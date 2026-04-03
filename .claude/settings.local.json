@@ -71,7 +71,8 @@
       "Bash(PATH=\"/Users/trentontaylor/.nvm/versions/node/v22.21.1/bin:$PATH\" npx supabase secrets set MAILERSEND_API_TOKEN=REDACTED-ROTATED-CREDENTIAL MAILERSEND_FROM_EMAIL=no-reply@smyrnatools.com MAILERSEND_FROM_NAME=SmyrnaTools FRONTEND_URL=https://smyrnatools.com --project-ref gujgtjqqurildqurpffh)",
       "Bash(PATH=\"/Users/trentontaylor/.nvm/versions/node/v22.21.1/bin:$PATH\" npx supabase functions deploy email-service --project-ref hzudmeptzciقkwlroos)",
       "Bash(PATH=\"/Users/trentontaylor/.nvm/versions/node/v22.21.1/bin:$PATH\" npx supabase projects list)",
-      "Bash(PATH=\"/Users/trentontaylor/.nvm/versions/node/v22.21.1/bin:$PATH\" npx supabase functions deploy email-service --project-ref hzudmeptzciqukwlroos)"
+      "Bash(PATH=\"/Users/trentontaylor/.nvm/versions/node/v22.21.1/bin:$PATH\" npx supabase functions deploy email-service --project-ref hzudmeptzciqukwlroos)",
+      "Bash(PATH=\"/Users/trentontaylor/.nvm/versions/node/v22.21.1/bin:$PATH\" npx supabase functions deploy report-service --project-ref hzudmeptzciqukwlroos)"
     ]
   },
   "disabledMcpjsonServers": [
