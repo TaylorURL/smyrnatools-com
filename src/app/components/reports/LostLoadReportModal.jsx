@@ -38,6 +38,7 @@ async function uploadWriteup(file, userId) {
 }
 
 const REASONS = ['Plant Manager Error', 'Operator Error', 'Plant Issue', 'Truck Issues', 'Other']
+const DUMP_LOCATIONS = ['Yard', 'Job Site', 'Blocks', 'Other']
 /** Modal form for submitting a new lost load report. Plant is auto-populated from the user's assigned plant. */
 function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
     const { preferences } = usePreferences()
@@ -51,6 +52,8 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
     const [ticketNumber, setTicketNumber] = useState('')
     const [reason, setReason] = useState('')
     const [explanation, setExplanation] = useState('')
+    const [dumpLocation, setDumpLocation] = useState('')
+    const [dumpLocationOther, setDumpLocationOther] = useState('')
     const [attachment, setAttachment] = useState(null)
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
@@ -121,8 +124,12 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
         setAttachment(file)
     }
     const handleSubmit = async () => {
-        if (!plant || !lostLoadDate || !yardage || !truckNumber.trim() || !reason) {
+        if (!plant || !lostLoadDate || !yardage || !truckNumber.trim() || !reason || !dumpLocation) {
             setError('Please fill out all required fields.')
+            return
+        }
+        if (dumpLocation === 'Other' && !dumpLocationOther.trim()) {
+            setError('Please specify where the concrete was dumped.')
             return
         }
         if (!explanation.trim()) {
@@ -133,6 +140,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
             setError('Yardage must be a positive number.')
             return
         }
+        const resolvedDumpLocation = dumpLocation === 'Other' ? dumpLocationOther.trim() : dumpLocation
         setSubmitting(true)
         setError('')
         try {
@@ -150,6 +158,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
                     data: {
                         attachment_url: attachmentUrl,
                         customer_name: customerName.trim() || null,
+                        dump_location: resolvedDumpLocation,
                         lost_load_date: lostLoadDate,
                         plant,
                         reason: fullReason,
@@ -189,6 +198,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
                         { label: 'Plant', value: plant },
                         { label: 'Truck Number', value: truckNumber.trim() },
                         { label: 'Yardage', value: String(Number(yardage)) },
+                        { label: 'Dump Location', value: resolvedDumpLocation },
                         ...(customerName.trim() ? [{ label: 'Customer', value: customerName.trim() }] : []),
                         ...(ticketNumber.trim() ? [{ label: 'Ticket Number', value: ticketNumber.trim() }] : []),
                         { label: 'Reason', value: fullReason },
@@ -507,6 +517,65 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
                                 <i className="fas fa-cloud-upload-alt" />
                                 Upload PDF
                             </button>
+                        )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                            Dump Location <span className="text-red-500">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {DUMP_LOCATIONS.map((loc) => (
+                                <button
+                                    key={loc}
+                                    type="button"
+                                    onClick={() => {
+                                        setDumpLocation(loc)
+                                        if (loc !== 'Other') setDumpLocationOther('')
+                                    }}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg border text-sm text-left transition-colors"
+                                    style={
+                                        dumpLocation === loc
+                                            ? {
+                                                  backgroundColor: `${accentColor}10`,
+                                                  borderColor: accentColor,
+                                                  color: accentColor
+                                              }
+                                            : { borderColor: 'var(--border-light)', color: 'var(--text-secondary)' }
+                                    }
+                                >
+                                    <div
+                                        className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                                        style={
+                                            dumpLocation === loc
+                                                ? { borderColor: accentColor }
+                                                : { borderColor: 'var(--border-light)' }
+                                        }
+                                    >
+                                        {dumpLocation === loc && (
+                                            <div
+                                                className="w-2 h-2 rounded-full"
+                                                style={{ backgroundColor: accentColor }}
+                                            />
+                                        )}
+                                    </div>
+                                    <span className="font-medium">{loc}</span>
+                                </button>
+                            ))}
+                        </div>
+                        {dumpLocation === 'Other' && (
+                            <input
+                                type="text"
+                                value={dumpLocationOther}
+                                onChange={(e) => setDumpLocationOther(e.target.value)}
+                                placeholder="Specify where concrete was dumped..."
+                                autoFocus
+                                className="rounded-lg px-3 py-2.5 text-sm focus:outline-none mt-1"
+                                style={{
+                                    backgroundColor: 'var(--bg-primary)',
+                                    border: '1px solid var(--border-light)',
+                                    color: 'var(--text-primary)'
+                                }}
+                            />
                         )}
                     </div>
                     <div className="flex flex-col gap-1.5">

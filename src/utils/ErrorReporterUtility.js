@@ -24,55 +24,55 @@ const pendingCalls = []
 let drainTimer = null
 
 function getBeacon() {
-  return typeof window !== 'undefined' ? window.__taylorURL : null
+    return typeof window !== 'undefined' ? window.__taylorURL : null
 }
 
 function runOrDefer(call) {
-  const beacon = getBeacon()
-  if (beacon) {
-    call(beacon)
-    return
-  }
-  pendingCalls.push(call)
-  scheduleDrain()
+    const beacon = getBeacon()
+    if (beacon) {
+        call(beacon)
+        return
+    }
+    pendingCalls.push(call)
+    scheduleDrain()
 }
 
 function scheduleDrain() {
-  if (drainTimer !== null) return
-  const startedAt = Date.now()
-  drainTimer = setInterval(() => {
-    const beacon = getBeacon()
-    if (beacon) {
-      clearInterval(drainTimer)
-      drainTimer = null
-      while (pendingCalls.length) pendingCalls.shift()(beacon)
-    } else if (Date.now() - startedAt > PENDING_TIMEOUT_MS) {
-      clearInterval(drainTimer)
-      drainTimer = null
-      pendingCalls.length = 0
-    }
-  }, POLL_INTERVAL_MS)
+    if (drainTimer !== null) return
+    const startedAt = Date.now()
+    drainTimer = setInterval(() => {
+        const beacon = getBeacon()
+        if (beacon) {
+            clearInterval(drainTimer)
+            drainTimer = null
+            while (pendingCalls.length) pendingCalls.shift()(beacon)
+        } else if (Date.now() - startedAt > PENDING_TIMEOUT_MS) {
+            clearInterval(drainTimer)
+            drainTimer = null
+            pendingCalls.length = 0
+        }
+    }, POLL_INTERVAL_MS)
 }
 
 const ErrorReporterUtility = {
-  /**
-   * No-op: the beacon auto-initializes from its <script data-project="…"> tag.
-   * Accepted for backwards compatibility with older call sites.
-   */
-  init() {},
+    /**
+     * No-op: the beacon auto-initializes from its <script data-project="…"> tag.
+     * Accepted for backwards compatibility with older call sites.
+     */
+    init() {},
 
-  /** Manually report an error. Delegates to the beacon once it's available. */
-  reportError(error, metadata) {
-    runOrDefer(beacon => beacon.reportError?.(error, metadata))
-  },
+    /** Manually report an error. Delegates to the beacon once it's available. */
+    reportError(error, metadata) {
+        runOrDefer((beacon) => beacon.reportError?.(error, metadata))
+    },
 
-  /** Force-flush queued errors. */
-  flush() {
-    runOrDefer(beacon => beacon.flush?.())
-  },
+    /** Force-flush queued errors. */
+    flush() {
+        runOrDefer((beacon) => beacon.flush?.())
+    },
 
-  /** No-op: the beacon handlers are installed for the page's lifetime. */
-  destroy() {},
+    /** No-op: the beacon handlers are installed for the page's lifetime. */
+    destroy() {}
 }
 
 /**
@@ -80,25 +80,23 @@ const ErrorReporterUtility = {
  * beacon. Wrap your top-level <App /> with this.
  */
 class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { hasError: false }
-  }
+    constructor(props) {
+        super(props)
+        this.state = { hasError: false }
+    }
 
-  static getDerivedStateFromError() {
-    return { hasError: true }
-  }
+    static getDerivedStateFromError() {
+        return { hasError: true }
+    }
 
-  componentDidCatch(error, info) {
-    runOrDefer(beacon =>
-      beacon.reportError?.(error, { component_stack: info?.componentStack })
-    )
-  }
+    componentDidCatch(error, info) {
+        runOrDefer((beacon) => beacon.reportError?.(error, { component_stack: info?.componentStack }))
+    }
 
-  render() {
-    if (this.state.hasError) return this.props.fallback ?? null
-    return this.props.children
-  }
+    render() {
+        if (this.state.hasError) return this.props.fallback ?? null
+        return this.props.children
+    }
 }
 
 export default ErrorReporterUtility

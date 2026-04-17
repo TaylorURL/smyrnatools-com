@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [38.5.24] - 2026-04-17
+
+- Added dump location field to lost load reports — required field with options (Yard, Job Site, Blocks, Other) and a free-text input when Other is selected
+- Dump location now appears in the lost load detail modal and is included in submission confirmation summaries
+- Moved the Terminated section above Hiring Goals in the Weekly Ready Mix Instructor report (both submit and review views)
+- Re-indented ErrorReporterUtility.js to use 4-space indentation consistently throughout the file
+
 ## [38.5.23] - 2026-04-11
 
 - Added the Weekly Quality Control Manager report type with daily recap fields (Monday–Saturday), including submit and review plugin components

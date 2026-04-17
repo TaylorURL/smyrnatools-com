@@ -856,13 +856,13 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
                     onRemove={removeTraining}
                     actions={trainingActions}
                 />
+                <TerminatedSection terminatedOperators={terminatedThisWeek} plants={plants} readOnly={readOnly} />
                 <HiringGoalsSection
                     plants={plants}
                     hiringGoals={hiringGoals}
                     onChange={handleHiringGoalChange}
                     readOnly={readOnly}
                 />
-                <TerminatedSection terminatedOperators={terminatedThisWeek} plants={plants} readOnly={readOnly} />
                 {showAddTrainerModal &&
                     ReactDOM.createPortal(
                         <div
@@ -1157,8 +1157,8 @@ export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso }) {
             <TrainersSection mixerTrainers={mixerTrainers} tractorTrainers={tractorTrainers} plants={plants} readOnly />
             <PendingSection mixerPending={mixerPending} tractorPending={tractorPending} plants={plants} readOnly />
             <TrainingSection mixerTraining={mixerTraining} tractorTraining={tractorTraining} plants={plants} readOnly />
-            <HiringGoalsSection plants={plants} hiringGoals={hiringGoals} readOnly />
             <TerminatedSection terminatedOperators={terminatedOperators} plants={plants} />
+            <HiringGoalsSection plants={plants} hiringGoals={hiringGoals} readOnly />
         </div>
     )
 }

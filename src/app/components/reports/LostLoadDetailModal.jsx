@@ -97,6 +97,7 @@ function LostLoadDetailModal({ report, getUserName, onClose }) {
                         label="Truck Number"
                         value={data.truck_number ? `#${data.truck_number}` : null}
                     />
+                    <DetailRow icon="map-marker-alt" label="Dump Location" value={data.dump_location} />
                     <DetailRow icon="user-tie" label="Customer" value={data.customer_name} />
                     <DetailRow
                         icon="ticket-alt"
