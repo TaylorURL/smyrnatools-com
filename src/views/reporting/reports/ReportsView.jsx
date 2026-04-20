@@ -4,6 +4,7 @@ import PlantDropdownModal from '../../../app/components/common/PlantDropdownModa
 import LostLoadDetailModal from '../../../app/components/reports/LostLoadDetailModal'
 import LostLoadReportModal from '../../../app/components/reports/LostLoadReportModal'
 import LostLoadsList from '../../../app/components/reports/LostLoadsList'
+import MissingReportsList from '../../../app/components/reports/MissingReportsList'
 import MyReportsList from '../../../app/components/reports/MyReportsList'
 import QCStrengthDetailModal from '../../../app/components/reports/QCStrengthDetailModal'
 import QCStrengthReportModal from '../../../app/components/reports/QCStrengthReportModal'
@@ -20,6 +21,7 @@ import { reportTypeMap, reportTypes } from '../../../app/types/ReportTypes'
 import { Database } from '../../../services/DatabaseService'
 import { ReportService } from '../../../services/ReportService'
 import { UserService } from '../../../services/UserService'
+import { ReportUtility } from '../../../utils/ReportUtility'
 import ReportsReviewView from './ReportsReviewView'
 import ReportsSubmitView from './ReportsSubmitView'
 
@@ -92,6 +94,9 @@ function ReportsView() {
     const [qcReports, setQcReports] = useState([])
     const [isLoadingQC, setIsLoadingQC] = useState(false)
     const [qcLoaded, setQcLoaded] = useState(false)
+    const [missingReports, setMissingReports] = useState([])
+    const [isLoadingMissing, setIsLoadingMissing] = useState(false)
+    const [missingLoaded, setMissingLoaded] = useState(false)
     const [selectedQCReport, setSelectedQCReport] = useState(null)
     const [selectedLabReport, setSelectedLabReport] = useState(null)
     const [currentUserWeight, setCurrentUserWeight] = useState(0)
@@ -266,11 +271,59 @@ function ReportsView() {
             .then(setCurrentUserWeight)
             .catch(() => {})
     }, [user, qcLoaded, fetchProfilesFor])
+    const previousTwoWeekIsos = useMemo(() => {
+        const now = new Date()
+        const candidates = ReportUtility.getLastNWeekIsos(4, now)
+        const completed = []
+        for (const iso of candidates) {
+            const { saturday } = ReportUtility.getWeekDatesFromIso(iso)
+            if (saturday && saturday < now) {
+                completed.push(iso)
+                if (completed.length === 2) break
+            }
+        }
+        return completed
+    }, [])
+    const allowedReviewReportNames = useMemo(() => {
+        if (isLoadingPermissions) return []
+        if (regionType === 'office') return hasReviewPermission['general_manager'] ? ['general_manager'] : []
+        return reportTypes
+            .filter((rt) => hasReviewPermission[rt.name] && rt.name !== 'general_manager')
+            .map((rt) => rt.name)
+    }, [hasReviewPermission, regionType, isLoadingPermissions])
+    const loadMissingReports = useCallback(async () => {
+        if (!user || isLoadingPermissions || missingLoaded) return
+        if (allowedReviewReportNames.length === 0) {
+            setMissingReports([])
+            setMissingLoaded(true)
+            return
+        }
+        setIsLoadingMissing(true)
+        try {
+            const overdue = await ReportService.fetchOverdueAssignments(new Date(), {
+                allowedReview: allowedReviewReportNames
+            })
+            const weekSet = new Set(previousTwoWeekIsos)
+            setMissingReports(
+                (Array.isArray(overdue) ? overdue : []).filter((item) => item.week && weekSet.has(item.week))
+            )
+        } catch (err) {
+            console.error('Failed to load missing reports:', err)
+            setMissingReports([])
+        }
+        setIsLoadingMissing(false)
+        setMissingLoaded(true)
+    }, [user, isLoadingPermissions, missingLoaded, allowedReviewReportNames, previousTwoWeekIsos])
+    const visibleMissingReports = useMemo(() => {
+        if (!preferences.selectedRegion?.code || !regionPlantCodes) return missingReports
+        return missingReports.filter((item) => item.plant_code && regionPlantCodes.has(item.plant_code))
+    }, [missingReports, preferences.selectedRegion?.code, regionPlantCodes])
     useEffect(() => {
         if (tab === 'review') loadReviewReports()
         if (tab === 'lost_loads') loadLostLoadReports()
         if (tab === 'quality') loadQCReports()
-    }, [tab, loadReviewReports, loadLostLoadReports, loadQCReports])
+        if (tab === 'missing') loadMissingReports()
+    }, [tab, loadReviewReports, loadLostLoadReports, loadQCReports, loadMissingReports])
     const fetchWeightForUser = useCallback(
         async (userId) => {
             if (userWeights[userId] !== undefined) return userWeights[userId]
@@ -422,13 +475,16 @@ function ReportsView() {
               ? isReviewLoading
               : tab === 'quality'
                 ? isLoadingQC
-                : isLoadingLostLoads
+                : tab === 'missing'
+                  ? isLoadingMissing
+                  : isLoadingLostLoads
     const statsContent = (() => {
         if (isCurrentTabLoading) return null
         if (tab === 'all') return <ReportsStatsCards items={allMyItems} tab={tab} />
         if (tab === 'quality')
             return <ReportsStatsCards items={qcAsReviewItems} tab="review" reviewedByCurrentUser={qcReviewedSet} />
         if (tab === 'lost_loads') return <ReportsStatsCards items={lostLoadsAsItems} tab="all" />
+        if (tab === 'missing') return null
         return (
             <ReportsStatsCards items={visibleReviewReports} tab={tab} reviewedByCurrentUser={reviewedByCurrentUser} />
         )
@@ -482,6 +538,13 @@ function ReportsView() {
                       icon: 'fa-clipboard-check',
                       count: pendingReviewCount || null,
                       countAlert: pendingReviewCount > 0
+                  },
+                  {
+                      key: 'missing',
+                      label: 'Missing Reports',
+                      icon: 'fa-exclamation-circle',
+                      count: visibleMissingReports.length || null,
+                      countAlert: visibleMissingReports.length > 0
                   }
               ]
             : [])
@@ -738,6 +801,9 @@ function ReportsView() {
                                 getUserName={getUserName}
                             />
                         ))}
+                    {tab === 'missing' && (
+                        <MissingReportsList isLoading={isLoadingMissing} items={visibleMissingReports} />
+                    )}
                     {tab === 'lost_loads' && (
                         <LostLoadsList
                             isLoading={isLoadingLostLoads}

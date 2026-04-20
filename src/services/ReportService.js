@@ -408,8 +408,9 @@ class ReportServiceImpl {
             CacheUtility.set(cacheKey, [], TTL_SHORT)
             return []
         }
-        const { data: profiles, error: profilesError } =
-            await Database.from('users_profiles').select('id, first_name, last_name')
+        const { data: profiles, error: profilesError } = await Database.from('users_profiles').select(
+            'id, first_name, last_name, plant_code'
+        )
         if (profilesError || !Array.isArray(profiles) || profiles.length === 0) {
             CacheUtility.set(cacheKey, [], TTL_SHORT)
             return []
@@ -560,6 +561,7 @@ class ReportServiceImpl {
                         overdue.push({
                             first_name: info.user.first_name || '',
                             last_name: info.user.last_name || '',
+                            plant_code: info.user.plant_code || '',
                             report_name: rtName,
                             userId,
                             week: day
