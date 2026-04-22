@@ -54,6 +54,8 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
     const [explanation, setExplanation] = useState('')
     const [dumpLocation, setDumpLocation] = useState('')
     const [dumpLocationOther, setDumpLocationOther] = useState('')
+    const [operatorReprimanded, setOperatorReprimanded] = useState(false)
+    const [plantManagerReprimanded, setPlantManagerReprimanded] = useState(false)
     const [attachment, setAttachment] = useState(null)
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
@@ -88,6 +90,20 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
         })
         return map
     }, [operators])
+    const selectedMixer = useMemo(() => {
+        const target = truckNumber.trim().toLowerCase()
+        if (!target) return null
+        return (
+            mixers.find(
+                (m) =>
+                    String(m.truckNumber || '')
+                        .trim()
+                        .toLowerCase() === target
+            ) || null
+        )
+    }, [mixers, truckNumber])
+    const selectedOperatorId = selectedMixer?.assignedOperator || null
+    const selectedOperatorName = selectedOperatorId ? operatorMap[selectedOperatorId] || '' : ''
     const regionalMixers = useMemo(() => {
         const plantCodes = new Set((plants || []).map((p) => String(p.plant_code).toUpperCase()))
         let filtered = mixers.filter(
@@ -160,7 +176,11 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
                         customer_name: customerName.trim() || null,
                         dump_location: resolvedDumpLocation,
                         lost_load_date: lostLoadDate,
+                        operator_id: selectedOperatorId,
+                        operator_name: selectedOperatorName || null,
+                        operator_reprimanded: !!operatorReprimanded,
                         plant,
+                        plant_manager_reprimanded: !!plantManagerReprimanded,
                         reason: fullReason,
                         ticket_number: ticketNumber.trim() || null,
                         truck_number: truckNumber.trim(),
@@ -636,6 +656,49 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
                                 }}
                             />
                         )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                            Reprimand
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
+                                style={{
+                                    backgroundColor: operatorReprimanded ? `${accentColor}12` : 'var(--bg-primary)',
+                                    border: `1px solid ${operatorReprimanded ? accentColor : 'var(--border-light)'}`
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={operatorReprimanded}
+                                    onChange={(e) => setOperatorReprimanded(e.target.checked)}
+                                    className="w-4 h-4 shrink-0 cursor-pointer"
+                                    style={{ accentColor }}
+                                />
+                                <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                                    Operator reprimanded
+                                </span>
+                            </label>
+                            <label
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
+                                style={{
+                                    backgroundColor: plantManagerReprimanded ? `${accentColor}12` : 'var(--bg-primary)',
+                                    border: `1px solid ${plantManagerReprimanded ? accentColor : 'var(--border-light)'}`
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={plantManagerReprimanded}
+                                    onChange={(e) => setPlantManagerReprimanded(e.target.checked)}
+                                    className="w-4 h-4 shrink-0 cursor-pointer"
+                                    style={{ accentColor }}
+                                />
+                                <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                                    Plant Manager reprimanded
+                                </span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div

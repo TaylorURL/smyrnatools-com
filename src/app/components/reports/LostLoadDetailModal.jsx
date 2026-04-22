@@ -97,6 +97,7 @@ function LostLoadDetailModal({ report, getUserName, onClose }) {
                         label="Truck Number"
                         value={data.truck_number ? `#${data.truck_number}` : null}
                     />
+                    <DetailRow icon="user" label="Operator" value={data.operator_name || null} />
                     <DetailRow icon="map-marker-alt" label="Dump Location" value={data.dump_location} />
                     <DetailRow icon="user-tie" label="Customer" value={data.customer_name} />
                     <DetailRow
@@ -105,6 +106,16 @@ function LostLoadDetailModal({ report, getUserName, onClose }) {
                         value={data.ticket_number ? `#${data.ticket_number}` : null}
                     />
                     <DetailRow icon="tag" label="Reason" value={reasonCategory} />
+                    <DetailRow
+                        icon="gavel"
+                        label="Operator Reprimanded"
+                        value={data.operator_reprimanded ? 'Yes' : 'No'}
+                    />
+                    <DetailRow
+                        icon="gavel"
+                        label="Plant Manager Reprimanded"
+                        value={data.plant_manager_reprimanded ? 'Yes' : 'No'}
+                    />
                     {reasonExplanation && (
                         <div className="py-3 border-b border-border-light">
                             <div className="flex items-start gap-3">

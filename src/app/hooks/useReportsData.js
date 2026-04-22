@@ -62,82 +62,129 @@ export function useReportsData() {
     const fetchReportsBatch = useCallback(
         async ({ weeks, scope }) => {
             if (!user || !Array.isArray(weeks) || weeks.length === 0) return
-            const dateStrs = weeks.map((w) => new Date(w).toISOString().slice(0, 10))
-            const fullIsos = weeks.map((w) => new Date(w).toISOString())
-            const weekFieldList = Array.from(new Set([...dateStrs, ...fullIsos]))
-            let query = Database.from('reports')
-                .select(
-                    'id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week'
-                )
-                .in('week', weekFieldList)
-            if (scope === 'my') {
-                const allowedMy =
-                    regionType === 'office'
-                        ? hasAssigned['general_manager']
-                            ? ['general_manager']
-                            : []
-                        : reportTypes.filter((rt) => hasAssigned[rt.name]).map((rt) => rt.name)
-                query = query.eq('user_id', user.id)
-                if (allowedMy.length > 0) query = query.in('report_name', allowedMy)
-            } else if (scope === 'review') {
-                const recurringAllowed =
-                    regionType === 'office'
-                        ? hasReviewPermission['general_manager']
-                            ? ['general_manager']
-                            : []
-                        : reportTypes
-                              .filter((rt) => hasReviewPermission[rt.name] && rt.name !== 'general_manager')
-                              .map((rt) => rt.name)
-                const oneOffAllowed = oneOffReportTypes
-                    .filter((rt) => hasOneOffReviewPermission[rt.name])
-                    .map((rt) => rt.name)
-                const allowedReview = [...recurringAllowed, ...oneOffAllowed]
-                query = query.neq('user_id', user.id).eq('completed', true)
-                if (allowedReview.length > 0) query = query.in('report_name', allowedReview)
-            }
-            const { data, error } = await query
-            if (error) {
-                setLoadError(error.message || 'Error fetching reports')
+            // Break the week list into reasonable chunks so we never exceed the
+            // PostgREST URL-length cap, and loop each chunk sequentially.
+            const WEEK_CHUNK = 26
+            if (weeks.length > WEEK_CHUNK) {
+                for (let i = 0; i < weeks.length; i += WEEK_CHUNK) {
+                    await loadChunk(weeks.slice(i, i + WEEK_CHUNK))
+                }
                 return
             }
-            if (!Array.isArray(data)) return
-            const reportIds = data.map((r) => r.id).filter((id) => id != null)
-            if (reportIds.length > 0 && scope === 'review' && user?.id) {
-                const { data: reviewedData } = await Database.from('reports_reviewed')
-                    .select('report_id')
-                    .in('report_id', reportIds)
-                    .eq('reviewed_by_user_id', user.id)
-                if (reviewedData && Array.isArray(reviewedData)) {
-                    const reviewedSet = new Set(reviewedData.map((r) => r.report_id))
-                    setReviewedByCurrentUser((prev) => {
-                        const newSet = new Set(prev)
-                        reviewedSet.forEach((id) => newSet.add(id))
-                        return newSet
-                    })
+            await loadChunk(weeks)
+            async function loadChunk(chunkWeeks) {
+                const dateStrs = chunkWeeks.map((w) => new Date(w).toISOString().slice(0, 10))
+                const fullIsos = chunkWeeks.map((w) => new Date(w).toISOString())
+                const weekFieldList = Array.from(new Set([...dateStrs, ...fullIsos]))
+                const buildBaseQuery = () => {
+                    let q = Database.from('reports')
+                        .select(
+                            'id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week'
+                        )
+                        .in('week', weekFieldList)
+                    if (scope === 'my') {
+                        const allowedMy =
+                            regionType === 'office'
+                                ? hasAssigned['general_manager']
+                                    ? ['general_manager']
+                                    : []
+                                : reportTypes.filter((rt) => hasAssigned[rt.name]).map((rt) => rt.name)
+                        q = q.eq('user_id', user.id)
+                        if (allowedMy.length > 0) q = q.in('report_name', allowedMy)
+                    } else if (scope === 'review') {
+                        const recurringAllowed =
+                            regionType === 'office'
+                                ? hasReviewPermission['general_manager']
+                                    ? ['general_manager']
+                                    : []
+                                : reportTypes
+                                      .filter((rt) => hasReviewPermission[rt.name] && rt.name !== 'general_manager')
+                                      .map((rt) => rt.name)
+                        const oneOffAllowed = oneOffReportTypes
+                            .filter((rt) => hasOneOffReviewPermission[rt.name])
+                            .map((rt) => rt.name)
+                        const allowedReview = [...recurringAllowed, ...oneOffAllowed]
+                        q = q.neq('user_id', user.id).eq('completed', true)
+                        if (allowedReview.length > 0) q = q.in('report_name', allowedReview)
+                    }
+                    return q
+                        .order('week', { ascending: false })
+                        .order('submitted_at', { ascending: false, nullsFirst: false })
+                        .order('id', { ascending: false })
                 }
+                const PAGE_SIZE = 1000
+                const data = []
+                let from = 0
+                let fetchError = null
+                let done = false
+                // Paginate explicitly — Supabase caps a single response so we loop until
+                // we receive a short page, guaranteeing we load every matching report.
+                while (!done) {
+                    const { data: pageData, error: pageError } = await buildBaseQuery().range(
+                        from,
+                        from + PAGE_SIZE - 1
+                    )
+                    if (pageError) {
+                        fetchError = pageError
+                        break
+                    }
+                    const page = Array.isArray(pageData) ? pageData : []
+                    data.push(...page)
+                    if (page.length < PAGE_SIZE) done = true
+                    else from += PAGE_SIZE
+                }
+                if (fetchError) {
+                    setLoadError(fetchError.message || 'Error fetching reports')
+                    return
+                }
+                const reportIds = data.map((r) => r.id).filter((id) => id != null)
+                if (reportIds.length > 0 && scope === 'review' && user?.id) {
+                    // Chunk the `.in()` list so we never hit PostgREST's URL-length
+                    // limit when the review result is large.
+                    const CHUNK = 500
+                    const reviewedAll = []
+                    for (let i = 0; i < reportIds.length; i += CHUNK) {
+                        const slice = reportIds.slice(i, i + CHUNK)
+                        const { data: reviewedData } = await Database.from('reports_reviewed')
+                            .select('report_id')
+                            .in('report_id', slice)
+                            .eq('reviewed_by_user_id', user.id)
+                        if (Array.isArray(reviewedData)) reviewedAll.push(...reviewedData)
+                    }
+                    if (reviewedAll.length > 0) {
+                        const reviewedSet = new Set(reviewedAll.map((r) => r.report_id))
+                        setReviewedByCurrentUser((prev) => {
+                            const newSet = new Set(prev)
+                            reviewedSet.forEach((id) => newSet.add(id))
+                            return newSet
+                        })
+                    }
+                }
+                setLocalReports((prev) => {
+                    const existingIds = new Set(prev.map((r) => r.id))
+                    const mapped = data
+                        .filter((r) => !existingIds.has(r.id))
+                        .map((r) => ({
+                            completed: !!r.completed,
+                            completedDate: r.submitted_at,
+                            data: r.data,
+                            id: r.id,
+                            name: r.report_name,
+                            report_date_range_end: r.report_date_range_end ? new Date(r.report_date_range_end) : null,
+                            report_date_range_start: r.report_date_range_start
+                                ? new Date(r.report_date_range_start)
+                                : null,
+                            title:
+                                (reportTypeMap[r.report_name] || oneOffReportTypeMap[r.report_name] || {}).title ||
+                                r.report_name,
+                            userId: r.user_id,
+                            week: r.week || r.data?.week || null
+                        }))
+                    return [...prev, ...mapped]
+                })
+                const ids = Array.from(new Set(data.map((r) => r.user_id).filter(Boolean)))
+                await fetchProfilesFor(ids)
             }
-            setLocalReports((prev) => {
-                const existingIds = new Set(prev.map((r) => r.id))
-                const mapped = data
-                    .filter((r) => !existingIds.has(r.id))
-                    .map((r) => ({
-                        completed: !!r.completed,
-                        completedDate: r.submitted_at,
-                        data: r.data,
-                        id: r.id,
-                        name: r.report_name,
-                        report_date_range_end: r.report_date_range_end ? new Date(r.report_date_range_end) : null,
-                        report_date_range_start: r.report_date_range_start ? new Date(r.report_date_range_start) : null,
-                        title:
-                            (reportTypeMap[r.report_name] || oneOffReportTypeMap[r.report_name] || {}).title ||
-                            r.report_name,
-                        userId: r.user_id,
-                        week: r.week || r.data?.week || null
-                    }))
-                return [...prev, ...mapped]
-            })
-            const ids = Array.from(new Set(data.map((r) => r.user_id).filter(Boolean)))
-            await fetchProfilesFor(ids)
         },
         [user, regionType, hasAssigned, hasReviewPermission, hasOneOffReviewPermission, fetchProfilesFor]
     )
@@ -354,7 +401,8 @@ export function useReportsData() {
     )
     const loadReviewReports = useCallback(async () => {
         if (!user || isLoadingPermissions) return
-        const allWeeks = ReportUtility.getLastNWeekIsos(52, new Date())
+        const weeksSpan = Math.max(52, ReportUtility.getTotalWeeksSince(REPORTS_START_DATE))
+        const allWeeks = ReportUtility.getLastNWeekIsos(weeksSpan, new Date())
         const newWeeks = allWeeks.filter((w) => !reviewLoadedWeeks.has(w))
         // On subsequent calls (all weeks already loaded), re-fetch last 4 weeks
         // so newly submitted reports appear without a full page refresh

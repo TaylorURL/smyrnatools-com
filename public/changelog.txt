@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [38.5.25] - 2026-04-20
+
+- Added a Missing Reports tab to the Reports view that shows which assignees did not submit their reports for the previous two weeks, grouped by week with Last Week / Older badges
+- New MissingReportsList component renders missing entries by week group, with report-type icons, user initials, and a Missing badge per row, plus a skeleton loading state and an empty state when all reports are accounted for
+- Missing reports are filtered by the reviewer's allowed report types and scoped to the selected region via plant code
+- ReportService now fetches plant_code alongside user profiles and includes it in overdue assignment entries to support region-based filtering
+
 ## [38.5.24] - 2026-04-17
 
 - Added dump location field to lost load reports — required field with options (Yard, Job Site, Blocks, Other) and a free-text input when Other is selected
