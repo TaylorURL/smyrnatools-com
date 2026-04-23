@@ -281,8 +281,7 @@ Deno.serve(async (req) => {
                 if (authErr) return authErr;
                 const {name, permissions = [], weight = 0} = body;
                 if (!name) return errorResponse("Role name is required", headers);
-                const now = nowISO();
-                const {data, error} = await supabase.from(ROLES_TABLE).insert({name, permissions, weight, created_at: now, updated_at: now}).select().single();
+                const {data, error} = await supabase.from(ROLES_TABLE).insert({name, permissions, weight}).select().single();
                 if (error) return errorResponse("Failed to create role", headers, 500);
                 return jsonResponse(data, headers);
             }
@@ -291,7 +290,7 @@ Deno.serve(async (req) => {
                 if (authErr) return authErr;
                 const {roleId, updates} = body;
                 if (!roleId || !updates) return errorResponse("Role ID and updates are required", headers);
-                const {error} = await supabase.from(ROLES_TABLE).update({...updates, updated_at: nowISO()}).eq('id', roleId);
+                const {error} = await supabase.from(ROLES_TABLE).update(updates).eq('id', roleId);
                 if (error) return errorResponse("Failed to update role", headers, 500);
                 return jsonResponse(true, headers);
             }

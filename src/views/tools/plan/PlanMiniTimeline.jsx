@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import {
     addMinutesToTime,
@@ -16,12 +16,11 @@ import {
 const SENT_COLOR = '#c2703a'
 const RECV_COLOR = '#3b7dd8'
 const HOME_COLOR = '#2d8659'
-const MINI_ROW_H = 36
+const ROW_HEIGHT = 40
+const LABEL_WIDTH = 120
+const HEADER_HEIGHT = 34
 
-/**
- * Compact timeline preview shown below the assignment list in the planner view.
- * Extracted from PlanView to reduce file size.
- */
+/** Compact, cleaner Gantt-style preview of the day's movements. */
 export default function PlanMiniTimeline({
     accentColor,
     assignments,
@@ -74,7 +73,6 @@ export default function PlanMiniTimeline({
         })
 
         const involvedPlants = [...new Set([...lanes.map((l) => l.fromPlant), ...lanes.map((l) => l.toPlant)])].sort()
-
         const rows = involvedPlants.map((plant) => {
             const sent = lanes
                 .filter((l) => l.fromPlant === plant)
@@ -97,9 +95,26 @@ export default function PlanMiniTimeline({
         return { allLanes: lanes, hourLabels: labels, miniPlantRows: rows }
     }, [assignments, getTravelTime, mixerCountsByPlant])
 
-    if (!allLanes.length) {
+    // Live "now" indicator (updates every minute so it slides across)
+    const [now, setNow] = useState(() => new Date())
+    useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 60 * 1000)
+        return () => clearInterval(t)
+    }, [])
+    const nowMinutes = now.getHours() * 60 + now.getMinutes()
+    const startMinutes = TIMELINE_START_HOUR * 60
+    const totalMinutes = TIMELINE_HOURS * 60
+    const nowPct =
+        nowMinutes >= startMinutes && nowMinutes <= startMinutes + totalMinutes
+            ? ((nowMinutes - startMinutes) / totalMinutes) * 100
+            : null
+
+    const hasAny = allLanes.length > 0
+
+    if (!hasAny) {
         return (
-            <div className="text-[11px] py-4 text-center" style={{ color: 'var(--text-secondary)' }}>
+            <div className="text-[12px] py-6 text-center" style={{ color: 'var(--text-secondary)' }}>
+                <i className="fas fa-chart-gantt text-2xl mb-2 opacity-50 block" />
                 Add assignments with times to see the timeline
             </div>
         )
@@ -107,71 +122,137 @@ export default function PlanMiniTimeline({
 
     return (
         <div
-            className="rounded-lg border overflow-hidden"
-            style={{ borderColor: 'var(--border-light)', background: 'var(--bg-secondary)' }}
+            className="rounded-xl overflow-hidden"
+            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
         >
+            {/* Legend */}
+            <div
+                className="flex items-center gap-4 px-4 py-2 text-[10px] font-semibold"
+                style={{
+                    background: 'var(--bg-primary)',
+                    borderBottom: '1px solid var(--border-light)',
+                    color: 'var(--text-secondary)'
+                }}
+            >
+                <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm" style={{ background: HOME_COLOR }} />
+                    On-site (home)
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm" style={{ background: SENT_COLOR }} />
+                    Sent out
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm" style={{ background: RECV_COLOR }} />
+                    Received
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-0.5" style={{ background: '#dc2626' }} />
+                    Now
+                </span>
+                <span className="ml-auto text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                    {allLanes.length} lane{allLanes.length === 1 ? '' : 's'} · {miniPlantRows.length} plants
+                </span>
+            </div>
+
             {/* Hour header */}
-            <div className="relative flex" style={{ height: 28 }}>
+            <div className="relative flex" style={{ height: HEADER_HEIGHT }}>
                 <div
                     className="shrink-0 flex items-center px-3 text-[10px] font-bold uppercase tracking-wider border-b border-r"
                     style={{
-                        width: 100,
+                        width: LABEL_WIDTH,
                         color: 'var(--text-secondary)',
                         borderColor: 'var(--border-light)',
-                        background: 'var(--bg-tertiary)'
+                        background: 'var(--bg-primary)'
                     }}
                 >
                     Plant
                 </div>
                 <div
                     className="flex-1 relative border-b"
-                    style={{ borderColor: 'var(--border-light)', background: 'var(--bg-tertiary)' }}
+                    style={{ borderColor: 'var(--border-light)', background: 'var(--bg-primary)' }}
                 >
+                    {/* Shift window highlight (4AM–6PM) */}
+                    <div
+                        className="absolute inset-y-0 pointer-events-none"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            left: `${((4 - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100}%`,
+                            width: `${((18 - 4) / TIMELINE_HOURS) * 100}%`
+                        }}
+                    />
                     {hourLabels.map((label, i) => {
                         const hour = TIMELINE_START_HOUR + i
                         const isWorkHour = hour >= 4 && hour <= 18
+                        const isMajor = hour % 2 === 0
                         return (
                             <div
                                 key={i}
-                                className="absolute top-0 bottom-0 flex items-end pb-0.5"
+                                className="absolute top-0 bottom-0 flex items-end pb-1"
                                 style={{ left: `${(i / TIMELINE_HOURS) * 100}%` }}
                             >
                                 <div
-                                    className="absolute top-0 bottom-0 w-px"
-                                    style={{ background: 'var(--border-light)', opacity: isWorkHour ? 1 : 0.4 }}
-                                />
-                                <span
-                                    className="text-[9px] pl-0.5"
+                                    className="absolute top-0 bottom-0"
                                     style={{
-                                        color: 'var(--text-secondary)',
-                                        opacity: isWorkHour ? 0.9 : 0.4,
-                                        fontWeight: isWorkHour ? 600 : 400
+                                        width: 1,
+                                        background: 'var(--border-light)',
+                                        opacity: isMajor ? 1 : isWorkHour ? 0.5 : 0.25
                                     }}
-                                >
-                                    {label}
-                                </span>
+                                />
+                                {isMajor && (
+                                    <span
+                                        className="pl-1 text-[10px] font-semibold"
+                                        style={{
+                                            color: isWorkHour ? 'var(--text-primary)' : 'var(--text-tertiary)'
+                                        }}
+                                    >
+                                        {label}
+                                    </span>
+                                )}
                             </div>
                         )
                     })}
+                    {/* NOW marker in header */}
+                    {nowPct != null && (
+                        <div
+                            className="absolute top-0 bottom-0"
+                            style={{
+                                left: `${nowPct}%`,
+                                width: 2,
+                                background: '#dc2626',
+                                boxShadow: '0 0 0 1px rgba(220,38,38,0.25)'
+                            }}
+                        >
+                            <div
+                                className="absolute -top-0.5 -translate-x-1/2 px-1.5 rounded-sm text-[9px] font-bold text-white whitespace-nowrap"
+                                style={{ background: '#dc2626' }}
+                            >
+                                NOW{' '}
+                                {now.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true, minute: '2-digit' })}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
+
             {/* Plant rows */}
             {miniPlantRows.map((pr, prIdx) => (
                 <PlantRow
                     key={pr.plant}
                     accentColor={accentColor}
                     hourLabels={hourLabels}
+                    nowPct={nowPct}
                     plantProduction={plantProduction}
                     plantRow={pr}
                     rowIndex={prIdx}
+                    isLast={prIdx === miniPlantRows.length - 1}
                 />
             ))}
         </div>
     )
 }
 
-/** Single plant row in the mini-timeline. */
-function PlantRow({ accentColor, hourLabels, plantProduction, plantRow: pr, rowIndex: prIdx }) {
+function PlantRow({ accentColor, hourLabels, isLast, nowPct, plantProduction, plantRow: pr, rowIndex: prIdx }) {
     const prod = plantProduction[pr.plant] || {}
     const startPct = timeToPercent(prod.firstJobTime)
     const endPct = timeToPercent(prod.lastJobTime)
@@ -181,183 +262,124 @@ function PlantRow({ accentColor, hourLabels, plantProduction, plantRow: pr, rowI
     const lastMins = hasProd ? timeToMinutes(prod.lastJobTime) : null
     const hrs = firstMins !== null && lastMins !== null && lastMins > firstMins ? (lastMins - firstMins) / 60 : null
     const yds = hasProd ? parseFloat(prod.totalYardage) || 0 : 0
-    const ydsPerHrOp = hrs && yds && effectiveOps > 0 ? Math.round((yds / (hrs * effectiveOps)) * 10) / 10 : null
-    const overMax = ydsPerHrOp !== null && ydsPerHrOp > MAX_YPH
+    const yph = hrs && yds && effectiveOps > 0 ? Math.round((yds / (hrs * effectiveOps)) * 10) / 10 : null
+    const overMax = yph !== null && yph > MAX_YPH
+    const rowBg = prIdx % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)'
 
     return (
-        <div className="flex" style={{ borderBottom: '2px solid var(--border-light)' }}>
+        <div className="flex" style={{ borderBottom: isLast ? 'none' : '1px solid var(--border-light)' }}>
             {/* Plant label */}
             <div
                 className="shrink-0 flex flex-col justify-center px-3 border-r"
                 style={{
-                    width: 100,
+                    width: LABEL_WIDTH,
                     borderColor: 'var(--border-light)',
-                    height: MINI_ROW_H * pr.laneCount,
-                    background: prIdx % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)'
+                    height: ROW_HEIGHT * pr.laneCount,
+                    background: rowBg
                 }}
             >
-                <div className="flex items-center gap-1.5">
-                    <i className="fas fa-industry text-[9px]" style={{ color: accentColor }} />
-                    <span className="text-[12px] font-extrabold uppercase tracking-wide" style={{ color: accentColor }}>
-                        {pr.plant}
-                    </span>
-                    {pr.base > 0 && (
-                        <span
-                            className="text-[9px] font-semibold rounded-full px-1.5 py-px"
-                            style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)' }}
+                <div className="flex items-center gap-2">
+                    <div
+                        className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                        style={{ background: `${accentColor}14`, color: accentColor }}
+                    >
+                        <i className="fas fa-industry text-[10px]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div
+                            className="text-[12px] font-bold uppercase tracking-wide leading-none"
+                            style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
                         >
-                            {pr.base}
-                        </span>
-                    )}
+                            {pr.plant}
+                        </div>
+                        <div className="text-[10px] font-medium mt-0.5 flex items-center gap-1">
+                            <span style={{ color: 'var(--text-secondary)' }}>{pr.base}</span>
+                            {pr.sent.length > 0 && (
+                                <span style={{ color: SENT_COLOR, fontWeight: 700 }}>-{pr.sent.length}</span>
+                            )}
+                            {pr.recv.length > 0 && (
+                                <span style={{ color: RECV_COLOR, fontWeight: 700 }}>+{pr.recv.length}</span>
+                            )}
+                        </div>
+                    </div>
                 </div>
-                <div className="flex items-center gap-1.5 mt-1">
-                    {pr.sent.length > 0 && (
-                        <span
-                            className="flex items-center gap-0.5 text-[9px] font-bold rounded px-1 py-px"
-                            style={{ color: SENT_COLOR, background: `${SENT_COLOR}15` }}
-                        >
-                            <i className="fas fa-arrow-right-from-bracket text-[7px]" />
-                            {pr.sent.length}
-                        </span>
-                    )}
-                    {pr.recv.length > 0 && (
-                        <span
-                            className="flex items-center gap-0.5 text-[9px] font-bold rounded px-1 py-px"
-                            style={{ color: RECV_COLOR, background: `${RECV_COLOR}15` }}
-                        >
-                            <i className="fas fa-arrow-right-to-bracket text-[7px]" />
-                            {pr.recv.length}
-                        </span>
-                    )}
-                </div>
+                {yph !== null && (
+                    <div
+                        className="mt-1 text-[9px] font-bold rounded-full px-1.5 py-px self-start"
+                        style={{
+                            background: overMax ? '#ef444418' : `${HOME_COLOR}14`,
+                            color: overMax ? '#ef4444' : HOME_COLOR
+                        }}
+                    >
+                        {yph} yph
+                    </div>
+                )}
             </div>
-            {/* Timeline area */}
-            <div
-                className="flex-1 relative"
-                style={{
-                    height: MINI_ROW_H * pr.laneCount,
-                    background: prIdx % 2 === 0 ? `${accentColor}06` : `${accentColor}08`
-                }}
-            >
+
+            {/* Lane area */}
+            <div className="flex-1 relative" style={{ height: ROW_HEIGHT * pr.laneCount, background: rowBg }}>
+                {/* Hour grid lines */}
+                {hourLabels.map((_, j) => {
+                    const hour = TIMELINE_START_HOUR + j
+                    const isMajor = hour % 2 === 0
+                    const isWorkHour = hour >= 4 && hour <= 18
+                    return (
+                        <div
+                            key={j}
+                            className="absolute top-0 bottom-0"
+                            style={{
+                                left: `${(j / TIMELINE_HOURS) * 100}%`,
+                                width: 1,
+                                background: 'var(--border-light)',
+                                opacity: isMajor ? 0.6 : isWorkHour ? 0.25 : 0.1
+                            }}
+                        />
+                    )
+                })}
+
+                {/* Shift window tint */}
+                <div
+                    className="absolute inset-y-0 pointer-events-none"
+                    style={{
+                        background: `${accentColor}05`,
+                        left: `${((4 - TIMELINE_START_HOUR) / TIMELINE_HOURS) * 100}%`,
+                        width: `${((18 - 4) / TIMELINE_HOURS) * 100}%`
+                    }}
+                />
+
                 {/* Sent/Recv separator */}
                 {pr.sent.length > 0 && pr.recv.length > 0 && (
                     <div
                         className="absolute left-0 right-0"
                         style={{
-                            top: (pr.sent.length + pr.homeOffset) * MINI_ROW_H - 1,
-                            height: 2,
-                            background: `repeating-linear-gradient(90deg, ${RECV_COLOR}30 0, ${RECV_COLOR}30 4px, transparent 4px, transparent 8px)`
+                            top: (pr.sent.length + pr.homeOffset) * ROW_HEIGHT - 0.5,
+                            height: 1,
+                            background: `repeating-linear-gradient(90deg, var(--border-medium) 0, var(--border-medium) 4px, transparent 4px, transparent 8px)`,
+                            opacity: 0.7
                         }}
                     />
                 )}
-                {/* Hour grid lines */}
-                {hourLabels.map((_, j) => {
-                    const hour = TIMELINE_START_HOUR + j
-                    const isWorkHour = hour >= 4 && hour <= 18
-                    return (
-                        <div
-                            key={j}
-                            className="absolute top-0 bottom-0 w-px"
-                            style={{
-                                left: `${(j / TIMELINE_HOURS) * 100}%`,
-                                background: 'var(--border-light)',
-                                opacity: isWorkHour ? 0.5 : 0.15
-                            }}
-                        />
-                    )
-                })}
-                {/* Home operators + production bar */}
-                {pr.homeCount > 0 &&
-                    (() => {
-                        const homeTop = 2
-                        const blockH = MINI_ROW_H - 4
-                        return (
-                            <>
-                                {hasProd && (
-                                    <div
-                                        className="absolute pointer-events-none"
-                                        style={{
-                                            left: `${startPct}%`,
-                                            width: `${endPct - startPct}%`,
-                                            top: 0,
-                                            bottom: 0,
-                                            background: `${HOME_COLOR}08`,
-                                            borderLeft: `2px solid ${HOME_COLOR}25`,
-                                            borderRight: `2px solid ${HOME_COLOR}25`
-                                        }}
-                                    />
-                                )}
-                                <div
-                                    className="absolute flex items-center overflow-visible pointer-events-none"
-                                    style={{
-                                        left: hasProd ? `${startPct}%` : '1%',
-                                        width: hasProd ? `${endPct - startPct}%` : '98%',
-                                        top: homeTop,
-                                        height: blockH,
-                                        background: `${HOME_COLOR}20`,
-                                        borderRadius: 5,
-                                        borderLeft: `3px solid ${HOME_COLOR}`,
-                                        boxShadow: `inset 0 0 0 1px ${HOME_COLOR}25`
-                                    }}
-                                >
-                                    <div className="flex items-center gap-2 px-2 whitespace-nowrap">
-                                        <span
-                                            className="text-[9px] font-extrabold flex items-center gap-1"
-                                            style={{ color: HOME_COLOR }}
-                                        >
-                                            <i className="fas fa-hard-hat text-[8px]" />
-                                            {effectiveOps}
-                                            {pr.recv.length > 0 && (
-                                                <span style={{ color: RECV_COLOR, fontWeight: 600 }}>
-                                                    (+{pr.recv.length})
-                                                </span>
-                                            )}
-                                        </span>
-                                        {hasProd && (
-                                            <span
-                                                className="text-[9px] font-semibold"
-                                                style={{ color: `${HOME_COLOR}CC` }}
-                                            >
-                                                {prod.firstJobTime}–{prod.lastJobTime}
-                                            </span>
-                                        )}
-                                        {yds > 0 && (
-                                            <span
-                                                className="text-[9px] font-bold rounded-full px-1.5 py-px"
-                                                style={{ color: HOME_COLOR, background: `${HOME_COLOR}15` }}
-                                            >
-                                                {prod.totalYardage} yds
-                                            </span>
-                                        )}
-                                        {ydsPerHrOp !== null && (
-                                            <span
-                                                className="text-[9px] font-bold rounded-full px-1.5 py-px"
-                                                style={{
-                                                    color: overMax ? '#fff' : HOME_COLOR,
-                                                    background: overMax ? '#ef444490' : `${HOME_COLOR}15`
-                                                }}
-                                            >
-                                                {ydsPerHrOp} yph
-                                            </span>
-                                        )}
-                                        {overMax && (
-                                            <span
-                                                className="text-[9px] font-extrabold flex items-center gap-0.5"
-                                                style={{ color: '#ef4444' }}
-                                            >
-                                                <i className="fas fa-triangle-exclamation text-[8px]" />
-                                                Likely behind
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </>
-                        )
-                    })()}
+
+                {/* Home operators + production window */}
+                {pr.homeCount > 0 && (
+                    <HomeLane
+                        hasProd={hasProd}
+                        startPct={startPct}
+                        endPct={endPct}
+                        prod={prod}
+                        effectiveOps={effectiveOps}
+                        recvCount={pr.recv.length}
+                        yds={yds}
+                        yph={yph}
+                        overMax={overMax}
+                    />
+                )}
+
                 {/* Sent lanes */}
                 {pr.sent.map((lane, i) => (
                     <MiniBlock key={`s-${i}`} lane={lane} laneIdx={i} isSent homeOffset={pr.homeOffset} />
                 ))}
+
                 {/* Received lanes */}
                 {pr.recv.map((lane, i) => (
                     <MiniBlock
@@ -368,138 +390,241 @@ function PlantRow({ accentColor, hourLabels, plantProduction, plantRow: pr, rowI
                         homeOffset={pr.homeOffset}
                     />
                 ))}
+
+                {/* NOW vertical line */}
+                {nowPct != null && (
+                    <div
+                        className="absolute top-0 bottom-0 pointer-events-none"
+                        style={{
+                            left: `${nowPct}%`,
+                            width: 2,
+                            background: '#dc2626',
+                            opacity: 0.6
+                        }}
+                    />
+                )}
             </div>
         </div>
     )
 }
 
-/** Single timeline block (pre-trip, travel, on-site, return) for one operator lane. */
-function MiniBlock({ lane, laneIdx, isSent, homeOffset }) {
+function HomeLane({ effectiveOps, endPct, hasProd, overMax, prod, recvCount, startPct, yds, yph }) {
+    const barLeft = hasProd ? startPct : 1
+    const barWidth = hasProd ? endPct - startPct : 98
+    const blockH = ROW_HEIGHT - 8
+    return (
+        <>
+            {hasProd && (
+                <div
+                    className="absolute inset-y-0 pointer-events-none"
+                    style={{
+                        background: `${HOME_COLOR}08`,
+                        borderLeft: `2px solid ${HOME_COLOR}30`,
+                        borderRight: `2px solid ${HOME_COLOR}30`,
+                        left: `${startPct}%`,
+                        width: `${endPct - startPct}%`
+                    }}
+                />
+            )}
+            <div
+                className="absolute flex items-center pointer-events-none"
+                style={{
+                    background: `${HOME_COLOR}22`,
+                    borderLeft: `3px solid ${HOME_COLOR}`,
+                    borderRadius: 6,
+                    boxShadow: `inset 0 0 0 1px ${HOME_COLOR}30`,
+                    height: blockH,
+                    left: `${barLeft}%`,
+                    top: 4,
+                    width: `${barWidth}%`
+                }}
+            >
+                <div className="flex items-center gap-2 px-2 whitespace-nowrap">
+                    <span className="text-[10px] font-extrabold flex items-center gap-1" style={{ color: HOME_COLOR }}>
+                        <i className="fas fa-hard-hat text-[8px]" />
+                        {effectiveOps} op{effectiveOps === 1 ? '' : 's'}
+                        {recvCount > 0 && <span style={{ color: RECV_COLOR, fontWeight: 700 }}> (+{recvCount})</span>}
+                    </span>
+                    {hasProd && (
+                        <span className="text-[10px] font-semibold font-mono" style={{ color: `${HOME_COLOR}CC` }}>
+                            {prod.firstJobTime}–{prod.lastJobTime}
+                        </span>
+                    )}
+                    {yds > 0 && (
+                        <span
+                            className="text-[10px] font-bold rounded-full px-1.5 py-px"
+                            style={{ color: HOME_COLOR, background: `${HOME_COLOR}15` }}
+                        >
+                            {prod.totalYardage} yd
+                        </span>
+                    )}
+                    {overMax && (
+                        <span
+                            className="text-[10px] font-extrabold flex items-center gap-1"
+                            style={{ color: '#ef4444' }}
+                        >
+                            <i className="fas fa-triangle-exclamation text-[9px]" />
+                            Over capacity
+                        </span>
+                    )}
+                </div>
+            </div>
+        </>
+    )
+}
+
+function MiniBlock({ homeOffset, isSent, lane, laneIdx }) {
     const blockColor = isSent ? SENT_COLOR : RECV_COLOR
     const clockInPct = timeToPercent(lane.clockIn)
     const preTripEndPct = timeToPercent(lane.preTripEnd)
     const arrivePct = timeToPercent(lane.arriveTime)
     const leavePct = timeToPercent(lane.leaveTime)
     const returnEndPct = timeToPercent(lane.returnEnd)
-    const top = (laneIdx + homeOffset) * MINI_ROW_H + 3
-    const blockH = MINI_ROW_H - 6
-    const routeLabel = isSent ? `\u2192 ${lane.toPlant}` : `\u2190 ${lane.fromPlant}`
-    const dirIcon = isSent ? 'fa-arrow-right-from-bracket' : 'fa-arrow-right-to-bracket'
+    const top = (laneIdx + homeOffset) * ROW_HEIGHT + 5
+    const blockH = ROW_HEIGHT - 10
 
     const preW = clockInPct != null && preTripEndPct != null ? Math.max(preTripEndPct - clockInPct, 0) : 0
     const travelW =
         lane.hasTravelTime && preTripEndPct != null && arrivePct != null ? Math.max(arrivePct - preTripEndPct, 0) : 0
     const siteStart = arrivePct ?? preTripEndPct ?? clockInPct
     const siteEnd = leavePct ?? (siteStart != null ? Math.min(siteStart + 2, 100) : null)
-    const siteW = siteStart != null && siteEnd != null ? Math.max(siteEnd - siteStart, 0.8) : 0
+    const siteW = siteStart != null && siteEnd != null ? Math.max(siteEnd - siteStart, 1) : 0
     const returnW = leavePct != null && returnEndPct != null ? Math.max(returnEndPct - leavePct, 0) : 0
+
+    const tooltip = [
+        isSent ? `→ ${lane.toPlant}` : `← ${lane.fromPlant}`,
+        lane.clockIn && `clock ${lane.clockIn}`,
+        lane.arriveTime && `arrive ${lane.arriveTime}`,
+        lane.leaveTime && `leave ${lane.leaveTime}`,
+        lane.travel != null && `${lane.travel}m travel`
+    ]
+        .filter(Boolean)
+        .join(' · ')
+
+    const routeLabel = isSent ? `→${lane.toPlant}` : `←${lane.fromPlant}`
 
     return (
         <>
-            {/* Connector line */}
-            {clockInPct != null && siteStart != null && (preW > 0 || travelW > 0) && (
+            {/* Connecting line through the whole lane range */}
+            {clockInPct != null && siteStart != null && (
                 <div
                     className="absolute pointer-events-none"
                     style={{
                         left: `${clockInPct}%`,
                         width: `${(returnEndPct ?? siteStart + siteW) - clockInPct}%`,
-                        top: top + blockH / 2 - 1,
-                        height: 2,
-                        background: `${blockColor}30`
+                        top: top + blockH / 2 - 0.5,
+                        height: 1,
+                        background: `${blockColor}40`
                     }}
                 />
             )}
+
             {/* Pre-trip */}
             {preW > 0 && (
                 <div
-                    className="absolute rounded-sm flex items-center justify-center overflow-visible"
+                    className="absolute rounded-sm flex items-center justify-center"
+                    title={tooltip}
                     style={{
-                        left: `${clockInPct}%`,
-                        width: `${preW}%`,
-                        minWidth: 8,
-                        top,
+                        background: `${blockColor}24`,
+                        borderLeft: `3px solid ${blockColor}`,
                         height: blockH,
-                        background: `${blockColor}18`,
-                        borderLeft: `3px solid ${blockColor}80`
+                        left: `${clockInPct}%`,
+                        minWidth: 6,
+                        top,
+                        width: `${preW}%`
                     }}
                 >
-                    <span
-                        className="text-[8px] font-bold whitespace-nowrap px-0.5 uppercase"
-                        style={{ color: `${blockColor}90` }}
-                    >
-                        PT
-                    </span>
+                    {preW > 1.5 && (
+                        <span className="text-[8px] font-bold uppercase" style={{ color: `${blockColor}C0` }}>
+                            PT
+                        </span>
+                    )}
                 </div>
             )}
+
             {/* Travel */}
             {travelW > 0 && (
                 <div
-                    className="absolute flex items-center justify-center overflow-visible"
+                    className="absolute flex items-center justify-center"
+                    title={tooltip}
                     style={{
-                        left: `${preTripEndPct}%`,
-                        width: `${travelW}%`,
-                        minWidth: 8,
-                        top: top + 2,
-                        height: blockH - 4,
-                        background: `${blockColor}20`,
+                        background: `${blockColor}12`,
+                        border: `1px dashed ${blockColor}60`,
                         borderRadius: 3,
-                        border: `1px dashed ${blockColor}50`
+                        height: blockH - 4,
+                        left: `${preTripEndPct}%`,
+                        minWidth: 6,
+                        top: top + 2,
+                        width: `${travelW}%`
                     }}
                 >
-                    <span
-                        className="text-[8px] font-semibold whitespace-nowrap px-1"
-                        style={{ color: `${blockColor}BB` }}
-                    >
-                        <i className="fas fa-route text-[7px] mr-0.5" />
-                        {lane.travel}m
-                    </span>
+                    {travelW > 2.5 && (
+                        <span
+                            className="text-[9px] font-semibold whitespace-nowrap"
+                            style={{ color: `${blockColor}C0` }}
+                        >
+                            <i className="fas fa-route text-[7px] mr-0.5" />
+                            {lane.travel}m
+                        </span>
+                    )}
                 </div>
             )}
-            {/* On-site */}
+
+            {/* On-site block — the hero */}
             {siteW > 0 && siteStart != null && (
                 <div
-                    className="absolute flex items-center overflow-visible"
+                    className="absolute flex items-center"
+                    title={tooltip}
                     style={{
-                        left: `${siteStart}%`,
-                        width: `${siteW}%`,
-                        top,
-                        height: blockH,
                         background: blockColor,
                         borderRadius: returnW > 0 ? '4px 0 0 4px' : 4,
-                        boxShadow: `0 1px 3px ${blockColor}40`
+                        boxShadow: `0 1px 2px rgba(0,0,0,0.12)`,
+                        height: blockH,
+                        left: `${siteStart}%`,
+                        minWidth: 10,
+                        top,
+                        width: `${siteW}%`
                     }}
                 >
-                    <span className="text-[9px] font-bold text-white px-1.5 whitespace-nowrap flex items-center gap-1">
-                        <i className={`fas ${dirIcon} text-[7px] opacity-70`} />
-                        {routeLabel} {lane.arriveTime}
-                        {lane.leaveTime ? `\u2013${lane.leaveTime}` : ''}
-                        {lane.loadFromPlant ? ' LD' : ''}
+                    <span className="text-[10px] font-bold text-white px-2 whitespace-nowrap truncate">
+                        {routeLabel}
+                        {lane.arriveTime && (
+                            <span className="font-normal opacity-90 ml-1 font-mono">
+                                {lane.arriveTime}
+                                {lane.leaveTime ? `–${lane.leaveTime}` : ''}
+                            </span>
+                        )}
+                        {lane.loadFromPlant && <span className="ml-1 opacity-80">LD</span>}
                     </span>
                 </div>
             )}
-            {/* Return travel */}
+
+            {/* Return */}
             {returnW > 0 && (
                 <div
-                    className="absolute flex items-center justify-center overflow-visible"
+                    className="absolute flex items-center justify-center"
+                    title={tooltip}
                     style={{
-                        left: `${leavePct}%`,
-                        width: `${returnW}%`,
-                        minWidth: 8,
-                        top: top + 2,
-                        height: blockH - 4,
-                        background: `${blockColor}20`,
+                        background: `${blockColor}12`,
+                        border: `1px dashed ${blockColor}60`,
+                        borderLeft: 'none',
                         borderRadius: '0 3px 3px 0',
-                        border: `1px dashed ${blockColor}50`,
-                        borderLeft: 'none'
+                        height: blockH - 4,
+                        left: `${leavePct}%`,
+                        minWidth: 6,
+                        top: top + 2,
+                        width: `${returnW}%`
                     }}
                 >
-                    <span
-                        className="text-[8px] font-semibold whitespace-nowrap px-1"
-                        style={{ color: `${blockColor}BB` }}
-                    >
-                        <i className="fas fa-rotate-left text-[7px] mr-0.5" />
-                        {lane.travel}m
-                    </span>
+                    {returnW > 2.5 && (
+                        <span
+                            className="text-[9px] font-semibold whitespace-nowrap"
+                            style={{ color: `${blockColor}C0` }}
+                        >
+                            <i className="fas fa-rotate-left text-[7px] mr-0.5" />
+                            {lane.travel}m
+                        </span>
+                    )}
                 </div>
             )}
         </>

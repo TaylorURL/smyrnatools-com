@@ -1,0 +1,3 @@
+- PlanView revamp. Ideas include flow chart & real-time view plant managers can use to assist in planning / audibles called during day controlled by central dispatch from another view. 
+- Quality control report for ongoing issues such as cracked slab, contact info, pictures, status, loss from issues, etc.
+- Revamp TopSection & make it minimizable across site if users want to with adaptable functionality for exiting custom filters / layout on a per page basis.

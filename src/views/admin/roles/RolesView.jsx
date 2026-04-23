@@ -253,15 +253,15 @@ const CreateRoleModal = ({ isOpen, onClose, onCreate }) => {
             </RoleModalBody>
             <RoleModalFooter
                 onCancel={onClose}
-                onConfirm={() => {
+                onSubmit={() => {
                     if (!name.trim()) return
                     onCreate(name.trim(), weight)
                     setName('')
                     setWeight(10)
                     onClose()
                 }}
-                confirmLabel="Create"
-                confirmDisabled={!name.trim()}
+                submitText="Create"
+                disabled={!name.trim()}
             />
         </RoleModal>
     )
@@ -280,11 +280,11 @@ const EditWeightModal = ({ role, onClose, onSave }) => {
             </RoleModalBody>
             <RoleModalFooter
                 onCancel={onClose}
-                onConfirm={() => {
+                onSubmit={() => {
                     onSave(role.id, weight)
                     onClose()
                 }}
-                confirmLabel="Save"
+                submitText="Save"
             />
         </RoleModal>
     )
@@ -397,11 +397,11 @@ const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor }) => {
             </RoleModalBody>
             <RoleModalFooter
                 onCancel={onClose}
-                onConfirm={handleSubmit}
-                confirmLabel={
-                    saving ? 'Adding...' : `Add to ${selectedRoleIds.size} Role${selectedRoleIds.size !== 1 ? 's' : ''}`
-                }
-                confirmDisabled={!permission.trim() || selectedRoleIds.size === 0 || saving}
+                onSubmit={handleSubmit}
+                submitText={`Add to ${selectedRoleIds.size} Role${selectedRoleIds.size !== 1 ? 's' : ''}`}
+                loadingText="Adding..."
+                isLoading={saving}
+                disabled={!permission.trim() || selectedRoleIds.size === 0}
             />
         </RoleModal>
     )

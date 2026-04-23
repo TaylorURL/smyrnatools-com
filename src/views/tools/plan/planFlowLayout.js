@@ -1,0 +1,147 @@
+import { MAX_YPH, TARGET_YPH } from '../../../utils/PlanUtility'
+
+export const NODE_RADIUS_MIN = 48
+export const NODE_RADIUS_MAX = 110
+export const EDGE_GAP = 70
+export const CANVAS_PADDING = 40
+export const TOOLBAR_CLEAR = 64
+/** Extra horizontal breathing room on each side of the cluster so users can
+ *  pan past the outermost nodes without hitting a wall immediately. */
+export const HORIZONTAL_OVERSCROLL = 900
+
+/** Scale a plant's render radius from its effective operator count. */
+export function radiusForOps(ops) {
+    const n = Math.max(0, Number.isFinite(ops) ? ops : 0)
+    const scaled = NODE_RADIUS_MIN + Math.sqrt(n) * 14
+    return Math.round(Math.max(NODE_RADIUS_MIN, Math.min(NODE_RADIUS_MAX, scaled)))
+}
+
+/** Aggregate assignments into directed edges with operator totals + earliest time. */
+export function buildEdges(assignments) {
+    const map = new Map()
+    ;(assignments || []).forEach((a, idx) => {
+        if (!a.fromPlant || !a.toPlant) return
+        const key = `${a.fromPlant}->${a.toPlant}`
+        if (!map.has(key)) {
+            map.set(key, { assignmentIndexes: [], earliest: null, from: a.fromPlant, ops: 0, to: a.toPlant })
+        }
+        const edge = map.get(key)
+        edge.ops += parseInt(a.driverCount, 10) || 0
+        if (a.time && (!edge.earliest || a.time < edge.earliest)) edge.earliest = a.time
+        edge.assignmentIndexes.push(idx)
+    })
+    return Array.from(map.values())
+}
+
+/** Deterministic PRNG so a given plant-code set always lays out the same way. */
+export function mulberry32(seed) {
+    let s = seed >>> 0
+    return () => {
+        s = (s + 0x6d2b79f5) >>> 0
+        let t = s
+        t = Math.imul(t ^ (t >>> 15), t | 1)
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+}
+export function hashString(str) {
+    let h = 2166136261
+    for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619)
+    return h >>> 0
+}
+
+/**
+ * Organic cluster layout — biggest node at the centre, satellites placed
+ * at random angles on expanding rings with collision rejection. Canvas
+ * tightens to the cluster bounds and pins it near the top.
+ */
+export function computeClusterLayout(items, viewportWidth, viewportHeight, options = {}) {
+    const {
+        pinTop = TOOLBAR_CLEAR,
+        pad = CANVAS_PADDING,
+        edgeGap = EDGE_GAP,
+        horizontalOverscroll = HORIZONTAL_OVERSCROLL
+    } = options
+    const n = items.length
+    if (n === 0) return { height: viewportHeight, positions: {}, width: viewportWidth }
+    const sorted = [...items].sort((a, b) => b.radius - a.radius)
+    const seed = hashString(
+        items
+            .map((i) => i.code)
+            .sort()
+            .join('|')
+    )
+    const rng = mulberry32(seed)
+    const totalNodeArea = items.reduce((s, it) => s + Math.PI * it.radius * it.radius, 0)
+    const maxR = Math.max(...items.map((i) => i.radius))
+    const targetSide = Math.sqrt(totalNodeArea * 4.2) + maxR * 2 + pad * 2
+    const side = Math.max(viewportWidth, viewportHeight, targetSide)
+    const cx = side / 2
+    const cy = side / 2
+    const placed = []
+    const positions = {}
+    const tryPlace = (item, x, y) => {
+        if (x - item.radius < pad || x + item.radius > side - pad) return false
+        if (y - item.radius < pad || y + item.radius > side - pad) return false
+        for (const p of placed) {
+            const dx = p.x - x
+            const dy = p.y - y
+            if (dx * dx + dy * dy < (p.radius + item.radius + edgeGap) ** 2) return false
+        }
+        placed.push({ ...item, x, y })
+        positions[item.code] = { x, y }
+        return true
+    }
+    const hub = sorted[0]
+    tryPlace(hub, cx, cy)
+    for (let i = 1; i < sorted.length; i++) {
+        const item = sorted[i]
+        const baseDistance = hub.radius + item.radius + edgeGap
+        let done = false
+        for (let attempt = 0; attempt < 900 && !done; attempt++) {
+            const angle = rng() * Math.PI * 2
+            const ringGrowth = Math.floor(attempt / 40) * 32
+            const jitter = rng() * rng() * 100
+            const distance = baseDistance + ringGrowth + jitter
+            done = tryPlace(item, cx + Math.cos(angle) * distance, cy + Math.sin(angle) * distance)
+        }
+        if (!done) {
+            const angle = rng() * Math.PI * 2
+            const r = Math.min(side, viewportHeight) / 2 - item.radius - pad - 20
+            const fx = cx + Math.cos(angle) * r
+            const fy = cy + Math.sin(angle) * r
+            placed.push({ ...item, x: fx, y: fy })
+            positions[item.code] = { x: fx, y: fy }
+        }
+    }
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    for (const p of placed) {
+        if (p.x - p.radius < minX) minX = p.x - p.radius
+        if (p.y - p.radius < minY) minY = p.y - p.radius
+        if (p.x + p.radius > maxX) maxX = p.x + p.radius
+        if (p.y + p.radius > maxY) maxY = p.y + p.radius
+    }
+    const clusterWidth = maxX - minX + pad * 2
+    const clusterHeight = maxY - minY + pad * 2
+    // Widen the canvas on both sides so users can drag-pan past the cluster
+    // for a bit — feels less cramped without letting them drift into the void.
+    const paddedWidth = clusterWidth + horizontalOverscroll * 2
+    const finalWidth = Math.max(viewportWidth, paddedWidth)
+    const finalHeight = Math.max(viewportHeight, clusterHeight + pinTop)
+    const hShift = pad - minX + (finalWidth - clusterWidth) / 2
+    const vShift = pad - minY + pinTop
+    Object.keys(positions).forEach((code) => {
+        positions[code] = { x: positions[code].x + hShift, y: positions[code].y + vShift }
+    })
+    return { height: finalHeight, positions, width: finalWidth }
+}
+
+export const yphColorFor = (yph, accentColor) => {
+    if (yph == null) return accentColor
+    if (yph > MAX_YPH) return '#ef4444'
+    if (yph < TARGET_YPH - 0.3) return '#d97706'
+    return '#16a34a'
+}

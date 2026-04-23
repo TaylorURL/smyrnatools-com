@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { PlanService } from '../../services/PlanService'
+import { PlantService } from '../../services/PlantService'
 import { ReportService } from '../../services/ReportService'
 import { UserService } from '../../services/UserService'
 import { AUTOSAVE_DELAY_MS, createEmptyAssignment, ensureUniqueIds, getOffsetDate } from '../../utils/PlanUtility'
+import { usePreferences } from '../context/PreferencesContext'
 import { useRealtimeSubscription } from './useRealtimeSubscription'
 
 export function usePlanData(planDate) {
+    const { preferences } = usePreferences()
+    const selectedRegionCode = preferences?.selectedRegion?.code || null
     const [plants, setPlants] = useState([])
+    const [regionPlants, setRegionPlants] = useState([])
     const [mixerCountsByPlant, setMixerCountsByPlant] = useState({})
     const [assignments, setAssignments] = useState([])
     const [notes, setNotes] = useState('')
@@ -27,9 +32,9 @@ export function usePlanData(planDate) {
         setTravelTimes(PlanService.getTravelTimesMap())
     }
 
-    // Initial data load
+    // One-time bootstrap: user, permissions, travel-time cache.
     useEffect(() => {
-        const loadInitialData = async () => {
+        const bootstrap = async () => {
             const user = await UserService.getCurrentUser()
             const uid = user?.id || user
             if (uid) {
@@ -41,9 +46,45 @@ export function usePlanData(planDate) {
                     setCanEdit(true)
                 }
             }
-            let plantList = uid ? await ReportService.fetchPlantsForUser(uid) : []
-            if (!plantList.length) plantList = await ReportService.fetchPlantsSorted()
-            const sorted = plantList
+            await refreshTravelTimes()
+        }
+        bootstrap()
+    }, [])
+
+    // Plants + mixer counts — re-runs whenever the user's selected region
+    // changes so the plan scopes to the region the user is currently viewing,
+    // not their permanently-assigned one.
+    useEffect(() => {
+        let cancelled = false
+        const loadPlants = async () => {
+            let plantList = []
+            let regionPlantRecords = []
+            if (selectedRegionCode) {
+                try {
+                    const [all, fetchedRegionPlants] = await Promise.all([
+                        ReportService.fetchPlantsSorted(),
+                        PlantService.fetchRegionPlants(selectedRegionCode)
+                    ])
+                    regionPlantRecords = fetchedRegionPlants || []
+                    const allowedCodes = new Set(
+                        regionPlantRecords
+                            .map((rp) => String(rp.plantCode || rp.plant_code || '').trim())
+                            .filter(Boolean)
+                    )
+                    plantList = (all || []).filter((p) => allowedCodes.has(String(p.plant_code || '').trim()))
+                } catch {
+                    plantList = []
+                    regionPlantRecords = []
+                }
+            } else if (userId) {
+                plantList = await ReportService.fetchPlantsForUser(userId)
+                if (!plantList.length) plantList = await ReportService.fetchPlantsSorted()
+            } else {
+                plantList = await ReportService.fetchPlantsSorted()
+            }
+            if (!cancelled) setRegionPlants(regionPlantRecords)
+            if (cancelled) return
+            const sorted = (plantList || [])
                 .filter((p) => p.plant_code)
                 .sort((a, b) => String(a.plant_code).localeCompare(String(b.plant_code)))
             setPlants(sorted)
@@ -51,13 +92,17 @@ export function usePlanData(planDate) {
                 const counts = await ReportService.fetchActiveMixerCountsByPlant(
                     sorted.map((p) => p.plant_code).filter(Boolean)
                 )
-                setMixerCountsByPlant(counts)
+                if (!cancelled) setMixerCountsByPlant(counts)
+            } else {
+                setMixerCountsByPlant({})
             }
-            await refreshTravelTimes()
-            setIsLoading(false)
+            if (!cancelled) setIsLoading(false)
         }
-        loadInitialData()
-    }, [])
+        loadPlants()
+        return () => {
+            cancelled = true
+        }
+    }, [userId, selectedRegionCode])
 
     // Load plan for selected date
     const loadedForDateRef = useRef(null)
@@ -202,6 +247,7 @@ export function usePlanData(planDate) {
         plantProduction,
         plants,
         refreshTravelTimes,
+        regionPlants,
         setAssignments,
         setNotes,
         setPlantProduction,

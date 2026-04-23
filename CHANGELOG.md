@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [38.5.28] - 2026-04-23
+
+- Added PlanDashboardView — a new region-scoped dashboard for the Plan tool with stat cards, per-plant summaries, a special jobs tracker, QC attention jobs, and a daily dispatch checklist
+- Added PlanFlowView and PlanFlowPreview — a flow-chart style assignment visualization for plant planning, with a compact preview variant
+- Extracted PlanPlantCard and PlanNotesSection into dedicated components as part of a full PlanView architecture overhaul; PlanMiniTimeline was significantly restructured alongside this
+- Added planFlowLayout.js with layout algorithms powering the flow chart view
+- Added DistrictUtility.js with district-aware scope resolution helpers — role predicates (Plant Manager, GM, District Manager, Dispatcher), district plant-code lookups, and buildYourPlantScope() which scopes the Plan "Your Plant" section based on the current user's role
+- usePlanData now re-fetches plants whenever the user's selected region changes, filtering the plant list to only those in the active region via PlantService.fetchRegionPlants; bootstrap (user auth, travel times) is now a separate one-time effect
+- Added AIService.formatPlanNotes() which reformats raw dispatcher notes into structured markdown for read-only display on the Plan dashboard without altering the persisted source text
+- Updated RoleModalFooter prop names in RolesView to align with a standardized interface (onConfirm → onSubmit, confirmLabel → submitText, confirmDisabled → disabled, added isLoading/loadingText)
+- Added migration granting plan.yourtab permission and updated user-service edge function
+
 ## [38.5.27] - 2026-04-23
 
 - Added edit mode to LostLoadReportModal, QCStrengthReportModal, and ThirdPartyLabReportModal — all three modals now accept an `initialReport` prop and switch to UPDATE mode when editing an existing report, pre-filling all fields from the saved data
