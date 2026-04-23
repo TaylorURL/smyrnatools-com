@@ -267,7 +267,7 @@ function JobEditor({ accent, job, onCancel, onSave, plants, tint, titleLabel = '
     )
 }
 
-function JobRow({ accent, job, onDelete, onEdit, plantNameByCode, tint }) {
+function JobRow({ accent, canEdit = true, job, onDelete, onEdit, plantNameByCode, tint }) {
     return (
         <div
             className="rounded-lg p-3 flex items-start gap-3"
@@ -319,30 +319,33 @@ function JobRow({ accent, job, onDelete, onEdit, plantNameByCode, tint }) {
                     </div>
                 )}
             </div>
-            <div className="flex flex-col gap-1 shrink-0">
-                <button
-                    onClick={onEdit}
-                    className="w-7 h-7 rounded-md border-none cursor-pointer"
-                    style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}
-                    title="Edit"
-                >
-                    <i className="fas fa-pen text-[10px]" />
-                </button>
-                <button
-                    onClick={onDelete}
-                    className="w-7 h-7 rounded-md border-none cursor-pointer"
-                    style={{ background: 'var(--bg-primary)', color: '#dc2626' }}
-                    title="Delete"
-                >
-                    <i className="fas fa-trash text-[10px]" />
-                </button>
-            </div>
+            {canEdit && (
+                <div className="flex flex-col gap-1 shrink-0">
+                    <button
+                        onClick={onEdit}
+                        className="w-7 h-7 rounded-md border-none cursor-pointer"
+                        style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}
+                        title="Edit"
+                    >
+                        <i className="fas fa-pen text-[10px]" />
+                    </button>
+                    <button
+                        onClick={onDelete}
+                        className="w-7 h-7 rounded-md border-none cursor-pointer"
+                        style={{ background: 'var(--bg-primary)', color: '#dc2626' }}
+                        title="Delete"
+                    >
+                        <i className="fas fa-trash text-[10px]" />
+                    </button>
+                </div>
+            )}
         </div>
     )
 }
 
 function JobsSection({
     accent,
+    canEdit = true,
     emptyHint,
     icon,
     iconColor,
@@ -386,13 +389,15 @@ function JobsSection({
             icon={icon}
             iconColor={iconColor}
             right={
-                <button
-                    onClick={startCreate}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold text-white border-none cursor-pointer"
-                    style={{ background: tint || accent }}
-                >
-                    <i className="fas fa-plus mr-1" /> Add
-                </button>
+                canEdit && (
+                    <button
+                        onClick={startCreate}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-semibold text-white border-none cursor-pointer"
+                        style={{ background: tint || accent }}
+                    >
+                        <i className="fas fa-plus mr-1" /> Add
+                    </button>
+                )
             }
         >
             <div className="flex flex-col gap-2">
@@ -420,6 +425,7 @@ function JobsSection({
                         <JobRow
                             key={job.id}
                             accent={accent}
+                            canEdit={canEdit}
                             tint={tint}
                             job={job}
                             plantNameByCode={plantNameByCode}
@@ -461,8 +467,8 @@ const YOUR_SECTION_ICONS = {
 
 const NAV_SECTIONS = [
     { icon: 'fa-chart-line', id: 'overview', label: 'Overview' },
-    { icon: 'fa-sticky-note', id: 'notes', label: 'Notes' },
     { icon: 'fa-user-tie', id: 'my-plant', label: 'Your Plant', requiresYourScope: true },
+    { icon: 'fa-sticky-note', id: 'notes', label: 'Notes' },
     { icon: 'fa-project-diagram', id: 'flow-preview', label: 'Flow' },
     { icon: 'fa-circle-exclamation', id: 'special', label: 'Special Attention' },
     { icon: 'fa-vial-circle-check', id: 'qc', label: 'QC Attention' },
@@ -652,6 +658,7 @@ function PlanDashboardView({
     accentColor,
     assignments,
     calcClockIn,
+    canEdit = true,
     earliestClockIn,
     getTravelTime,
     mixerCountsByPlant,
@@ -1001,17 +1008,6 @@ function PlanDashboardView({
                         </div>
                     </section>
 
-                    <Card id="notes" title="Notes" icon="fa-sticky-note" iconColor={accentColor}>
-                        <PlanNotesSection
-                            accentColor={accentColor}
-                            cachedFormatted={formattedNotes}
-                            cachedSource={formattedNotesSource}
-                            notes={notes}
-                            onFormattedChange={setFormattedNotes}
-                            setNotes={setNotes}
-                        />
-                    </Card>
-
                     {/* Your plant / district / region — gated by plan.yourtab */}
                     {hasYourScope && (
                         <Card
@@ -1283,6 +1279,18 @@ function PlanDashboardView({
                         </Card>
                     )}
 
+                    <Card id="notes" title="Notes" icon="fa-sticky-note" iconColor={accentColor}>
+                        <PlanNotesSection
+                            accentColor={accentColor}
+                            cachedFormatted={formattedNotes}
+                            cachedSource={formattedNotesSource}
+                            canEdit={canEdit}
+                            notes={notes}
+                            onFormattedChange={setFormattedNotes}
+                            setNotes={setNotes}
+                        />
+                    </Card>
+
                     <Card
                         id="flow-preview"
                         title="Flow preview"
@@ -1312,6 +1320,7 @@ function PlanDashboardView({
                     <JobsSection
                         id="special"
                         accent={accentColor}
+                        canEdit={canEdit}
                         tint="#d97706"
                         icon="fa-circle-exclamation"
                         iconColor="#d97706"
@@ -1329,6 +1338,7 @@ function PlanDashboardView({
                     <JobsSection
                         id="qc"
                         accent={accentColor}
+                        canEdit={canEdit}
                         tint="#7c3aed"
                         icon="fa-vial-circle-check"
                         iconColor="#7c3aed"

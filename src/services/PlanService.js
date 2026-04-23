@@ -66,6 +66,12 @@ class PlanServiceImpl {
         if (!res.ok) return null
         return json?.data ?? null
     }
+    /** Returns the ISO date of the most recently saved plan, or null when no plans exist yet. */
+    async fetchLatestPlanDate() {
+        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/fetch-latest-plan-date`)
+        if (!res.ok) return null
+        return json?.planDate ?? null
+    }
     /** Saves or updates the shared daily plan with assignments and notes. */
     async savePlan(planDate, assignments, notes, plantProduction) {
         if (!planDate) throw new Error('planDate is required')

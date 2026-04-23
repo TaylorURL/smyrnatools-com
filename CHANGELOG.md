@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [38.5.29] - 2026-04-23
+
+- Added `fetchLatestPlanDate` to PlanService and a matching `fetch-latest-plan-date` edge function case that finds the nearest plan with real content within a 60-day window, preferring future dates on ties
+- PlanView now initializes to the most recently saved plan date on first mount instead of always defaulting to tomorrow
+- Added a production-required gate in PlanView — editing is locked until production data has been imported for the selected plan date, with a banner explaining the requirement and a quick-import button
+- Introduced `canEditPlan` which combines the existing `canEdit` flag with a `hasProduction` check; both the dashboard and editor views now receive this gated flag
+- Added `canEdit` prop to `PlanDashboardView`, `JobsSection`, and `JobRow` — edit/delete buttons and the Add action are now hidden when editing is not permitted
+- Passed `canEdit` through to `PlanNotesSection`
+- Moved the Notes card to appear after the Your Plant section in the dashboard nav and layout
+- Reordered the dashboard nav so "Your Plant" comes before "Notes"
+
 ## [38.5.28] - 2026-04-23
 
 - Added PlanDashboardView — a new region-scoped dashboard for the Plan tool with stat cards, per-plant summaries, a special jobs tracker, QC attention jobs, and a daily dispatch checklist

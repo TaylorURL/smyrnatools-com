@@ -110,6 +110,49 @@ Deno.serve(async (req) => {
                 if (error && error.code !== "PGRST116") return errorResponse("Operation failed", headers, 400);
                 return jsonResponse({data: data ?? null}, headers);
             }
+            case "fetch-latest-plan-date": {
+                const auth = await requireAuthenticated(supabase, req, headers); if (auth instanceof Response) return auth;
+                // Return the plan-date with real content whose calendar date
+                // is closest to today. Ties break toward the future so users
+                // landing mid-week see the next planned day, not yesterday.
+                const today = new Date();
+                const todayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+                const windowDays = 60;
+                const lower = new Date(todayMs - windowDays * 86400000).toISOString().slice(0, 10);
+                const upper = new Date(todayMs + windowDays * 86400000).toISOString().slice(0, 10);
+                const {data, error} = await supabase
+                    .from(PLANS_TABLE)
+                    .select("plan_date, assignments, plant_production, notes")
+                    .gte("plan_date", lower)
+                    .lte("plan_date", upper);
+                if (error) return errorResponse("Operation failed", headers, 400);
+                const hasContent = (row: any) => {
+                    const assignments = Array.isArray(row?.assignments) ? row.assignments : [];
+                    const hasRealRoutes = assignments.some((a: any) =>
+                        a && (a.fromPlant || a.toPlant || a.time || (Array.isArray(a.customTimes) && a.customTimes.length))
+                    );
+                    if (hasRealRoutes) return true;
+                    const production = row?.plant_production || {};
+                    const productionKeys = Object.keys(production).filter((k) => k !== "_meta");
+                    if (productionKeys.length > 0) return true;
+                    if (row?.notes && String(row.notes).trim().length > 0) return true;
+                    return false;
+                };
+                const candidates = (data ?? []).filter(hasContent);
+                if (!candidates.length) return jsonResponse({planDate: null}, headers);
+                const scored = candidates
+                    .map((row: any) => {
+                        const [y, m, d] = String(row.plan_date).split("-").map((n) => parseInt(n, 10));
+                        const planMs = Date.UTC(y, (m || 1) - 1, d || 1);
+                        return {row, delta: Math.abs(planMs - todayMs), forward: planMs >= todayMs};
+                    })
+                    .sort((a, b) => {
+                        if (a.delta !== b.delta) return a.delta - b.delta;
+                        if (a.forward !== b.forward) return a.forward ? -1 : 1;
+                        return String(b.row.plan_date).localeCompare(String(a.row.plan_date));
+                    });
+                return jsonResponse({planDate: scored[0].row.plan_date}, headers);
+            }
             case "save-plan": {
                 const auth = await requireAuthenticated(supabase, req, headers); if (auth instanceof Response) return auth;
                 const body = await parseBody(req);
