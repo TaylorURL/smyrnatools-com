@@ -1,6 +1,24 @@
 # Changelog
 
 
+## [38.5.34] - 2026-04-23
+
+- Added TrafficService and traffic-service edge function — fetches live driving times from Google Distance Matrix API with Supabase-backed caching
+- Added travel_time_cache database table migration for persisting traffic lookup results
+- Integrated live traffic data into the JobMapModal — shows Google live travel time with traffic, free-flow comparison, and dispatch estimate delta
+- Improved PlanFlowView edge label positioning — labels now detect when a third node occludes the midpoint and shift perpendicular with a dashed connector line back to the edge
+- Added relaxLayoutForEdges pass to planFlowLayout that nudges nodes apart when they sit on top of an edge, preventing route lines from passing through unrelated plants
+- Increased default edge gap from 70 to 100px to give labelled edges more breathing room
+- Redesigned KpiCard component — more compact layout, added valueColor prop, improved text truncation and tooltips
+- Made OrderCard plant codes, status badges, and product names clickable for filtering via new onPickPlant, onPickStatus, onPickProduct callbacks
+- Added bad-address detection to OrderCard with a red warning badge and location pin button for valid addresses
+- Added product display row to OrderCard showing mix code and description
+- Built TimeBucketBar component for visualizing order distribution across morning time slots
+- Refactored PlanScheduleView header into a compact unified strip with inline KPIs, time bucket chart, and filter pills
+- Added product and status filter dimensions to PlanScheduleView alongside existing plant filter
+- Added travel time column to the schedule table with live traffic lookups and loading/error states
+- Wired PlanView to pass plant addresses and accent colors through to PlanScheduleView for traffic lookups and consistent theming
+
 ## [38.5.33] - 2026-04-23
 
 - Added realtime schedule syncing via Supabase storage events — useScheduleSync now subscribes to the dispatch-reports bucket and triggers an immediate debounced re-sync when a new file lands, on top of the existing 5-min polling

@@ -2,7 +2,11 @@ import { MAX_YPH, TARGET_YPH } from '../../../utils/PlanUtility'
 
 export const NODE_RADIUS_MIN = 48
 export const NODE_RADIUS_MAX = 110
-export const EDGE_GAP = 70
+// Tight enough to keep the cluster compact while still leaving room for a
+// `+N ops · time` label between two adjacent nodes. Edges that need extra
+// length get individually stretched by `relaxLayoutForEdges` after the
+// initial placement.
+export const EDGE_GAP = 100
 export const CANVAS_PADDING = 40
 export const TOOLBAR_CLEAR = 64
 /** Extra horizontal breathing room on each side of the cluster so users can
@@ -137,6 +141,157 @@ export function computeClusterLayout(items, viewportWidth, viewportHeight, optio
         positions[code] = { x: positions[code].x + hShift, y: positions[code].y + vShift }
     })
     return { height: finalHeight, positions, width: finalWidth }
+}
+
+/**
+ * Edge-aware relaxation pass — runs *after* the initial cluster layout once
+ * we know which routes (edges) actually exist. Any non-endpoint node that
+ * sits across an edge's straight-line path is shoved perpendicular to the
+ * line until it's clear, then a couple of node-collision passes resolve any
+ * new overlaps the shoves introduced. Bounds are recomputed afterwards so
+ * nothing slips off-canvas.
+ */
+export function relaxLayoutForEdges(layout, items, edges, options = {}) {
+    if (!edges?.length) return layout
+    const {
+        edgeBuffer = 14,
+        edgePasses = 6,
+        collisionPasses = 4,
+        pad = CANVAS_PADDING,
+        // Required visible line length between two endpoints (after subtracting
+        // their radii) so the badge fits with a few px of visible line on each
+        // side. ~96 px label + 2× ~8 px padding = 112.
+        minLabelClearance = 112,
+        stretchPasses = 4
+    } = options
+    const positions = Object.fromEntries(
+        Object.entries(layout.positions).map(([code, p]) => [code, { x: p.x, y: p.y }])
+    )
+    const radiusByCode = Object.fromEntries(items.map((i) => [i.code, i.radius]))
+
+    // Stretch-pass: if an edge's visible line is shorter than the label needs,
+    // push its endpoints apart along the line so the badge sits between them
+    // without touching either node.
+    for (let iter = 0; iter < stretchPasses; iter++) {
+        let stretched = false
+        for (const edge of edges) {
+            const a = positions[edge.from]
+            const b = positions[edge.to]
+            if (!a || !b) continue
+            const ra = radiusByCode[edge.from] ?? NODE_RADIUS_MIN
+            const rb = radiusByCode[edge.to] ?? NODE_RADIUS_MIN
+            const dx = b.x - a.x
+            const dy = b.y - a.y
+            const centerDist = Math.sqrt(dx * dx + dy * dy) || 0.001
+            const visibleLine = centerDist - ra - rb
+            const required = minLabelClearance
+            if (visibleLine < required) {
+                const need = required - visibleLine + 4
+                const ux = dx / centerDist
+                const uy = dy / centerDist
+                positions[edge.from] = { x: a.x - ux * (need / 2), y: a.y - uy * (need / 2) }
+                positions[edge.to] = { x: b.x + ux * (need / 2), y: b.y + uy * (need / 2) }
+                stretched = true
+            }
+        }
+        if (!stretched) break
+    }
+
+    for (let iter = 0; iter < edgePasses; iter++) {
+        let moved = false
+        for (const edge of edges) {
+            const a = positions[edge.from]
+            const b = positions[edge.to]
+            if (!a || !b) continue
+            const dx = b.x - a.x
+            const dy = b.y - a.y
+            const lenSq = dx * dx + dy * dy
+            if (lenSq < 1) continue
+            const len = Math.sqrt(lenSq)
+            const ux = dx / len
+            const uy = dy / len
+            const px = -uy
+            const py = ux
+            for (const item of items) {
+                if (item.code === edge.from || item.code === edge.to) continue
+                const p = positions[item.code]
+                if (!p) continue
+                const radius = radiusByCode[item.code] ?? NODE_RADIUS_MIN
+                // Project node centre onto the edge as a normalized parameter t.
+                const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq
+                if (t < 0.05 || t > 0.95) continue // not actually crossing this segment
+                const closestX = a.x + dx * t
+                const closestY = a.y + dy * t
+                const ddx = p.x - closestX
+                const ddy = p.y - closestY
+                const distance = Math.sqrt(ddx * ddx + ddy * ddy)
+                const minDistance = radius + edgeBuffer
+                if (distance < minDistance) {
+                    const overlap = minDistance - distance + 2
+                    const sign = distance > 0.001 ? Math.sign(ddx * px + ddy * py) || 1 : 1
+                    positions[item.code] = {
+                        x: p.x + px * sign * overlap,
+                        y: p.y + py * sign * overlap
+                    }
+                    moved = true
+                }
+            }
+        }
+        if (!moved) break
+    }
+
+    // Resolve any node-vs-node overlaps the perpendicular shoves may have introduced.
+    for (let iter = 0; iter < collisionPasses; iter++) {
+        let collided = false
+        for (let i = 0; i < items.length; i++) {
+            for (let j = i + 1; j < items.length; j++) {
+                const a = items[i]
+                const b = items[j]
+                const pa = positions[a.code]
+                const pb = positions[b.code]
+                if (!pa || !pb) continue
+                const dx = pb.x - pa.x
+                const dy = pb.y - pa.y
+                const dist = Math.sqrt(dx * dx + dy * dy) || 0.001
+                const minDist = a.radius + b.radius + 24
+                if (dist < minDist) {
+                    const half = (minDist - dist) / 2
+                    const ux = dx / dist
+                    const uy = dy / dist
+                    positions[a.code] = { x: pa.x - ux * half, y: pa.y - uy * half }
+                    positions[b.code] = { x: pb.x + ux * half, y: pb.y + uy * half }
+                    collided = true
+                }
+            }
+        }
+        if (!collided) break
+    }
+
+    // Re-fit bounds and shift everything positive so nothing drifts off-canvas.
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    for (const item of items) {
+        const p = positions[item.code]
+        if (!p) continue
+        minX = Math.min(minX, p.x - item.radius)
+        minY = Math.min(minY, p.y - item.radius)
+        maxX = Math.max(maxX, p.x + item.radius)
+        maxY = Math.max(maxY, p.y + item.radius)
+    }
+    const shiftX = minX < pad ? pad - minX : 0
+    const shiftY = minY < pad ? pad - minY : 0
+    if (shiftX || shiftY) {
+        for (const code of Object.keys(positions)) {
+            positions[code] = { x: positions[code].x + shiftX, y: positions[code].y + shiftY }
+        }
+        maxX += shiftX
+        maxY += shiftY
+    }
+    const newWidth = Math.max(layout.width, maxX + pad)
+    const newHeight = Math.max(layout.height, maxY + pad)
+    return { height: newHeight, positions, width: newWidth }
 }
 
 export const yphColorFor = (yph, accentColor) => {

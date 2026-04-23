@@ -39,7 +39,11 @@ function PlanView() {
     const isMobile = useIsMobile()
     const [planDate, setPlanDate] = useState(getTomorrowDate)
     const hasInitializedDateRef = useRef(false)
-    const [viewMode, setViewMode] = useState('flow')
+    const [viewMode, setViewModeRaw] = useState('schedule')
+    // Mobile users get the Schedule view only — Planner and Plan tabs depend on
+    // wide layouts (zoomable canvas, sticky scrollspy) that don't fit a phone.
+    const setViewMode = (mode) => setViewModeRaw(mode)
+    const effectiveViewMode = isMobile ? 'schedule' : viewMode
     const [selectedPlant, setSelectedPlant] = useState(null)
     const [productionPopoverPlant, setProductionPopoverPlant] = useState(null)
     const [userPlantCode, setUserPlantCode] = useState('')
@@ -385,30 +389,33 @@ function PlanView() {
                         </>
                     )}
                 </div>
-                {/* View mode toggle */}
-                <div
-                    className="flex items-center rounded-lg p-0.5"
-                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
-                >
-                    {[
-                        { mode: 'flow', icon: 'fa-project-diagram', label: 'Planner' },
-                        { mode: 'schedule', icon: 'fa-calendar-days', label: 'Schedule' },
-                        { mode: 'dashboard', icon: 'fa-gauge-high', label: 'Plan' }
-                    ].map(({ mode, icon, label }) => (
-                        <button
-                            key={mode}
-                            onClick={() => setViewMode(mode)}
-                            className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5"
-                            style={{
-                                backgroundColor: viewMode === mode ? accentColor : 'transparent',
-                                color: viewMode === mode ? '#fff' : 'var(--text-secondary)'
-                            }}
-                        >
-                            <i className={`fas ${icon}`} />
-                            <span>{label}</span>
-                        </button>
-                    ))}
-                </div>
+                {/* View mode toggle — Planner & Plan are desktop-only.
+                    Mobile users always land on Schedule. */}
+                {!isMobile && (
+                    <div
+                        className="flex items-center rounded-lg p-0.5"
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
+                    >
+                        {[
+                            { mode: 'schedule', icon: 'fa-calendar-days', label: 'Schedule' },
+                            { mode: 'flow', icon: 'fa-project-diagram', label: 'Planner' },
+                            { mode: 'dashboard', icon: 'fa-gauge-high', label: 'Plan' }
+                        ].map(({ mode, icon, label }) => (
+                            <button
+                                key={mode}
+                                onClick={() => setViewMode(mode)}
+                                className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5"
+                                style={{
+                                    backgroundColor: viewMode === mode ? accentColor : 'transparent',
+                                    color: viewMode === mode ? '#fff' : 'var(--text-secondary)'
+                                }}
+                            >
+                                <i className={`fas ${icon}`} />
+                                <span>{label}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
             <div
                 className="global-content-container content-container"
@@ -452,92 +459,102 @@ function PlanView() {
 
                         {/* Region totals — combined yardage, trucks have / need,
                             and combined YPH so dispatch can see at a glance whether
-                            today is overbooked across the whole region. */}
-                        <RegionTotalsBar
-                            accentColor={accentColor}
-                            shiftSpanHours={shiftSpanHours}
-                            totals={regionTotals}
-                        />
+                            today is overbooked across the whole region. The Schedule
+                            tab has its own KPI panel, so the bar is hidden there. */}
+                        {effectiveViewMode !== 'schedule' && (
+                            <RegionTotalsBar
+                                accentColor={accentColor}
+                                shiftSpanHours={shiftSpanHours}
+                                totals={regionTotals}
+                            />
+                        )}
 
-                        {/* Plant Strip — horizontal cards, visible in all modes */}
-                        <div
-                            className="shrink-0 flex items-center gap-2 overflow-x-auto px-4 py-2 border-b"
-                            style={{ borderColor: 'var(--border-light)', background: 'var(--bg-secondary)' }}
-                        >
-                            <span
-                                className="text-[9px] font-semibold uppercase tracking-wider shrink-0 mr-1"
-                                style={{ color: 'var(--text-secondary)' }}
+                        {/* Plant Strip — horizontal cards, used by Planner / Plan
+                            modes for plant selection. Schedule has its own per-row
+                            plant badges so the strip just adds noise there. */}
+                        {effectiveViewMode !== 'schedule' && (
+                            <div
+                                className="shrink-0 flex items-center gap-2 overflow-x-auto px-4 py-2 border-b"
+                                style={{ borderColor: 'var(--border-light)', background: 'var(--bg-secondary)' }}
                             >
-                                Plants
-                            </span>
-                            {stats.map((s) => {
-                                const isSelected = selectedPlant === s.code
-                                const isPopoverOpen = productionPopoverPlant === s.code
-                                return (
-                                    <PlanPlantCard
-                                        key={s.code}
-                                        accentColor={accentColor}
-                                        stat={s}
-                                        plantName={plantNameByCode[s.code]}
-                                        production={plantProduction[s.code] || {}}
-                                        earliestClockIn={planEarliestClockInByPlant[s.code]}
-                                        earliestArrival={planEarliestArrivalByPlant[s.code]}
-                                        isSelected={isSelected}
-                                        isPopoverOpen={isPopoverOpen}
-                                        onSelect={() => {
-                                            setSelectedPlant(s.code)
+                                <span
+                                    className="text-[9px] font-semibold uppercase tracking-wider shrink-0 mr-1"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
+                                    Plants
+                                </span>
+                                {stats.map((s) => {
+                                    const isSelected = selectedPlant === s.code
+                                    const isPopoverOpen = productionPopoverPlant === s.code
+                                    return (
+                                        <PlanPlantCard
+                                            key={s.code}
+                                            accentColor={accentColor}
+                                            stat={s}
+                                            plantName={plantNameByCode[s.code]}
+                                            production={plantProduction[s.code] || {}}
+                                            earliestClockIn={planEarliestClockInByPlant[s.code]}
+                                            earliestArrival={planEarliestArrivalByPlant[s.code]}
+                                            isSelected={isSelected}
+                                            isPopoverOpen={isPopoverOpen}
+                                            onSelect={() => {
+                                                setSelectedPlant(s.code)
+                                                setProductionPopoverPlant(null)
+                                            }}
+                                            onTogglePopover={() =>
+                                                setProductionPopoverPlant(isPopoverOpen ? null : s.code)
+                                            }
+                                            updatePlantProduction={updatePlantProduction}
+                                        />
+                                    )
+                                })}
+                                {selectedPlant && (
+                                    <button
+                                        onClick={() => {
+                                            setSelectedPlant(null)
                                             setProductionPopoverPlant(null)
                                         }}
-                                        onTogglePopover={() => setProductionPopoverPlant(isPopoverOpen ? null : s.code)}
-                                        updatePlantProduction={updatePlantProduction}
-                                    />
-                                )
-                            })}
-                            {selectedPlant && (
-                                <button
-                                    onClick={() => {
-                                        setSelectedPlant(null)
-                                        setProductionPopoverPlant(null)
-                                    }}
-                                    className="shrink-0 border-none rounded-md cursor-pointer text-[10px] font-semibold px-2 py-1"
-                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                                        className="shrink-0 border-none rounded-md cursor-pointer text-[10px] font-semibold px-2 py-1"
+                                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                                    >
+                                        <i className="fas fa-times mr-1" />
+                                        Clear
+                                    </button>
+                                )}
+                                <div className="flex-1" />
+                                <span
+                                    className="shrink-0 text-[11px] font-medium whitespace-nowrap"
+                                    style={{ color: 'var(--text-secondary)' }}
                                 >
-                                    <i className="fas fa-times mr-1" />
-                                    Clear
-                                </button>
-                            )}
-                            <div className="flex-1" />
-                            <span
-                                className="shrink-0 text-[11px] font-medium whitespace-nowrap"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
-                                {validAssignmentCount} route{validAssignmentCount !== 1 ? 's' : ''}, {totalOps} op
-                                {totalOps !== 1 ? 's' : ''}
-                                {earliestClockIn && (
-                                    <>
-                                        {' '}
-                                        · <span className="font-bold text-[#16a34a]">{earliestClockIn}</span> earliest
-                                    </>
-                                )}
-                                {shiftSpanHours && (
-                                    <>
-                                        {' '}
-                                        ·{' '}
-                                        <span
-                                            className={
-                                                shiftSpanHours > OVERTIME_THRESHOLD_HOURS
-                                                    ? 'font-bold text-[#ef4444]'
-                                                    : ''
-                                            }
-                                        >
-                                            {shiftSpanHours}h span
-                                        </span>
-                                    </>
-                                )}
-                            </span>
-                        </div>
+                                    {validAssignmentCount} route{validAssignmentCount !== 1 ? 's' : ''}, {totalOps} op
+                                    {totalOps !== 1 ? 's' : ''}
+                                    {earliestClockIn && (
+                                        <>
+                                            {' '}
+                                            · <span className="font-bold text-[#16a34a]">{earliestClockIn}</span>{' '}
+                                            earliest
+                                        </>
+                                    )}
+                                    {shiftSpanHours && (
+                                        <>
+                                            {' '}
+                                            ·{' '}
+                                            <span
+                                                className={
+                                                    shiftSpanHours > OVERTIME_THRESHOLD_HOURS
+                                                        ? 'font-bold text-[#ef4444]'
+                                                        : ''
+                                                }
+                                            >
+                                                {shiftSpanHours}h span
+                                            </span>
+                                        </>
+                                    )}
+                                </span>
+                            </div>
+                        )}
 
-                        {viewMode === 'dashboard' && (
+                        {effectiveViewMode === 'dashboard' && (
                             <PlanDashboardView
                                 accentColor={accentColor}
                                 assignments={assignments}
@@ -563,7 +580,7 @@ function PlanView() {
                             />
                         )}
 
-                        {viewMode === 'flow' && (
+                        {effectiveViewMode === 'flow' && (
                             <PlanFlowView
                                 accentColor={accentColor}
                                 assignments={assignments}
@@ -580,10 +597,11 @@ function PlanView() {
                             />
                         )}
 
-                        {viewMode === 'schedule' && (
+                        {effectiveViewMode === 'schedule' && (
                             <PlanScheduleView
                                 accentColor={accentColor}
-                                onSwitchToPlanner={() => setViewMode('flow')}
+                                isMobile={isMobile}
+                                onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
                                 plantAddressByCode={plantAddressByCode}
                                 plantNameByCode={plantNameByCode}
                                 plantProduction={plantProduction}

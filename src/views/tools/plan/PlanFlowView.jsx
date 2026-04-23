@@ -1,13 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { createEmptyAssignment, MAX_YPH, minutesToTime, TARGET_YPH, timeToMinutes } from '../../../utils/PlanUtility'
+import { relaxLayoutForEdges } from './planFlowLayout'
 
 const NEEDS_HELP_COLOR = '#dc2626'
 const LEAVE_OFF_COLOR = '#d97706'
 
 const NODE_RADIUS_MIN = 48
 const NODE_RADIUS_MAX = 110
-const EDGE_GAP = 70
+// Minimum gap between any two node edges. Tight enough to keep the cluster
+// compact, just wide enough for a `+N ops · 13:00` badge to sit on the edge
+// without touching either node. The stretch pass in relaxLayoutForEdges
+// nudges any specific labelled edge that still ends up shorter than this.
+const EDGE_GAP = 100
 const CANVAS_PADDING = 40
 const TOOLBAR_CLEAR = 64
 const MIN_ZOOM = 0.4
@@ -275,12 +280,15 @@ function PlanFlowView({
         })
         return out
     }, [nodeItems])
-    const layout = useMemo(
+    const baseLayout = useMemo(
         () => computeClusterLayout(nodeItems, canvasSize.width, canvasSize.height),
         [nodeItems, canvasSize]
     )
-    const { positions, width: layoutWidth, height: layoutHeight } = layout
     const edges = useMemo(() => buildEdges(assignments), [assignments])
+    // Push any plant whose centre lies on top of an edge perpendicular to that
+    // edge so the route line never has to pass straight through a third node.
+    const layout = useMemo(() => relaxLayoutForEdges(baseLayout, nodeItems, edges), [baseLayout, nodeItems, edges])
+    const { positions, width: layoutWidth, height: layoutHeight } = layout
 
     const yphByCode = useMemo(() => {
         const out = {}
@@ -427,6 +435,64 @@ function PlanFlowView({
             edges.filter((e) => e.from === selectedCode || e.to === selectedCode).map((e) => `${e.from}->${e.to}`)
         )
     }, [edges, selectedCode])
+
+    /**
+     * Position each edge label so it doesn't get hidden by a third-party node
+     * sitting on top of the line. We start at the edge midpoint, then if any
+     * non-endpoint node would obscure it, push the label perpendicular to the
+     * edge until it's clear. The original midpoint is also returned so we can
+     * draw a small connector line back to the edge.
+     */
+    const labelLayout = useMemo(() => {
+        const out = {}
+        const LABEL_HALF = 14 // approx label half-height in px
+        const PADDING = 10
+        const obstacles = allPlantStats
+            .map((s) => ({ code: s.code, pos: positions[s.code], radius: radiusByCode[s.code] || NODE_RADIUS_MIN }))
+            .filter((o) => o.pos)
+        for (const e of edges) {
+            const from = positions[e.from]
+            const to = positions[e.to]
+            if (!from || !to) continue
+            const midX = (from.x + to.x) / 2
+            const midY = (from.y + to.y) / 2
+            const dx = to.x - from.x
+            const dy = to.y - from.y
+            const len = Math.sqrt(dx * dx + dy * dy) || 1
+            const px = -dy / len
+            const py = dx / len
+            const blockers = obstacles.filter((o) => o.code !== e.from && o.code !== e.to)
+            const isOccluded = (x, y) => {
+                for (const o of blockers) {
+                    const r = o.radius + LABEL_HALF + PADDING
+                    const ddx = o.pos.x - x
+                    const ddy = o.pos.y - y
+                    if (ddx * ddx + ddy * ddy < r * r) return true
+                }
+                return false
+            }
+            let lx = midX
+            let ly = midY
+            if (isOccluded(midX, midY)) {
+                let foundClear = false
+                for (let step = 30; step <= 260 && !foundClear; step += 20) {
+                    for (const sign of [1, -1]) {
+                        const tx = midX + px * step * sign
+                        const ty = midY + py * step * sign
+                        if (!isOccluded(tx, ty)) {
+                            lx = tx
+                            ly = ty
+                            foundClear = true
+                            break
+                        }
+                    }
+                }
+            }
+            const offset = Math.hypot(lx - midX, ly - midY)
+            out[`${e.from}->${e.to}`] = { anchorX: midX, anchorY: midY, offset, x: lx, y: ly }
+        }
+        return out
+    }, [edges, positions, allPlantStats, radiusByCode])
 
     return (
         <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -626,42 +692,66 @@ function PlanFlowView({
 
                             {hasNodes &&
                                 edges.map((e) => {
-                                    const from = positions[e.from]
-                                    const to = positions[e.to]
-                                    if (!from || !to) return null
-                                    const mx = (from.x + to.x) / 2
-                                    const my = (from.y + to.y) / 2
                                     const key = `${e.from}->${e.to}`
+                                    const layout = labelLayout[key]
+                                    if (!layout) return null
                                     const isRelated = activeRelatedEdges.has(key)
                                     const muted = selectedCode && !isRelated
+                                    const isOffset = layout.offset > 4
                                     return (
-                                        <div
-                                            key={`lbl-${key}`}
-                                            onMouseEnter={() => setHoverEdgeKey(key)}
-                                            onMouseLeave={() => setHoverEdgeKey(null)}
-                                            className="absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1 rounded-full flex items-center gap-1.5 text-[10.5px] font-semibold cursor-default"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: `1px solid ${isRelated ? '#f59e0b' : 'var(--border-light)'}`,
-                                                boxShadow: 'var(--shadow-sm)',
-                                                color: 'var(--text-primary)',
-                                                left: `${mx}px`,
-                                                opacity: muted ? 0.5 : 1,
-                                                top: `${my}px`,
-                                                zIndex: 20
-                                            }}
-                                        >
-                                            <i
-                                                className="fas fa-truck text-[9px]"
-                                                style={{ color: isRelated ? '#f59e0b' : accentColor }}
-                                            />
-                                            <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                                {e.ops > 0 ? `+${e.ops} op${e.ops === 1 ? '' : 's'}` : 'Route'}
-                                            </span>
-                                            {e.earliest && (
-                                                <span style={{ color: 'var(--text-secondary)' }}>· {e.earliest}</span>
+                                        <React.Fragment key={`lbl-${key}`}>
+                                            {isOffset && (
+                                                <svg
+                                                    className="absolute pointer-events-none"
+                                                    width={layoutWidth}
+                                                    height={layoutHeight}
+                                                    style={{
+                                                        left: 0,
+                                                        opacity: muted ? 0.4 : 0.7,
+                                                        top: 0,
+                                                        zIndex: 15
+                                                    }}
+                                                >
+                                                    <line
+                                                        x1={layout.anchorX}
+                                                        y1={layout.anchorY}
+                                                        x2={layout.x}
+                                                        y2={layout.y}
+                                                        stroke={isRelated ? '#f59e0b' : 'var(--border-medium)'}
+                                                        strokeWidth={1.25}
+                                                        strokeDasharray="3 3"
+                                                    />
+                                                </svg>
                                             )}
-                                        </div>
+                                            <div
+                                                onMouseEnter={() => setHoverEdgeKey(key)}
+                                                onMouseLeave={() => setHoverEdgeKey(null)}
+                                                className="absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1 rounded-full flex items-center gap-1.5 text-[10.5px] font-semibold cursor-default"
+                                                style={{
+                                                    background: 'var(--bg-primary)',
+                                                    border: `1px solid ${isRelated ? '#f59e0b' : 'var(--border-light)'}`,
+                                                    boxShadow: 'var(--shadow-sm)',
+                                                    color: 'var(--text-primary)',
+                                                    left: `${layout.x}px`,
+                                                    opacity: muted ? 0.5 : 1,
+                                                    top: `${layout.y}px`,
+                                                    zIndex: 20
+                                                }}
+                                            >
+                                                <i
+                                                    className="fas fa-truck text-[9px]"
+                                                    style={{ color: isRelated ? '#f59e0b' : accentColor }}
+                                                />
+                                                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                                    {e.ops > 0 ? `+${e.ops} op${e.ops === 1 ? '' : 's'}` : 'Route'}
+                                                </span>
+                                                {e.earliest && (
+                                                    <span style={{ color: 'var(--text-secondary)' }}>
+                                                        · {e.earliest}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </React.Fragment>
                                     )
                                 })}
 

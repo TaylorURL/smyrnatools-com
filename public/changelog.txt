@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [38.5.33] - 2026-04-23
+
+- Added realtime schedule syncing via Supabase storage events — useScheduleSync now subscribes to the dispatch-reports bucket and triggers an immediate debounced re-sync when a new file lands, on top of the existing 5-min polling
+- Exposed sync state (isSyncing, lastSyncedAt, refresh) from useScheduleSync so the UI can show sync status and offer manual refresh
+- Fixed multi-page parsing in DailyOrderParser — page scoping now matches any frpage-prefixed class instead of only frpage0, preventing orders on page 2+ from reading cells off page 1
+- Hardened plant header regex to require at least one letter in the name portion, rejecting purely numeric customer reference lines that false-matched as plant headers
+- Excluded cancelled orders (17:00 sentinel start time) from plant yardage totals so YPH, dashboard figures, and overbook checks reflect only live deliveries
+- Added cancelled/same-day order sentinel constants and isCancelledOrder helper to PlanUtility
+- Added "Leave off" indicator to PlanFlowView — plants with YPH below TARGET_YPH now show an amber badge suggesting how many drivers could be left off and the resulting adjusted YPH
+- Built out PlanScheduleView with per-order detail cards, bad-address detection, cancelled/same-day status badges, and an embedded Google Maps route modal for plant-to-job navigation
+- Added updatePlantAddress method to PlantService for editing plant street addresses from the plan settings modal
+- Included plant_address in the ReportService plant query
+- Added plant-address column migration and wired the update-address endpoint into the plant-service edge function
+- Added overbooked pill animations (glow + icon wobble) to index.css with prefers-reduced-motion support
+- Expanded PlanSettingsModal and PlanView with schedule integration, sync status display, and plant address editing
+
 ## [38.5.32] - 2026-04-23
 
 - Added automatic schedule syncing from the dispatch-reports storage bucket — a new useScheduleSync hook polls every 5 minutes for the current plan date's Daily Order Listing HTML, replacing the old manual file import workflow

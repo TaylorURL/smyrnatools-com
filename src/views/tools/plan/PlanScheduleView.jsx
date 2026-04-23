@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { TrafficService } from '../../../services/TrafficService'
 import { timeToMinutes } from '../../../utils/PlanUtility'
 
 const composeAddress = (order) =>
@@ -123,10 +124,62 @@ function JobMapModal({ accentColor, onClose, order, plantAddress, plantCode, pla
         }
     }, [onClose])
 
-    const oneWayMinutes = Number.isFinite(travelMinutes) ? travelMinutes : null
+    const dispatchMinutes = Number.isFinite(travelMinutes) ? travelMinutes : null
+
+    /** Live driving time (with traffic) from the traffic-service edge function.
+     *  Falls back silently when the API key isn't set or the lookup fails. */
+    const [live, setLive] = useState({ status: 'idle', data: null })
+    useEffect(() => {
+        if (!canRoute) {
+            setLive({ status: 'idle', data: null })
+            return undefined
+        }
+        let cancelled = false
+        setLive({ status: 'loading', data: null })
+        TrafficService.fetchDistance(plantAddress, jobAddress).then((result) => {
+            if (cancelled) return
+            if (!result) {
+                setLive({ status: 'error', data: null })
+                return
+            }
+            if (result.error) {
+                setLive({ status: result.error === 'not_configured' ? 'not_configured' : 'error', data: null })
+                return
+            }
+            setLive({ status: 'ok', data: result })
+        })
+        return () => {
+            cancelled = true
+        }
+    }, [canRoute, plantAddress, jobAddress])
+
+    const liveMinutes =
+        live.status === 'ok' && Number.isFinite(live.data?.durationInTrafficSeconds)
+            ? Math.round(live.data.durationInTrafficSeconds / 60)
+            : null
+    const liveFreeFlowMinutes =
+        live.status === 'ok' && Number.isFinite(live.data?.durationSeconds)
+            ? Math.round(live.data.durationSeconds / 60)
+            : null
+    // Prefer live-with-traffic when available; otherwise the dispatch estimate.
+    const oneWayMinutes = liveMinutes ?? dispatchMinutes
     const roundTripMinutes = oneWayMinutes != null ? oneWayMinutes * 2 : null
     const oneWayLabel = formatMinutesToHm(oneWayMinutes)
     const roundTripLabel = formatMinutesToHm(roundTripMinutes)
+    const sourceLabel =
+        live.status === 'loading'
+            ? 'Loading live traffic…'
+            : liveMinutes != null
+              ? 'Google live · with traffic'
+              : live.status === 'not_configured'
+                ? 'Dispatch Estimate (Traffic not Included)'
+                : live.status === 'error'
+                  ? 'Dispatch Estimate (Traffic not Included)'
+                  : dispatchMinutes != null
+                    ? 'Dispatch Estimate (Traffic not Included)'
+                    : 'No travel time available'
+    const trafficDelta = liveMinutes != null && liveFreeFlowMinutes != null ? liveMinutes - liveFreeFlowMinutes : null
+    const dispatchVsLive = liveMinutes != null && dispatchMinutes != null ? liveMinutes - dispatchMinutes : null
 
     return (
         <div
@@ -221,12 +274,25 @@ function JobMapModal({ accentColor, onClose, order, plantAddress, plantCode, pla
                         <div
                             className="rounded-lg px-3 py-2 flex flex-col justify-center text-center"
                             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                            title={
+                                liveMinutes != null
+                                    ? 'Live driving time from Google with current traffic conditions.'
+                                    : 'Dispatch report estimate. Live traffic unavailable.'
+                            }
                         >
                             <div
-                                className="text-[10px] font-bold uppercase tracking-wider"
+                                className="text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1"
                                 style={{ color: 'var(--text-tertiary)' }}
                             >
                                 Travel time
+                                {live.status === 'loading' && <i className="fas fa-spinner fa-spin text-[9px]" />}
+                                {liveMinutes != null && (
+                                    <i
+                                        className="fas fa-traffic-light text-[10px]"
+                                        style={{ color: '#16a34a' }}
+                                        title="Includes live traffic"
+                                    />
+                                )}
                             </div>
                             <div
                                 className="font-bold text-[16px] leading-none mt-1"
@@ -239,9 +305,21 @@ function JobMapModal({ accentColor, onClose, order, plantAddress, plantCode, pla
                                     Round trip ≈ {roundTripLabel}
                                 </div>
                             )}
-                            {!oneWayLabel && (
-                                <div className="text-[10.5px] mt-0.5 italic" style={{ color: 'var(--text-tertiary)' }}>
-                                    Set a plant→plant time in Settings to seed this
+                            <div className="text-[10px] mt-1 italic" style={{ color: 'var(--text-tertiary)' }}>
+                                {sourceLabel}
+                                {trafficDelta != null && trafficDelta > 1 && (
+                                    <span style={{ color: '#dc2626' }}> · +{trafficDelta}m vs free-flow</span>
+                                )}
+                            </div>
+                            {dispatchVsLive != null && Math.abs(dispatchVsLive) >= 3 && dispatchMinutes != null && (
+                                <div
+                                    className="text-[10px] mt-0.5"
+                                    style={{ color: dispatchVsLive > 0 ? '#dc2626' : '#16a34a' }}
+                                    title={`Live ${liveMinutes}m vs dispatch ${dispatchMinutes}m`}
+                                >
+                                    {dispatchVsLive > 0 ? '⚠ ' : '↓ '}
+                                    {dispatchVsLive > 0 ? '+' : ''}
+                                    {dispatchVsLive}m vs dispatch est ({dispatchMinutes}m)
                                 </div>
                             )}
                         </div>
@@ -381,38 +459,31 @@ const TIME_BUCKETS = [
 
 /* ── small building blocks ──────────────────────────────────────────────── */
 
-function KpiCard({ accent, hint, icon, label, value }) {
+function KpiCard({ accent, hint, icon, label, value, valueColor }) {
     return (
-        <div
-            className="rounded-xl p-4 flex items-center gap-3"
-            style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                boxShadow: 'var(--shadow-sm)',
-                minWidth: 180
-            }}
-        >
+        <div className="px-4 py-3 flex items-start gap-3 min-w-0 flex-1" style={{ minWidth: 160 }}>
             <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: `${accent}14`, color: accent }}
             >
-                <i className={`fas ${icon} text-[14px]`} />
+                <i className={`fas ${icon} text-[13px]`} />
             </div>
             <div className="flex-1 min-w-0">
                 <div
                     className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--text-secondary)' }}
+                    style={{ color: 'var(--text-tertiary)' }}
                 >
                     {label}
                 </div>
                 <div
-                    className="font-bold text-[22px] leading-none mt-0.5"
-                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                    className="font-bold text-[24px] leading-none mt-1 truncate"
+                    style={{ color: valueColor || 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                    title={String(value)}
                 >
                     {value}
                 </div>
                 {hint && (
-                    <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="text-[11px] mt-1 truncate" style={{ color: 'var(--text-secondary)' }} title={hint}>
                         {hint}
                     </div>
                 )}
@@ -452,13 +523,24 @@ function Pill({ accent, active, children, icon, onClick }) {
 
 /* ── order card ─────────────────────────────────────────────────────────── */
 
-function OrderCard({ accentColor, order, plantCode, plantName }) {
+function OrderCard({
+    accentColor,
+    onOpenLocation,
+    onPickPlant,
+    onPickProduct,
+    onPickStatus,
+    order,
+    plantCode,
+    plantName
+}) {
     const yardage = parseFloat(order.yardage) || 0
     const trucks = parseFloat(order.truckCount) || 0
     const loadSize = parseFloat(order.loadSize) || 0
     const start = formatHhmm(order.startTime)
     const status = getOrderStatus(order.startTime)
     const isCancelled = status?.kind === 'cancelled'
+    const addressBad = isLikelyBadAddress(clean(order.address))
+    const hasAddress = !!(clean(order.address) || clean(order.city))
     return (
         <div
             className="rounded-xl p-3 flex flex-col gap-2"
@@ -500,33 +582,80 @@ function OrderCard({ accentColor, order, plantCode, plantName }) {
                         >
                             {clean(order.customer) || 'Unknown customer'}
                         </div>
-                        {status && <OrderStatusBadge status={status} />}
+                        {status &&
+                            (onPickStatus ? (
+                                <button
+                                    type="button"
+                                    onClick={() => onPickStatus(status.kind)}
+                                    className="border-none bg-transparent p-0 cursor-pointer"
+                                    title={`Filter to ${status.label.toLowerCase()} orders`}
+                                >
+                                    <OrderStatusBadge status={status} />
+                                </button>
+                            ) : (
+                                <OrderStatusBadge status={status} />
+                            ))}
                     </div>
                     <div
-                        className="text-[11.5px] flex flex-wrap items-center gap-x-2"
+                        className="text-[11.5px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1"
                         style={{ color: 'var(--text-secondary)' }}
                     >
-                        {plantCode && (
-                            <span className="font-semibold" style={{ color: accentColor }}>
-                                {plantCode}
-                                {plantName ? ` · ${plantName}` : ''}
-                            </span>
-                        )}
+                        {plantCode &&
+                            (onPickPlant ? (
+                                <button
+                                    type="button"
+                                    onClick={() => onPickPlant(plantCode)}
+                                    className="font-semibold underline-offset-2 hover:underline border-none bg-transparent p-0 cursor-pointer"
+                                    style={{ color: accentColor }}
+                                    title={`Filter to plant ${plantCode}`}
+                                >
+                                    {plantCode}
+                                    {plantName ? ` · ${plantName}` : ''}
+                                </button>
+                            ) : (
+                                <span className="font-semibold" style={{ color: accentColor }}>
+                                    {plantCode}
+                                    {plantName ? ` · ${plantName}` : ''}
+                                </span>
+                            ))}
                         {order.orderNum && <span>#{order.orderNum}</span>}
                         {order.customerNum && <span>Cust {order.customerNum}</span>}
                         {order.truckClass && <span>Class {order.truckClass}</span>}
                     </div>
-                    {(order.address || order.city) && (
-                        <div
-                            className="text-[12px] mt-1 flex items-center gap-1.5"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
-                            <i className="fas fa-location-dot text-[10px] opacity-70" />
-                            <span className="truncate">
-                                {[clean(order.address), clean(order.city)].filter(Boolean).join(' · ')}
+                    {hasAddress &&
+                        (addressBad ? (
+                            <span
+                                className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider"
+                                style={{ background: '#dc2626', color: '#fff' }}
+                                title={`Address looks invalid — original value: "${clean(order.address)}"`}
+                            >
+                                <i className="fas fa-triangle-exclamation text-[9px]" />
+                                Bad Address
                             </span>
-                        </div>
-                    )}
+                        ) : onOpenLocation ? (
+                            <button
+                                type="button"
+                                onClick={() => onOpenLocation(order)}
+                                className="text-[12px] mt-1 flex items-center gap-1.5 border-none bg-transparent p-0 cursor-pointer underline-offset-2 hover:underline w-full text-left"
+                                style={{ color: accentColor }}
+                                title="Open route map"
+                            >
+                                <i className="fas fa-location-dot text-[10px] opacity-80" />
+                                <span className="truncate uppercase tracking-wide font-semibold">
+                                    {composeAddress(order).toUpperCase()}
+                                </span>
+                            </button>
+                        ) : (
+                            <div
+                                className="text-[12px] mt-1 flex items-center gap-1.5"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
+                                <i className="fas fa-location-dot text-[10px] opacity-70" />
+                                <span className="truncate">
+                                    {[clean(order.address), clean(order.city)].filter(Boolean).join(' · ')}
+                                </span>
+                            </div>
+                        ))}
                 </div>
                 <div className="text-right shrink-0">
                     <div
@@ -540,22 +669,44 @@ function OrderCard({ accentColor, order, plantCode, plantName }) {
                     </div>
                 </div>
             </div>
-            {(order.productCode || order.description) && (
-                <div
-                    className="rounded-md px-2.5 py-1.5 flex items-center gap-2"
-                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                >
-                    <i className="fas fa-cube text-[10px]" style={{ color: accentColor }} />
-                    <span className="text-[12px] font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        {clean(order.productCode)}
-                    </span>
-                    {order.description && (
-                        <span className="text-[12px] truncate" style={{ color: 'var(--text-secondary)' }}>
-                            {clean(order.description)}
+            {(order.productCode || order.description) &&
+                (onPickProduct && order.productCode ? (
+                    <button
+                        type="button"
+                        onClick={() => onPickProduct(clean(order.productCode))}
+                        className="rounded-md px-2.5 py-1.5 flex items-center gap-2 border cursor-pointer text-left"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            borderColor: 'var(--border-light)'
+                        }}
+                        title={`Filter to product ${clean(order.productCode)}`}
+                    >
+                        <i className="fas fa-cube text-[10px]" style={{ color: accentColor }} />
+                        <span className="text-[12px] font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                            {clean(order.productCode)}
                         </span>
-                    )}
-                </div>
-            )}
+                        {order.description && (
+                            <span className="text-[12px] truncate" style={{ color: 'var(--text-secondary)' }}>
+                                {clean(order.description)}
+                            </span>
+                        )}
+                    </button>
+                ) : (
+                    <div
+                        className="rounded-md px-2.5 py-1.5 flex items-center gap-2"
+                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                    >
+                        <i className="fas fa-cube text-[10px]" style={{ color: accentColor }} />
+                        <span className="text-[12px] font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                            {clean(order.productCode)}
+                        </span>
+                        {order.description && (
+                            <span className="text-[12px] truncate" style={{ color: 'var(--text-secondary)' }}>
+                                {clean(order.description)}
+                            </span>
+                        )}
+                    </div>
+                ))}
             <div className="flex flex-wrap gap-1.5 text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
                 {order.tktTime && <KeyValue label="Tkt" value={formatHhmm(order.tktTime)} />}
                 {order.rate && <KeyValue label="Rate" value={clean(order.rate)} />}
@@ -674,17 +825,12 @@ const compareOrders = (a, b, sortKey) => {
 function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode }) {
     return (
         <div
-            className="rounded-xl overflow-auto"
+            className="rounded-xl overflow-x-auto"
             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
         >
             <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
                 <thead>
-                    <tr
-                        style={{
-                            background: 'var(--bg-tertiary)',
-                            borderBottom: '1px solid var(--border-light)'
-                        }}
-                    >
+                    <tr>
                         {[
                             'Start',
                             'Plant',
@@ -703,7 +849,15 @@ function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode })
                             <th
                                 key={h}
                                 className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
-                                style={{ color: 'var(--text-secondary)' }}
+                                style={{
+                                    background: 'var(--bg-tertiary)',
+                                    borderBottom: '1px solid var(--border-light)',
+                                    boxShadow: '0 1px 0 0 var(--border-light)',
+                                    color: 'var(--text-secondary)',
+                                    position: 'sticky',
+                                    top: 0,
+                                    zIndex: 10
+                                }}
                             >
                                 {h}
                             </th>
@@ -876,16 +1030,26 @@ function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode })
  * narrow by plant, customer, product, time bucket, truck class, minimum
  * yardage, and a free-text search across customer/address/PO.
  */
-function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, plantNameByCode, plantProduction }) {
+function PlanScheduleView({
+    accentColor,
+    isMobile = false,
+    onSwitchToPlanner,
+    plantAddressByCode,
+    plantNameByCode,
+    plantProduction
+}) {
     const [query, setQuery] = useState('')
     const [plantFilter, setPlantFilter] = useState('all')
-    const [classFilter, setClassFilter] = useState('all')
+    const [statusFilter, setStatusFilter] = useState('all')
     const [productFilter, setProductFilter] = useState('all')
     const [bucket, setBucket] = useState('all')
     const [minYards, setMinYards] = useState('')
     const [sortKey, setSortKey] = useState('plantThenTime')
-    const [viewMode, setViewMode] = useState('table')
+    // Mobile is always cards (the 12-column table needs hundreds of px to read).
+    const [viewMode, setViewMode] = useState(isMobile ? 'cards' : 'table')
     const [mapOrder, setMapOrder] = useState(null)
+    // Filter drawer is collapsed by default on mobile so the schedule fills the screen.
+    const [filtersOpen, setFiltersOpen] = useState(!isMobile)
 
     /** Flat list of every order with plantCode attached. */
     const allOrders = useMemo(() => {
@@ -903,13 +1067,16 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
         return Array.from(codes).sort()
     }, [allOrders])
 
-    const classOptions = useMemo(() => {
-        const set = new Set()
+    /** Status counts (Scheduled / Same-day / Cancelled) for the status filter. */
+    const statusCounts = useMemo(() => {
+        const out = { all: allOrders.length, cancelled: 0, sameDay: 0, scheduled: 0 }
         allOrders.forEach((o) => {
-            const c = clean(o.truckClass)
-            if (c) set.add(c)
+            const kind = getOrderStatus(o.startTime)?.kind
+            if (kind === 'cancelled') out.cancelled += 1
+            else if (kind === 'sameDay') out.sameDay += 1
+            else out.scheduled += 1
         })
-        return Array.from(set).sort()
+        return out
     }, [allOrders])
 
     const productOptions = useMemo(() => {
@@ -927,7 +1094,10 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
         return allOrders
             .filter((o) => {
                 if (plantFilter !== 'all' && o.plantCode !== plantFilter) return false
-                if (classFilter !== 'all' && clean(o.truckClass) !== classFilter) return false
+                if (statusFilter !== 'all') {
+                    const kind = getOrderStatus(o.startTime)?.kind || 'scheduled'
+                    if (kind !== statusFilter) return false
+                }
                 if (productFilter !== 'all' && clean(o.productCode) !== productFilter) return false
                 if (bucket !== 'all' && timeBucket(o.startTime) !== bucket) return false
                 if (minYd > 0 && (parseFloat(o.yardage) || 0) < minYd) return false
@@ -954,7 +1124,7 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
                 return true
             })
             .sort((a, b) => compareOrders(a, b, sortKey))
-    }, [allOrders, bucket, classFilter, minYards, plantFilter, productFilter, query, sortKey])
+    }, [allOrders, bucket, statusFilter, minYards, plantFilter, productFilter, query, sortKey])
 
     /* ── KPI numbers — cancelled orders (start time 17:00) are kept in
        the table for transparency but excluded from yardage / truck totals. */
@@ -996,7 +1166,7 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
     const hasActiveFilters =
         query ||
         plantFilter !== 'all' ||
-        classFilter !== 'all' ||
+        statusFilter !== 'all' ||
         productFilter !== 'all' ||
         bucket !== 'all' ||
         (parseFloat(minYards) || 0) > 0
@@ -1004,7 +1174,7 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
     const clearAllFilters = () => {
         setQuery('')
         setPlantFilter('all')
-        setClassFilter('all')
+        setStatusFilter('all')
         setProductFilter('all')
         setBucket('all')
         setMinYards('')
@@ -1021,45 +1191,84 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
             .sort((a, b) => String(a.code).localeCompare(String(b.code)))
     }, [filtered])
 
+    const activeFilterCount =
+        (query ? 1 : 0) +
+        (plantFilter !== 'all' ? 1 : 0) +
+        (statusFilter !== 'all' ? 1 : 0) +
+        (productFilter !== 'all' ? 1 : 0) +
+        (bucket !== 'all' ? 1 : 0) +
+        ((parseFloat(minYards) || 0) > 0 ? 1 : 0)
+
     return (
         <div className="flex-1 overflow-y-auto">
-            <div className="w-full px-4 lg:px-6 py-5 flex flex-col gap-4">
+            <div className="w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-5 flex flex-col gap-3 sm:gap-4">
                 {/* Title row */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <div>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <div className="flex-1 min-w-0">
                         <div
-                            className="text-[22px] font-bold leading-tight"
+                            className="text-[18px] sm:text-[22px] font-bold leading-tight"
                             style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
                         >
                             Schedule
                         </div>
-                        <div className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                            Pulled from the Daily Order Listing import. Filter, sort, and scan every plant&apos;s orders
-                            on one page.
+                        <div className="text-[11.5px] sm:text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                            {isMobile
+                                ? `${filtered.length} of ${allOrders.length} orders`
+                                : "Pulled from the Daily Order Listing import. Filter, sort, and scan every plant's orders on one page."}
                         </div>
                     </div>
-                    <div className="flex-1" />
                     <div className="flex items-center gap-2">
-                        <div
-                            className="flex items-center rounded-lg p-0.5"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                        >
-                            {VIEW_MODES.map((m) => (
-                                <button
-                                    key={m}
-                                    type="button"
-                                    onClick={() => setViewMode(m)}
-                                    className="px-3 py-1.5 rounded-md text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
-                                    style={{
-                                        background: viewMode === m ? accentColor : 'transparent',
-                                        color: viewMode === m ? '#fff' : 'var(--text-secondary)'
-                                    }}
-                                >
-                                    <i className={`fas ${m === 'table' ? 'fa-table' : 'fa-grip'} text-[10px]`} />
-                                    {m === 'table' ? 'Table' : 'Cards'}
-                                </button>
-                            ))}
-                        </div>
+                        {!isMobile && (
+                            <div
+                                className="flex items-center rounded-lg p-0.5"
+                                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                            >
+                                {VIEW_MODES.map((m) => (
+                                    <button
+                                        key={m}
+                                        type="button"
+                                        onClick={() => setViewMode(m)}
+                                        className="px-3 py-1.5 rounded-md text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                        style={{
+                                            background: viewMode === m ? accentColor : 'transparent',
+                                            color: viewMode === m ? '#fff' : 'var(--text-secondary)'
+                                        }}
+                                    >
+                                        <i className={`fas ${m === 'table' ? 'fa-table' : 'fa-grip'} text-[10px]`} />
+                                        {m === 'table' ? 'Table' : 'Cards'}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {isMobile && hasAnyOrders && (
+                            <button
+                                type="button"
+                                onClick={() => setFiltersOpen((v) => !v)}
+                                className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                style={{
+                                    background:
+                                        filtersOpen || activeFilterCount > 0 ? accentColor : 'var(--bg-secondary)',
+                                    color: filtersOpen || activeFilterCount > 0 ? '#fff' : 'var(--text-secondary)'
+                                }}
+                            >
+                                <i className={`fas fa-filter text-[10px]`} />
+                                Filters
+                                {activeFilterCount > 0 && (
+                                    <span
+                                        className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
+                                        style={{
+                                            background: 'rgba(255,255,255,0.3)',
+                                            color: '#fff',
+                                            minWidth: 18,
+                                            height: 18,
+                                            padding: '0 5px'
+                                        }}
+                                    >
+                                        {activeFilterCount}
+                                    </span>
+                                )}
+                            </button>
+                        )}
                         {onSwitchToPlanner && (
                             <button
                                 type="button"
@@ -1095,8 +1304,16 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
                     </div>
                 ) : (
                     <>
-                        {/* KPI row */}
-                        <div className="flex flex-wrap gap-3">
+                        {/* KPI row — unified panel with vertical dividers between cells */}
+                        <div
+                            className="rounded-xl flex flex-wrap items-stretch divide-x"
+                            style={{
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-light)',
+                                boxShadow: 'var(--shadow-sm)',
+                                borderColor: 'var(--border-light)'
+                            }}
+                        >
                             <KpiCard
                                 accent={accentColor}
                                 icon="fa-clipboard-list"
@@ -1104,8 +1321,8 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
                                 value={filtered.length.toLocaleString()}
                                 hint={
                                     hasActiveFilters && filtered.length !== allOrders.length
-                                        ? `of ${allOrders.length} total`
-                                        : undefined
+                                        ? `of ${allOrders.length.toLocaleString()} total`
+                                        : `${allOrders.length.toLocaleString()} on the day`
                                 }
                             />
                             <KpiCard
@@ -1113,197 +1330,202 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
                                 icon="fa-industry"
                                 label="Plants"
                                 value={uniquePlants.toLocaleString()}
-                                hint={`${uniqueCustomers} customers`}
+                                hint={`${uniqueCustomers.toLocaleString()} customer${uniqueCustomers === 1 ? '' : 's'}`}
                             />
                             <KpiCard
                                 accent={accentColor}
                                 icon="fa-cubes"
                                 label="Yardage"
                                 value={totalYards.toLocaleString()}
+                                hint="yards · cancelled excluded"
                             />
                             <KpiCard
                                 accent={accentColor}
                                 icon="fa-truck"
-                                label="Trucks"
+                                label="Loads"
                                 value={totalTrucks.toLocaleString()}
+                                hint="truck loads scheduled"
                             />
                             <KpiCard
                                 accent={accentColor}
                                 icon="fa-clock"
                                 label="Window"
                                 value={earliestTime && latestTime ? `${earliestTime}–${latestTime}` : '—'}
+                                hint={earliestTime && latestTime ? 'first → last start' : undefined}
                             />
                         </div>
 
-                        {/* Time-bucket quick chips */}
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span
-                                className="text-[10px] font-bold uppercase tracking-wider mr-1"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
-                                Time
-                            </span>
-                            <Pill
-                                accent={accentColor}
-                                active={bucket === 'all'}
-                                icon="fa-border-all"
-                                onClick={() => setBucket('all')}
-                            >
-                                All · {allOrders.length}
-                            </Pill>
-                            {TIME_BUCKETS.map((b) => (
+                        {/* Time-bucket quick chips — collapsible on mobile */}
+                        {filtersOpen && (
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span
+                                    className="text-[10px] font-bold uppercase tracking-wider mr-1"
+                                    style={{ color: 'var(--text-tertiary)' }}
+                                >
+                                    Time
+                                </span>
                                 <Pill
-                                    key={b.key}
                                     accent={accentColor}
-                                    active={bucket === b.key}
-                                    icon={b.icon}
-                                    onClick={() => setBucket(b.key)}
+                                    active={bucket === 'all'}
+                                    icon="fa-border-all"
+                                    onClick={() => setBucket('all')}
                                 >
-                                    {b.label} · {bucketCounts[b.key] || 0}
+                                    All · {allOrders.length}
                                 </Pill>
-                            ))}
-                        </div>
+                                {TIME_BUCKETS.map((b) => (
+                                    <Pill
+                                        key={b.key}
+                                        accent={accentColor}
+                                        active={bucket === b.key}
+                                        icon={b.icon}
+                                        onClick={() => setBucket(b.key)}
+                                    >
+                                        {b.label} · {bucketCounts[b.key] || 0}
+                                    </Pill>
+                                ))}
+                            </div>
+                        )}
 
-                        {/* Filter bar */}
-                        <div
-                            className="rounded-xl p-3 grid gap-3"
-                            style={{
-                                background: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)',
-                                boxShadow: 'var(--shadow-sm)',
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))'
-                            }}
-                        >
-                            <FilterField label="Search">
-                                <div
-                                    className="flex items-center gap-2 rounded-md px-2.5 py-1.5"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
-                                    <i
-                                        className="fas fa-magnifying-glass text-[11px]"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={query}
-                                        onChange={(e) => setQuery(e.target.value)}
-                                        placeholder="Customer, address, PO…"
-                                        className="bg-transparent outline-none border-none text-[12.5px] w-full"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    />
-                                    {query && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setQuery('')}
-                                            className="border-none bg-transparent cursor-pointer"
+                        {/* Filter bar — collapsible on mobile */}
+                        {filtersOpen && (
+                            <div
+                                className="rounded-xl p-3 grid gap-3"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    border: '1px solid var(--border-light)',
+                                    boxShadow: 'var(--shadow-sm)',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))'
+                                }}
+                            >
+                                <FilterField label="Search">
+                                    <div
+                                        className="flex items-center gap-2 rounded-md px-2.5 py-1.5"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)'
+                                        }}
+                                    >
+                                        <i
+                                            className="fas fa-magnifying-glass text-[11px]"
                                             style={{ color: 'var(--text-tertiary)' }}
-                                        >
-                                            <i className="fas fa-times text-[10px]" />
-                                        </button>
-                                    )}
-                                </div>
-                            </FilterField>
+                                        />
+                                        <input
+                                            type="text"
+                                            value={query}
+                                            onChange={(e) => setQuery(e.target.value)}
+                                            placeholder="Customer, address, PO…"
+                                            className="bg-transparent outline-none border-none text-[12.5px] w-full"
+                                            style={{ color: 'var(--text-primary)' }}
+                                        />
+                                        {query && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setQuery('')}
+                                                className="border-none bg-transparent cursor-pointer"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
+                                                <i className="fas fa-times text-[10px]" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </FilterField>
 
-                            <FilterField label="Plant">
-                                <select
-                                    value={plantFilter}
-                                    onChange={(e) => setPlantFilter(e.target.value)}
-                                    className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-primary)'
-                                    }}
-                                >
-                                    <option value="all">All plants · {plantOptions.length}</option>
-                                    {plantOptions.map((code) => (
-                                        <option key={code} value={code}>
-                                            {code}
-                                            {plantNameByCode?.[code] ? ` · ${plantNameByCode[code]}` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </FilterField>
+                                <FilterField label="Plant">
+                                    <select
+                                        value={plantFilter}
+                                        onChange={(e) => setPlantFilter(e.target.value)}
+                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)',
+                                            color: 'var(--text-primary)'
+                                        }}
+                                    >
+                                        <option value="all">All plants · {plantOptions.length}</option>
+                                        {plantOptions.map((code) => (
+                                            <option key={code} value={code}>
+                                                {code}
+                                                {plantNameByCode?.[code] ? ` · ${plantNameByCode[code]}` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </FilterField>
 
-                            <FilterField label="Truck class">
-                                <select
-                                    value={classFilter}
-                                    onChange={(e) => setClassFilter(e.target.value)}
-                                    className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-primary)'
-                                    }}
-                                >
-                                    <option value="all">All classes · {classOptions.length}</option>
-                                    {classOptions.map((c) => (
-                                        <option key={c} value={c}>
-                                            {c}
-                                        </option>
-                                    ))}
-                                </select>
-                            </FilterField>
+                                <FilterField label="Status">
+                                    <select
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)',
+                                            color: 'var(--text-primary)'
+                                        }}
+                                    >
+                                        <option value="all">All · {statusCounts.all}</option>
+                                        <option value="scheduled">Scheduled · {statusCounts.scheduled}</option>
+                                        <option value="sameDay">Same-day · {statusCounts.sameDay}</option>
+                                        <option value="cancelled">Cancelled · {statusCounts.cancelled}</option>
+                                    </select>
+                                </FilterField>
 
-                            <FilterField label="Product">
-                                <select
-                                    value={productFilter}
-                                    onChange={(e) => setProductFilter(e.target.value)}
-                                    className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-primary)'
-                                    }}
-                                >
-                                    <option value="all">All products · {productOptions.length}</option>
-                                    {productOptions.map((p) => (
-                                        <option key={p} value={p}>
-                                            {p}
-                                        </option>
-                                    ))}
-                                </select>
-                            </FilterField>
+                                <FilterField label="Product">
+                                    <select
+                                        value={productFilter}
+                                        onChange={(e) => setProductFilter(e.target.value)}
+                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)',
+                                            color: 'var(--text-primary)'
+                                        }}
+                                    >
+                                        <option value="all">All products · {productOptions.length}</option>
+                                        {productOptions.map((p) => (
+                                            <option key={p} value={p}>
+                                                {p}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </FilterField>
 
-                            <FilterField label="Min yardage">
-                                <input
-                                    type="number"
-                                    value={minYards}
-                                    onChange={(e) => setMinYards(e.target.value)}
-                                    placeholder="Any"
-                                    min={0}
-                                    className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] font-mono"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-primary)'
-                                    }}
-                                />
-                            </FilterField>
+                                <FilterField label="Min yardage">
+                                    <input
+                                        type="number"
+                                        value={minYards}
+                                        onChange={(e) => setMinYards(e.target.value)}
+                                        placeholder="Any"
+                                        min={0}
+                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] font-mono"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)',
+                                            color: 'var(--text-primary)'
+                                        }}
+                                    />
+                                </FilterField>
 
-                            <FilterField label="Sort by">
-                                <select
-                                    value={sortKey}
-                                    onChange={(e) => setSortKey(e.target.value)}
-                                    className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-primary)'
-                                    }}
-                                >
-                                    {SORT_OPTIONS.map((o) => (
-                                        <option key={o.key} value={o.key}>
-                                            {o.label}
-                                            {o.desc ? ' (high → low)' : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </FilterField>
-                        </div>
+                                <FilterField label="Sort by">
+                                    <select
+                                        value={sortKey}
+                                        onChange={(e) => setSortKey(e.target.value)}
+                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)',
+                                            color: 'var(--text-primary)'
+                                        }}
+                                    >
+                                        {SORT_OPTIONS.map((o) => (
+                                            <option key={o.key} value={o.key}>
+                                                {o.label}
+                                                {o.desc ? ' (high → low)' : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </FilterField>
+                            </div>
+                        )}
 
                         {hasActiveFilters && (
                             <div className="flex items-center gap-2">
@@ -1336,7 +1558,7 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
                             >
                                 No orders match the current filters.
                             </div>
-                        ) : viewMode === 'table' ? (
+                        ) : viewMode === 'table' && !isMobile ? (
                             <ScheduleTable
                                 accentColor={accentColor}
                                 onOpenLocation={setMapOrder}
@@ -1347,15 +1569,23 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
                             <div className="flex flex-col gap-4">
                                 {groupedByPlant.map(({ code, orders }) => (
                                     <div key={code} className="flex flex-col gap-2">
-                                        <div
-                                            className="flex items-center gap-2 px-1 text-[13px]"
-                                            style={{ color: 'var(--text-secondary)' }}
-                                        >
-                                            <PlantBadge
-                                                code={code}
-                                                fallback={accentColor}
-                                                name={plantNameByCode?.[code]}
-                                            />
+                                        <div className="flex items-center gap-2 px-1 text-[13px]">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPlantFilter((prev) => (prev === code ? 'all' : code))}
+                                                className="border-none bg-transparent p-0 cursor-pointer"
+                                                title={
+                                                    plantFilter === code
+                                                        ? 'Tap to clear plant filter'
+                                                        : `Filter to plant ${code}`
+                                                }
+                                            >
+                                                <PlantBadge
+                                                    code={code}
+                                                    fallback={accentColor}
+                                                    name={plantNameByCode?.[code]}
+                                                />
+                                            </button>
                                             <span style={{ color: 'var(--text-tertiary)' }}>
                                                 {orders.length} order{orders.length === 1 ? '' : 's'} ·{' '}
                                                 {sumField(orders, 'yardage').toLocaleString()} yd
@@ -1366,6 +1596,16 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, 
                                                 <OrderCard
                                                     key={`${code}-${o.orderId || idx}`}
                                                     accentColor={accentColor}
+                                                    onOpenLocation={setMapOrder}
+                                                    onPickPlant={(c) =>
+                                                        setPlantFilter((prev) => (prev === c ? 'all' : c))
+                                                    }
+                                                    onPickProduct={(p) =>
+                                                        setProductFilter((prev) => (prev === p ? 'all' : p))
+                                                    }
+                                                    onPickStatus={(s) =>
+                                                        setStatusFilter((prev) => (prev === s ? 'all' : s))
+                                                    }
                                                     order={o}
                                                     plantCode={code}
                                                     plantName={plantNameByCode?.[code]}
