@@ -1,6 +1,324 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { timeToMinutes } from '../../../utils/PlanUtility'
+
+const composeAddress = (order) =>
+    [order?.address, order?.city]
+        .map((s) => (s == null ? '' : String(s).trim()))
+        .filter(Boolean)
+        .join(', ')
+
+/** Parse a `HH:MM` duration string (from the dispatch report) into minutes.
+ *  Returns null when the value is missing or unparseable. */
+const parseHhmmToMinutes = (value) => {
+    const v = String(value || '').trim()
+    const m = v.match(/^(\d{1,2}):(\d{2})$/)
+    if (!m) return null
+    const hours = parseInt(m[1], 10)
+    const mins = parseInt(m[2], 10)
+    if (!Number.isFinite(hours) || !Number.isFinite(mins)) return null
+    return hours * 60 + mins
+}
+
+/**
+ * Sentinel start times the dispatch system uses to mark special order states.
+ *  - `17:00` → order was cancelled
+ *  - `15:00` → same-day order
+ * Returns null for everything else.
+ */
+const ORDER_STATUS_BY_START = {
+    '17:00': { color: '#dc2626', icon: 'fa-ban', kind: 'cancelled', label: 'Cancelled' },
+    '15:00': { color: '#d97706', icon: 'fa-bolt', kind: 'sameDay', label: 'Same-day' }
+}
+const getOrderStatus = (startTime) => {
+    const v = String(startTime || '').trim()
+    if (!v) return null
+    return ORDER_STATUS_BY_START[v.padStart(5, '0')] || null
+}
+
+/**
+ * Detect garbage / placeholder addresses that the dispatcher needs to fix
+ * before the load can be sent (e.g. "GET NEW ADD....!", "GOING WHERE?",
+ * "TBD", "N/A"). Empty strings are treated as "missing", not "bad".
+ */
+const BAD_ADDRESS_TOKENS = [
+    'get address',
+    'get add',
+    'get new',
+    'going where',
+    'going to',
+    'where?',
+    'tbd',
+    'tba',
+    'n/a',
+    'n a',
+    'fix',
+    'fixme',
+    'unknown',
+    'no address',
+    'need address',
+    'need add',
+    'pending',
+    'placeholder',
+    'verify',
+    'update',
+    'address?',
+    '???',
+    'find address',
+    'no addr'
+]
+const isLikelyBadAddress = (raw) => {
+    const value = String(raw || '').trim()
+    if (!value) return false
+    const lower = value.toLowerCase()
+    if (/[?!]/.test(value)) return true
+    if (/\.{3,}/.test(value)) return true
+    if (BAD_ADDRESS_TOKENS.some((tok) => lower.includes(tok))) return true
+    // Real addresses almost always have a digit — anything ≥ 5 chars without one
+    // is suspicious (e.g. "GO WHERE", "FIND IT").
+    if (value.length < 5) return true
+    if (!/\d/.test(value) && value.length < 12) return true
+    return false
+}
+
+/* ── Map modal ──────────────────────────────────────────────────────────── */
+
+const formatMinutesToHm = (mins) => {
+    if (!Number.isFinite(mins) || mins <= 0) return null
+    const h = Math.floor(mins / 60)
+    const m = Math.round(mins % 60)
+    if (h === 0) return `${m} min`
+    if (m === 0) return `${h}h`
+    return `${h}h ${m}m`
+}
+
+function JobMapModal({ accentColor, onClose, order, plantAddress, plantCode, plantName, travelMinutes }) {
+    const jobAddress = composeAddress(order)
+    const hasJob = !!jobAddress
+    const hasPlant = !!plantAddress
+    const canRoute = hasJob && hasPlant
+    const jobQuery = encodeURIComponent(jobAddress || order?.customer || '')
+    const plantQuery = hasPlant ? encodeURIComponent(plantAddress) : null
+    // Round trip: plant -> job -> plant. Google Maps' query-string embed
+    // supports `saddr` + `daddr` with `+to:` waypoints and renders without an
+    // API key. When the plant address is missing, fall back to a single-point
+    // map of the job so the modal is still useful.
+    const mapSrc = canRoute
+        ? `https://www.google.com/maps?saddr=${plantQuery}&daddr=${jobQuery}+to:${plantQuery}&output=embed`
+        : `https://www.google.com/maps?q=${jobQuery}&t=&z=14&ie=UTF8&iwloc=&output=embed`
+    const externalUrl = canRoute
+        ? `https://www.google.com/maps/dir/?api=1&origin=${plantQuery}&destination=${plantQuery}&waypoints=${jobQuery}&travelmode=driving`
+        : `https://www.google.com/maps/search/?api=1&query=${jobQuery}`
+
+    useEffect(() => {
+        const onKey = (e) => {
+            if (e.key === 'Escape') onClose()
+        }
+        window.addEventListener('keydown', onKey)
+        const prev = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        return () => {
+            window.removeEventListener('keydown', onKey)
+            document.body.style.overflow = prev
+        }
+    }, [onClose])
+
+    const oneWayMinutes = Number.isFinite(travelMinutes) ? travelMinutes : null
+    const roundTripMinutes = oneWayMinutes != null ? oneWayMinutes * 2 : null
+    const oneWayLabel = formatMinutesToHm(oneWayMinutes)
+    const roundTripLabel = formatMinutesToHm(roundTripMinutes)
+
+    return (
+        <div
+            role="dialog"
+            aria-modal="true"
+            onClick={onClose}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.55)' }}
+        >
+            <div
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-2xl flex flex-col w-full overflow-hidden"
+                style={{
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-light)',
+                    boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.35))',
+                    maxHeight: '90vh',
+                    maxWidth: 1000
+                }}
+            >
+                <div
+                    className="flex items-start gap-3 px-5 py-3 border-b"
+                    style={{ borderColor: 'var(--border-light)' }}
+                >
+                    <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: `${accentColor}14`, color: accentColor }}
+                    >
+                        <i className="fas fa-route text-[14px]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div
+                            className="text-[15px] font-bold leading-tight"
+                            style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                        >
+                            {(order?.customer || 'Job location').toUpperCase()}
+                        </div>
+                        <div
+                            className="text-[12px] mt-0.5 uppercase tracking-wider"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            {jobAddress || 'Address not provided'}
+                        </div>
+                        {(order?.orderNum || plantCode) && (
+                            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                                {plantCode && (
+                                    <span>
+                                        Plant {plantCode}
+                                        {plantName ? ` · ${plantName}` : ''}
+                                    </span>
+                                )}
+                                {plantCode && order?.orderNum && <span> · </span>}
+                                {order?.orderNum && <span>Order #{order.orderNum}</span>}
+                            </div>
+                        )}
+                    </div>
+                    <a
+                        href={externalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1.5 rounded-lg text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                    >
+                        <i className="fas fa-arrow-up-right-from-square text-[10px]" />
+                        {canRoute ? 'Open route' : 'Open in Maps'}
+                    </a>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="w-8 h-8 rounded-lg border-none cursor-pointer flex items-center justify-center"
+                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                        aria-label="Close"
+                    >
+                        <i className="fas fa-times text-[12px]" />
+                    </button>
+                </div>
+
+                {/* Route summary strip — origin / destination / round-trip times */}
+                {hasJob && (
+                    <div
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-3 px-5 py-3 border-b"
+                        style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
+                    >
+                        <RoutePoint
+                            color={accentColor}
+                            icon="fa-industry"
+                            label={hasPlant ? `Plant ${plantCode || ''}` : 'Plant address missing'}
+                            primary={hasPlant ? plantAddress : 'Add an address in Plan Settings → Plant Addresses'}
+                            sub={!hasPlant ? 'Required to draw the route' : plantName || ''}
+                            warn={!hasPlant}
+                        />
+                        <div
+                            className="rounded-lg px-3 py-2 flex flex-col justify-center text-center"
+                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                        >
+                            <div
+                                className="text-[10px] font-bold uppercase tracking-wider"
+                                style={{ color: 'var(--text-tertiary)' }}
+                            >
+                                Travel time
+                            </div>
+                            <div
+                                className="font-bold text-[16px] leading-none mt-1"
+                                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                            >
+                                {oneWayLabel ? `${oneWayLabel} one-way` : '—'}
+                            </div>
+                            {roundTripLabel && (
+                                <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                                    Round trip ≈ {roundTripLabel}
+                                </div>
+                            )}
+                            {!oneWayLabel && (
+                                <div className="text-[10.5px] mt-0.5 italic" style={{ color: 'var(--text-tertiary)' }}>
+                                    Set a plant→plant time in Settings to seed this
+                                </div>
+                            )}
+                        </div>
+                        <RoutePoint
+                            color="#16a34a"
+                            icon="fa-flag-checkered"
+                            label="Job site"
+                            primary={jobAddress}
+                            sub={order?.customer || ''}
+                        />
+                    </div>
+                )}
+
+                <div className="relative" style={{ background: 'var(--bg-secondary)', minHeight: 360 }}>
+                    {hasJob ? (
+                        <iframe
+                            title={canRoute ? `Route to ${jobAddress}` : `Map of ${jobAddress}`}
+                            src={mapSrc}
+                            className="w-full"
+                            style={{ border: 0, height: '60vh', minHeight: 360 }}
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                            allowFullScreen
+                        />
+                    ) : (
+                        <div
+                            className="flex flex-col items-center justify-center text-center p-10"
+                            style={{ color: 'var(--text-tertiary)' }}
+                        >
+                            <i className="fas fa-map-location-dot text-3xl mb-2 opacity-60" />
+                            <div className="text-[13px]">No address on this order — nothing to map.</div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function RoutePoint({ color, icon, label, primary, sub, warn }) {
+    return (
+        <div
+            className="rounded-lg px-3 py-2 flex items-start gap-2.5 min-w-0"
+            style={{
+                background: 'var(--bg-primary)',
+                border: `1px solid ${warn ? '#fbbf24' : 'var(--border-light)'}`
+            }}
+        >
+            <div
+                className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                style={{ background: warn ? '#fef3c7' : `${color}14`, color: warn ? '#92400e' : color }}
+            >
+                <i className={`fas ${icon} text-[11px]`} />
+            </div>
+            <div className="flex-1 min-w-0">
+                <div
+                    className="text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    {label}
+                </div>
+                <div
+                    className="text-[12.5px] font-semibold leading-tight mt-0.5 truncate"
+                    style={{ color: warn ? '#92400e' : 'var(--text-primary)' }}
+                    title={primary}
+                >
+                    {primary || '—'}
+                </div>
+                {sub && (
+                    <div className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }} title={sub}>
+                        {sub}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
 
 const PLAN_META_KEY = '_meta'
 const VIEW_MODES = ['table', 'cards']
@@ -139,30 +457,50 @@ function OrderCard({ accentColor, order, plantCode, plantName }) {
     const trucks = parseFloat(order.truckCount) || 0
     const loadSize = parseFloat(order.loadSize) || 0
     const start = formatHhmm(order.startTime)
+    const status = getOrderStatus(order.startTime)
+    const isCancelled = status?.kind === 'cancelled'
     return (
         <div
             className="rounded-xl p-3 flex flex-col gap-2"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+            style={{
+                background: isCancelled ? 'rgba(220, 38, 38, 0.05)' : 'var(--bg-primary)',
+                border: `1px solid ${isCancelled ? 'rgba(220, 38, 38, 0.35)' : 'var(--border-light)'}`,
+                opacity: isCancelled ? 0.78 : 1
+            }}
         >
             <div className="flex items-start gap-3">
                 <div
                     className="rounded-lg px-3 py-2 text-center shrink-0"
-                    style={{ background: `${accentColor}14`, color: accentColor, minWidth: 72 }}
+                    style={{
+                        background: status ? `${status.color}14` : `${accentColor}14`,
+                        color: status ? status.color : accentColor,
+                        minWidth: 72
+                    }}
                 >
                     <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">Start</div>
                     <div
                         className="font-bold text-[18px] leading-none font-mono"
-                        style={{ fontFamily: 'var(--font-heading)' }}
+                        style={{
+                            fontFamily: 'var(--font-heading)',
+                            textDecoration: isCancelled ? 'line-through' : 'none'
+                        }}
                     >
                         {start || '—'}
                     </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div
-                        className="text-[15px] font-bold leading-tight"
-                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                    >
-                        {clean(order.customer) || 'Unknown customer'}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div
+                            className="text-[15px] font-bold leading-tight"
+                            style={{
+                                color: 'var(--text-primary)',
+                                fontFamily: 'var(--font-heading)',
+                                textDecoration: isCancelled ? 'line-through' : 'none'
+                            }}
+                        >
+                            {clean(order.customer) || 'Unknown customer'}
+                        </div>
+                        {status && <OrderStatusBadge status={status} />}
                     </div>
                     <div
                         className="text-[11.5px] flex flex-wrap items-center gap-x-2"
@@ -231,6 +569,20 @@ function OrderCard({ accentColor, order, plantCode, plantName }) {
                 {order.phone && <KeyValue label="Phone" value={clean(order.phone)} />}
             </div>
         </div>
+    )
+}
+
+function OrderStatusBadge({ status }) {
+    if (!status) return null
+    return (
+        <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
+            style={{ background: status.color, color: '#fff' }}
+            title={`Start time sentinel — order is ${status.label.toLowerCase()}`}
+        >
+            <i className={`fas ${status.icon} text-[8px]`} />
+            {status.label}
+        </span>
     )
 }
 
@@ -319,7 +671,7 @@ const compareOrders = (a, b, sortKey) => {
     return cmp || compareByPlant(a, b) || compareByStartTime(a, b)
 }
 
-function ScheduleTable({ accentColor, orders, plantNameByCode }) {
+function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode }) {
     return (
         <div
             className="rounded-xl overflow-auto"
@@ -364,14 +716,23 @@ function ScheduleTable({ accentColor, orders, plantNameByCode }) {
                         const trucks = parseFloat(o.truckCount) || 0
                         const loadSize = parseFloat(o.loadSize) || 0
                         const plantName = plantNameByCode?.[o.plantCode] || ''
+                        const status = getOrderStatus(o.startTime)
+                        const isCancelled = status?.kind === 'cancelled'
                         return (
                             <tr
                                 key={`${o.plantCode}-${o.orderId || idx}`}
-                                style={{ borderTop: '1px solid var(--border-light)' }}
+                                style={{
+                                    borderTop: '1px solid var(--border-light)',
+                                    background: isCancelled ? 'rgba(220, 38, 38, 0.05)' : undefined,
+                                    opacity: isCancelled ? 0.7 : 1
+                                }}
                             >
                                 <td
                                     className="px-3 py-2 font-mono font-bold whitespace-nowrap"
-                                    style={{ color: accentColor }}
+                                    style={{
+                                        color: isCancelled ? 'var(--text-tertiary)' : accentColor,
+                                        textDecoration: isCancelled ? 'line-through' : 'none'
+                                    }}
                                 >
                                     {formatHhmm(o.startTime) || '—'}
                                 </td>
@@ -385,18 +746,54 @@ function ScheduleTable({ accentColor, orders, plantNameByCode }) {
                                     {o.orderNum ? `#${o.orderNum}` : '—'}
                                 </td>
                                 <td
-                                    className="px-3 py-2 font-semibold max-w-[240px] truncate"
+                                    className="px-3 py-2 max-w-[260px]"
                                     style={{ color: 'var(--text-primary)' }}
                                     title={clean(o.customer)}
                                 >
-                                    {clean(o.customer) || '—'}
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <span
+                                            className="font-semibold truncate"
+                                            style={{
+                                                textDecoration: isCancelled ? 'line-through' : 'none'
+                                            }}
+                                        >
+                                            {clean(o.customer) || '—'}
+                                        </span>
+                                        {status && <OrderStatusBadge status={status} />}
+                                    </div>
                                 </td>
-                                <td
-                                    className="px-3 py-2 max-w-[240px] truncate"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                    title={[clean(o.address), clean(o.city)].filter(Boolean).join(' · ')}
-                                >
-                                    {[clean(o.address), clean(o.city)].filter(Boolean).join(' · ') || '—'}
+                                <td className="px-3 py-2 max-w-[280px]">
+                                    {(() => {
+                                        const address = clean(o.address)
+                                        const city = clean(o.city)
+                                        if (!address && !city) {
+                                            return <span style={{ color: 'var(--text-tertiary)' }}>—</span>
+                                        }
+                                        if (isLikelyBadAddress(address)) {
+                                            return (
+                                                <span
+                                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider whitespace-nowrap"
+                                                    style={{ background: '#dc2626', color: '#fff' }}
+                                                    title={`Address looks invalid — original value: "${address}"${city ? ` · City: ${city}` : ''}`}
+                                                >
+                                                    <i className="fas fa-triangle-exclamation text-[9px]" />
+                                                    Bad Address
+                                                </span>
+                                            )
+                                        }
+                                        return (
+                                            <button
+                                                type="button"
+                                                onClick={() => onOpenLocation?.(o)}
+                                                className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate max-w-full uppercase tracking-wide font-semibold"
+                                                style={{ color: accentColor, fontSize: 12 }}
+                                                title={`Open map for ${composeAddress(o)}`}
+                                            >
+                                                <i className="fas fa-location-dot text-[10px] mr-1.5 opacity-70" />
+                                                {composeAddress(o).toUpperCase()}
+                                            </button>
+                                        )
+                                    })()}
                                 </td>
                                 <td
                                     className="px-3 py-2 whitespace-nowrap"
@@ -479,7 +876,7 @@ function ScheduleTable({ accentColor, orders, plantNameByCode }) {
  * narrow by plant, customer, product, time bucket, truck class, minimum
  * yardage, and a free-text search across customer/address/PO.
  */
-function PlanScheduleView({ accentColor, onSwitchToPlanner, plantNameByCode, plantProduction }) {
+function PlanScheduleView({ accentColor, onSwitchToPlanner, plantAddressByCode, plantNameByCode, plantProduction }) {
     const [query, setQuery] = useState('')
     const [plantFilter, setPlantFilter] = useState('all')
     const [classFilter, setClassFilter] = useState('all')
@@ -488,6 +885,7 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantNameByCode, pla
     const [minYards, setMinYards] = useState('')
     const [sortKey, setSortKey] = useState('plantThenTime')
     const [viewMode, setViewMode] = useState('table')
+    const [mapOrder, setMapOrder] = useState(null)
 
     /** Flat list of every order with plantCode attached. */
     const allOrders = useMemo(() => {
@@ -558,9 +956,14 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantNameByCode, pla
             .sort((a, b) => compareOrders(a, b, sortKey))
     }, [allOrders, bucket, classFilter, minYards, plantFilter, productFilter, query, sortKey])
 
-    /* ── KPI numbers ──────────────────────────────────────────────── */
-    const totalYards = sumField(filtered, 'yardage')
-    const totalTrucks = sumField(filtered, 'truckCount')
+    /* ── KPI numbers — cancelled orders (start time 17:00) are kept in
+       the table for transparency but excluded from yardage / truck totals. */
+    const liveOrders = useMemo(
+        () => filtered.filter((o) => getOrderStatus(o.startTime)?.kind !== 'cancelled'),
+        [filtered]
+    )
+    const totalYards = sumField(liveOrders, 'yardage')
+    const totalTrucks = sumField(liveOrders, 'truckCount')
     const uniquePlants = new Set(filtered.map((o) => o.plantCode)).size
     const uniqueCustomers = new Set(filtered.map((o) => (clean(o.customer) || '').toLowerCase()).filter(Boolean)).size
     const earliest = filtered
@@ -936,6 +1339,7 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantNameByCode, pla
                         ) : viewMode === 'table' ? (
                             <ScheduleTable
                                 accentColor={accentColor}
+                                onOpenLocation={setMapOrder}
                                 orders={filtered}
                                 plantNameByCode={plantNameByCode}
                             />
@@ -975,6 +1379,17 @@ function PlanScheduleView({ accentColor, onSwitchToPlanner, plantNameByCode, pla
                     </>
                 )}
             </div>
+            {mapOrder && (
+                <JobMapModal
+                    accentColor={accentColor}
+                    onClose={() => setMapOrder(null)}
+                    order={mapOrder}
+                    plantAddress={plantAddressByCode?.[mapOrder?.plantCode] || ''}
+                    plantCode={mapOrder?.plantCode}
+                    plantName={plantNameByCode?.[mapOrder?.plantCode] || ''}
+                    travelMinutes={parseHhmmToMinutes(mapOrder?.toJobTime)}
+                />
+            )}
         </div>
     )
 }

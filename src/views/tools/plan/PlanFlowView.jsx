@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createEmptyAssignment, MAX_YPH, minutesToTime, TARGET_YPH, timeToMinutes } from '../../../utils/PlanUtility'
 
 const NEEDS_HELP_COLOR = '#dc2626'
+const LEAVE_OFF_COLOR = '#d97706'
 
 const NODE_RADIUS_MIN = 48
 const NODE_RADIUS_MAX = 110
@@ -291,6 +292,32 @@ function PlanFlowView({
                 firstMins !== null && lastMins !== null && lastMins > firstMins ? (lastMins - firstMins) / 60 : null
             const yardage = parseFloat(prod.totalYardage) || 0
             out[s.code] = hours && yardage && s.eff > 0 ? Math.round((yardage / (hours * s.eff)) * 10) / 10 : null
+        })
+        return out
+    }, [stats, plantProduction])
+
+    /** How many drivers a plant could safely leave off based on actual yardage
+     *  vs. TARGET_YPH, plus what the YPH would become after they're left off.
+     *  `count: 0` means there's no slack — keep everyone. */
+    const leaveOffByCode = useMemo(() => {
+        const out = {}
+        stats.forEach((s) => {
+            const prod = plantProduction[s.code] || {}
+            const firstMins = timeToMinutes(prod.firstJobTime)
+            const lastMins = timeToMinutes(prod.lastJobTime)
+            const hours =
+                firstMins !== null && lastMins !== null && lastMins > firstMins ? (lastMins - firstMins) / 60 : null
+            const yardage = parseFloat(prod.totalYardage) || 0
+            if (!hours || yardage <= 0 || s.eff <= 1) {
+                out[s.code] = { adjustedYph: null, count: 0 }
+                return
+            }
+            const needed = Math.ceil(yardage / (TARGET_YPH * hours))
+            const slack = Math.max(0, s.eff - Math.max(1, needed))
+            const remaining = s.eff - slack
+            const adjustedYph =
+                slack > 0 && remaining > 0 ? Math.round((yardage / (hours * remaining)) * 10) / 10 : null
+            out[s.code] = { adjustedYph, count: slack }
         })
         return out
     }, [stats, plantProduction])
@@ -656,6 +683,12 @@ function PlanFlowView({
                                 const yph = yphByCode[s.code]
                                 const ringColor = yphColorFor(yph, accentColor)
                                 const needsHelp = yph != null && yph > MAX_YPH
+                                const leaveOffInfo = !needsHelp
+                                    ? leaveOffByCode[s.code] || { adjustedYph: null, count: 0 }
+                                    : { adjustedYph: null, count: 0 }
+                                const leaveOff = leaveOffInfo.count
+                                const adjustedYph = leaveOffInfo.adjustedYph
+                                const hasLeaveOff = leaveOff > 0
                                 const r = radiusByCode[s.code] || NODE_RADIUS_MIN
                                 const codeFontSize = Math.round(Math.max(18, Math.min(34, r * 0.38)))
                                 const isDestinationCandidate = pickingDestination && draft && s.code !== draft.fromPlant
@@ -665,7 +698,9 @@ function PlanFlowView({
                                       ? '0 0 0 3px #f59e0b, var(--shadow)'
                                       : needsHelp
                                         ? `0 0 0 2px ${NEEDS_HELP_COLOR}44, var(--shadow)`
-                                        : 'var(--shadow)'
+                                        : hasLeaveOff
+                                          ? `0 0 0 2px ${LEAVE_OFF_COLOR}44, var(--shadow)`
+                                          : 'var(--shadow)'
                                 return (
                                     <button
                                         key={s.code}
@@ -684,7 +719,9 @@ function PlanFlowView({
                                         title={
                                             needsHelp
                                                 ? `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'} · NEEDS HELP (YPH ${yph} > ${MAX_YPH})`
-                                                : `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'}`
+                                                : hasLeaveOff
+                                                  ? `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'} · low YPH ${yph} — leave off ${leaveOff} driver${leaveOff === 1 ? '' : 's'}${adjustedYph != null ? ` → adjusted YPH ${adjustedYph.toFixed(1)}` : ''}`
+                                                  : `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'}`
                                         }
                                     >
                                         <span
@@ -722,6 +759,28 @@ function PlanFlowView({
                                             >
                                                 <i className="fas fa-triangle-exclamation text-[8px]" />
                                                 Needs Help
+                                            </span>
+                                        )}
+                                        {hasLeaveOff && (
+                                            <span
+                                                className="absolute flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider text-white whitespace-nowrap"
+                                                style={{
+                                                    background: LEAVE_OFF_COLOR,
+                                                    bottom: -9,
+                                                    boxShadow: `0 0 0 2px var(--bg-secondary), 0 2px 6px ${LEAVE_OFF_COLOR}55`,
+                                                    left: '50%',
+                                                    transform: 'translateX(-50%)',
+                                                    zIndex: 2
+                                                }}
+                                                title={`YPH ${yph} below target ${TARGET_YPH} — leave off ${leaveOff} driver${leaveOff === 1 ? '' : 's'}${adjustedYph != null ? ` to bring YPH to ${adjustedYph.toFixed(1)}` : ''}`}
+                                            >
+                                                <i className="fas fa-user-minus text-[8px]" />
+                                                Leave off {leaveOff}
+                                                {adjustedYph != null && (
+                                                    <span className="opacity-90 normal-case font-semibold">
+                                                        → {adjustedYph.toFixed(1)} yph
+                                                    </span>
+                                                )}
                                             </span>
                                         )}
                                         <div className="flex flex-col items-center justify-center h-full gap-0.5">

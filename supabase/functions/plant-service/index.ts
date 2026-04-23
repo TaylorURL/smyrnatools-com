@@ -101,9 +101,10 @@ Deno.serve(async (req) => {
                 const body = await parseBody(req);
                 const plantCode = trimString(body?.plantCode);
                 const plantName = trimString(body?.plantName);
+                const plantAddress = body?.plantAddress != null ? trimString(body.plantAddress) || null : null;
                 if (!plantCode || !plantName) return errorResponse("Plant code and name are required", headers, 400);
                 const now = nowISO();
-                const {error} = await supabase.from(PLANTS_TABLE).insert({plant_code: plantCode, plant_name: plantName, created_at: now, updated_at: now});
+                const {error} = await supabase.from(PLANTS_TABLE).insert({plant_code: plantCode, plant_name: plantName, plant_address: plantAddress, created_at: now, updated_at: now});
                 if (error) return errorResponse("Operation failed", headers, 400);
                 return jsonResponse({success: true}, headers);
             }
@@ -113,7 +114,22 @@ Deno.serve(async (req) => {
                 const plantCode = trimString(body?.plantCode);
                 const plantName = trimString(body?.plantName);
                 if (!plantCode || !plantName) return errorResponse("Plant code and name are required", headers, 400);
-                const {error} = await supabase.from(PLANTS_TABLE).update({plant_name: plantName, updated_at: nowISO()}).eq("plant_code", plantCode);
+                const updateFields: Record<string, unknown> = {plant_name: plantName, updated_at: nowISO()};
+                if (body?.plantAddress !== undefined) {
+                    const address = trimString(body.plantAddress);
+                    updateFields.plant_address = address.length > 0 ? address : null;
+                }
+                const {error} = await supabase.from(PLANTS_TABLE).update(updateFields).eq("plant_code", plantCode);
+                if (error) return errorResponse("Operation failed", headers, 400);
+                return jsonResponse({success: true}, headers);
+            }
+            case "update-address": {
+                const auth = await requireAuthenticated(supabase, req, headers); if (auth instanceof Response) return auth;
+                const body = await parseBody(req);
+                const plantCode = trimString(body?.plantCode);
+                if (!plantCode) return errorResponse("Plant code is required", headers, 400);
+                const address = body?.plantAddress != null ? trimString(body.plantAddress) : "";
+                const {error} = await supabase.from(PLANTS_TABLE).update({plant_address: address.length > 0 ? address : null, updated_at: nowISO()}).eq("plant_code", plantCode);
                 if (error) return errorResponse("Operation failed", headers, 400);
                 return jsonResponse({success: true}, headers);
             }

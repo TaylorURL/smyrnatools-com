@@ -1,6 +1,7 @@
 import { Plant } from '../app/models/plants/Plant'
 import Region from '../app/models/regions/Region'
 import APIUtility from '../utils/APIUtility'
+import CacheUtility from '../utils/CacheUtility'
 import { UserService } from './UserService'
 const SERVICE_PREFIX = 'plant-service'
 /**
@@ -56,6 +57,20 @@ class PlantServiceImpl {
         if (!plantCode?.trim() || !plantName?.trim()) throw new Error('Plant code and name are required')
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/update`, { plantCode, plantName })
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update plant')
+        await this.fetchAllPlants()
+        return true
+    }
+    /** Updates only the plant's street address — used by the Plan settings modal.
+     *  Busts the shared `plants:all` cache so the next render picks up the new
+     *  address without waiting for the 10-min TTL. */
+    async updatePlantAddress(plantCode, plantAddress) {
+        if (!plantCode?.trim()) throw new Error('Plant code is required')
+        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/update-address`, {
+            plantAddress: plantAddress || '',
+            plantCode
+        })
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update plant address')
+        CacheUtility.delete('plants:all')
         await this.fetchAllPlants()
         return true
     }

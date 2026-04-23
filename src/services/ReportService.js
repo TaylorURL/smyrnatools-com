@@ -292,7 +292,7 @@ class ReportServiceImpl {
         const cached = CacheUtility.get(cacheKey)
         if (cached) return cached
         const { data, error } = await Database.from('plants')
-            .select('plant_code,plant_name')
+            .select('plant_code,plant_name,plant_address')
             .order('plant_code', { ascending: true })
         const plants = !error && Array.isArray(data) ? sortPlants(data) : []
         CacheUtility.set(cacheKey, plants, TTL_MED)

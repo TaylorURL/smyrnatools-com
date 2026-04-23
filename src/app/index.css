@@ -72,6 +72,46 @@ select:disabled {
     }
 }
 
+/* Plan view "OVERBOOKED" pill — quiet attention without losing readability.
+   The pill itself sits still and stays fully opaque so the reason text is
+   always crisp; a soft red glow ripples around it on a slow loop, and the
+   warning icon does a gentle wobble to draw the eye. */
+@keyframes plan-overbook-glow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+    }
+}
+@keyframes plan-overbook-wobble {
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+    25% {
+        transform: rotate(-7deg);
+    }
+    75% {
+        transform: rotate(7deg);
+    }
+}
+.plan-overbook-pill {
+    animation: plan-overbook-glow 2.4s ease-in-out infinite;
+}
+.plan-overbook-icon {
+    display: inline-block;
+    transform-origin: center;
+    animation: plan-overbook-wobble 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .plan-overbook-pill,
+    .plan-overbook-icon {
+        animation: none;
+    }
+}
+
 * {
     box-sizing: border-box;
 }

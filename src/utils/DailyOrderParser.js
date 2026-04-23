@@ -7,9 +7,12 @@
  * plant section we read each field at its known (left, top) offset.
  */
 
-/** A plant header is a single-entry `<code> - <n>` row anchored to end of line.
- *  The `[^,]+$` clause rejects the TOC row that comma-separates every plant. */
-const PLANT_HEADER_RE = /^(\d{3,6})\s*-\s*(.+)$/
+/** A plant header is a single-entry `<code> - <name>` row anchored to end of line.
+ *  The `[^,]+$` clause (enforced separately) rejects the TOC row that comma-
+ *  separates every plant. The name part MUST contain at least one letter — this
+ *  rejects bogus matches like `26307-11535` or `26015-042126` (purely numeric
+ *  customer reference lines that would otherwise look like plant headers). */
+const PLANT_HEADER_RE = /^(\d{3,6})\s*-\s*(.*[A-Za-z].*)$/
 
 /** Loose name key used to match HTML plant names (e.g. "LONGHORN HOUSTON")
  *  against DB plant names (e.g. "Longhorn") when the numeric codes differ. */
@@ -187,7 +190,13 @@ export function parseDailyOrderHtml(htmlString, plants = []) {
             const topMatch = inner.match(/top:\s*([\d.]+)/)
             const rowTop = topMatch ? parseFloat(topMatch[1]) : null
             if (rowTop == null) continue
-            const page = a.closest('.frpage0') || doc
+            // Pages are class-named `.frpage0`, `.frpage1`, … through however
+            // many the report spans. Climb to whichever page wraps this link
+            // so per-page (left, top) lookups stay scoped — without this every
+            // page-2+ order would fall through to the document and read the
+            // first matching cell from page 1, swapping customer/address into
+            // the wrong order.
+            const page = a.closest('[class^="frpage"], [class*=" frpage"]') || doc
             const pageDivs = parsePositionedDivs(page)
             const orderId = (a.getAttribute('href') || '').match(/\/orders\/concrete\/(\d+)/)?.[1] || ''
             const orderNum = innerDiv?.textContent.trim() || ''
@@ -312,12 +321,21 @@ export function parseDailyOrderHtml(htmlString, plants = []) {
             if (maxVal > 0) totalYardage = String(maxVal)
         }
 
+        // The HTML's "Plant Total" includes cancelled orders (start time
+        // 17:00 sentinel). When per-order data is available we recompute the
+        // total from live orders only so YPH, dashboard yardage, and region
+        // overbook checks all reflect what's actually being delivered.
+        const liveOrderYardage = orders
+            .filter((o) => String(o.startTime || '').padStart(5, '0') !== '17:00')
+            .reduce((sum, o) => sum + (parseFloat(o.yardage) || 0), 0)
+        const effectiveYardage =
+            liveOrderYardage > 0 || orders.length > 0 ? liveOrderYardage : parseFloat(totalYardage) || 0
         const sorted = [...startTimes].sort()
         production[code] = {
             firstJobTime: sorted[0] || '',
             lastJobTime: sorted[sorted.length - 1] || '',
             orders,
-            totalYardage
+            totalYardage: effectiveYardage > 0 ? String(effectiveYardage) : totalYardage
         }
     })
 

@@ -235,10 +235,15 @@ export function usePlanData(planDate) {
         }, [])
     })
 
-    // Pull the daily schedule from the bucket every 5 min. Replaces the old
-    // manual "Import Production" upload — dispatcher's workstation auto-uploads
-    // today + 7 days of schedule HTML so production data is always current.
-    useScheduleSync({
+    // Pull the daily schedule from the bucket every 5 min, plus realtime when
+    // a fresh upload lands. Replaces the old manual "Import Production" upload
+    // — dispatcher's workstation auto-uploads today + 7 days of schedule HTML
+    // so production data is always current.
+    const {
+        isSyncing: isSchedulesSyncing,
+        lastSyncedAt: scheduleLastSyncedAt,
+        refresh: refreshSchedule
+    } = useScheduleSync({
         planDate,
         plants,
         setPlantProduction,
@@ -253,12 +258,15 @@ export function usePlanData(planDate) {
         dirtyRef,
         getTravelTime,
         isLoading,
+        isSchedulesSyncing,
         mixerCountsByPlant,
         notes,
         plantProduction,
         plants,
+        refreshSchedule,
         refreshTravelTimes,
         regionPlants,
+        scheduleLastSyncedAt,
         setAssignments,
         setNotes,
         setPlantProduction,

@@ -8,6 +8,19 @@ export const OVERTIME_THRESHOLD_HOURS = 12
 export const GAP_THRESHOLD_MINUTES = 30
 export const TARGET_YPH = 3 // minimum yards/hr/op target
 export const MAX_YPH = 5 // above this, operators can't keep up
+
+/** Sentinel start times the dispatch HTML uses to flag special order states.
+ *  17:00 means the order was cancelled — we keep showing it for transparency
+ *  but exclude it from yardage / truck / KPI totals. */
+export const CANCELLED_ORDER_START = '17:00'
+export const SAME_DAY_ORDER_START = '15:00'
+
+/** True if an order's start time matches the cancellation sentinel. */
+export const isCancelledOrder = (order) => {
+    const t = String(order?.startTime || '').trim()
+    if (!t) return false
+    return t.padStart(5, '0') === CANCELLED_ORDER_START
+}
 export const DROPDOWN_ARROW_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`
 
 export const TIMELINE_START_HOUR = 0

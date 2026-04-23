@@ -9,7 +9,15 @@ import { usePlanInsights } from '../../../app/hooks/usePlanInsights'
 import { PlanService } from '../../../services/PlanService'
 import { UserService } from '../../../services/UserService'
 import { buildYourPlantScope } from '../../../utils/DistrictUtility'
-import { getOffsetDate, getTomorrowDate, OVERTIME_THRESHOLD_HOURS } from '../../../utils/PlanUtility'
+import {
+    getOffsetDate,
+    getTomorrowDate,
+    isCancelledOrder,
+    MAX_YPH,
+    OVERTIME_THRESHOLD_HOURS,
+    TARGET_YPH,
+    timeToMinutes
+} from '../../../utils/PlanUtility'
 import PlanDashboardView from './PlanDashboardView'
 import PlanFlowView from './PlanFlowView'
 import PlanPlantCard from './PlanPlantCard'
@@ -46,12 +54,15 @@ function PlanView() {
         dirtyRef,
         getTravelTime,
         isLoading,
+        isSchedulesSyncing,
         mixerCountsByPlant,
         notes,
         plantProduction,
         plants,
+        refreshSchedule,
         refreshTravelTimes,
         regionPlants,
+        scheduleLastSyncedAt,
         setAssignments,
         setNotes,
         setPlantProduction,
@@ -97,6 +108,15 @@ function PlanView() {
         const out = {}
         ;(plants || []).forEach((p) => {
             if (p?.plant_code) out[p.plant_code] = p.plant_name || null
+        })
+        return out
+    }, [plants])
+
+    /** Plant code → street address lookup for the schedule's route map. */
+    const plantAddressByCode = useMemo(() => {
+        const out = {}
+        ;(plants || []).forEach((p) => {
+            if (p?.plant_code && p.plant_address) out[p.plant_code] = p.plant_address
         })
         return out
     }, [plants])
@@ -151,6 +171,63 @@ function PlanView() {
     // (see useScheduleSync inside usePlanData). Users can edit whenever they
     // have permission — no more manual production-import gate.
     const canEditPlan = canEdit
+
+    /** Region-wide totals shown in the overbook bar above the plant strip.
+     *  Overbooking is judged ONLY on aggregate capacity — i.e. "even if we
+     *  perfectly redistribute operators and trucks across plants, can we
+     *  finish today's work without blowing past good KPIs?":
+     *   1. Combined YPH > MAX_YPH — total yardage outpaces total operator-hours
+     *   2. Loads-per-truck > target — total scheduled loads outpace the fleet
+     *  Per-plant overloads are handled visually on the Planner nodes and
+     *  intentionally do NOT trip this region-level alarm. Shift span is
+     *  informational only. */
+    const LOADS_PER_TRUCK_TARGET = 5
+    const regionTotals = useMemo(() => {
+        let totalYardage = 0
+        let totalOperatorHours = 0
+        let trucksAvailable = 0
+        let trucksScheduled = 0
+        let plantsWithProduction = 0
+        ;(stats || []).forEach((s) => {
+            const prod = plantProduction?.[s.code] || {}
+            const orders = Array.isArray(prod.orders) ? prod.orders : []
+            const liveOrders = orders.filter((o) => !isCancelledOrder(o))
+            // Prefer summing per-order yardage so cancelled orders (start time
+            // 17:00 sentinel) are excluded; fall back to the plant-level total
+            // only when no order-level data exists yet.
+            const orderYardage = liveOrders.reduce((sum, o) => sum + (parseFloat(o.yardage) || 0), 0)
+            const yardage = orderYardage > 0 || orders.length > 0 ? orderYardage : parseFloat(prod.totalYardage) || 0
+            const firstMins = timeToMinutes(prod.firstJobTime)
+            const lastMins = timeToMinutes(prod.lastJobTime)
+            const hours =
+                firstMins != null && lastMins != null && lastMins > firstMins ? (lastMins - firstMins) / 60 : 0
+            totalYardage += yardage
+            totalOperatorHours += (s.eff || 0) * hours
+            trucksAvailable += s.eff || 0
+            if (yardage > 0) plantsWithProduction += 1
+            for (const o of liveOrders) trucksScheduled += parseFloat(o?.truckCount) || 0
+        })
+        const combinedYph = totalOperatorHours > 0 ? Math.round((totalYardage / totalOperatorHours) * 10) / 10 : null
+        const loadsPerTruck =
+            trucksAvailable > 0 && trucksScheduled > 0
+                ? Math.round((trucksScheduled / trucksAvailable) * 10) / 10
+                : null
+        const overbookedByYph = combinedYph != null && combinedYph > MAX_YPH
+        const overbookedByTrucks = loadsPerTruck != null && loadsPerTruck > LOADS_PER_TRUCK_TARGET
+        return {
+            combinedYph,
+            isOverbooked: overbookedByYph || overbookedByTrucks,
+            loadsPerTruck,
+            loadsPerTruckTarget: LOADS_PER_TRUCK_TARGET,
+            overbookedByTrucks,
+            overbookedByYph,
+            plantsWithProduction,
+            totalOperatorHours: Math.round(totalOperatorHours * 10) / 10,
+            totalYardage,
+            trucksAvailable,
+            trucksScheduled
+        }
+    }, [stats, plantProduction])
 
     // Role-aware scope: Plant Managers see their plant, District Managers see
     // every plant in their district, General Managers see the whole region.
@@ -250,6 +327,20 @@ function PlanView() {
                 <div className="flex-1" />
                 {/* Action buttons — compact */}
                 <div className="flex items-center gap-1.5">
+                    <button
+                        onClick={() => refreshSchedule?.()}
+                        disabled={isSchedulesSyncing}
+                        className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-60"
+                        style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                        title={
+                            scheduleLastSyncedAt
+                                ? `Pull the latest schedule from the dispatch bucket\nLast synced ${scheduleLastSyncedAt.toLocaleTimeString()}`
+                                : 'Pull the latest schedule from the dispatch bucket'
+                        }
+                    >
+                        <i className={`fas fa-rotate ${isSchedulesSyncing ? 'fa-spin' : ''}`} />
+                        {!isMobile && <span>{isSchedulesSyncing ? 'Syncing…' : 'Refresh'}</span>}
+                    </button>
                     <button
                         onClick={copyToClipboard}
                         className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
@@ -358,6 +449,15 @@ function PlanView() {
                                 onClose={() => setShowSettings(false)}
                             />
                         )}
+
+                        {/* Region totals — combined yardage, trucks have / need,
+                            and combined YPH so dispatch can see at a glance whether
+                            today is overbooked across the whole region. */}
+                        <RegionTotalsBar
+                            accentColor={accentColor}
+                            shiftSpanHours={shiftSpanHours}
+                            totals={regionTotals}
+                        />
 
                         {/* Plant Strip — horizontal cards, visible in all modes */}
                         <div
@@ -484,6 +584,7 @@ function PlanView() {
                             <PlanScheduleView
                                 accentColor={accentColor}
                                 onSwitchToPlanner={() => setViewMode('flow')}
+                                plantAddressByCode={plantAddressByCode}
                                 plantNameByCode={plantNameByCode}
                                 plantProduction={plantProduction}
                                 plants={plants}
@@ -492,6 +593,177 @@ function PlanView() {
                     </div>
                 )}
             </div>
+        </div>
+    )
+}
+
+/* ── Region totals bar ──────────────────────────────────────────────────── */
+
+const yphColor = (yph) => {
+    if (yph == null) return null
+    if (yph > MAX_YPH) return '#dc2626'
+    if (yph < TARGET_YPH - 0.3) return '#d97706'
+    return '#16a34a'
+}
+
+function RegionTotalCell({ accent, color, hint, icon, label, value, valueColor, warning }) {
+    return (
+        <div
+            className="rounded-lg px-3 py-1.5 flex items-center gap-2.5 shrink-0"
+            style={{
+                background: warning ? `${color || '#dc2626'}12` : 'var(--bg-primary)',
+                border: `1px solid ${warning ? `${color || '#dc2626'}66` : 'var(--border-light)'}`
+            }}
+        >
+            <div
+                className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                style={{
+                    background: warning ? color || '#dc2626' : `${accent}14`,
+                    color: warning ? '#fff' : accent
+                }}
+            >
+                <i className={`fas ${icon} text-[11px]`} />
+            </div>
+            <div className="flex flex-col leading-tight">
+                <span
+                    className="text-[9px] font-bold uppercase tracking-wider"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
+                    {label}
+                </span>
+                <span
+                    className="text-[14px] font-bold font-mono"
+                    style={{
+                        color: valueColor || 'var(--text-primary)',
+                        fontFamily: 'var(--font-heading)'
+                    }}
+                >
+                    {value}
+                </span>
+                {hint && (
+                    <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                        {hint}
+                    </span>
+                )}
+            </div>
+        </div>
+    )
+}
+
+function RegionTotalsBar({ accentColor, shiftSpanHours, totals }) {
+    const {
+        combinedYph,
+        isOverbooked,
+        loadsPerTruck,
+        loadsPerTruckTarget,
+        overbookedByTrucks,
+        overbookedByYph,
+        plantsWithProduction,
+        totalOperatorHours,
+        totalYardage,
+        trucksAvailable,
+        trucksScheduled
+    } = totals
+    const yphFg = yphColor(combinedYph)
+    const overSpan = !!shiftSpanHours && shiftSpanHours > OVERTIME_THRESHOLD_HOURS
+    const reasons = [
+        overbookedByYph && `Combined YPH ${combinedYph} > ${MAX_YPH} — no operator redistribution can fix it`,
+        overbookedByTrucks && `${loadsPerTruck} loads/truck > ${loadsPerTruckTarget} — fleet at capacity`
+    ].filter(Boolean)
+    return (
+        <div
+            className="shrink-0 flex items-center gap-2 overflow-x-auto px-4 py-2 border-b"
+            style={{
+                background: isOverbooked ? 'linear-gradient(90deg, #fee2e240, #fef3c740)' : 'var(--bg-primary)',
+                borderColor: isOverbooked ? '#fbbf24' : 'var(--border-light)'
+            }}
+        >
+            <span
+                className="text-[9px] font-semibold uppercase tracking-wider shrink-0 mr-1"
+                style={{ color: 'var(--text-secondary)' }}
+            >
+                Region today
+            </span>
+
+            <RegionTotalCell
+                accent={accentColor}
+                icon="fa-cubes"
+                label="Total yardage"
+                value={totalYardage > 0 ? totalYardage.toLocaleString() : '—'}
+                hint={
+                    plantsWithProduction > 0
+                        ? `${plantsWithProduction} plant${plantsWithProduction === 1 ? '' : 's'} reporting`
+                        : undefined
+                }
+            />
+
+            <RegionTotalCell
+                accent={accentColor}
+                color="#dc2626"
+                icon="fa-truck"
+                label="Trucks"
+                value={trucksAvailable > 0 ? String(trucksAvailable) : '—'}
+                hint={
+                    trucksScheduled > 0
+                        ? `${trucksScheduled} loads scheduled`
+                        : trucksAvailable > 0
+                          ? 'no loads scheduled'
+                          : undefined
+                }
+            />
+
+            <RegionTotalCell
+                accent={accentColor}
+                color="#dc2626"
+                icon="fa-arrows-rotate"
+                label="Loads / truck"
+                value={loadsPerTruck != null ? loadsPerTruck.toFixed(1) : '—'}
+                valueColor={overbookedByTrucks ? '#dc2626' : undefined}
+                hint={loadsPerTruck != null ? `target ≤ ${loadsPerTruckTarget}` : undefined}
+                warning={overbookedByTrucks}
+            />
+
+            <RegionTotalCell
+                accent={accentColor}
+                color="#dc2626"
+                icon="fa-gauge-high"
+                label="Combined YPH"
+                value={combinedYph != null ? combinedYph.toFixed(1) : '—'}
+                valueColor={yphFg || undefined}
+                hint={totalOperatorHours > 0 ? `${totalOperatorHours} op-hours · target ${TARGET_YPH}` : undefined}
+                warning={overbookedByYph}
+            />
+
+            <RegionTotalCell
+                accent={accentColor}
+                icon="fa-hourglass-half"
+                label="Shift span"
+                value={shiftSpanHours ? `${shiftSpanHours}h` : '—'}
+                valueColor={overSpan ? '#d97706' : undefined}
+                hint={overSpan ? `${OVERTIME_THRESHOLD_HOURS}h+ — overtime likely` : undefined}
+            />
+
+            <div className="flex-1" />
+
+            {isOverbooked ? (
+                <div
+                    className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold plan-overbook-pill"
+                    style={{ background: '#dc2626', color: '#fff' }}
+                    title={reasons.join(' · ')}
+                >
+                    <i className="fas fa-triangle-exclamation text-[12px] plan-overbook-icon" />
+                    OVERBOOKED
+                    <span className="opacity-90 font-normal hidden md:inline">· {reasons.join(' · ')}</span>
+                </div>
+            ) : totalYardage > 0 || trucksAvailable > 0 ? (
+                <div
+                    className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold"
+                    style={{ background: '#16a34a14', color: '#16a34a' }}
+                >
+                    <i className="fas fa-check-circle text-[12px]" />
+                    Within capacity
+                </div>
+            ) : null}
         </div>
     )
 }
