@@ -28,26 +28,39 @@ export function usePlanData(planDate) {
 
     const getTravelTime = (from, to) => travelTimes[`${from}->${to}`] ?? null
 
+    /** Best-effort travel-time refresh. Swallows errors (e.g. Unauthorized
+     *  when the session hasn't established yet, or transient network blips)
+     *  so the planner doesn't surface a runtime error for non-critical data. */
     const refreshTravelTimes = async () => {
-        await PlanService.fetchTravelTimes()
-        setTravelTimes(PlanService.getTravelTimesMap())
+        try {
+            await PlanService.fetchTravelTimes()
+            setTravelTimes(PlanService.getTravelTimesMap())
+        } catch (err) {
+            console.warn('[usePlanData] travel-times refresh failed:', err?.message || err)
+        }
     }
 
-    // One-time bootstrap: user, permissions, travel-time cache.
+    // One-time bootstrap: user, permissions, travel-time cache. We only fetch
+    // travel times once we have a session — otherwise the edge function 401s
+    // and the unhandled rejection surfaces as a "runtime error" overlay.
     useEffect(() => {
         const bootstrap = async () => {
-            const user = await UserService.getCurrentUser()
-            const uid = user?.id || user
-            if (uid) {
-                setUserId(uid)
-                try {
-                    const hasEdit = await UserService.hasPermission(uid, 'plan.edit')
-                    setCanEdit(hasEdit)
-                } catch {
-                    setCanEdit(true)
+            try {
+                const user = await UserService.getCurrentUser()
+                const uid = user?.id || user
+                if (uid) {
+                    setUserId(uid)
+                    try {
+                        const hasEdit = await UserService.hasPermission(uid, 'plan.edit')
+                        setCanEdit(hasEdit)
+                    } catch {
+                        setCanEdit(true)
+                    }
+                    await refreshTravelTimes()
                 }
+            } catch (err) {
+                console.warn('[usePlanData] bootstrap failed:', err?.message || err)
             }
-            await refreshTravelTimes()
         }
         bootstrap()
     }, [])
@@ -230,8 +243,12 @@ export function usePlanData(planDate) {
         table: 'plant_travel_times',
         enabled: !isLoading,
         onChange: useCallback(async () => {
-            await PlanService.fetchTravelTimes()
-            setTravelTimes(PlanService.getTravelTimesMap())
+            try {
+                await PlanService.fetchTravelTimes()
+                setTravelTimes(PlanService.getTravelTimesMap())
+            } catch (err) {
+                console.warn('[usePlanData] realtime travel-times refresh failed:', err?.message || err)
+            }
         }, [])
     })
 

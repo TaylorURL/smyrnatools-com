@@ -10,6 +10,7 @@ import QCStrengthReportModal from '../../../app/components/reports/QCStrengthRep
 import ReportsEmptyState from '../../../app/components/reports/ReportsEmptyState'
 import ReportsToolbar, {
     LossFilterBar,
+    MobileFilterShell,
     QcFilterBar,
     ReviewFilterBar
 } from '../../../app/components/reports/ReportsToolbar'
@@ -1298,23 +1299,33 @@ function ReportsView() {
                             mode={fuseForSelectedWeek.mode}
                             caption={fuseForSelectedWeek.caption}
                         />
-                        <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
-                            <ReviewFilterBar
-                                statusFilter={reviewStatusFilter}
-                                onStatusFilterChange={setReviewStatusFilter}
-                                reportTypeFilter={filterReportType}
-                                onReportTypeFilterChange={setFilterReportType}
-                                reportTypeOptions={reviewTypeOptions}
-                                sort={reviewSort}
-                                onSortChange={setReviewSort}
-                                dateFrom={reviewDateFrom}
-                                onDateFromChange={setReviewDateFrom}
-                                dateTo={reviewDateTo}
-                                onDateToChange={setReviewDateTo}
-                                hasActiveFilters={reviewHasActiveFilters}
-                                onClear={clearReviewFilters}
-                            />
-                        </div>
+                        <MobileFilterShell
+                            label="Filters"
+                            activeCount={
+                                (reviewStatusFilter !== 'all' ? 1 : 0) +
+                                (filterReportType ? 1 : 0) +
+                                (reviewDateFrom ? 1 : 0) +
+                                (reviewDateTo ? 1 : 0)
+                            }
+                        >
+                            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
+                                <ReviewFilterBar
+                                    statusFilter={reviewStatusFilter}
+                                    onStatusFilterChange={setReviewStatusFilter}
+                                    reportTypeFilter={filterReportType}
+                                    onReportTypeFilterChange={setFilterReportType}
+                                    reportTypeOptions={reviewTypeOptions}
+                                    sort={reviewSort}
+                                    onSortChange={setReviewSort}
+                                    dateFrom={reviewDateFrom}
+                                    onDateFromChange={setReviewDateFrom}
+                                    dateTo={reviewDateTo}
+                                    onDateToChange={setReviewDateTo}
+                                    hasActiveFilters={reviewHasActiveFilters}
+                                    onClear={clearReviewFilters}
+                                />
+                            </div>
+                        </MobileFilterShell>
                         <div className={`rv-split ${railCollapsed ? 'rv-split-collapsed' : ''}`}>
                             <div className="rv-left flex flex-col gap-3 min-w-0">
                                 <div
@@ -1361,32 +1372,42 @@ function ReportsView() {
                                     </button>
                                 </div>
                             )}
-                            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
-                                <LossFilterBar
-                                    dumpLocationFilter={lossDumpLocation}
-                                    onDumpLocationFilterChange={setLossDumpLocation}
-                                    reasonFilter={lossReason}
-                                    onReasonFilterChange={setLossReason}
-                                    sort={lossSort}
-                                    onSortChange={setLossSort}
-                                    dateFrom={lossDateFrom}
-                                    onDateFromChange={setLossDateFrom}
-                                    dateTo={lossDateTo}
-                                    onDateToChange={setLossDateTo}
-                                    hasActiveFilters={lossHasActiveFilters}
-                                    onClear={clearLossFilters}
-                                    onExport={
-                                        visibleLostLoads.length > 0
-                                            ? () =>
-                                                  exportLostLoadReports({
-                                                      getUserName,
-                                                      plants: regionalPlants,
-                                                      reports: visibleLostLoads
-                                                  })
-                                            : undefined
-                                    }
-                                />
-                            </div>
+                            <MobileFilterShell
+                                label="Filters"
+                                activeCount={
+                                    (lossDumpLocation !== 'all' ? 1 : 0) +
+                                    (lossReason !== 'all' ? 1 : 0) +
+                                    (lossDateFrom ? 1 : 0) +
+                                    (lossDateTo ? 1 : 0)
+                                }
+                            >
+                                <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
+                                    <LossFilterBar
+                                        dumpLocationFilter={lossDumpLocation}
+                                        onDumpLocationFilterChange={setLossDumpLocation}
+                                        reasonFilter={lossReason}
+                                        onReasonFilterChange={setLossReason}
+                                        sort={lossSort}
+                                        onSortChange={setLossSort}
+                                        dateFrom={lossDateFrom}
+                                        onDateFromChange={setLossDateFrom}
+                                        dateTo={lossDateTo}
+                                        onDateToChange={setLossDateTo}
+                                        hasActiveFilters={lossHasActiveFilters}
+                                        onClear={clearLossFilters}
+                                        onExport={
+                                            visibleLostLoads.length > 0
+                                                ? () =>
+                                                      exportLostLoadReports({
+                                                          getUserName,
+                                                          plants: regionalPlants,
+                                                          reports: visibleLostLoads
+                                                      })
+                                                : undefined
+                                        }
+                                    />
+                                </div>
+                            </MobileFilterShell>
                             <LostLoadsList
                                 isLoading={isLoadingLostLoads}
                                 items={lostLoadsPagination.paginatedItems}
@@ -1437,22 +1458,32 @@ function ReportsView() {
                                     </button>
                                 </div>
                             )}
-                            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
-                                <QcFilterBar
-                                    qcTypeFilter={qcTypeFilter}
-                                    onQcTypeFilterChange={setQcTypeFilter}
-                                    qcStatusFilter={qcStatusFilter}
-                                    onQcStatusFilterChange={setQcStatusFilter}
-                                    qcSort={qcSort}
-                                    onQcSortChange={setQcSort}
-                                    qcDateFrom={qcDateFrom}
-                                    onQcDateFromChange={setQcDateFrom}
-                                    qcDateTo={qcDateTo}
-                                    onQcDateToChange={setQcDateTo}
-                                    qcHasActiveFilters={qcHasActiveFilters}
-                                    onClearQcFilters={clearQcFilters}
-                                />
-                            </div>
+                            <MobileFilterShell
+                                label="Filters"
+                                activeCount={
+                                    (qcTypeFilter !== 'all' ? 1 : 0) +
+                                    (qcStatusFilter !== 'all' ? 1 : 0) +
+                                    (qcDateFrom ? 1 : 0) +
+                                    (qcDateTo ? 1 : 0)
+                                }
+                            >
+                                <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
+                                    <QcFilterBar
+                                        qcTypeFilter={qcTypeFilter}
+                                        onQcTypeFilterChange={setQcTypeFilter}
+                                        qcStatusFilter={qcStatusFilter}
+                                        onQcStatusFilterChange={setQcStatusFilter}
+                                        qcSort={qcSort}
+                                        onQcSortChange={setQcSort}
+                                        qcDateFrom={qcDateFrom}
+                                        onQcDateFromChange={setQcDateFrom}
+                                        qcDateTo={qcDateTo}
+                                        onQcDateToChange={setQcDateTo}
+                                        qcHasActiveFilters={qcHasActiveFilters}
+                                        onClearQcFilters={clearQcFilters}
+                                    />
+                                </div>
+                            </MobileFilterShell>
                             {isLoadingQC ? (
                                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                                     {[1, 2, 3, 4, 5].map((i) => (

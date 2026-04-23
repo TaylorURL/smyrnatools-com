@@ -281,12 +281,12 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
     }
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center sm:p-4 overflow-y-auto"
             style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
-            <div className="rounded-2xl shadow-2xl w-full max-w-lg flex flex-col bg-bg-primary max-h-[90vh]">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border-light">
+            <div className="rounded-none sm:rounded-2xl shadow-2xl w-full sm:max-w-lg flex flex-col bg-bg-primary min-h-screen sm:min-h-0 sm:max-h-[90vh]">
+                <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border-light sticky top-0 bg-bg-primary z-10">
                     <div className="flex items-center gap-3">
                         <div
                             className="flex items-center justify-center w-9 h-9 rounded-lg"
@@ -306,7 +306,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                         <i className="fas fa-times text-sm" />
                     </button>
                 </div>
-                <div className="px-6 py-5 flex flex-col gap-4 overflow-y-auto">
+                <div className="px-4 sm:px-6 py-4 sm:py-5 flex flex-col gap-4 overflow-y-auto">
                     {error && (
                         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                             <i className="fas fa-exclamation-circle shrink-0" />
@@ -748,7 +748,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                     </div>
                 </div>
                 <div
-                    className="px-6 py-4 flex items-center justify-end gap-3"
+                    className="px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 sticky bottom-0 bg-bg-primary border-t border-border-light z-10"
                     style={{ borderTop: '1px solid var(--border-light)' }}
                 >
                     <button
