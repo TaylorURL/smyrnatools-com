@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { createEmptyAssignment, MAX_YPH, minutesToTime, TARGET_YPH, timeToMinutes } from '../../../utils/PlanUtility'
 
+const NEEDS_HELP_COLOR = '#dc2626'
+
 const NODE_RADIUS_MIN = 48
 const NODE_RADIUS_MAX = 110
 const EDGE_GAP = 70
@@ -653,6 +655,7 @@ function PlanFlowView({
                                               : null
                                 const yph = yphByCode[s.code]
                                 const ringColor = yphColorFor(yph, accentColor)
+                                const needsHelp = yph != null && yph > MAX_YPH
                                 const r = radiusByCode[s.code] || NODE_RADIUS_MIN
                                 const codeFontSize = Math.round(Math.max(18, Math.min(34, r * 0.38)))
                                 const isDestinationCandidate = pickingDestination && draft && s.code !== draft.fromPlant
@@ -660,7 +663,9 @@ function PlanFlowView({
                                     ? `0 0 0 3px ${accentColor}, var(--shadow)`
                                     : isDestinationCandidate
                                       ? '0 0 0 3px #f59e0b, var(--shadow)'
-                                      : 'var(--shadow)'
+                                      : needsHelp
+                                        ? `0 0 0 2px ${NEEDS_HELP_COLOR}44, var(--shadow)`
+                                        : 'var(--shadow)'
                                 return (
                                     <button
                                         key={s.code}
@@ -676,7 +681,11 @@ function PlanFlowView({
                                             width: r * 2,
                                             zIndex: 10
                                         }}
-                                        title={`Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'}`}
+                                        title={
+                                            needsHelp
+                                                ? `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'} · NEEDS HELP (YPH ${yph} > ${MAX_YPH})`
+                                                : `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'}`
+                                        }
                                     >
                                         <span
                                             className="absolute inset-0 rounded-full pointer-events-none"
@@ -696,6 +705,23 @@ function PlanFlowView({
                                                 }}
                                             >
                                                 {role}
+                                            </span>
+                                        )}
+                                        {needsHelp && (
+                                            <span
+                                                className="absolute flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider text-white whitespace-nowrap animate-pulse"
+                                                style={{
+                                                    background: NEEDS_HELP_COLOR,
+                                                    bottom: -9,
+                                                    boxShadow: `0 0 0 2px var(--bg-secondary), 0 2px 6px ${NEEDS_HELP_COLOR}55`,
+                                                    left: '50%',
+                                                    transform: 'translateX(-50%)',
+                                                    zIndex: 2
+                                                }}
+                                                title={`YPH ${yph} exceeds max (${MAX_YPH}) — operators overloaded`}
+                                            >
+                                                <i className="fas fa-triangle-exclamation text-[8px]" />
+                                                Needs Help
                                             </span>
                                         )}
                                         <div className="flex flex-col items-center justify-center h-full gap-0.5">

@@ -7,6 +7,7 @@ import { UserService } from '../../services/UserService'
 import { AUTOSAVE_DELAY_MS, createEmptyAssignment, ensureUniqueIds, getOffsetDate } from '../../utils/PlanUtility'
 import { usePreferences } from '../context/PreferencesContext'
 import { useRealtimeSubscription } from './useRealtimeSubscription'
+import { useScheduleSync } from './useScheduleSync'
 
 export function usePlanData(planDate) {
     const { preferences } = usePreferences()
@@ -232,6 +233,16 @@ export function usePlanData(planDate) {
             await PlanService.fetchTravelTimes()
             setTravelTimes(PlanService.getTravelTimesMap())
         }, [])
+    })
+
+    // Pull the daily schedule from the bucket every 5 min. Replaces the old
+    // manual "Import Production" upload — dispatcher's workstation auto-uploads
+    // today + 7 days of schedule HTML so production data is always current.
+    useScheduleSync({
+        planDate,
+        plants,
+        setPlantProduction,
+        enabled: !isLoading && plants.length > 0
     })
 
     return {

@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [38.5.32] - 2026-04-23
+
+- Added automatic schedule syncing from the dispatch-reports storage bucket — a new useScheduleSync hook polls every 5 minutes for the current plan date's Daily Order Listing HTML, replacing the old manual file import workflow
+- Created ScheduleBucketService to download date-keyed schedule HTML files from Supabase storage
+- Extracted and expanded the Daily Order Listing parser into a standalone DailyOrderParser utility — now parses full per-order detail (customer, address, product, truck class, yardage, etc.) using the report's fixed pixel grid layout, and resolves HTML plant codes to DB plant codes via numeric derivation and fuzzy name matching
+- Removed the inline importDailyOrderHtml function from usePlanActions since parsing and importing are now handled automatically by the sync hook
+- Added a new PlanScheduleView (~980 lines) for viewing and interacting with the parsed daily schedule data within the plan tool
+- Added a "Needs Help" indicator to PlanFlowView — plant nodes with yardage-per-hour exceeding MAX_YPH now show a red ring and a pulsing "NEEDS HELP" badge
+- PlanFlowView now highlights the selected plant node and shows an info overlay with first/last job times, total yardage, and order count when a node is clicked
+- Simplified PlanView by removing the manual import UI and wiring up the new schedule view as a dedicated tab/section
+
 ## [38.5.31] - 2026-04-23
 
 - Improved plant header detection in the Daily Order Listing importer — replaced the loose numeric pattern with a stricter regex (`PLANT_HEADER_RE`) that requires a `code - name` format and rejects comma-separated TOC rows and bare numeric codes that could false-match order numbers or customer IDs

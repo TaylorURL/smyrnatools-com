@@ -13,6 +13,7 @@ import { getOffsetDate, getTomorrowDate, OVERTIME_THRESHOLD_HOURS } from '../../
 import PlanDashboardView from './PlanDashboardView'
 import PlanFlowView from './PlanFlowView'
 import PlanPlantCard from './PlanPlantCard'
+import PlanScheduleView from './PlanScheduleView'
 import PlanSettingsModal from './PlanSettingsModal'
 
 /**
@@ -28,7 +29,6 @@ function PlanView() {
     const accentColor = preferences.accentColor || '#1e3a5f'
     const isDark = preferences.themeMode === 'dark'
     const isMobile = useIsMobile()
-    const productionFileRef = useRef(null)
     const [planDate, setPlanDate] = useState(getTomorrowDate)
     const hasInitializedDateRef = useRef(false)
     const [viewMode, setViewMode] = useState('flow')
@@ -65,7 +65,6 @@ function PlanView() {
         copied,
         copyToClipboard,
         clearPlantProduction,
-        importDailyOrderHtml,
         newTravelTime,
         removeTravelTime,
         setNewTravelTime,
@@ -148,25 +147,10 @@ function PlanView() {
         }
     }, [userId])
 
-    // Plan edits are gated until production has been imported for this day —
-    // the planner depends on YPH, first/last-job times, and yardage per plant,
-    // so routing decisions before that are essentially guesses.
-    const hasProduction = useMemo(
-        () =>
-            Object.entries(plantProduction || {}).some(([code, data]) => {
-                if (code === '_meta' || !data || typeof data !== 'object') return false
-                return (
-                    data.firstJobTime ||
-                    data.lastJobTime ||
-                    data.totalYardage ||
-                    (Array.isArray(data.materials) && data.materials.length > 0) ||
-                    (Array.isArray(data.jobs) && data.jobs.length > 0)
-                )
-            }),
-        [plantProduction]
-    )
-    const canEditPlan = canEdit && hasProduction
-    const openProductionImport = () => productionFileRef.current?.click()
+    // Plan data now auto-syncs from the dispatch bucket every 5 minutes
+    // (see useScheduleSync inside usePlanData). Users can edit whenever they
+    // have permission — no more manual production-import gate.
+    const canEditPlan = canEdit
 
     // Role-aware scope: Plant Managers see their plant, District Managers see
     // every plant in their district, General Managers see the whole region.
@@ -281,31 +265,17 @@ function PlanView() {
                     {canEdit && (
                         <>
                             <button
-                                onClick={() => productionFileRef.current?.click()}
-                                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
-                                style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                                title="Import production from HTML"
-                            >
-                                <i className="fas fa-file-import" />
-                                {!isMobile && <span>Import Production</span>}
-                            </button>
-                            <input
-                                ref={productionFileRef}
-                                type="file"
-                                accept=".html,.htm"
-                                className="hidden"
-                                onChange={(e) => {
-                                    if (e.target.files?.[0]) importDailyOrderHtml(e.target.files[0])
-                                    e.target.value = ''
-                                }}
-                            />
-                            <button
                                 onClick={() => {
-                                    if (window.confirm('Clear all production data?')) clearPlantProduction()
+                                    if (
+                                        window.confirm(
+                                            'Clear all production data? It will be re-synced from the bucket within 5 minutes.'
+                                        )
+                                    )
+                                        clearPlantProduction()
                                 }}
                                 className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
                                 style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                                title="Clear production data"
+                                title="Clear production data (will re-sync from bucket within 5 min)"
                             >
                                 <i className="fas fa-eraser" />
                                 {!isMobile && <span>Clear Production</span>}
@@ -331,6 +301,7 @@ function PlanView() {
                 >
                     {[
                         { mode: 'flow', icon: 'fa-project-diagram', label: 'Planner' },
+                        { mode: 'schedule', icon: 'fa-calendar-days', label: 'Schedule' },
                         { mode: 'dashboard', icon: 'fa-gauge-high', label: 'Plan' }
                     ].map(({ mode, icon, label }) => (
                         <button
@@ -371,53 +342,9 @@ function PlanView() {
                             </div>
                         )}
 
-                        {/* Production-required gate — dispatchers must upload
-                            production for the selected plan date before editing
-                            anything, so routing decisions are grounded in real
-                            yardage / start times. Importing unlocks edits. */}
-                        {canEdit && !hasProduction && (
-                            <div
-                                className="flex items-center gap-3 px-4 py-3 border-b shrink-0"
-                                style={{
-                                    background: 'linear-gradient(90deg, #fef3c750, #fde68a50)',
-                                    borderColor: '#fbbf24',
-                                    color: '#78350f'
-                                }}
-                            >
-                                <div
-                                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                                    style={{ background: '#f59e0b', color: '#fff' }}
-                                >
-                                    <i className="fas fa-lock text-[14px]" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div
-                                        className="text-[13px] font-bold"
-                                        style={{ fontFamily: 'var(--font-heading)' }}
-                                    >
-                                        Editing is locked until production is uploaded for{' '}
-                                        {new Date(planDate + 'T00:00:00').toLocaleDateString('en-US', {
-                                            weekday: 'long',
-                                            month: 'short',
-                                            day: 'numeric'
-                                        })}
-                                    </div>
-                                    <div className="text-[11.5px]" style={{ color: '#92400e' }}>
-                                        Upload the daily order HTML for this plan date so the planner can use real start
-                                        times, yardage, and YPH. Routes, notes, and attention flags can&apos;t be edited
-                                        until production is imported.
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={openProductionImport}
-                                    className="border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 flex items-center gap-1.5"
-                                    style={{ background: '#f59e0b', color: '#fff' }}
-                                >
-                                    <i className="fas fa-file-import text-[11px]" />
-                                    Import Production
-                                </button>
-                            </div>
-                        )}
+                        {/* Production-required gate removed — useScheduleSync auto-imports
+                            production from the dispatch bucket every 5 minutes, so edits
+                            are no longer blocked waiting for a manual upload. */}
 
                         {showSettings && (
                             <PlanSettingsModal
@@ -550,6 +477,16 @@ function PlanView() {
                                 stats={stats}
                                 updateAssignment={updateAssignment}
                                 onSwitchToPlanner={() => setViewMode('dashboard')}
+                            />
+                        )}
+
+                        {viewMode === 'schedule' && (
+                            <PlanScheduleView
+                                accentColor={accentColor}
+                                onSwitchToPlanner={() => setViewMode('flow')}
+                                plantNameByCode={plantNameByCode}
+                                plantProduction={plantProduction}
+                                plants={plants}
                             />
                         )}
                     </div>
