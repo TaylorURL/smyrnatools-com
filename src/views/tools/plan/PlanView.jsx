@@ -31,7 +31,7 @@ function PlanView() {
     const productionFileRef = useRef(null)
     const [planDate, setPlanDate] = useState(getTomorrowDate)
     const hasInitializedDateRef = useRef(false)
-    const [viewMode, setViewMode] = useState('dashboard')
+    const [viewMode, setViewMode] = useState('flow')
     const [selectedPlant, setSelectedPlant] = useState(null)
     const [productionPopoverPlant, setProductionPopoverPlant] = useState(null)
     const [userPlantCode, setUserPlantCode] = useState('')
@@ -330,8 +330,8 @@ function PlanView() {
                     style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
                 >
                     {[
-                        { mode: 'dashboard', icon: 'fa-gauge-high', label: 'Plan' },
-                        { mode: 'flow', icon: 'fa-project-diagram', label: 'Planner' }
+                        { mode: 'flow', icon: 'fa-project-diagram', label: 'Planner' },
+                        { mode: 'dashboard', icon: 'fa-gauge-high', label: 'Plan' }
                     ].map(({ mode, icon, label }) => (
                         <button
                             key={mode}
