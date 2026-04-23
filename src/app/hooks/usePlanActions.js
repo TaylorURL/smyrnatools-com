@@ -58,22 +58,30 @@ export function usePlanActions({
     }
 
     const importDailyOrderHtml = (file) => {
+        if (!file) {
+            window.alert('No file selected.')
+            return
+        }
         const reader = new FileReader()
+        reader.onerror = () => window.alert('Could not read the file — please try again.')
         reader.onload = (e) => {
             const parser = new DOMParser()
             const doc = parser.parseFromString(e.target.result, 'text/html')
             const allDivs = [...doc.querySelectorAll('div')]
 
-            // Find plant headers — any element matching "###" or "### - Name" pattern
-            const plantHeaders = allDivs.filter((d) => {
-                const text = d.textContent.trim()
-                return /^\d{3}\s*-\s*.+/.test(text) || /^\d{3}\s*$/.test(text)
-            })
+            // A plant header is a single-entry `<code> - <name>` row anchored
+            // to end of line. The `[^,]+$` clause rejects the TOC row that
+            // comma-separates every plant. We deliberately don't accept a bare
+            // numeric code as a header — it would false-match order numbers,
+            // customer IDs, and any incidental number in the report.
+            const PLANT_HEADER_RE = /^(\d{3,6})\s*-\s*[^,]+$/
 
-            // Deduplicate — sometimes multiple nested divs match the same header
+            const plantHeaders = allDivs.filter((d) => PLANT_HEADER_RE.test(d.textContent.trim()))
+
+            // Deduplicate — multiple nested divs often share the same text content.
             const seenCodes = new Set()
             const uniqueHeaders = plantHeaders.filter((h) => {
-                const code = h.textContent.trim().match(/^(\d{3})/)?.[1]
+                const code = h.textContent.trim().match(PLANT_HEADER_RE)?.[1]
                 if (!code || seenCodes.has(code)) return false
                 seenCodes.add(code)
                 return true
@@ -81,32 +89,28 @@ export function usePlanActions({
 
             const production = {}
             uniqueHeaders.forEach((header, idx) => {
-                const text = header.textContent.trim()
-                const code = text.match(/^(\d{3})/)?.[1]
+                const code = header.textContent.trim().match(PLANT_HEADER_RE)?.[1]
                 if (!code) return
 
                 const headerIndex = allDivs.indexOf(header)
                 const nextHeaderIndex =
                     idx < uniqueHeaders.length - 1 ? allDivs.indexOf(uniqueHeaders[idx + 1]) : allDivs.length
 
-                // Collect all HH:MM times in the plant section
+                // Collect HH:MM values that sit in the Start-Time column. The
+                // Daily Order Listing places start times at a fixed left offset
+                // around 307–308px; other columns at 355/403/451/etc. hold
+                // durations or spacing times that must be excluded, otherwise
+                // first/last job times get polluted by short "00:24"-ish values.
                 const startTimes = []
                 for (let i = headerIndex + 1; i < nextHeaderIndex; i++) {
                     const d = allDivs[i]
                     const time = d.textContent.trim()
-                    // Match HH:MM patterns (start times) — check by class or by position/style
-                    if (/^\d{1,2}:\d{2}$/.test(time)) {
-                        const style = d.getAttribute('style') || ''
-                        // Accept times at the known position OR from known time classes
-                        if (
-                            style.includes('left:307') ||
-                            style.includes('left:308') ||
-                            d.classList.contains('s48') ||
-                            d.classList.contains('s49') ||
-                            d.classList.contains('s50')
-                        ) {
-                            startTimes.push(time.padStart(5, '0'))
-                        }
+                    if (!/^\d{1,2}:\d{2}$/.test(time)) continue
+                    const style = d.getAttribute('style') || ''
+                    const leftMatch = style.match(/left:\s*([\d.]+)/)
+                    const left = leftMatch ? parseFloat(leftMatch[1]) : null
+                    if (left != null && left >= 305 && left <= 310) {
+                        startTimes.push(time.padStart(5, '0'))
                     }
                 }
 
@@ -162,7 +166,20 @@ export function usePlanActions({
                 }
             })
 
-            setPlantProduction(production)
+            if (Object.keys(production).length === 0) {
+                window.alert(
+                    'No plant production could be read from that file. Make sure it\u2019s the Daily Order Listing HTML export (not a PDF or a different report).'
+                )
+                return
+            }
+
+            // Keep the plan's `_meta` blob (special/QC jobs, formatted notes)
+            // intact — importing production should not wipe per-plan metadata.
+            setPlantProduction((prev) => {
+                const next = { ...production }
+                if (prev && prev._meta) next._meta = prev._meta
+                return next
+            })
         }
         reader.readAsText(file)
     }

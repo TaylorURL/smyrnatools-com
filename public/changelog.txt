@@ -1,6 +1,11 @@
 # Changelog
 
 
+## [38.5.30] - 2026-04-23
+
+- PlanView now defaults to the flow/planner view on initial load instead of the dashboard view
+- Reordered the view mode toggle so "Planner" appears before "Plan" in the tab bar
+
 ## [38.5.29] - 2026-04-23
 
 - Added `fetchLatestPlanDate` to PlanService and a matching `fetch-latest-plan-date` edge function case that finds the nearest plan with real content within a 60-day window, preferring future dates on ties

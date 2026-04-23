@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [38.5.31] - 2026-04-23
+
+- Improved plant header detection in the Daily Order Listing importer — replaced the loose numeric pattern with a stricter regex (`PLANT_HEADER_RE`) that requires a `code - name` format and rejects comma-separated TOC rows and bare numeric codes that could false-match order numbers or customer IDs
+- Start time filtering now parses the `left:` CSS value as a float and accepts a numeric range (305–310px) instead of checking for exact string matches, making column position detection more robust
+- Added a guard when no plant production data is parsed from the file — shows a clear alert directing the user to use the correct HTML export format instead of silently setting empty state
+- `setPlantProduction` now merges imported data with any existing `_meta` blob so per-plan metadata (special/QC jobs, formatted notes) is preserved across imports
+- Added a missing-file guard and a `reader.onerror` handler to `importDailyOrderHtml` so failures surface as user-facing alerts rather than silent no-ops
+
 ## [38.5.30] - 2026-04-23
 
 - PlanView now defaults to the flow/planner view on initial load instead of the dashboard view
