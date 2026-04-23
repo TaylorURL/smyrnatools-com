@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [38.5.27] - 2026-04-23
+
+- Added edit mode to LostLoadReportModal, QCStrengthReportModal, and ThirdPartyLabReportModal — all three modals now accept an `initialReport` prop and switch to UPDATE mode when editing an existing report, pre-filling all fields from the saved data
+- ThirdPartyLabReportModal edit mode merges newly uploaded files with existing attachments rather than replacing them
+- Added MyOneOffRail component that shows a user's own one-off report submissions in a side rail with per-type color tinting and an Edit button that opens the relevant modal pre-filled
+- Wired edit state into ReportsView with `editingLostLoad`, `editingQcReport`, and `editingLabReport` slots, and added a `myQualityReports` derived list filtered to the current user's QC submissions
+- Updated user-service edge function
+
 ## [38.5.26] - 2026-04-22
 
 - Added operator reprimanded and plant manager reprimanded checkboxes to the lost load report submission form, with visual toggle styling that highlights when checked

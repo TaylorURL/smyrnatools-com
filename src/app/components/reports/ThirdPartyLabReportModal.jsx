@@ -40,17 +40,19 @@ async function uploadFile(file, userId) {
     }
 }
 
-function ThirdPartyLabReportModal({ onClose, onSubmitted, user }) {
+function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = null }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
     const fileInputRef = useRef(null)
-    const [labCompanyName, setLabCompanyName] = useState('')
-    const [customer, setCustomer] = useState('')
-    const [orderNo, setOrderNo] = useState('')
-    const [ticketNo, setTicketNo] = useState('')
-    const [truckNo, setTruckNo] = useState('')
-    const [reportDate, setReportDate] = useState('')
-    const [labIssue, setLabIssue] = useState('')
+    const isEditing = !!initialReport?.id
+    const initialData = initialReport?.data || {}
+    const [labCompanyName, setLabCompanyName] = useState(initialData.lab_company_name || '')
+    const [customer, setCustomer] = useState(initialData.customer || '')
+    const [orderNo, setOrderNo] = useState(initialData.order_no || '')
+    const [ticketNo, setTicketNo] = useState(initialData.ticket_no || '')
+    const [truckNo, setTruckNo] = useState(initialData.truck_no || '')
+    const [reportDate, setReportDate] = useState(initialData.report_date || '')
+    const [labIssue, setLabIssue] = useState(initialData.lab_issue || '')
     const [files, setFiles] = useState([])
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
@@ -83,29 +85,43 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user }) {
                 uploadedFiles = await Promise.all(files.map((f) => uploadFile(f, user.id)))
             }
 
-            const { monday, saturday } = getCurrentWeekBounds()
-            const row = {
-                user_id: user?.id,
-                report_name: 'third_party_lab',
-                week: monday.toISOString(),
-                report_date_range_start: monday.toISOString(),
-                report_date_range_end: saturday.toISOString(),
-                data: {
-                    lab_company_name: labCompanyName.trim(),
-                    customer: customer.trim(),
-                    order_no: orderNo.trim(),
-                    ticket_no: ticketNo.trim(),
-                    truck_no: truckNo.trim(),
-                    report_date: reportDate,
-                    lab_issue: labIssue.trim(),
-                    attachments: uploadedFiles
-                },
-                completed: true,
-                submitted_at: new Date().toISOString()
+            const mergedAttachments = isEditing ? [...(initialData.attachments || []), ...uploadedFiles] : uploadedFiles
+            const payloadData = {
+                lab_company_name: labCompanyName.trim(),
+                customer: customer.trim(),
+                order_no: orderNo.trim(),
+                ticket_no: ticketNo.trim(),
+                truck_no: truckNo.trim(),
+                report_date: reportDate,
+                lab_issue: labIssue.trim(),
+                attachments: mergedAttachments
             }
             setUploadProgress('')
-            const { data, error: dbError } = await Database.from(TABLE).insert(row).select().single()
-            if (dbError) throw new Error(dbError.message)
+            let data
+            if (isEditing) {
+                const { data: updated, error: dbError } = await Database.from(TABLE)
+                    .update({ data: payloadData })
+                    .eq('id', initialReport.id)
+                    .select()
+                    .single()
+                if (dbError) throw new Error(dbError.message)
+                data = updated
+            } else {
+                const { monday, saturday } = getCurrentWeekBounds()
+                const row = {
+                    user_id: user?.id,
+                    report_name: 'third_party_lab',
+                    week: monday.toISOString(),
+                    report_date_range_start: monday.toISOString(),
+                    report_date_range_end: saturday.toISOString(),
+                    data: payloadData,
+                    completed: true,
+                    submitted_at: new Date().toISOString()
+                }
+                const { data: inserted, error: dbError } = await Database.from(TABLE).insert(row).select().single()
+                if (dbError) throw new Error(dbError.message)
+                data = inserted
+            }
             onSubmitted?.(data)
             onClose()
         } catch (e) {
@@ -131,7 +147,9 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user }) {
                             <i className="fas fa-vial text-white text-sm" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-800">Third Party Lab Report</h2>
+                            <h2 className="text-lg font-bold text-slate-800">
+                                {isEditing ? 'Edit Third Party Lab Report' : 'Third Party Lab Report'}
+                            </h2>
                             <p className="text-xs text-slate-400">Report issues with lab results</p>
                         </div>
                     </div>
@@ -314,8 +332,10 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user }) {
                     >
                         {submitting ? (
                             <span className="flex items-center gap-2">
-                                <i className="fas fa-spinner fa-spin" /> Submitting...
+                                <i className="fas fa-spinner fa-spin" /> {isEditing ? 'Saving...' : 'Submitting...'}
                             </span>
+                        ) : isEditing ? (
+                            'Save Changes'
                         ) : (
                             'Submit Report'
                         )}

@@ -84,6 +84,41 @@ async function requireElevatedCaller(_supabase: any, req: Request, headers: any,
     return null;
 }
 
+async function getMaxRoleWeight(userId: string): Promise<number> {
+    const admin = getAdminClient();
+    const {data} = await admin.from("users_permissions").select("users_roles(weight)").eq("user_id", userId);
+    if (!data?.length) return 0;
+    return Math.max(0, ...data.map((p: any) => p.users_roles?.weight ?? 0));
+}
+
+async function requireElevatedOrOutranking(
+    _supabase: any,
+    req: Request,
+    headers: any,
+    body: any,
+    targetUserId: string,
+    newRoleId?: string | null
+): Promise<Response | null> {
+    const auth = await requireAuthenticated(_supabase, req, headers, body);
+    if (auth instanceof Response) return auth;
+    const admin = getAdminClient();
+    const [callerWeight, targetWeight] = await Promise.all([
+        getMaxRoleWeight(auth),
+        getMaxRoleWeight(targetUserId)
+    ]);
+    const isElevated = callerWeight > ELEVATED_WEIGHT_THRESHOLD;
+    const outranksTarget = callerWeight > targetWeight;
+    if (!isElevated && !outranksTarget) return errorResponse("Forbidden: insufficient privileges", headers, 403);
+    if (newRoleId) {
+        const {data: roleData} = await admin.from(ROLES_TABLE).select("weight").eq("id", newRoleId).maybeSingle();
+        const newRoleWeight = roleData?.weight ?? 0;
+        if (!isElevated && newRoleWeight >= callerWeight) {
+            return errorResponse("Forbidden: cannot assign a role at or above your own", headers, 403);
+        }
+    }
+    return null;
+}
+
 Deno.serve(async (req) => {
     const origin = req.headers.get("origin");
     if (req.method === "OPTIONS") return handleOptions(origin);
@@ -295,11 +330,11 @@ Deno.serve(async (req) => {
                 return jsonResponse(true, headers);
             }
             case "update-manager": {
-                const authErr = await requireElevatedCaller(supabase, req, headers, body);
-                if (authErr) return authErr;
                 const {userId: targetId, profile, email: managerEmail, roleId} = body;
                 if (!targetId) return errorResponse("User ID is required", headers);
                 const id = resolveUserId(targetId);
+                const authErr = await requireElevatedOrOutranking(supabase, req, headers, body, id, roleId);
+                if (authErr) return authErr;
                 const now = nowISO();
                 if (profile) {
                     // Whitelist allowed profile fields to prevent mass assignment
@@ -326,11 +361,12 @@ Deno.serve(async (req) => {
                 return jsonResponse(true, headers);
             }
             case "delete-manager": {
-                const authErr = await requireElevatedCaller(supabase, req, headers, body);
-                if (authErr) return authErr;
                 const {userId: delId} = body;
                 if (!delId) return errorResponse("User ID is required", headers);
-                const {error} = await supabase.from(USERS_TABLE).delete().eq('id', resolveUserId(delId));
+                const resolvedDelId = resolveUserId(delId);
+                const authErr = await requireElevatedOrOutranking(supabase, req, headers, body, resolvedDelId);
+                if (authErr) return authErr;
+                const {error} = await supabase.from(USERS_TABLE).delete().eq('id', resolvedDelId);
                 if (error) return errorResponse("Failed to delete manager", headers, 500);
                 return jsonResponse(true, headers);
             }

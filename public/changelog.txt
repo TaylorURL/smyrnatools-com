@@ -1,6 +1,16 @@
 # Changelog
 
 
+## [38.5.26] - 2026-04-22
+
+- Added operator reprimanded and plant manager reprimanded checkboxes to the lost load report submission form, with visual toggle styling that highlights when checked
+- Lost load reports now auto-resolve the assigned operator name from the selected truck number and include operator_id, operator_name, operator_reprimanded, and plant_manager_reprimanded in the submitted payload
+- Lost load detail modal now shows the operator name, operator reprimanded status, and plant manager reprimanded status alongside existing fields
+- Added a new Excel export for lost load reports (LostLoadExport) that groups entries by plant, color-codes reason categories, flags reprimand columns, and includes a summary row with total yardage
+- Extracted QcFilterBar into a named export from ReportsToolbar and simplified the toolbar's props, removing the inline QC filter logic, report type dropdown, and stats content slot in favor of a generic tabStrip prop
+- Added seven new v2 report components: DeadlineFuse, MergedReviewList, MissingPanel, OverdueBanner, QuickRail, TrackCard, and WeekRibbon
+- Significantly restructured ReportsView and useReportsData to support the new v2 component layout and data model
+
 ## [38.5.25] - 2026-04-20
 
 - Added a Missing Reports tab to the Reports view that shows which assignees did not submit their reports for the previous two weeks, grouped by week with Last Week / Older badges

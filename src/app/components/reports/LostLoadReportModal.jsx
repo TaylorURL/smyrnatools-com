@@ -39,23 +39,48 @@ async function uploadWriteup(file, userId) {
 
 const REASONS = ['Plant Manager Error', 'Operator Error', 'Plant Issue', 'Truck Issues', 'Other']
 const DUMP_LOCATIONS = ['Yard', 'Job Site', 'Blocks', 'Other']
-/** Modal form for submitting a new lost load report. Plant is auto-populated from the user's assigned plant. */
-function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
+/** Modal form for submitting or editing a lost load report. Plant is
+ *  auto-populated from the user's assigned plant. When `initialReport` is
+ *  provided the modal runs in edit mode and UPDATEs the existing row. */
+function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport = null }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
     const fileInputRef = useRef(null)
-    const [plant, setPlant] = useState('')
-    const [lostLoadDate, setLostLoadDate] = useState('')
-    const [yardage, setYardage] = useState('')
-    const [truckNumber, setTruckNumber] = useState('')
-    const [customerName, setCustomerName] = useState('')
-    const [ticketNumber, setTicketNumber] = useState('')
-    const [reason, setReason] = useState('')
-    const [explanation, setExplanation] = useState('')
-    const [dumpLocation, setDumpLocation] = useState('')
-    const [dumpLocationOther, setDumpLocationOther] = useState('')
-    const [operatorReprimanded, setOperatorReprimanded] = useState(false)
-    const [plantManagerReprimanded, setPlantManagerReprimanded] = useState(false)
+    const isEditing = !!initialReport?.id
+    const initialData = initialReport?.data || {}
+    const initialReasonCategory = (() => {
+        const full = initialData.reason || ''
+        if (!full) return ''
+        const [cat] = full.split(':')
+        const trimmed = (cat || '').trim()
+        return REASONS.includes(trimmed) ? trimmed : 'Other'
+    })()
+    const initialExplanation = (() => {
+        const full = initialData.reason || ''
+        const idx = full.indexOf(':')
+        return idx === -1 ? full : full.slice(idx + 1).trim()
+    })()
+    const initialDumpCategory = DUMP_LOCATIONS.includes(initialData.dump_location)
+        ? initialData.dump_location
+        : initialData.dump_location
+          ? 'Other'
+          : ''
+    const initialDumpOther =
+        initialData.dump_location && !DUMP_LOCATIONS.includes(initialData.dump_location)
+            ? initialData.dump_location
+            : ''
+    const [plant, setPlant] = useState(initialData.plant || '')
+    const [lostLoadDate, setLostLoadDate] = useState(initialData.lost_load_date || '')
+    const [yardage, setYardage] = useState(initialData.yardage != null ? String(initialData.yardage) : '')
+    const [truckNumber, setTruckNumber] = useState(initialData.truck_number || '')
+    const [customerName, setCustomerName] = useState(initialData.customer_name || '')
+    const [ticketNumber, setTicketNumber] = useState(initialData.ticket_number || '')
+    const [reason, setReason] = useState(initialReasonCategory)
+    const [explanation, setExplanation] = useState(initialExplanation)
+    const [dumpLocation, setDumpLocation] = useState(initialDumpCategory)
+    const [dumpLocationOther, setDumpLocationOther] = useState(initialDumpOther)
+    const [operatorReprimanded, setOperatorReprimanded] = useState(!!initialData.operator_reprimanded)
+    const [plantManagerReprimanded, setPlantManagerReprimanded] = useState(!!initialData.plant_manager_reprimanded)
     const [attachment, setAttachment] = useState(null)
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
@@ -65,13 +90,13 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
     const [truckPickerOpen, setTruckPickerOpen] = useState(false)
     const [truckSearch, setTruckSearch] = useState('')
     useEffect(() => {
-        if (!user?.id) return
+        if (!user?.id || isEditing) return
         UserService.getUserPlant(user.id)
             .then((code) => {
                 if (code) setPlant(code)
             })
             .catch((e) => console.error('Failed to fetch user plant:', e))
-    }, [user?.id])
+    }, [user?.id, isEditing])
     useEffect(() => {
         MixerService.getAllMixers()
             .then(setMixers)
@@ -160,44 +185,63 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
         setSubmitting(true)
         setError('')
         try {
-            // Upload attachment if provided
-            let attachmentUrl = null
+            // Upload attachment if a new one was chosen; otherwise keep any
+            // existing attachment URL when editing.
+            let attachmentUrl = isEditing ? initialData.attachment_url || null : null
             if (attachment) {
                 attachmentUrl = await uploadWriteup(attachment, user.id)
             }
 
             const { monday, saturday } = getCurrentWeekBounds()
             const fullReason = reason === 'Other' ? `Other: ${explanation.trim()}` : `${reason}: ${explanation.trim()}`
-            const { data, error: dbError } = await Database.from('reports')
-                .insert({
-                    completed: true,
-                    data: {
-                        attachment_url: attachmentUrl,
-                        customer_name: customerName.trim() || null,
-                        dump_location: resolvedDumpLocation,
-                        lost_load_date: lostLoadDate,
-                        operator_id: selectedOperatorId,
-                        operator_name: selectedOperatorName || null,
-                        operator_reprimanded: !!operatorReprimanded,
-                        plant,
-                        plant_manager_reprimanded: !!plantManagerReprimanded,
-                        reason: fullReason,
-                        ticket_number: ticketNumber.trim() || null,
-                        truck_number: truckNumber.trim(),
-                        yardage: Number(yardage)
-                    },
-                    report_date_range_end: saturday,
-                    report_date_range_start: monday,
-                    report_name: 'lost_load',
-                    submitted_at: new Date().toISOString(),
-                    user_id: user.id,
-                    week: monday
-                })
-                .select()
-                .single()
-            if (dbError) throw dbError
+            const payloadData = {
+                attachment_url: attachmentUrl,
+                customer_name: customerName.trim() || null,
+                dump_location: resolvedDumpLocation,
+                lost_load_date: lostLoadDate,
+                operator_id: selectedOperatorId,
+                operator_name: selectedOperatorName || null,
+                operator_reprimanded: !!operatorReprimanded,
+                plant,
+                plant_manager_reprimanded: !!plantManagerReprimanded,
+                reason: fullReason,
+                ticket_number: ticketNumber.trim() || null,
+                truck_number: truckNumber.trim(),
+                yardage: Number(yardage)
+            }
+            let data
+            if (isEditing) {
+                const { data: updated, error: dbError } = await Database.from('reports')
+                    .update({ data: payloadData })
+                    .eq('id', initialReport.id)
+                    .select()
+                    .single()
+                if (dbError) throw dbError
+                data = updated
+            } else {
+                const { data: inserted, error: dbError } = await Database.from('reports')
+                    .insert({
+                        completed: true,
+                        data: payloadData,
+                        report_date_range_end: saturday,
+                        report_date_range_start: monday,
+                        report_name: 'lost_load',
+                        submitted_at: new Date().toISOString(),
+                        user_id: user.id,
+                        week: monday
+                    })
+                    .select()
+                    .single()
+                if (dbError) throw dbError
+                data = inserted
+            }
 
             onSubmitted?.(data)
+
+            if (isEditing) {
+                onClose()
+                return
+            }
 
             // Notify GMs — await so failures are visible, but don't block the success flow
             try {
@@ -250,7 +294,9 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
                         >
                             <i className="fas fa-exclamation-triangle text-sm" style={{ color: accentColor }} />
                         </div>
-                        <h2 className="text-base font-semibold m-0 text-text-primary">Lost Load Report</h2>
+                        <h2 className="text-base font-semibold m-0 text-text-primary">
+                            {isEditing ? 'Edit Lost Load Report' : 'Lost Load Report'}
+                        </h2>
                     </div>
                     <button
                         onClick={onClose}
@@ -723,8 +769,10 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user }) {
                         {submitting ? (
                             <>
                                 <i className="fas fa-circle-notch fa-spin mr-2" />
-                                Submitting...
+                                {isEditing ? 'Saving...' : 'Submitting...'}
                             </>
+                        ) : isEditing ? (
+                            'Save Changes'
                         ) : (
                             'Submit Report'
                         )}

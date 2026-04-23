@@ -84,10 +84,11 @@ async function fetchUsersForRole(roleName, currentUserId) {
 }
 
 /** Modal form for submitting a QC Strength Report. */
-function QCStrengthReportModal({ onClose, onSubmitted, user }) {
+function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = null }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
-    const [formData, setFormData] = useState({})
+    const isEditing = !!initialReport?.id
+    const [formData, setFormData] = useState(initialReport?.data || {})
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
     const [roleUsers, setRoleUsers] = useState({})
@@ -110,19 +111,31 @@ function QCStrengthReportModal({ onClose, onSubmitted, user }) {
         setError('')
         setSubmitting(true)
         try {
-            const { monday, saturday } = getCurrentWeekBounds()
-            const row = {
-                user_id: user?.id,
-                report_name: 'qc_strength',
-                week: monday.toISOString(),
-                report_date_range_start: monday.toISOString(),
-                report_date_range_end: saturday.toISOString(),
-                data: { ...formData },
-                completed: true,
-                submitted_at: new Date().toISOString()
+            let data
+            if (isEditing) {
+                const { data: updated, error: dbError } = await Database.from(TABLE)
+                    .update({ data: { ...formData } })
+                    .eq('id', initialReport.id)
+                    .select()
+                    .single()
+                if (dbError) throw new Error(dbError.message)
+                data = updated
+            } else {
+                const { monday, saturday } = getCurrentWeekBounds()
+                const row = {
+                    user_id: user?.id,
+                    report_name: 'qc_strength',
+                    week: monday.toISOString(),
+                    report_date_range_start: monday.toISOString(),
+                    report_date_range_end: saturday.toISOString(),
+                    data: { ...formData },
+                    completed: true,
+                    submitted_at: new Date().toISOString()
+                }
+                const { data: inserted, error: dbError } = await Database.from(TABLE).insert(row).select().single()
+                if (dbError) throw new Error(dbError.message)
+                data = inserted
             }
-            const { data, error: dbError } = await Database.from(TABLE).insert(row).select().single()
-            if (dbError) throw new Error(dbError.message)
             onSubmitted?.(data)
             onClose()
         } catch (e) {
@@ -234,7 +247,9 @@ function QCStrengthReportModal({ onClose, onSubmitted, user }) {
                             <i className="fas fa-flask text-white text-sm" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-800">Quality Control Strength Report</h2>
+                            <h2 className="text-lg font-bold text-slate-800">
+                                {isEditing ? 'Edit QC Strength Report' : 'Quality Control Strength Report'}
+                            </h2>
                             <p className="text-xs text-slate-400">Concrete cylinder strength testing</p>
                         </div>
                     </div>
@@ -283,8 +298,10 @@ function QCStrengthReportModal({ onClose, onSubmitted, user }) {
                     >
                         {submitting ? (
                             <span className="flex items-center gap-2">
-                                <i className="fas fa-spinner fa-spin" /> Submitting...
+                                <i className="fas fa-spinner fa-spin" /> {isEditing ? 'Saving...' : 'Submitting...'}
                             </span>
+                        ) : isEditing ? (
+                            'Save Changes'
                         ) : (
                             'Submit Report'
                         )}

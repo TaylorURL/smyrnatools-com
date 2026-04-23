@@ -18,6 +18,7 @@ import ThirdPartyLabReportModal from '../../../app/components/reports/ThirdParty
 import DeadlineFuse from '../../../app/components/reports/v2/DeadlineFuse'
 import MergedReviewList from '../../../app/components/reports/v2/MergedReviewList'
 import MissingPanel from '../../../app/components/reports/v2/MissingPanel'
+import MyOneOffRail from '../../../app/components/reports/v2/MyOneOffRail'
 import OverdueBanner from '../../../app/components/reports/v2/OverdueBanner'
 import QuickRail from '../../../app/components/reports/v2/QuickRail'
 import TrackCard from '../../../app/components/reports/v2/TrackCard'
@@ -135,6 +136,9 @@ function ReportsView() {
     const [showLostLoadModal, setShowLostLoadModal] = useState(false)
     const [showQCStrengthModal, setShowQCStrengthModal] = useState(false)
     const [showLabReportModal, setShowLabReportModal] = useState(false)
+    const [editingLostLoad, setEditingLostLoad] = useState(null)
+    const [editingQcReport, setEditingQcReport] = useState(null)
+    const [editingLabReport, setEditingLabReport] = useState(null)
     const [qcReports, setQcReports] = useState([])
     const [isLoadingQC, setIsLoadingQC] = useState(false)
     const [qcLoaded, setQcLoaded] = useState(false)
@@ -577,6 +581,29 @@ function ReportsView() {
         lossDumpLocation,
         lossReason
     ])
+    const myQualityReports = useMemo(
+        () =>
+            qcReports
+                .filter((r) => r.userId === user?.id)
+                .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
+                .slice(0, 20),
+        [qcReports, user?.id]
+    )
+    const myLostLoadReports = useMemo(
+        () =>
+            (Array.isArray(lostLoadReports) ? lostLoadReports : [])
+                .filter((r) => r.userId === user?.id)
+                .map((r) => ({ ...r, name: 'lost_load' }))
+                .sort((a, b) => new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0))
+                .slice(0, 20),
+        [lostLoadReports, user?.id]
+    )
+    const handleEditMyOneOff = useCallback((report) => {
+        if (!report) return
+        if (report.name === 'qc_strength') setEditingQcReport(report)
+        else if (report.name === 'third_party_lab') setEditingLabReport(report)
+        else if (report.name === 'lost_load') setEditingLostLoad(report)
+    }, [])
     const lossHasActiveFilters =
         lossSort !== 'newest' ||
         lossDateFrom !== currentMonthStartIso ||
@@ -1320,260 +1347,286 @@ function ReportsView() {
                 )}
 
                 {tab === 'lost_loads' && (
-                    <div className="flex flex-col gap-3">
-                        {hasLostLoadsPermission && (
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowLostLoadModal(true)}
-                                    className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-transparent text-white text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
-                                    style={{ background: accent }}
-                                >
-                                    <i className="fas fa-truck text-[10px]" /> Submit Lost Load Report
-                                </button>
+                    <div className={`rv-split ${railCollapsed ? 'rv-split-collapsed' : ''}`}>
+                        <div className="rv-left flex flex-col gap-3 min-w-0">
+                            {hasLostLoadsPermission && (
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowLostLoadModal(true)}
+                                        className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-transparent text-white text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
+                                        style={{ background: accent }}
+                                    >
+                                        <i className="fas fa-truck text-[10px]" /> Submit Lost Load Report
+                                    </button>
+                                </div>
+                            )}
+                            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
+                                <LossFilterBar
+                                    dumpLocationFilter={lossDumpLocation}
+                                    onDumpLocationFilterChange={setLossDumpLocation}
+                                    reasonFilter={lossReason}
+                                    onReasonFilterChange={setLossReason}
+                                    sort={lossSort}
+                                    onSortChange={setLossSort}
+                                    dateFrom={lossDateFrom}
+                                    onDateFromChange={setLossDateFrom}
+                                    dateTo={lossDateTo}
+                                    onDateToChange={setLossDateTo}
+                                    hasActiveFilters={lossHasActiveFilters}
+                                    onClear={clearLossFilters}
+                                    onExport={
+                                        visibleLostLoads.length > 0
+                                            ? () =>
+                                                  exportLostLoadReports({
+                                                      getUserName,
+                                                      plants: regionalPlants,
+                                                      reports: visibleLostLoads
+                                                  })
+                                            : undefined
+                                    }
+                                />
                             </div>
-                        )}
-                        <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
-                            <LossFilterBar
-                                dumpLocationFilter={lossDumpLocation}
-                                onDumpLocationFilterChange={setLossDumpLocation}
-                                reasonFilter={lossReason}
-                                onReasonFilterChange={setLossReason}
-                                sort={lossSort}
-                                onSortChange={setLossSort}
-                                dateFrom={lossDateFrom}
-                                onDateFromChange={setLossDateFrom}
-                                dateTo={lossDateTo}
-                                onDateToChange={setLossDateTo}
-                                hasActiveFilters={lossHasActiveFilters}
-                                onClear={clearLossFilters}
-                                onExport={
-                                    visibleLostLoads.length > 0
-                                        ? () =>
-                                              exportLostLoadReports({
-                                                  getUserName,
-                                                  plants: regionalPlants,
-                                                  reports: visibleLostLoads
-                                              })
-                                        : undefined
-                                }
+                            <LostLoadsList
+                                isLoading={isLoadingLostLoads}
+                                items={lostLoadsPagination.paginatedItems}
+                                pageSize={lostLoadsPagination.pageSize}
+                                currentPage={lostLoadsPagination.currentPage}
+                                totalPages={lostLoadsPagination.totalPages}
+                                onPageSizeChange={lostLoadsPagination.changePageSize}
+                                onPageChange={lostLoadsPagination.goToPage}
+                                getUserName={getUserName}
+                                canDelete={hasLostLoadsDeletePermission}
+                                onDelete={deleteLostLoadReport}
+                                onRowClick={setSelectedLostLoad}
                             />
                         </div>
-                        <LostLoadsList
-                            isLoading={isLoadingLostLoads}
-                            items={lostLoadsPagination.paginatedItems}
-                            pageSize={lostLoadsPagination.pageSize}
-                            currentPage={lostLoadsPagination.currentPage}
-                            totalPages={lostLoadsPagination.totalPages}
-                            onPageSizeChange={lostLoadsPagination.changePageSize}
-                            onPageChange={lostLoadsPagination.goToPage}
-                            getUserName={getUserName}
-                            canDelete={hasLostLoadsDeletePermission}
-                            onDelete={deleteLostLoadReport}
-                            onRowClick={setSelectedLostLoad}
-                        />
+                        <div ref={railRef} className="rv-rail-slot">
+                            <div className="rv-rail-fixed">
+                                <MyOneOffRail
+                                    reports={myLostLoadReports}
+                                    title="Your Lost Loads"
+                                    emptyLabel="You haven't submitted a lost load yet"
+                                    onEdit={handleEditMyOneOff}
+                                />
+                            </div>
+                        </div>
                     </div>
                 )}
 
                 {tab === 'quality' && (
-                    <div className="flex flex-col gap-3">
-                        {hasQCStrengthPermission && (
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowQCStrengthModal(true)}
-                                    className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-transparent text-white text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
-                                    style={{ background: accent }}
-                                >
-                                    <i className="fas fa-flask text-[10px]" /> Submit QC Strength Report
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowLabReportModal(true)}
-                                    className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-transparent text-white text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
-                                    style={{ background: '#e11d48' }}
-                                >
-                                    <i className="fas fa-vial text-[10px]" /> Submit Third-Party Lab Report
-                                </button>
-                            </div>
-                        )}
-                        <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
-                            <QcFilterBar
-                                qcTypeFilter={qcTypeFilter}
-                                onQcTypeFilterChange={setQcTypeFilter}
-                                qcStatusFilter={qcStatusFilter}
-                                onQcStatusFilterChange={setQcStatusFilter}
-                                qcSort={qcSort}
-                                onQcSortChange={setQcSort}
-                                qcDateFrom={qcDateFrom}
-                                onQcDateFromChange={setQcDateFrom}
-                                qcDateTo={qcDateTo}
-                                onQcDateToChange={setQcDateTo}
-                                qcHasActiveFilters={qcHasActiveFilters}
-                                onClearQcFilters={clearQcFilters}
-                            />
-                        </div>
-                        {isLoadingQC ? (
-                            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                                {[1, 2, 3, 4, 5].map((i) => (
-                                    <div
-                                        key={i}
-                                        className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0"
+                    <div className={`rv-split ${railCollapsed ? 'rv-split-collapsed' : ''}`}>
+                        <div className="rv-left flex flex-col gap-3 min-w-0">
+                            {hasQCStrengthPermission && (
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowQCStrengthModal(true)}
+                                        className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-transparent text-white text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
+                                        style={{ background: accent }}
                                     >
-                                        <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="h-4 w-44 rounded bg-slate-200 animate-pulse mb-1.5" />
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-5 h-5 rounded-full bg-slate-200 animate-pulse" />
-                                                <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
-                                                <div className="h-3 w-16 rounded bg-slate-100 animate-pulse" />
+                                        <i className="fas fa-flask text-[10px]" /> Submit QC Strength Report
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowLabReportModal(true)}
+                                        className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-transparent text-white text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
+                                        style={{ background: '#e11d48' }}
+                                    >
+                                        <i className="fas fa-vial text-[10px]" /> Submit Third-Party Lab Report
+                                    </button>
+                                </div>
+                            )}
+                            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
+                                <QcFilterBar
+                                    qcTypeFilter={qcTypeFilter}
+                                    onQcTypeFilterChange={setQcTypeFilter}
+                                    qcStatusFilter={qcStatusFilter}
+                                    onQcStatusFilterChange={setQcStatusFilter}
+                                    qcSort={qcSort}
+                                    onQcSortChange={setQcSort}
+                                    qcDateFrom={qcDateFrom}
+                                    onQcDateFromChange={setQcDateFrom}
+                                    qcDateTo={qcDateTo}
+                                    onQcDateToChange={setQcDateTo}
+                                    qcHasActiveFilters={qcHasActiveFilters}
+                                    onClearQcFilters={clearQcFilters}
+                                />
+                            </div>
+                            {isLoadingQC ? (
+                                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                    {[1, 2, 3, 4, 5].map((i) => (
+                                        <div
+                                            key={i}
+                                            className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0"
+                                        >
+                                            <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="h-4 w-44 rounded bg-slate-200 animate-pulse mb-1.5" />
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 rounded-full bg-slate-200 animate-pulse" />
+                                                    <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+                                                    <div className="h-3 w-16 rounded bg-slate-100 animate-pulse" />
+                                                </div>
+                                            </div>
+                                            <div className="h-6 w-16 rounded bg-slate-200 animate-pulse shrink-0" />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : qcReports.length === 0 ? (
+                                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                    <div className="flex flex-col items-center justify-center py-12 px-4 text-slate-400">
+                                        <i className="fas fa-flask text-4xl mb-3" />
+                                        <div className="text-sm">No quality reports submitted yet</div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <div className="flex items-center gap-3 mb-2 px-1">
+                                        <span className="text-sm font-bold text-slate-700">Quality Reports</span>
+                                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-slate-600 bg-slate-100">
+                                            {qcHasActiveFilters
+                                                ? `${visibleQcReports.length} of ${qcReports.length}`
+                                                : `${qcReports.length} submitted`}
+                                        </span>
+                                    </div>
+                                    {visibleQcReports.length === 0 ? (
+                                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                            <div className="flex flex-col items-center justify-center py-10 px-4 text-slate-400">
+                                                <i className="fas fa-filter text-3xl mb-2" />
+                                                <div className="text-sm">No reports match your filters</div>
                                             </div>
                                         </div>
-                                        <div className="h-6 w-16 rounded bg-slate-200 animate-pulse shrink-0" />
-                                    </div>
-                                ))}
-                            </div>
-                        ) : qcReports.length === 0 ? (
-                            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                                <div className="flex flex-col items-center justify-center py-12 px-4 text-slate-400">
-                                    <i className="fas fa-flask text-4xl mb-3" />
-                                    <div className="text-sm">No quality reports submitted yet</div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <div className="flex items-center gap-3 mb-2 px-1">
-                                    <span className="text-sm font-bold text-slate-700">Quality Reports</span>
-                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-slate-600 bg-slate-100">
-                                        {qcHasActiveFilters
-                                            ? `${visibleQcReports.length} of ${qcReports.length}`
-                                            : `${qcReports.length} submitted`}
-                                    </span>
-                                </div>
-                                {visibleQcReports.length === 0 ? (
-                                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                                        <div className="flex flex-col items-center justify-center py-10 px-4 text-slate-400">
-                                            <i className="fas fa-filter text-3xl mb-2" />
-                                            <div className="text-sm">No reports match your filters</div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                                        {visibleQcReports.map((report) => {
-                                            const submittedLabel = report.submittedAt
-                                                ? new Date(report.submittedAt).toLocaleDateString(undefined, {
-                                                      day: 'numeric',
-                                                      month: 'short'
-                                                  })
-                                                : ''
-                                            const submitterName = getUserName(report.userId) || 'Unknown'
-                                            const initials = submitterName
-                                                .split(' ')
-                                                .map((w) => w[0])
-                                                .join('')
-                                                .slice(0, 2)
-                                                .toUpperCase()
-                                            const d = report.data || {}
-                                            const isLabReport = report.name === 'third_party_lab'
-                                            const meaningfulStr = (val) =>
-                                                val && typeof val === 'string' && val.trim() && val.trim() !== 'N/A'
-                                                    ? val.trim()
-                                                    : null
-                                            const title = isLabReport
-                                                ? meaningfulStr(d.lab_company_name) || 'Third Party Lab Report'
-                                                : meaningfulStr(d.contractor) ||
-                                                  meaningfulStr(d.project) ||
-                                                  'QC Strength Report'
-                                            const iconClass = isLabReport ? 'fa-vial' : 'fa-flask'
-                                            const iconBg = isLabReport ? 'bg-rose-600' : 'bg-violet-600'
-                                            return (
-                                                <div
-                                                    key={report.id}
-                                                    className="flex items-center px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0 cursor-pointer transition-colors hover:bg-slate-50"
-                                                    onClick={() =>
-                                                        isLabReport
-                                                            ? setSelectedLabReport(report)
-                                                            : setSelectedQCReport(report)
-                                                    }
-                                                >
-                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                        <div
-                                                            className={`w-7 h-7 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}
-                                                        >
-                                                            <i className={`fas ${iconClass} text-white text-[10px]`} />
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <span className="text-sm font-medium text-slate-800 block truncate">
-                                                                {title}
-                                                            </span>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                <div
-                                                                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                                                                    style={{
-                                                                        background: `${accent}20`,
-                                                                        color: accent
-                                                                    }}
-                                                                >
-                                                                    <span className="text-[8px] font-bold">
-                                                                        {initials}
-                                                                    </span>
-                                                                </div>
-                                                                <span className="text-xs text-slate-500 truncate">
-                                                                    {submitterName}
-                                                                </span>
-                                                                {submittedLabel && (
-                                                                    <>
-                                                                        <span className="text-slate-300 text-[8px]">
-                                                                            ●
-                                                                        </span>
-                                                                        <span className="text-xs text-slate-400">
-                                                                            {submittedLabel}
-                                                                        </span>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    {report.reviewed ? (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-700 shrink-0">
-                                                            <i className="fas fa-check text-[9px]" /> Reviewed
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-700 shrink-0">
-                                                            <i className="fas fa-flag text-[9px]" /> Pending
-                                                        </span>
-                                                    )}
-                                                    <button
-                                                        className="ml-3 px-3 py-1.5 rounded-md text-white text-xs font-semibold shrink-0 hidden sm:block"
-                                                        style={{ background: accent }}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
+                                    ) : (
+                                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                            {visibleQcReports.map((report) => {
+                                                const submittedLabel = report.submittedAt
+                                                    ? new Date(report.submittedAt).toLocaleDateString(undefined, {
+                                                          day: 'numeric',
+                                                          month: 'short'
+                                                      })
+                                                    : ''
+                                                const submitterName = getUserName(report.userId) || 'Unknown'
+                                                const initials = submitterName
+                                                    .split(' ')
+                                                    .map((w) => w[0])
+                                                    .join('')
+                                                    .slice(0, 2)
+                                                    .toUpperCase()
+                                                const d = report.data || {}
+                                                const isLabReport = report.name === 'third_party_lab'
+                                                const meaningfulStr = (val) =>
+                                                    val && typeof val === 'string' && val.trim() && val.trim() !== 'N/A'
+                                                        ? val.trim()
+                                                        : null
+                                                const title = isLabReport
+                                                    ? meaningfulStr(d.lab_company_name) || 'Third Party Lab Report'
+                                                    : meaningfulStr(d.contractor) ||
+                                                      meaningfulStr(d.project) ||
+                                                      'QC Strength Report'
+                                                const iconClass = isLabReport ? 'fa-vial' : 'fa-flask'
+                                                const iconBg = isLabReport ? 'bg-rose-600' : 'bg-violet-600'
+                                                return (
+                                                    <div
+                                                        key={report.id}
+                                                        className="flex items-center px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0 cursor-pointer transition-colors hover:bg-slate-50"
+                                                        onClick={() =>
                                                             isLabReport
                                                                 ? setSelectedLabReport(report)
                                                                 : setSelectedQCReport(report)
-                                                        }}
+                                                        }
                                                     >
-                                                        {report.reviewed ? 'View' : 'Review'}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            handleDeleteQCReport(report)
-                                                        }}
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0 ml-2 hidden sm:flex"
-                                                        title="Delete"
-                                                    >
-                                                        <i className="fas fa-trash-alt text-xs" />
-                                                    </button>
-                                                    <i className="fas fa-chevron-right text-slate-300 text-xs ml-3 sm:hidden" />
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                )}
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                            <div
+                                                                className={`w-7 h-7 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}
+                                                            >
+                                                                <i
+                                                                    className={`fas ${iconClass} text-white text-[10px]`}
+                                                                />
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <span className="text-sm font-medium text-slate-800 block truncate">
+                                                                    {title}
+                                                                </span>
+                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                    <div
+                                                                        className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                                                                        style={{
+                                                                            background: `${accent}20`,
+                                                                            color: accent
+                                                                        }}
+                                                                    >
+                                                                        <span className="text-[8px] font-bold">
+                                                                            {initials}
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="text-xs text-slate-500 truncate">
+                                                                        {submitterName}
+                                                                    </span>
+                                                                    {submittedLabel && (
+                                                                        <>
+                                                                            <span className="text-slate-300 text-[8px]">
+                                                                                ●
+                                                                            </span>
+                                                                            <span className="text-xs text-slate-400">
+                                                                                {submittedLabel}
+                                                                            </span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {report.reviewed ? (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-700 shrink-0">
+                                                                <i className="fas fa-check text-[9px]" /> Reviewed
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-700 shrink-0">
+                                                                <i className="fas fa-flag text-[9px]" /> Pending
+                                                            </span>
+                                                        )}
+                                                        <button
+                                                            className="ml-3 px-3 py-1.5 rounded-md text-white text-xs font-semibold shrink-0 hidden sm:block"
+                                                            style={{ background: accent }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                isLabReport
+                                                                    ? setSelectedLabReport(report)
+                                                                    : setSelectedQCReport(report)
+                                                            }}
+                                                        >
+                                                            {report.reviewed ? 'View' : 'Review'}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleDeleteQCReport(report)
+                                                            }}
+                                                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0 ml-2 hidden sm:flex"
+                                                            title="Delete"
+                                                        >
+                                                            <i className="fas fa-trash-alt text-xs" />
+                                                        </button>
+                                                        <i className="fas fa-chevron-right text-slate-300 text-xs ml-3 sm:hidden" />
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <div ref={railRef} className="rv-rail-slot">
+                            <div className="rv-rail-fixed">
+                                <MyOneOffRail
+                                    reports={myQualityReports}
+                                    title="Your Quality Reports"
+                                    emptyLabel="You haven't submitted a quality report yet"
+                                    onEdit={handleEditMyOneOff}
+                                />
                             </div>
-                        )}
+                        </div>
                     </div>
                 )}
             </div>
@@ -1592,15 +1645,19 @@ function ReportsView() {
                     userPlantCode={userPlantCode}
                 />
             )}
-            {showLostLoadModal && (
+            {(showLostLoadModal || editingLostLoad) && (
                 <LostLoadReportModal
-                    onClose={() => setShowLostLoadModal(false)}
+                    onClose={() => {
+                        setShowLostLoadModal(false)
+                        setEditingLostLoad(null)
+                    }}
                     onSubmitted={(report) => {
                         addLostLoadReport(report)
-                        if (tab !== 'lost_loads') setTab('lost_loads')
+                        if (!editingLostLoad && tab !== 'lost_loads') setTab('lost_loads')
                     }}
                     plants={regionalPlants}
                     user={user}
+                    initialReport={editingLostLoad}
                 />
             )}
             {selectedLostLoad && (
@@ -1610,11 +1667,19 @@ function ReportsView() {
                     onClose={() => setSelectedLostLoad(null)}
                 />
             )}
-            {showQCStrengthModal && (
+            {(showQCStrengthModal || editingQcReport) && (
                 <QCStrengthReportModal
-                    onClose={() => setShowQCStrengthModal(false)}
-                    onSubmitted={() => triggerRefresh()}
+                    onClose={() => {
+                        setShowQCStrengthModal(false)
+                        setEditingQcReport(null)
+                    }}
+                    onSubmitted={() => {
+                        setQcLoaded(false)
+                        if (tab === 'quality') loadQCReports()
+                        if (!editingQcReport) triggerRefresh()
+                    }}
                     user={user}
+                    initialReport={editingQcReport}
                 />
             )}
             {selectedLabReport && (
@@ -1628,14 +1693,18 @@ function ReportsView() {
                     }}
                 />
             )}
-            {showLabReportModal && (
+            {(showLabReportModal || editingLabReport) && (
                 <ThirdPartyLabReportModal
-                    onClose={() => setShowLabReportModal(false)}
+                    onClose={() => {
+                        setShowLabReportModal(false)
+                        setEditingLabReport(null)
+                    }}
                     onSubmitted={() => {
                         setQcLoaded(false)
                         if (tab === 'quality') loadQCReports()
                     }}
                     user={user}
+                    initialReport={editingLabReport}
                 />
             )}
             {selectedQCReport && (
