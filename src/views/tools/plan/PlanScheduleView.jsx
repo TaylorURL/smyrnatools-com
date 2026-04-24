@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { TrafficService } from '../../../services/TrafficService'
 import {
+    adjustPoolForDate,
     BIG_POUR_MIN_TRUCKS,
     computePlantPoolTimeline,
     computePlantPoolTimelines,
@@ -13,8 +14,10 @@ import {
     getEffectiveMinTrucks,
     getOrderPourDurationMinutes,
     getOrderPourRate,
+    getPoolDayMultiplier,
     getRequiredTrucksForPourRate,
     isBigPourOrder,
+    isClosedDay,
     timeToMinutes,
     trucksToHitBigPourGoal
 } from '../../../utils/PlanUtility'
@@ -968,12 +971,18 @@ function TruckCoverageHoverCard({
     timing,
     yardage
 }) {
-    const statusColor = overbooked ? '#dc2626' : '#16a34a'
-    const statusIcon = overbooked ? 'fa-triangle-exclamation' : 'fa-circle-check'
-    const statusTitle = overbooked ? 'This order will run behind' : 'This order is covered'
+    const statusColor = overbooked ? '#d97706' : '#16a34a'
+    const statusIcon = overbooked ? 'fa-gauge-simple-low' : 'fa-circle-check'
+    const statusTitle = overbooked ? 'Pour will run at reduced rate' : 'This order is covered'
     const shortfall = overbooked && Number.isFinite(poolAfterEffective) ? -poolAfterEffective : 0
+    const scheduledYph = timing?.scheduledRateYph
+    const actualYph = timing?.effectiveRateYph
     const statusSub = overbooked
-        ? `${plantCode} is short ${shortfall} truck${shortfall === 1 ? '' : 's'} for this pour. Consider sending help from another plant, or accept that the job will start slow.`
+        ? `${plantCode} is short ${shortfall} truck${shortfall === 1 ? '' : 's'}. ${
+              Number.isFinite(scheduledYph) && Number.isFinite(actualYph)
+                  ? `Pour rate drops from ${scheduledYph} to ${actualYph} yd/hr — same yardage, just takes longer to finish.`
+                  : 'Fewer trucks cycling means a lower pour rate — the pour still finishes, it just takes longer.'
+          } Consider sending help from another plant to keep the pour on its scheduled rate.`
         : `${plantCode} has enough trucks to keep this pour on pace.`
     return (
         <div
@@ -1076,10 +1085,10 @@ function TruckCoverageHoverCard({
                 >
                     {overbooked ? (
                         <HoverNote>
-                            <span style={{ color: '#dc2626', fontWeight: 600 }}>
+                            <span style={{ color: '#d97706', fontWeight: 600 }}>
                                 {bigPour
-                                    ? `This order won't have enough trucks to maintain 120 yd/hr loaded.`
-                                    : `${plantCode} won't have trucks available at this point — this order will be late.`}
+                                    ? `Not enough trucks to hold 120 yd/hr loaded — pour runs at a reduced rate.`
+                                    : `${plantCode} doesn't have enough trucks to hold the scheduled pour rate — the pour still runs, just slower.`}
                             </span>
                         </HoverNote>
                     ) : poolAfter < 0 ? (
@@ -1127,23 +1136,25 @@ function TruckCoverageHoverCard({
                 </div>
             </div>
 
-            {/* Estimated arrival / completion — only when running behind */}
+            {/* Real-world timing — when fewer trucks cycle, the pour rate
+                drops and completion slides later. First truck is still on
+                time unless there's literally no truck at the plant. */}
             {overbooked && timing && (
                 <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-light)' }}>
                     <div className="flex items-center gap-2 mb-1.5">
                         <div
                             className="flex items-center justify-center rounded-md shrink-0"
                             style={{
-                                background: 'rgba(220, 38, 38, 0.14)',
-                                color: '#dc2626',
+                                background: 'rgba(217, 119, 6, 0.14)',
+                                color: '#d97706',
                                 height: 22,
                                 width: 22
                             }}
                         >
-                            <i className="fas fa-stopwatch text-[11px]" />
+                            <i className="fas fa-gauge-simple-low text-[11px]" />
                         </div>
-                        <div className="text-[12px] font-bold" style={{ color: '#dc2626' }}>
-                            Real-world timing
+                        <div className="text-[12px] font-bold" style={{ color: '#d97706' }}>
+                            Pour pace
                         </div>
                     </div>
                     <div className="text-[11px] leading-relaxed pl-7" style={{ color: 'var(--text-secondary)' }}>
@@ -1152,25 +1163,36 @@ function TruckCoverageHoverCard({
                                 First truck at job:{' '}
                                 <b style={{ color: 'var(--text-primary)' }}>
                                     {formatMinutesClock(timing.firstArrivalMin)}
-                                </b>
+                                </b>{' '}
+                                <span style={{ color: '#16a34a', fontWeight: 600 }}>
+                                    {timing.firstTruckIsLate ? '(late — no truck available)' : '(on time)'}
+                                </span>
                             </div>
                         )}
-                        <div>
+                        {Number.isFinite(timing.scheduledRateYph) && Number.isFinite(timing.effectiveRateYph) && (
+                            <div className="mt-0.5">
+                                Pour rate: <b style={{ color: '#d97706' }}>{timing.effectiveRateYph} yd/hr</b>{' '}
+                                <span style={{ color: 'var(--text-tertiary)' }}>
+                                    (scheduled {timing.scheduledRateYph} yd/hr)
+                                </span>
+                            </div>
+                        )}
+                        <div className="mt-0.5">
                             Pour finishes around{' '}
-                            <b style={{ color: '#dc2626' }}>{formatMinutesClock(timing.estimatedCompletionMin)}</b>{' '}
+                            <b style={{ color: '#d97706' }}>{formatMinutesClock(timing.estimatedCompletionMin)}</b>{' '}
                             <span style={{ color: 'var(--text-tertiary)' }}>
                                 (vs. scheduled {formatMinutesClock(timing.scheduledCompletionMin)})
                             </span>
                         </div>
                         {timing.delayMin > 0 && (
                             <div className="mt-0.5">
-                                <b style={{ color: '#dc2626' }}>
+                                <b style={{ color: '#d97706' }}>
                                     ~
                                     {timing.delayMin >= 60
                                         ? `${Math.floor(timing.delayMin / 60)}h ${timing.delayMin % 60}m`
                                         : `${timing.delayMin} min`}
                                 </b>{' '}
-                                behind — pouring with {timing.actualTrucks} truck
+                                longer than scheduled — cycling {timing.actualTrucks} truck
                                 {timing.actualTrucks === 1 ? '' : 's'} instead of {timing.requiredTrucks}.
                             </div>
                         )}
@@ -1197,12 +1219,12 @@ function TruckCoverageHoverCard({
                     </div>
                     <div className="text-[11px] leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
                         <div className="font-bold text-[12px]" style={{ color: '#0ea5e9' }}>
-                            Suggested move
+                            To pour at full rate
                         </div>
-                        Try starting this order at{' '}
+                        Move this order to{' '}
                         <b style={{ color: 'var(--text-primary)' }}>{formatMinutesClock(recommendedMoveTime)}</b> —
-                        that&apos;s the earliest {plantCode} will have {computed} truck
-                        {computed === 1 ? '' : 's'} free to run the full pour.
+                        that&apos;s the earliest {plantCode} has {computed} truck
+                        {computed === 1 ? '' : 's'} free to hold the scheduled pour rate.
                     </div>
                 </div>
             )}
@@ -1223,8 +1245,8 @@ function TruckCoverageHoverCard({
                         <i className="fas fa-calendar-xmark text-[11px]" />
                     </div>
                     <div className="text-[11px] leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
-                        No time later today has enough capacity — {plantCode} will need help from another plant to cover
-                        this order.
+                        No time later today has the full truck count — {plantCode} will need inbound help from another
+                        plant to pour this order at the scheduled rate.
                     </div>
                 </div>
             )}
@@ -2020,10 +2042,11 @@ function ScheduleTable({
                                                 {overbooked && (
                                                     <span
                                                         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
-                                                        style={{ background: '#dc2626', color: '#fff' }}
+                                                        style={{ background: '#d97706', color: '#fff' }}
+                                                        title="Fewer trucks than needed to hold the scheduled pour rate — send help from another plant to pour on pace."
                                                     >
-                                                        <i className="fas fa-triangle-exclamation text-[8px]" />
-                                                        Will run behind
+                                                        <i className="fas fa-hand-holding-hand text-[8px]" />
+                                                        Needs Help
                                                     </span>
                                                 )}
                                             </div>
@@ -2126,11 +2149,15 @@ function PlanScheduleView({
     assignments = [],
     isMobile = false,
     onSwitchToPlanner,
+    planDate,
     plantAddressByCode,
     plantNameByCode,
     plantProduction,
     stats = []
 }) {
+    const poolDayMultiplier = getPoolDayMultiplier(planDate)
+    const plantsClosed = isClosedDay(planDate)
+    const isSaturday = poolDayMultiplier === 0.5
     /** Fallback city lookup: when an order's city is blank, we use the plant's
      *  city so the map/geocoder still lands near the right area. */
     const plantCityByCode = useMemo(() => {
@@ -2199,22 +2226,32 @@ function PlanScheduleView({
      *  to the dispatch report's travel estimate until results land. */
     useEffect(() => {
         if (!travelPairs.length) return undefined
+        // Skip the whole prefetch once the service has latched unavailable —
+        // otherwise the console fills with 503s every re-render.
+        if (TrafficService.isUnavailable()) return undefined
         let cancelled = false
+        // Only fetch keys we haven't tried yet (undefined). Keys that
+        // previously failed are cached as `null`, so filter excludes them.
         const pending = travelPairs.filter((p) => liveTravelByKey[p.key] === undefined)
         if (!pending.length) return undefined
         Promise.allSettled(
             pending.map(async (pair) => {
                 const result = await TrafficService.fetchDistance(pair.origin, pair.destination)
-                if (cancelled || !result || result.error) return null
+                if (cancelled) return { key: pair.key, minutes: null }
+                if (!result || result.error) return { key: pair.key, minutes: null }
                 const seconds = result.durationInTrafficSeconds ?? result.durationSeconds ?? null
-                if (!Number.isFinite(seconds)) return null
+                if (!Number.isFinite(seconds)) return { key: pair.key, minutes: null }
                 return { key: pair.key, minutes: Math.max(1, Math.round(seconds / 60)) }
             })
         ).then((results) => {
             if (cancelled) return
             const next = {}
             for (const r of results) {
-                if (r.status === 'fulfilled' && r.value) next[r.value.key] = r.value.minutes
+                if (r.status !== 'fulfilled' || !r.value) continue
+                // Cache both successes and failures so we don't retry on
+                // every re-render. `null` tells future renders "already
+                // tried, no live data" and the UI falls back cleanly.
+                next[r.value.key] = r.value.minutes
             }
             if (Object.keys(next).length > 0) {
                 setLiveTravelByKey((prev) => ({ ...prev, ...next }))
@@ -2258,30 +2295,34 @@ function PlanScheduleView({
         const out = {}
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
-            const base = Number.isFinite(s.base) ? s.base : 0
+            const rawBase = Number.isFinite(s.base) ? s.base : 0
+            const base = adjustPoolForDate(rawBase, planDate)
             const send = Number.isFinite(s.send) ? s.send : 0
             const recv = Number.isFinite(s.recv) ? s.recv : 0
             out[s.code] = {
                 base,
-                send,
+                rawBase,
                 recv,
+                send,
                 starting: base - send + recv
             }
         })
         return out
-    }, [stats])
+    }, [stats, planDate])
 
-    /** Initial pool is just the plant's base mixer count — Planner help is
-     *  applied as time-based events (below) so the pool goes up/down at the
-     *  actual transfer times instead of being baked in all at once. */
+    /** Initial pool is the plant's base mixer count, adjusted for the plan
+     *  date: Saturdays run on half crew (floor of base ÷ 2), Sundays are
+     *  closed (pool = 0). Planner help is applied as time-based events
+     *  (below) so the pool goes up/down at the actual transfer times. */
     const initialPoolByCode = useMemo(() => {
         const out = {}
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
-            out[s.code] = Number.isFinite(s.base) ? s.base : 0
+            const base = Number.isFinite(s.base) ? s.base : 0
+            out[s.code] = adjustPoolForDate(base, planDate)
         })
         return out
-    }, [stats])
+    }, [stats, planDate])
 
     /**
      * Time-based help transfers derived from Planner assignments.
@@ -2516,6 +2557,33 @@ function PlanScheduleView({
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-5 flex flex-col gap-3 sm:gap-4">
+                {(plantsClosed || isSaturday) && (
+                    <div
+                        className="rounded-lg px-4 py-3 flex items-start gap-3"
+                        style={{
+                            background: plantsClosed ? 'rgba(220, 38, 38, 0.08)' : 'rgba(217, 119, 6, 0.08)',
+                            border: `1px solid ${plantsClosed ? 'rgba(220, 38, 38, 0.35)' : 'rgba(217, 119, 6, 0.35)'}`
+                        }}
+                    >
+                        <i
+                            className={`fas ${plantsClosed ? 'fa-ban' : 'fa-calendar-day'} mt-0.5`}
+                            style={{ color: plantsClosed ? '#dc2626' : '#d97706', fontSize: 14 }}
+                        />
+                        <div className="flex-1 min-w-0">
+                            <div
+                                className="text-[13px] font-bold"
+                                style={{ color: plantsClosed ? '#991b1b' : '#92400e' }}
+                            >
+                                {plantsClosed ? 'Sunday — plants closed' : 'Saturday — half crew'}
+                            </div>
+                            <div className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                                {plantsClosed
+                                    ? 'All plants are assumed closed today. Truck-coverage math treats every plant pool as 0.'
+                                    : 'Saturday crews run at half staffing. Every plant’s active mixer count is halved (rounded down) for the coverage math.'}
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* Title row */}
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <div className="flex-1 min-w-0">

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
+    adjustPoolForDate,
     computePlantPoolTimeline,
     computePlantPoolTimelines,
     createEmptyAssignment,
@@ -156,6 +157,7 @@ function PlanFlowView({
     getTravelTime,
     mixerCountsByPlant,
     onSwitchToPlanner,
+    planDate,
     plantProduction,
     plants = [],
     setAssignments,
@@ -310,15 +312,19 @@ function PlanFlowView({
         return out
     }, [stats, plantProduction])
 
-    /** Initial pool is just the plant's base. Help is applied as time-aware
-     *  events so the pool only shifts when help actually leaves / returns. */
+    /** Initial pool is the plant's base mixer count, adjusted for day-of-week
+     *  (Saturday halves crew; Sunday closes plants entirely). Help is applied
+     *  as time-aware events so the pool only shifts when help actually leaves
+     *  or returns. */
     const initialPoolByCode = useMemo(() => {
         const out = {}
         ;(stats || []).forEach((s) => {
-            if (s?.code) out[s.code] = Number.isFinite(s.base) ? s.base : 0
+            if (!s?.code) return
+            const base = Number.isFinite(s.base) ? s.base : 0
+            out[s.code] = adjustPoolForDate(base, planDate)
         })
         return out
-    }, [stats])
+    }, [stats, planDate])
 
     /** Help transfers derived from planner assignments — each assignment yields
      *  an outbound handoff at `time` (sender −, receiver +) and, if a valid

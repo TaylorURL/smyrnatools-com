@@ -59,6 +59,38 @@ export const BIG_POUR_MIN_TRUCKS = 12
  *  length, not just windshield time. */
 export const TRUCK_ON_SITE_MINUTES = 30
 
+/**
+ * Weekend availability rules:
+ *   - Sunday  → plants are closed. Pool = 0.
+ *   - Saturday → half crew on. Base mixer count is halved (rounded down so
+ *     the plan stays conservative).
+ *   - All other days → full base.
+ */
+export const getPoolDayMultiplier = (planDate) => {
+    if (!planDate) return 1
+    const parts = String(planDate)
+        .split('-')
+        .map((v) => parseInt(v, 10))
+    if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return 1
+    const [year, month, day] = parts
+    const dow = new Date(year, month - 1, day).getDay()
+    if (dow === 0) return 0
+    if (dow === 6) return 0.5
+    return 1
+}
+
+/** True when the plan date falls on a Sunday (plants closed). */
+export const isClosedDay = (planDate) => getPoolDayMultiplier(planDate) === 0
+
+/** Apply the day-of-week multiplier to a base mixer count. Rounds down so
+ *  we never overestimate on Saturdays. */
+export const adjustPoolForDate = (base, planDate) => {
+    const multiplier = getPoolDayMultiplier(planDate)
+    if (multiplier >= 1) return Number.isFinite(base) ? base : 0
+    if (multiplier <= 0) return 0
+    return Math.floor((Number.isFinite(base) ? base : 0) * multiplier)
+}
+
 /** Parse an `HH:MM` (or `H:MM`) duration from the dispatch report into minutes. */
 const parseDurationMinutes = (value) => {
     const v = String(value || '').trim()
@@ -495,13 +527,28 @@ export const estimateOrderTiming = (order, poolEntry, overrides) => {
     const effectiveSpacing =
         actualTrucks >= required ? scheduledSpacing : Math.max(scheduledSpacing, cycleMin / usableTrucks)
     const estimatedCompletionMin = startMin + (trips - 1) * effectiveSpacing + cycleMin
+    // Pour rate (yd/hr loaded) — scheduled vs actual given the truck count.
+    // If load size is unknown we can't derive a yd/hr figure; leave null so
+    // callers don't render nonsense.
+    const scheduledRateYph = loadSize > 0 && scheduledSpacing > 0 ? (60 / scheduledSpacing) * loadSize : null
+    const effectiveRateYph = loadSize > 0 && effectiveSpacing > 0 ? (60 / effectiveSpacing) * loadSize : null
+    // First truck can't actually dispatch until the plant has at least one
+    // truck available — if the pool is 0 at the scheduled start, the FIRST
+    // truck is physically late. With any available trucks, the first truck
+    // goes out on time; fewer-than-required only slows the pour rate.
+    const firstTruckIsLate = poolAtStart < 1 && inboundDuring > 0
     return {
         actualTrucks,
         delayMin: Math.max(0, Math.round(estimatedCompletionMin - scheduledCompletionMin)),
+        effectiveRateYph: Number.isFinite(effectiveRateYph) ? Math.round(effectiveRateYph * 10) / 10 : null,
+        effectiveSpacingMin: Math.round(effectiveSpacing * 10) / 10,
         estimatedCompletionMin: Math.round(estimatedCompletionMin),
         firstArrivalMin: Number.isFinite(firstArrivalMin) ? Math.round(firstArrivalMin) : null,
+        firstTruckIsLate,
         requiredTrucks: required,
-        scheduledCompletionMin: Math.round(scheduledCompletionMin)
+        scheduledCompletionMin: Math.round(scheduledCompletionMin),
+        scheduledRateYph: Number.isFinite(scheduledRateYph) ? Math.round(scheduledRateYph * 10) / 10 : null,
+        scheduledSpacingMin: scheduledSpacing
     }
 }
 

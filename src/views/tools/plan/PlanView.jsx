@@ -588,6 +588,7 @@ function PlanView() {
                                 canEdit={canEditPlan}
                                 getTravelTime={getTravelTime}
                                 mixerCountsByPlant={mixerCountsByPlant}
+                                planDate={planDate}
                                 plantProduction={plantProduction}
                                 plants={plants}
                                 setAssignments={setAssignments}
@@ -603,6 +604,7 @@ function PlanView() {
                                 assignments={assignments}
                                 isMobile={isMobile}
                                 onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
+                                planDate={planDate}
                                 plantAddressByCode={plantAddressByCode}
                                 plantNameByCode={plantNameByCode}
                                 plantProduction={plantProduction}
