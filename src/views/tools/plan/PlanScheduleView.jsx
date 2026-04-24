@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { TrafficService } from '../../../services/TrafficService'
 import {
-    adjustPoolForDate,
     BIG_POUR_MIN_TRUCKS,
     buildAssignmentDriverTimes,
     computePlantPoolTimeline,
@@ -12,13 +11,18 @@ import {
     estimateOrderTiming,
     findNextViableStart,
     getCalculatedTruckCount,
+    getEffectiveBase,
     getEffectiveMinTrucks,
+    getMissingOperators,
+    getOffsetDate,
     getOrderPourDurationMinutes,
     getOrderPourRate,
     getPoolDayMultiplier,
     getRequiredTrucksForPourRate,
     isBigPourOrder,
     isClosedDay,
+    isExcludedOrder,
+    plantBadgeColor,
     timeToMinutes,
     trucksToHitBigPourGoal
 } from '../../../utils/PlanUtility'
@@ -458,23 +462,8 @@ function RoutePoint({ color, icon, label, primary, sub, warn }) {
 const PLAN_META_KEY = '_meta'
 const VIEW_MODES = ['table', 'cards']
 
-/** Plant badge colors. Values picked to read well on both light and dark bg
- *  with white foreground text. `null` entries fall through to the accent. */
-const PLANT_BADGE_COLORS = {
-    401: '#f97316', // orange
-    402: '#15803d', // dark green
-    403: '#7c3aed', // purple
-    405: '#b98a50', // tan
-    406: '#06b6d4', // cyan
-    407: '#0d9488', // teal
-    408: '#4f46e5', // purple/blue (indigo) — Conroe
-    410: '#6b7280', // gray
-    453: '#a855f7', // purple (lighter than 403/408)
-    455: '#d4a373', // tan (lighter)
-    461: '#2563eb', // blue
-    468: '#eab308' // yellow
-}
-const plantBadgeColor = (code, fallback) => PLANT_BADGE_COLORS[String(code)] || fallback
+// Plant badge colors live in PlanUtility so every view (Schedule, Demand,
+// Planner markers, …) draws the same plant the same color.
 
 /* ── helpers ────────────────────────────────────────────────────────────── */
 
@@ -516,7 +505,7 @@ const TIME_BUCKETS = [
 
 /* ── small building blocks ──────────────────────────────────────────────── */
 
-function KpiCard({ accent, hint, icon, label, value, valueColor }) {
+function KpiCard({ accent, badge, hint, icon, label, value, valueColor }) {
     return (
         <div className="px-4 py-3 flex items-start gap-3 min-w-0 flex-1" style={{ minWidth: 160 }}>
             <div
@@ -533,11 +522,12 @@ function KpiCard({ accent, hint, icon, label, value, valueColor }) {
                     {label}
                 </div>
                 <div
-                    className="font-bold text-[24px] leading-none mt-1 truncate"
+                    className="font-bold text-[24px] leading-none mt-1 truncate flex items-baseline gap-2"
                     style={{ color: valueColor || 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
                     title={String(value)}
                 >
-                    {value}
+                    <span className="truncate">{value}</span>
+                    {badge}
                 </div>
                 {hint && (
                     <div className="text-[11px] mt-1 truncate" style={{ color: 'var(--text-secondary)' }} title={hint}>
@@ -546,6 +536,28 @@ function KpiCard({ accent, hint, icon, label, value, valueColor }) {
                 )}
             </div>
         </div>
+    )
+}
+
+/** +/- percentage pill shown next to the Yardage KPI value. Green when
+ *  up day-over-day, red when down, gray at zero. */
+function YardageDeltaBadge({ pct, yesterdayYardage }) {
+    if (!Number.isFinite(pct)) return null
+    const isFlat = pct === 0
+    const isUp = pct > 0
+    const color = isFlat ? '#64748b' : isUp ? '#16a34a' : '#dc2626'
+    const icon = isFlat ? 'fa-minus' : isUp ? 'fa-arrow-up' : 'fa-arrow-down'
+    const sign = isUp ? '+' : ''
+    return (
+        <span
+            className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5"
+            style={{ background: `${color}1a`, color }}
+            title={`Day-over-day change · yesterday ${yesterdayYardage.toLocaleString()} yd`}
+        >
+            <i className={`fas ${icon} text-[9px]`} />
+            {sign}
+            {pct.toFixed(1)}%
+        </span>
     )
 }
 
@@ -1062,6 +1074,14 @@ function TruckCoverageHoverCard({
                     label={`Plant ${plantCode}`}
                     value={`${poolSource.base} active assigned mixer${poolSource.base === 1 ? '' : 's'}`}
                 >
+                    {poolSource.missing > 0 && (
+                        <HoverNote>
+                            <span style={{ color: '#dc2626', fontWeight: 600 }}>
+                                −{poolSource.missing} operator{poolSource.missing === 1 ? '' : 's'} out today
+                            </span>{' '}
+                            <span style={{ color: 'var(--text-tertiary)' }}>(of {poolSource.rawBase} assigned)</span>
+                        </HoverNote>
+                    )}
                     {(poolSource.send > 0 || poolSource.recv > 0) && (
                         <HoverNote>
                             {poolSource.recv > 0 && (
@@ -2269,6 +2289,7 @@ function ScheduleTable({
  */
 function PlanScheduleView({
     accentColor,
+    adjacentProduction = {},
     assignments = [],
     isMobile = false,
     onSwitchToPlanner,
@@ -2426,11 +2447,13 @@ function PlanScheduleView({
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
             const rawBase = Number.isFinite(s.base) ? s.base : 0
-            const base = adjustPoolForDate(rawBase, planDate)
+            const missing = getMissingOperators(plantProduction, s.code)
+            const base = getEffectiveBase(rawBase, s.code, plantProduction, planDate)
             const send = Number.isFinite(s.send) ? s.send : 0
             const recv = Number.isFinite(s.recv) ? s.recv : 0
             out[s.code] = {
                 base,
+                missing,
                 rawBase,
                 recv,
                 send,
@@ -2438,21 +2461,22 @@ function PlanScheduleView({
             }
         })
         return out
-    }, [stats, planDate])
+    }, [stats, plantProduction, planDate])
 
     /** Initial pool is the plant's base mixer count, adjusted for the plan
-     *  date: Saturdays run on half crew (floor of base ÷ 2), Sundays are
-     *  closed (pool = 0). Planner help is applied as time-based events
-     *  (below) so the pool goes up/down at the actual transfer times. */
+     *  date (Saturdays half crew, Sundays closed) AND any missing-operator
+     *  shortfall the dispatcher has marked from the Planner plant overview.
+     *  Planner help is applied as time-based events (below) so the pool
+     *  still goes up/down at the actual transfer times. */
     const initialPoolByCode = useMemo(() => {
         const out = {}
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
             const base = Number.isFinite(s.base) ? s.base : 0
-            out[s.code] = adjustPoolForDate(base, planDate)
+            out[s.code] = getEffectiveBase(base, s.code, plantProduction, planDate)
         })
         return out
-    }, [stats, planDate])
+    }, [stats, plantProduction, planDate])
 
     /**
      * Time-based help transfers derived from Planner assignments.
@@ -2656,6 +2680,49 @@ function PlanScheduleView({
         [filtered]
     )
     const totalYards = sumField(liveOrders, 'yardage')
+
+    /** Sum real-pour yardage across a day's `plant_production` object,
+     *  mirroring the liveOrders filter (excludes cancelled + test). */
+    const sumDayYardage = (production) => {
+        if (!production || typeof production !== 'object') return 0
+        let sum = 0
+        Object.entries(production).forEach(([code, prod]) => {
+            if (code === PLAN_META_KEY) return
+            const list = Array.isArray(prod?.orders) ? prod.orders : []
+            list.forEach((o) => {
+                if (isExcludedOrder(o)) return
+                sum += parseFloat(o?.yardage) || 0
+            })
+        })
+        return sum
+    }
+
+    /** Yesterday's yardage (for the day-over-day delta) + a rolling 7-day
+     *  total (today + previous 6). Both fall back gracefully when the
+     *  adjacent fetch hasn't hydrated yet. */
+    const yesterdayYardage = useMemo(() => {
+        if (!planDate) return 0
+        const key = getOffsetDate(planDate, -1)
+        return sumDayYardage(adjacentProduction?.[key])
+    }, [adjacentProduction, planDate])
+
+    const weekYardage = useMemo(() => {
+        if (!planDate) return totalYards
+        let sum = totalYards
+        for (let i = 1; i <= 6; i++) {
+            const key = getOffsetDate(planDate, -i)
+            sum += sumDayYardage(adjacentProduction?.[key])
+        }
+        return sum
+    }, [adjacentProduction, planDate, totalYards])
+
+    /** Percent change vs yesterday. Null when yesterday has no data so the
+     *  badge renders a neutral "—" instead of a misleading "+∞%". */
+    const yardageDeltaPct = useMemo(() => {
+        if (!(yesterdayYardage > 0)) return null
+        const delta = totalYards - yesterdayYardage
+        return Math.round((delta / yesterdayYardage) * 1000) / 10
+    }, [totalYards, yesterdayYardage])
     // Sum our canonical per-order truck count (excludes cancelled). Falls back
     // to `truckCount` only when we can't compute — same rule as the table cell.
     const totalTrucks = liveOrders.reduce((sum, o) => {
@@ -2889,10 +2956,26 @@ function PlanScheduleView({
                             />
                             <KpiCard
                                 accent={accentColor}
+                                badge={
+                                    yardageDeltaPct != null ? (
+                                        <YardageDeltaBadge pct={yardageDeltaPct} yesterdayYardage={yesterdayYardage} />
+                                    ) : null
+                                }
                                 icon="fa-cubes"
                                 label="Yardage"
                                 value={totalYards.toLocaleString()}
-                                hint="yards · cancelled excluded"
+                                hint={
+                                    yardageDeltaPct != null
+                                        ? `yards · vs ${yesterdayYardage.toLocaleString()} yesterday`
+                                        : 'yards · cancelled excluded'
+                                }
+                            />
+                            <KpiCard
+                                accent="#8b5cf6"
+                                icon="fa-calendar-week"
+                                label="Week yardage"
+                                value={weekYardage.toLocaleString()}
+                                hint="yards · rolling 7 days"
                             />
                             <KpiCard
                                 accent={accentColor}

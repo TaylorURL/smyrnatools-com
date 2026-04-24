@@ -154,7 +154,9 @@ export function usePlanData(planDate) {
         if (!planDate || isLoading) return
         const fetchId = ++adjacentFetchRef.current
         const loadAdjacentPlans = async () => {
-            const offsets = [-3, -2, -1, 1, 2, 3]
+            // Timeline wants ±3 days. Schedule's yardage KPIs want yesterday
+            // + rolling 7-day window, so we fetch -6..-1 and 1..3.
+            const offsets = [-6, -5, -4, -3, -2, -1, 1, 2, 3]
             const dates = offsets.map((o) => getOffsetDate(planDate, o))
             const results = await Promise.allSettled(dates.map((d) => PlanService.fetchPlan(d)))
             if (adjacentFetchRef.current !== fetchId) return

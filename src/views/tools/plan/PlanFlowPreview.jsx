@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
     buildAssignmentDriverTimes,
     computePlantPoolTimeline,
+    getEffectiveBase,
     MAX_YPH,
     TARGET_YPH,
     timeToMinutes
@@ -88,7 +89,12 @@ function PlanFlowPreview({ accentColor, allPlantStats, assignments, onOpenPlanne
         const initialPool = {}
         const transfers = []
         ;(allPlantStats || []).forEach((s) => {
-            if (s?.code) initialPool[s.code] = Number.isFinite(s.base) ? s.base : 0
+            if (!s?.code) return
+            const base = Number.isFinite(s.base) ? s.base : 0
+            // Preview doesn't know the plan date, so no weekend adjustment;
+            // still honor the missing-operator subtraction so the preview
+            // matches the Planner / Schedule truth.
+            initialPool[s.code] = getEffectiveBase(base, s.code, plantProduction, null)
         })
         ;(assignments || []).forEach((a) => {
             if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return

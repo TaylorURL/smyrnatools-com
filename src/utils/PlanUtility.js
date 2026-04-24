@@ -92,6 +92,75 @@ export const adjustPoolForDate = (base, planDate) => {
 }
 
 /**
+ * Canonical plant-badge colors. Shared across every view that draws a plant
+ * marker (Schedule badge, Demand charts, Planner node hints, …) so the same
+ * plant always reads as the same hue. Values picked to work in both light
+ * and dark themes with a white foreground; `eab308` gets dark text.
+ */
+export const PLANT_BADGE_COLORS = {
+    401: '#f97316', // orange
+    402: '#15803d', // dark green
+    403: '#7c3aed', // purple
+    405: '#b98a50', // tan
+    406: '#06b6d4', // cyan
+    407: '#0d9488', // teal
+    408: '#4f46e5', // indigo — Conroe
+    410: '#6b7280', // gray
+    453: '#a855f7', // lighter purple
+    455: '#d4a373', // lighter tan
+    461: '#2563eb', // blue
+    468: '#eab308' // yellow
+}
+
+/** Canonical per-plant color lookup. Falls back to the caller's `fallback`
+ *  when the plant isn't in the shared map. */
+export const plantBadgeColor = (code, fallback) => PLANT_BADGE_COLORS[String(code)] || fallback
+
+/** Key under which plan-level metadata rides on the plantProduction object.
+ *  Other plant-code keys store real production data; this one stashes
+ *  operator shortfalls, special-job flags, etc. */
+export const PLAN_META_KEY = '_meta'
+
+/** Count of operators the dispatcher has marked as missing at this plant
+ *  (sick, vacation, etc.). Subtracted from the base pool in every truck
+ *  calculation so the schedule reflects actual availability. */
+export const getMissingOperators = (plantProduction, plantCode) => {
+    const raw = plantProduction?.[PLAN_META_KEY]?.missingByPlant?.[plantCode]
+    const value = parseInt(raw, 10)
+    return Number.isFinite(value) && value > 0 ? value : 0
+}
+
+/** Persist the missing-operator count for a plant. Clamps to 0 so the
+ *  caller never needs to guard against negatives. */
+export const setMissingOperators = (setPlantProduction, plantCode, count) => {
+    if (typeof setPlantProduction !== 'function' || !plantCode) return
+    const safe = Math.max(0, parseInt(count, 10) || 0)
+    setPlantProduction((prev) => {
+        const next = { ...(prev || {}) }
+        const meta = { ...(next[PLAN_META_KEY] || {}) }
+        const missing = { ...(meta.missingByPlant || {}) }
+        if (safe <= 0) {
+            delete missing[plantCode]
+        } else {
+            missing[plantCode] = safe
+        }
+        meta.missingByPlant = missing
+        next[PLAN_META_KEY] = meta
+        return next
+    })
+}
+
+/** Compute the effective base pool for a plant on a given plan date:
+ *  weekend-adjusted base, minus any operators the dispatcher has marked
+ *  missing. Clamps at 0 so an over-aggressive shortfall never drives the
+ *  pool negative before the simulation even runs. */
+export const getEffectiveBase = (rawBase, plantCode, plantProduction, planDate) => {
+    const adjusted = adjustPoolForDate(rawBase, planDate)
+    const missing = getMissingOperators(plantProduction, plantCode)
+    return Math.max(0, adjusted - missing)
+}
+
+/**
  * Per-driver arrive + leave times for a planner assignment. Respects both
  * scheduling modes:
  *   - `timeMode: 'stagger'` — each driver lands `staggerMinutes` after the

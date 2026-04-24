@@ -19,8 +19,10 @@ import {
     timeToMinutes
 } from '../../../utils/PlanUtility'
 import PlanDashboardView from './PlanDashboardView'
+import PlanDemandView from './PlanDemandView'
 import PlanFlowView from './PlanFlowView'
 import PlanPlantCard from './PlanPlantCard'
+import PlanRealtimeView from './PlanRealtimeView'
 import PlanScheduleView from './PlanScheduleView'
 import PlanSettingsModal from './PlanSettingsModal'
 
@@ -402,7 +404,9 @@ function PlanView() {
                         {[
                             { mode: 'schedule', icon: 'fa-calendar-days', label: 'Schedule' },
                             { mode: 'flow', icon: 'fa-project-diagram', label: 'Planner' },
-                            { mode: 'dashboard', icon: 'fa-gauge-high', label: 'Plan' }
+                            { mode: 'dashboard', icon: 'fa-gauge-high', label: 'Plan' },
+                            { mode: 'demand', icon: 'fa-chart-column', label: 'Demand' },
+                            { mode: 'realtime', icon: 'fa-circle-dot', label: 'Realtime' }
                         ].map(({ mode, icon, label }) => (
                             <button
                                 key={mode}
@@ -595,6 +599,7 @@ function PlanView() {
                                 plantProduction={plantProduction}
                                 plants={plants}
                                 setAssignments={setAssignments}
+                                setPlantProduction={setPlantProduction}
                                 stats={stats}
                                 updateAssignment={updateAssignment}
                                 onSwitchToPlanner={() => setViewMode('dashboard')}
@@ -604,6 +609,7 @@ function PlanView() {
                         {effectiveViewMode === 'schedule' && (
                             <PlanScheduleView
                                 accentColor={accentColor}
+                                adjacentProduction={adjacentProduction}
                                 assignments={assignments}
                                 isMobile={isMobile}
                                 onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
@@ -612,6 +618,27 @@ function PlanView() {
                                 plantNameByCode={plantNameByCode}
                                 plantProduction={plantProduction}
                                 plants={plants}
+                                stats={stats}
+                            />
+                        )}
+
+                        {effectiveViewMode === 'demand' && (
+                            <PlanDemandView
+                                accentColor={accentColor}
+                                planDate={planDate}
+                                plantNameByCode={plantNameByCode}
+                                plantProduction={plantProduction}
+                                stats={stats}
+                            />
+                        )}
+
+                        {effectiveViewMode === 'realtime' && (
+                            <PlanRealtimeView
+                                accentColor={accentColor}
+                                assignments={assignments}
+                                planDate={planDate}
+                                plantNameByCode={plantNameByCode}
+                                plantProduction={plantProduction}
                                 stats={stats}
                             />
                         )}

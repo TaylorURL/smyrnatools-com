@@ -2,15 +2,17 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
     addMinutesToTime,
-    adjustPoolForDate,
     buildAssignmentDriverTimes,
     computePlantPoolTimeline,
     computePlantPoolTimelines,
     createEmptyAssignment,
+    getEffectiveBase,
+    getMissingOperators,
     getOrderPourDurationMinutes,
     MAX_YPH,
     minutesToTime,
     poolAtTime,
+    setMissingOperators,
     TARGET_YPH,
     timeToMinutes
 } from '../../../utils/PlanUtility'
@@ -163,6 +165,7 @@ function PlanFlowView({
     plantProduction,
     plants = [],
     setAssignments,
+    setPlantProduction,
     stats,
     updateAssignment: _updateAssignment
 }) {
@@ -339,18 +342,19 @@ function PlanFlowView({
     }, [stats, plantProduction])
 
     /** Initial pool is the plant's base mixer count, adjusted for day-of-week
-     *  (Saturday halves crew; Sunday closes plants entirely). Help is applied
-     *  as time-aware events so the pool only shifts when help actually leaves
-     *  or returns. */
+     *  (Saturday halves crew; Sunday closes plants entirely) AND any missing-
+     *  operator shortfall the dispatcher has marked from the plant overview
+     *  panel. Help is applied as time-aware events so the pool only shifts
+     *  when help actually leaves or returns. */
     const initialPoolByCode = useMemo(() => {
         const out = {}
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
             const base = Number.isFinite(s.base) ? s.base : 0
-            out[s.code] = adjustPoolForDate(base, planDate)
+            out[s.code] = getEffectiveBase(base, s.code, plantProduction, planDate)
         })
         return out
-    }, [stats, planDate])
+    }, [stats, plantProduction, planDate])
 
     /** Help transfers derived from planner assignments — one event pair per
      *  driver (respecting stagger / custom modes) and routing returns to the
@@ -1078,6 +1082,8 @@ function PlanFlowView({
                                 const yph = yphByCode[s.code]
                                 const ringColor = yphColorFor(yph, accentColor)
                                 const minPool = minPoolByCode[s.code]
+                                const missingAtPlant = getMissingOperators(plantProduction, s.code)
+                                const effWithMissing = Math.max(0, (s.eff ?? 0) - missingAtPlant)
                                 // When the scrubber is set to a specific time, "needs
                                 // help" is point-in-time: pool(t) < 0 AND a job is
                                 // actively pouring at t. Idle plants never flag.
@@ -1133,7 +1139,8 @@ function PlanFlowView({
                                             zIndex: 10
                                         }}
                                         title={(() => {
-                                            const base = `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'}`
+                                            const missingSuffix = missingAtPlant > 0 ? ` · ${missingAtPlant} out` : ''
+                                            const base = `Plant ${s.code} · ${effWithMissing} op${effWithMissing === 1 ? '' : 's'}${missingSuffix}`
                                             if (isTimeView) {
                                                 const t = minutesToTime(viewTime)
                                                 if (activeNow === 0) return `${base} · Idle at ${t} — no help needed`
@@ -1298,7 +1305,8 @@ function PlanFlowView({
                                                         className="text-[11px]"
                                                         style={{ color: 'var(--text-secondary)' }}
                                                     >
-                                                        {s.eff} op{s.eff === 1 ? '' : 's'}
+                                                        {effWithMissing} op
+                                                        {effWithMissing === 1 ? '' : 's'}
                                                         {net !== 0 && (
                                                             <>
                                                                 {' '}
@@ -1310,6 +1318,20 @@ function PlanFlowView({
                                                                 >
                                                                     ({net > 0 ? '+' : ''}
                                                                     {net})
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                        {missingAtPlant > 0 && (
+                                                            <>
+                                                                {' '}
+                                                                <span
+                                                                    style={{
+                                                                        color: '#dc2626',
+                                                                        fontWeight: 700
+                                                                    }}
+                                                                    title={`${missingAtPlant} operator${missingAtPlant === 1 ? '' : 's'} marked missing`}
+                                                                >
+                                                                    −{missingAtPlant} out
                                                                 </span>
                                                             </>
                                                         )}
@@ -1360,6 +1382,10 @@ function PlanFlowView({
                         accentColor={accentColor}
                         selected={selected}
                         mixerCountsByPlant={mixerCountsByPlant}
+                        missingOperators={getMissingOperators(plantProduction, selected.code)}
+                        onMissingOperatorsChange={(count) =>
+                            setMissingOperators(setPlantProduction, selected.code, count)
+                        }
                         yphByCode={yphByCode}
                         yphColorFor={yphColorFor}
                         production={plantProduction[selected.code] || {}}
@@ -1497,10 +1523,12 @@ function PlantOverview({
     canEdit,
     getTravelTime,
     inbound,
+    missingOperators = 0,
     mixerCountsByPlant,
     onAddRoute,
     onDeleteRoute,
     onEditRoute,
+    onMissingOperatorsChange,
     outbound,
     production,
     selected,
@@ -1508,6 +1536,9 @@ function PlantOverview({
     yphColorFor
 }) {
     const yph = yphByCode[selected.code]
+    const baseCount = mixerCountsByPlant[selected.code] || 0
+    const hasMissing = missingOperators > 0
+    const remaining = Math.max(0, baseCount - missingOperators)
     return (
         <div className="p-5 flex flex-col gap-4">
             <div className="flex items-center gap-3">
@@ -1533,8 +1564,14 @@ function PlantOverview({
                         Plant {selected.code}
                     </div>
                     <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                        {mixerCountsByPlant[selected.code] || 0} base ·{' '}
-                        <span style={{ color: '#dc2626' }}>-{selected.send || 0} sent</span> ·{' '}
+                        {baseCount} base
+                        {hasMissing && (
+                            <>
+                                {' '}
+                                <span style={{ color: '#dc2626' }}>-{missingOperators} missing</span>
+                            </>
+                        )}{' '}
+                        · <span style={{ color: '#dc2626' }}>-{selected.send || 0} sent</span> ·{' '}
                         <span style={{ color: '#16a34a' }}>+{selected.recv || 0} recv</span>
                     </div>
                 </div>
@@ -1549,6 +1586,107 @@ function PlantOverview({
                     color={yph != null ? yphColorFor(yph, accentColor) : undefined}
                 />
             </div>
+
+            {/* Missing-operator editor — subtracts from the plant's base for
+                every pool / truck calculation across Plan, Planner & Schedule. */}
+            {canEdit && onMissingOperatorsChange && (
+                <div
+                    className="rounded-lg p-3"
+                    style={{
+                        background: hasMissing ? 'rgba(220, 38, 38, 0.06)' : 'var(--bg-secondary)',
+                        border: `1px solid ${hasMissing ? 'rgba(220, 38, 38, 0.35)' : 'var(--border-light)'}`
+                    }}
+                >
+                    <div className="flex items-start gap-2">
+                        <i
+                            className="fas fa-user-slash text-[13px] mt-0.5"
+                            style={{ color: hasMissing ? '#dc2626' : 'var(--text-tertiary)' }}
+                        />
+                        <div className="flex-1 min-w-0">
+                            <div
+                                className="text-[12px] font-bold"
+                                style={{ color: hasMissing ? '#991b1b' : 'var(--text-primary)' }}
+                            >
+                                Missing operators
+                            </div>
+                            <div className="text-[10.5px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                                {hasMissing
+                                    ? `Plant runs on ${remaining} active mixer${remaining === 1 ? '' : 's'} today (${baseCount} assigned − ${missingOperators} out).`
+                                    : 'Note anyone out sick / vacation to subtract from this plant\u2019s pool.'}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-2.5 flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => onMissingOperatorsChange(Math.max(0, missingOperators - 1))}
+                            disabled={missingOperators === 0}
+                            className="border-none rounded-md cursor-pointer text-[13px] font-bold flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-medium)',
+                                color: 'var(--text-primary)',
+                                height: 32,
+                                width: 32
+                            }}
+                            title="Subtract one missing operator"
+                        >
+                            −
+                        </button>
+                        <input
+                            type="number"
+                            min={0}
+                            max={baseCount || 50}
+                            value={missingOperators}
+                            onChange={(e) => {
+                                const next = Math.max(0, parseInt(e.target.value, 10) || 0)
+                                onMissingOperatorsChange(next)
+                            }}
+                            className="flex-1 px-2 py-1.5 rounded-md text-sm font-mono text-center border"
+                            style={{
+                                background: 'var(--bg-primary)',
+                                borderColor: 'var(--border-medium)',
+                                color: 'var(--text-primary)'
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() =>
+                                onMissingOperatorsChange(
+                                    Math.min(baseCount || missingOperators + 1, missingOperators + 1)
+                                )
+                            }
+                            disabled={baseCount > 0 && missingOperators >= baseCount}
+                            className="border-none rounded-md cursor-pointer text-[13px] font-bold flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-medium)',
+                                color: 'var(--text-primary)',
+                                height: 32,
+                                width: 32
+                            }}
+                            title="Add one missing operator"
+                        >
+                            +
+                        </button>
+                        {hasMissing && (
+                            <button
+                                type="button"
+                                onClick={() => onMissingOperatorsChange(0)}
+                                className="border-none rounded-md cursor-pointer text-[11px] font-semibold px-2.5 py-1.5"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    border: '1px solid var(--border-medium)',
+                                    color: 'var(--text-secondary)'
+                                }}
+                                title="Clear — everyone is in"
+                            >
+                                Reset
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {canEdit && (
                 <button

@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [38.5.42] - 2026-04-24
+
+- Plan view header bar now wraps on narrow viewports so settings and action buttons no longer clip off the right edge
+- Added responsive horizontal padding to the header (tighter on mobile, standard on sm+)
+- Action buttons group stays together with shrink-0 and ml-auto, wrapping to a second row on narrow screens instead of overflowing
+- Spacer between date buttons and action buttons now has a min-width to prevent full collapse
+
 ## [38.5.41] - 2026-04-24
 
 - Suggested open-slot rows now display whenever a plant filter is active, independent of the extras toggle — they serve as dispatcher nudges for booking new orders and should always be visible when filtering by plant
