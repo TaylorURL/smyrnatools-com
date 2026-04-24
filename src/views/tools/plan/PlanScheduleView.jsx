@@ -1417,9 +1417,13 @@ function ScheduleTable({
         () => (extrasActive ? sendHomeRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
         [sendHomeRows, visiblePlantCodes, extrasActive]
     )
+    // Open-slot suggestions are the dispatcher's "where could I book a new
+    // order" nudge — they show whenever a plant is filtered, even if the
+    // dispatcher toggled off the other synthetic rows. Free-slot visibility
+    // is independent of `extrasActive`.
     const filteredSuggestedSlotRows = useMemo(
-        () => (extrasActive ? suggestedSlotRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
-        [suggestedSlotRows, visiblePlantCodes, extrasActive]
+        () => (isPlantFiltered ? suggestedSlotRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
+        [suggestedSlotRows, visiblePlantCodes, isPlantFiltered]
     )
 
     /* ── Truck-coverage hover modal state ─────────────────────────────────
@@ -1576,12 +1580,12 @@ function ScheduleTable({
                 truckRange: row.truckRange
             })
         })
-        // Only force a chronological sort when extras are active — synthetic
-        // rows must land at their actual minute between orders. With extras
-        // off the table has nothing but order rows, which arrive here
-        // already sorted by whatever the Sort by picker chose upstream, so
-        // we preserve that ordering verbatim.
-        if (extrasActive) {
+        // Chronological sort runs whenever any synthetic row is in play —
+        // they only make sense at their actual minute between orders. With
+        // NO synthetic rows (pure order list), we preserve the Sort by
+        // picker's ordering verbatim.
+        const hasSyntheticRows = rows.some((r) => r.kind !== 'order')
+        if (hasSyntheticRows) {
             rows.sort((a, b) => {
                 const at = Number.isFinite(a.time) ? a.time : Infinity
                 const bt = Number.isFinite(b.time) ? b.time : Infinity

@@ -1,6 +1,11 @@
 # Changelog
 
 
+## [38.5.41] - 2026-04-24
+
+- Suggested open-slot rows now display whenever a plant filter is active, independent of the extras toggle — they serve as dispatcher nudges for booking new orders and should always be visible when filtering by plant
+- Schedule table sorting now triggers chronological ordering based on whether synthetic rows are actually present in the list, rather than relying on the extrasActive flag — this preserves the Sort-by picker's ordering when only order rows exist
+
 ## [38.5.40] - 2026-04-24
 
 - Added job marker nodes on the flow view — when a help assignment targets a specific destination order, a small blue circle appears on the outbound edge showing the order number and yardage
