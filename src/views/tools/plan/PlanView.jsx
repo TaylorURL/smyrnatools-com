@@ -267,9 +267,10 @@ function PlanView() {
             className="global-dashboard-container dashboard-container global-flush-top flush-top plan-view"
             style={{ position: 'absolute', inset: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
         >
-            {/* Header — slim sticky bar */}
+            {/* Header — slim sticky bar. Wraps on narrow viewports so the
+                settings / action buttons never clip off the right edge. */}
             <div
-                className="shrink-0 flex items-center gap-3 border-b px-4 py-2.5"
+                className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5"
                 style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
             >
                 <h1 className="text-lg font-bold tracking-tight m-0 shrink-0" style={{ color: 'var(--text-primary)' }}>
@@ -328,9 +329,11 @@ function PlanView() {
                 >
                     Tomorrow
                 </button>
-                <div className="flex-1" />
-                {/* Action buttons — compact */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex-1 min-w-[8px]" />
+                {/* Action buttons — compact. Kept together and allowed to wrap
+                    to a second row on narrow mobile so the settings cog
+                    stays inside the viewport. */}
+                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                     <button
                         onClick={() => refreshSchedule?.()}
                         disabled={isSchedulesSyncing}
