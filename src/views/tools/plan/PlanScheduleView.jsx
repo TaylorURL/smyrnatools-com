@@ -4,6 +4,7 @@ import { TrafficService } from '../../../services/TrafficService'
 import {
     adjustPoolForDate,
     BIG_POUR_MIN_TRUCKS,
+    buildAssignmentDriverTimes,
     computePlantPoolTimeline,
     computePlantPoolTimelines,
     computeSendHomeRows,
@@ -1363,6 +1364,7 @@ function SyntheticRow({ accentColor, chips, icon, pillIcon, pillLabel, plantCell
 
 function ScheduleTable({
     accentColor,
+    filteredPlantCode = null,
     getTravelOverrides,
     helpRows = [],
     isPlantFiltered = false,
@@ -1375,31 +1377,43 @@ function ScheduleTable({
     poolTimeline,
     poolTimelinesByPlant,
     sendHomeRows = [],
+    showExtraRows = true,
     suggestedSlotRows = []
 }) {
+    // Synthetic rows require a plant filter AND the toggle to be on — both
+    // gates collapse into one effective flag for the rest of the component.
+    const extrasActive = isPlantFiltered && showExtraRows
     /** Synthetic rows (help, send-home, truck returns, slot suggestions) are
      *  only meaningful in the context of a single plant — they clutter the
      *  table when every plant's rows are mixed together. Gate them on an
-     *  active plant filter. */
+     *  active plant filter. When the dispatcher selects a specific plant
+     *  (even one with no orders), prefer that explicit filter over the
+     *  visible-orders set so help / send-home / slot rows still show. */
     const visiblePlantCodes = useMemo(() => {
+        if (filteredPlantCode) return new Set([filteredPlantCode])
         const set = new Set()
         for (const order of orders) if (order.plantCode) set.add(order.plantCode)
         return set
-    }, [orders])
+    }, [orders, filteredPlantCode])
     const filteredHelpRows = useMemo(
         () =>
-            isPlantFiltered
-                ? helpRows.filter((row) => visiblePlantCodes.has(row.fromPlant) || visiblePlantCodes.has(row.toPlant))
+            extrasActive
+                ? helpRows.filter(
+                      (row) =>
+                          visiblePlantCodes.has(row.fromPlant) ||
+                          visiblePlantCodes.has(row.toPlant) ||
+                          (row.returnPlant && visiblePlantCodes.has(row.returnPlant))
+                  )
                 : [],
-        [helpRows, visiblePlantCodes, isPlantFiltered]
+        [helpRows, visiblePlantCodes, extrasActive]
     )
     const filteredSendHomeRows = useMemo(
-        () => (isPlantFiltered ? sendHomeRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
-        [sendHomeRows, visiblePlantCodes, isPlantFiltered]
+        () => (extrasActive ? sendHomeRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
+        [sendHomeRows, visiblePlantCodes, extrasActive]
     )
     const filteredSuggestedSlotRows = useMemo(
-        () => (isPlantFiltered ? suggestedSlotRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
-        [suggestedSlotRows, visiblePlantCodes, isPlantFiltered]
+        () => (extrasActive ? suggestedSlotRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
+        [suggestedSlotRows, visiblePlantCodes, extrasActive]
     )
 
     /* ── Truck-coverage hover modal state ─────────────────────────────────
@@ -1442,19 +1456,50 @@ function ScheduleTable({
     const tableRows = useMemo(() => {
         const rows = []
         for (const order of orders) rows.push({ kind: 'order', order, time: timeToMinutes(order.startTime) })
-        if (isPlantFiltered) {
+        if (extrasActive) {
+            // Roll per-truck returns up into 30-minute buckets — trucks
+            // cycle individually, but showing one row per truck floods the
+            // schedule. A row per half-hour batch reads like "7 trucks back
+            // between 07:00 and 07:30" which is what a dispatcher actually
+            // tracks. Pool count on the bucket uses the pool state right
+            // after the last return in that bucket.
+            const BUCKET_MIN = 30
             for (const order of orders) {
                 const entry = poolTimeline?.[keyForOrder(order)]
-                if (!entry || !Number.isFinite(entry.lastReturnMinutes)) continue
-                rows.push({
-                    count: entry.truckCount,
-                    kind: 'return',
-                    order,
-                    plantCode: order.plantCode,
-                    poolAfterReturn: entry.poolAfterReturn,
-                    time: entry.lastReturnMinutes,
-                    tripsPerTruck: entry.tripsPerTruck,
-                    tripsTotal: entry.tripsTotal
+                if (!entry || !Array.isArray(entry.returnEvents) || entry.returnEvents.length === 0) continue
+                const buckets = new Map()
+                entry.returnEvents.forEach((re) => {
+                    if (!Number.isFinite(re.time)) return
+                    const bucket = Math.floor(re.time / BUCKET_MIN) * BUCKET_MIN
+                    const existing = buckets.get(bucket)
+                    if (existing) {
+                        existing.count += re.count
+                        existing.lastTime = Math.max(existing.lastTime, re.time)
+                        existing.poolAfter = re.poolAfter
+                    } else {
+                        buckets.set(bucket, {
+                            count: re.count,
+                            firstTime: re.time,
+                            lastTime: re.time,
+                            poolAfter: re.poolAfter
+                        })
+                    }
+                })
+                const bucketRows = Array.from(buckets.entries()).sort((a, b) => a[0] - b[0])
+                bucketRows.forEach(([bucketStart, agg], i) => {
+                    rows.push({
+                        count: agg.count,
+                        kind: 'return',
+                        order,
+                        plantCode: order.plantCode,
+                        poolAfterReturn: agg.poolAfter,
+                        rangeEnd: agg.lastTime,
+                        rangeStart: agg.firstTime,
+                        returnIndex: i,
+                        time: bucketStart,
+                        totalReturns: bucketRows.length,
+                        truckCount: entry.truckCount
+                    })
                 })
             }
         }
@@ -1465,6 +1510,7 @@ function ScheduleTable({
                 fromPlant: row.fromPlant,
                 helpKey: `${row.assignmentIndex}-${row.direction}-${row.time}`,
                 kind: 'help',
+                returnPlant: row.returnPlant,
                 time: row.time,
                 toPlant: row.toPlant
             })
@@ -1523,15 +1569,23 @@ function ScheduleTable({
                 truckRange: row.truckRange
             })
         })
-        rows.sort((a, b) => {
-            const at = Number.isFinite(a.time) ? a.time : Infinity
-            const bt = Number.isFinite(b.time) ? b.time : Infinity
-            if (at !== bt) return at - bt
-            // At the same minute: returns first (pool up), then help, then
-            // send-home / trade-off, then slot suggestions, then real orders.
-            const order = { help: 1, order: 4, return: 0, sendHome: 2, slot: 3, tradeoff: 2 }
-            return (order[a.kind] ?? 5) - (order[b.kind] ?? 5)
-        })
+        // Only force a chronological sort when extras are active — synthetic
+        // rows must land at their actual minute between orders. With extras
+        // off the table has nothing but order rows, which arrive here
+        // already sorted by whatever the Sort by picker chose upstream, so
+        // we preserve that ordering verbatim.
+        if (extrasActive) {
+            rows.sort((a, b) => {
+                const at = Number.isFinite(a.time) ? a.time : Infinity
+                const bt = Number.isFinite(b.time) ? b.time : Infinity
+                if (at !== bt) return at - bt
+                // At the same minute: returns first (pool up), then help,
+                // then send-home / trade-off, then slot suggestions, then
+                // real orders.
+                const order = { help: 1, order: 4, return: 0, sendHome: 2, slot: 3, tradeoff: 2 }
+                return (order[a.kind] ?? 5) - (order[b.kind] ?? 5)
+            })
+        }
         return rows
     }, [
         orders,
@@ -1540,7 +1594,7 @@ function ScheduleTable({
         filteredHelpRows,
         filteredSendHomeRows,
         filteredSuggestedSlotRows,
-        isPlantFiltered
+        extrasActive
     ])
 
     return (
@@ -1598,42 +1652,24 @@ function ScheduleTable({
                     {tableRows.map((row, idx) => {
                         if (row.kind === 'return') {
                             const plantName = plantNameByCode?.[row.plantCode] || ''
-                            let tripChip = null
-                            if (
-                                Number.isFinite(row.tripsTotal) &&
-                                Number.isFinite(row.tripsPerTruck) &&
-                                row.tripsPerTruck > 1
-                            ) {
-                                const ceil = row.tripsPerTruck
-                                const floorCount = ceil - 1
-                                const extra = row.tripsTotal - row.count * floorCount
-                                const base = row.count - extra
-                                const label = base > 0 ? `${extra}×${ceil} + ${base}×${floorCount}` : `${ceil}× each`
-                                tripChip = (
-                                    <div className="mt-1 flex items-center gap-1.5 text-[10.5px]">
-                                        <span
-                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-semibold"
-                                            style={{ background: 'rgba(15, 118, 110, 0.15)', color: '#0f766e' }}
-                                            title={
-                                                base > 0
-                                                    ? `${extra} trucks ran ${ceil} trips, ${base} ran ${floorCount} — ${row.tripsTotal} total.`
-                                                    : `Each truck ran ${ceil} trips — ${row.tripsTotal} total.`
-                                            }
-                                        >
-                                            <i className="fas fa-arrows-rotate text-[8px]" />
-                                            {label}
-                                        </span>
-                                        <span style={{ color: 'var(--text-tertiary)' }}>
-                                            {row.tripsTotal} total trips
-                                        </span>
-                                    </div>
-                                )
-                            }
+                            const orderTag = row.order.orderNum
+                                ? `#${row.order.orderNum}`
+                                : row.order.startTime
+                                  ? String(row.order.startTime).slice(0, 5)
+                                  : 'order'
+                            const truckWord = row.count === 1 ? 'truck' : 'trucks'
+                            // Show the actual first/last return time inside the 30-min
+                            // bucket so dispatchers see exactly when trucks trickled in.
+                            const rangeLabel =
+                                Number.isFinite(row.rangeStart) && Number.isFinite(row.rangeEnd)
+                                    ? row.rangeStart === row.rangeEnd
+                                        ? formatMinutesClock(row.rangeStart)
+                                        : `${formatMinutesClock(row.rangeStart)}–${formatMinutesClock(row.rangeEnd)}`
+                                    : null
                             return (
                                 <SyntheticRow
-                                    key={`return-${keyForOrder(row.order)}`}
+                                    key={`return-${keyForOrder(row.order)}-${row.returnIndex ?? 0}`}
                                     accentColor="#16a34a"
-                                    chips={tripChip}
                                     icon="fa-arrow-rotate-left"
                                     pillIcon="fa-truck-fast"
                                     pillLabel={`+${row.count} back`}
@@ -1650,9 +1686,14 @@ function ScheduleTable({
                                     }
                                     secondary={
                                         <>
-                                            {row.count} truck{row.count === 1 ? '' : 's'} back from{' '}
-                                            <b>#{row.order.orderNum || '—'}</b> ·{' '}
-                                            {clean(row.order.customer) || 'Unknown customer'}
+                                            {row.count} {truckWord} back from <b>{orderTag}</b>
+                                            {row.order.customer ? ` · ${clean(row.order.customer)}` : ''}
+                                            {rangeLabel && (
+                                                <span style={{ color: 'var(--text-tertiary)' }}>
+                                                    {' '}
+                                                    · trickled in {rangeLabel}
+                                                </span>
+                                            )}
                                         </>
                                     }
                                     time={row.time}
@@ -1772,10 +1813,33 @@ function ScheduleTable({
                         }
                         if (row.kind === 'help') {
                             const isOutbound = row.direction === 'outbound'
+                            const homePlant = row.returnPlant || row.fromPlant
                             const fromName = plantNameByCode?.[row.fromPlant] || ''
                             const toName = plantNameByCode?.[row.toPlant] || ''
+                            const homeName = plantNameByCode?.[homePlant] || ''
                             const accent = isOutbound ? '#3b82f6' : '#8b5cf6'
                             const tint = isOutbound ? 'rgba(59, 130, 246, 0.06)' : 'rgba(139, 92, 246, 0.06)'
+                            // On the return leg, the "plant cell" shows {toPlant} → {homePlant}
+                            // since those are the actual ends of the movement.
+                            const plantCell = isOutbound ? (
+                                <div className="flex items-center gap-1.5">
+                                    <PlantBadge code={row.fromPlant} fallback={accentColor} name={fromName} />
+                                    <i
+                                        className="fas fa-arrow-right text-[9px]"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    />
+                                    <PlantBadge code={row.toPlant} fallback={accentColor} name={toName} />
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1.5">
+                                    <PlantBadge code={row.toPlant} fallback={accentColor} name={toName} />
+                                    <i
+                                        className="fas fa-arrow-right text-[9px]"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    />
+                                    <PlantBadge code={homePlant} fallback={accentColor} name={homeName} />
+                                </div>
+                            )
                             return (
                                 <SyntheticRow
                                     key={`help-${row.helpKey}`}
@@ -1783,16 +1847,7 @@ function ScheduleTable({
                                     icon={isOutbound ? 'fa-paper-plane' : 'fa-rotate-left'}
                                     pillIcon={isOutbound ? 'fa-truck-fast' : 'fa-truck-ramp-box'}
                                     pillLabel={isOutbound ? 'Help sent' : 'Help returning'}
-                                    plantCell={
-                                        <div className="flex items-center gap-1.5">
-                                            <PlantBadge code={row.fromPlant} fallback={accentColor} name={fromName} />
-                                            <i
-                                                className="fas fa-arrow-right text-[9px]"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            />
-                                            <PlantBadge code={row.toPlant} fallback={accentColor} name={toName} />
-                                        </div>
-                                    }
+                                    plantCell={plantCell}
                                     primary={
                                         isOutbound ? (
                                             <>
@@ -1801,15 +1856,15 @@ function ScheduleTable({
                                             </>
                                         ) : (
                                             <>
-                                                <b>{row.count}</b> help truck{row.count === 1 ? '' : 's'} heading home
-                                                to <b>{row.fromPlant}</b>.
+                                                <b>{row.count}</b> help truck{row.count === 1 ? '' : 's'} heading{' '}
+                                                {homePlant === row.fromPlant ? 'home' : 'over'} to <b>{homePlant}</b>.
                                             </>
                                         )
                                     }
                                     secondary={
                                         isOutbound
                                             ? `${row.toPlant}'s pool goes up by ${row.count} until they return.`
-                                            : `${row.fromPlant}'s pool goes back up by ${row.count}.`
+                                            : `${homePlant}'s pool goes up by ${row.count}.`
                                     }
                                     time={row.time}
                                     tint={tint}
@@ -2176,6 +2231,13 @@ function PlanScheduleView({
     const [bucket, setBucket] = useState('all')
     const [minYards, setMinYards] = useState('')
     const [sortKey, setSortKey] = useState('plantThenTime')
+    /** When the schedule is filtered to a single plant we interleave synthetic
+     *  rows (truck returns, help events, send-home recommendations, open-slot
+     *  suggestions, trade-offs). Those rows only make sense chronologically,
+     *  so turning them ON forces a time-based sort; turning them OFF lets the
+     *  Sort by picker actually reorder the table. Default off so the sort
+     *  controls work immediately — dispatchers opt-in to the extras. */
+    const [showExtraRows, setShowExtraRows] = useState(false)
     // Mobile is always cards (the 12-column table needs hundreds of px to read).
     const [viewMode, setViewMode] = useState(isMobile ? 'cards' : 'table')
     const [mapOrder, setMapOrder] = useState(null)
@@ -2334,38 +2396,68 @@ function PlanScheduleView({
      * pair a return when `leaveTime > arrivalTime` (otherwise the leave value
      * is nonsense and would deduct from the destination mid-work).
      */
+    /** Per-driver help rows — grouped into 30-minute buckets per assignment +
+     *  direction so a staggered crew arriving over an hour reads as two rows
+     *  ("5 between 08:00–08:30, 5 between 08:30–09:00") rather than one row
+     *  per driver. Return rows honor the assignment's `returnPlant` so trucks
+     *  can be sent back to a different plant after pouring. */
     const helpRows = useMemo(() => {
-        const rows = []
+        const HELP_BUCKET_MIN = 30
+        const grouped = new Map()
+        const bump = (key, seed, time) => {
+            const existing = grouped.get(key)
+            if (existing) {
+                existing.count += 1
+                existing.rangeEnd = Math.max(existing.rangeEnd, time)
+                existing.rangeStart = Math.min(existing.rangeStart, time)
+            } else {
+                grouped.set(key, { ...seed, count: 1, rangeEnd: time, rangeStart: time })
+            }
+        }
         ;(assignments || []).forEach((a, idx) => {
             if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
-            const count = parseInt(a.driverCount, 10) || 0
-            if (count <= 0) return
-            const arrivalMin = timeToMinutes(a.time)
-            if (!Number.isFinite(arrivalMin)) return
-            rows.push({
-                assignmentIndex: idx,
-                count,
-                direction: 'outbound',
-                fromPlant: a.fromPlant,
-                time: arrivalMin,
-                toPlant: a.toPlant
+            const returnPlant = a.returnPlant || a.fromPlant
+            const driverTimes = buildAssignmentDriverTimes(a)
+            driverTimes.forEach((dt) => {
+                if (Number.isFinite(dt.arriveMin)) {
+                    const bucket = Math.floor(dt.arriveMin / HELP_BUCKET_MIN) * HELP_BUCKET_MIN
+                    bump(
+                        `out-${idx}-${bucket}`,
+                        {
+                            assignmentIndex: idx,
+                            direction: 'outbound',
+                            fromPlant: a.fromPlant,
+                            returnPlant,
+                            time: bucket,
+                            toPlant: a.toPlant
+                        },
+                        dt.arriveMin
+                    )
+                }
+                if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
+                    const bucket = Math.floor(dt.leaveMin / HELP_BUCKET_MIN) * HELP_BUCKET_MIN
+                    bump(
+                        `rt-${idx}-${bucket}`,
+                        {
+                            assignmentIndex: idx,
+                            direction: 'return',
+                            fromPlant: a.fromPlant,
+                            returnPlant,
+                            time: bucket,
+                            toPlant: a.toPlant
+                        },
+                        dt.leaveMin
+                    )
+                }
             })
-            const leaveMin = timeToMinutes(a.leaveTime)
-            if (Number.isFinite(leaveMin) && leaveMin > arrivalMin) {
-                rows.push({
-                    assignmentIndex: idx,
-                    count,
-                    direction: 'return',
-                    fromPlant: a.fromPlant,
-                    time: leaveMin,
-                    toPlant: a.toPlant
-                })
-            }
         })
-        return rows
+        return Array.from(grouped.values())
     }, [assignments])
 
-    /** Help transfers in the format expected by `computePlantPoolTimeline`. */
+    /** Help transfers in the format expected by `computePlantPoolTimeline`.
+     *  Each driver's arrival subtracts from `fromPlant` and adds to `toPlant`;
+     *  each driver's return subtracts from `toPlant` and adds to `returnPlant`
+     *  (which defaults to `fromPlant` when not overridden). */
     const helpTransfers = useMemo(() => {
         const out = []
         helpRows.forEach((row) => {
@@ -2373,8 +2465,9 @@ function PlanScheduleView({
                 out.push({ delta: -row.count, plantCode: row.fromPlant, time: row.time })
                 out.push({ delta: row.count, plantCode: row.toPlant, time: row.time })
             } else {
+                const home = row.returnPlant || row.fromPlant
                 out.push({ delta: -row.count, plantCode: row.toPlant, time: row.time })
-                out.push({ delta: row.count, plantCode: row.fromPlant, time: row.time })
+                out.push({ delta: row.count, plantCode: home, time: row.time })
             }
         })
         return out
@@ -2906,6 +2999,27 @@ function PlanScheduleView({
                                             </option>
                                         ))}
                                     </select>
+                                    {plantFilter !== 'all' && (
+                                        <label
+                                            className="mt-1.5 flex items-center gap-2 text-[11.5px] cursor-pointer select-none"
+                                            style={{ color: 'var(--text-secondary)' }}
+                                            title="Toggle the return / help / send-home / open-slot rows that appear between order rows when a plant is selected."
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={showExtraRows}
+                                                onChange={(e) => setShowExtraRows(e.target.checked)}
+                                                className="cursor-pointer"
+                                                style={{ accentColor }}
+                                            />
+                                            <span>
+                                                Show extra rows{' '}
+                                                <span style={{ color: 'var(--text-tertiary)' }}>
+                                                    · returns, help, suggestions
+                                                </span>
+                                            </span>
+                                        </label>
+                                    )}
                                 </FilterField>
                             </div>
                         )}
@@ -2946,7 +3060,9 @@ function PlanScheduleView({
                                 accentColor={accentColor}
                                 getTravelOverrides={getTravelOverrides}
                                 helpRows={helpRows}
+                                filteredPlantCode={plantFilter !== 'all' ? plantFilter : null}
                                 isPlantFiltered={plantFilter !== 'all'}
+                                showExtraRows={showExtraRows}
                                 keyForOrder={keyForOrder}
                                 onOpenLocation={setMapOrder}
                                 orders={filtered}

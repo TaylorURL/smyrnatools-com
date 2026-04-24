@@ -1,6 +1,11 @@
 # Changelog
 
 
+## [38.5.38] - 2026-04-24
+
+- Changed the overbooked status icon from gauge-simple-low to gauge-simple-high in the truck coverage hover card
+- Switched the "Needs Help" badge icon from hand-holding-hand to handshake-angle in the schedule table
+
 ## [38.5.37] - 2026-04-24
 
 - Added weekend awareness to truck pool math — Sunday treats all plants as closed (pool 0), Saturday halves crew (rounded down), with a visible banner in the schedule view explaining the adjustment

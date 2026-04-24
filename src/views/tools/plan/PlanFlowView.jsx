@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
+    addMinutesToTime,
     adjustPoolForDate,
+    buildAssignmentDriverTimes,
     computePlantPoolTimeline,
     computePlantPoolTimelines,
     createEmptyAssignment,
@@ -326,24 +328,23 @@ function PlanFlowView({
         return out
     }, [stats, planDate])
 
-    /** Help transfers derived from planner assignments — each assignment yields
-     *  an outbound handoff at `time` (sender −, receiver +) and, if a valid
-     *  `leaveTime > time` is set, a return at `leaveTime` (receiver −, sender +). */
+    /** Help transfers derived from planner assignments — one event pair per
+     *  driver (respecting stagger / custom modes) and routing returns to the
+     *  assignment's `returnPlant` when it differs from the sender. */
     const helpTransfers = useMemo(() => {
         const out = []
         ;(assignments || []).forEach((a) => {
             if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
-            const count = parseInt(a.driverCount, 10) || 0
-            if (count <= 0) return
-            const arrivalMin = timeToMinutes(a.time)
-            if (!Number.isFinite(arrivalMin)) return
-            out.push({ delta: -count, plantCode: a.fromPlant, time: arrivalMin })
-            out.push({ delta: count, plantCode: a.toPlant, time: arrivalMin })
-            const leaveMin = timeToMinutes(a.leaveTime)
-            if (Number.isFinite(leaveMin) && leaveMin > arrivalMin) {
-                out.push({ delta: -count, plantCode: a.toPlant, time: leaveMin })
-                out.push({ delta: count, plantCode: a.fromPlant, time: leaveMin })
-            }
+            const home = a.returnPlant || a.fromPlant
+            buildAssignmentDriverTimes(a).forEach((dt) => {
+                if (!Number.isFinite(dt.arriveMin)) return
+                out.push({ delta: -1, plantCode: a.fromPlant, time: dt.arriveMin })
+                out.push({ delta: 1, plantCode: a.toPlant, time: dt.arriveMin })
+                if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
+                    out.push({ delta: -1, plantCode: a.toPlant, time: dt.leaveMin })
+                    out.push({ delta: 1, plantCode: home, time: dt.leaveMin })
+                }
+            })
         })
         return out
     }, [assignments])
@@ -454,11 +455,10 @@ function PlanFlowView({
         return out
     }, [viewTime, poolTimelinesByPlant])
 
-    /** Effective operator count at `viewTime` — base roster adjusted for help
-     *  that's active right now (outbound sent but not yet returned, inbound
-     *  arrived but not yet returned). This is what the node badge should read
-     *  when the scrubber is engaged: total operators currently assigned to
-     *  this plant, regardless of whether they're out on a job or idle. */
+    /** Effective operator count at `viewTime` — base roster adjusted per-
+     *  driver for help currently in-transit or at the destination. Walks
+     *  each assignment's per-driver arrive/leave times so staggered arrivals
+     *  and staggered returns show up correctly when the scrubber moves. */
     const effAtViewTime = useMemo(() => {
         if (!Number.isFinite(viewTime)) return null
         const out = {}
@@ -467,15 +467,21 @@ function PlanFlowView({
         })
         ;(assignments || []).forEach((a) => {
             if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
-            const count = parseInt(a.driverCount, 10) || 0
-            if (count <= 0) return
-            const arrivalMin = timeToMinutes(a.time)
-            if (!Number.isFinite(arrivalMin) || viewTime < arrivalMin) return
-            const leaveMin = timeToMinutes(a.leaveTime)
-            const stillOut = !Number.isFinite(leaveMin) || viewTime < leaveMin
-            if (!stillOut) return
-            out[a.fromPlant] = (out[a.fromPlant] ?? 0) - count
-            out[a.toPlant] = (out[a.toPlant] ?? 0) + count
+            const home = a.returnPlant || a.fromPlant
+            buildAssignmentDriverTimes(a).forEach((dt) => {
+                if (!Number.isFinite(dt.arriveMin) || viewTime < dt.arriveMin) return
+                const stillOut = !Number.isFinite(dt.leaveMin) || viewTime < dt.leaveMin
+                if (stillOut) {
+                    // Driver currently at destination.
+                    out[a.fromPlant] = (out[a.fromPlant] ?? 0) - 1
+                    out[a.toPlant] = (out[a.toPlant] ?? 0) + 1
+                } else if (home !== a.fromPlant) {
+                    // Driver has left the destination but hasn't "gone home"
+                    // to their sender — they're now assigned to `home`.
+                    out[a.fromPlant] = (out[a.fromPlant] ?? 0) - 1
+                    out[home] = (out[home] ?? 0) + 1
+                }
+            })
         })
         return out
     }, [viewTime, stats, assignments])
@@ -498,11 +504,15 @@ function PlanFlowView({
         if (!selected) return
         setPanelMode('add')
         setDraft({
+            customTimes: [],
             driverCount: 1,
+            forOrderId: '',
             fromPlant: selected.code,
             leaveTime: '',
+            returnPlant: selected.code,
             staggerMinutes: 5,
             time: '',
+            timeMode: 'stagger',
             toPlant: ''
         })
         setEditingIndex(null)
@@ -514,11 +524,15 @@ function PlanFlowView({
         setPanelMode('edit')
         setEditingIndex(assignmentIndex)
         setDraft({
+            customTimes: Array.isArray(a.customTimes) ? a.customTimes : [],
             driverCount: parseInt(a.driverCount, 10) || 1,
+            forOrderId: a.forOrderId || '',
             fromPlant: a.fromPlant,
             leaveTime: a.leaveTime || '',
+            returnPlant: a.returnPlant || a.fromPlant,
             staggerMinutes: parseInt(a.staggerMinutes, 10) || 5,
             time: a.time || '',
+            timeMode: a.timeMode === 'custom' ? 'custom' : 'stagger',
             toPlant: a.toPlant
         })
         setPickingDestination(false)
@@ -532,11 +546,15 @@ function PlanFlowView({
     const submitEditor = () => {
         if (!draft?.fromPlant || !draft?.toPlant) return
         const payload = {
+            customTimes: draft.timeMode === 'custom' ? draft.customTimes || [] : [],
             driverCount: Math.max(0, parseInt(draft.driverCount, 10) || 0),
+            forOrderId: draft.forOrderId || '',
             fromPlant: draft.fromPlant,
             leaveTime: draft.leaveTime || '',
+            returnPlant: draft.returnPlant || draft.fromPlant,
             staggerMinutes: Math.max(0, parseInt(draft.staggerMinutes, 10) || 0),
             time: draft.time,
+            timeMode: draft.timeMode === 'custom' ? 'custom' : 'stagger',
             toPlant: draft.toPlant
         }
         if (panelMode === 'edit' && editingIndex != null) {
@@ -1252,6 +1270,7 @@ function PlanFlowView({
                         mode={panelMode}
                         draft={draft}
                         setDraft={setDraft}
+                        plantProduction={plantProduction}
                         plants={plants}
                         stats={allPlantStats}
                         travel={draftTravel}
@@ -1476,6 +1495,7 @@ function RouteEditor({
     onDelete,
     onSubmit,
     pickingDestination,
+    plantProduction,
     plants,
     setDraft,
     setPickingDestination,
@@ -1484,6 +1504,8 @@ function RouteEditor({
 }) {
     const leaveMins = timeToMinutes(draft.leaveTime)
     const returnTime = leaveMins != null && travel != null ? minutesToTime(leaveMins + travel) : null
+    const driverCount = Math.max(1, parseInt(draft.driverCount, 10) || 1)
+    const isCustom = draft.timeMode === 'custom'
 
     const destinationOptions = useMemo(() => {
         // Show all plants except the sender; prefer ones already in the plan.
@@ -1496,6 +1518,88 @@ function RouteEditor({
             return a.plant_code.localeCompare(b.plant_code)
         })
     }, [plants, draft.fromPlant, stats])
+
+    /** Orders at the destination plant that the dispatcher can tie this help
+     *  to. Picking a job means "these trucks are loading to pour for that
+     *  specific job," not just "help {toPlant} generally." */
+    const destinationJobs = useMemo(() => {
+        if (!draft.toPlant) return []
+        const prod = plantProduction?.[draft.toPlant]
+        const orders = Array.isArray(prod?.orders) ? prod.orders : []
+        return orders.slice().sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')))
+    }, [plantProduction, draft.toPlant])
+
+    /** When a job is picked, the trucks may return to a different plant than
+     *  they came from (e.g. staged for the next pour). Default to fromPlant. */
+    const returnPlantOptions = useMemo(() => {
+        const seen = new Set()
+        const out = []
+        ;(plants || []).forEach((p) => {
+            if (!p?.plant_code || seen.has(p.plant_code)) return
+            seen.add(p.plant_code)
+            out.push(p)
+        })
+        return out.sort((a, b) => a.plant_code.localeCompare(b.plant_code))
+    }, [plants])
+
+    /** Seed customTimes from the current stagger/leave values whenever the
+     *  user flips into custom mode or bumps the driver count while in it. */
+    const seedCustomTimesIfNeeded = (nextCount = driverCount) => {
+        const existing = Array.isArray(draft.customTimes) ? draft.customTimes : []
+        const seeded = Array.from({ length: nextCount }, (_, i) => {
+            const prior = existing[i]
+            if (prior && (prior.time || prior.leaveTime)) return prior
+            const arrive = draft.time ? addMinutesToTime(draft.time, i * (parseInt(draft.staggerMinutes, 10) || 0)) : ''
+            return { leaveTime: draft.leaveTime || '', time: arrive || '' }
+        })
+        return seeded
+    }
+
+    const handleModeChange = (nextMode) => {
+        if (nextMode === 'custom') {
+            setDraft({ ...draft, customTimes: seedCustomTimesIfNeeded(), timeMode: 'custom' })
+        } else {
+            setDraft({ ...draft, timeMode: 'stagger' })
+        }
+    }
+
+    const handleCountChange = (raw) => {
+        const count = Math.max(1, parseInt(raw, 10) || 1)
+        if (isCustom) {
+            const seeded = seedCustomTimesIfNeeded(count)
+            setDraft({ ...draft, customTimes: seeded, driverCount: count })
+        } else {
+            setDraft({ ...draft, driverCount: count })
+        }
+    }
+
+    const updateCustomTime = (idx, field, value) => {
+        const existing = Array.isArray(draft.customTimes) ? [...draft.customTimes] : []
+        while (existing.length <= idx) existing.push({ leaveTime: '', time: '' })
+        existing[idx] = { ...existing[idx], [field]: value }
+        setDraft({ ...draft, customTimes: existing })
+    }
+
+    const handleJobSelect = (orderId) => {
+        if (!orderId) {
+            setDraft({ ...draft, forOrderId: '' })
+            return
+        }
+        const job = destinationJobs.find((o) => (o.orderId || o.orderNum) === orderId)
+        if (!job) {
+            setDraft({ ...draft, forOrderId: orderId })
+            return
+        }
+        // Auto-fill arrival to the job's scheduled start time so the trucks
+        // land right when the pour begins. Dispatcher can tweak afterward.
+        const next = {
+            ...draft,
+            forOrderId: job.orderId || job.orderNum || orderId,
+            returnPlant: draft.returnPlant || draft.fromPlant
+        }
+        if (!draft.time && job.startTime) next.time = job.startTime
+        setDraft(next)
+    }
 
     return (
         <div className="p-5 flex flex-col gap-4">
@@ -1586,9 +1690,9 @@ function RouteEditor({
             <LabeledField label="Trucks">
                 <input
                     type="number"
-                    min={0}
+                    min={1}
                     value={draft.driverCount}
-                    onChange={(e) => setDraft({ ...draft, driverCount: e.target.value })}
+                    onChange={(e) => handleCountChange(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm border font-mono"
                     style={{
                         background: 'var(--bg-primary)',
@@ -1598,66 +1702,222 @@ function RouteEditor({
                 />
             </LabeledField>
 
-            <div className="grid grid-cols-2 gap-2">
-                <LabeledField label="Arrival time">
-                    <input
-                        type="time"
-                        value={draft.time || ''}
-                        onChange={(e) => setDraft({ ...draft, time: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg text-sm border font-mono"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            borderColor: 'var(--border-medium)',
-                            color: 'var(--text-primary)'
-                        }}
-                    />
-                </LabeledField>
+            {/* Loading for a specific job at the destination? */}
+            {destinationJobs.length > 0 && (
                 <LabeledField
                     label={
                         <>
-                            Leave time <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>· return</span>
+                            Loading for job{' '}
+                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>· optional</span>
                         </>
                     }
                 >
-                    <input
-                        type="time"
-                        value={draft.leaveTime || ''}
-                        onChange={(e) => setDraft({ ...draft, leaveTime: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg text-sm border font-mono"
+                    <select
+                        value={draft.forOrderId || ''}
+                        onChange={(e) => handleJobSelect(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg text-sm border"
                         style={{
                             background: 'var(--bg-primary)',
                             borderColor: 'var(--border-medium)',
                             color: 'var(--text-primary)'
                         }}
-                    />
+                    >
+                        <option value="">General help — no specific job</option>
+                        {destinationJobs.map((job) => {
+                            const id = job.orderId || job.orderNum || `${job.startTime}-${job.customer}`
+                            const parts = [
+                                job.startTime ? String(job.startTime).slice(0, 5) : '—',
+                                job.orderNum ? `#${job.orderNum}` : null,
+                                job.customer || null,
+                                Number.isFinite(parseFloat(job.yardage)) ? `${parseFloat(job.yardage)}yd` : null
+                            ].filter(Boolean)
+                            return (
+                                <option key={id} value={id}>
+                                    {parts.join(' · ')}
+                                </option>
+                            )
+                        })}
+                    </select>
                 </LabeledField>
+            )}
+
+            {/* After pouring, which plant do the trucks return to? Only
+                meaningful when loading for a specific job — otherwise the
+                default is "back where they came from." */}
+            {draft.forOrderId && (
+                <LabeledField
+                    label={
+                        <>
+                            Return to{' '}
+                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>· after pouring</span>
+                        </>
+                    }
+                >
+                    <select
+                        value={draft.returnPlant || draft.fromPlant}
+                        onChange={(e) => setDraft({ ...draft, returnPlant: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg text-sm border"
+                        style={{
+                            background: 'var(--bg-primary)',
+                            borderColor: 'var(--border-medium)',
+                            color: 'var(--text-primary)'
+                        }}
+                    >
+                        {returnPlantOptions.map((p) => (
+                            <option key={p.plant_code} value={p.plant_code}>
+                                {p.plant_code}
+                                {p.plant_name ? ` — ${p.plant_name}` : ''}
+                                {p.plant_code === draft.fromPlant ? ' (home)' : ''}
+                            </option>
+                        ))}
+                    </select>
+                </LabeledField>
+            )}
+
+            {/* Time mode toggle */}
+            <div>
+                <div
+                    className="text-[10px] font-bold uppercase tracking-wider mb-1.5"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
+                    Operator times
+                </div>
+                <div
+                    className="inline-flex rounded-md overflow-hidden"
+                    style={{ border: '1px solid var(--border-medium)' }}
+                >
+                    {['stagger', 'custom'].map((m) => {
+                        const active = (m === 'custom') === isCustom
+                        return (
+                            <button
+                                key={m}
+                                type="button"
+                                onClick={() => handleModeChange(m)}
+                                className="border-none cursor-pointer text-[11px] font-semibold px-3 py-1.5"
+                                style={{
+                                    background: active ? accentColor : 'transparent',
+                                    color: active ? '#fff' : 'var(--text-secondary)'
+                                }}
+                            >
+                                {m === 'stagger' ? 'Staggered' : 'Custom per operator'}
+                            </button>
+                        )
+                    })}
+                </div>
             </div>
 
-            <LabeledField
-                label={
-                    <>
-                        Stagger{' '}
-                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>
-                            · {draft.staggerMinutes || 0} min
-                        </span>
-                    </>
-                }
-            >
-                <input
-                    type="range"
-                    min={0}
-                    max={15}
-                    step={1}
-                    value={draft.staggerMinutes || 0}
-                    onChange={(e) => setDraft({ ...draft, staggerMinutes: parseInt(e.target.value, 10) })}
-                    className="w-full"
-                    style={{ accentColor }}
-                />
-                <div className="flex justify-between text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                    <span>0m</span>
-                    <span>15m</span>
+            {!isCustom && (
+                <>
+                    <div className="grid grid-cols-2 gap-2">
+                        <LabeledField label="Arrival time">
+                            <input
+                                type="time"
+                                value={draft.time || ''}
+                                onChange={(e) => setDraft({ ...draft, time: e.target.value })}
+                                className="w-full px-3 py-2 rounded-lg text-sm border font-mono"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    borderColor: 'var(--border-medium)',
+                                    color: 'var(--text-primary)'
+                                }}
+                            />
+                        </LabeledField>
+                        <LabeledField
+                            label={
+                                <>
+                                    Leave time{' '}
+                                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>· return</span>
+                                </>
+                            }
+                        >
+                            <input
+                                type="time"
+                                value={draft.leaveTime || ''}
+                                onChange={(e) => setDraft({ ...draft, leaveTime: e.target.value })}
+                                className="w-full px-3 py-2 rounded-lg text-sm border font-mono"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    borderColor: 'var(--border-medium)',
+                                    color: 'var(--text-primary)'
+                                }}
+                            />
+                        </LabeledField>
+                    </div>
+                    <LabeledField
+                        label={
+                            <>
+                                Stagger{' '}
+                                <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>
+                                    · {draft.staggerMinutes || 0} min between operators
+                                </span>
+                            </>
+                        }
+                    >
+                        <input
+                            type="range"
+                            min={0}
+                            max={15}
+                            step={1}
+                            value={draft.staggerMinutes || 0}
+                            onChange={(e) => setDraft({ ...draft, staggerMinutes: parseInt(e.target.value, 10) })}
+                            className="w-full"
+                            style={{ accentColor }}
+                        />
+                        <div className="flex justify-between text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                            <span>0m</span>
+                            <span>15m</span>
+                        </div>
+                    </LabeledField>
+                </>
+            )}
+
+            {isCustom && (
+                <div className="flex flex-col gap-1.5">
+                    <div
+                        className="grid grid-cols-[24px_1fr_1fr] gap-2 text-[10px] font-bold uppercase tracking-wider"
+                        style={{ color: 'var(--text-tertiary)' }}
+                    >
+                        <span>#</span>
+                        <span>Arrive</span>
+                        <span>Leave</span>
+                    </div>
+                    {Array.from({ length: driverCount }, (_, i) => {
+                        const ct = draft.customTimes?.[i] || {}
+                        return (
+                            <div key={i} className="grid grid-cols-[24px_1fr_1fr] gap-2 items-center">
+                                <span
+                                    className="inline-flex items-center justify-center rounded text-white text-[10px] font-bold w-6 h-6 shrink-0"
+                                    style={{ background: accentColor }}
+                                >
+                                    {i + 1}
+                                </span>
+                                <input
+                                    type="time"
+                                    value={ct.time || ''}
+                                    onChange={(e) => updateCustomTime(i, 'time', e.target.value)}
+                                    className="w-full px-2 py-1.5 rounded-md text-[12px] border font-mono"
+                                    style={{
+                                        background: 'var(--bg-primary)',
+                                        borderColor: 'var(--border-medium)',
+                                        color: 'var(--text-primary)'
+                                    }}
+                                />
+                                <input
+                                    type="time"
+                                    value={ct.leaveTime || ''}
+                                    onChange={(e) => updateCustomTime(i, 'leaveTime', e.target.value)}
+                                    className="w-full px-2 py-1.5 rounded-md text-[12px] border font-mono"
+                                    style={{
+                                        background: 'var(--bg-primary)',
+                                        borderColor: 'var(--border-medium)',
+                                        color: 'var(--text-primary)'
+                                    }}
+                                />
+                            </div>
+                        )
+                    })}
                 </div>
-            </LabeledField>
+            )}
 
             <div
                 className="rounded-lg p-3 grid grid-cols-3 gap-2"

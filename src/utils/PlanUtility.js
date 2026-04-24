@@ -91,6 +91,47 @@ export const adjustPoolForDate = (base, planDate) => {
     return Math.floor((Number.isFinite(base) ? base : 0) * multiplier)
 }
 
+/**
+ * Per-driver arrive + leave times for a planner assignment. Respects both
+ * scheduling modes:
+ *   - `timeMode: 'stagger'` — each driver lands `staggerMinutes` after the
+ *     previous one, starting from `time`. Leave time applies to all.
+ *   - `timeMode: 'custom'` — arrive and leave come from `customTimes[i]`.
+ *
+ * Every downstream consumer (pool simulation, help rows, flow-view time
+ * scrubber) should build events from this function so the whole app treats
+ * staggered crew arrivals/returns identically.
+ *
+ * @returns {Array<{ driverIndex, arriveMin, leaveMin }>}
+ */
+export const buildAssignmentDriverTimes = (assignment) => {
+    const count = parseInt(assignment?.driverCount, 10) || 0
+    if (count <= 0) return []
+    const stagger = parseInt(assignment?.staggerMinutes, 10) || 0
+    const isCustom = assignment?.timeMode === 'custom' && Array.isArray(assignment?.customTimes)
+    const baseArrive = timeToMinutes(assignment?.time)
+    const baseLeave = timeToMinutes(assignment?.leaveTime)
+    const result = []
+    for (let i = 0; i < count; i++) {
+        let arriveMin = null
+        let leaveMin = null
+        if (isCustom) {
+            const ct = assignment.customTimes[i] || {}
+            arriveMin = timeToMinutes(ct.time)
+            leaveMin = timeToMinutes(ct.leaveTime)
+        } else {
+            if (Number.isFinite(baseArrive)) arriveMin = baseArrive + i * stagger
+            leaveMin = baseLeave
+        }
+        result.push({
+            arriveMin: Number.isFinite(arriveMin) ? arriveMin : null,
+            driverIndex: i,
+            leaveMin: Number.isFinite(leaveMin) ? leaveMin : null
+        })
+    }
+    return result
+}
+
 /** Parse an `HH:MM` (or `H:MM`) duration from the dispatch report into minutes. */
 const parseDurationMinutes = (value) => {
     const v = String(value || '').trim()
@@ -296,10 +337,20 @@ const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides
         const yardage = parseFloat(order?.yardage) || 0
         const tripsTotal = loadSize > 0 && yardage > 0 ? Math.max(1, Math.ceil(yardage / loadSize)) : truckCount
         const tripsPerTruck = Math.max(1, Math.ceil(tripsTotal / truckCount))
-        // The pour finishes when the LAST trip returns. Trucks are locked
-        // until then — jobs have to be completed fully before we refund.
-        const lastReturnMinutes = startMin + (tripsTotal - 1) * spacingMin + cycleMin
-        const firstReturnMinutes = startMin + cycleMin
+        // Per-truck last-trip return time. Trucks cycle round-robin: trip k
+        // goes to truck (k % truckCount), so truck i's last trip is the
+        // largest k ≤ tripsTotal-1 where k % truckCount === i. Each truck
+        // comes home individually — dispatchers see one return row per
+        // truck, not one bulk "all 14 back" row at the end of the pour.
+        const returnTimesByTruck = []
+        for (let i = 0; i < truckCount; i++) {
+            const j = tripsTotal - 1 - i
+            if (j < 0) continue
+            const lastTripIdx = Math.floor(j / truckCount) * truckCount + i
+            returnTimesByTruck.push(startMin + lastTripIdx * spacingMin + cycleMin)
+        }
+        const lastReturnMinutes = returnTimesByTruck.length ? Math.max(...returnTimesByTruck) : startMin + cycleMin
+        const firstReturnMinutes = returnTimesByTruck.length ? Math.min(...returnTimesByTruck) : startMin + cycleMin
         const orderKey =
             order.orderId ||
             `${order.plantCode ?? 'unknown'}-${startMin}-${order.orderNum ?? Math.random().toString(36).slice(2, 8)}`
@@ -310,18 +361,24 @@ const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides
             time: startMin,
             type: 'dispatch'
         })
-        events.push({
-            count: truckCount,
-            orderKey,
-            plantCode: order.plantCode,
-            time: lastReturnMinutes,
-            type: 'return'
+        // One return event per truck so the pool ticks up gradually through
+        // the pour instead of snapping up by `truckCount` at the end.
+        returnTimesByTruck.forEach((returnMin) => {
+            events.push({
+                count: 1,
+                orderKey,
+                plantCode: order.plantCode,
+                time: returnMin,
+                type: 'return'
+            })
         })
         byOrder[orderKey] = {
             dispatchMinutes: startMin,
             firstReturnMinutes,
             lastReturnMinutes,
             plantCode: order.plantCode,
+            returnEvents: [],
+            returnTimesByTruck,
             tripsPerTruck,
             tripsTotal,
             truckCount
@@ -366,10 +423,20 @@ const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides
         let nextPool
         if (event.type === 'return') {
             nextPool = plantPool + event.count
-            // Record the pool state the moment this order's trucks complete
-            // so the schedule can label the return row with live availability.
+            // Record each return event so the schedule can render one row
+            // per truck (or grouped batch) and show the live pool count at
+            // the moment that truck comes home. `poolAfterReturn` tracks
+            // the latest value so legacy callers keep working.
             if (event.orderKey && byOrder[event.orderKey]) {
-                byOrder[event.orderKey].poolAfterReturn = nextPool
+                const entry = byOrder[event.orderKey]
+                entry.poolAfterReturn = nextPool
+                if (Array.isArray(entry.returnEvents)) {
+                    entry.returnEvents.push({
+                        count: event.count,
+                        poolAfter: nextPool,
+                        time: event.time
+                    })
+                }
             }
         } else {
             if (byOrder[event.orderKey]) {

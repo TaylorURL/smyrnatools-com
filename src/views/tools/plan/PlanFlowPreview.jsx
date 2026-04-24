@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
-import { computePlantPoolTimeline, MAX_YPH, TARGET_YPH, timeToMinutes } from '../../../utils/PlanUtility'
+import {
+    buildAssignmentDriverTimes,
+    computePlantPoolTimeline,
+    MAX_YPH,
+    TARGET_YPH,
+    timeToMinutes
+} from '../../../utils/PlanUtility'
 
 const NEEDS_HELP_COLOR = '#dc2626'
 const LEAVE_OFF_COLOR = '#d97706'
@@ -86,17 +92,16 @@ function PlanFlowPreview({ accentColor, allPlantStats, assignments, onOpenPlanne
         })
         ;(assignments || []).forEach((a) => {
             if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
-            const count = parseInt(a.driverCount, 10) || 0
-            if (count <= 0) return
-            const arrivalMin = timeToMinutes(a.time)
-            if (!Number.isFinite(arrivalMin)) return
-            transfers.push({ delta: -count, plantCode: a.fromPlant, time: arrivalMin })
-            transfers.push({ delta: count, plantCode: a.toPlant, time: arrivalMin })
-            const leaveMin = timeToMinutes(a.leaveTime)
-            if (Number.isFinite(leaveMin) && leaveMin > arrivalMin) {
-                transfers.push({ delta: -count, plantCode: a.toPlant, time: leaveMin })
-                transfers.push({ delta: count, plantCode: a.fromPlant, time: leaveMin })
-            }
+            const home = a.returnPlant || a.fromPlant
+            buildAssignmentDriverTimes(a).forEach((dt) => {
+                if (!Number.isFinite(dt.arriveMin)) return
+                transfers.push({ delta: -1, plantCode: a.fromPlant, time: dt.arriveMin })
+                transfers.push({ delta: 1, plantCode: a.toPlant, time: dt.arriveMin })
+                if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
+                    transfers.push({ delta: -1, plantCode: a.toPlant, time: dt.leaveMin })
+                    transfers.push({ delta: 1, plantCode: home, time: dt.leaveMin })
+                }
+            })
         })
         return { flat, initialPool, transfers }
     }, [allPlantStats, plantProduction, assignments])
