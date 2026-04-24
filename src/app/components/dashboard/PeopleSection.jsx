@@ -37,8 +37,14 @@ export default function PeopleSection({
     accentColor
 }) {
     return (
-        <DashboardCard>
-            <SectionTitle>People</SectionTitle>
+        <DashboardCard accent={accentColor} className="h-full flex flex-col">
+            <SectionTitle
+                icon="fa-user-group"
+                accentColor={accentColor}
+                subtitle="Operators, training pipeline, and status"
+            >
+                People
+            </SectionTitle>
             <MetricCard
                 label="Operators"
                 value={displayStats.operators.total}

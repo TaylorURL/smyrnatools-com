@@ -3,13 +3,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import DashboardCharts from '../../../app/components/dashboard/DashboardCharts'
 import DashboardHeader from '../../../app/components/dashboard/DashboardHeader'
+import DashboardOperationsSection from '../../../app/components/dashboard/DashboardOperationsSection'
+import DashboardScheduleSection from '../../../app/components/dashboard/DashboardScheduleSection'
 import DashboardSidebar from '../../../app/components/dashboard/DashboardSidebar'
 import DashboardSkeleton from '../../../app/components/dashboard/DashboardSkeleton'
 import EmbeddedViewModal from '../../../app/components/dashboard/EmbeddedViewModal'
 import FleetOverviewSection from '../../../app/components/dashboard/FleetOverviewSection'
 import KeyMetricsStrip from '../../../app/components/dashboard/KeyMetricsStrip'
-import MaintenanceQualitySection from '../../../app/components/dashboard/MaintenanceQualitySection'
-import PeopleSection from '../../../app/components/dashboard/PeopleSection'
 import { DashboardCard, SectionTitle } from '../../../app/components/ui/DashboardCards'
 import { INITIAL_EXPANDED_SECTIONS } from '../../../app/constants/dashboardConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
@@ -24,6 +24,7 @@ import {
 import { useDashboardAssets, useIssueCommentCounts, usePlantFilter } from '../../../app/hooks/useDashboardData'
 import { useAITypingEffect, useAnimatedStats, useDateFilter } from '../../../app/hooks/useDashboardEffects'
 import { useDashboardInit } from '../../../app/hooks/useDashboardInit'
+import { useDashboardSchedule } from '../../../app/hooks/useDashboardSchedule'
 import { useDashboardStats } from '../../../app/hooks/useDashboardStats'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import {
@@ -47,9 +48,6 @@ export default function DashboardView() {
     const [expandedSections, setExpandedSections] = useState(INITIAL_EXPANDED_SECTIONS)
     const [embeddedView, setEmbeddedView] = useState(null)
     const [embeddedViewSearch, setEmbeddedViewSearch] = useState('')
-    const [trainingCollapsed, setTrainingCollapsed] = useState(true)
-    const [pendingCollapsed, setPendingCollapsed] = useState(true)
-    const [lightDutyCollapsed, setLightDutyCollapsed] = useState(true)
     const [, startTransition] = useTransition()
     const filterTimeoutRef = useRef(null)
     const { plantSetRef } = usePlantFilter('', '', [], [])
@@ -198,6 +196,13 @@ export default function DashboardView() {
         userRoleName,
         userRoleWeight
     })
+    const {
+        hasSchedule,
+        isSyncing: scheduleSyncing,
+        lastSyncedAt: scheduleLastSyncedAt,
+        production: scheduleProduction,
+        scheduleDate
+    } = useDashboardSchedule({ enabled: dataReady && allPlants.length > 0, plants: allPlants })
     const displayStats = useAnimatedStats(stats, regionPlantsLoaded, dashboardRegionCode)
     const { aiActionPlan, aiDisplayText, isTypingComplete, showActionPlan, visibleActionItems } = useAITypingEffect(
         plantNotifications.aiSummary,
@@ -391,7 +396,7 @@ export default function DashboardView() {
                         {showSkeleton ? (
                             <DashboardSkeleton isMobile={isMobile} />
                         ) : (
-                            <>
+                            <div className={`flex flex-col ${isMobile ? 'gap-4' : 'gap-6'}`}>
                                 <div className={revealClass('up')} style={revealStyle(0)}>
                                     <KeyMetricsStrip
                                         displayStats={displayStats}
@@ -401,60 +406,67 @@ export default function DashboardView() {
                                         isMobile={isMobile}
                                     />
                                 </div>
-                                <div className={`grid ${isMobile ? 'gap-4' : 'gap-6'}`}>
-                                    <div className={revealClass('left')} style={revealStyle(120)}>
-                                        <FleetOverviewSection
-                                            displayStats={displayStats}
-                                            stats={stats}
-                                            isAggregate={isAggregate}
-                                            selectedRegion={selectedRegion}
-                                            accentColor={accentColor}
-                                            isMobile={isMobile}
-                                        />
-                                    </div>
-                                    <div className={revealClass('right')} style={revealStyle(200)}>
-                                        <PeopleSection
-                                            displayStats={displayStats}
-                                            isAggregate={isAggregate}
-                                            filteredTrainingOperators={filteredTrainingOperators}
-                                            filteredPendingStartOperators={filteredPendingStartOperators}
-                                            filteredLightDutyOperators={filteredLightDutyOperators}
-                                            trainingCollapsed={trainingCollapsed}
-                                            setTrainingCollapsed={setTrainingCollapsed}
-                                            pendingCollapsed={pendingCollapsed}
-                                            setPendingCollapsed={setPendingCollapsed}
-                                            lightDutyCollapsed={lightDutyCollapsed}
-                                            setLightDutyCollapsed={setLightDutyCollapsed}
-                                            formatPendingDate={DateUtility.formatPendingDate}
-                                            accentColor={accentColor}
-                                        />
-                                    </div>
-                                    <div className={revealClass('left')} style={revealStyle(280)}>
-                                        <MaintenanceQualitySection
-                                            displayStats={displayStats}
-                                            isAggregate={isAggregate}
-                                            statusHistoryData={statusHistoryData}
-                                            handleQuickDateFilter={handleQuickDateFilter}
-                                            isMobile={isMobile}
-                                        />
-                                    </div>
-                                    <div className={revealClass('right')} style={revealStyle(360)}>
-                                        <DashboardCard>
-                                            <SectionTitle>Fleet Analytics</SectionTitle>
-                                            <DashboardCharts
-                                                dashboardPlant={dashboardPlant}
-                                                dashboardRegionCode={dashboardRegionCode}
-                                                regionPlants={regionPlants}
-                                                allPlants={allPlants}
-                                                statusHistoryData={statusHistoryData}
-                                                isAggregate={isAggregate}
-                                                stats={stats}
-                                                isMobile={isMobile}
-                                            />
-                                        </DashboardCard>
-                                    </div>
+
+                                <div className={revealClass('up')} style={revealStyle(80)}>
+                                    <DashboardScheduleSection
+                                        production={scheduleProduction}
+                                        hasSchedule={hasSchedule}
+                                        isSyncing={scheduleSyncing}
+                                        lastSyncedAt={scheduleLastSyncedAt}
+                                        scheduleDate={scheduleDate}
+                                        dashboardPlant={dashboardPlant}
+                                        regionPlants={regionPlants}
+                                        allPlants={allPlants}
+                                        isPlantMode={isPlantMode}
+                                        accentColor={accentColor}
+                                        isMobile={isMobile}
+                                    />
                                 </div>
-                            </>
+
+                                <div className={revealClass('left')} style={revealStyle(160)}>
+                                    <FleetOverviewSection
+                                        displayStats={displayStats}
+                                        stats={stats}
+                                        isAggregate={isAggregate}
+                                        selectedRegion={selectedRegion}
+                                        accentColor={accentColor}
+                                        isMobile={isMobile}
+                                    />
+                                </div>
+
+                                <div className={revealClass('up')} style={revealStyle(240)}>
+                                    <DashboardOperationsSection
+                                        displayStats={displayStats}
+                                        isAggregate={isAggregate}
+                                        filteredTrainingOperators={filteredTrainingOperators}
+                                        filteredPendingStartOperators={filteredPendingStartOperators}
+                                        filteredLightDutyOperators={filteredLightDutyOperators}
+                                        statusHistoryData={statusHistoryData}
+                                        handleQuickDateFilter={handleQuickDateFilter}
+                                        formatPendingDate={DateUtility.formatPendingDate}
+                                        accentColor={accentColor}
+                                        isMobile={isMobile}
+                                    />
+                                </div>
+
+                                <div className={revealClass('up')} style={revealStyle(400)}>
+                                    <DashboardCard accent={accentColor}>
+                                        <SectionTitle icon="fa-chart-line" accentColor={accentColor}>
+                                            Fleet Analytics
+                                        </SectionTitle>
+                                        <DashboardCharts
+                                            dashboardPlant={dashboardPlant}
+                                            dashboardRegionCode={dashboardRegionCode}
+                                            regionPlants={regionPlants}
+                                            allPlants={allPlants}
+                                            statusHistoryData={statusHistoryData}
+                                            isAggregate={isAggregate}
+                                            stats={stats}
+                                            isMobile={isMobile}
+                                        />
+                                    </DashboardCard>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </main>

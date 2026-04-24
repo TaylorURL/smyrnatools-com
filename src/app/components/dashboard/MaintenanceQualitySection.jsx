@@ -101,8 +101,14 @@ export default function MaintenanceQualitySection({
         return buildChartEntry(statusHistoryData[a.dataKey], a.name)
     }).filter(Boolean)
     return (
-        <DashboardCard>
-            <SectionTitle>Maintenance & Quality</SectionTitle>
+        <DashboardCard accent="#f59e0b" className="h-full flex flex-col">
+            <SectionTitle
+                icon="fa-screwdriver-wrench"
+                accentColor="#f59e0b"
+                subtitle="Overdue service, open issues, and historical distribution"
+            >
+                Maintenance & Quality
+            </SectionTitle>
             <div
                 className={`grid ${isMobile ? 'gap-3 grid-cols-1' : 'gap-4 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]'} mb-4 md:mb-6`}
             >
@@ -129,9 +135,9 @@ export default function MaintenanceQualitySection({
                     <StatusPill>Equipment {displayStats.equipment.issues}</StatusPill>
                 </MetricCard>
             </div>
-            <div className="border-t border-slate-200 pt-6">
+            <div className="border-t border-border-light pt-6">
                 <div className="flex flex-wrap items-center justify-between gap-2 md:gap-4 mb-4 md:mb-5">
-                    <h4 className="text-sm md:text-base font-semibold text-slate-900 m-0">
+                    <h4 className="text-sm md:text-base font-semibold text-text-primary m-0">
                         Historical Status Distribution
                     </h4>
                     <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
@@ -139,7 +145,7 @@ export default function MaintenanceQualitySection({
                             <button
                                 key={filter}
                                 onClick={() => handleQuickDateFilter(filter)}
-                                className="bg-slate-100 border-none rounded-md text-slate-600 text-[10px] md:text-xs font-medium px-2 py-1 md:px-3 md:py-1.5 cursor-pointer hover:bg-slate-200"
+                                className="bg-bg-tertiary border border-border-light rounded-md text-text-secondary text-[10px] md:text-xs font-medium px-2 py-1 md:px-3 md:py-1.5 cursor-pointer hover:brightness-95 transition"
                             >
                                 {formatFilterLabel(filter)}
                             </button>
@@ -150,17 +156,25 @@ export default function MaintenanceQualitySection({
                     className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-[repeat(auto-fit,minmax(140px,1fr))]'} gap-3 mb-4 md:mb-6`}
                 >
                     {assets.map((asset, idx) => (
-                        <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
-                            <div className="text-sm font-semibold text-slate-600 mb-2.5">{asset.name}</div>
+                        <div key={idx} className="bg-bg-tertiary border border-border-light rounded-lg p-3.5">
+                            <div className="text-sm font-semibold text-text-primary mb-2.5">{asset.name}</div>
                             <div className="flex flex-col gap-1.5">
                                 {[
-                                    { color: 'text-green-600', label: 'Active', value: asset.active },
-                                    { color: 'text-purple-600', label: 'Spare', value: asset.spare },
-                                    { color: 'text-blue-600', label: 'In Shop', value: asset.inShop }
+                                    {
+                                        color: 'text-emerald-600 dark:text-emerald-400',
+                                        label: 'Active',
+                                        value: asset.active
+                                    },
+                                    {
+                                        color: 'text-violet-600 dark:text-violet-400',
+                                        label: 'Spare',
+                                        value: asset.spare
+                                    },
+                                    { color: 'text-sky-600 dark:text-sky-400', label: 'In Shop', value: asset.inShop }
                                 ].map(({ color, label, value }) => (
                                     <div key={label} className="flex justify-between text-xs">
                                         <span className={color}>{label}</span>
-                                        <span className="font-semibold text-slate-900">{value}%</span>
+                                        <span className="font-semibold text-text-primary tabular-nums">{value}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -169,7 +183,7 @@ export default function MaintenanceQualitySection({
                 </div>
                 <div className="flex flex-col gap-2.5">
                     {chartData.length === 0 ? (
-                        <div className="text-center py-5 text-slate-400 text-sm">No historical data available</div>
+                        <div className="text-center py-5 text-text-secondary text-sm">No historical data available</div>
                     ) : (
                         <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
                             <BarChart data={chartData} layout="vertical">

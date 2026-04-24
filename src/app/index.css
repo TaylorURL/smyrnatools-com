@@ -803,14 +803,18 @@ html.dark .border-\[\#fef08a\] {
 
 /* ── Dashboard metric card overrides ── */
 
-/* Metric card base: light surface + border */
+/* Metric card base: subtle gradient surface + soft border for visual lift */
 .metric-card {
-    background-color: var(--bg-tertiary);
+    background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
     border: 1px solid var(--border-light);
+}
+html.dark .metric-card {
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
 }
 .metric-card-highlight {
     border-width: 2px;
     border-style: solid;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 /* Allocation pill colors */

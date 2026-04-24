@@ -14,7 +14,7 @@ function staggerDelay(index) {
 function PulseBlock({ className, style, delay }) {
     return (
         <div
-            className={`bg-slate-200 rounded-lg animate-pulse ${className}`}
+            className={`bg-bg-tertiary rounded-lg animate-pulse ${className}`}
             style={{ animationDelay: `${delay}ms`, animationFillMode: 'both', ...style }}
         />
     )
@@ -23,20 +23,20 @@ function PulseBlock({ className, style, delay }) {
 function SkeletonMetricCard({ delay, isMobile }) {
     return (
         <div
-            className={`rounded-xl ${isMobile ? 'p-4' : 'p-5'} bg-slate-50 border border-slate-200 animate-pulse`}
+            className={`rounded-xl ${isMobile ? 'p-4' : 'p-5'} bg-bg-tertiary border border-border-light animate-pulse`}
             style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
         >
             <div className="flex items-start justify-between mb-3">
                 <div>
-                    <div className="h-3.5 w-20 rounded bg-slate-200 mb-2" />
-                    <div className="h-8 w-14 rounded bg-slate-200" />
+                    <div className="h-3.5 w-20 rounded bg-bg-tertiary mb-2" />
+                    <div className="h-8 w-14 rounded bg-bg-tertiary" />
                 </div>
-                <div className="h-9 w-9 rounded-lg bg-slate-200" />
+                <div className="h-9 w-9 rounded-lg bg-bg-tertiary" />
             </div>
             <div className="flex flex-wrap gap-1.5 mt-2">
-                <div className="h-6 w-16 rounded-2xl bg-slate-200" />
-                <div className="h-6 w-14 rounded-2xl bg-slate-200" />
-                <div className="h-6 w-18 rounded-2xl bg-slate-200" />
+                <div className="h-6 w-16 rounded-2xl bg-bg-tertiary" />
+                <div className="h-6 w-14 rounded-2xl bg-bg-tertiary" />
+                <div className="h-6 w-18 rounded-2xl bg-bg-tertiary" />
             </div>
         </div>
     )
@@ -54,7 +54,31 @@ export default function DashboardSkeleton({ isMobile }) {
     const gridCols = isMobile ? 'gap-3 grid-cols-1' : 'gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]'
 
     return (
-        <div className={`grid ${isMobile ? 'gap-4' : 'gap-6'}`}>
+        <div className={`flex flex-col ${isMobile ? 'gap-4' : 'gap-6'}`}>
+            {/* KPI strip */}
+            <div
+                className={`grid gap-2.5 ${isMobile ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6'}`}
+            >
+                {Array.from({ length: 6 }, (_, i) => (
+                    <PulseBlock key={i} className="h-16 rounded-xl" delay={staggerDelay(i)} />
+                ))}
+            </div>
+
+            {/* Schedule */}
+            <DashboardCard>
+                <PulseBlock className="h-5 w-44 mb-5" delay={staggerDelay(6)} />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 rounded-xl bg-bg-tertiary border border-border-light">
+                    {[0, 1, 2, 3].map((i) => (
+                        <PulseBlock key={i} className="h-12 rounded-lg" delay={staggerDelay(7 + i)} />
+                    ))}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                    {[0, 1, 2, 3].map((i) => (
+                        <PulseBlock key={i} className="h-12 rounded-lg" delay={staggerDelay(11 + i)} />
+                    ))}
+                </div>
+            </DashboardCard>
+
             {/* Fleet Overview */}
             <DashboardCard>
                 <PulseBlock className="h-5 w-36 mb-5" delay={staggerDelay(0)} />
@@ -69,7 +93,7 @@ export default function DashboardSkeleton({ isMobile }) {
             <DashboardCard>
                 <PulseBlock className="h-5 w-32 mb-5" delay={staggerDelay(fleetCards + 1)} />
                 <div
-                    className="animate-pulse rounded-xl bg-slate-50 border border-slate-200"
+                    className="animate-pulse rounded-xl bg-bg-tertiary border border-border-light"
                     style={{
                         animationDelay: `${staggerDelay(fleetCards + 2)}ms`,
                         animationFillMode: 'both',
@@ -86,14 +110,14 @@ export default function DashboardSkeleton({ isMobile }) {
                     {[0, 1, 2].map((i) => (
                         <div
                             key={i}
-                            className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-4 py-3.5 animate-pulse"
+                            className="flex items-center justify-between bg-bg-tertiary border border-border-light rounded-lg px-4 py-3.5 animate-pulse"
                             style={{
                                 animationDelay: `${staggerDelay(fleetCards + 5 + i)}ms`,
                                 animationFillMode: 'both'
                             }}
                         >
-                            <div className="h-4 w-48 rounded bg-slate-200" />
-                            <div className="h-4 w-4 rounded bg-slate-200" />
+                            <div className="h-4 w-48 rounded bg-bg-tertiary" />
+                            <div className="h-4 w-4 rounded bg-bg-tertiary" />
                         </div>
                     ))}
                 </div>
@@ -110,7 +134,7 @@ export default function DashboardSkeleton({ isMobile }) {
                     ))}
                 </div>
                 <div
-                    className="animate-pulse rounded-xl bg-slate-50 border border-slate-200"
+                    className="animate-pulse rounded-xl bg-bg-tertiary border border-border-light"
                     style={{
                         animationDelay: `${staggerDelay(fleetCards + 11)}ms`,
                         animationFillMode: 'both',

@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [38.5.43] - 2026-04-24
+
+- Added new Demand view to the Plan tool with KPI tiles, hourly/stacked truck charts, yardage share pie, cumulative yardage area chart, capacity vs peak comparison, top customers bar chart, and product mix breakdown
+- Added new Realtime view to the Plan tool for live dispatching visibility
+- Expanded adjacent plan fetching from +/-3 days to -6..+3 days to support the Schedule view's rolling 7-day yardage KPIs
+- Added canonical plant-badge color map to PlanUtility so every view (Schedule, Demand, Planner) renders the same plant in the same hue
+- Added missing-operator tracking helpers (get/set) to PlanUtility with plan-level metadata support, letting dispatchers mark operators as sick/vacation and have truck calculations reflect actual availability
+- Added getEffectiveBase helper that combines weekend-adjusted base pool with missing-operator shortfalls, clamped to zero
+- Extended PlanScheduleView with yardage KPI tiles, a rolling 7-day yardage sparkline, and per-plant missing-operator adjustment controls
+- Extended PlanFlowView with a collapsible plant-level stats panel showing order counts, truck totals, yardage, and capacity utilization per plant
+- Updated PlanFlowPreview to pass plantNameByCode and stats props through to child views
+- Added Demand and Realtime tabs to the main PlanView tab bar with demand-chart and clock icons
+- Wired new Demand and Realtime views into PlanView's tab rendering with the required props
+
 ## [38.5.42] - 2026-04-24
 
 - Plan view header bar now wraps on narrow viewports so settings and action buttons no longer clip off the right edge

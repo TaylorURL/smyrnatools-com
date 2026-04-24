@@ -31,8 +31,14 @@ export default function FleetOverviewSection({
     isMobile
 }) {
     return (
-        <DashboardCard>
-            <SectionTitle>Fleet Overview</SectionTitle>
+        <DashboardCard accent={accentColor}>
+            <SectionTitle
+                icon="fa-truck-fast"
+                accentColor={accentColor}
+                subtitle="Active, spare, and in-shop counts by asset type"
+            >
+                Fleet Overview
+            </SectionTitle>
             <div
                 className={`grid ${isMobile ? 'gap-3 grid-cols-1' : 'gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]'}`}
             >
