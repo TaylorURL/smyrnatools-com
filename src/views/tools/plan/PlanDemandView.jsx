@@ -18,8 +18,8 @@ import {
 } from 'recharts'
 
 import {
-    adjustPoolForDate,
     getCalculatedTruckCount,
+    getEffectiveBase,
     isBigPourOrder,
     isExcludedOrder,
     plantBadgeColor,
@@ -100,10 +100,19 @@ function useDemandData(plantProduction, stats, plantNameByCode, planDate) {
         const plants = new Map()
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
+            const rawBase = Number.isFinite(s.base) ? s.base : 0
+            // Match the schedule tab's starting-pool math: apply date/holiday
+            // adjustments AND missing-operator shortfalls, then subtract help
+            // sent to other plants and add help received from other plants.
+            const effectiveBase = getEffectiveBase(rawBase, s.code, plantProduction, planDate)
+            const send = Number.isFinite(s.send) ? s.send : 0
+            const recv = Number.isFinite(s.recv) ? s.recv : 0
             plants.set(s.code, {
-                adjustedBase: adjustPoolForDate(Number.isFinite(s.base) ? s.base : 0, planDate),
-                base: Number.isFinite(s.base) ? s.base : 0,
+                adjustedBase: Math.max(0, effectiveBase - send + recv),
+                base: rawBase,
                 code: s.code,
+                helpRecv: recv,
+                helpSend: send,
                 name: plantNameByCode?.[s.code] || s.code,
                 orders: 0,
                 totalTrucks: 0,
@@ -117,6 +126,8 @@ function useDemandData(plantProduction, stats, plantNameByCode, planDate) {
                     adjustedBase: 0,
                     base: 0,
                     code,
+                    helpRecv: 0,
+                    helpSend: 0,
                     name: plantNameByCode?.[code] || code,
                     orders: 0,
                     totalTrucks: 0,

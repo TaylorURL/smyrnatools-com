@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [38.5.44] - 2026-04-24
+
+- Redesigned DashboardHeader with frosted-glass backdrop blur, gradient accent band, region name as primary title, and a labeled "Dashboard" badge pill
+- Added new DashboardOperationsSection that consolidates workforce and maintenance data into a single full-width card with three bands: KPI strip, people pipeline + asset attention grid, and historical status distribution chart
+- Added new DashboardScheduleSection for displaying schedule-related data on the dashboard
+- Added useDashboardSchedule hook to fetch and manage schedule data for the dashboard
+- Refactored KeyMetricsStrip with updated layout and styling to match the new dashboard design language
+- Updated DashboardSharedComponents with revised shared UI primitives (section titles, stat chips, layout helpers)
+- Refactored DashboardCards with expanded card and section title variants to support the new operations and schedule sections
+- Updated DashboardSkeleton to reflect the new section layout with operations and schedule placeholders
+- Updated FleetOverviewSection, MaintenanceQualitySection, and PeopleSection with minor prop and styling adjustments for consistency
+- Refactored DashboardView to wire up the new operations and schedule sections, replacing the old side-by-side people + maintenance split
+- Updated CollapsibleTable with refined styling and layout tweaks
+- Cleaned up leftover CSS custom properties in index.css
+
 ## [38.5.43] - 2026-04-24
 
 - Added new Demand view to the Plan tool with KPI tiles, hourly/stacked truck charts, yardage share pie, cumulative yardage area chart, capacity vs peak comparison, top customers bar chart, and product mix breakdown

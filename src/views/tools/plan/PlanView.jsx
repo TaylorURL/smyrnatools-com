@@ -10,11 +10,24 @@ import { PlanService } from '../../../services/PlanService'
 import { UserService } from '../../../services/UserService'
 import { buildYourPlantScope } from '../../../utils/DistrictUtility'
 import {
+    addMinutesToTime,
+    buildAssignmentDriverTimes,
+    computePlantPoolTimeline,
+    computeSendHomeRows,
+    computeSuggestedSlots,
+    DEFAULT_STAGGER_MINUTES,
+    getCalculatedTruckCount,
+    getEffectiveBase,
+    getMissingOperators,
     getOffsetDate,
     getTomorrowDate,
+    isBigPourOrder,
     isCancelledOrder,
+    isClosedDay,
+    isExcludedOrder,
     MAX_YPH,
     OVERTIME_THRESHOLD_HOURS,
+    PLAN_META_KEY,
     TARGET_YPH,
     timeToMinutes
 } from '../../../utils/PlanUtility'
@@ -126,6 +139,258 @@ function PlanView() {
         })
         return out
     }, [plants])
+
+    /**
+     * Comprehensive plan-briefing message — assembled when the user clicks
+     * "Copy Plan". Mirrors what's surfaced across the Plan / Schedule /
+     * Planner / Demand / Realtime tabs so the recipient gets the full plan
+     * context in one paste-able block:
+     *   - Day header (date + closed/half-crew warnings)
+     *   - Day totals (yardage, trucks, orders, peak hour, big pours)
+     *   - Per-plant section: roster (base/missing/effective + help in/out),
+     *     order list with start/customer/yardage/trucks/big-pour flag, peak
+     *     concurrent demand, send-home recommendations, open-slot suggestions
+     *   - Help routes (driver-by-driver arrivals/leaves + return plant +
+     *     specific job loaded for, when set)
+     *   - Notes
+     */
+    const handleCopyPlan = () => {
+        const closed = isClosedDay(planDate)
+        const dateLabel = planDate
+            ? new Date(`${planDate}T00:00:00`).toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'long',
+                  weekday: 'long',
+                  year: 'numeric'
+              })
+            : ''
+        const lines = []
+        const sep = '────────────────────────────────────────'
+
+        lines.push(`PLAN — ${dateLabel || planDate}`)
+        if (closed) {
+            lines.push('⚠ Sunday — plants closed. All pools = 0.')
+        } else {
+            const dow = planDate ? new Date(`${planDate}T00:00:00`).getDay() : -1
+            if (dow === 6) lines.push('⚠ Saturday — half crew, every plant base halved.')
+        }
+
+        // Flat order list per plant + day-wide totals.
+        const flat = []
+        let totalYardage = 0
+        let totalTrucks = 0
+        let totalOrders = 0
+        let bigPours = 0
+        const productionEntries = Object.entries(plantProduction || {}).filter(([code]) => code !== PLAN_META_KEY)
+        productionEntries.forEach(([code, prod]) => {
+            const list = Array.isArray(prod?.orders) ? prod.orders : []
+            list.forEach((o) => {
+                if (isExcludedOrder(o)) return
+                const enriched = { ...o, plantCode: code }
+                flat.push(enriched)
+                totalYardage += parseFloat(o.yardage) || 0
+                totalTrucks += getCalculatedTruckCount(o) || 0
+                totalOrders += 1
+                if (isBigPourOrder(o)) bigPours += 1
+            })
+        })
+
+        // Hourly concurrent-truck demand for peak-hour readout.
+        const hours = Array.from({ length: 24 }, () => 0)
+        flat.forEach((o) => {
+            const startMin = timeToMinutes(o?.startTime)
+            const trucks = getCalculatedTruckCount(o) || 0
+            if (!Number.isFinite(startMin) || trucks <= 0) return
+            const rate = timeToMinutes(o?.rate) || 5
+            const loadSize = parseFloat(o?.loadSize) || 0
+            const yards = parseFloat(o?.yardage) || 0
+            const trips = loadSize > 0 && yards > 0 ? Math.max(1, Math.ceil(yards / loadSize)) : trucks
+            const endMin = startMin + (trips - 1) * rate + 30
+            for (let h = Math.floor(startMin / 60); h <= Math.min(23, Math.floor((endMin - 1) / 60)); h++) {
+                hours[h] += trucks
+            }
+        })
+        let peakHour = 0
+        let peakTrucks = 0
+        hours.forEach((v, h) => {
+            if (v > peakTrucks) {
+                peakTrucks = v
+                peakHour = h
+            }
+        })
+
+        if (totalOrders > 0) {
+            lines.push('')
+            lines.push('DAY TOTALS')
+            lines.push(`  Yardage: ${Math.round(totalYardage).toLocaleString()} yd`)
+            lines.push(`  Trucks required: ${totalTrucks}`)
+            lines.push(`  Orders: ${totalOrders}`)
+            if (peakTrucks > 0) {
+                lines.push(`  Peak hour: ${String(peakHour).padStart(2, '0')}:00 (${peakTrucks} trucks)`)
+            }
+            if (bigPours > 0) lines.push(`  Big pours (120+ yd, back-to-back): ${bigPours}`)
+        }
+
+        // Pool simulation feeds per-plant peak demand, send-home + open-slot.
+        const initialPoolByCode = {}
+        ;(stats || []).forEach((s) => {
+            if (!s?.code) return
+            initialPoolByCode[s.code] = getEffectiveBase(
+                Number.isFinite(s.base) ? s.base : 0,
+                s.code,
+                plantProduction,
+                planDate
+            )
+        })
+        const helpTransfers = []
+        ;(assignments || []).forEach((a) => {
+            if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
+            const home = a.returnPlant || a.fromPlant
+            buildAssignmentDriverTimes(a).forEach((dt) => {
+                if (!Number.isFinite(dt.arriveMin)) return
+                helpTransfers.push({ delta: -1, plantCode: a.fromPlant, time: dt.arriveMin })
+                helpTransfers.push({ delta: 1, plantCode: a.toPlant, time: dt.arriveMin })
+                if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
+                    helpTransfers.push({ delta: -1, plantCode: a.toPlant, time: dt.leaveMin })
+                    helpTransfers.push({ delta: 1, plantCode: home, time: dt.leaveMin })
+                }
+            })
+        })
+        const byOrder = computePlantPoolTimeline(flat, initialPoolByCode, null, helpTransfers)
+        const sendHome = computeSendHomeRows(flat, initialPoolByCode, null, helpTransfers)
+        const slots = computeSuggestedSlots(flat, initialPoolByCode, null, helpTransfers)
+
+        // Per-plant blocks
+        const plantsToList = new Set([...Object.keys(initialPoolByCode), ...productionEntries.map(([code]) => code)])
+        const orderedPlants = Array.from(plantsToList).sort()
+        orderedPlants.forEach((code) => {
+            const plantOrders = flat.filter((o) => o.plantCode === code)
+            const stat = (stats || []).find((s) => s.code === code) || { base: 0, recv: 0, send: 0 }
+            const rawBase = Number.isFinite(stat.base) ? stat.base : 0
+            const missing = getMissingOperators(plantProduction, code)
+            const effectiveBase = initialPoolByCode[code] || 0
+            const inbound = stat.recv || 0
+            const outbound = stat.send || 0
+            if (plantOrders.length === 0 && !inbound && !outbound && rawBase === 0) return
+            lines.push('')
+            lines.push(sep)
+            lines.push(`PLANT ${code}${plantNameByCode[code] ? ` · ${plantNameByCode[code]}` : ''}`)
+            const rosterParts = [`${rawBase} base`]
+            if (missing > 0) rosterParts.push(`-${missing} out`)
+            rosterParts.push(`${effectiveBase} effective`)
+            if (inbound > 0) rosterParts.push(`+${inbound} help in`)
+            if (outbound > 0) rosterParts.push(`-${outbound} help out`)
+            lines.push(`  Roster: ${rosterParts.join(' · ')}`)
+
+            if (plantOrders.length > 0) {
+                lines.push(`  Orders (${plantOrders.length}):`)
+                plantOrders
+                    .slice()
+                    .sort((a, b) => (timeToMinutes(a.startTime) ?? 0) - (timeToMinutes(b.startTime) ?? 0))
+                    .forEach((o) => {
+                        const trucks = getCalculatedTruckCount(o) || 0
+                        const yards = parseFloat(o.yardage) || 0
+                        const orderKey = o.orderId || `${code}-${timeToMinutes(o.startTime)}-${o.orderNum ?? ''}`
+                        const entry = byOrder?.[orderKey]
+                        const poolAfter = entry?.poolAfterDispatchEffective
+                        const overFlag = Number.isFinite(poolAfter) && poolAfter < 0 ? ` [SHORT ${-poolAfter}]` : ''
+                        const bigFlag = isBigPourOrder(o) ? ' [BIG]' : ''
+                        lines.push(
+                            `    ${String(o.startTime || '')
+                                .slice(0, 5)
+                                .padStart(5, ' ')}  ` +
+                                `${o.orderNum ? `#${o.orderNum}` : '—'.padStart(6)}  ` +
+                                `${(o.customer || 'Unknown').slice(0, 28).padEnd(28)}  ` +
+                                `${String(yards).padStart(5)}yd  ${String(trucks).padStart(3)}tr` +
+                                `${bigFlag}${overFlag}`
+                        )
+                    })
+            }
+
+            // Plant-specific send-home + slot recommendations
+            const plantSendHome = sendHome.filter((r) => r.plantCode === code)
+            if (plantSendHome.length > 0) {
+                const summary = plantSendHome
+                    .map(
+                        (r) =>
+                            `${String(Math.floor(r.time / 60)).padStart(2, '0')}:${String(r.time % 60).padStart(2, '0')} → -${r.count}`
+                    )
+                    .join(', ')
+                lines.push(`  Clock-out moments: ${summary}`)
+            }
+            const plantSlots = slots.filter((r) => r.plantCode === code)
+            if (plantSlots.length > 0) {
+                plantSlots.forEach((s) => {
+                    const t = `${String(Math.floor(s.time / 60)).padStart(2, '0')}:${String(s.time % 60).padStart(2, '0')}`
+                    lines.push(`  Open slot: ${s.label} starting ${t}`)
+                })
+            }
+        })
+
+        // Help routes (assignments) — operator-level detail.
+        const validAssignments = (assignments || []).filter(
+            (a) => a.fromPlant && a.toPlant && (parseInt(a.driverCount, 10) || 0) > 0
+        )
+        if (validAssignments.length > 0) {
+            lines.push('')
+            lines.push(sep)
+            lines.push(`HELP ROUTES (${validAssignments.length})`)
+            validAssignments.forEach((a) => {
+                const count = parseInt(a.driverCount, 10) || 0
+                const home = a.returnPlant || a.fromPlant
+                const opWord = count === 1 ? 'operator' : 'operators'
+                let routeLine = `  ${a.fromPlant} → ${a.toPlant}  ${count} ${opWord}`
+                if (a.timeMode !== 'custom' && count > 1) {
+                    routeLine += ` (${a.staggerMinutes || DEFAULT_STAGGER_MINUTES}m stagger)`
+                }
+                if (home !== a.fromPlant) routeLine += `  ↩ returns to ${home}`
+                lines.push(routeLine)
+                if (a.forOrderId) {
+                    const destOrders = plantProduction?.[a.toPlant]?.orders || []
+                    const job = destOrders.find((o) => (o.orderId || o.orderNum) === a.forOrderId)
+                    if (job) {
+                        const tag = job.orderNum ? `#${job.orderNum}` : job.startTime || 'job'
+                        lines.push(`    Loading for ${tag}${job.customer ? ` · ${String(job.customer).trim()}` : ''}`)
+                    }
+                }
+                if (a.timeMode === 'custom' && Array.isArray(a.customTimes) && a.customTimes.length) {
+                    a.customTimes.slice(0, count).forEach((ct, i) => {
+                        const inTime = ct.time ? calcClockIn(ct.time, a.fromPlant, a.toPlant) : null
+                        lines.push(
+                            `    Op ${i + 1}:${inTime ? ` In ${inTime}` : ''}${ct.time ? ` · Arrive ${ct.time}` : ''}${ct.leaveTime ? ` · Leave ${ct.leaveTime}` : ''}`
+                        )
+                    })
+                } else if (count > 1) {
+                    for (let j = 0; j < count; j++) {
+                        const arr = a.time
+                            ? addMinutesToTime(a.time, j * (a.staggerMinutes || DEFAULT_STAGGER_MINUTES))
+                            : null
+                        const inTime = arr ? calcClockIn(arr, a.fromPlant, a.toPlant) : null
+                        lines.push(`    Op ${j + 1}: In ${inTime || '--:--'} · Arrive ${arr || '--:--'}`)
+                    }
+                    if (a.leaveTime) lines.push(`    Leave by: ${a.leaveTime}`)
+                } else {
+                    const inTime = a.time ? calcClockIn(a.time, a.fromPlant, a.toPlant) : null
+                    if (inTime) lines.push(`    Clock in: ${inTime}`)
+                    if (a.time) lines.push(`    Arrive: ${a.time}`)
+                    if (a.leaveTime) lines.push(`    Leave: ${a.leaveTime}`)
+                }
+            })
+        }
+
+        if (notes && notes.trim()) {
+            lines.push('')
+            lines.push(sep)
+            lines.push('NOTES')
+            notes
+                .split('\n')
+                .map((l) => l.trim())
+                .filter(Boolean)
+                .forEach((l) => lines.push(`  ${l}`))
+        }
+
+        return lines.join('\n').trim()
+    }
 
     // On first mount, jump straight to the most recently-saved plan so the
     // user opens where work was last happening instead of always tomorrow.
@@ -351,13 +616,13 @@ function PlanView() {
                         {!isMobile && <span>{isSchedulesSyncing ? 'Syncing…' : 'Refresh'}</span>}
                     </button>
                     <button
-                        onClick={copyToClipboard}
+                        onClick={() => copyToClipboard(handleCopyPlan())}
                         className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
                         style={{
                             backgroundColor: copied ? '#16a34a' : 'var(--bg-tertiary)',
                             color: copied ? '#fff' : 'var(--text-secondary)'
                         }}
-                        title="Copy plan to clipboard"
+                        title="Copy a full plan briefing — assignments, per-plant orders, help routes, send-home and slot recommendations, notes."
                     >
                         <i className={`fas fa-${copied ? 'check' : 'copy'}`} />
                         {!isMobile && <span>{copied ? 'Copied' : 'Copy Plan'}</span>}

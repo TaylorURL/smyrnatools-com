@@ -157,8 +157,13 @@ export function usePlanActions({
         return msg.trim()
     }
 
-    const copyToClipboard = async () => {
-        const msg = buildPlanMessage()
+    /** Copy a message to the clipboard and flash the "Copied" state.
+     *  Accepts a custom string so the caller can build a richer briefing
+     *  with state the hook doesn't have direct access to (stats, production
+     *  totals, etc.). Falls back to the legacy bare assignments listing
+     *  when no text is supplied. */
+    const copyToClipboard = async (text) => {
+        const msg = typeof text === 'string' && text.trim() ? text : buildPlanMessage()
         if (!msg) return
         await navigator.clipboard.writeText(msg)
         setCopied(true)
@@ -225,6 +230,7 @@ export function usePlanActions({
     return {
         activeRowId,
         addTravelTime,
+        buildPlanMessage,
         calcClockIn,
         clearPlantProduction,
         copied,

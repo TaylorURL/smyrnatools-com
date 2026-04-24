@@ -407,7 +407,18 @@ export default function DashboardView() {
                                     />
                                 </div>
 
-                                <div className={revealClass('up')} style={revealStyle(80)}>
+                                <div className={revealClass('left')} style={revealStyle(80)}>
+                                    <FleetOverviewSection
+                                        displayStats={displayStats}
+                                        stats={stats}
+                                        isAggregate={isAggregate}
+                                        selectedRegion={selectedRegion}
+                                        accentColor={accentColor}
+                                        isMobile={isMobile}
+                                    />
+                                </div>
+
+                                <div className={revealClass('up')} style={revealStyle(160)}>
                                     <DashboardScheduleSection
                                         production={scheduleProduction}
                                         hasSchedule={hasSchedule}
@@ -418,17 +429,6 @@ export default function DashboardView() {
                                         regionPlants={regionPlants}
                                         allPlants={allPlants}
                                         isPlantMode={isPlantMode}
-                                        accentColor={accentColor}
-                                        isMobile={isMobile}
-                                    />
-                                </div>
-
-                                <div className={revealClass('left')} style={revealStyle(160)}>
-                                    <FleetOverviewSection
-                                        displayStats={displayStats}
-                                        stats={stats}
-                                        isAggregate={isAggregate}
-                                        selectedRegion={selectedRegion}
                                         accentColor={accentColor}
                                         isMobile={isMobile}
                                     />

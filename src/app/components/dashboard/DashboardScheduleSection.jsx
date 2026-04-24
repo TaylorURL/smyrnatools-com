@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 
-import { getCalculatedTruckCount, plantBadgeColor } from '../../../utils/PlanUtility'
+import { getCalculatedTruckCount, isBigPourOrder, plantBadgeColor } from '../../../utils/PlanUtility'
 import { summarizeSchedule } from '../../hooks/useDashboardSchedule'
+import JobMapModal from '../schedule/JobMapModal'
+import TruckCoverageHoverCard from '../schedule/TruckCoverageHoverCard'
 import { DashboardCard, SectionTitle } from '../ui/DashboardCards'
 
 const clean = (value) => (value == null ? '' : String(value).trim())
@@ -176,7 +178,7 @@ const TABLE_HEADERS = [
  * full planner's pool-timeline math, which isn't available in a dashboard
  * preview context.
  */
-function ScheduleTable({ orders, accentColor, plantNameByCode, plantCityByCode }) {
+function ScheduleTable({ orders, accentColor, plantNameByCode, plantCityByCode, plantAddressByCode, onOpenLocation }) {
     return (
         <div
             className="rounded-xl overflow-auto"
@@ -218,6 +220,8 @@ function ScheduleTable({ orders, accentColor, plantNameByCode, plantCityByCode }
                             order={o}
                             plantName={plantNameByCode.get(o.plantCode) || ''}
                             plantCity={plantCityByCode?.[o.plantCode] || ''}
+                            plantAddress={plantAddressByCode?.[o.plantCode] || ''}
+                            onOpenLocation={onOpenLocation}
                         />
                     ))}
                 </tbody>
@@ -226,7 +230,18 @@ function ScheduleTable({ orders, accentColor, plantNameByCode, plantCityByCode }
     )
 }
 
-function ScheduleTableRow({ order: o, accentColor, plantName, plantCity }) {
+/** Parse an `HH:MM` duration string (dispatch report) into minutes. */
+const parseHhmmToMinutes = (value) => {
+    const v = String(value || '').trim()
+    const m = v.match(/^(\d{1,2}):(\d{2})$/)
+    if (!m) return null
+    const hours = parseInt(m[1], 10)
+    const mins = parseInt(m[2], 10)
+    if (!Number.isFinite(hours) || !Number.isFinite(mins)) return null
+    return hours * 60 + mins
+}
+
+function ScheduleTableRow({ order: o, accentColor, plantName, plantCity, plantAddress, onOpenLocation }) {
     const status = getOrderStatus(o.startTime)
     const isCancelled = status?.kind === 'cancelled'
     const isTest = status?.kind === 'test'
@@ -238,6 +253,7 @@ function ScheduleTableRow({ order: o, accentColor, plantName, plantCity }) {
     const differsFromDispatch = computedTrucks != null && dispatchTrucks > 0 && computedTrucks !== dispatchTrucks
     const address = clean(o.address)
     const city = clean(o.city)
+    const [truckHoverOpen, setTruckHoverOpen] = useState(false)
 
     return (
         <tr
@@ -294,14 +310,16 @@ function ScheduleTableRow({ order: o, accentColor, plantName, plantCity }) {
                         const displayText = [address, effectiveCity].filter(Boolean).join(', ').toUpperCase()
                         return (
                             <div className="flex items-center gap-1.5 min-w-0">
-                                <span
-                                    className="truncate min-w-0 uppercase tracking-wide font-semibold"
+                                <button
+                                    type="button"
+                                    onClick={() => onOpenLocation?.(usingFallback ? { ...o, city: fallbackCity } : o)}
+                                    className="truncate min-w-0 uppercase tracking-wide font-semibold text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0"
                                     style={{ color: accentColor, fontSize: 12 }}
-                                    title={composeAddress(o)}
+                                    title={`Open map for ${composeAddress(o) || displayText}`}
                                 >
                                     <i className="fas fa-location-dot text-[10px] mr-1.5 opacity-70" />
                                     {displayText}
-                                </span>
+                                </button>
                                 {usingFallback && (
                                     <span
                                         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
@@ -343,12 +361,9 @@ function ScheduleTableRow({ order: o, accentColor, plantName, plantCity }) {
             </td>
             <td
                 className="px-3 py-2 font-mono text-right whitespace-nowrap"
-                style={{ color: 'var(--text-secondary)' }}
-                title={
-                    differsFromDispatch
-                        ? `Travel-based calc: ${computedTrucks} · Dispatch booked: ${dispatchTrucks}`
-                        : undefined
-                }
+                style={{ color: 'var(--text-secondary)', position: 'relative' }}
+                onMouseEnter={() => !isNonProduction && setTruckHoverOpen(true)}
+                onMouseLeave={() => setTruckHoverOpen(false)}
             >
                 <span
                     className="inline-flex items-center gap-1 justify-end"
@@ -364,6 +379,30 @@ function ScheduleTableRow({ order: o, accentColor, plantName, plantCity }) {
                     {differsFromDispatch && <i className="fas fa-circle-info text-[10px]" />}
                     {isNonProduction ? '—' : computedTrucks != null ? computedTrucks : '—'}
                 </span>
+                {truckHoverOpen && !isNonProduction && (
+                    <TruckCoverageHoverCard
+                        accentColor={accentColor}
+                        bigPour={isBigPourOrder(o)}
+                        computed={computedTrucks}
+                        customer={clean(o.customer)}
+                        differsFromDispatch={differsFromDispatch}
+                        dispatchTrucks={dispatchTrucks}
+                        helpInWindow={0}
+                        liveTravel={false}
+                        onMouseEnter={() => setTruckHoverOpen(true)}
+                        onMouseLeave={() => setTruckHoverOpen(false)}
+                        orderNum={o.orderNum}
+                        overbooked={false}
+                        plantCode={o.plantCode}
+                        poolAfter={undefined}
+                        poolAfterEffective={undefined}
+                        poolAtStart={undefined}
+                        poolSource={undefined}
+                        recommendedMoveTime={null}
+                        timing={null}
+                        yardage={yardage}
+                    />
+                )}
             </td>
             <td className="px-3 py-2 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                 {clean(o.phone) || '—'}
@@ -415,6 +454,16 @@ export default function DashboardScheduleSection({
         })
         return map
     }, [allPlants])
+
+    const plantAddressByCode = useMemo(() => {
+        const map = {}
+        ;(allPlants || []).forEach((p) => {
+            if (p.plantAddress) map[p.plantCode] = p.plantAddress
+        })
+        return map
+    }, [allPlants])
+
+    const [mapOrder, setMapOrder] = useState(null)
 
     const summary = useMemo(() => summarizeSchedule(production, plantCodes), [production, plantCodes])
 
@@ -506,6 +555,8 @@ export default function DashboardScheduleSection({
                         accentColor={accentColor}
                         plantNameByCode={plantNameByCode}
                         plantCityByCode={plantCityByCode}
+                        plantAddressByCode={plantAddressByCode}
+                        onOpenLocation={setMapOrder}
                     />
 
                     {lastSyncedAt && (
@@ -514,6 +565,17 @@ export default function DashboardScheduleSection({
                         </div>
                     )}
                 </>
+            )}
+            {mapOrder && (
+                <JobMapModal
+                    accentColor={accentColor}
+                    onClose={() => setMapOrder(null)}
+                    order={mapOrder}
+                    plantAddress={plantAddressByCode?.[mapOrder?.plantCode] || ''}
+                    plantCode={mapOrder?.plantCode}
+                    plantName={plantNameByCode?.get(mapOrder?.plantCode) || ''}
+                    travelMinutes={parseHhmmToMinutes(mapOrder?.toJobTime)}
+                />
             )}
         </DashboardCard>
     )
