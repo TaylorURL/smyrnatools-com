@@ -11,15 +11,615 @@ export const MAX_YPH = 5 // above this, operators can't keep up
 
 /** Sentinel start times the dispatch HTML uses to flag special order states.
  *  17:00 means the order was cancelled — we keep showing it for transparency
- *  but exclude it from yardage / truck / KPI totals. */
+ *  but exclude it from yardage / truck / KPI totals.
+ *  18:00 flags a dispatcher test order — not a real pour, always excluded. */
 export const CANCELLED_ORDER_START = '17:00'
 export const SAME_DAY_ORDER_START = '15:00'
+export const TEST_ORDER_START = '18:00'
 
-/** True if an order's start time matches the cancellation sentinel. */
-export const isCancelledOrder = (order) => {
+const matchesStartSentinel = (order, sentinel) => {
     const t = String(order?.startTime || '').trim()
     if (!t) return false
-    return t.padStart(5, '0') === CANCELLED_ORDER_START
+    return t.padStart(5, '0') === sentinel
+}
+
+/** True if an order's start time matches the cancellation sentinel. */
+export const isCancelledOrder = (order) => matchesStartSentinel(order, CANCELLED_ORDER_START)
+
+/** True if an order's start time matches the dispatcher test-order sentinel. */
+export const isTestOrder = (order) => matchesStartSentinel(order, TEST_ORDER_START)
+
+/** True for any order that should be excluded from yardage / truck / pool
+ *  math (test + cancelled). Callers that show the row for transparency
+ *  should still check `isTestOrder` / `isCancelledOrder` individually. */
+export const isExcludedOrder = (order) => isCancelledOrder(order) || isTestOrder(order)
+
+/**
+ * Big-pour rule — fires on any order that's ≥ 120 yd total AND scheduled
+ * with back-to-back spacing (< 10 min between trucks). "Back-to-back" means
+ * we're loading trucks as fast as we can, typically 5–10 min apart. Jobs
+ * this size run long, and at that cadence the pool stays locked until the
+ * whole pour is done — so if we under-staff the floor, the rest of the
+ * day's schedule slips while trucks finish cycling this one.
+ *
+ * When the rule fires, require at least `BIG_POUR_MIN_TRUCKS` in rotation
+ * (or the travel-rotation requirement, whichever is larger).
+ *
+ * The goal on every order is to sustain its pour rate *loaded* — keep a
+ * truck arriving every `rate` minutes. We compute the truck count needed
+ * from the round-trip cycle (travel-to-job + travel-back + on-site time),
+ * then floor big pours at `BIG_POUR_MIN_TRUCKS` so service never slips.
+ */
+export const BIG_POUR_YARDAGE_THRESHOLD = 120
+export const BIG_POUR_SPACING_THRESHOLD_MIN = 10
+export const BIG_POUR_MIN_TRUCKS = 12
+/** Minutes each truck spends on-site pouring at the job (load + unload +
+ *  maneuvering + buffer per operator). Added into the cycle time alongside
+ *  travel-to-job and travel-back so `cycleMin` reflects the real round-trip
+ *  length, not just windshield time. */
+export const TRUCK_ON_SITE_MINUTES = 30
+
+/** Parse an `HH:MM` (or `H:MM`) duration from the dispatch report into minutes. */
+const parseDurationMinutes = (value) => {
+    const v = String(value || '').trim()
+    const m = v.match(/^(\d{1,2}):(\d{2})$/)
+    if (!m) return null
+    const hours = parseInt(m[1], 10)
+    const mins = parseInt(m[2], 10)
+    if (!Number.isFinite(hours) || !Number.isFinite(mins)) return null
+    const total = hours * 60 + mins
+    return total > 0 ? total : null
+}
+
+/** Pour rate (yd/hr) for a single order — `(60 / rate) × loadSize`.
+ *  Returns null when either input is missing. */
+export const getOrderPourRate = (order) => {
+    const rateMin = parseDurationMinutes(order?.rate)
+    const loadSize = parseFloat(order?.loadSize)
+    if (!rateMin || !Number.isFinite(loadSize) || loadSize <= 0) return null
+    return Math.round((60 / rateMin) * loadSize * 10) / 10
+}
+
+/** True for orders that trigger the 12-truck floor — total yardage ≥ 120 yd
+ *  AND spacing between trucks < 10 min (back-to-back loading). */
+export const isBigPourOrder = (order) => {
+    const yardage = parseFloat(order?.yardage) || 0
+    const spacingMin = parseDurationMinutes(order?.rate)
+    if (yardage < BIG_POUR_YARDAGE_THRESHOLD) return false
+    if (spacingMin == null || spacingMin >= BIG_POUR_SPACING_THRESHOLD_MIN) return false
+    return true
+}
+
+/**
+ * Trucks needed to sustain 120 yd/hr LOADED on a big pour given the actual
+ * travel cycle. At 120 yd/hr the target spacing is `loadSize / 2` minutes
+ * (e.g. 10-yd loads need 5-min spacing), so required rotation is
+ * `ceil(cycleMin / targetSpacing)`. This is what drives the big-pour
+ * requirement when travel is long enough that 12 isn't actually enough.
+ */
+export const trucksToHitBigPourGoal = (order, overrides) => {
+    const opts = overrides || {}
+    const loadSize = parseFloat(order?.loadSize) || 0
+    if (loadSize <= 0) return null
+    const toJobMin = Number.isFinite(opts.toJobMin) ? opts.toJobMin : parseDurationMinutes(order?.toJobTime)
+    const toPlantMin = Number.isFinite(opts.toPlantMin)
+        ? opts.toPlantMin
+        : (parseDurationMinutes(order?.toPlantTime) ?? toJobMin)
+    if (toJobMin == null) return null
+    const cycleMin = toJobMin + TRUCK_ON_SITE_MINUTES + toPlantMin
+    // Spacing needed for 120 yd/hr = loadSize / 2 minutes.
+    const targetSpacingMin = loadSize / 2
+    if (targetSpacingMin <= 0) return null
+    return Math.max(1, Math.ceil(cycleMin / targetSpacingMin))
+}
+
+/** Estimated time to complete the pour at the scheduled rate, in minutes.
+ *  Used as informational context alongside required truck count. */
+export const getOrderPourDurationMinutes = (order) => {
+    const rateMin = parseDurationMinutes(order?.rate)
+    const loadSize = parseFloat(order?.loadSize) || 0
+    const yardage = parseFloat(order?.yardage) || 0
+    if (!rateMin || loadSize <= 0 || yardage <= 0) return null
+    const trips = Math.ceil(yardage / loadSize)
+    if (trips <= 0) return null
+    return (trips - 1) * rateMin + TRUCK_ON_SITE_MINUTES
+}
+
+/**
+ * Trucks required to sustain the order's scheduled pour rate given its
+ * per-order travel times. Capped at the total number of trips in the pour —
+ * a 50-yd pour with 10-yd loads has only 5 trips, so it never needs more
+ * than 5 trucks no matter how long the cycle is.
+ *
+ *   trips      = ceil(yardage / loadSize)
+ *   cycleMin   = toJobTime + toPlantTime + TRUCK_ON_SITE_MINUTES
+ *   rotation   = ceil(cycleMin / rateMin)
+ *   required   = min(rotation, trips)
+ *
+ * The `overrides` object can supply `toJobMin` / `toPlantMin` derived from
+ * live Google Distance Matrix lookups so the table reflects real driving
+ * time instead of the dispatch report's (sometimes optimistic) estimate.
+ *
+ * Returns null when rate and both travel sources are missing.
+ */
+export const getRequiredTrucksForPourRate = (order, overrides) => {
+    const opts = overrides || {}
+    const rateMin = parseDurationMinutes(order?.rate)
+    const toJobMin = Number.isFinite(opts.toJobMin) ? opts.toJobMin : parseDurationMinutes(order?.toJobTime)
+    const toPlantMin = Number.isFinite(opts.toPlantMin)
+        ? opts.toPlantMin
+        : (parseDurationMinutes(order?.toPlantTime) ?? toJobMin)
+    if (!rateMin || toJobMin == null) return null
+    const cycleMin = toJobMin + toPlantMin + TRUCK_ON_SITE_MINUTES
+    const rotation = Math.max(1, Math.ceil(cycleMin / rateMin))
+    // Cap at actual trips so short pours don't get inflated by long cycles.
+    const loadSize = parseFloat(order?.loadSize) || 0
+    const yardage = parseFloat(order?.yardage) || 0
+    if (loadSize > 0 && yardage > 0) {
+        const trips = Math.ceil(yardage / loadSize)
+        return Math.max(1, Math.min(rotation, trips))
+    }
+    return rotation
+}
+
+/** Effective minimum trucks — max of:
+ *    - the travel-derived rotation at the ORDER's scheduled spacing,
+ *    - the big-pour floor (12) when the rule fires,
+ *    - the travel-derived rotation needed to actually hit 120 yd/hr LOADED
+ *      (big pours only — long travel makes the 12-truck floor insufficient).
+ *  Then capped at the pour's total trips so a short pour never demands more
+ *  trucks than it has loads. Accepts live travel overrides so the number
+ *  matches reality, not the dispatch estimate. */
+export const getEffectiveMinTrucks = (order, overrides) => {
+    const opts = overrides || {}
+    const calculated = getRequiredTrucksForPourRate(order, opts)
+    const isBig = isBigPourOrder(order)
+    const bigPourFloor = isBig ? BIG_POUR_MIN_TRUCKS : 0
+    const bigPourGoalTrucks = isBig ? (trucksToHitBigPourGoal(order, opts) ?? 0) : 0
+    if (calculated == null && bigPourFloor === 0 && bigPourGoalTrucks === 0) return null
+    let effective = Math.max(calculated ?? 0, bigPourFloor, bigPourGoalTrucks)
+    const loadSize = parseFloat(order?.loadSize) || 0
+    const yardage = parseFloat(order?.yardage) || 0
+    if (loadSize > 0 && yardage > 0) {
+        const trips = Math.ceil(yardage / loadSize)
+        effective = Math.min(effective, trips)
+    }
+    return effective > 0 ? effective : null
+}
+
+/** How many trucks the order is short of its effective minimum.
+ *  Returns 0 when the order is adequately staffed or when we can't compute. */
+export const getTruckShortfall = (order, overrides) => {
+    const needed = getEffectiveMinTrucks(order, overrides || {})
+    if (!needed) return 0
+    const scheduled = parseFloat(order?.truckCount) || 0
+    return Math.max(0, needed - scheduled)
+}
+
+/**
+ * Simulate per-plant truck pools through the day.
+ *
+ * Model — the pool is locked until the pour is done:
+ *   - At each order's start time, pool[plant] -= requiredTrucks.
+ *   - Long pours (trips > trucks) force each truck to make multiple runs;
+ *     short pours (trips ≤ trucks) use each truck once. Either way a truck
+ *     is tied up until the *last* trip it runs returns to the plant.
+ *   - We conservatively refund the whole squad at `lastReturnMinutes`
+ *     (= startTime + (trips − 1) × spacing + cycleMin). That keeps the
+ *     pool honest even for multi-trip rotations.
+ *   - First-truck-back time is surfaced separately for the return row and
+ *     visual arrows: `startTime + min(trucks, trips) × 0 cycleMin` — i.e.
+ *     the first truck comes home one full cycle after dispatch.
+ *   - Cancelled orders are skipped entirely.
+ *
+ * @returns {Object} Map `orderKey → { poolAtDispatch, poolAfterDispatch,
+ *                                     firstReturnMinutes, lastReturnMinutes,
+ *                                     dispatchMinutes, plantCode, truckCount,
+ *                                     tripsTotal, tripsPerTruck }`
+ */
+/**
+ * Internal simulation — builds the event list, runs it, and returns both the
+ * per-order summary (`byOrder`) and the per-plant pool timeline
+ * (`timelineByPlant`). Public `computePlantPoolTimeline` and
+ * `computeSendHomeRows` wrap this so each caller can pick the slice it needs
+ * without duplicating the event-building logic.
+ */
+const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides = null, helpTransfers = []) => {
+    const events = []
+    const byOrder = {}
+    // Help transfers from the planner — inter-plant truck movements that
+    // adjust the pool at the transfer time (not all-at-once at day start).
+    // A positive `delta` means trucks arrive at `plantCode`; negative means
+    // they leave. Handled as return/dispatch events so the existing ordering
+    // rule (returns before dispatches at the same minute) keeps the pool
+    // honest when a handoff lands on the same timestamp as an order.
+    for (const transfer of helpTransfers || []) {
+        if (!transfer?.plantCode) continue
+        if (!Number.isFinite(transfer.time) || !Number.isFinite(transfer.delta) || transfer.delta === 0) continue
+        events.push({
+            count: Math.abs(transfer.delta),
+            orderKey: null,
+            plantCode: transfer.plantCode,
+            time: transfer.time,
+            type: transfer.delta > 0 ? 'return' : 'dispatch'
+        })
+    }
+    for (const order of orders || []) {
+        if (isExcludedOrder(order)) continue
+        const startMin = timeToMinutes(order?.startTime)
+        if (startMin == null) continue
+        const overrides = typeof getTravelOverrides === 'function' ? getTravelOverrides(order) || {} : {}
+        const truckCount = getCalculatedTruckCount(order, overrides)
+        if (!truckCount) continue
+        const toJobMin = Number.isFinite(overrides?.toJobMin)
+            ? overrides.toJobMin
+            : (parseDurationMinutes(order?.toJobTime) ?? 20)
+        const toPlantMin = Number.isFinite(overrides?.toPlantMin)
+            ? overrides.toPlantMin
+            : (parseDurationMinutes(order?.toPlantTime) ?? toJobMin)
+        const spacingMin = parseDurationMinutes(order?.rate) ?? 5
+        const cycleMin = toJobMin + TRUCK_ON_SITE_MINUTES + toPlantMin
+        // Total trips in the pour = how many times a truck has to roll.
+        const loadSize = parseFloat(order?.loadSize) || 0
+        const yardage = parseFloat(order?.yardage) || 0
+        const tripsTotal = loadSize > 0 && yardage > 0 ? Math.max(1, Math.ceil(yardage / loadSize)) : truckCount
+        const tripsPerTruck = Math.max(1, Math.ceil(tripsTotal / truckCount))
+        // The pour finishes when the LAST trip returns. Trucks are locked
+        // until then — jobs have to be completed fully before we refund.
+        const lastReturnMinutes = startMin + (tripsTotal - 1) * spacingMin + cycleMin
+        const firstReturnMinutes = startMin + cycleMin
+        const orderKey =
+            order.orderId ||
+            `${order.plantCode ?? 'unknown'}-${startMin}-${order.orderNum ?? Math.random().toString(36).slice(2, 8)}`
+        events.push({
+            count: truckCount,
+            orderKey,
+            plantCode: order.plantCode,
+            time: startMin,
+            type: 'dispatch'
+        })
+        events.push({
+            count: truckCount,
+            orderKey,
+            plantCode: order.plantCode,
+            time: lastReturnMinutes,
+            type: 'return'
+        })
+        byOrder[orderKey] = {
+            dispatchMinutes: startMin,
+            firstReturnMinutes,
+            lastReturnMinutes,
+            plantCode: order.plantCode,
+            tripsPerTruck,
+            tripsTotal,
+            truckCount
+        }
+    }
+    // After building all events, credit each order with inbound trucks
+    // landing at its plant during its pour window — help arrivals AND other
+    // orders' trucks returning. These trucks are physically at the plant
+    // while the pour is still running, so they naturally cover later trips.
+    //
+    // Outbound events during the window are intentionally NOT subtracted:
+    // trucks already committed to this pour are locked until it ends, so a
+    // scheduled help-leave or another dispatch can't actually pull trucks
+    // off it, and the order shouldn't be penalised for plan-level conflicts.
+    Object.entries(byOrder).forEach(([orderKey, entry]) => {
+        let inboundDuringPour = 0
+        for (const event of events) {
+            if (event.plantCode !== entry.plantCode) continue
+            if (event.type !== 'return') continue
+            if (event.orderKey === orderKey) continue
+            if (event.time <= entry.dispatchMinutes || event.time > entry.lastReturnMinutes) continue
+            inboundDuringPour += event.count
+        }
+        entry.inboundDuringPour = inboundDuringPour
+    })
+    // Return events go before dispatches at the same timestamp so trucks
+    // refund themselves *before* we subtract for the next order.
+    events.sort((a, b) => {
+        if (a.time !== b.time) return a.time - b.time
+        if (a.type === b.type) return 0
+        return a.type === 'return' ? -1 : 1
+    })
+    const pool = { ...initialPoolByCode }
+    const timelineByPlant = {}
+    // Seed initial entries so the timeline starts at the base pool value, even
+    // for plants that never see an event.
+    Object.entries(initialPoolByCode).forEach(([code, value]) => {
+        timelineByPlant[code] = [{ isInitial: true, pool: value, time: null }]
+    })
+    for (const event of events) {
+        const plantPool = pool[event.plantCode] ?? 0
+        let nextPool
+        if (event.type === 'return') {
+            nextPool = plantPool + event.count
+            // Record the pool state the moment this order's trucks complete
+            // so the schedule can label the return row with live availability.
+            if (event.orderKey && byOrder[event.orderKey]) {
+                byOrder[event.orderKey].poolAfterReturn = nextPool
+            }
+        } else {
+            if (byOrder[event.orderKey]) {
+                byOrder[event.orderKey].poolAtDispatch = plantPool
+                byOrder[event.orderKey].poolAfterDispatch = plantPool - event.count
+                // Effective pool counts help that arrives during the pour
+                // window — even if we start short, late-arriving trucks still
+                // cover later trips, so the job's deficit shrinks by that
+                // inbound help.
+                // Effective pool credits inbound trucks landing during the
+                // pour window (other orders' returns + help arrivals). Those
+                // trucks are physically at the plant while the pour is still
+                // running, so they naturally cover later trips.
+                byOrder[event.orderKey].poolAfterDispatchEffective =
+                    plantPool - event.count + (byOrder[event.orderKey].inboundDuringPour || 0)
+            }
+            nextPool = plantPool - event.count
+        }
+        pool[event.plantCode] = nextPool
+        if (!timelineByPlant[event.plantCode]) {
+            timelineByPlant[event.plantCode] = [{ isInitial: true, pool: 0, time: null }]
+        }
+        timelineByPlant[event.plantCode].push({
+            delta: event.count * (event.type === 'return' ? 1 : -1),
+            pool: nextPool,
+            time: event.time,
+            type: event.type
+        })
+    }
+    return { byOrder, timelineByPlant }
+}
+
+/**
+ * Public wrapper — returns only `byOrder`. See `simulatePoolTimeline` for the
+ * full model. Existing callers keep the previous return shape.
+ */
+export const computePlantPoolTimeline = (orders, initialPoolByCode, getTravelOverrides, helpTransfers) =>
+    simulatePoolTimeline(orders, initialPoolByCode, getTravelOverrides, helpTransfers).byOrder
+
+/**
+ * Per-plant pool timelines — each plant gets an ordered list of
+ * `{ time, pool, type }` entries representing the pool state after each
+ * dispatch / return / help event. Use with `poolAtTime(timeline, t)` to
+ * answer "what was the pool at plant X at time Y?".
+ */
+export const computePlantPoolTimelines = (orders, initialPoolByCode, getTravelOverrides, helpTransfers) =>
+    simulatePoolTimeline(orders, initialPoolByCode, getTravelOverrides, helpTransfers).timelineByPlant
+
+/**
+ * Pool value at plant at a specific minute. Takes the last known pool state
+ * at or before the queried time. Returns the initial pool when the time
+ * predates any event, or `null` if the timeline is empty.
+ */
+export const poolAtTime = (timeline, timeMin) => {
+    if (!Array.isArray(timeline) || timeline.length === 0) return null
+    if (!Number.isFinite(timeMin)) return timeline[timeline.length - 1].pool
+    let current = timeline[0].pool
+    for (let i = 1; i < timeline.length; i++) {
+        const entryTime = timeline[i].time
+        if (!Number.isFinite(entryTime)) continue
+        if (entryTime > timeMin) break
+        current = timeline[i].pool
+    }
+    return current
+}
+
+/**
+ * Pre-defined order-size slots the dispatcher might be asked to take on.
+ * Each entry captures the MINIMUM truck floor plus a conservative duration
+ * estimate used to find a window where the plant has enough idle capacity.
+ *
+ *   - Large pour: 6–12+ trucks (needs 6 floor; big pours run ~3h)
+ *   - Medium pour: 3–5 trucks (needs 3 floor; ~60 min round)
+ *   - Small pour: 1–2 trucks (needs 1 floor; ~30 min round)
+ */
+export const SUGGESTED_SLOT_TYPES = [
+    { durationMin: 180, key: 'large', label: 'Large pour · 6–12+ trucks', minTrucks: 6, truckRange: '6–12+' },
+    { durationMin: 60, key: 'medium', label: 'Medium pour · 3–5 trucks', minTrucks: 3, truckRange: '3–5' },
+    { durationMin: 30, key: 'small', label: 'Small pour · 1–2 trucks', minTrucks: 1, truckRange: '1–2' }
+]
+
+const SLOT_DAY_START_MIN = 6 * 60
+const SLOT_DAY_END_MIN = 18 * 60
+
+/** Walk a plant's pool timeline and return the earliest start time (in minutes)
+ *  within business hours where the plant has `minTrucks` GENUINELY spare —
+ *  i.e. `minFuture(t) ≥ minTrucks`. Using minFuture (lowest pool from t
+ *  onward) rather than raw pool ensures we only recommend slots for trucks
+ *  that aren't already committed to a later order. Returns null if no moment
+ *  qualifies within business hours. */
+const findEarliestIdleTime = (timeline, minTrucks) => {
+    if (!Array.isArray(timeline) || timeline.length === 0) return null
+    const segments = timeline.map((entry) => ({
+        pool: entry.pool,
+        startTime: Number.isFinite(entry.time) ? entry.time : 0
+    }))
+    // Reverse pass: minFuture[i] = min pool value from segment i to the end.
+    const minFuture = new Array(segments.length)
+    let running = Infinity
+    for (let i = segments.length - 1; i >= 0; i--) {
+        if (segments[i].pool < running) running = segments[i].pool
+        minFuture[i] = running
+    }
+    for (let i = 0; i < segments.length; i++) {
+        if (minFuture[i] < minTrucks) continue
+        const seg = segments[i]
+        const segEnd = i + 1 < segments.length ? segments[i + 1].startTime : SLOT_DAY_END_MIN
+        const clippedStart = Math.max(seg.startTime, SLOT_DAY_START_MIN)
+        const clippedEnd = Math.min(segEnd, SLOT_DAY_END_MIN)
+        if (clippedStart < clippedEnd) return clippedStart
+    }
+    return null
+}
+
+/**
+ * Estimate real-world timing for an order given how many trucks the plant
+ * can actually put on it. For overbooked orders where `actualTrucks <
+ * required`, the spacing between trips widens (each truck cycles every
+ * `cycleMin`, so with N trucks the effective spacing is `cycleMin / N`) and
+ * the pour drags out. Returns first-truck arrival, estimated completion,
+ * and the derived delay in minutes.
+ *
+ * @param {object} order
+ * @param {object} poolEntry - entry from `computePlantPoolTimeline` (has
+ *                             `dispatchMinutes`, `poolAtDispatch`,
+ *                             `inboundDuringPour`, `truckCount`).
+ * @param {object} [overrides]
+ */
+export const estimateOrderTiming = (order, poolEntry, overrides) => {
+    if (!poolEntry || !Number.isFinite(poolEntry.dispatchMinutes)) return null
+    const opts = overrides || {}
+    const toJobMin = Number.isFinite(opts.toJobMin) ? opts.toJobMin : (parseDurationMinutes(order?.toJobTime) ?? 20)
+    const toPlantMin = Number.isFinite(opts.toPlantMin)
+        ? opts.toPlantMin
+        : (parseDurationMinutes(order?.toPlantTime) ?? toJobMin)
+    const cycleMin = toJobMin + TRUCK_ON_SITE_MINUTES + toPlantMin
+    const scheduledSpacing = parseDurationMinutes(order?.rate) ?? 5
+    const loadSize = parseFloat(order?.loadSize) || 0
+    const yardage = parseFloat(order?.yardage) || 0
+    const trips = loadSize > 0 && yardage > 0 ? Math.max(1, Math.ceil(yardage / loadSize)) : poolEntry.truckCount
+    const required = poolEntry.truckCount || trips
+    const startMin = poolEntry.dispatchMinutes
+    const poolAtStart = Number.isFinite(poolEntry.poolAtDispatch) ? poolEntry.poolAtDispatch : 0
+    const inboundDuring = Number.isFinite(poolEntry.inboundDuringPour) ? poolEntry.inboundDuringPour : 0
+    const actualTrucks = Math.max(0, poolAtStart) + Math.max(0, inboundDuring)
+    const usableTrucks = Math.max(1, Math.min(required, actualTrucks))
+    // First truck — if we have at least one at the plant, it dispatches on
+    // time. Otherwise use the first inbound during pour (very rare case).
+    const firstDispatchMin = poolAtStart >= 1 ? startMin : inboundDuring > 0 ? startMin : null
+    const firstArrivalMin = firstDispatchMin != null ? firstDispatchMin + toJobMin : null
+    // Scheduled completion = pour running at planned spacing with required trucks.
+    const scheduledCompletionMin = startMin + (trips - 1) * scheduledSpacing + cycleMin
+    // Real completion = cycle / truck count → effective spacing broadens when
+    // short-handed, so the last trip lands later.
+    const effectiveSpacing =
+        actualTrucks >= required ? scheduledSpacing : Math.max(scheduledSpacing, cycleMin / usableTrucks)
+    const estimatedCompletionMin = startMin + (trips - 1) * effectiveSpacing + cycleMin
+    return {
+        actualTrucks,
+        delayMin: Math.max(0, Math.round(estimatedCompletionMin - scheduledCompletionMin)),
+        estimatedCompletionMin: Math.round(estimatedCompletionMin),
+        firstArrivalMin: Number.isFinite(firstArrivalMin) ? Math.round(firstArrivalMin) : null,
+        requiredTrucks: required,
+        scheduledCompletionMin: Math.round(scheduledCompletionMin)
+    }
+}
+
+/**
+ * Earliest time at-or-after `afterMin` when the plant has at least
+ * `minTrucks` idle for `durationMin` contiguous minutes (within business
+ * hours). Used to recommend when to move an overbooked order so the plant
+ * can actually staff it. Returns null if no viable window remains today.
+ */
+export const findNextViableStart = (timeline, minTrucks, afterMin, durationMin) => {
+    if (!Array.isArray(timeline) || timeline.length === 0) return null
+    const segments = timeline.map((entry) => ({
+        pool: entry.pool,
+        startTime: Number.isFinite(entry.time) ? entry.time : 0
+    }))
+    let runStart = null
+    for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i]
+        const segEnd = i + 1 < segments.length ? segments[i + 1].startTime : SLOT_DAY_END_MIN
+        if (seg.pool >= minTrucks) {
+            const clippedStart = Math.max(seg.startTime, afterMin)
+            const clippedEnd = Math.min(segEnd, SLOT_DAY_END_MIN)
+            if (clippedEnd <= clippedStart) continue
+            if (runStart == null) runStart = clippedStart
+            if (clippedEnd - runStart >= durationMin) return runStart
+        } else {
+            runStart = null
+        }
+    }
+    return null
+}
+
+/**
+ * For each plant AND each slot size (big / medium / small), find the earliest
+ * start time where that plant has enough surplus trucks to accept the job
+ * without dropping below its required truck floor. Used by the schedule view
+ * to surface "here's where a new order would fit at this plant" recommendations.
+ *
+ * @returns {Array<{key, label, durationMin, minTrucks, yardage, loadSize, plantCode, time}>}
+ *          Up to three entries per plant — one per slot type that has a viable
+ *          window. Plants without capacity for a given size simply omit that
+ *          size from their row set.
+ */
+export const computeSuggestedSlots = (orders, initialPoolByCode, getTravelOverrides, helpTransfers) => {
+    const { timelineByPlant } = simulatePoolTimeline(orders, initialPoolByCode, getTravelOverrides, helpTransfers)
+    const results = []
+    Object.entries(timelineByPlant || {}).forEach(([plantCode, timeline]) => {
+        for (const slot of SUGGESTED_SLOT_TYPES) {
+            const earliest = findEarliestIdleTime(timeline, slot.minTrucks)
+            if (earliest != null) results.push({ ...slot, plantCode, time: earliest })
+        }
+    })
+    return results
+}
+
+/**
+ * Determine when operators can be safely sent home during the day.
+ *
+ * For each plant, compute the "min future pool" at every event boundary. Once
+ * that minimum grows past the running send-home total, the excess operators
+ * are surplus from that point on — they can clock out. We only emit rows at
+ * pool-increase events (returns / help arrivals) since those are the moments
+ * trucks are physically back at the plant and free to leave.
+ *
+ * @returns {Array<{plantCode, time, count, poolAfter}>}
+ */
+export const computeSendHomeRows = (orders, initialPoolByCode, getTravelOverrides, helpTransfers) => {
+    const { timelineByPlant } = simulatePoolTimeline(orders, initialPoolByCode, getTravelOverrides, helpTransfers)
+    const rows = []
+    Object.entries(timelineByPlant || {}).forEach(([plantCode, timeline]) => {
+        if (!Array.isArray(timeline) || timeline.length < 2) return
+        // Reverse pass: minFuture[i] = min pool value from index i to the end.
+        const minFuture = new Array(timeline.length)
+        let running = Infinity
+        for (let i = timeline.length - 1; i >= 0; i--) {
+            if (timeline[i].pool < running) running = timeline[i].pool
+            minFuture[i] = running
+        }
+        let sentHome = 0
+        let prevPool = timeline[0].pool
+        for (let i = 1; i < timeline.length; i++) {
+            const entry = timeline[i]
+            const poolIncreased = entry.pool > prevPool
+            prevPool = entry.pool
+            if (!poolIncreased) continue
+            const budget = minFuture[i]
+            if (budget > sentHome) {
+                rows.push({
+                    count: budget - sentHome,
+                    plantCode,
+                    pool: entry.pool,
+                    poolAfter: entry.pool - budget,
+                    surplus: budget,
+                    time: entry.time
+                })
+                sentHome = budget
+            }
+        }
+    })
+    return rows
+}
+
+/**
+ * Our canonical truck count for an order — what the dispatch *should* book.
+ * Uses the same travel-aware rotation math as `getEffectiveMinTrucks`, with
+ * the big-pour floor and trip cap already applied. Prefer this over the
+ * dispatch report's raw `truckCount` anywhere we display or aggregate trucks
+ * so the number stays consistent across the UI.
+ */
+export const getCalculatedTruckCount = (order, overrides) => {
+    const computed = getEffectiveMinTrucks(order, overrides || {})
+    if (computed != null) return computed
+    // When travel data is missing AND the order isn't a big pour, we can't
+    // derive a rotation — fall back to the dispatch report's number so the
+    // column isn't empty. This is the only place we read `truckCount` for
+    // display purposes.
+    const scheduled = parseFloat(order?.truckCount)
+    return Number.isFinite(scheduled) && scheduled > 0 ? scheduled : null
 }
 export const DROPDOWN_ARROW_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`
 

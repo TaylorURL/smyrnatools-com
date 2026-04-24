@@ -21,20 +21,54 @@ export function radiusForOps(ops) {
 }
 
 /** Aggregate assignments into directed edges with operator totals + earliest time. */
+/**
+ * Perpendicular offset (px) applied to bidirectional route pairs so the
+ * outbound and return arrows render as two parallel lanes instead of
+ * stacking on top of each other. Shared by the Planner tab and the
+ * dashboard flow preview so both views look identical.
+ */
+export const EDGE_PARALLEL_OFFSET = 26
+
+/**
+ * Aggregate assignments into directed edges with operator totals + earliest
+ * time. When an assignment has a `leaveTime`, the same drivers also make the
+ * return trip back to their origin plant — we emit an implicit reverse edge
+ * tagged `isReturn: true` so rendering can style it differently.
+ */
 export function buildEdges(assignments) {
     const map = new Map()
-    ;(assignments || []).forEach((a, idx) => {
-        if (!a.fromPlant || !a.toPlant) return
-        const key = `${a.fromPlant}->${a.toPlant}`
+    const upsert = (from, to, ops, time, idx, isReturn) => {
+        const key = `${from}->${to}`
         if (!map.has(key)) {
-            map.set(key, { assignmentIndexes: [], earliest: null, from: a.fromPlant, ops: 0, to: a.toPlant })
+            map.set(key, { assignmentIndexes: [], earliest: null, from, isReturn, ops: 0, to })
         }
         const edge = map.get(key)
-        edge.ops += parseInt(a.driverCount, 10) || 0
-        if (a.time && (!edge.earliest || a.time < edge.earliest)) edge.earliest = a.time
+        edge.ops += ops
+        if (time && (!edge.earliest || time < edge.earliest)) edge.earliest = time
         edge.assignmentIndexes.push(idx)
+        // A real outbound assignment on the same pair outranks a return-only
+        // edge — clear the flag so styling reflects the outbound.
+        if (!isReturn) edge.isReturn = false
+    }
+    ;(assignments || []).forEach((a, idx) => {
+        if (!a.fromPlant || !a.toPlant) return
+        const ops = parseInt(a.driverCount, 10) || 0
+        upsert(a.fromPlant, a.toPlant, ops, a.time, idx, false)
+        if (a.leaveTime) upsert(a.toPlant, a.fromPlant, ops, a.leaveTime, idx, true)
     })
     return Array.from(map.values())
+}
+
+/** Keys of edges that have an opposite counterpart (A→B and B→A both
+ *  present). Used to decide which edges need perpendicular offset. */
+export function computeBidirectionalEdgeKeys(edges) {
+    const keys = new Set((edges || []).map((e) => `${e.from}->${e.to}`))
+    const out = new Set()
+    for (const key of keys) {
+        const [from, to] = key.split('->')
+        if (keys.has(`${to}->${from}`)) out.add(key)
+    }
+    return out
 }
 
 /** Deterministic PRNG so a given plant-code set always lays out the same way. */

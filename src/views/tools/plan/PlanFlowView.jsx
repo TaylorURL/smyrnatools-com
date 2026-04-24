@@ -1,7 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
-import { createEmptyAssignment, MAX_YPH, minutesToTime, TARGET_YPH, timeToMinutes } from '../../../utils/PlanUtility'
-import { relaxLayoutForEdges } from './planFlowLayout'
+import {
+    computePlantPoolTimeline,
+    computePlantPoolTimelines,
+    createEmptyAssignment,
+    getOrderPourDurationMinutes,
+    MAX_YPH,
+    minutesToTime,
+    poolAtTime,
+    TARGET_YPH,
+    timeToMinutes
+} from '../../../utils/PlanUtility'
+import { buildEdges, computeBidirectionalEdgeKeys, EDGE_PARALLEL_OFFSET, relaxLayoutForEdges } from './planFlowLayout'
 
 const NEEDS_HELP_COLOR = '#dc2626'
 const LEAVE_OFF_COLOR = '#d97706'
@@ -24,23 +34,6 @@ function radiusForOps(ops) {
     const n = Math.max(0, Number.isFinite(ops) ? ops : 0)
     const scaled = NODE_RADIUS_MIN + Math.sqrt(n) * 14
     return Math.round(Math.max(NODE_RADIUS_MIN, Math.min(NODE_RADIUS_MAX, scaled)))
-}
-
-/** Aggregate assignments into directed edges with operator totals + earliest time. */
-function buildEdges(assignments) {
-    const map = new Map()
-    assignments.forEach((a, idx) => {
-        if (!a.fromPlant || !a.toPlant) return
-        const key = `${a.fromPlant}->${a.toPlant}`
-        if (!map.has(key)) {
-            map.set(key, { assignmentIndexes: [], earliest: null, from: a.fromPlant, ops: 0, to: a.toPlant })
-        }
-        const edge = map.get(key)
-        edge.ops += parseInt(a.driverCount, 10) || 0
-        if (a.time && (!edge.earliest || a.time < edge.earliest)) edge.earliest = a.time
-        edge.assignmentIndexes.push(idx)
-    })
-    return Array.from(map.values())
 }
 
 /** Deterministic PRNG so a given plant-code set always lays out the same way. */
@@ -285,6 +278,7 @@ function PlanFlowView({
         [nodeItems, canvasSize]
     )
     const edges = useMemo(() => buildEdges(assignments), [assignments])
+    const bidirectionalEdgeKeys = useMemo(() => computeBidirectionalEdgeKeys(edges), [edges])
     // Push any plant whose centre lies on top of an edge perpendicular to that
     // edge so the route line never has to pass straight through a third node.
     const layout = useMemo(() => relaxLayoutForEdges(baseLayout, nodeItems, edges), [baseLayout, nodeItems, edges])
@@ -304,9 +298,89 @@ function PlanFlowView({
         return out
     }, [stats, plantProduction])
 
-    /** How many drivers a plant could safely leave off based on actual yardage
-     *  vs. TARGET_YPH, plus what the YPH would become after they're left off.
-     *  `count: 0` means there's no slack — keep everyone. */
+    /** Flattened order list with `plantCode` attached — fed to both the
+     *  byOrder pool summary and the per-plant timeline. */
+    const flatOrders = useMemo(() => {
+        const out = []
+        ;(stats || []).forEach((s) => {
+            const prod = plantProduction[s.code] || {}
+            const orders = Array.isArray(prod.orders) ? prod.orders : []
+            orders.forEach((o) => out.push({ ...o, plantCode: s.code }))
+        })
+        return out
+    }, [stats, plantProduction])
+
+    /** Initial pool is just the plant's base. Help is applied as time-aware
+     *  events so the pool only shifts when help actually leaves / returns. */
+    const initialPoolByCode = useMemo(() => {
+        const out = {}
+        ;(stats || []).forEach((s) => {
+            if (s?.code) out[s.code] = Number.isFinite(s.base) ? s.base : 0
+        })
+        return out
+    }, [stats])
+
+    /** Help transfers derived from planner assignments — each assignment yields
+     *  an outbound handoff at `time` (sender −, receiver +) and, if a valid
+     *  `leaveTime > time` is set, a return at `leaveTime` (receiver −, sender +). */
+    const helpTransfers = useMemo(() => {
+        const out = []
+        ;(assignments || []).forEach((a) => {
+            if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
+            const count = parseInt(a.driverCount, 10) || 0
+            if (count <= 0) return
+            const arrivalMin = timeToMinutes(a.time)
+            if (!Number.isFinite(arrivalMin)) return
+            out.push({ delta: -count, plantCode: a.fromPlant, time: arrivalMin })
+            out.push({ delta: count, plantCode: a.toPlant, time: arrivalMin })
+            const leaveMin = timeToMinutes(a.leaveTime)
+            if (Number.isFinite(leaveMin) && leaveMin > arrivalMin) {
+                out.push({ delta: -count, plantCode: a.toPlant, time: leaveMin })
+                out.push({ delta: count, plantCode: a.fromPlant, time: leaveMin })
+            }
+        })
+        return out
+    }, [assignments])
+
+    /** Per-plant peak concurrent truck demand from the big-pour-aware pool
+     *  simulation. Used by both the leave-off math (can only leave off as many
+     *  as are idle at the plant's busiest moment) and the needs-help badge
+     *  (if peak demand exceeds eff, plant is overbooked at some point). */
+    const poolTimeline = useMemo(
+        () => computePlantPoolTimeline(flatOrders, initialPoolByCode, null, helpTransfers),
+        [flatOrders, initialPoolByCode, helpTransfers]
+    )
+
+    /** Per-plant pool timelines used to answer "what's the pool at time T?"
+     *  for the time scrubber. */
+    const poolTimelinesByPlant = useMemo(
+        () => computePlantPoolTimelines(flatOrders, initialPoolByCode, null, helpTransfers),
+        [flatOrders, initialPoolByCode, helpTransfers]
+    )
+
+    /** Min pool value per plant across the day (lowest the pool drops to).
+     *  minPool < 0 ⇒ plant is overbooked — needs inbound help.
+     *  minPool ≥ 0 ⇒ minPool trucks are idle at the busiest moment. */
+    const minPoolByCode = useMemo(() => {
+        const out = {}
+        Object.values(poolTimeline || {}).forEach((entry) => {
+            // Use the effective pool (counts help landing during the pour
+            // window) so "needs help" doesn't light up when late-arriving
+            // help already covers the deficit.
+            const value = Number.isFinite(entry?.poolAfterDispatchEffective)
+                ? entry.poolAfterDispatchEffective
+                : entry?.poolAfterDispatch
+            if (!entry?.plantCode || !Number.isFinite(value)) return
+            const cur = out[entry.plantCode]
+            if (cur == null || value < cur) out[entry.plantCode] = value
+        })
+        return out
+    }, [poolTimeline])
+
+    /** How many drivers a plant could safely leave off. Tightest of:
+     *   - yph slack (avg TARGET_YPH math — good for plants with small jobs),
+     *   - peak-demand slack (how many trucks sit idle at the busiest moment,
+     *     which respects per-order big-pour truck requirements). */
     const leaveOffByCode = useMemo(() => {
         const out = {}
         stats.forEach((s) => {
@@ -320,15 +394,85 @@ function PlanFlowView({
                 out[s.code] = { adjustedYph: null, count: 0 }
                 return
             }
-            const needed = Math.ceil(yardage / (TARGET_YPH * hours))
-            const slack = Math.max(0, s.eff - Math.max(1, needed))
+            const yphSlack = Math.max(0, s.eff - Math.max(1, Math.ceil(yardage / (TARGET_YPH * hours))))
+            const minPool = minPoolByCode[s.code]
+            // If any order overbooked the plant (minPool < 0), we can't leave
+            // anyone off — plant actually needs more trucks, not fewer.
+            // Otherwise cap leave-off at the idle-truck count during peak.
+            const peakSlack = Number.isFinite(minPool) ? Math.max(0, minPool) : yphSlack
+            const slack = Math.max(0, Math.min(yphSlack, peakSlack))
             const remaining = s.eff - slack
             const adjustedYph =
                 slack > 0 && remaining > 0 ? Math.round((yardage / (hours * remaining)) * 10) / 10 : null
             out[s.code] = { adjustedYph, count: slack }
         })
         return out
-    }, [stats, plantProduction])
+    }, [stats, plantProduction, minPoolByCode])
+
+    /* ── Time scrubber ────────────────────────────────────────────────────
+       `viewTime` in minutes since midnight (null = whole-day view). When
+       set, the "needs help" badge flips from day-aggregate peak-overbook to
+       a point-in-time check: pool(t) < 0 AND the plant has an order actively
+       pouring at t. Idle plants are never flagged — no jobs, no help. */
+    const [viewTime, setViewTime] = useState(null)
+
+    /** Orders actively pouring at a given minute, grouped by plant. An order
+     *  is active from its start time until its last-return moment (the full
+     *  pour window including round-trip cycles). */
+    const activeOrdersAtTime = useMemo(() => {
+        if (!Number.isFinite(viewTime)) return null
+        const byPlant = {}
+        flatOrders.forEach((order) => {
+            const startMin = timeToMinutes(order?.startTime)
+            if (!Number.isFinite(startMin)) return
+            const key = order.orderId || `${order.plantCode ?? 'unknown'}-${startMin}-${order.orderNum ?? ''}`
+            const entry = poolTimeline?.[key]
+            const endMin = Number.isFinite(entry?.lastReturnMinutes)
+                ? entry.lastReturnMinutes
+                : startMin + (getOrderPourDurationMinutes(order) ?? 60)
+            if (viewTime < startMin || viewTime > endMin) return
+            const list = (byPlant[order.plantCode] ||= [])
+            list.push({ endMin, order, startMin })
+        })
+        return byPlant
+    }, [viewTime, flatOrders, poolTimeline])
+
+    /** Per-plant pool value at `viewTime`. Null when no time is selected or
+     *  the plant has no timeline. */
+    const poolAtViewTime = useMemo(() => {
+        if (!Number.isFinite(viewTime)) return null
+        const out = {}
+        Object.entries(poolTimelinesByPlant || {}).forEach(([code, timeline]) => {
+            out[code] = poolAtTime(timeline, viewTime)
+        })
+        return out
+    }, [viewTime, poolTimelinesByPlant])
+
+    /** Effective operator count at `viewTime` — base roster adjusted for help
+     *  that's active right now (outbound sent but not yet returned, inbound
+     *  arrived but not yet returned). This is what the node badge should read
+     *  when the scrubber is engaged: total operators currently assigned to
+     *  this plant, regardless of whether they're out on a job or idle. */
+    const effAtViewTime = useMemo(() => {
+        if (!Number.isFinite(viewTime)) return null
+        const out = {}
+        ;(stats || []).forEach((s) => {
+            if (s?.code) out[s.code] = Number.isFinite(s.base) ? s.base : 0
+        })
+        ;(assignments || []).forEach((a) => {
+            if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
+            const count = parseInt(a.driverCount, 10) || 0
+            if (count <= 0) return
+            const arrivalMin = timeToMinutes(a.time)
+            if (!Number.isFinite(arrivalMin) || viewTime < arrivalMin) return
+            const leaveMin = timeToMinutes(a.leaveTime)
+            const stillOut = !Number.isFinite(leaveMin) || viewTime < leaveMin
+            if (!stillOut) return
+            out[a.fromPlant] = (out[a.fromPlant] ?? 0) - count
+            out[a.toPlant] = (out[a.toPlant] ?? 0) + count
+        })
+        return out
+    }, [viewTime, stats, assignments])
 
     const selected = selectedCode ? allPlantStats.find((s) => s.code === selectedCode) : null
     const hasNodes = nodeItems.length > 0 && Object.keys(positions).length > 0
@@ -454,13 +598,21 @@ function PlanFlowView({
             const from = positions[e.from]
             const to = positions[e.to]
             if (!from || !to) continue
-            const midX = (from.x + to.x) / 2
-            const midY = (from.y + to.y) / 2
             const dx = to.x - from.x
             const dy = to.y - from.y
             const len = Math.sqrt(dx * dx + dy * dy) || 1
-            const px = -dy / len
-            const py = dx / len
+            const ux = dx / len
+            const uy = dy / len
+            // Match the SVG's perpendicular offset for bidirectional edges so
+            // each direction's label floats over its own arrow, not between.
+            const key = `${e.from}->${e.to}`
+            const isBidirectional = bidirectionalEdgeKeys.has(key)
+            const laneOffX = isBidirectional ? uy * EDGE_PARALLEL_OFFSET : 0
+            const laneOffY = isBidirectional ? -ux * EDGE_PARALLEL_OFFSET : 0
+            const midX = (from.x + to.x) / 2 + laneOffX
+            const midY = (from.y + to.y) / 2 + laneOffY
+            const px = -uy
+            const py = ux
             const blockers = obstacles.filter((o) => o.code !== e.from && o.code !== e.to)
             const isOccluded = (x, y) => {
                 for (const o of blockers) {
@@ -489,10 +641,10 @@ function PlanFlowView({
                 }
             }
             const offset = Math.hypot(lx - midX, ly - midY)
-            out[`${e.from}->${e.to}`] = { anchorX: midX, anchorY: midY, offset, x: lx, y: ly }
+            out[key] = { anchorX: midX, anchorY: midY, offset, x: lx, y: ly }
         }
         return out
-    }, [edges, positions, allPlantStats, radiusByCode])
+    }, [edges, positions, allPlantStats, radiusByCode, bidirectionalEdgeKeys])
 
     return (
         <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -601,6 +753,15 @@ function PlanFlowView({
                     </div>
                 </div>
 
+                {/* Time scrubber — 24-hour slider that drives the point-in-time
+                    "needs help" view. Sticky below the main toolbar. */}
+                <TimeScrubber
+                    accentColor={accentColor}
+                    viewTime={viewTime}
+                    onChange={setViewTime}
+                    hasActivity={Number.isFinite(viewTime) ? Object.keys(activeOrdersAtTime || {}).length : null}
+                />
+
                 {/* Zoomable layer — wrapped in a flex centerer so that when the
                     scaled content is narrower than the viewport it stays
                     horizontally centered (instead of clinging to the left edge),
@@ -664,14 +825,21 @@ function PlanFlowView({
                                         const uy = dy / len
                                         const rFrom = radiusByCode[e.from] || NODE_RADIUS_MIN
                                         const rTo = radiusByCode[e.to] || NODE_RADIUS_MIN
-                                        const x1 = from.x + ux * rFrom
-                                        const y1 = from.y + uy * rFrom
-                                        const x2 = to.x - ux * rTo
-                                        const y2 = to.y - uy * rTo
                                         const key = `${e.from}->${e.to}`
+                                        // Offset perpendicular to travel direction so an opposite
+                                        // edge (B→A) naturally lands on the other side, producing
+                                        // two parallel lanes instead of one stacked line.
+                                        const isBidirectional = bidirectionalEdgeKeys.has(key)
+                                        const offX = isBidirectional ? uy * EDGE_PARALLEL_OFFSET : 0
+                                        const offY = isBidirectional ? -ux * EDGE_PARALLEL_OFFSET : 0
+                                        const x1 = from.x + ux * rFrom + offX
+                                        const y1 = from.y + uy * rFrom + offY
+                                        const x2 = to.x - ux * rTo + offX
+                                        const y2 = to.y - uy * rTo + offY
                                         const isRelated = activeRelatedEdges.has(key)
                                         const isHover = hoverEdgeKey === key
                                         const active = isRelated || isHover
+                                        const baseOpacity = selectedCode && !isRelated ? 0.25 : 1
                                         return (
                                             <line
                                                 key={key}
@@ -681,8 +849,9 @@ function PlanFlowView({
                                                 y2={y2}
                                                 stroke={active ? '#f59e0b' : accentColor}
                                                 strokeWidth={active ? 3 : 2}
-                                                strokeOpacity={selectedCode && !isRelated ? 0.25 : 1}
+                                                strokeOpacity={e.isReturn ? baseOpacity * 0.55 : baseOpacity}
                                                 strokeLinecap="round"
+                                                strokeDasharray={e.isReturn ? '6 4' : undefined}
                                                 markerEnd={active ? 'url(#flow-arrow-highlight)' : 'url(#flow-arrow)'}
                                             />
                                         )
@@ -733,17 +902,19 @@ function PlanFlowView({
                                                     boxShadow: 'var(--shadow-sm)',
                                                     color: 'var(--text-primary)',
                                                     left: `${layout.x}px`,
-                                                    opacity: muted ? 0.5 : 1,
+                                                    opacity: muted ? 0.5 : e.isReturn ? 0.85 : 1,
                                                     top: `${layout.y}px`,
                                                     zIndex: 20
                                                 }}
                                             >
                                                 <i
-                                                    className="fas fa-truck text-[9px]"
+                                                    className={`fas ${e.isReturn ? 'fa-rotate-left' : 'fa-truck'} text-[9px]`}
                                                     style={{ color: isRelated ? '#f59e0b' : accentColor }}
                                                 />
                                                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                                    {e.ops > 0 ? `+${e.ops} op${e.ops === 1 ? '' : 's'}` : 'Route'}
+                                                    {e.ops > 0
+                                                        ? `${e.isReturn ? '−' : '+'}${e.ops} op${e.ops === 1 ? '' : 's'}`
+                                                        : 'Route'}
                                                 </span>
                                                 {e.earliest && (
                                                     <span style={{ color: 'var(--text-secondary)' }}>
@@ -772,10 +943,31 @@ function PlanFlowView({
                                               : null
                                 const yph = yphByCode[s.code]
                                 const ringColor = yphColorFor(yph, accentColor)
-                                const needsHelp = yph != null && yph > MAX_YPH
-                                const leaveOffInfo = !needsHelp
-                                    ? leaveOffByCode[s.code] || { adjustedYph: null, count: 0 }
-                                    : { adjustedYph: null, count: 0 }
+                                const minPool = minPoolByCode[s.code]
+                                // When the scrubber is set to a specific time, "needs
+                                // help" is point-in-time: pool(t) < 0 AND a job is
+                                // actively pouring at t. Idle plants never flag.
+                                // Whole-day view falls back to the day-aggregate
+                                // peak-overbook signal + YPH > MAX heuristic.
+                                const isTimeView = Number.isFinite(viewTime)
+                                const poolNow = isTimeView ? poolAtViewTime?.[s.code] : null
+                                const activeNow = isTimeView ? activeOrdersAtTime?.[s.code]?.length || 0 : 0
+                                const timeDeficit =
+                                    isTimeView && Number.isFinite(poolNow) && poolNow < 0 && activeNow > 0
+                                        ? -poolNow
+                                        : 0
+                                const peakOverbookShortage = isTimeView
+                                    ? timeDeficit
+                                    : Number.isFinite(minPool) && minPool < 0
+                                      ? -minPool
+                                      : 0
+                                const needsHelp = isTimeView
+                                    ? timeDeficit > 0
+                                    : (yph != null && yph > MAX_YPH) || peakOverbookShortage > 0
+                                const leaveOffInfo =
+                                    !needsHelp && !isTimeView
+                                        ? leaveOffByCode[s.code] || { adjustedYph: null, count: 0 }
+                                        : { adjustedYph: null, count: 0 }
                                 const leaveOff = leaveOffInfo.count
                                 const adjustedYph = leaveOffInfo.adjustedYph
                                 const hasLeaveOff = leaveOff > 0
@@ -806,13 +998,31 @@ function PlanFlowView({
                                             width: r * 2,
                                             zIndex: 10
                                         }}
-                                        title={
-                                            needsHelp
-                                                ? `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'} · NEEDS HELP (YPH ${yph} > ${MAX_YPH})`
-                                                : hasLeaveOff
-                                                  ? `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'} · low YPH ${yph} — leave off ${leaveOff} driver${leaveOff === 1 ? '' : 's'}${adjustedYph != null ? ` → adjusted YPH ${adjustedYph.toFixed(1)}` : ''}`
-                                                  : `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'}`
-                                        }
+                                        title={(() => {
+                                            const base = `Plant ${s.code} · ${s.eff} op${s.eff === 1 ? '' : 's'}`
+                                            if (isTimeView) {
+                                                const t = minutesToTime(viewTime)
+                                                if (activeNow === 0) return `${base} · Idle at ${t} — no help needed`
+                                                if (needsHelp) {
+                                                    return `${base} · NEEDS HELP at ${t} — short ${timeDeficit} truck${timeDeficit === 1 ? '' : 's'} (${activeNow} active order${activeNow === 1 ? '' : 's'})`
+                                                }
+                                                return `${base} · Covered at ${t} — pool ${Number.isFinite(poolNow) ? poolNow : '—'}, ${activeNow} active`
+                                            }
+                                            if (needsHelp) {
+                                                const parts = []
+                                                if (yph != null && yph > MAX_YPH) parts.push(`YPH ${yph} > ${MAX_YPH}`)
+                                                if (peakOverbookShortage > 0) {
+                                                    parts.push(
+                                                        `peak demand overbooks by ${peakOverbookShortage} truck${peakOverbookShortage === 1 ? '' : 's'}`
+                                                    )
+                                                }
+                                                return `${base} · NEEDS HELP (${parts.join(' · ')})`
+                                            }
+                                            if (hasLeaveOff) {
+                                                return `${base} · low YPH ${yph ?? ''} — leave off ${leaveOff} driver${leaveOff === 1 ? '' : 's'}${adjustedYph != null ? ` → adjusted YPH ${adjustedYph.toFixed(1)}` : ''}`
+                                            }
+                                            return base
+                                        })()}
                                     >
                                         <span
                                             className="absolute inset-0 rounded-full pointer-events-none"
@@ -845,7 +1055,13 @@ function PlanFlowView({
                                                     transform: 'translateX(-50%)',
                                                     zIndex: 2
                                                 }}
-                                                title={`YPH ${yph} exceeds max (${MAX_YPH}) — operators overloaded`}
+                                                title={
+                                                    isTimeView
+                                                        ? `At ${minutesToTime(viewTime)} — short ${timeDeficit} truck${timeDeficit === 1 ? '' : 's'} (${activeNow} order${activeNow === 1 ? '' : 's'} actively pouring)`
+                                                        : peakOverbookShortage > 0
+                                                          ? `Peak demand overbooks this plant by ${peakOverbookShortage} truck${peakOverbookShortage === 1 ? '' : 's'} — big-pour requirements exceed current pool${yph != null && yph > MAX_YPH ? ` (YPH ${yph} > ${MAX_YPH})` : ''}`
+                                                          : `YPH ${yph} exceeds max (${MAX_YPH}) — operators overloaded`
+                                                }
                                             >
                                                 <i className="fas fa-triangle-exclamation text-[8px]" />
                                                 Needs Help
@@ -885,30 +1101,97 @@ function PlanFlowView({
                                             >
                                                 {s.code}
                                             </span>
-                                            <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                                                {s.eff} op{s.eff === 1 ? '' : 's'}
-                                                {net !== 0 && (
-                                                    <>
-                                                        {' '}
+                                            {isTimeView ? (
+                                                <>
+                                                    {(() => {
+                                                        const effNow = effAtViewTime?.[s.code]
+                                                        const effDisplay = Number.isFinite(effNow) ? effNow : s.base
+                                                        const effDelta = Number.isFinite(effNow)
+                                                            ? effNow - (s.base ?? 0)
+                                                            : 0
+                                                        return (
+                                                            <span
+                                                                className="text-[11px]"
+                                                                style={{ color: 'var(--text-secondary)' }}
+                                                            >
+                                                                {effDisplay} op{effDisplay === 1 ? '' : 's'}
+                                                                {effDelta !== 0 && (
+                                                                    <>
+                                                                        {' '}
+                                                                        <span
+                                                                            style={{
+                                                                                color:
+                                                                                    effDelta > 0
+                                                                                        ? '#16a34a'
+                                                                                        : '#dc2626',
+                                                                                fontWeight: 700
+                                                                            }}
+                                                                        >
+                                                                            ({effDelta > 0 ? '+' : ''}
+                                                                            {effDelta})
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                            </span>
+                                                        )
+                                                    })()}
+                                                    {(() => {
+                                                        const poolNow = poolAtViewTime?.[s.code]
+                                                        if (!Number.isFinite(poolNow)) return null
+                                                        const poolColor =
+                                                            poolNow < 0
+                                                                ? NEEDS_HELP_COLOR
+                                                                : poolNow === 0
+                                                                  ? '#d97706'
+                                                                  : '#16a34a'
+                                                        return (
+                                                            <span
+                                                                className="text-[10px] font-bold"
+                                                                style={{
+                                                                    color: poolColor,
+                                                                    fontFamily: 'var(--font-heading)'
+                                                                }}
+                                                                title={`${poolNow} truck${poolNow === 1 ? '' : 's'} at plant, ready to dispatch at ${minutesToTime(viewTime)}`}
+                                                            >
+                                                                avail {poolNow}
+                                                            </span>
+                                                        )
+                                                    })()}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span
+                                                        className="text-[11px]"
+                                                        style={{ color: 'var(--text-secondary)' }}
+                                                    >
+                                                        {s.eff} op{s.eff === 1 ? '' : 's'}
+                                                        {net !== 0 && (
+                                                            <>
+                                                                {' '}
+                                                                <span
+                                                                    style={{
+                                                                        color: net > 0 ? '#16a34a' : '#dc2626',
+                                                                        fontWeight: 700
+                                                                    }}
+                                                                >
+                                                                    ({net > 0 ? '+' : ''}
+                                                                    {net})
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                    {yph != null && (
                                                         <span
+                                                            className="text-[10px] font-bold"
                                                             style={{
-                                                                color: net > 0 ? '#16a34a' : '#dc2626',
-                                                                fontWeight: 700
+                                                                color: ringColor,
+                                                                fontFamily: 'var(--font-heading)'
                                                             }}
                                                         >
-                                                            ({net > 0 ? '+' : ''}
-                                                            {net})
+                                                            {yph} yph
                                                         </span>
-                                                    </>
-                                                )}
-                                            </span>
-                                            {yph != null && (
-                                                <span
-                                                    className="text-[10px] font-bold"
-                                                    style={{ color: ringColor, fontFamily: 'var(--font-heading)' }}
-                                                >
-                                                    {yph} yph
-                                                </span>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </button>
@@ -975,6 +1258,79 @@ function PlanFlowView({
                     />
                 )}
             </aside>
+        </div>
+    )
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Time scrubber — 24-hour horizontal slider for point-in-time help view
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const SCRUB_MIN = 0
+const SCRUB_MAX = 24 * 60 - 1
+const SCRUB_STEP = 15
+
+function TimeScrubber({ accentColor, hasActivity, onChange, viewTime }) {
+    const active = Number.isFinite(viewTime)
+    const displayValue = active ? viewTime : 12 * 60
+    const clockLabel = active ? minutesToTime(displayValue) : 'All day'
+    const activityNote = !active
+        ? null
+        : hasActivity === 0
+          ? 'No plants active at this time'
+          : `${hasActivity} plant${hasActivity === 1 ? '' : 's'} actively pouring`
+    return (
+        <div className="sticky z-20 flex justify-center px-4 pb-3 pointer-events-none" style={{ top: '60px' }}>
+            <div
+                className="pointer-events-auto w-full max-w-2xl rounded-lg flex items-center gap-3 px-3 py-2"
+                style={{
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-light)',
+                    boxShadow: 'var(--shadow-sm)'
+                }}
+            >
+                <button
+                    type="button"
+                    onClick={() => onChange(active ? null : 12 * 60)}
+                    className="border-none rounded cursor-pointer px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
+                    style={{
+                        background: active ? accentColor : 'var(--bg-secondary)',
+                        color: active ? '#fff' : 'var(--text-secondary)'
+                    }}
+                    title={active ? 'Return to whole-day view' : 'Enable point-in-time view'}
+                >
+                    <i className={`fas ${active ? 'fa-clock' : 'fa-calendar-day'} mr-1 text-[9px]`} />
+                    {active ? 'At time' : 'All day'}
+                </button>
+                <div className="flex-1 flex items-center gap-3 min-w-0">
+                    <input
+                        type="range"
+                        min={SCRUB_MIN}
+                        max={SCRUB_MAX}
+                        step={SCRUB_STEP}
+                        value={displayValue}
+                        onChange={(event) => onChange(parseInt(event.target.value, 10))}
+                        className="flex-1"
+                        style={{ accentColor }}
+                        title={active ? `Viewing ${clockLabel}` : 'Drag to pick a time'}
+                    />
+                    <div
+                        className="font-mono font-bold text-[13px] shrink-0 min-w-[62px] text-right"
+                        style={{ color: active ? accentColor : 'var(--text-tertiary)' }}
+                    >
+                        {clockLabel}
+                    </div>
+                </div>
+                {active && activityNote && (
+                    <span
+                        className="text-[10.5px] font-semibold whitespace-nowrap hidden sm:inline"
+                        style={{ color: hasActivity === 0 ? 'var(--text-tertiary)' : '#16a34a' }}
+                    >
+                        <i className={`fas ${hasActivity === 0 ? 'fa-moon' : 'fa-truck'} mr-1 text-[9px]`} />
+                        {activityNote}
+                    </span>
+                )}
+            </div>
         </div>
     )
 }

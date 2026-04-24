@@ -1,6 +1,16 @@
 # Changelog
 
 
+## [38.5.35] - 2026-04-23
+
+- Made LostLoadReportModal fully responsive — full-screen on mobile with sticky header/footer, stacked action buttons, and scroll-friendly layout
+- Added MobileFilterShell component that collapses filter bars behind a toggle button on small screens with an active-filter count badge
+- Wrapped Review, Lost Load, and QC filter bars in MobileFilterShell for collapsible mobile filtering across all report tabs
+- Made all report filter bars responsive — selects, date ranges, sort controls, and export buttons now stack and stretch properly on small screens
+- Refactored QcFilterBar to reuse the shared DateRange component instead of inline date inputs
+- Added error handling to usePlanData travel-time fetches — bootstrap, refresh, and realtime callbacks now catch and warn instead of surfacing unhandled rejections
+- Deferred travel-time fetch until after session is established to prevent 401 errors on initial load
+
 ## [38.5.34] - 2026-04-23
 
 - Added TrafficService and traffic-service edge function — fetches live driving times from Google Distance Matrix API with Supabase-backed caching

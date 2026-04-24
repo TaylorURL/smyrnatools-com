@@ -600,12 +600,14 @@ function PlanView() {
                         {effectiveViewMode === 'schedule' && (
                             <PlanScheduleView
                                 accentColor={accentColor}
+                                assignments={assignments}
                                 isMobile={isMobile}
                                 onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
                                 plantAddressByCode={plantAddressByCode}
                                 plantNameByCode={plantNameByCode}
                                 plantProduction={plantProduction}
                                 plants={plants}
+                                stats={stats}
                             />
                         )}
                     </div>

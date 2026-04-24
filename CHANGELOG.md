@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [38.5.36] - 2026-04-24
+
+- Added test-order sentinel (18:00) detection and unified excluded-order helper for filtering cancelled and test orders from yardage/truck/KPI totals
+- Built out truck-requirement math in PlanUtility — pour rate calculation, big-pour rule (120+ yd with back-to-back spacing requires 12-truck floor), travel-cycle-based rotation sizing, and trip-capped effective minimum trucks
+- Added plant pool simulation engine that models per-plant truck availability through the day, tracking dispatch/return events, inter-plant help transfers, and inbound-during-pour credits
+- Added pool timeline querying (pool-at-time lookups), order timing estimation with delay detection for underbooked pours, and next-viable-start-time search for rescheduling recommendations
+- Added suggested slot system that finds earliest windows where each plant has idle capacity for large, medium, or small pours
+- Added send-home row computation that identifies when surplus operators can safely leave based on minimum future pool analysis
+- Expanded PlanScheduleView with full schedule table rendering — per-order rows with truck requirements, pool state, timing estimates, delay warnings, return arrows, send-home rows, and suggested availability slots
+- Added help-transfer support to PlanScheduleView allowing inter-plant truck movements with time-based pool adjustments
+- Enhanced PlanFlowView with pool timeline integration, truck shortfall indicators, and travel-override-aware truck count display
+- Updated PlanFlowPreview with expanded order detail rendering including pour rate, required trucks, pool state, and timing context
+- Refined planFlowLayout to account for calculated truck counts and excluded-order filtering in layout positioning
+- Registered PlanScheduleView in PlanView as a new tab/view option
+
 ## [38.5.35] - 2026-04-23
 
 - Made LostLoadReportModal fully responsive — full-screen on mobile with sticky header/footer, stacked action buttons, and scroll-friendly layout

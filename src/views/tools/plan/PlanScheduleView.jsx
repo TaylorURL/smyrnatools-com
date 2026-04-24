@@ -1,13 +1,59 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { TrafficService } from '../../../services/TrafficService'
-import { timeToMinutes } from '../../../utils/PlanUtility'
+import {
+    BIG_POUR_MIN_TRUCKS,
+    computePlantPoolTimeline,
+    computePlantPoolTimelines,
+    computeSendHomeRows,
+    computeSuggestedSlots,
+    estimateOrderTiming,
+    findNextViableStart,
+    getCalculatedTruckCount,
+    getEffectiveMinTrucks,
+    getOrderPourDurationMinutes,
+    getOrderPourRate,
+    getRequiredTrucksForPourRate,
+    isBigPourOrder,
+    timeToMinutes,
+    trucksToHitBigPourGoal
+} from '../../../utils/PlanUtility'
+
+const formatMinutesClock = (mins) => {
+    if (!Number.isFinite(mins)) return ''
+    const wrapped = ((mins % (24 * 60)) + 24 * 60) % (24 * 60)
+    const h = Math.floor(wrapped / 60)
+    const m = Math.round(wrapped % 60)
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
 
 const composeAddress = (order) =>
     [order?.address, order?.city]
         .map((s) => (s == null ? '' : String(s).trim()))
         .filter(Boolean)
         .join(', ')
+
+/**
+ * Pull the city segment out of a plant's full street address so we can fall
+ * back to it when an order's city is missing. Accepts common formats:
+ *   "123 Main St, Houston, TX 77001"  → "Houston"
+ *   "123 Main St, Houston TX 77001"   → "Houston"
+ *   "123 Main St"                      → ""
+ */
+const extractCityFromFullAddress = (fullAddress) => {
+    const value = String(fullAddress || '').trim()
+    if (!value) return ''
+    const parts = value
+        .split(',')
+        .map((segment) => segment.trim())
+        .filter(Boolean)
+    if (parts.length >= 3) return parts[1]
+    if (parts.length === 2) {
+        // "street, city STATE ZIP" — strip trailing state + zip to isolate city.
+        return parts[1].replace(/\s+[A-Za-z]{2}(\s+\d{5}(-\d{4})?)?\s*$/i, '').trim()
+    }
+    return ''
+}
 
 /** Parse a `HH:MM` duration string (from the dispatch report) into minutes.
  *  Returns null when the value is missing or unparseable. */
@@ -28,8 +74,9 @@ const parseHhmmToMinutes = (value) => {
  * Returns null for everything else.
  */
 const ORDER_STATUS_BY_START = {
+    '15:00': { color: '#d97706', icon: 'fa-bolt', kind: 'sameDay', label: 'Same-day' },
     '17:00': { color: '#dc2626', icon: 'fa-ban', kind: 'cancelled', label: 'Cancelled' },
-    '15:00': { color: '#d97706', icon: 'fa-bolt', kind: 'sameDay', label: 'Same-day' }
+    '18:00': { color: '#6366f1', icon: 'fa-flask', kind: 'test', label: 'Test' }
 }
 const getOrderStatus = (startTime) => {
     const v = String(startTime || '').trim()
@@ -531,23 +578,33 @@ function OrderCard({
     onPickStatus,
     order,
     plantCode,
-    plantName
+    plantName,
+    travelOverrides
 }) {
     const yardage = parseFloat(order.yardage) || 0
-    const trucks = parseFloat(order.truckCount) || 0
     const loadSize = parseFloat(order.loadSize) || 0
     const start = formatHhmm(order.startTime)
     const status = getOrderStatus(order.startTime)
     const isCancelled = status?.kind === 'cancelled'
+    const isTest = status?.kind === 'test'
+    // Test + cancelled orders are not real pours — suppress truck count and
+    // style the card so the dispatcher knows not to act on it.
+    const isNonProduction = isCancelled || isTest
+    const computedTrucks = isNonProduction ? null : getCalculatedTruckCount(order, travelOverrides)
+    const trucks = computedTrucks ?? 0
     const addressBad = isLikelyBadAddress(clean(order.address))
     const hasAddress = !!(clean(order.address) || clean(order.city))
     return (
         <div
             className="rounded-xl p-3 flex flex-col gap-2"
             style={{
-                background: isCancelled ? 'rgba(220, 38, 38, 0.05)' : 'var(--bg-primary)',
-                border: `1px solid ${isCancelled ? 'rgba(220, 38, 38, 0.35)' : 'var(--border-light)'}`,
-                opacity: isCancelled ? 0.78 : 1
+                background: isCancelled
+                    ? 'rgba(220, 38, 38, 0.05)'
+                    : isTest
+                      ? 'rgba(99, 102, 241, 0.05)'
+                      : 'var(--bg-primary)',
+                border: `1px solid ${isCancelled ? 'rgba(220, 38, 38, 0.35)' : isTest ? 'rgba(99, 102, 241, 0.35)' : 'var(--border-light)'}`,
+                opacity: isNonProduction ? 0.78 : 1
             }}
         >
             <div className="flex items-start gap-3">
@@ -595,6 +652,7 @@ function OrderCard({
                             ) : (
                                 <OrderStatusBadge status={status} />
                             ))}
+                        <BigPourBadge order={order} travelOverrides={travelOverrides} />
                     </div>
                     <div
                         className="text-[11.5px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1"
@@ -716,10 +774,67 @@ function OrderCard({
                 {loadSize > 0 && <KeyValue label="Load" value={`${loadSize} yd`} />}
                 {order.poNumber && <KeyValue label="PO" value={clean(order.poNumber)} />}
                 {order.jobNumber && <KeyValue label="Job" value={clean(order.jobNumber)} />}
-                {order.contact && <KeyValue label="Contact" value={clean(order.contact)} />}
-                {order.phone && <KeyValue label="Phone" value={clean(order.phone)} />}
+                {order.phone && <KeyValue label="Contact" value={clean(order.phone)} />}
+                {order.contact && <KeyValue label="Dispatcher" value={clean(order.contact)} />}
             </div>
         </div>
+    )
+}
+
+function BigPourBadge({ order, travelOverrides }) {
+    const isBigPour = isBigPourOrder(order)
+    const needed = getEffectiveMinTrucks(order, travelOverrides)
+    // Only flag under-booked when dispatch booked fewer than our canonical count.
+    const dispatchBooked = parseFloat(order?.truckCount) || 0
+    const shortfall = needed && dispatchBooked > 0 ? Math.max(0, needed - dispatchBooked) : 0
+    const trucks = parseFloat(order.truckCount) || 0
+    // Show when the order is a flagged big pour OR when any order is
+    // understaffed vs the travel-time-derived requirement.
+    if (!isBigPour && shortfall === 0) return null
+    const rate = getOrderPourRate(order)
+    const calculated = getRequiredTrucksForPourRate(order, travelOverrides)
+    const pourMinutes = getOrderPourDurationMinutes(order)
+    const usingLive = !!travelOverrides
+    const pourHours = pourMinutes != null ? (pourMinutes / 60).toFixed(1) : null
+    const understaffed = shortfall > 0
+    const tooltipLines = []
+    if (rate != null) tooltipLines.push(`Pour rate: ${rate} yd/hr`)
+    if (calculated != null)
+        tooltipLines.push(
+            `Travel-based requirement: ${calculated} trucks${usingLive ? ' (live Google traffic)' : ' (dispatch estimate)'}`
+        )
+    if (isBigPour) {
+        tooltipLines.push(`Big-pour floor (≥ 120 yd · <10 min spacing): ${BIG_POUR_MIN_TRUCKS} trucks`)
+        const goalTrucks = trucksToHitBigPourGoal(order, travelOverrides)
+        if (Number.isFinite(goalTrucks) && goalTrucks > BIG_POUR_MIN_TRUCKS) {
+            tooltipLines.push(`Trucks to hit 120 yd/hr loaded at this travel: ${goalTrucks}`)
+        }
+    }
+    if (needed != null) tooltipLines.push(`Effective minimum: ${needed} trucks`)
+    if (dispatchBooked > 0 && needed !== dispatchBooked) {
+        tooltipLines.push(`On Jonel: ${dispatchBooked} trucks`)
+        tooltipLines.push('(Jonel is likely wrong — use the required count above)')
+    }
+    if (pourHours) tooltipLines.push(`Est. pour time: ~${pourHours}h`)
+    if (understaffed) tooltipLines.push(`Short by ${shortfall} truck${shortfall === 1 ? '' : 's'}`)
+    return (
+        <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
+            style={{
+                background: understaffed ? '#dc2626' : isBigPour ? '#4f46e5' : '#d97706',
+                color: '#fff'
+            }}
+            title={tooltipLines.join('\n')}
+        >
+            <i
+                className={`fas ${understaffed ? 'fa-triangle-exclamation' : isBigPour ? 'fa-fire' : 'fa-users'} text-[9px]`}
+            />
+            {understaffed
+                ? `${isBigPour ? 'Big pour · ' : ''}+${shortfall} trucks`
+                : isBigPour
+                  ? `Big Pour · ${rate} yd/hr`
+                  : `Needs ${needed} trucks`}
+        </span>
     )
 }
 
@@ -822,11 +937,604 @@ const compareOrders = (a, b, sortKey) => {
     return cmp || compareByPlant(a, b) || compareByStartTime(a, b)
 }
 
-function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode }) {
+/**
+ * Rich hover modal explaining the truck coverage math for a given order in
+ * plain English. Replaces the raw `title=` tooltip so dispatchers get a
+ * scannable breakdown of what's feeding the number.
+ *
+ * Positioned absolutely within the containing cell (which must be
+ * `position: relative`). Shown on hover of the parent cell via Tailwind's
+ * `group-hover:` pattern — no state needed.
+ */
+function TruckCoverageHoverCard({
+    accentColor,
+    bigPour,
+    computed,
+    customer,
+    differsFromDispatch,
+    dispatchTrucks,
+    helpInWindow,
+    liveTravel,
+    onMouseEnter,
+    onMouseLeave,
+    orderNum,
+    overbooked,
+    plantCode,
+    poolAfter,
+    poolAfterEffective,
+    poolAtStart,
+    poolSource,
+    recommendedMoveTime,
+    timing,
+    yardage
+}) {
+    const statusColor = overbooked ? '#dc2626' : '#16a34a'
+    const statusIcon = overbooked ? 'fa-triangle-exclamation' : 'fa-circle-check'
+    const statusTitle = overbooked ? 'This order will run behind' : 'This order is covered'
+    const shortfall = overbooked && Number.isFinite(poolAfterEffective) ? -poolAfterEffective : 0
+    const statusSub = overbooked
+        ? `${plantCode} is short ${shortfall} truck${shortfall === 1 ? '' : 's'} for this pour. Consider sending help from another plant, or accept that the job will start slow.`
+        : `${plantCode} has enough trucks to keep this pour on pace.`
     return (
         <div
-            className="rounded-xl overflow-x-auto"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+            className="fixed rounded-xl p-5 text-left font-normal normal-case"
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-medium)',
+                boxShadow:
+                    '0 40px 80px -20px rgba(0, 0, 0, 0.45), 0 12px 30px -10px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.04)',
+                color: 'var(--text-primary)',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                left: '50%',
+                letterSpacing: 'normal',
+                maxHeight: '85vh',
+                maxWidth: 'min(420px, 92vw)',
+                minWidth: 360,
+                overflowY: 'auto',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                whiteSpace: 'normal',
+                zIndex: 1000
+            }}
+        >
+            {/* Header */}
+            <div
+                className="flex items-center gap-2 pb-3 mb-3"
+                style={{ borderBottom: '1px solid var(--border-light)' }}
+            >
+                <div
+                    className="flex items-center justify-center rounded-lg shrink-0"
+                    style={{
+                        background: `${accentColor}14`,
+                        color: accentColor,
+                        height: 34,
+                        width: 34
+                    }}
+                >
+                    <i className="fas fa-truck text-[14px]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                        Truck Coverage
+                    </div>
+                    <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                        {orderNum ? `#${orderNum}` : ''}
+                        {orderNum && customer ? ' · ' : ''}
+                        {customer || `Plant ${plantCode}`}
+                    </div>
+                </div>
+            </div>
+
+            {/* Required */}
+            <HoverRow
+                icon="fa-list-check"
+                iconColor={accentColor}
+                label="Trucks needed"
+                value={`${Number.isFinite(computed) ? computed : '—'} truck${computed === 1 ? '' : 's'}`}
+            >
+                {bigPour && <HoverNote>Big pour ({yardage}+ yd) — we require at least 12 trucks.</HoverNote>}
+                {liveTravel && <HoverNote>Based on live Google traffic times.</HoverNote>}
+            </HoverRow>
+
+            {/* Starting pool */}
+            {poolSource && (
+                <HoverRow
+                    icon="fa-warehouse"
+                    iconColor="#0ea5e9"
+                    label={`Plant ${plantCode}`}
+                    value={`${poolSource.base} active assigned mixer${poolSource.base === 1 ? '' : 's'}`}
+                >
+                    {(poolSource.send > 0 || poolSource.recv > 0) && (
+                        <HoverNote>
+                            {poolSource.recv > 0 && (
+                                <>
+                                    <span style={{ color: '#16a34a', fontWeight: 600 }}>
+                                        +{poolSource.recv} help coming in
+                                    </span>
+                                    {poolSource.send > 0 ? ' · ' : ''}
+                                </>
+                            )}
+                            {poolSource.send > 0 && (
+                                <span style={{ color: '#dc2626', fontWeight: 600 }}>
+                                    −{poolSource.send} sent elsewhere
+                                </span>
+                            )}
+                        </HoverNote>
+                    )}
+                </HoverRow>
+            )}
+
+            {/* Trucks in rotation at dispatch time */}
+            {Number.isFinite(poolAtStart) && (
+                <HoverRow
+                    icon="fa-clock"
+                    iconColor="#8b5cf6"
+                    label="Trucks in rotation"
+                    value={`${poolAtStart} truck${poolAtStart === 1 ? '' : 's'} at plant`}
+                >
+                    {overbooked ? (
+                        <HoverNote>
+                            <span style={{ color: '#dc2626', fontWeight: 600 }}>
+                                {bigPour
+                                    ? `This order won't have enough trucks to maintain 120 yd/hr loaded.`
+                                    : `${plantCode} won't have trucks available at this point — this order will be late.`}
+                            </span>
+                        </HoverNote>
+                    ) : poolAfter < 0 ? (
+                        <HoverNote>
+                            Starts <b style={{ color: '#d97706' }}>{-poolAfter}</b> short, but {helpInWindow} truck
+                            {helpInWindow === 1 ? '' : 's'} arriving mid-pour will cover the later trips.
+                        </HoverNote>
+                    ) : (
+                        <HoverNote>
+                            There {poolAfter === 1 ? 'is' : 'are'}{' '}
+                            <b style={{ color: 'var(--text-primary)' }}>{poolAfter}</b> truck
+                            {poolAfter === 1 ? '' : 's'} available at this plant after sending out{' '}
+                            <b style={{ color: 'var(--text-primary)' }}>{computed}</b> truck
+                            {computed === 1 ? '' : 's'} for this order.
+                        </HoverNote>
+                    )}
+                </HoverRow>
+            )}
+
+            {/* Help during pour */}
+            {helpInWindow > 0 && (
+                <HoverRow
+                    icon="fa-right-to-bracket"
+                    iconColor="#16a34a"
+                    label="Extra help mid-pour"
+                    value={`+${helpInWindow} truck${helpInWindow === 1 ? '' : 's'}`}
+                >
+                    <HoverNote>
+                        Trucks returning from other jobs (or help arriving) land at {plantCode} while this pour is still
+                        running — they&apos;ll cover later trips.
+                    </HoverNote>
+                </HoverRow>
+            )}
+
+            {/* Result */}
+            <div className="flex items-start gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-light)' }}>
+                <i className={`fas ${statusIcon} text-[16px] mt-0.5`} style={{ color: statusColor }} />
+                <div>
+                    <div className="text-[12px] font-bold" style={{ color: statusColor }}>
+                        {statusTitle}
+                    </div>
+                    <div className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                        {statusSub}
+                    </div>
+                </div>
+            </div>
+
+            {/* Estimated arrival / completion — only when running behind */}
+            {overbooked && timing && (
+                <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-light)' }}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                        <div
+                            className="flex items-center justify-center rounded-md shrink-0"
+                            style={{
+                                background: 'rgba(220, 38, 38, 0.14)',
+                                color: '#dc2626',
+                                height: 22,
+                                width: 22
+                            }}
+                        >
+                            <i className="fas fa-stopwatch text-[11px]" />
+                        </div>
+                        <div className="text-[12px] font-bold" style={{ color: '#dc2626' }}>
+                            Real-world timing
+                        </div>
+                    </div>
+                    <div className="text-[11px] leading-relaxed pl-7" style={{ color: 'var(--text-secondary)' }}>
+                        {Number.isFinite(timing.firstArrivalMin) && (
+                            <div>
+                                First truck at job:{' '}
+                                <b style={{ color: 'var(--text-primary)' }}>
+                                    {formatMinutesClock(timing.firstArrivalMin)}
+                                </b>
+                            </div>
+                        )}
+                        <div>
+                            Pour finishes around{' '}
+                            <b style={{ color: '#dc2626' }}>{formatMinutesClock(timing.estimatedCompletionMin)}</b>{' '}
+                            <span style={{ color: 'var(--text-tertiary)' }}>
+                                (vs. scheduled {formatMinutesClock(timing.scheduledCompletionMin)})
+                            </span>
+                        </div>
+                        {timing.delayMin > 0 && (
+                            <div className="mt-0.5">
+                                <b style={{ color: '#dc2626' }}>
+                                    ~
+                                    {timing.delayMin >= 60
+                                        ? `${Math.floor(timing.delayMin / 60)}h ${timing.delayMin % 60}m`
+                                        : `${timing.delayMin} min`}
+                                </b>{' '}
+                                behind — pouring with {timing.actualTrucks} truck
+                                {timing.actualTrucks === 1 ? '' : 's'} instead of {timing.requiredTrucks}.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Move recommendation — only when overbooked AND we found a viable later window */}
+            {overbooked && Number.isFinite(recommendedMoveTime) && (
+                <div
+                    className="flex items-start gap-2 mt-3 pt-3"
+                    style={{ borderTop: '1px solid var(--border-light)' }}
+                >
+                    <div
+                        className="flex items-center justify-center rounded-md shrink-0 mt-0.5"
+                        style={{
+                            background: 'rgba(14, 165, 233, 0.14)',
+                            color: '#0ea5e9',
+                            height: 22,
+                            width: 22
+                        }}
+                    >
+                        <i className="fas fa-calendar-xmark text-[11px]" />
+                    </div>
+                    <div className="text-[11px] leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
+                        <div className="font-bold text-[12px]" style={{ color: '#0ea5e9' }}>
+                            Suggested move
+                        </div>
+                        Try starting this order at{' '}
+                        <b style={{ color: 'var(--text-primary)' }}>{formatMinutesClock(recommendedMoveTime)}</b> —
+                        that&apos;s the earliest {plantCode} will have {computed} truck
+                        {computed === 1 ? '' : 's'} free to run the full pour.
+                    </div>
+                </div>
+            )}
+            {overbooked && !Number.isFinite(recommendedMoveTime) && (
+                <div
+                    className="flex items-start gap-2 mt-3 pt-3"
+                    style={{ borderTop: '1px solid var(--border-light)' }}
+                >
+                    <div
+                        className="flex items-center justify-center rounded-md shrink-0 mt-0.5"
+                        style={{
+                            background: 'rgba(217, 119, 6, 0.14)',
+                            color: '#d97706',
+                            height: 22,
+                            width: 22
+                        }}
+                    >
+                        <i className="fas fa-calendar-xmark text-[11px]" />
+                    </div>
+                    <div className="text-[11px] leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
+                        No time later today has enough capacity — {plantCode} will need help from another plant to cover
+                        this order.
+                    </div>
+                </div>
+            )}
+
+            {/* Jonel mismatch */}
+            {differsFromDispatch && dispatchTrucks > 0 && (
+                <div
+                    className="flex items-start gap-2 mt-3 pt-3"
+                    style={{ borderTop: '1px solid var(--border-light)' }}
+                >
+                    <i className="fas fa-circle-info text-[14px] mt-0.5" style={{ color: '#d97706' }} />
+                    <div className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                        Jonel booked <b>{dispatchTrucks}</b>, but our math says you really need <b>{computed}</b>. Go
+                        with our number — Jonel&apos;s count is often off.
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function HoverRow({ children, icon, iconColor, label, value }) {
+    return (
+        <div className="flex items-start gap-2 py-1.5">
+            <div
+                className="flex items-center justify-center rounded-md shrink-0 mt-0.5"
+                style={{
+                    background: `${iconColor}14`,
+                    color: iconColor,
+                    height: 22,
+                    width: 22
+                }}
+            >
+                <i className={`fas ${icon} text-[11px]`} />
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                        {label}
+                    </span>
+                    <span className="text-[12px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                        {value}
+                    </span>
+                </div>
+                {children}
+            </div>
+        </div>
+    )
+}
+
+function HoverNote({ children }) {
+    return (
+        <div className="text-[10.5px] mt-0.5 leading-snug" style={{ color: 'var(--text-tertiary)' }}>
+            {children}
+        </div>
+    )
+}
+
+/**
+ * Shared visual shell for every non-order row in the schedule (truck returns,
+ * help transfers, send-home recommendations, trade-off decisions, open-slot
+ * suggestions). Keeps the visual rhythm consistent so order rows always read
+ * as the "primary" content while synthetic rows feel like quiet annotations.
+ *
+ * Layout:
+ *   [accent time col] [plant badge col] [pill + primary + secondary + chips]
+ */
+function SyntheticRow({ accentColor, chips, icon, pillIcon, pillLabel, plantCell, primary, secondary, time, tint }) {
+    return (
+        <tr
+            style={{
+                background: tint,
+                borderLeft: `3px solid ${accentColor}`,
+                borderTop: '1px solid var(--border-light)'
+            }}
+        >
+            <td
+                className="px-3 py-2 font-mono font-bold whitespace-nowrap align-top"
+                style={{ color: accentColor, width: 1 }}
+            >
+                <span className="inline-flex items-center gap-1.5">
+                    <i className={`fas ${icon} text-[11px]`} />
+                    {formatMinutesClock(time)}
+                </span>
+            </td>
+            <td className="px-3 py-2 whitespace-nowrap align-top" style={{ width: 1 }}>
+                {plantCell}
+            </td>
+            <td className="px-3 py-2 align-top" colSpan={11}>
+                <div className="flex items-start gap-2.5 text-[12px] flex-wrap">
+                    <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
+                        style={{ background: accentColor, color: '#fff' }}
+                    >
+                        <i className={`fas ${pillIcon} text-[8px]`} />
+                        {pillLabel}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <div className="leading-snug" style={{ color: 'var(--text-primary)' }}>
+                            {primary}
+                        </div>
+                        {secondary && (
+                            <div className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                                {secondary}
+                            </div>
+                        )}
+                        {chips}
+                    </div>
+                </div>
+            </td>
+        </tr>
+    )
+}
+
+function ScheduleTable({
+    accentColor,
+    getTravelOverrides,
+    helpRows = [],
+    isPlantFiltered = false,
+    keyForOrder,
+    onOpenLocation,
+    orders,
+    plantCityByCode,
+    plantNameByCode,
+    poolSourceByCode,
+    poolTimeline,
+    poolTimelinesByPlant,
+    sendHomeRows = [],
+    suggestedSlotRows = []
+}) {
+    /** Synthetic rows (help, send-home, truck returns, slot suggestions) are
+     *  only meaningful in the context of a single plant — they clutter the
+     *  table when every plant's rows are mixed together. Gate them on an
+     *  active plant filter. */
+    const visiblePlantCodes = useMemo(() => {
+        const set = new Set()
+        for (const order of orders) if (order.plantCode) set.add(order.plantCode)
+        return set
+    }, [orders])
+    const filteredHelpRows = useMemo(
+        () =>
+            isPlantFiltered
+                ? helpRows.filter((row) => visiblePlantCodes.has(row.fromPlant) || visiblePlantCodes.has(row.toPlant))
+                : [],
+        [helpRows, visiblePlantCodes, isPlantFiltered]
+    )
+    const filteredSendHomeRows = useMemo(
+        () => (isPlantFiltered ? sendHomeRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
+        [sendHomeRows, visiblePlantCodes, isPlantFiltered]
+    )
+    const filteredSuggestedSlotRows = useMemo(
+        () => (isPlantFiltered ? suggestedSlotRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
+        [suggestedSlotRows, visiblePlantCodes, isPlantFiltered]
+    )
+
+    /* ── Truck-coverage hover modal state ─────────────────────────────────
+       Tracks which order's modal is open. `openHover(key)` shows the modal
+       and cancels any pending close; `queueCloseHover` schedules a delayed
+       close so the user has time to move their cursor from the cell onto
+       the modal itself. Both the cell trigger and the modal get the same
+       handlers, so hovering either keeps it open. */
+    const [hoveredKey, setHoveredKey] = useState(null)
+    const hoverCloseTimer = useRef(null)
+    const cancelHoverClose = useCallback(() => {
+        if (hoverCloseTimer.current) {
+            clearTimeout(hoverCloseTimer.current)
+            hoverCloseTimer.current = null
+        }
+    }, [])
+    const openHover = useCallback(
+        (key) => {
+            cancelHoverClose()
+            setHoveredKey(key)
+        },
+        [cancelHoverClose]
+    )
+    const queueCloseHover = useCallback(() => {
+        cancelHoverClose()
+        hoverCloseTimer.current = setTimeout(() => setHoveredKey(null), 400)
+    }, [cancelHoverClose])
+    useEffect(() => () => cancelHoverClose(), [cancelHoverClose])
+    /**
+     * Build a chronological list of real order rows interleaved with synthetic
+     * "trucks returning" rows, one per order at that order's last-truck-back
+     * timestamp. The return row styles differently (green tint, left accent)
+     * so dispatchers see exactly when capacity frees up at each plant without
+     * floating overlays.
+     *
+     * Return rows only interleave when the sort is time-based (default sort
+     * plant→time, or explicit start-time). For yardage/trucks/customer sorts
+     * returns are skipped because they'd break the chosen ordering.
+     */
+    const tableRows = useMemo(() => {
+        const rows = []
+        for (const order of orders) rows.push({ kind: 'order', order, time: timeToMinutes(order.startTime) })
+        if (isPlantFiltered) {
+            for (const order of orders) {
+                const entry = poolTimeline?.[keyForOrder(order)]
+                if (!entry || !Number.isFinite(entry.lastReturnMinutes)) continue
+                rows.push({
+                    count: entry.truckCount,
+                    kind: 'return',
+                    order,
+                    plantCode: order.plantCode,
+                    poolAfterReturn: entry.poolAfterReturn,
+                    time: entry.lastReturnMinutes,
+                    tripsPerTruck: entry.tripsPerTruck,
+                    tripsTotal: entry.tripsTotal
+                })
+            }
+        }
+        for (const row of filteredHelpRows) {
+            rows.push({
+                count: row.count,
+                direction: row.direction,
+                fromPlant: row.fromPlant,
+                helpKey: `${row.assignmentIndex}-${row.direction}-${row.time}`,
+                kind: 'help',
+                time: row.time,
+                toPlant: row.toPlant
+            })
+        }
+        // Combine a send-home row with any open-slot rows at the same plant
+        // that fit the true spare capacity at that moment. "Surplus" here is
+        // the cumulative min-future pool — trucks that will never be needed
+        // for existing orders from this moment forward. Slots whose min-truck
+        // floor fits that surplus merge into a single trade-off row.
+        const slotConsumed = new Set()
+        const sendHomeConsumed = new Set()
+        filteredSendHomeRows.forEach((sh, shIdx) => {
+            const available = Number.isFinite(sh.surplus) ? sh.surplus : sh.count
+            const fittingIdxs = []
+            filteredSuggestedSlotRows.forEach((slot, sIdx) => {
+                if (slotConsumed.has(sIdx)) return
+                if (slot.plantCode !== sh.plantCode) return
+                if (slot.minTrucks > available) return
+                fittingIdxs.push(sIdx)
+            })
+            if (fittingIdxs.length === 0) return
+            sendHomeConsumed.add(shIdx)
+            fittingIdxs.forEach((i) => slotConsumed.add(i))
+            rows.push({
+                count: sh.count,
+                kind: 'tradeoff',
+                plantCode: sh.plantCode,
+                poolAfter: sh.poolAfter,
+                slots: fittingIdxs.map((i) => filteredSuggestedSlotRows[i]),
+                surplus: available,
+                time: sh.time,
+                tradeoffKey: `${sh.plantCode}-${sh.time}-${shIdx}`
+            })
+        })
+        filteredSendHomeRows.forEach((row, i) => {
+            if (sendHomeConsumed.has(i)) return
+            rows.push({
+                count: row.count,
+                kind: 'sendHome',
+                plantCode: row.plantCode,
+                poolAfter: row.poolAfter,
+                sendHomeKey: `${row.plantCode}-${row.time}-${i}`,
+                time: row.time
+            })
+        })
+        filteredSuggestedSlotRows.forEach((row, i) => {
+            if (slotConsumed.has(i)) return
+            rows.push({
+                durationMin: row.durationMin,
+                kind: 'slot',
+                label: row.label,
+                minTrucks: row.minTrucks,
+                plantCode: row.plantCode,
+                slotKey: `${row.key}-${row.plantCode}-${row.time}`,
+                time: row.time,
+                truckRange: row.truckRange
+            })
+        })
+        rows.sort((a, b) => {
+            const at = Number.isFinite(a.time) ? a.time : Infinity
+            const bt = Number.isFinite(b.time) ? b.time : Infinity
+            if (at !== bt) return at - bt
+            // At the same minute: returns first (pool up), then help, then
+            // send-home / trade-off, then slot suggestions, then real orders.
+            const order = { help: 1, order: 4, return: 0, sendHome: 2, slot: 3, tradeoff: 2 }
+            return (order[a.kind] ?? 5) - (order[b.kind] ?? 5)
+        })
+        return rows
+    }, [
+        orders,
+        poolTimeline,
+        keyForOrder,
+        filteredHelpRows,
+        filteredSendHomeRows,
+        filteredSuggestedSlotRows,
+        isPlantFiltered
+    ])
+
+    return (
+        <div
+            className="rounded-xl overflow-auto"
+            style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-light)',
+                // Give the table its own scroll viewport so the header can
+                // actually stick when the dispatcher scrolls through a long
+                // schedule. Height is capped to "viewport minus surrounding
+                // chrome" (page nav, title, KPIs, filters) so the sticky
+                // header pins within the table, not within a container that
+                // itself scrolls out of view.
+                maxHeight: 'calc(100vh - 260px)'
+            }}
         >
             <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
                 <thead>
@@ -843,8 +1551,8 @@ function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode })
                             'Trucks',
                             'Travel',
                             'Spacing',
-                            'PO',
-                            'Contact'
+                            'Contact',
+                            'Dispatcher'
                         ].map((h) => (
                             <th
                                 key={h}
@@ -865,20 +1573,248 @@ function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode })
                     </tr>
                 </thead>
                 <tbody>
-                    {orders.map((o, idx) => {
+                    {tableRows.map((row, idx) => {
+                        if (row.kind === 'return') {
+                            const plantName = plantNameByCode?.[row.plantCode] || ''
+                            let tripChip = null
+                            if (
+                                Number.isFinite(row.tripsTotal) &&
+                                Number.isFinite(row.tripsPerTruck) &&
+                                row.tripsPerTruck > 1
+                            ) {
+                                const ceil = row.tripsPerTruck
+                                const floorCount = ceil - 1
+                                const extra = row.tripsTotal - row.count * floorCount
+                                const base = row.count - extra
+                                const label = base > 0 ? `${extra}×${ceil} + ${base}×${floorCount}` : `${ceil}× each`
+                                tripChip = (
+                                    <div className="mt-1 flex items-center gap-1.5 text-[10.5px]">
+                                        <span
+                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-semibold"
+                                            style={{ background: 'rgba(15, 118, 110, 0.15)', color: '#0f766e' }}
+                                            title={
+                                                base > 0
+                                                    ? `${extra} trucks ran ${ceil} trips, ${base} ran ${floorCount} — ${row.tripsTotal} total.`
+                                                    : `Each truck ran ${ceil} trips — ${row.tripsTotal} total.`
+                                            }
+                                        >
+                                            <i className="fas fa-arrows-rotate text-[8px]" />
+                                            {label}
+                                        </span>
+                                        <span style={{ color: 'var(--text-tertiary)' }}>
+                                            {row.tripsTotal} total trips
+                                        </span>
+                                    </div>
+                                )
+                            }
+                            return (
+                                <SyntheticRow
+                                    key={`return-${keyForOrder(row.order)}`}
+                                    accentColor="#16a34a"
+                                    chips={tripChip}
+                                    icon="fa-arrow-rotate-left"
+                                    pillIcon="fa-truck-fast"
+                                    pillLabel={`+${row.count} back`}
+                                    plantCell={
+                                        <PlantBadge code={row.plantCode} fallback={accentColor} name={plantName} />
+                                    }
+                                    primary={
+                                        <>
+                                            <b>{row.plantCode}</b> now has{' '}
+                                            <b>{Number.isFinite(row.poolAfterReturn) ? row.poolAfterReturn : '—'}</b>{' '}
+                                            operator
+                                            {row.poolAfterReturn === 1 ? '' : 's'} available
+                                        </>
+                                    }
+                                    secondary={
+                                        <>
+                                            {row.count} truck{row.count === 1 ? '' : 's'} back from{' '}
+                                            <b>#{row.order.orderNum || '—'}</b> ·{' '}
+                                            {clean(row.order.customer) || 'Unknown customer'}
+                                        </>
+                                    }
+                                    time={row.time}
+                                    tint="rgba(22, 163, 74, 0.06)"
+                                />
+                            )
+                        }
+                        if (row.kind === 'tradeoff') {
+                            const plantName = plantNameByCode?.[row.plantCode] || ''
+                            const freeCount = Number.isFinite(row.surplus) ? row.surplus : row.count
+                            return (
+                                <SyntheticRow
+                                    key={`tradeoff-${row.tradeoffKey}`}
+                                    accentColor="#d97706"
+                                    chips={
+                                        <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[11px]">
+                                            <span
+                                                className="inline-flex items-center gap-1 font-semibold"
+                                                style={{ color: '#0369a1' }}
+                                            >
+                                                <i className="fas fa-calendar-plus text-[9px]" />
+                                                Book:
+                                            </span>
+                                            {row.slots.map((slot) => (
+                                                <span
+                                                    key={slot.key}
+                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-semibold text-[10.5px]"
+                                                    style={{
+                                                        background: 'rgba(14, 165, 233, 0.12)',
+                                                        color: '#0369a1'
+                                                    }}
+                                                    title={`${slot.minTrucks}+ trucks idle for ~${Math.round((slot.durationMin / 60) * 10) / 10}h starting ${formatMinutesClock(slot.time)}`}
+                                                >
+                                                    {slot.label}
+                                                </span>
+                                            ))}
+                                            <span style={{ color: 'var(--text-tertiary)' }}>or</span>
+                                            <span
+                                                className="inline-flex items-center gap-1 font-semibold"
+                                                style={{ color: '#64748b' }}
+                                            >
+                                                <i className="fas fa-house-user text-[9px]" />
+                                                Send {freeCount} home
+                                            </span>
+                                        </div>
+                                    }
+                                    icon="fa-scale-balanced"
+                                    pillIcon="fa-scale-balanced"
+                                    pillLabel={`Decision · ${freeCount} idle`}
+                                    plantCell={
+                                        <PlantBadge code={row.plantCode} fallback={accentColor} name={plantName} />
+                                    }
+                                    primary={
+                                        <>
+                                            <b>{row.plantCode}</b> has <b>{freeCount}</b> truck
+                                            {freeCount === 1 ? '' : 's'} free — book new work, or send them home.
+                                        </>
+                                    }
+                                    time={row.time}
+                                    tint="rgba(217, 119, 6, 0.07)"
+                                />
+                            )
+                        }
+                        if (row.kind === 'slot') {
+                            const plantName = plantNameByCode?.[row.plantCode] || ''
+                            const hours = Math.round((row.durationMin / 60) * 10) / 10
+                            return (
+                                <SyntheticRow
+                                    key={`slot-${row.slotKey}`}
+                                    accentColor="#0ea5e9"
+                                    icon="fa-calendar-plus"
+                                    pillIcon="fa-calendar-plus"
+                                    pillLabel={row.label}
+                                    plantCell={
+                                        <PlantBadge code={row.plantCode} fallback={accentColor} name={plantName} />
+                                    }
+                                    primary={
+                                        <>
+                                            <b>{row.plantCode}</b> could take a <b>{row.truckRange}-truck</b> pour
+                                            starting here.
+                                        </>
+                                    }
+                                    secondary={
+                                        <>
+                                            {row.minTrucks}+ trucks idle · ~{hours}h window from{' '}
+                                            {formatMinutesClock(row.time)}
+                                        </>
+                                    }
+                                    time={row.time}
+                                    tint="rgba(14, 165, 233, 0.06)"
+                                />
+                            )
+                        }
+                        if (row.kind === 'sendHome') {
+                            const plantName = plantNameByCode?.[row.plantCode] || ''
+                            return (
+                                <SyntheticRow
+                                    key={`send-home-${row.sendHomeKey}`}
+                                    accentColor="#64748b"
+                                    icon="fa-house-user"
+                                    pillIcon="fa-door-open"
+                                    pillLabel="Clock out"
+                                    plantCell={
+                                        <PlantBadge code={row.plantCode} fallback={accentColor} name={plantName} />
+                                    }
+                                    primary={
+                                        <>
+                                            Send <b>{row.count}</b> operator
+                                            {row.count === 1 ? '' : 's'} home from <b>{row.plantCode}</b>.
+                                        </>
+                                    }
+                                    secondary={`Pool stays covered for the rest of the day.`}
+                                    time={row.time}
+                                    tint="rgba(100, 116, 139, 0.07)"
+                                />
+                            )
+                        }
+                        if (row.kind === 'help') {
+                            const isOutbound = row.direction === 'outbound'
+                            const fromName = plantNameByCode?.[row.fromPlant] || ''
+                            const toName = plantNameByCode?.[row.toPlant] || ''
+                            const accent = isOutbound ? '#3b82f6' : '#8b5cf6'
+                            const tint = isOutbound ? 'rgba(59, 130, 246, 0.06)' : 'rgba(139, 92, 246, 0.06)'
+                            return (
+                                <SyntheticRow
+                                    key={`help-${row.helpKey}`}
+                                    accentColor={accent}
+                                    icon={isOutbound ? 'fa-paper-plane' : 'fa-rotate-left'}
+                                    pillIcon={isOutbound ? 'fa-truck-fast' : 'fa-truck-ramp-box'}
+                                    pillLabel={isOutbound ? 'Help sent' : 'Help returning'}
+                                    plantCell={
+                                        <div className="flex items-center gap-1.5">
+                                            <PlantBadge code={row.fromPlant} fallback={accentColor} name={fromName} />
+                                            <i
+                                                className="fas fa-arrow-right text-[9px]"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            />
+                                            <PlantBadge code={row.toPlant} fallback={accentColor} name={toName} />
+                                        </div>
+                                    }
+                                    primary={
+                                        isOutbound ? (
+                                            <>
+                                                <b>{row.count}</b> truck{row.count === 1 ? '' : 's'} leaving{' '}
+                                                <b>{row.fromPlant}</b> to back up <b>{row.toPlant}</b>.
+                                            </>
+                                        ) : (
+                                            <>
+                                                <b>{row.count}</b> help truck{row.count === 1 ? '' : 's'} heading home
+                                                to <b>{row.fromPlant}</b>.
+                                            </>
+                                        )
+                                    }
+                                    secondary={
+                                        isOutbound
+                                            ? `${row.toPlant}'s pool goes up by ${row.count} until they return.`
+                                            : `${row.fromPlant}'s pool goes back up by ${row.count}.`
+                                    }
+                                    time={row.time}
+                                    tint={tint}
+                                />
+                            )
+                        }
+                        const o = row.order
                         const yardage = parseFloat(o.yardage) || 0
                         const trucks = parseFloat(o.truckCount) || 0
                         const loadSize = parseFloat(o.loadSize) || 0
                         const plantName = plantNameByCode?.[o.plantCode] || ''
                         const status = getOrderStatus(o.startTime)
                         const isCancelled = status?.kind === 'cancelled'
+                        const isTest = status?.kind === 'test'
+                        const isNonProduction = isCancelled || isTest
+                        const rowKey = keyForOrder(o)
                         return (
                             <tr
                                 key={`${o.plantCode}-${o.orderId || idx}`}
                                 style={{
                                     borderTop: '1px solid var(--border-light)',
-                                    background: isCancelled ? 'rgba(220, 38, 38, 0.05)' : undefined,
-                                    opacity: isCancelled ? 0.7 : 1
+                                    background: isCancelled
+                                        ? 'rgba(220, 38, 38, 0.05)'
+                                        : isTest
+                                          ? 'rgba(99, 102, 241, 0.05)'
+                                          : undefined,
+                                    opacity: isNonProduction ? 0.7 : 1
                                 }}
                             >
                                 <td
@@ -935,17 +1871,43 @@ function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode })
                                                 </span>
                                             )
                                         }
+                                        // Fallback: when dispatch didn't enter a city, borrow the
+                                        // plant's city so the geocoder still lands in the right
+                                        // area — and flag that it was inferred.
+                                        const fallbackCity = city ? '' : plantCityByCode?.[o.plantCode] || ''
+                                        const effectiveCity = city || fallbackCity
+                                        const usingFallback = !city && !!fallbackCity
+                                        const displayText = [address, effectiveCity]
+                                            .filter(Boolean)
+                                            .join(', ')
+                                            .toUpperCase()
+                                        const orderForMap = usingFallback ? { ...o, city: fallbackCity } : o
                                         return (
-                                            <button
-                                                type="button"
-                                                onClick={() => onOpenLocation?.(o)}
-                                                className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate max-w-full uppercase tracking-wide font-semibold"
-                                                style={{ color: accentColor, fontSize: 12 }}
-                                                title={`Open map for ${composeAddress(o)}`}
-                                            >
-                                                <i className="fas fa-location-dot text-[10px] mr-1.5 opacity-70" />
-                                                {composeAddress(o).toUpperCase()}
-                                            </button>
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onOpenLocation?.(orderForMap)}
+                                                    className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 uppercase tracking-wide font-semibold"
+                                                    style={{ color: accentColor, fontSize: 12 }}
+                                                    title={`Open map for ${composeAddress(orderForMap)}`}
+                                                >
+                                                    <i className="fas fa-location-dot text-[10px] mr-1.5 opacity-70" />
+                                                    {displayText}
+                                                </button>
+                                                {usingFallback && (
+                                                    <span
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
+                                                        style={{
+                                                            background: 'rgba(217, 119, 6, 0.15)',
+                                                            color: '#b45309'
+                                                        }}
+                                                        title={`City wasn't entered by dispatch — we filled in "${fallbackCity}" from plant ${o.plantCode}. The actual delivery city could be different.`}
+                                                    >
+                                                        <i className="fas fa-circle-exclamation text-[9px]" />
+                                                        City?
+                                                    </span>
+                                                )}
+                                            </div>
                                         )
                                     })()}
                                 </td>
@@ -976,12 +1938,122 @@ function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode })
                                 >
                                     {loadSize > 0 ? loadSize : '—'}
                                 </td>
-                                <td
-                                    className="px-3 py-2 font-mono text-right whitespace-nowrap"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
-                                    {trucks > 0 ? trucks : '—'}
-                                </td>
+                                {(() => {
+                                    if (isNonProduction) {
+                                        return (
+                                            <td
+                                                className="px-3 py-2 font-mono text-right whitespace-nowrap"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
+                                                —
+                                            </td>
+                                        )
+                                    }
+                                    const overrides = getTravelOverrides ? getTravelOverrides(o) : undefined
+                                    const computed = getCalculatedTruckCount(o, overrides)
+                                    const dispatchTrucks = parseFloat(o.truckCount) || 0
+                                    const differsFromDispatch =
+                                        computed != null && dispatchTrucks > 0 && computed !== dispatchTrucks
+                                    const poolEntry = poolTimeline?.[rowKey]
+                                    const poolAtStart = poolEntry?.poolAtDispatch
+                                    const poolAfter = poolEntry?.poolAfterDispatch
+                                    const poolAfterEffective = Number.isFinite(poolEntry?.poolAfterDispatchEffective)
+                                        ? poolEntry.poolAfterDispatchEffective
+                                        : poolAfter
+                                    const helpInWindow = poolEntry?.inboundDuringPour || 0
+                                    // Count help arriving during the pour window — it covers later
+                                    // trips even if the first few are short.
+                                    const overbooked = Number.isFinite(poolAfterEffective) && poolAfterEffective < 0
+                                    // When an order is overbooked, recommend the earliest time the
+                                    // plant will actually be able to cover the full pour — so the
+                                    // dispatcher can pitch a specific "move to HH:MM" suggestion.
+                                    let recommendedMoveTime = null
+                                    if (overbooked && Number.isFinite(computed) && poolEntry) {
+                                        const timeline = poolTimelinesByPlant?.[o.plantCode]
+                                        const pourDuration = Math.max(
+                                            0,
+                                            (poolEntry.lastReturnMinutes ?? 0) - (poolEntry.dispatchMinutes ?? 0)
+                                        )
+                                        recommendedMoveTime = findNextViableStart(
+                                            timeline,
+                                            computed,
+                                            (poolEntry.dispatchMinutes ?? 0) + 1,
+                                            pourDuration
+                                        )
+                                    }
+                                    const poolSource = poolSourceByCode?.[o.plantCode]
+                                    // Estimate realistic timing for late orders — first truck
+                                    // arrival, estimated completion, and delay in minutes.
+                                    const timing =
+                                        overbooked && poolEntry ? estimateOrderTiming(o, poolEntry, overrides) : null
+                                    const isHovered = hoveredKey === rowKey
+                                    return (
+                                        <td
+                                            className="px-3 py-2 font-mono text-right whitespace-nowrap"
+                                            style={{ color: 'var(--text-secondary)', position: 'relative' }}
+                                            onMouseEnter={() => openHover(rowKey)}
+                                            onMouseLeave={queueCloseHover}
+                                        >
+                                            <div className="flex flex-col items-end gap-0.5">
+                                                <span
+                                                    className="inline-flex items-center gap-1 justify-end"
+                                                    style={{
+                                                        color: differsFromDispatch ? '#d97706' : 'var(--text-primary)',
+                                                        fontWeight: 600
+                                                    }}
+                                                >
+                                                    {differsFromDispatch && (
+                                                        <i className="fas fa-circle-info text-[10px]" />
+                                                    )}
+                                                    {computed != null ? computed : '—'}
+                                                    {Number.isFinite(poolAfterEffective) && (
+                                                        <span
+                                                            className="font-normal"
+                                                            style={{
+                                                                color: overbooked ? '#dc2626' : 'var(--text-tertiary)'
+                                                            }}
+                                                        >
+                                                            /{poolAfterEffective}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                {overbooked && (
+                                                    <span
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
+                                                        style={{ background: '#dc2626', color: '#fff' }}
+                                                    >
+                                                        <i className="fas fa-triangle-exclamation text-[8px]" />
+                                                        Will run behind
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {isHovered && (
+                                                <TruckCoverageHoverCard
+                                                    accentColor={accentColor}
+                                                    bigPour={isBigPourOrder(o)}
+                                                    computed={computed}
+                                                    customer={clean(o.customer)}
+                                                    differsFromDispatch={differsFromDispatch}
+                                                    dispatchTrucks={dispatchTrucks}
+                                                    helpInWindow={helpInWindow}
+                                                    liveTravel={!!overrides}
+                                                    onMouseEnter={() => openHover(rowKey)}
+                                                    onMouseLeave={queueCloseHover}
+                                                    orderNum={o.orderNum}
+                                                    overbooked={overbooked}
+                                                    plantCode={o.plantCode}
+                                                    poolAfter={poolAfter}
+                                                    poolAfterEffective={poolAfterEffective}
+                                                    poolAtStart={poolAtStart}
+                                                    poolSource={poolSource}
+                                                    recommendedMoveTime={recommendedMoveTime}
+                                                    timing={timing}
+                                                    yardage={yardage}
+                                                />
+                                            )}
+                                        </td>
+                                    )
+                                })()}
                                 <td
                                     className="px-3 py-2 font-mono whitespace-nowrap"
                                     style={{ color: 'var(--text-secondary)' }}
@@ -1001,17 +2073,36 @@ function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode })
                                     {clean(o.rate) || '—'}
                                 </td>
                                 <td
-                                    className="px-3 py-2 font-mono whitespace-nowrap"
+                                    className="px-3 py-2 whitespace-nowrap font-mono"
                                     style={{ color: 'var(--text-secondary)' }}
+                                    title={clean(o.phone) || undefined}
                                 >
-                                    {clean(o.poNumber) || '—'}
+                                    {(() => {
+                                        const phone = clean(o.phone)
+                                        if (!phone) return '—'
+                                        // Format 10-digit US phone as (XXX) XXX-XXXX for readability;
+                                        // anything else falls back to the raw digits.
+                                        const digits = phone.replace(/\D/g, '')
+                                        if (digits.length === 10) {
+                                            return (
+                                                <a
+                                                    href={`tel:${digits}`}
+                                                    className="hover:underline"
+                                                    style={{ color: accentColor }}
+                                                >
+                                                    ({digits.slice(0, 3)}) {digits.slice(3, 6)}-{digits.slice(6)}
+                                                </a>
+                                            )
+                                        }
+                                        return phone
+                                    })()}
                                 </td>
                                 <td
                                     className="px-3 py-2 whitespace-nowrap max-w-[180px] truncate"
                                     style={{ color: 'var(--text-secondary)' }}
-                                    title={[clean(o.contact), clean(o.phone)].filter(Boolean).join(' · ')}
+                                    title={clean(o.contact) || undefined}
                                 >
-                                    {clean(o.contact) || clean(o.phone) || '—'}
+                                    {clean(o.contact) || '—'}
                                 </td>
                             </tr>
                         )
@@ -1032,12 +2123,25 @@ function ScheduleTable({ accentColor, onOpenLocation, orders, plantNameByCode })
  */
 function PlanScheduleView({
     accentColor,
+    assignments = [],
     isMobile = false,
     onSwitchToPlanner,
     plantAddressByCode,
     plantNameByCode,
-    plantProduction
+    plantProduction,
+    stats = []
 }) {
+    /** Fallback city lookup: when an order's city is blank, we use the plant's
+     *  city so the map/geocoder still lands near the right area. */
+    const plantCityByCode = useMemo(() => {
+        const out = {}
+        Object.entries(plantAddressByCode || {}).forEach(([code, addr]) => {
+            const city = extractCityFromFullAddress(addr)
+            if (city) out[code] = city
+        })
+        return out
+    }, [plantAddressByCode])
+
     const [query, setQuery] = useState('')
     const [plantFilter, setPlantFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
@@ -1050,6 +2154,10 @@ function PlanScheduleView({
     const [mapOrder, setMapOrder] = useState(null)
     // Filter drawer is collapsed by default on mobile so the schedule fills the screen.
     const [filtersOpen, setFiltersOpen] = useState(!isMobile)
+    /** Live Google travel times keyed by `plantCode::jobAddress`. Used to
+     *  override the dispatch report's `toJobTime` when computing required
+     *  trucks — the table reflects reality, not the report's estimate. */
+    const [liveTravelByKey, setLiveTravelByKey] = useState({})
 
     /** Flat list of every order with plantCode attached. */
     const allOrders = useMemo(() => {
@@ -1067,13 +2175,209 @@ function PlanScheduleView({
         return Array.from(codes).sort()
     }, [allOrders])
 
-    /** Status counts (Scheduled / Same-day / Cancelled) for the status filter. */
+    /** Unique (plant → job) pairs that have addresses on both sides. Orders
+     *  missing a city borrow the plant's city so the geocoder doesn't fail
+     *  on an ambiguous street-only lookup. */
+    const travelPairs = useMemo(() => {
+        const seen = new Map()
+        for (const o of allOrders) {
+            const plantAddr = plantAddressByCode?.[o.plantCode]
+            if (!plantAddr || isLikelyBadAddress(clean(o.address))) continue
+            const fallbackCity = clean(o.city) ? '' : plantCityByCode?.[o.plantCode] || ''
+            const orderForGeocode = fallbackCity ? { ...o, city: fallbackCity } : o
+            const jobAddr = composeAddress(orderForGeocode)
+            if (!jobAddr) continue
+            const key = `${o.plantCode}::${jobAddr}`
+            if (!seen.has(key)) seen.set(key, { destination: jobAddr, key, origin: plantAddr })
+        }
+        return Array.from(seen.values())
+    }, [allOrders, plantAddressByCode, plantCityByCode])
+
+    /** Prefetch Google live travel for every unique pair. The edge function
+     *  caches by 15-min departure bucket, so repeat calls hit the cache
+     *  instead of the paid API. Runs in the background — helpers fall back
+     *  to the dispatch report's travel estimate until results land. */
+    useEffect(() => {
+        if (!travelPairs.length) return undefined
+        let cancelled = false
+        const pending = travelPairs.filter((p) => liveTravelByKey[p.key] === undefined)
+        if (!pending.length) return undefined
+        Promise.allSettled(
+            pending.map(async (pair) => {
+                const result = await TrafficService.fetchDistance(pair.origin, pair.destination)
+                if (cancelled || !result || result.error) return null
+                const seconds = result.durationInTrafficSeconds ?? result.durationSeconds ?? null
+                if (!Number.isFinite(seconds)) return null
+                return { key: pair.key, minutes: Math.max(1, Math.round(seconds / 60)) }
+            })
+        ).then((results) => {
+            if (cancelled) return
+            const next = {}
+            for (const r of results) {
+                if (r.status === 'fulfilled' && r.value) next[r.value.key] = r.value.minutes
+            }
+            if (Object.keys(next).length > 0) {
+                setLiveTravelByKey((prev) => ({ ...prev, ...next }))
+            }
+        })
+        return () => {
+            cancelled = true
+        }
+    }, [travelPairs, liveTravelByKey])
+
+    /** Travel overrides for an order — pulls live Google minutes when we have
+     *  them, otherwise falls back to letting the helper use the order's own
+     *  `toJobTime` field from the dispatch report. */
+    const getTravelOverrides = useCallback(
+        (order) => {
+            // Match the travel-pair key which uses the plant's city as a
+            // fallback when dispatch didn't enter one on the order.
+            const fallbackCity = clean(order.city) ? '' : plantCityByCode?.[order.plantCode] || ''
+            const orderForKey = fallbackCity ? { ...order, city: fallbackCity } : order
+            const key = `${order.plantCode}::${composeAddress(orderForKey)}`
+            const mins = liveTravelByKey[key]
+            if (!Number.isFinite(mins)) return undefined
+            return { toJobMin: mins, toPlantMin: mins }
+        },
+        [liveTravelByKey, plantCityByCode]
+    )
+
+    /** Canonical orderKey, mirroring what `computePlantPoolTimeline` builds. */
+    const keyForOrder = useCallback((order) => {
+        if (order.orderId) return order.orderId
+        const mins = timeToMinutes(order?.startTime)
+        return `${order.plantCode ?? 'unknown'}-${mins}-${order.orderNum ?? ''}`
+    }, [])
+
+    /** Per-plant pool breakdown — surfaced in the Trucks column tooltip so the
+     *  dispatcher can see where a plant's starting number comes from.
+     *  `starting` is still the effective count (base − send + recv) because
+     *  that's what reads cleanly in the tooltip; actual pool timing is now
+     *  driven by help-transfer events below. */
+    const poolSourceByCode = useMemo(() => {
+        const out = {}
+        ;(stats || []).forEach((s) => {
+            if (!s?.code) return
+            const base = Number.isFinite(s.base) ? s.base : 0
+            const send = Number.isFinite(s.send) ? s.send : 0
+            const recv = Number.isFinite(s.recv) ? s.recv : 0
+            out[s.code] = {
+                base,
+                send,
+                recv,
+                starting: base - send + recv
+            }
+        })
+        return out
+    }, [stats])
+
+    /** Initial pool is just the plant's base mixer count — Planner help is
+     *  applied as time-based events (below) so the pool goes up/down at the
+     *  actual transfer times instead of being baked in all at once. */
+    const initialPoolByCode = useMemo(() => {
+        const out = {}
+        ;(stats || []).forEach((s) => {
+            if (!s?.code) return
+            out[s.code] = Number.isFinite(s.base) ? s.base : 0
+        })
+        return out
+    }, [stats])
+
+    /**
+     * Time-based help transfers derived from Planner assignments.
+     *  - `time` (arrival at destination): sender loses trucks, receiver gains.
+     *  - `leaveTime` (trucks head back): receiver loses, sender regains.
+     *
+     * The pool must NOT be docked for help before it's sent or after it's
+     * returned — so we only emit rows when arrival time is known, and only
+     * pair a return when `leaveTime > arrivalTime` (otherwise the leave value
+     * is nonsense and would deduct from the destination mid-work).
+     */
+    const helpRows = useMemo(() => {
+        const rows = []
+        ;(assignments || []).forEach((a, idx) => {
+            if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
+            const count = parseInt(a.driverCount, 10) || 0
+            if (count <= 0) return
+            const arrivalMin = timeToMinutes(a.time)
+            if (!Number.isFinite(arrivalMin)) return
+            rows.push({
+                assignmentIndex: idx,
+                count,
+                direction: 'outbound',
+                fromPlant: a.fromPlant,
+                time: arrivalMin,
+                toPlant: a.toPlant
+            })
+            const leaveMin = timeToMinutes(a.leaveTime)
+            if (Number.isFinite(leaveMin) && leaveMin > arrivalMin) {
+                rows.push({
+                    assignmentIndex: idx,
+                    count,
+                    direction: 'return',
+                    fromPlant: a.fromPlant,
+                    time: leaveMin,
+                    toPlant: a.toPlant
+                })
+            }
+        })
+        return rows
+    }, [assignments])
+
+    /** Help transfers in the format expected by `computePlantPoolTimeline`. */
+    const helpTransfers = useMemo(() => {
+        const out = []
+        helpRows.forEach((row) => {
+            if (row.direction === 'outbound') {
+                out.push({ delta: -row.count, plantCode: row.fromPlant, time: row.time })
+                out.push({ delta: row.count, plantCode: row.toPlant, time: row.time })
+            } else {
+                out.push({ delta: -row.count, plantCode: row.toPlant, time: row.time })
+                out.push({ delta: row.count, plantCode: row.fromPlant, time: row.time })
+            }
+        })
+        return out
+    }, [helpRows])
+
+    /** Simulate the day — get poolAtDispatch + return times per order. */
+    const poolTimeline = useMemo(
+        () => computePlantPoolTimeline(allOrders, initialPoolByCode, getTravelOverrides, helpTransfers),
+        [allOrders, initialPoolByCode, getTravelOverrides, helpTransfers]
+    )
+
+    /** Per-plant pool timelines — used to recommend a better start time when
+     *  an order is overbooked ("move this to 11:00 when the plant has trucks"). */
+    const poolTimelinesByPlant = useMemo(
+        () => computePlantPoolTimelines(allOrders, initialPoolByCode, getTravelOverrides, helpTransfers),
+        [allOrders, initialPoolByCode, getTravelOverrides, helpTransfers]
+    )
+
+    /** Moments throughout the day when operators can be sent home because the
+     *  plant's pool has reached a level it never drops below again. Surfaced
+     *  as dedicated "send home" rows in the schedule so the dispatcher knows
+     *  exactly when to release operators. */
+    const sendHomeRows = useMemo(
+        () => computeSendHomeRows(allOrders, initialPoolByCode, getTravelOverrides, helpTransfers),
+        [allOrders, initialPoolByCode, getTravelOverrides, helpTransfers]
+    )
+
+    /** One suggested slot per pour size (120+ / 50 / 10 yd) pointing the
+     *  dispatcher to the earliest window where the plant has idle capacity
+     *  for that job size — so they know where a new order would fit without
+     *  disrupting the current plan. */
+    const suggestedSlotRows = useMemo(
+        () => computeSuggestedSlots(allOrders, initialPoolByCode, getTravelOverrides, helpTransfers),
+        [allOrders, initialPoolByCode, getTravelOverrides, helpTransfers]
+    )
+
+    /** Status counts (Scheduled / Same-day / Cancelled / Test) for the status filter. */
     const statusCounts = useMemo(() => {
-        const out = { all: allOrders.length, cancelled: 0, sameDay: 0, scheduled: 0 }
+        const out = { all: allOrders.length, cancelled: 0, sameDay: 0, scheduled: 0, test: 0 }
         allOrders.forEach((o) => {
             const kind = getOrderStatus(o.startTime)?.kind
             if (kind === 'cancelled') out.cancelled += 1
             else if (kind === 'sameDay') out.sameDay += 1
+            else if (kind === 'test') out.test += 1
             else out.scheduled += 1
         })
         return out
@@ -1126,14 +2430,24 @@ function PlanScheduleView({
             .sort((a, b) => compareOrders(a, b, sortKey))
     }, [allOrders, bucket, statusFilter, minYards, plantFilter, productFilter, query, sortKey])
 
-    /* ── KPI numbers — cancelled orders (start time 17:00) are kept in
-       the table for transparency but excluded from yardage / truck totals. */
+    /* ── KPI numbers — non-production rows (cancelled at 17:00, test at 18:00)
+       stay in the table for transparency but are excluded from yardage /
+       truck totals. */
     const liveOrders = useMemo(
-        () => filtered.filter((o) => getOrderStatus(o.startTime)?.kind !== 'cancelled'),
+        () =>
+            filtered.filter((o) => {
+                const kind = getOrderStatus(o.startTime)?.kind
+                return kind !== 'cancelled' && kind !== 'test'
+            }),
         [filtered]
     )
     const totalYards = sumField(liveOrders, 'yardage')
-    const totalTrucks = sumField(liveOrders, 'truckCount')
+    // Sum our canonical per-order truck count (excludes cancelled). Falls back
+    // to `truckCount` only when we can't compute — same rule as the table cell.
+    const totalTrucks = liveOrders.reduce((sum, o) => {
+        const n = getCalculatedTruckCount(o, getTravelOverrides ? getTravelOverrides(o) : undefined)
+        return sum + (Number.isFinite(n) ? n : 0)
+    }, 0)
     const uniquePlants = new Set(filtered.map((o) => o.plantCode)).size
     const uniqueCustomers = new Set(filtered.map((o) => (clean(o.customer) || '').toLowerCase()).filter(Boolean)).size
     const earliest = filtered
@@ -1466,6 +2780,7 @@ function PlanScheduleView({
                                         <option value="scheduled">Scheduled · {statusCounts.scheduled}</option>
                                         <option value="sameDay">Same-day · {statusCounts.sameDay}</option>
                                         <option value="cancelled">Cancelled · {statusCounts.cancelled}</option>
+                                        <option value="test">Test · {statusCounts.test}</option>
                                     </select>
                                 </FilterField>
 
@@ -1561,9 +2876,19 @@ function PlanScheduleView({
                         ) : viewMode === 'table' && !isMobile ? (
                             <ScheduleTable
                                 accentColor={accentColor}
+                                getTravelOverrides={getTravelOverrides}
+                                helpRows={helpRows}
+                                isPlantFiltered={plantFilter !== 'all'}
+                                keyForOrder={keyForOrder}
                                 onOpenLocation={setMapOrder}
                                 orders={filtered}
+                                plantCityByCode={plantCityByCode}
                                 plantNameByCode={plantNameByCode}
+                                poolSourceByCode={poolSourceByCode}
+                                poolTimeline={poolTimeline}
+                                poolTimelinesByPlant={poolTimelinesByPlant}
+                                sendHomeRows={sendHomeRows}
+                                suggestedSlotRows={suggestedSlotRows}
                             />
                         ) : (
                             <div className="flex flex-col gap-4">
@@ -1609,6 +2934,7 @@ function PlanScheduleView({
                                                     order={o}
                                                     plantCode={code}
                                                     plantName={plantNameByCode?.[code]}
+                                                    travelOverrides={getTravelOverrides(o)}
                                                 />
                                             ))}
                                         </div>
