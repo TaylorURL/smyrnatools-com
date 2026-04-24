@@ -1,6 +1,16 @@
 # Changelog
 
 
+## [38.5.37] - 2026-04-24
+
+- Added weekend awareness to truck pool math — Sunday treats all plants as closed (pool 0), Saturday halves crew (rounded down), with a visible banner in the schedule view explaining the adjustment
+- TrafficService now latches itself as unavailable after a 503 or network error, short-circuiting all subsequent calls for the page lifecycle instead of spamming the console
+- Fixed travel prefetch to cache failed lookups as null so they aren't retried on every re-render
+- Expanded estimateOrderTiming to return pour rate (scheduled vs effective yd/hr), effective spacing, and a firstTruckIsLate flag when the pool is empty at dispatch time
+- Reworked overbooked-order messaging from red "will run behind" to amber "needs help" — language now frames shortfalls as reduced pour rate rather than outright failure, with specific yd/hr comparisons
+- Updated hover card timing section to show pour rate drop, on-time/late first-truck status, and reworded move suggestions to reference holding the scheduled pour rate
+- Passed planDate down through PlanView into PlanFlowView and PlanScheduleView so pool calculations respect day-of-week multipliers
+
 ## [38.5.36] - 2026-04-24
 
 - Added test-order sentinel (18:00) detection and unified excluded-order helper for filtering cancelled and test orders from yardage/truck/KPI totals

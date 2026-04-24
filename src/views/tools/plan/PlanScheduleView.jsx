@@ -972,7 +972,7 @@ function TruckCoverageHoverCard({
     yardage
 }) {
     const statusColor = overbooked ? '#d97706' : '#16a34a'
-    const statusIcon = overbooked ? 'fa-gauge-simple-low' : 'fa-circle-check'
+    const statusIcon = overbooked ? 'fa-gauge-simple-high' : 'fa-circle-check'
     const statusTitle = overbooked ? 'Pour will run at reduced rate' : 'This order is covered'
     const shortfall = overbooked && Number.isFinite(poolAfterEffective) ? -poolAfterEffective : 0
     const scheduledYph = timing?.scheduledRateYph
@@ -1151,7 +1151,7 @@ function TruckCoverageHoverCard({
                                 width: 22
                             }}
                         >
-                            <i className="fas fa-gauge-simple-low text-[11px]" />
+                            <i className="fas fa-gauge-simple-high text-[11px]" />
                         </div>
                         <div className="text-[12px] font-bold" style={{ color: '#d97706' }}>
                             Pour pace
@@ -2045,7 +2045,7 @@ function ScheduleTable({
                                                         style={{ background: '#d97706', color: '#fff' }}
                                                         title="Fewer trucks than needed to hold the scheduled pour rate — send help from another plant to pour on pace."
                                                     >
-                                                        <i className="fas fa-hand-holding-hand text-[8px]" />
+                                                        <i className="fas fa-handshake-angle text-[8px]" />
                                                         Needs Help
                                                     </span>
                                                 )}
