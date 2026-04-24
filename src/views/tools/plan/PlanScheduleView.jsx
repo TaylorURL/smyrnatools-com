@@ -237,8 +237,14 @@ function JobMapModal({ accentColor, onClose, order, plantAddress, plantCode, pla
             role="dialog"
             aria-modal="true"
             onClick={onClose}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.55)' }}
+            className="fixed inset-0 flex items-center justify-center p-4"
+            style={{
+                background: 'rgba(0,0,0,0.55)',
+                // Tailwind's z-50 lands beneath the mobile top nav; bump to
+                // a viewport-level z so the backdrop + modal always sit on
+                // top of app chrome.
+                zIndex: 2147483000
+            }}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
@@ -1507,6 +1513,7 @@ function ScheduleTable({
             rows.push({
                 count: row.count,
                 direction: row.direction,
+                forOrder: row.forOrder || null,
                 fromPlant: row.fromPlant,
                 helpKey: `${row.assignmentIndex}-${row.direction}-${row.time}`,
                 kind: 'help',
@@ -1840,6 +1847,17 @@ function ScheduleTable({
                                     <PlantBadge code={homePlant} fallback={accentColor} name={homeName} />
                                 </div>
                             )
+                            const forOrder = row.forOrder
+                            const jobTag = forOrder
+                                ? forOrder.orderNum
+                                    ? `#${forOrder.orderNum}`
+                                    : forOrder.startTime
+                                      ? String(forOrder.startTime).slice(0, 5)
+                                      : 'that job'
+                                : null
+                            const customerTag =
+                                forOrder?.customer && clean(forOrder.customer) ? clean(forOrder.customer) : null
+                            const returnsHome = homePlant === row.fromPlant
                             return (
                                 <SyntheticRow
                                     key={`help-${row.helpKey}`}
@@ -1852,19 +1870,46 @@ function ScheduleTable({
                                         isOutbound ? (
                                             <>
                                                 <b>{row.count}</b> truck{row.count === 1 ? '' : 's'} leaving{' '}
-                                                <b>{row.fromPlant}</b> to back up <b>{row.toPlant}</b>.
+                                                <b>{row.fromPlant}</b>{' '}
+                                                {forOrder ? (
+                                                    <>
+                                                        to load for <b>{jobTag}</b>
+                                                        {customerTag ? ` · ${customerTag}` : ''} at <b>{row.toPlant}</b>
+                                                        .
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        to back up <b>{row.toPlant}</b>.
+                                                    </>
+                                                )}
                                             </>
                                         ) : (
                                             <>
                                                 <b>{row.count}</b> help truck{row.count === 1 ? '' : 's'} heading{' '}
-                                                {homePlant === row.fromPlant ? 'home' : 'over'} to <b>{homePlant}</b>.
+                                                {returnsHome ? 'home' : 'over'} to <b>{homePlant}</b>.
                                             </>
                                         )
                                     }
                                     secondary={
-                                        isOutbound
-                                            ? `${row.toPlant}'s pool goes up by ${row.count} until they return.`
-                                            : `${homePlant}'s pool goes up by ${row.count}.`
+                                        isOutbound ? (
+                                            <>
+                                                {row.toPlant}&apos;s pool goes up by {row.count} until they return
+                                                {returnsHome ? (
+                                                    <>
+                                                        {' '}
+                                                        to <b>{row.fromPlant}</b>.
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {' '}
+                                                        — heading to <b>{homePlant}</b> afterward (not back to{' '}
+                                                        {row.fromPlant}).
+                                                    </>
+                                                )}
+                                            </>
+                                        ) : (
+                                            `${homePlant}'s pool goes up by ${row.count}.`
+                                        )
                                     }
                                     time={row.time}
                                     tint={tint}
@@ -2083,16 +2128,35 @@ function ScheduleTable({
                                                         <i className="fas fa-circle-info text-[10px]" />
                                                     )}
                                                     {computed != null ? computed : '—'}
-                                                    {Number.isFinite(poolAfterEffective) && (
-                                                        <span
-                                                            className="font-normal"
-                                                            style={{
-                                                                color: overbooked ? '#dc2626' : 'var(--text-tertiary)'
-                                                            }}
-                                                        >
-                                                            /{poolAfterEffective}
-                                                        </span>
-                                                    )}
+                                                    {Number.isFinite(poolAfterEffective) &&
+                                                        (() => {
+                                                            // Three-color scale on the trailing pool value:
+                                                            //   < 0   → red  (below demand, overbooked)
+                                                            //   0–2   → amber (tight margin — 1–2 trucks left
+                                                            //           is close to the edge, 0 is break-even)
+                                                            //   ≥ 3   → green (comfortable headroom)
+                                                            const pillColor =
+                                                                poolAfterEffective < 0
+                                                                    ? '#dc2626'
+                                                                    : poolAfterEffective <= 2
+                                                                      ? '#d97706'
+                                                                      : '#16a34a'
+                                                            return (
+                                                                <span
+                                                                    className="font-semibold"
+                                                                    style={{ color: pillColor }}
+                                                                    title={
+                                                                        poolAfterEffective < 0
+                                                                            ? `${-poolAfterEffective} truck${poolAfterEffective === -1 ? '' : 's'} short — pour runs below scheduled rate`
+                                                                            : poolAfterEffective <= 2
+                                                                              ? `Tight — only ${poolAfterEffective} truck${poolAfterEffective === 1 ? '' : 's'} left in the pool during this pour`
+                                                                              : `${poolAfterEffective} trucks still free during this pour — comfortable margin`
+                                                                    }
+                                                                >
+                                                                    /{poolAfterEffective}
+                                                                </span>
+                                                            )
+                                                        })()}
                                                 </span>
                                                 {overbooked && (
                                                     <span
@@ -2417,6 +2481,14 @@ function PlanScheduleView({
         ;(assignments || []).forEach((a, idx) => {
             if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
             const returnPlant = a.returnPlant || a.fromPlant
+            // When the dispatcher tied this help to a specific destination
+            // order, look it up so the row can read "loading for #610" +
+            // customer instead of the generic "backing up 402".
+            let forOrder = null
+            if (a.forOrderId) {
+                const destOrders = plantProduction?.[a.toPlant]?.orders || []
+                forOrder = destOrders.find((o) => (o.orderId || o.orderNum) === a.forOrderId) || null
+            }
             const driverTimes = buildAssignmentDriverTimes(a)
             driverTimes.forEach((dt) => {
                 if (Number.isFinite(dt.arriveMin)) {
@@ -2426,6 +2498,8 @@ function PlanScheduleView({
                         {
                             assignmentIndex: idx,
                             direction: 'outbound',
+                            forOrder,
+                            forOrderId: a.forOrderId || '',
                             fromPlant: a.fromPlant,
                             returnPlant,
                             time: bucket,
@@ -2441,6 +2515,8 @@ function PlanScheduleView({
                         {
                             assignmentIndex: idx,
                             direction: 'return',
+                            forOrder,
+                            forOrderId: a.forOrderId || '',
                             fromPlant: a.fromPlant,
                             returnPlant,
                             time: bucket,
@@ -2452,7 +2528,7 @@ function PlanScheduleView({
             })
         })
         return Array.from(grouped.values())
-    }, [assignments])
+    }, [assignments, plantProduction])
 
     /** Help transfers in the format expected by `computePlantPoolTimeline`.
      *  Each driver's arrival subtracts from `fromPlant` and adds to `toPlant`;

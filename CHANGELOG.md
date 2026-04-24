@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [38.5.40] - 2026-04-24
+
+- Added job marker nodes on the flow view — when a help assignment targets a specific destination order, a small blue circle appears on the outbound edge showing the order number and yardage
+- Help transfer rows in the schedule now show which job trucks are loading for (e.g. "to load for #610 · CustomerName") instead of the generic "to back up" phrasing
+- Schedule return descriptions now clarify when trucks head to a different plant afterward vs. returning to the sender
+- Added three-color scale to the trailing pool count in pour rows: red when overbooked, amber when tight (0-2 trucks remaining), green when comfortable (3+), with descriptive hover tooltips
+- Bumped the job map modal z-index above mobile top nav so the backdrop and modal always sit on top of app chrome
+- Threaded forOrder and forOrderId through help transfer row data so schedule rows can reference the destination order details
+
 ## [38.5.39] - 2026-04-24
 
 - Added per-driver arrive/leave time tracking via new buildAssignmentDriverTimes utility, supporting both staggered and custom-per-operator scheduling modes

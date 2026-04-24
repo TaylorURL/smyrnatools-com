@@ -283,6 +283,30 @@ function PlanFlowView({
     )
     const edges = useMemo(() => buildEdges(assignments), [assignments])
     const bidirectionalEdgeKeys = useMemo(() => computeBidirectionalEdgeKeys(edges), [edges])
+    /** Assignments that are loading directly for a specific destination job
+     *  get a small "job" node rendered on the edge between the sender and
+     *  receiver — it represents the pour the trucks are actually heading to
+     *  rather than a generic "help out" handoff. Keyed by edge key
+     *  (`from->to`). Only the outbound edge gets the marker; the return leg
+     *  is unaffected. */
+    const edgeJobs = useMemo(() => {
+        const map = new Map()
+        for (const edge of edges) {
+            if (edge.isReturn) continue
+            const key = `${edge.from}->${edge.to}`
+            for (const idx of edge.assignmentIndexes || []) {
+                const assignment = assignments?.[idx]
+                if (!assignment?.forOrderId) continue
+                const destOrders = plantProduction?.[edge.to]?.orders || []
+                const job = destOrders.find((o) => (o.orderId || o.orderNum) === assignment.forOrderId)
+                if (job) {
+                    map.set(key, { assignment, order: job })
+                    break
+                }
+            }
+        }
+        return map
+    }, [edges, assignments, plantProduction])
     // Push any plant whose centre lies on top of an edge perpendicular to that
     // edge so the route line never has to pass straight through a third node.
     const layout = useMemo(() => relaxLayoutForEdges(baseLayout, nodeItems, edges), [baseLayout, nodeItems, edges])
@@ -947,6 +971,92 @@ function PlanFlowView({
                                                 )}
                                             </div>
                                         </React.Fragment>
+                                    )
+                                })}
+
+                            {hasNodes &&
+                                Array.from(edgeJobs.entries()).map(([key, info]) => {
+                                    const [fromCode, toCode] = key.split('->')
+                                    const from = positions[fromCode]
+                                    const to = positions[toCode]
+                                    if (!from || !to) return null
+                                    const dx = to.x - from.x
+                                    const dy = to.y - from.y
+                                    const len = Math.sqrt(dx * dx + dy * dy) || 1
+                                    const ux = dx / len
+                                    const uy = dy / len
+                                    // Match the perpendicular offset the line itself uses for
+                                    // bidirectional pairs so the marker sits ON the outbound lane.
+                                    const isBidirectional = bidirectionalEdgeKeys.has(key)
+                                    const offX = isBidirectional ? uy * EDGE_PARALLEL_OFFSET : 0
+                                    const offY = isBidirectional ? -ux * EDGE_PARALLEL_OFFSET : 0
+                                    // Bias toward the destination (~65% along the line) so the
+                                    // marker reads as "a job AT the receiving plant" rather than
+                                    // collisions with the mid-line ops label.
+                                    const t = 0.65
+                                    const mx = from.x + dx * t + offX
+                                    const my = from.y + dy * t + offY
+                                    const isRelated = activeRelatedEdges.has(key)
+                                    const muted = selectedCode && !isRelated
+                                    const order = info.order
+                                    const orderTag = order.orderNum
+                                        ? `#${order.orderNum}`
+                                        : order.startTime
+                                          ? String(order.startTime).slice(0, 5)
+                                          : 'Job'
+                                    const customer = order.customer ? String(order.customer).trim() : ''
+                                    const yardageText = Number.isFinite(parseFloat(order.yardage))
+                                        ? `${parseFloat(order.yardage)} yd`
+                                        : null
+                                    // Fixed-size circle so every job marker reads the same,
+                                    // regardless of yardage. Smaller than any plant so it visually
+                                    // slots between them on the line.
+                                    const JOB_RADIUS = 36
+                                    return (
+                                        <div
+                                            key={`job-${key}`}
+                                            className="absolute rounded-full flex flex-col items-center justify-center"
+                                            style={{
+                                                background: '#0ea5e9',
+                                                border: '3px solid var(--bg-secondary)',
+                                                boxShadow: '0 4px 12px rgba(14, 165, 233, 0.45), var(--shadow)',
+                                                color: '#fff',
+                                                height: JOB_RADIUS * 2,
+                                                left: `${mx - JOB_RADIUS}px`,
+                                                opacity: muted ? 0.55 : 1,
+                                                top: `${my - JOB_RADIUS}px`,
+                                                width: JOB_RADIUS * 2,
+                                                zIndex: 18
+                                            }}
+                                            title={[
+                                                `Loading for ${orderTag}`,
+                                                customer || null,
+                                                `at plant ${toCode}`,
+                                                yardageText
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' · ')}
+                                        >
+                                            <i className="fas fa-clipboard-list text-[12px] mb-0.5 opacity-80" />
+                                            <span
+                                                className="font-bold leading-none"
+                                                style={{
+                                                    fontFamily: 'var(--font-heading)',
+                                                    fontSize: 12,
+                                                    letterSpacing: '0.2px'
+                                                }}
+                                            >
+                                                {orderTag}
+                                            </span>
+                                            {yardageText && (
+                                                <span
+                                                    className="leading-none mt-0.5"
+                                                    style={{ fontSize: 9, opacity: 0.85, fontWeight: 500 }}
+                                                >
+                                                    {yardageText}
+                                                </span>
+                                            )}
+                                        </div>
                                     )
                                 })}
 

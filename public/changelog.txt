@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [38.5.39] - 2026-04-24
+
+- Added per-driver arrive/leave time tracking via new buildAssignmentDriverTimes utility, supporting both staggered and custom-per-operator scheduling modes
+- Reworked pool simulation to return trucks individually instead of all at once — each truck now generates its own return event, so the pool ticks up gradually through a pour
+- Added "custom per operator" time mode toggle in the route editor, letting dispatchers set individual arrive/leave times for each driver in an assignment
+- Added job selection dropdown in the route editor so help trucks can be tied to a specific order at the destination plant, with auto-fill of the job's start time
+- Added return plant selector so trucks can be routed to a different plant after pouring instead of always going back to the sender
+- Updated help transfer logic across PlanFlowView, PlanFlowPreview, and the scrubber's effective-operator calculation to walk per-driver times instead of treating the whole crew as a single block
+- Changed minimum truck count from 0 to 1 in the route editor
+- Per-truck return times now tracked in pool timeline order entries (returnTimesByTruck, returnEvents) so the schedule can render granular return rows with live pool counts
+
 ## [38.5.38] - 2026-04-24
 
 - Changed the overbooked status icon from gauge-simple-low to gauge-simple-high in the truck coverage hover card
