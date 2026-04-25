@@ -1,41 +1,24 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
-import DashboardCharts from '../../../app/components/dashboard/DashboardCharts'
 import DashboardHeader from '../../../app/components/dashboard/DashboardHeader'
-import DashboardOperationsSection from '../../../app/components/dashboard/DashboardOperationsSection'
-import DashboardScheduleSection from '../../../app/components/dashboard/DashboardScheduleSection'
+import DashboardPeopleSection from '../../../app/components/dashboard/DashboardPeopleSection'
 import DashboardSidebar from '../../../app/components/dashboard/DashboardSidebar'
 import DashboardSkeleton from '../../../app/components/dashboard/DashboardSkeleton'
 import EmbeddedViewModal from '../../../app/components/dashboard/EmbeddedViewModal'
 import FleetOverviewSection from '../../../app/components/dashboard/FleetOverviewSection'
 import KeyMetricsStrip from '../../../app/components/dashboard/KeyMetricsStrip'
-import { DashboardCard, SectionTitle } from '../../../app/components/ui/DashboardCards'
 import { INITIAL_EXPANDED_SECTIONS } from '../../../app/constants/dashboardConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
-import {
-    buildFleetDomain,
-    buildIssueDomain,
-    buildOperatorDomain,
-    buildPlantChatContext,
-    buildRegionChatContext,
-    useDashboardChat
-} from '../../../app/hooks/useDashboardChat'
 import { useDashboardAssets, useIssueCommentCounts, usePlantFilter } from '../../../app/hooks/useDashboardData'
-import { useAITypingEffect, useAnimatedStats, useDateFilter } from '../../../app/hooks/useDashboardEffects'
+import { useAnimatedStats, useDateFilter } from '../../../app/hooks/useDashboardEffects'
 import { useDashboardInit } from '../../../app/hooks/useDashboardInit'
-import { useDashboardSchedule } from '../../../app/hooks/useDashboardSchedule'
+import { useDashboardManagers } from '../../../app/hooks/useDashboardManagers'
 import { useDashboardStats } from '../../../app/hooks/useDashboardStats'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
-import {
-    useAISummary,
-    useLeaderboardMetrics,
-    usePlantNotifications,
-    useRegionalAISummary
-} from '../../../app/hooks/usePlantNotifications'
+import { useLeaderboardMetrics, usePlantNotifications } from '../../../app/hooks/usePlantNotifications'
 import { useStatusHistory } from '../../../app/hooks/useStatusHistory'
 import { PlantService } from '../../../services/PlantService'
-import DateUtility from '../../../utils/DateUtility'
 /**
  * Primary dashboard view with a sidebar + main content layout.
  * The sidebar houses alerts, people pipeline, AI insights, and plant rankings.
@@ -185,84 +168,7 @@ export default function DashboardView() {
         dataReady,
         setPlantNotifications
     })
-    const { handleRegenerateAISummary: handleRegeneratePlantAI } = useAISummary({
-        allMixersRef,
-        createFilterFn: activeCreateFilterFn,
-        dashboardPlant,
-        plantNotifications,
-        plantSetRef: activePlantSetRef,
-        setPlantNotifications,
-        userPlantCode,
-        userRoleName,
-        userRoleWeight
-    })
-    const {
-        hasSchedule,
-        isSyncing: scheduleSyncing,
-        lastSyncedAt: scheduleLastSyncedAt,
-        production: scheduleProduction,
-        scheduleDate
-    } = useDashboardSchedule({ enabled: dataReady && allPlants.length > 0, plants: allPlants })
     const displayStats = useAnimatedStats(stats, regionPlantsLoaded, dashboardRegionCode)
-    const { aiActionPlan, aiDisplayText, isTypingComplete, showActionPlan, visibleActionItems } = useAITypingEffect(
-        plantNotifications.aiSummary,
-        dashboardPlant
-    )
-    const [regionalAI, setRegionalAI] = useState({ aiSummary: null, aiSummaryFailed: false, aiSummaryLoading: false })
-    const { handleRegenerateRegionalAI } = useRegionalAISummary({
-        dashboardPlant,
-        dataReady,
-        displayStats,
-        plantNotifications,
-        regionDisplayName: dashboardRegionName || 'Region',
-        regionPlants,
-        setRegionalAI,
-        userRoleName,
-        userRoleWeight
-    })
-    const {
-        aiActionPlan: regionalActionPlan,
-        aiDisplayText: regionalDisplayText,
-        isTypingComplete: regionalTypingComplete,
-        showActionPlan: regionalShowActionPlan,
-        visibleActionItems: regionalVisibleActionItems
-    } = useAITypingEffect(regionalAI.aiSummary, dashboardPlant)
-
-    // Select active AI state based on plant vs region mode
-    const activeAiText = isPlantMode ? aiDisplayText : regionalDisplayText
-    const activeAiPlan = isPlantMode ? aiActionPlan : regionalActionPlan
-    const activeAiTypingComplete = isPlantMode ? isTypingComplete : regionalTypingComplete
-    const activeShowActionPlan = isPlantMode ? showActionPlan : regionalShowActionPlan
-    const activeVisibleItems = isPlantMode ? visibleActionItems : regionalVisibleActionItems
-    const activeAiLoading = isPlantMode ? plantNotifications.aiSummaryLoading : regionalAI.aiSummaryLoading
-    const activeAiFailed = isPlantMode ? plantNotifications.aiSummaryFailed : regionalAI.aiSummaryFailed
-    const activeRegenerateAI = isPlantMode ? handleRegeneratePlantAI : handleRegenerateRegionalAI
-
-    // Build chat context for whichever mode is active
-    const plantChatContext = useMemo(
-        () =>
-            buildPlantChatContext({
-                aiSummary: plantNotifications.aiSummary,
-                dashboardPlant,
-                isPlantManager,
-                plantNotifications,
-                userPlantCode,
-                userRoleName
-            }),
-        [dashboardPlant, isPlantManager, plantNotifications, userPlantCode, userRoleName]
-    )
-    const regionChatContext = useMemo(
-        () =>
-            buildRegionChatContext({
-                aiSummary: regionalAI.aiSummary,
-                displayStats,
-                plantNotifications,
-                regionDisplayName: dashboardRegionName || 'Region',
-                userRoleName
-            }),
-        [displayStats, dashboardRegionName, plantNotifications, regionalAI.aiSummary, userRoleName]
-    )
-    const chatContext = isPlantMode ? plantChatContext : regionChatContext
 
     // Debounce stat recomputation (30ms) to batch rapid plant/region filter changes.
     const applyFilters = useCallback(() => {
@@ -303,30 +209,14 @@ export default function DashboardView() {
         'trainerPlant'
     )
     const filteredLightDutyOperators = filterByPlantSet(lightDutyOperators, activePlantSetRef.current, 'plant')
-    const domainData = useMemo(() => {
-        if (!dataReady) return null
-        const plantSet = activePlantSetRef.current
-        const inScope = (a) => !plantSet || plantSet.size === 0 || plantSet.has(a.plantCode)
-        return {
-            fleet: buildFleetDomain(
-                (allMixersRef.current || []).filter(inScope),
-                (allTractorsRef.current || []).filter(inScope),
-                (allTrailersRef.current || []).filter(inScope),
-                (allEquipmentRef.current || []).filter(inScope)
-            ),
-            issues: buildIssueDomain(assetIssueDetails),
-            operators: buildOperatorDomain(
-                (allOperatorsRef.current || []).filter(inScope),
-                filteredTrainingOperators,
-                filteredPendingStartOperators,
-                filteredLightDutyOperators
-            )
-        }
+    // Snapshot the plant scope so the manager hook re-derives when filters change.
+    const managerPlantSet = useMemo(() => {
+        const set = activePlantSetRef.current
+        if (!set || set.size === 0) return null
+        return new Set(set)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dataReady, dashboardPlant, dashboardRegionCode, stats.fleetTotal])
-
-    const chat = useDashboardChat(chatContext, domainData)
-
+    }, [dashboardPlant, dashboardRegionCode, stats.fleetTotal])
+    const managerStats = useDashboardManagers({ plantSet: managerPlantSet })
     // Resolve display labels
     const regionDisplayName = (() => {
         if (selectedRegion?.type === 'Office') return 'Home Office'
@@ -371,6 +261,30 @@ export default function DashboardView() {
     return (
         <div className="dashboard-full-width min-h-screen bg-bg-secondary text-text-primary">
             <div className="flex min-h-screen">
+                {/* Sidebar — left rail */}
+                {!isMobile && (
+                    <DashboardSidebar
+                        accentColor={accentColor}
+                        dashboardPlant={dashboardPlant}
+                        dashboardRegionCode={dashboardRegionCode}
+                        dataReady={dataReady}
+                        expandedSections={expandedSections}
+                        isPlantManager={isPlantManager}
+                        isPlantMode={isPlantMode}
+                        onRefresh={onRefresh}
+                        plantNotifications={plantNotifications}
+                        refreshing={refreshing}
+                        regionDisplayName={regionDisplayName}
+                        regionPlants={regionPlants}
+                        selectedRegion={selectedRegion}
+                        setEmbeddedView={setEmbeddedView}
+                        setEmbeddedViewSearch={setEmbeddedViewSearch}
+                        setExpandedSections={setExpandedSections}
+                        setPlantModalOpen={setPlantModalOpen}
+                        userPlantCode={userPlantCode}
+                        userRoleName={userRoleName}
+                    />
+                )}
                 {/* Main content */}
                 <main className="flex-1 min-w-0 flex flex-col">
                     <DashboardHeader
@@ -381,13 +295,16 @@ export default function DashboardView() {
                         isLoading={showSkeleton}
                         onPlantFilterClick={() => setPlantModalOpen(true)}
                     />
-                    <div className={`w-full flex-1 ${isMobile ? 'p-3' : 'p-6'}`}>
+                    <div className={`w-full flex-1 ${isMobile ? 'p-3' : 'px-4 lg:px-6 py-5'}`}>
                         {error && (
-                            <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl text-red-600 mb-6 px-5 py-4">
-                                <span>{error}</span>
+                            <div
+                                className="flex items-center justify-between rounded text-red-600 mb-4 px-4 py-3"
+                                style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.3)' }}
+                            >
+                                <span className="text-[13px] font-semibold">{error}</span>
                                 <button
                                     onClick={() => setRefreshKey((v) => v + 1)}
-                                    className="bg-transparent border-none text-red-600 cursor-pointer font-semibold"
+                                    className="bg-transparent border-none text-red-600 cursor-pointer font-semibold text-[12px]"
                                 >
                                     Retry
                                 </button>
@@ -396,7 +313,7 @@ export default function DashboardView() {
                         {showSkeleton ? (
                             <DashboardSkeleton isMobile={isMobile} />
                         ) : (
-                            <div className={`flex flex-col ${isMobile ? 'gap-4' : 'gap-6'}`}>
+                            <div className={`flex flex-col ${isMobile ? 'gap-4' : 'gap-5'}`}>
                                 <div className={revealClass('up')} style={revealStyle(0)}>
                                     <KeyMetricsStrip
                                         displayStats={displayStats}
@@ -419,91 +336,17 @@ export default function DashboardView() {
                                 </div>
 
                                 <div className={revealClass('up')} style={revealStyle(160)}>
-                                    <DashboardScheduleSection
-                                        production={scheduleProduction}
-                                        hasSchedule={hasSchedule}
-                                        isSyncing={scheduleSyncing}
-                                        lastSyncedAt={scheduleLastSyncedAt}
-                                        scheduleDate={scheduleDate}
-                                        dashboardPlant={dashboardPlant}
-                                        regionPlants={regionPlants}
-                                        allPlants={allPlants}
-                                        isPlantMode={isPlantMode}
-                                        accentColor={accentColor}
-                                        isMobile={isMobile}
-                                    />
-                                </div>
-
-                                <div className={revealClass('up')} style={revealStyle(240)}>
-                                    <DashboardOperationsSection
+                                    <DashboardPeopleSection
                                         displayStats={displayStats}
                                         isAggregate={isAggregate}
-                                        filteredTrainingOperators={filteredTrainingOperators}
-                                        filteredPendingStartOperators={filteredPendingStartOperators}
-                                        filteredLightDutyOperators={filteredLightDutyOperators}
-                                        statusHistoryData={statusHistoryData}
-                                        handleQuickDateFilter={handleQuickDateFilter}
-                                        formatPendingDate={DateUtility.formatPendingDate}
+                                        managerStats={managerStats}
                                         accentColor={accentColor}
-                                        isMobile={isMobile}
                                     />
-                                </div>
-
-                                <div className={revealClass('up')} style={revealStyle(400)}>
-                                    <DashboardCard accent={accentColor}>
-                                        <SectionTitle icon="fa-chart-line" accentColor={accentColor}>
-                                            Fleet Analytics
-                                        </SectionTitle>
-                                        <DashboardCharts
-                                            dashboardPlant={dashboardPlant}
-                                            dashboardRegionCode={dashboardRegionCode}
-                                            regionPlants={regionPlants}
-                                            allPlants={allPlants}
-                                            statusHistoryData={statusHistoryData}
-                                            isAggregate={isAggregate}
-                                            stats={stats}
-                                            isMobile={isMobile}
-                                        />
-                                    </DashboardCard>
                                 </div>
                             </div>
                         )}
                     </div>
                 </main>
-
-                {/* Sidebar */}
-                {!isMobile && (
-                    <DashboardSidebar
-                        accentColor={accentColor}
-                        aiActionPlan={activeAiPlan}
-                        aiDisplayText={activeAiText}
-                        aiSummaryFailed={activeAiFailed}
-                        aiSummaryLoading={activeAiLoading}
-                        chat={chat}
-                        dashboardPlant={dashboardPlant}
-                        dashboardRegionCode={dashboardRegionCode}
-                        dataReady={dataReady}
-                        expandedSections={expandedSections}
-                        handleRegenerateAISummary={activeRegenerateAI}
-                        isPlantManager={isPlantManager}
-                        isPlantMode={isPlantMode}
-                        isTypingComplete={activeAiTypingComplete}
-                        onRefresh={onRefresh}
-                        plantNotifications={plantNotifications}
-                        refreshing={refreshing}
-                        regionDisplayName={regionDisplayName}
-                        regionPlants={regionPlants}
-                        selectedRegion={selectedRegion}
-                        setEmbeddedView={setEmbeddedView}
-                        setEmbeddedViewSearch={setEmbeddedViewSearch}
-                        setExpandedSections={setExpandedSections}
-                        setPlantModalOpen={setPlantModalOpen}
-                        showActionPlan={activeShowActionPlan}
-                        userPlantCode={userPlantCode}
-                        userRoleName={userRoleName}
-                        visibleActionItems={activeVisibleItems}
-                    />
-                )}
             </div>
 
             <PlantDropdownModal

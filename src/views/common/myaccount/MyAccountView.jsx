@@ -69,7 +69,7 @@ function StartPageDropdown({ value, accentColor, onChange }) {
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-left transition-all hover:border-gray-300 focus:outline-none"
+                className="flex w-full items-center justify-between rounded-xl border border-border-light bg-white px-4 py-3 text-left transition-all hover:border-gray-300 focus:outline-none"
                 style={open ? { borderColor: accentColor, boxShadow: `0 0 0 3px ${accentColor}20` } : undefined}
             >
                 <span className="flex items-center gap-3">
@@ -86,7 +86,7 @@ function StartPageDropdown({ value, accentColor, onChange }) {
                 ></i>
             </button>
             {open && (
-                <div className="absolute left-0 right-0 z-50 mt-2 max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
+                <div className="absolute left-0 right-0 z-50 mt-2 max-h-64 overflow-y-auto rounded-xl border border-border-light bg-white py-1 shadow-lg">
                     {START_PAGE_OPTIONS.map(({ icon, id }) => {
                         const isActive = id === value
                         return (
@@ -482,18 +482,6 @@ function MyAccountView({ userId }) {
                     className="relative overflow-hidden"
                     style={{ backgroundColor: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
                 >
-                    <div
-                        className="absolute inset-0"
-                        style={{
-                            backgroundImage: `
-                                linear-gradient(${preferences.accentColor || '#2A3163'}10 1px, transparent 1px),
-                                linear-gradient(90deg, ${preferences.accentColor || '#2A3163'}10 1px, transparent 1px),
-                                radial-gradient(circle at center, ${preferences.accentColor || '#2A3163'}08 0%, transparent 50%)
-                            `,
-                            backgroundPosition: '0 0, 0 0, 0 0',
-                            backgroundSize: '20px 20px, 20px 20px, 40px 40px'
-                        }}
-                    ></div>
                     <div className="relative mx-auto max-w-6xl px-4 py-6 md:px-8">
                         <div
                             className="h-8 w-48 animate-pulse rounded"
@@ -509,7 +497,7 @@ function MyAccountView({ userId }) {
                     <div className="grid gap-8 lg:grid-cols-3">
                         <div className="lg:col-span-1">
                             <div
-                                className="animate-pulse overflow-hidden rounded-2xl shadow-sm"
+                                className="animate-pulse overflow-hidden rounded shadow-sm"
                                 style={{ backgroundColor: 'var(--bg-primary)' }}
                             >
                                 <div className="h-32" style={{ backgroundColor: 'var(--bg-tertiary)' }}></div>
@@ -530,7 +518,7 @@ function MyAccountView({ userId }) {
                                 </div>
                             </div>
                             <div
-                                className="mt-6 animate-pulse rounded-2xl p-2 shadow-sm"
+                                className="mt-6 animate-pulse rounded p-2 shadow-sm"
                                 style={{ backgroundColor: 'var(--bg-primary)' }}
                             >
                                 <div
@@ -545,7 +533,7 @@ function MyAccountView({ userId }) {
                         </div>
                         <div className="space-y-6 lg:col-span-2">
                             <div
-                                className="animate-pulse rounded-2xl p-6 shadow-sm md:p-8"
+                                className="animate-pulse rounded p-6 shadow-sm md:p-8"
                                 style={{ backgroundColor: 'var(--bg-primary)' }}
                             >
                                 <div className="mb-6 flex items-center gap-3">
@@ -580,7 +568,7 @@ function MyAccountView({ userId }) {
                                 ></div>
                             </div>
                             <div
-                                className="animate-pulse rounded-2xl p-6 shadow-sm md:p-8"
+                                className="animate-pulse rounded p-6 shadow-sm md:p-8"
                                 style={{ backgroundColor: 'var(--bg-primary)' }}
                             >
                                 <div className="mb-6 flex items-center gap-3">
@@ -635,19 +623,7 @@ function MyAccountView({ userId }) {
     }
     return (
         <div className="min-h-screen bg-gray-50">
-            <div className="relative overflow-hidden border-b border-gray-200 bg-white">
-                <div
-                    className="absolute inset-0"
-                    style={{
-                        backgroundImage: `
-                            linear-gradient(${preferences.accentColor || '#2A3163'}10 1px, transparent 1px),
-                            linear-gradient(90deg, ${preferences.accentColor || '#2A3163'}10 1px, transparent 1px),
-                            radial-gradient(circle at center, ${preferences.accentColor || '#2A3163'}08 0%, transparent 50%)
-                        `,
-                        backgroundPosition: '0 0, 0 0, 0 0',
-                        backgroundSize: '20px 20px, 20px 20px, 40px 40px'
-                    }}
-                ></div>
+            <div className="relative overflow-hidden border-b border-border-light bg-white">
                 <div className="relative mx-auto max-w-6xl px-4 py-6 md:px-8">
                     <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
                     <p className="mt-1 text-sm text-gray-500">Manage your profile, security, and preferences</p>
@@ -670,7 +646,7 @@ function MyAccountView({ userId }) {
                 <div className="grid gap-8 lg:grid-cols-3">
                     <div className="lg:col-span-1">
                         <div className="sticky top-8 space-y-6">
-                            <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+                            <div className="overflow-hidden rounded bg-white shadow-sm">
                                 <div
                                     className="px-6 pb-16 pt-8"
                                     style={{
@@ -699,7 +675,7 @@ function MyAccountView({ userId }) {
                                     </div>
                                 </div>
                             </div>
-                            <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+                            <div className="overflow-hidden rounded bg-white shadow-sm">
                                 <nav className="flex flex-col">
                                     <button
                                         onClick={() => setActiveTab('profile')}
@@ -781,7 +757,7 @@ function MyAccountView({ userId }) {
                     <div className="space-y-6 lg:col-span-2">
                         {activeTab === 'profile' && (
                             <>
-                                <div className="rounded-2xl bg-white p-6 shadow-sm md:p-8">
+                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
                                     <div className="mb-6 flex items-center gap-3">
                                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
                                             <i className="fas fa-id-card text-accent"></i>
@@ -805,7 +781,7 @@ function MyAccountView({ userId }) {
                                                     onChange={(e) => setFirstName(e.target.value)}
                                                     placeholder="Enter first name"
                                                     required
-                                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                                                    className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                                                 />
                                             </div>
                                             <div>
@@ -818,7 +794,7 @@ function MyAccountView({ userId }) {
                                                     onChange={(e) => setLastName(e.target.value)}
                                                     placeholder="Enter last name"
                                                     required
-                                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                                                    className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                                                 />
                                             </div>
                                         </div>
@@ -833,7 +809,7 @@ function MyAccountView({ userId }) {
                                         </button>
                                     </form>
                                 </div>
-                                <div className="rounded-2xl bg-white p-6 shadow-sm md:p-8">
+                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
                                     <div className="mb-6 flex items-center gap-3">
                                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
                                             <i className="fas fa-info-circle text-accent"></i>
@@ -870,7 +846,7 @@ function MyAccountView({ userId }) {
                                                     value={preferences.selectedRegion?.code || ''}
                                                     onChange={handleChangeRegion}
                                                     disabled={!regionsLoaded}
-                                                    className="appearance-none rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-4 pr-10 text-sm font-semibold text-gray-900 transition-all hover:border-gray-300 focus:border-accent focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    className="appearance-none rounded-xl border border-border-light bg-gray-50 py-2.5 pl-4 pr-10 text-sm font-semibold text-gray-900 transition-all hover:border-gray-300 focus:border-accent focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50"
                                                 >
                                                     {permittedRegions.map((r) => (
                                                         <option
@@ -919,7 +895,7 @@ function MyAccountView({ userId }) {
                         )}
                         {activeTab === 'security' && (
                             <>
-                                <div className="rounded-2xl bg-white p-6 shadow-sm md:p-8">
+                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
                                     <div className="mb-6 flex items-center gap-3">
                                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
                                             <i className="fas fa-key text-accent"></i>
@@ -940,7 +916,7 @@ function MyAccountView({ userId }) {
                                         Change Password
                                     </button>
                                 </div>
-                                <div className="rounded-2xl bg-white p-6 shadow-sm md:p-8">
+                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
                                     <div className="mb-6 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
@@ -960,7 +936,7 @@ function MyAccountView({ userId }) {
                                             sessions.map((session) => (
                                                 <div
                                                     key={session.id}
-                                                    className={`flex items-center justify-between rounded-xl border p-4 ${session.isCurrent ? 'border-green-200 bg-green-50' : 'border-gray-100 bg-gray-50'}`}
+                                                    className={`flex items-center justify-between rounded-xl border p-4 ${session.isCurrent ? 'border-green-200 bg-green-50' : 'border-border-light bg-gray-50'}`}
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div
@@ -1006,7 +982,7 @@ function MyAccountView({ userId }) {
                                     </div>
                                 </div>
                                 <div
-                                    className="overflow-hidden rounded-2xl"
+                                    className="overflow-hidden rounded"
                                     style={{
                                         background: 'rgba(239,68,68,0.06)',
                                         border: '1px solid rgba(239,68,68,0.15)'
@@ -1041,7 +1017,7 @@ function MyAccountView({ userId }) {
                         )}
                         {activeTab === 'preferences' && (
                             <>
-                                <div className="rounded-2xl bg-white p-6 shadow-sm md:p-8">
+                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
                                     <div className="mb-6 flex items-center gap-3">
                                         <div
                                             className="flex h-10 w-10 items-center justify-center rounded-xl"
@@ -1065,7 +1041,7 @@ function MyAccountView({ userId }) {
                                         onChange={(id) => updatePreferences('startPage', id)}
                                     />
                                 </div>
-                                <div className="rounded-2xl bg-white p-6 shadow-sm md:p-8">
+                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
                                     <div className="mb-6 flex items-center gap-3">
                                         <div
                                             className="flex h-10 w-10 items-center justify-center rounded-xl"
@@ -1197,7 +1173,7 @@ function MyAccountView({ userId }) {
                                     </div>
                                 </div>
                                 {/* Navigation Style */}
-                                <div className="rounded-2xl border border-gray-100 bg-white p-6">
+                                <div className="rounded border border-border-light bg-white p-6">
                                     <div className="mb-6 flex items-center gap-3">
                                         <div
                                             className="flex h-10 w-10 items-center justify-center rounded-xl"
@@ -1243,7 +1219,7 @@ function MyAccountView({ userId }) {
                                     </div>
                                 </div>
                                 {!isMobile && (
-                                    <div className="rounded-2xl border border-gray-100 bg-white p-6">
+                                    <div className="rounded border border-border-light bg-white p-6">
                                         <div className="mb-6 flex items-center gap-3">
                                             <div
                                                 className="flex h-10 w-10 items-center justify-center rounded-xl"
@@ -1300,7 +1276,7 @@ function MyAccountView({ userId }) {
                                         </div>
                                     </div>
                                 )}
-                                <div className="rounded-2xl border border-gray-100 bg-white p-6">
+                                <div className="rounded border border-border-light bg-white p-6">
                                     <div className="mb-6 flex items-center gap-3">
                                         <div
                                             className="flex h-10 w-10 items-center justify-center rounded-xl"
@@ -1332,7 +1308,7 @@ function MyAccountView({ userId }) {
                             </>
                         )}
                         {activeTab === 'notifications' && (
-                            <div className="rounded-2xl bg-white p-6 shadow-sm md:p-8">
+                            <div className="rounded bg-white p-6 shadow-sm md:p-8">
                                 <div className="mb-6 flex items-center gap-3">
                                     <div
                                         className="flex h-10 w-10 items-center justify-center rounded-xl"
@@ -1351,7 +1327,7 @@ function MyAccountView({ userId }) {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                    <div className="flex items-center justify-between rounded-xl border border-border-light bg-gray-50 p-4">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                                 <i className="fas fa-comment-dots text-sm text-gray-400"></i>
@@ -1399,11 +1375,8 @@ function MyAccountView({ userId }) {
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
                     onClick={() => setShowPasswordModal(false)}
                 >
-                    <div
-                        className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                    <div className="w-full max-w-md rounded bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between border-b border-border-light px-6 py-4">
                             <div className="flex items-center gap-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
                                     <i className="fas fa-key text-accent"></i>
@@ -1435,7 +1408,7 @@ function MyAccountView({ userId }) {
                                         onChange={(e) => setCurrentPassword(e.target.value)}
                                         placeholder="Enter current password"
                                         required
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                                        className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                                     />
                                 </div>
                                 <div>
@@ -1446,7 +1419,7 @@ function MyAccountView({ userId }) {
                                         onChange={(e) => setNewPassword(e.target.value)}
                                         placeholder="Enter new password"
                                         required
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                                        className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                                     />
                                     <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
                                 </div>
@@ -1460,7 +1433,7 @@ function MyAccountView({ userId }) {
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         placeholder="Confirm new password"
                                         required
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+                                        className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                                     />
                                 </div>
                             </div>
@@ -1468,7 +1441,7 @@ function MyAccountView({ userId }) {
                                 <button
                                     type="button"
                                     onClick={() => setShowPasswordModal(false)}
-                                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 py-3 font-semibold text-gray-600 transition-all hover:bg-gray-100"
+                                    className="flex-1 rounded-xl border border-border-light bg-gray-50 py-3 font-semibold text-gray-600 transition-all hover:bg-gray-100"
                                 >
                                     Cancel
                                 </button>

@@ -21,7 +21,7 @@ export default function EfficiencyInfoCard() {
     const accent = preferences.accentColor || '#1e3a5f'
     return (
         <div
-            className="mb-6 overflow-hidden rounded-2xl border md:mb-8"
+            className="mb-6 overflow-hidden rounded border md:mb-8"
             style={{ background: `linear-gradient(135deg, ${accent}08, ${accent}04)`, borderColor: `${accent}20` }}
         >
             <button
@@ -52,7 +52,7 @@ export default function EfficiencyInfoCard() {
             </button>
             {isExpanded && (
                 <div className="px-5 pb-5 pt-4 md:px-6 md:pb-6 border-t" style={{ borderColor: `${accent}15` }}>
-                    <div className="mb-5 flex flex-wrap items-center justify-center gap-2.5 rounded-xl bg-white/80 p-4 shadow-sm border border-slate-100">
+                    <div className="mb-5 flex flex-wrap items-center justify-center gap-2.5 rounded-xl bg-white/80 p-4 shadow-sm border border-border-light">
                         {FORMULA_COMPONENTS.map((item, idx) =>
                             item.isOperator ? (
                                 <span key={idx} className="px-1 text-lg font-bold" style={{ color: accent }}>
@@ -61,7 +61,7 @@ export default function EfficiencyInfoCard() {
                             ) : (
                                 <div
                                     key={idx}
-                                    className="flex flex-col items-center gap-1.5 rounded-lg border border-slate-100 bg-slate-50/80 px-4 py-2.5"
+                                    className="flex flex-col items-center gap-1.5 rounded-lg border border-border-light bg-slate-50/80 px-4 py-2.5"
                                 >
                                     <span className="text-sm font-semibold text-slate-700">{item.label}</span>
                                     {item.weight && (

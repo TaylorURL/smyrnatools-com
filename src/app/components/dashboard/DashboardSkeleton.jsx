@@ -34,9 +34,9 @@ function SkeletonMetricCard({ delay, isMobile }) {
                 <div className="h-9 w-9 rounded-lg bg-bg-tertiary" />
             </div>
             <div className="flex flex-wrap gap-1.5 mt-2">
-                <div className="h-6 w-16 rounded-2xl bg-bg-tertiary" />
-                <div className="h-6 w-14 rounded-2xl bg-bg-tertiary" />
-                <div className="h-6 w-18 rounded-2xl bg-bg-tertiary" />
+                <div className="h-6 w-16 rounded bg-bg-tertiary" />
+                <div className="h-6 w-14 rounded bg-bg-tertiary" />
+                <div className="h-6 w-18 rounded bg-bg-tertiary" />
             </div>
         </div>
     )

@@ -194,7 +194,7 @@ function HistoryViewSection({ item, type, onClose }) {
         }
         return (
             <div className="space-y-4 animate-[fadeSlideIn_0.3s_ease-out]">
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                <div className="bg-slate-50 border border-border-light rounded-xl p-5">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
                             <i className="fas fa-robot text-lg text-accent" />
@@ -213,21 +213,21 @@ function HistoryViewSection({ item, type, onClose }) {
                 </div>
                 {isTypingComplete && (
                     <div className="grid grid-cols-2 gap-3 animate-[fadeSlideIn_0.3s_ease-out]">
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+                        <div className="bg-white border border-border-light rounded-lg p-3 text-center">
                             <div className="text-2xl font-bold text-accent">{history.length}</div>
                             <div className="text-xs text-slate-500">Total Changes</div>
                         </div>
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+                        <div className="bg-white border border-border-light rounded-lg p-3 text-center">
                             <div className="text-2xl font-bold text-accent">{statusData.length}</div>
                             <div className="text-xs text-slate-500">Status Changes</div>
                         </div>
                         {ASSET_TYPES_WITH_OPERATORS.includes(type) && (
-                            <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+                            <div className="bg-white border border-border-light rounded-lg p-3 text-center">
                                 <div className="text-2xl font-bold text-accent">{operatorData.length}</div>
                                 <div className="text-xs text-slate-500">Operator Changes</div>
                             </div>
                         )}
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+                        <div className="bg-white border border-border-light rounded-lg p-3 text-center">
                             <div className="text-2xl font-bold text-accent">{issues.length}</div>
                             <div className="text-xs text-slate-500">Total Issues</div>
                         </div>
@@ -361,7 +361,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                     <TimelineDuration text={HistoryUtility.pluralizeDays(entry.days)} />
                                 </TimelineMeta>
                                 {entry.isEmpty && entry.statusPeriods?.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-gray-100">
+                                    <div className="mt-2 pt-2 border-t border-border-light">
                                         <div className="text-[10px] text-slate-500 font-semibold mb-1">
                                             Status during period:
                                         </div>
@@ -416,7 +416,7 @@ function HistoryViewSection({ item, type, onClose }) {
         }
         return (
             <div className="flex flex-col gap-2.5">
-                <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4">
+                <div className="bg-white border border-border-light rounded-xl p-4 mb-4">
                     <h3 className="text-sm font-bold text-slate-800 m-0 mb-4">Asset Status Distribution</h3>
                     <div className="mb-4">
                         <div className="flex h-6 rounded-xl overflow-hidden bg-slate-100">
@@ -548,7 +548,7 @@ function HistoryViewSection({ item, type, onClose }) {
         ].sort((a, b) => new Date(b.date) - new Date(a.date))
         return (
             <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap gap-4 pb-4 border-b border-gray-200">
+                <div className="flex flex-wrap gap-4 pb-4 border-b border-border-light">
                     {lastService && (
                         <div className="flex items-center gap-2">
                             <i className="fas fa-wrench text-accent" />
@@ -615,7 +615,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                     )}
                                 </div>
                                 <div
-                                    className={`flex-1 bg-white border rounded-lg p-3 ${entry.isCompleted ? 'border-green-200' : 'border-gray-200'}`}
+                                    className={`flex-1 bg-white border rounded-lg p-3 ${entry.isCompleted ? 'border-green-200' : 'border-border-light'}`}
                                 >
                                     <div className="flex justify-between items-start">
                                         <div className="flex-1">
@@ -654,7 +654,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                             <i className="fas fa-trash text-xs" />
                                         </button>
                                     </div>
-                                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 flex-wrap gap-2">
+                                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-light flex-wrap gap-2">
                                         <div className="flex items-center gap-3 text-xs text-slate-500">
                                             <span>
                                                 <i className="fas fa-user mr-1" /> {getCreatorName(issue)}
@@ -771,25 +771,25 @@ function HistoryViewSection({ item, type, onClose }) {
         return (
             <div className="flex flex-col gap-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
                         <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
                             Current Position
                         </div>
                         <div className="text-sm font-bold text-slate-800 truncate">{currentPosition}</div>
                     </div>
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
                         <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
                             Total Changes
                         </div>
                         <div className="text-2xl font-bold text-slate-800">{totalChanges}</div>
                     </div>
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
                         <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
                             Unique Positions
                         </div>
                         <div className="text-2xl font-bold text-slate-800">{Object.keys(positionCounts).length}</div>
                     </div>
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
                         <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
                             Most Frequent
                         </div>
@@ -820,7 +820,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                         )}
                                     </div>
                                     <div
-                                        className={`ml-4 p-3 rounded-lg border ${entry.isCurrent ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}
+                                        className={`ml-4 p-3 rounded-lg border ${entry.isCurrent ? 'bg-green-50 border-green-200' : 'bg-white border-border-light'}`}
                                     >
                                         <div className="flex items-center justify-between gap-2 flex-wrap">
                                             <span className="font-semibold text-slate-800">{entry.position}</span>
@@ -856,7 +856,7 @@ function HistoryViewSection({ item, type, onClose }) {
                         {chartData.map((data, index) => (
                             <div
                                 key={index}
-                                className={`p-3 rounded-lg border ${index === 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}
+                                className={`p-3 rounded-lg border ${index === 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-border-light'}`}
                             >
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="font-medium text-slate-800">{data.position}</span>
@@ -1054,7 +1054,7 @@ function HistoryViewSection({ item, type, onClose }) {
         return (
             <div className="flex flex-col gap-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
                         <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
                             Current Mixer
                         </div>
@@ -1062,7 +1062,7 @@ function HistoryViewSection({ item, type, onClose }) {
                             {currentMixer ? `#${currentMixer}` : 'Not Assigned'}
                         </div>
                     </div>
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
                         <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
                             Current Tractor
                         </div>
@@ -1070,13 +1070,13 @@ function HistoryViewSection({ item, type, onClose }) {
                             {currentTractor ? `#${currentTractor}` : 'Not Assigned'}
                         </div>
                     </div>
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
                         <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
                             Total Assignments
                         </div>
                         <div className="text-2xl font-bold text-slate-800">{totalAssignments}</div>
                     </div>
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
                         <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
                             Assignment Changes
                         </div>
@@ -1102,7 +1102,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                     )}
                                 </div>
                                 <div
-                                    className={`ml-4 p-3 rounded-lg border ${entry.isCurrent ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}
+                                    className={`ml-4 p-3 rounded-lg border ${entry.isCurrent ? 'bg-green-50 border-green-200' : 'bg-white border-border-light'}`}
                                 >
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
                                         <span className="font-semibold text-slate-800">
@@ -1187,7 +1187,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                     return (
                                         <div
                                             key={entry.id ?? index}
-                                            className="bg-white border border-gray-200 rounded-lg p-3.5 hover:border-slate-400 hover:shadow-md transition-all"
+                                            className="bg-white border border-border-light rounded-lg p-3.5 hover:border-slate-400 hover:shadow-md transition-all"
                                         >
                                             <div className="flex justify-between items-center mb-2.5">
                                                 <div className="text-sm font-bold text-slate-800 capitalize">
@@ -1302,8 +1302,8 @@ function HistoryViewSection({ item, type, onClose }) {
     if (typeof document === 'undefined' || !document.body) return null
     return ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-[900px] w-full max-h-[85vh] flex flex-col border border-gray-200">
-                <div className="bg-slate-50 flex justify-between items-center px-6 py-5 border-b border-gray-200 rounded-t-2xl">
+            <div className="bg-white rounded shadow-2xl max-w-[900px] w-full max-h-[85vh] flex flex-col border border-border-light">
+                <div className="bg-slate-50 flex justify-between items-center px-6 py-5 border-b border-border-light rounded-t-2xl">
                     <div className="flex items-center gap-3">
                         <i className="fas fa-history text-xl text-accent" />
                         <div>
@@ -1320,7 +1320,7 @@ function HistoryViewSection({ item, type, onClose }) {
                         <i className="fas fa-times" />
                     </button>
                 </div>
-                <div className="flex gap-2 px-6 py-4 overflow-x-auto border-b border-gray-200 bg-slate-50 flex-shrink-0">
+                <div className="flex gap-2 px-6 py-4 overflow-x-auto border-b border-border-light bg-slate-50 flex-shrink-0">
                     {tabs
                         .filter((t) => t.show)
                         .map((tab) => (
@@ -1335,9 +1335,9 @@ function HistoryViewSection({ item, type, onClose }) {
                 <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 bg-white min-h-0">
                     {renderContent()}
                 </div>
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end bg-slate-50 rounded-b-2xl">
+                <div className="px-6 py-4 border-t border-border-light flex justify-end bg-slate-50 rounded-b-2xl">
                     <button
-                        className="px-6 py-3 border border-gray-200 rounded-lg bg-white text-gray-700 text-sm font-semibold cursor-pointer hover:bg-slate-100 hover:border-slate-300"
+                        className="px-6 py-3 border border-border-light rounded-lg bg-white text-gray-700 text-sm font-semibold cursor-pointer hover:bg-slate-100 hover:border-slate-300"
                         onClick={onClose}
                     >
                         Close

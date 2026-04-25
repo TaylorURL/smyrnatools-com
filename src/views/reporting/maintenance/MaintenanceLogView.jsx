@@ -52,7 +52,7 @@ const DAYS_OF_WEEK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const CHEVRON_BG =
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")"
 const SELECT_CLS =
-    'w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 bg-no-repeat px-3 py-2.5 pr-10 text-sm text-slate-900 outline-none cursor-pointer focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
+    'w-full appearance-none rounded-lg border border-border-light bg-slate-50 bg-no-repeat px-3 py-2.5 pr-10 text-sm text-slate-900 outline-none cursor-pointer focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
 const SELECT_STYLE = { backgroundImage: CHEVRON_BG, backgroundPosition: 'right 10px center', backgroundSize: '16px' }
 
 // ── Content Skeleton ────────────────────────────────────────────
@@ -92,12 +92,12 @@ function SkeletonRow({ i }) {
 function ContentSkeleton({ isMobile }) {
     return (
         <div className={`flex gap-4 items-start ${isMobile ? 'flex-col' : ''}`}>
-            <div className="flex-1 min-w-0 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="flex-1 min-w-0 bg-white rounded border border-border-light shadow-sm overflow-hidden">
                 <table className="w-full border-collapse">
                     <thead>
                         <tr>
                             {['w-32', 'w-12', 'w-20', 'w-24', 'w-16', 'w-8'].map((w, i) => (
-                                <th key={i} className="text-left py-3 px-4 border-b-2 border-slate-100">
+                                <th key={i} className="text-left py-3 px-4 border-b-2 border-border-light">
                                     <div className={`h-3 ${w} rounded bg-slate-200 animate-pulse`} />
                                 </th>
                             ))}
@@ -115,7 +115,7 @@ function ContentSkeleton({ isMobile }) {
                     {[140, 120, 160, 120].map((h, i) => (
                         <div
                             key={i}
-                            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4"
+                            className="bg-white rounded border border-border-light shadow-sm p-4"
                             style={{ animationDelay: `${i * 80}ms` }}
                         >
                             <div className="h-3 w-24 rounded bg-slate-200 animate-pulse mb-3" />
@@ -336,7 +336,7 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
                 })}
             </div>
             {/* Legend */}
-            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border-light">
                 <span className="flex items-center gap-1 text-[10px] text-slate-400">
                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_CONFIG.ok.barColor }} />{' '}
                     Serviced
@@ -495,20 +495,20 @@ function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accen
     }
 
     const inputCls =
-        'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
+        'w-full rounded-lg border border-border-light bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
     const labelCls = 'block text-xs font-semibold text-slate-500 mb-1.5'
 
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 110 }} onClick={onClose}>
             <div className="absolute inset-0 bg-black/40" />
             <div
-                className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl max-h-[90vh] overflow-y-auto"
+                className="relative w-full max-w-lg rounded bg-white shadow-2xl max-h-[90vh] overflow-y-auto"
                 style={{ background: 'var(--bg-primary)' }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div
-                    className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-slate-200 px-6 py-4"
+                    className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-border-light px-6 py-4"
                     style={{ background: 'var(--bg-primary)' }}
                 >
                     <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -647,12 +647,12 @@ function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accen
 
                 {/* Footer */}
                 <div
-                    className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4 rounded-b-2xl"
+                    className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-border-light px-6 py-4 rounded-b-2xl"
                     style={{ background: 'var(--bg-primary)' }}
                 >
                     <button
                         type="button"
-                        className="rounded-xl px-5 py-2.5 text-sm font-semibold border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50"
+                        className="rounded-xl px-5 py-2.5 text-sm font-semibold border border-border-light bg-white text-slate-700 cursor-pointer hover:bg-slate-50"
                         onClick={onClose}
                     >
                         Cancel
@@ -747,19 +747,19 @@ function EditEquipmentModal({ isOpen, onClose, onSaved, equipment, categories, p
     }
 
     const inputCls =
-        'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
+        'w-full rounded-lg border border-border-light bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
     const labelCls = 'block text-xs font-semibold text-slate-500 mb-1.5'
 
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 120 }} onClick={onClose}>
             <div className="absolute inset-0 bg-black/40" />
             <div
-                className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl max-h-[90vh] overflow-y-auto"
+                className="relative w-full max-w-lg rounded bg-white shadow-2xl max-h-[90vh] overflow-y-auto"
                 style={{ background: 'var(--bg-primary)' }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-slate-200 px-6 py-4"
+                    className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-border-light px-6 py-4"
                     style={{ background: 'var(--bg-primary)' }}
                 >
                     <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -896,12 +896,12 @@ function EditEquipmentModal({ isOpen, onClose, onSaved, equipment, categories, p
                 </div>
 
                 <div
-                    className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4 rounded-b-2xl"
+                    className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-border-light px-6 py-4 rounded-b-2xl"
                     style={{ background: 'var(--bg-primary)' }}
                 >
                     <button
                         type="button"
-                        className="rounded-xl px-5 py-2.5 text-sm font-semibold border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50"
+                        className="rounded-xl px-5 py-2.5 text-sm font-semibold border border-border-light bg-white text-slate-700 cursor-pointer hover:bg-slate-50"
                         onClick={onClose}
                     >
                         Cancel
@@ -985,20 +985,20 @@ function LogServiceModal({ isOpen, onClose, onSaved, equipment, serviceTypes, ac
     }
 
     const inputCls =
-        'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
+        'w-full rounded-lg border border-border-light bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
     const labelCls = 'block text-xs font-semibold text-slate-500 mb-1.5'
 
     return (
         <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 110 }} onClick={onClose}>
             <div className="absolute inset-0 bg-black/40" />
             <div
-                className="relative w-full max-w-md rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+                className="relative w-full max-w-md rounded shadow-2xl max-h-[90vh] overflow-y-auto"
                 style={{ background: 'var(--bg-primary)' }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div
-                    className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-slate-200 px-6 py-4"
+                    className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-border-light px-6 py-4"
                     style={{ background: 'var(--bg-primary)' }}
                 >
                     <div>
@@ -1082,12 +1082,12 @@ function LogServiceModal({ isOpen, onClose, onSaved, equipment, serviceTypes, ac
 
                 {/* Footer */}
                 <div
-                    className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4 rounded-b-2xl"
+                    className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-border-light px-6 py-4 rounded-b-2xl"
                     style={{ background: 'var(--bg-primary)' }}
                 >
                     <button
                         type="button"
-                        className="rounded-xl px-5 py-2.5 text-sm font-semibold border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50"
+                        className="rounded-xl px-5 py-2.5 text-sm font-semibold border border-border-light bg-white text-slate-700 cursor-pointer hover:bg-slate-50"
                         onClick={onClose}
                     >
                         Cancel
@@ -1161,7 +1161,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
             >
                 {/* Header */}
                 <div
-                    className="sticky top-0 z-10 border-b border-slate-200 px-6 py-5 shrink-0"
+                    className="sticky top-0 z-10 border-b border-border-light px-6 py-5 shrink-0"
                     style={{ background: 'var(--bg-primary)' }}
                 >
                     <div className="flex items-start justify-between">
@@ -1278,7 +1278,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                     </div>
 
                     {/* Service Progress */}
-                    <div className="rounded-xl border border-slate-200 p-4 mb-6">
+                    <div className="rounded-xl border border-border-light p-4 mb-6">
                         <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
                             Service Progress
                         </div>
@@ -1311,7 +1311,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                         {loadingHistory ? (
                             <div className="flex flex-col gap-3">
                                 {Array.from({ length: 3 }, (_, i) => (
-                                    <div key={i} className="rounded-xl border border-slate-200 p-4">
+                                    <div key={i} className="rounded-xl border border-border-light p-4">
                                         <div className="h-4 w-32 rounded bg-slate-200 animate-pulse mb-2" />
                                         <div className="h-3 w-48 rounded bg-slate-200 animate-pulse" />
                                     </div>
@@ -1324,7 +1324,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                         ) : (
                             <div className="flex flex-col gap-3">
                                 {history.map((entry) => (
-                                    <div key={entry.id} className="rounded-xl border border-slate-200 p-4">
+                                    <div key={entry.id} className="rounded-xl border border-border-light p-4">
                                         <div className="flex items-center justify-between mb-1.5">
                                             <span className="text-sm font-semibold">
                                                 {formatDate(entry.service_date)}
@@ -1506,18 +1506,18 @@ export default function MaintenanceLogView({
                         {/* Content */}
                         <div className="flex-1 min-w-0 w-full overflow-hidden">
                             {sorted.length === 0 ? (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div className="bg-white rounded border border-border-light shadow-sm overflow-hidden">
                                     {renderEmptyState()}
                                 </div>
                             ) : (
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+                                <div className="bg-white rounded border border-border-light shadow-sm overflow-x-auto">
                                     <table className="w-full border-collapse" style={{ minWidth: '700px' }}>
                                         <thead>
                                             <tr>
                                                 {headers.map((h, i) => (
                                                     <th
                                                         key={h || i}
-                                                        className="text-left text-[11px] font-bold uppercase tracking-wide text-slate-500 py-3 px-4 border-b-2 border-slate-100 cursor-pointer select-none hover:text-slate-700"
+                                                        className="text-left text-[11px] font-bold uppercase tracking-wide text-slate-500 py-3 px-4 border-b-2 border-border-light cursor-pointer select-none hover:text-slate-700"
                                                         style={{ width: colWidths[i] || 'auto' }}
                                                         onClick={() => h && handleHeaderClick(h)}
                                                     >
@@ -1538,7 +1538,7 @@ export default function MaintenanceLogView({
                                             {sorted.map((item) => (
                                                 <tr
                                                     key={item.id}
-                                                    className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50"
+                                                    className="cursor-pointer border-b border-border-light last:border-b-0 hover:bg-slate-50/50"
                                                     style={{
                                                         background:
                                                             item.service_status === 'overdue'
@@ -1614,7 +1614,7 @@ export default function MaintenanceLogView({
                         {/* Calendar Sidebar */}
                         {!isMobile && (
                             <div className="w-[320px] flex-shrink-0 flex flex-col gap-4">
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                                <div className="bg-white rounded border border-border-light shadow-sm p-4">
                                     <MiniCalendar
                                         equipment={equipment}
                                         calendarDate={calendarDate}
@@ -1623,7 +1623,7 @@ export default function MaintenanceLogView({
                                         accentColor={accentColor}
                                     />
                                 </div>
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                                <div className="bg-white rounded border border-border-light shadow-sm p-4">
                                     <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">
                                         Upcoming & Overdue
                                     </h4>
@@ -1632,7 +1632,7 @@ export default function MaintenanceLogView({
                                         (e) => e.service_status === 'overdue' || e.service_status === 'due_soon'
                                     ) && <p className="text-xs text-slate-400 italic">All equipment up to date</p>}
                                 </div>
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                                <div className="bg-white rounded border border-border-light shadow-sm p-4">
                                     <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">
                                         Recent Activity
                                     </h4>

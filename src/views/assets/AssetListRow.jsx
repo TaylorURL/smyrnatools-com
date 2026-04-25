@@ -4,10 +4,12 @@ import StatusHistoryBar from '../../app/components/common/StatusHistoryBar'
 
 /**
  * Single table row for the asset list view, driven by column type configs.
- * Extracted from AssetView's renderRow to keep the parent manageable.
+ * Visual rhythm matches the schedule-tab table: 12px body, 6/10 cell padding,
+ * 9.5px uppercase tracked-wider status pills, 22px borderless action icons.
+ * Cell backgrounds inherit from the parent row so the parent's hover styles
+ * (`hover:[&>td]:bg-bg-tertiary`) apply cleanly without inline overrides.
  */
 export default function AssetListRow({
-    alternatingBg,
     config,
     duplicates,
     item,
@@ -26,29 +28,30 @@ export default function AssetListRow({
     const { columns } = config.listConfig
 
     const cellBase = {
-        backgroundColor: alternatingBg,
         borderBottom: '1px solid var(--border-light)',
         color: 'var(--text-primary)',
-        fontSize: '14px',
-        padding: '20px 16px',
+        fontSize: '12px',
+        padding: '6px 10px',
         verticalAlign: 'middle'
     }
 
-    const cellBold = { ...cellBase, color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 700 }
+    const cellBold = { ...cellBase, fontSize: '12.5px', fontWeight: 700 }
 
+    /** Borderless 22×22 row icon — quiet inside the row, hover-darkens. */
     const actionBtnStyle = {
         alignItems: 'center',
-        backgroundColor: 'var(--bg-primary)',
-        border: '1px solid var(--border-light)',
-        borderRadius: '8px',
-        color: 'var(--text-secondary)',
+        background: 'transparent',
+        border: 'none',
+        borderRadius: '4px',
+        color: 'var(--text-tertiary)',
         cursor: 'pointer',
         display: 'inline-flex',
-        fontSize: '14px',
-        height: '36px',
+        fontSize: '11px',
+        height: '22px',
         justifyContent: 'center',
-        marginRight: '8px',
-        width: '36px'
+        marginRight: '2px',
+        position: 'relative',
+        width: '22px'
     }
 
     /** Copies text to clipboard and briefly swaps the icon to a checkmark. */
@@ -69,7 +72,8 @@ export default function AssetListRow({
             type="button"
             onClick={(e) => handleCopy(e, text)}
             title={title}
-            className="inline-flex items-center bg-transparent border-none text-[color:var(--text-secondary)] cursor-pointer text-xs p-0.5"
+            className="inline-flex items-center bg-transparent border-none cursor-pointer text-[10px] p-0.5"
+            style={{ color: 'var(--text-tertiary)' }}
         >
             <i className="fas fa-copy" />
         </button>
@@ -81,18 +85,17 @@ export default function AssetListRow({
         // --- Status badge ---
         if (col.type === 'status') {
             const displayStatus = col.getDisplayStatus ? col.getDisplayStatus(item) : item.status
-            const badgeClasses = config.statusBadgeClasses?.[displayStatus] || 'bg-slate-100 text-slate-500'
+            const badgeClasses = config.statusBadgeClasses?.[displayStatus] || 'bg-bg-tertiary text-text-secondary'
             const dateToUse = item.statusChangedAt || item.createdAt
             const days = dateToUse
                 ? Math.max(1, Math.floor((Date.now() - new Date(dateToUse).getTime()) / 86400000))
                 : 1
-            const daysSuffix =
-                displayStatus && displayStatus !== 'Retired' ? ` (${days} day${days !== 1 ? 's' : ''})` : ''
+            const daysSuffix = displayStatus && displayStatus !== 'Retired' ? ` · ${days}d` : ''
             return (
                 <td key={col.key} style={style}>
-                    <div>
+                    <div className="flex flex-col gap-1">
                         <span
-                            className={`inline-block rounded-2xl text-xs font-semibold px-3.5 py-1.5 ${badgeClasses}`}
+                            className={`inline-flex items-center self-start rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${badgeClasses}`}
                         >
                             {displayStatus || '---'}
                             {daysSuffix}
@@ -112,10 +115,10 @@ export default function AssetListRow({
         if (col.type === 'truckNumber') {
             const val = col.getValue ? col.getValue(item) : item[col.key]
             return (
-                <td key={col.key} style={{ ...cellBold, width: col.width }}>
+                <td key={col.key} style={{ ...cellBold, width: col.width, fontFamily: 'ui-monospace, monospace' }}>
                     {val ? (
-                        <div className="flex items-center gap-1.5">
-                            {val}
+                        <div className="flex items-center gap-1">
+                            <span className="tabular-nums">{val}</span>
                             {copyButton(val, col.copyTitle || 'Copy')}
                         </div>
                     ) : (
@@ -134,8 +137,8 @@ export default function AssetListRow({
             return (
                 <td key={col.key} style={style}>
                     {operator?.name ? (
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center gap-1.5">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1">
                                 <span className="font-medium">{operator.name}</span>
                                 {copyButton(operator.name, 'Copy operator name')}
                             </div>
@@ -144,7 +147,7 @@ export default function AssetListRow({
                                     {assignedTrainees.map((trainee) => (
                                         <span
                                             key={trainee.employeeId}
-                                            className="inline-flex items-center gap-1 rounded-md bg-amber-50 text-amber-800 text-[10px] font-semibold px-1.5 py-0.5"
+                                            className="inline-flex items-center gap-1 rounded bg-amber-50 text-amber-800 text-[9.5px] font-semibold px-1 py-0.5"
                                             title={`Trainee: ${trainee.name}`}
                                         >
                                             <i className="fas fa-user-graduate text-[8px]" />
@@ -161,12 +164,17 @@ export default function AssetListRow({
                                         onOperatorComment?.(operator)
                                     }}
                                     title="Operator comments"
-                                    className="relative inline-flex items-center gap-1 rounded-md border border-[color:var(--border-light)] bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] cursor-pointer text-[10px] px-1.5 py-0.5 transition-all hover:bg-[color:var(--accent)] hover:text-white hover:border-[color:var(--accent)]"
+                                    className="relative inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95"
+                                    style={{
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-light)',
+                                        color: 'var(--text-secondary)'
+                                    }}
                                 >
-                                    <i className="fas fa-comment text-[9px]" />
+                                    <i className="fas fa-comment text-[8px]" />
                                     <span>Comments</span>
                                     {operator.commentsCount > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[14px] h-3.5 px-0.5 rounded-full bg-blue-500 text-white text-[8px] font-bold leading-none shadow-sm">
+                                        <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[12px] h-3 px-0.5 rounded-full bg-blue-500 text-white text-[8px] font-bold leading-none">
                                             {operator.commentsCount > 9 ? '9+' : operator.commentsCount}
                                         </span>
                                     )}
@@ -178,15 +186,22 @@ export default function AssetListRow({
                                         onOperatorHistory?.(operator)
                                     }}
                                     title="Operator history"
-                                    className="relative inline-flex items-center gap-1 rounded-md border border-[color:var(--border-light)] bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] cursor-pointer text-[10px] px-1.5 py-0.5 transition-all hover:bg-[color:var(--accent)] hover:text-white hover:border-[color:var(--accent)]"
+                                    className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95"
+                                    style={{
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-light)',
+                                        color: 'var(--text-secondary)'
+                                    }}
                                 >
-                                    <i className="fas fa-history text-[9px]" />
+                                    <i className="fas fa-history text-[8px]" />
                                     <span>History</span>
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <span className="italic text-[color:var(--text-secondary)]">Not Assigned</span>
+                        <span className="italic" style={{ color: 'var(--text-tertiary)' }}>
+                            —
+                        </span>
                     )}
                 </td>
             )
@@ -199,19 +214,19 @@ export default function AssetListRow({
             return (
                 <td key={col.key} style={style}>
                     {showNAForRetired ? (
-                        <span className="text-[color:var(--text-secondary)]">N/A</span>
+                        <span style={{ color: 'var(--text-tertiary)' }}>N/A</span>
                     ) : (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-px">
                             {Array.from({ length: 5 }).map((_, i) => (
                                 <i
                                     key={i}
-                                    className="fas fa-star text-sm"
-                                    style={{ color: i < rating ? '#f59e0b' : 'var(--border-light)' }}
+                                    className="fas fa-star text-[9px]"
+                                    style={{ color: i < rating ? '#f59e0b' : 'var(--bg-tertiary)' }}
                                 />
                             ))}
                             {col.dirtyWarning && rating > 0 && rating < 3 && (
-                                <span className="bg-[#fee2e2] text-[#dc2626] rounded text-[10px] font-bold ml-2 px-2 py-0.5">
-                                    DIRTY
+                                <span className="bg-[#fee2e2] text-[#dc2626] rounded text-[9px] font-bold uppercase tracking-wider ml-1.5 px-1 py-0.5">
+                                    Dirty
                                 </span>
                             )}
                         </div>
@@ -225,15 +240,21 @@ export default function AssetListRow({
             const isVerified = col.getIsVerified ? col.getIsVerified(item) : item.isVerified?.()
             const verifyBtnClass = (v) => {
                 const base =
-                    'inline-flex items-center border-none rounded-lg font-semibold whitespace-nowrap text-xs gap-1.5 px-3.5 py-2'
+                    'inline-flex items-center border-none rounded font-bold uppercase tracking-wider whitespace-nowrap text-[9.5px] gap-1 px-1.5 py-0.5'
                 return v
                     ? `${base} bg-[#dcfce7] text-[#166534] cursor-default`
-                    : `${base} bg-[#fef3c7] text-[#92400e] cursor-pointer`
+                    : `${base} bg-[#fef3c7] text-[#92400e] cursor-pointer hover:brightness-95`
             }
             return (
                 <td key={col.key} style={style}>
                     {item.status === 'Retired' ? (
-                        <span className="bg-[color:var(--bg-secondary)] rounded-lg text-xs font-semibold text-[color:var(--text-secondary)] px-3.5 py-2">
+                        <span
+                            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5"
+                            style={{
+                                background: 'var(--bg-tertiary)',
+                                color: 'var(--text-tertiary)'
+                            }}
+                        >
                             N/A
                         </span>
                     ) : (
@@ -246,7 +267,9 @@ export default function AssetListRow({
                             title={isVerified ? 'Verified' : 'Click to verify'}
                             className={verifyBtnClass(isVerified)}
                         >
-                            <i className={`fas ${isVerified ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
+                            <i
+                                className={`fas ${isVerified ? 'fa-check-circle' : 'fa-exclamation-circle'} text-[8px]`}
+                            />
                             <span>{isVerified ? 'Verified' : 'Verify'}</span>
                         </button>
                     )}
@@ -276,19 +299,19 @@ export default function AssetListRow({
                         ...style,
                         color: 'var(--text-secondary)',
                         fontFamily: 'ui-monospace, monospace',
-                        fontSize: '12px'
+                        fontSize: '11px'
                     }}
                 >
                     {vinVal ? (
-                        <div className="flex items-center gap-1.5">
-                            {vinVal}
+                        <div className="flex items-center gap-1">
+                            <span className="tabular-nums">{vinVal}</span>
                             {copyButton(vinVal, 'Copy VIN')}
                             {isDuplicate && (
                                 <span
-                                    className="bg-amber-50 text-amber-800 rounded text-[10px] font-bold px-2 py-1"
+                                    className="bg-amber-50 text-amber-800 rounded text-[9px] font-bold uppercase tracking-wider px-1 py-0.5"
                                     title="Duplicate VIN"
                                 >
-                                    <i className="fas fa-exclamation-triangle" />
+                                    <i className="fas fa-exclamation-triangle text-[8px]" />
                                 </span>
                             )}
                         </div>
@@ -309,10 +332,10 @@ export default function AssetListRow({
                     {val || '---'}
                     {isDuplicate && (
                         <span
-                            className="bg-amber-50 text-amber-800 rounded text-[10px] font-bold ml-2 px-2 py-1"
+                            className="bg-amber-50 text-amber-800 rounded text-[9px] font-bold uppercase tracking-wider ml-1.5 px-1 py-0.5"
                             title={col.warningTitle}
                         >
-                            <i className="fas fa-exclamation-triangle" />
+                            <i className="fas fa-exclamation-triangle text-[8px]" />
                         </span>
                     )}
                 </td>
@@ -326,20 +349,20 @@ export default function AssetListRow({
             return (
                 <td key={col.key} style={style}>
                     {val != null ? (
-                        <>
-                            {val}
+                        <span className="inline-flex items-center gap-1.5">
+                            <span className="tabular-nums font-mono">{val}</span>
                             {hasWarning && (
                                 <span
                                     className={
                                         col.warningClassName ||
-                                        'bg-red-50 text-red-800 rounded text-[10px] font-bold ml-2 px-2 py-1'
+                                        'bg-red-50 text-red-800 rounded text-[9px] font-bold uppercase tracking-wider px-1 py-0.5'
                                     }
                                     title={col.warningTitle}
                                 >
-                                    <i className="fas fa-exclamation-triangle" />
+                                    <i className="fas fa-exclamation-triangle text-[8px]" />
                                 </span>
                             )}
-                        </>
+                        </span>
                     ) : (
                         '---'
                     )}
@@ -352,19 +375,19 @@ export default function AssetListRow({
             const identifier = config.getModalIdentifier(item)
             return (
                 <td key={col.key} style={style}>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-0.5">
                         <button
                             type="button"
                             onClick={(e) => {
                                 e.stopPropagation()
                                 onComment(item.id, identifier)
                             }}
-                            style={{ ...actionBtnStyle, position: 'relative' }}
+                            style={actionBtnStyle}
                             title="View comments"
                         >
                             <i className="fas fa-comments" />
                             {item.commentsCount > 0 && (
-                                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-blue-500 text-white text-[10px] font-bold shadow-md">
+                                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[12px] h-3 px-0.5 rounded-full bg-blue-500 text-white text-[8px] font-bold leading-none">
                                     {item.commentsCount > 9 ? '9+' : item.commentsCount}
                                 </span>
                             )}
@@ -375,12 +398,12 @@ export default function AssetListRow({
                                 e.stopPropagation()
                                 onIssue(item.id, identifier)
                             }}
-                            style={{ ...actionBtnStyle, position: 'relative' }}
+                            style={actionBtnStyle}
                             title="View issues"
                         >
                             <i className="fas fa-tools" />
                             {item.openIssuesCount > 0 && (
-                                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-md">
+                                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[12px] h-3 px-0.5 rounded-full bg-red-500 text-white text-[8px] font-bold leading-none">
                                     {item.openIssuesCount > 9 ? '9+' : item.openIssuesCount}
                                 </span>
                             )}
@@ -432,18 +455,7 @@ export default function AssetListRow({
     }
 
     return (
-        <tr
-            onClick={() => onSelect(item.id)}
-            style={{ cursor: 'pointer' }}
-            onMouseEnter={(e) =>
-                e.currentTarget
-                    .querySelectorAll('td')
-                    .forEach((td) => (td.style.backgroundColor = 'var(--bg-tertiary)'))
-            }
-            onMouseLeave={(e) =>
-                e.currentTarget.querySelectorAll('td').forEach((td) => (td.style.backgroundColor = alternatingBg))
-            }
-        >
+        <tr onClick={() => onSelect(item.id)} style={{ cursor: 'pointer' }}>
             {columns.map(renderCell)}
         </tr>
     )

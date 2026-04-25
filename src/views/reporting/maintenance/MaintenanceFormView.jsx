@@ -8,7 +8,7 @@ import ImagePreviewModal from '../../../app/components/ui/ImagePreviewModal'
 import { useMaintenanceForm } from '../../../app/hooks/useMaintenanceForm'
 import { formatMaintenanceDateShort, getFieldTypeIcon } from '../../../utils/MaintenanceUtility'
 const INPUT_BASE_CLASSES =
-    'w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-sm text-slate-800 outline-none transition-colors focus:border-accent focus:ring-[3px] focus:ring-accent/10'
+    'w-full rounded-lg border-2 border-border-light px-4 py-3 text-sm text-slate-800 outline-none transition-colors focus:border-accent focus:ring-[3px] focus:ring-accent/10'
 const INPUT_ERROR_CLASSES = 'border-red-500'
 /** Reusable single-line text input for short-answer and fallback field types. */
 function FormInput({ field, value, disabled, hasError, onChange, placeholder = 'Type your answer...' }) {
@@ -69,7 +69,7 @@ function ChecklistField({
                     <div key={idx} className="flex flex-col gap-3">
                         <label
                             className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${
-                                isChecked ? 'border-accent bg-blue-50' : 'border-gray-200 bg-slate-50'
+                                isChecked ? 'border-accent bg-blue-50' : 'border-border-light bg-slate-50'
                             } ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
                         >
                             <input
@@ -221,7 +221,7 @@ function StepperHeader({
     onSubmit
 }) {
     return (
-        <div className="sticky top-0 z-50 border-b border-gray-200 bg-white px-3 py-2.5 shadow-sm sm:px-8 sm:py-4">
+        <div className="sticky top-0 z-50 border-b border-border-light bg-white px-3 py-2.5 shadow-sm sm:px-8 sm:py-4">
             {/* Top row: close, title, progress */}
             <div className="flex items-center gap-3">
                 <button
@@ -311,7 +311,7 @@ function FieldCard({ field }) {
 function LoadingState({ formTitle, onBack }) {
     return (
         <div className="flex min-h-screen w-full flex-col bg-slate-50">
-            <div className="sticky top-0 z-50 flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
+            <div className="sticky top-0 z-50 flex items-center gap-4 border-b border-border-light bg-white px-6 py-4 shadow-sm">
                 <button
                     className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-500 text-lg hover:bg-slate-200 transition-colors"
                     onClick={onBack}
@@ -330,7 +330,7 @@ function LoadingState({ formTitle, onBack }) {
 function EmptyFieldsState({ formTitle, onBack }) {
     return (
         <div className="flex min-h-screen w-full flex-col bg-slate-50">
-            <div className="sticky top-0 z-50 flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
+            <div className="sticky top-0 z-50 flex items-center gap-4 border-b border-border-light bg-white px-6 py-4 shadow-sm">
                 <button
                     className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-500 text-lg hover:bg-slate-200 transition-colors"
                     onClick={onBack}

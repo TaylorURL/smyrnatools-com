@@ -75,7 +75,7 @@ const WaterCementCalculator = () => {
     const totalCite = (parseFloat(values.cementLbs) || 0) + (parseFloat(values.supplementalLbs) || 0)
     const hasData = waterGal > 0 && totalCite > 0
 
-    const containerClass = `bg-[var(--card-background)] border border-[var(--border-light)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${isMobile ? 'rounded-lg p-4' : 'rounded-xl p-8'}`
+    const containerClass = `bg-[var(--card-background)] border border-[var(--border-light)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${isMobile ? 'rounded-lg p-4' : 'rounded p-8'}`
     const sectionClass = isMobile ? 'mb-6' : 'mb-8'
     const sectionHeaderClass = `flex items-center gap-3 font-bold border-b-2 border-[var(--border-light)] pb-4 text-[var(--text-primary)] ${isMobile ? 'text-base mb-4' : 'text-lg mb-6'}`
     const labelClass = `text-[var(--text-secondary)] font-semibold uppercase tracking-wide text-center ${isMobile ? 'text-[0.625rem]' : 'text-xs'}`
@@ -99,7 +99,7 @@ const WaterCementCalculator = () => {
                 </div>
                 <div className="flex flex-col gap-4">
                     <div
-                        className={`flex items-center justify-center rounded-xl bg-[var(--bg-secondary)] ${isMobile ? 'flex-col gap-4 p-4' : 'flex-row flex-wrap gap-8 p-8'}`}
+                        className={`flex items-center justify-center rounded bg-[var(--bg-secondary)] ${isMobile ? 'flex-col gap-4 p-4' : 'flex-row flex-wrap gap-8 p-8'}`}
                     >
                         <div className={`flex flex-col ${isMobile ? 'min-w-full w-full' : 'min-w-[300px] w-auto'}`}>
                             <div
@@ -158,7 +158,7 @@ const WaterCementCalculator = () => {
                         </div>
                         <span className="text-accent font-bold text-3xl">=</span>
                         <div
-                            className={`flex flex-col items-center gap-2 rounded-xl ${resultBlockClass} ${isMobile ? 'min-w-full p-4' : 'min-w-[200px] p-6'}`}
+                            className={`flex flex-col items-center gap-2 rounded ${resultBlockClass} ${isMobile ? 'min-w-full p-4' : 'min-w-[200px] p-6'}`}
                         >
                             <span className="text-accent text-5xl font-bold leading-none">
                                 {hasData ? result?.ratio : '\u2014'}

@@ -110,7 +110,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         setExporting(false)
     }
     const renderPlantManagerForm = () => (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-xl border border-border-light p-6 mb-6">
             <div className="mb-5">
                 <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
                     <i className="fas fa-clipboard-list"></i>Weekly Production Data
@@ -134,7 +134,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 value={form[field.name] ?? ''}
                                 readOnly
                                 disabled
-                                className="px-4 py-3 border border-gray-200 rounded-lg text-sm text-slate-800 bg-slate-50 w-full"
+                                className="px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-slate-50 w-full"
                             />
                         </div>
                     ))}
@@ -142,7 +142,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         </div>
     )
     const renderDefaultForm = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-white rounded-xl border border-border-light p-6 mb-6">
             {report.fields
                 .filter(
                     (f) =>
@@ -162,14 +162,14 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 value={form[field.name] ?? ''}
                                 readOnly
                                 disabled
-                                className="px-4 py-3 border border-gray-200 rounded-lg text-sm text-slate-800 bg-slate-50 min-h-[100px] resize-y"
+                                className="px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-slate-50 min-h-[100px] resize-y"
                             />
                         ) : field.type === 'select' ? (
                             <select
                                 value={form[field.name] ?? ''}
                                 readOnly
                                 disabled
-                                className="px-4 py-3 border border-gray-200 rounded-lg text-sm text-slate-800 bg-slate-50"
+                                className="px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-slate-50"
                             >
                                 <option value="">Select...</option>
                                 {field.options?.map((opt) => (
@@ -184,7 +184,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 value={form[field.name] ?? ''}
                                 readOnly
                                 disabled
-                                className="px-4 py-3 border border-gray-200 rounded-lg text-sm text-slate-800 bg-slate-50"
+                                className="px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-slate-50"
                             />
                         )}
                     </div>
@@ -192,14 +192,14 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         </div>
     )
     const renderAggregateTable = () => (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+        <div className="bg-white rounded-xl border border-border-light overflow-hidden mb-6">
             <table className="w-full border-collapse">
                 <thead>
                     <tr>
-                        <th className="bg-slate-50 px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-gray-200">
+                        <th className="bg-slate-50 px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-border-light">
                             Material
                         </th>
-                        <th className="bg-slate-50 px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-gray-200">
+                        <th className="bg-slate-50 px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-border-light">
                             Amount
                         </th>
                     </tr>
@@ -207,10 +207,10 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 <tbody>
                     {report.fields.map((field) => (
                         <tr key={field.name} className="hover:bg-slate-50">
-                            <td className="px-4 py-3 text-sm text-slate-800 border-b border-slate-100">
+                            <td className="px-4 py-3 text-sm text-slate-800 border-b border-border-light">
                                 {field.label}
                             </td>
-                            <td className="px-4 py-3 text-sm text-slate-800 border-b border-slate-100">
+                            <td className="px-4 py-3 text-sm text-slate-800 border-b border-border-light">
                                 {form[field.name] || 0}
                             </td>
                         </tr>
@@ -221,7 +221,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
     )
     return (
         <div ref={containerRef} className="bg-slate-50 min-h-screen w-full">
-            <div className="flex items-center justify-between flex-wrap gap-4 bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-40">
+            <div className="flex items-center justify-between flex-wrap gap-4 bg-white border-b border-border-light px-6 py-4 sticky top-0 z-40">
                 <div className="flex items-center gap-4">
                     <button
                         className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
@@ -260,7 +260,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     )}
                 </div>
             </div>
-            <div className="flex items-center flex-wrap gap-6 bg-slate-50 border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center flex-wrap gap-6 bg-slate-50 border-b border-border-light px-6 py-4">
                 {reportDateVerbose && (
                     <MetaItem icon="far fa-calendar-check" label="Report Date:" value={reportDateVerbose} />
                 )}

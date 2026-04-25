@@ -368,8 +368,8 @@ function ChatMessages({ conversation, userNames, accentColor, resolvedUserId, on
                                 <div
                                     className={`max-w-[75%] px-3.5 py-2 ${
                                         isMine
-                                            ? `rounded-2xl ${sameSenderAsNext ? 'rounded-br-lg' : 'rounded-br-sm'} ${sameSenderAsPrev ? 'rounded-tr-lg' : ''}`
-                                            : `rounded-2xl ${sameSenderAsNext ? 'rounded-bl-lg' : 'rounded-bl-sm'} ${sameSenderAsPrev ? 'rounded-tl-lg' : ''}`
+                                            ? `rounded ${sameSenderAsNext ? 'rounded-br-lg' : 'rounded-br-sm'} ${sameSenderAsPrev ? 'rounded-tr-lg' : ''}`
+                                            : `rounded ${sameSenderAsNext ? 'rounded-bl-lg' : 'rounded-bl-sm'} ${sameSenderAsPrev ? 'rounded-tl-lg' : ''}`
                                     }`}
                                     style={{
                                         backgroundColor: isMine ? accentColor : 'var(--bg-primary)',
@@ -482,7 +482,7 @@ function ReplyBar({ accentColor, otherName, onSend }) {
                 }}
                 placeholder={`Message ${otherName}...`}
                 rows="1"
-                className="flex-1 px-4 py-2.5 rounded-2xl border text-sm outline-none resize-none transition-all"
+                className="flex-1 px-4 py-2.5 rounded border text-sm outline-none resize-none transition-all"
                 style={{
                     backgroundColor: 'var(--bg-secondary)',
                     borderColor: 'var(--border-light)',
@@ -525,7 +525,7 @@ function ConversationList({ conversations, userNames, accentColor, onSelect }) {
         return (
             <div className="flex flex-col items-center justify-center py-24" style={{ color: 'var(--text-secondary)' }}>
                 <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                    className="w-16 h-16 rounded flex items-center justify-center mb-4"
                     style={{ backgroundColor: 'var(--bg-hover)' }}
                 >
                     <i className="fas fa-inbox text-2xl" style={{ color: 'var(--border-medium)' }}></i>
@@ -753,7 +753,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
             }}
         >
             <div
-                className="w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+                className="w-full max-w-lg rounded shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
                 style={{ backgroundColor: 'var(--bg-secondary)' }}
                 onClick={(e) => e.stopPropagation()}
             >

@@ -116,7 +116,7 @@ const YardagePerHourCalculator = () => {
     }
     const status = getPerformanceStatus()
 
-    const containerClass = `bg-[var(--card-background)] border border-[var(--border-light)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${isMobile ? 'rounded-lg p-4' : 'rounded-xl p-8'}`
+    const containerClass = `bg-[var(--card-background)] border border-[var(--border-light)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${isMobile ? 'rounded-lg p-4' : 'rounded p-8'}`
     const inputClass = `w-full border-2 border-[var(--border-color)] rounded-lg text-[var(--text-primary)] font-semibold outline-none transition-all duration-200 focus:border-[var(--calc-accent)] focus:shadow-[0_0_0_3px_var(--calc-accent-ring)] ${isMobile ? 'text-base py-2.5 px-3' : 'text-lg py-3 px-4'}`
     const labelClass = `text-[var(--text-secondary)] font-semibold uppercase tracking-wide ${isMobile ? 'text-xs' : 'text-sm'}`
 
@@ -232,7 +232,7 @@ const YardagePerHourCalculator = () => {
                         =
                     </span>
                     <div
-                        className={`flex flex-col items-center justify-center rounded-xl transition-all duration-300 ${resultBoxClass} ${isMobile ? 'min-w-full p-4' : 'min-w-[200px] p-6'}`}
+                        className={`flex flex-col items-center justify-center rounded transition-all duration-300 ${resultBoxClass} ${isMobile ? 'min-w-full p-4' : 'min-w-[200px] p-6'}`}
                     >
                         {result ? (
                             <>
@@ -257,7 +257,7 @@ const YardagePerHourCalculator = () => {
                 </div>
                 {result && (
                     <div
-                        className={`flex items-center flex-wrap justify-center rounded-xl bg-[var(--bg-secondary)] ${isMobile ? 'gap-4 p-4' : 'gap-8 p-6'}`}
+                        className={`flex items-center flex-wrap justify-center rounded bg-[var(--bg-secondary)] ${isMobile ? 'gap-4 p-4' : 'gap-8 p-6'}`}
                     >
                         <div className="flex flex-col items-center gap-1">
                             <span
@@ -317,7 +317,7 @@ const YardagePerHourCalculator = () => {
             </div>
             {!result && (
                 <div
-                    className={`bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-color)] rounded-xl text-center ${isMobile ? 'mb-6 py-8 px-4' : 'mb-8 py-12 px-8'}`}
+                    className={`bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-color)] rounded text-center ${isMobile ? 'mb-6 py-8 px-4' : 'mb-8 py-12 px-8'}`}
                 >
                     <div className={`text-[var(--text-tertiary)] mb-4 ${isMobile ? 'text-3xl' : 'text-5xl'}`}>
                         <i className="fas fa-truck-loading"></i>

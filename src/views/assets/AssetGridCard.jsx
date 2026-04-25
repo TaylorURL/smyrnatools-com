@@ -45,12 +45,12 @@ function AssetGridCard({
 
     return (
         <div
-            className="flex flex-col overflow-hidden rounded-2xl border border-[color:var(--border-light)] bg-[color:var(--bg-primary)] shadow-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+            className="flex flex-col overflow-hidden rounded border border-[color:var(--border-light)] bg-[color:var(--bg-primary)] shadow-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
             onClick={() => onSelect?.(item.id)}
         >
             {/* Header: icon + number + verification + status */}
             <div className="flex items-center gap-3 px-5 py-4 border-b border-[color:var(--border-light)]">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg flex-shrink-0 bg-[color:var(--accent)]">
+                <div className="w-10 h-10 rounded flex items-center justify-center text-white text-lg flex-shrink-0 bg-[color:var(--accent)]">
                     <i className={`fas ${config.icon}`} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -72,7 +72,7 @@ function AssetGridCard({
                     </span>
                 )}
                 <span
-                    className={`inline-block rounded-2xl text-[11px] font-bold px-3 py-1.5 flex-shrink-0 ${statusBadgeClass}`}
+                    className={`inline-block rounded text-[11px] font-bold px-3 py-1.5 flex-shrink-0 ${statusBadgeClass}`}
                 >
                     {displayStatus || '---'}
                     {statusDays ? ` (${statusDays}d)` : ''}

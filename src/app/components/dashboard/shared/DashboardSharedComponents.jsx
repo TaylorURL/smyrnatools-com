@@ -181,7 +181,7 @@ export const AIChatBubble = ({ children, isAI, accentColor }) => (
         style={{ animation: 'fadeSlideIn 0.3s ease both' }}
     >
         <div
-            className={`rounded-2xl px-3.5 py-2.5 max-w-[95%] text-[13px] leading-relaxed ${
+            className={`rounded px-3.5 py-2.5 max-w-[95%] text-[13px] leading-relaxed ${
                 isAI
                     ? 'bg-bg-tertiary text-text-primary border border-border-light rounded-tl-sm'
                     : 'text-white rounded-tr-sm shadow-sm'

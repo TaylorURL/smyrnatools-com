@@ -348,7 +348,7 @@ function ReportsSubmitView({
                         }}
                         required
                         disabled={readOnly}
-                        className="appearance-none px-4 py-3 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white disabled:bg-gray-100 disabled:text-gray-500 cursor-pointer pr-10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-[right_12px_center] bg-no-repeat"
+                        className="appearance-none px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-gray-100 disabled:text-gray-500 cursor-pointer pr-10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-[right_12px_center] bg-no-repeat"
                     >
                         <option value="">Select Plant...</option>
                         {plants.map((p) => (
@@ -367,7 +367,7 @@ function ReportsSubmitView({
                         value={form.report_date ?? ''}
                         required
                         disabled
-                        className="px-4 py-3 border border-gray-200 rounded-lg text-sm bg-gray-100 text-gray-500"
+                        className="px-4 py-3 border border-border-light rounded-lg text-sm bg-gray-100 text-gray-500"
                     />
                     <div className="text-slate-500 text-xs mt-1">
                         Next Report {ReportUtility.formatDate(nextForcedReportDate)}
@@ -405,7 +405,7 @@ function ReportsSubmitView({
                                     </div>
                                 ))}
                             </div>
-                            <div className="bg-slate-50 rounded-xl border border-gray-200 p-5">
+                            <div className="bg-slate-50 rounded-xl border border-border-light p-5">
                                 {form.rows[carouselIndex] && (
                                     <div className="flex flex-col gap-4">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -421,7 +421,7 @@ function ReportsSubmitView({
                                                         )?.label ?? ''
                                                     }
                                                     disabled
-                                                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-1 w-28">
@@ -437,7 +437,7 @@ function ReportsSubmitView({
                                                         ) ?? ''
                                                     }
                                                     disabled
-                                                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
                                                 />
                                             </div>
                                         </div>
@@ -453,7 +453,7 @@ function ReportsSubmitView({
                                                         handleChange(e, 'rows', carouselIndex, 'start_time')
                                                     }
                                                     disabled={!!readOnly}
-                                                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-1">
@@ -467,7 +467,7 @@ function ReportsSubmitView({
                                                         handleChange(e, 'rows', carouselIndex, 'first_load')
                                                     }
                                                     disabled={!!readOnly}
-                                                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
                                                 />
                                             </div>
                                         </div>
@@ -483,7 +483,7 @@ function ReportsSubmitView({
                                                         handleChange(e, 'rows', carouselIndex, 'eod_in_yard')
                                                     }
                                                     disabled={!!readOnly}
-                                                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-1">
@@ -497,7 +497,7 @@ function ReportsSubmitView({
                                                         handleChange(e, 'rows', carouselIndex, 'punch_out')
                                                     }
                                                     disabled={!!readOnly}
-                                                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
                                                 />
                                             </div>
                                         </div>
@@ -510,7 +510,7 @@ function ReportsSubmitView({
                                                 value={form.rows[carouselIndex]?.loads ?? ''}
                                                 onChange={(e) => handleChange(e, 'rows', carouselIndex, 'loads')}
                                                 disabled={readOnly}
-                                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1">
@@ -522,12 +522,12 @@ function ReportsSubmitView({
                                                 value={form.rows[carouselIndex]?.comments ?? ''}
                                                 onChange={(e) => handleChange(e, 'rows', carouselIndex, 'comments')}
                                                 disabled={readOnly}
-                                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
                                             />
                                         </div>
                                     </div>
                                 )}
-                                <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-200 flex-wrap">
+                                <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-border-light flex-wrap">
                                     <button
                                         type="button"
                                         onClick={() => removeOperatorRow(carouselIndex)}
@@ -585,7 +585,7 @@ function ReportsSubmitView({
         </>
     )
     const renderPlantManagerForm = () => (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 col-span-full">
+        <div className="bg-white rounded-xl border border-border-light p-6 mb-6 col-span-full">
             <div className="mb-5">
                 <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
                     <i className="fas fa-clipboard-list"></i>Weekly Production Data
@@ -611,7 +611,7 @@ function ReportsSubmitView({
                             </div>
                             {renderFieldInput(
                                 field,
-                                'px-4 py-3 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white w-full disabled:bg-slate-50 disabled:text-slate-500'
+                                'px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-white w-full disabled:bg-slate-50 disabled:text-slate-500'
                             )}
                         </div>
                     ))}
@@ -620,7 +620,7 @@ function ReportsSubmitView({
     )
     const renderFieldInput = (field, className = '') => {
         const value = form[field.name] ?? ''
-        const baseClass = className || 'px-4 py-3 border border-gray-200 rounded-lg text-sm text-slate-800 bg-white'
+        const baseClass = className || 'px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-white'
         const props = {
             className: baseClass,
             disabled: readOnly,
@@ -686,7 +686,7 @@ function ReportsSubmitView({
             />
             <form className="max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6" onSubmit={handleSubmit}>
                 {!EXCLUDED_REPORT_TYPES.includes(report.name) && (
-                    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+                    <div className="bg-white border border-border-light rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
                         {renderFormSection()}
                     </div>
                 )}
@@ -735,7 +735,7 @@ function ReportsSubmitView({
                     </div>
                 )}
                 {!readOnly && (
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-200 mt-4 sm:mt-6">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-border-light mt-4 sm:mt-6">
                         <button
                             type="button"
                             className="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors order-3 sm:order-1"
@@ -798,7 +798,7 @@ function ReportsSubmitView({
 }
 const AIValidatingModal = ({ progress, reportName, accentColor }) => (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4">
-        <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+        <div className="bg-white rounded p-8 max-w-md w-full shadow-2xl">
             <div className="flex items-center gap-4 mb-6">
                 <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-amber-200 border-3 border-amber-500 text-amber-500 text-2xl animate-spin">
                     <i className="fas fa-robot"></i>
@@ -810,7 +810,7 @@ const AIValidatingModal = ({ progress, reportName, accentColor }) => (
                     <p className="text-slate-500 text-sm m-0">Analyzing efficiency report comments...</p>
                 </div>
             </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-lg mb-4 p-4">
+            <div className="bg-slate-50 border border-border-light rounded-lg mb-4 p-4">
                 <div className="flex items-center gap-3 mb-3">
                     <i className="fas fa-clipboard-check text-amber-500 text-lg"></i>
                     <span className="text-gray-700 text-sm font-semibold">

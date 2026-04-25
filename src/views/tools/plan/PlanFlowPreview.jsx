@@ -30,15 +30,19 @@ import {
 function PlanFlowPreview({ accentColor, allPlantStats, assignments, onOpenPlanner, plantProduction }) {
     const containerRef = useRef(null)
     const [width, setWidth] = useState(800)
-    const previewHeight = 360
+    const [previewHeight, setPreviewHeight] = useState(360)
 
     useEffect(() => {
         const node = containerRef.current
         if (!node) return
+        const updateForWidth = (w) => {
+            setWidth(Math.max(280, w))
+            // Shrink the preview height on narrow phones so the canvas
+            // doesn't dominate the screen when the flow scales down.
+            setPreviewHeight(w < 480 ? 240 : w < 768 ? 300 : 360)
+        }
         const ro = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                setWidth(Math.max(400, entry.contentRect.width))
-            }
+            for (const entry of entries) updateForWidth(entry.contentRect.width)
         })
         ro.observe(node)
         return () => ro.disconnect()
@@ -57,7 +61,7 @@ function PlanFlowPreview({ accentColor, allPlantStats, assignments, onOpenPlanne
     }, [nodeItems])
     const layout = useMemo(
         () => computeClusterLayout(nodeItems, width, previewHeight, { horizontalOverscroll: 0, pad: 20, pinTop: 16 }),
-        [nodeItems, width]
+        [nodeItems, width, previewHeight]
     )
     const { positions, width: layoutWidth, height: layoutHeight } = layout
     const edges = useMemo(() => buildEdges(assignments), [assignments])

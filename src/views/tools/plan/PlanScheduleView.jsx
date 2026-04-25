@@ -166,55 +166,51 @@ const sumField = (orders, key) =>
         return acc + (Number.isFinite(n) ? n : 0)
     }, 0)
 
-const timeBucket = (hhmm) => {
-    const mins = timeToMinutes(hhmm)
-    if (mins == null) return 'unscheduled'
-    if (mins < 6 * 60) return 'early'
-    if (mins < 12 * 60) return 'morning'
-    if (mins < 17 * 60) return 'afternoon'
-    return 'evening'
-}
-
-const TIME_BUCKETS = [
-    { icon: 'fa-moon', key: 'early', label: 'Before 6a' },
-    { icon: 'fa-mug-hot', key: 'morning', label: '6a – 12p' },
-    { icon: 'fa-sun', key: 'afternoon', label: '12p – 5p' },
-    { icon: 'fa-cloud-moon', key: 'evening', label: 'After 5p' },
-    { icon: 'fa-calendar-xmark', key: 'unscheduled', label: 'No start time' }
-]
-
 /* ── small building blocks ──────────────────────────────────────────────── */
 
-function KpiCard({ accent, badge, hint, icon, label, value, valueColor }) {
+/**
+ * Compact inline stat for the Schedule's KPI strip. Designed to sit shoulder-
+ * to-shoulder with siblings inside one rounded panel, separated by hairline
+ * dividers. No icons, no big colored chips — just a label, a hero number,
+ * an optional unit suffix, and a one-line hint. The badge slot floats next
+ * to the value (used by the yardage delta pill).
+ */
+function Stat({ badge, first, hint, label, unit, value }) {
     return (
-        <div className="px-4 py-3 flex items-start gap-3 min-w-0 flex-1" style={{ minWidth: 160 }}>
+        <div
+            className="flex-1 min-w-[120px] px-3.5 py-2.5"
+            style={{ borderLeft: first ? 'none' : '1px solid var(--border-light)' }}
+        >
             <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: `${accent}14`, color: accent }}
+                className="text-[9.5px] font-bold uppercase tracking-[0.08em]"
+                style={{ color: 'var(--text-tertiary)' }}
             >
-                <i className={`fas ${icon} text-[13px]`} />
+                {label}
             </div>
-            <div className="flex-1 min-w-0">
-                <div
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--text-tertiary)' }}
+            <div className="mt-0.5 flex items-baseline gap-1.5 truncate" title={String(value)}>
+                <span
+                    className="font-bold leading-none"
+                    style={{
+                        color: 'var(--text-primary)',
+                        fontFamily: 'var(--font-heading)',
+                        fontSize: 22,
+                        letterSpacing: '-0.01em'
+                    }}
                 >
-                    {label}
-                </div>
-                <div
-                    className="font-bold text-[24px] leading-none mt-1 truncate flex items-baseline gap-2"
-                    style={{ color: valueColor || 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                    title={String(value)}
-                >
-                    <span className="truncate">{value}</span>
-                    {badge}
-                </div>
-                {hint && (
-                    <div className="text-[11px] mt-1 truncate" style={{ color: 'var(--text-secondary)' }} title={hint}>
-                        {hint}
-                    </div>
+                    {value}
+                </span>
+                {unit && (
+                    <span className="text-[11px] font-semibold" style={{ color: 'var(--text-tertiary)' }}>
+                        {unit}
+                    </span>
                 )}
+                {badge}
             </div>
+            {hint && (
+                <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }} title={hint}>
+                    {hint}
+                </div>
+            )}
         </div>
     )
 }
@@ -1273,7 +1269,7 @@ function ScheduleTable({
                                 <td
                                     className="px-3 py-2 font-mono font-bold whitespace-nowrap"
                                     style={{
-                                        color: isCancelled ? 'var(--text-tertiary)' : accentColor,
+                                        color: isCancelled ? 'var(--text-tertiary)' : 'var(--text-primary)',
                                         textDecoration: isCancelled ? 'line-through' : 'none'
                                     }}
                                 >
@@ -1341,10 +1337,13 @@ function ScheduleTable({
                                                     type="button"
                                                     onClick={() => onOpenLocation?.(orderForMap)}
                                                     className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 uppercase tracking-wide font-semibold"
-                                                    style={{ color: accentColor, fontSize: 12 }}
+                                                    style={{ color: 'var(--text-primary)', fontSize: 12 }}
                                                     title={`Open map for ${composeAddress(orderForMap)}`}
                                                 >
-                                                    <i className="fas fa-location-dot text-[10px] mr-1.5 opacity-70" />
+                                                    <i
+                                                        className="fas fa-location-dot text-[10px] mr-1.5"
+                                                        style={{ color: 'var(--text-tertiary)' }}
+                                                    />
                                                     {displayText}
                                                 </button>
                                                 {usingFallback && (
@@ -1561,7 +1560,7 @@ function ScheduleTable({
                                                 <a
                                                     href={`tel:${digits}`}
                                                     className="hover:underline"
-                                                    style={{ color: accentColor }}
+                                                    style={{ color: 'var(--text-primary)' }}
                                                 >
                                                     ({digits.slice(0, 3)}) {digits.slice(3, 6)}-{digits.slice(6)}
                                                 </a>
@@ -1624,7 +1623,6 @@ function PlanScheduleView({
     const [plantFilter, setPlantFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
     const [productFilter, setProductFilter] = useState('all')
-    const [bucket, setBucket] = useState('all')
     const [minYards, setMinYards] = useState('')
     const [sortKey, setSortKey] = useState('plantThenTime')
     /** When the schedule is filtered to a single plant we interleave synthetic
@@ -1948,7 +1946,6 @@ function PlanScheduleView({
                     if (kind !== statusFilter) return false
                 }
                 if (productFilter !== 'all' && clean(o.productCode) !== productFilter) return false
-                if (bucket !== 'all' && timeBucket(o.startTime) !== bucket) return false
                 if (minYd > 0 && (parseFloat(o.yardage) || 0) < minYd) return false
                 if (q) {
                     const haystack = [
@@ -1973,7 +1970,7 @@ function PlanScheduleView({
                 return true
             })
             .sort((a, b) => compareOrders(a, b, sortKey))
-    }, [allOrders, bucket, statusFilter, minYards, plantFilter, productFilter, query, sortKey])
+    }, [allOrders, statusFilter, minYards, plantFilter, productFilter, query, sortKey])
 
     /* ── KPI numbers — non-production rows (cancelled at 17:00, test at 18:00)
        stay in the table for transparency but are excluded from yardage /
@@ -2055,22 +2052,12 @@ function PlanScheduleView({
             ? `${String(Math.floor(latest / 60)).padStart(2, '0')}:${String(latest % 60).padStart(2, '0')}`
             : null
 
-    const bucketCounts = useMemo(() => {
-        const counts = {}
-        allOrders.forEach((o) => {
-            const b = timeBucket(o.startTime)
-            counts[b] = (counts[b] || 0) + 1
-        })
-        return counts
-    }, [allOrders])
-
     const hasAnyOrders = allOrders.length > 0
     const hasActiveFilters =
         query ||
         plantFilter !== 'all' ||
         statusFilter !== 'all' ||
         productFilter !== 'all' ||
-        bucket !== 'all' ||
         (parseFloat(minYards) || 0) > 0
 
     const clearAllFilters = () => {
@@ -2078,7 +2065,6 @@ function PlanScheduleView({
         setPlantFilter('all')
         setStatusFilter('all')
         setProductFilter('all')
-        setBucket('all')
         setMinYards('')
     }
 
@@ -2098,7 +2084,6 @@ function PlanScheduleView({
         (plantFilter !== 'all' ? 1 : 0) +
         (statusFilter !== 'all' ? 1 : 0) +
         (productFilter !== 'all' ? 1 : 0) +
-        (bucket !== 'all' ? 1 : 0) +
         ((parseFloat(minYards) || 0) > 0 ? 1 : 0)
 
     return (
@@ -2233,103 +2218,56 @@ function PlanScheduleView({
                     </div>
                 ) : (
                     <>
-                        {/* KPI row — unified panel with vertical dividers between cells */}
+                        {/* Stat strip — single condensed bar of inline metrics
+                            separated by hairline dividers. Reads like a
+                            newspaper masthead instead of a card grid: small
+                            label, big number, optional inline badge / hint. */}
                         <div
-                            className="rounded-xl flex flex-wrap items-stretch divide-x"
+                            className="rounded-xl flex flex-wrap"
                             style={{
                                 background: 'var(--bg-primary)',
                                 border: '1px solid var(--border-light)',
-                                boxShadow: 'var(--shadow-sm)',
-                                borderColor: 'var(--border-light)'
+                                boxShadow: 'var(--shadow-sm)'
                             }}
                         >
-                            <KpiCard
-                                accent={accentColor}
-                                icon="fa-clipboard-list"
-                                label="Orders"
-                                value={filtered.length.toLocaleString()}
+                            <Stat
+                                first
                                 hint={
                                     hasActiveFilters && filtered.length !== allOrders.length
-                                        ? `of ${allOrders.length.toLocaleString()} total`
-                                        : `${allOrders.length.toLocaleString()} on the day`
+                                        ? `of ${allOrders.length.toLocaleString()}`
+                                        : 'on the day'
                                 }
+                                label="Orders"
+                                value={filtered.length.toLocaleString()}
                             />
-                            <KpiCard
-                                accent={accentColor}
-                                icon="fa-industry"
+                            <Stat
+                                hint={`${uniqueCustomers.toLocaleString()} customer${uniqueCustomers === 1 ? '' : 's'}`}
                                 label="Plants"
                                 value={uniquePlants.toLocaleString()}
-                                hint={`${uniqueCustomers.toLocaleString()} customer${uniqueCustomers === 1 ? '' : 's'}`}
                             />
-                            <KpiCard
-                                accent={accentColor}
+                            <Stat
                                 badge={
                                     yardageDeltaPct != null ? (
                                         <YardageDeltaBadge pct={yardageDeltaPct} yesterdayYardage={yesterdayYardage} />
                                     ) : null
                                 }
-                                icon="fa-cubes"
-                                label="Yardage"
-                                value={totalYards.toLocaleString()}
                                 hint={
                                     yardageDeltaPct != null
-                                        ? `yards · vs ${yesterdayYardage.toLocaleString()} yesterday`
-                                        : 'yards · cancelled excluded'
+                                        ? `vs ${yesterdayYardage.toLocaleString()} yd yesterday`
+                                        : 'cancelled excluded'
                                 }
+                                label="Yardage"
+                                unit="yd"
+                                value={totalYards.toLocaleString()}
                             />
-                            <KpiCard
-                                accent="#8b5cf6"
-                                icon="fa-calendar-week"
-                                label="Week yardage"
-                                value={weekYardage.toLocaleString()}
-                                hint="yards · rolling 7 days"
-                            />
-                            <KpiCard
-                                accent={accentColor}
-                                icon="fa-truck"
-                                label="Loads"
-                                value={totalTrucks.toLocaleString()}
-                                hint="truck loads scheduled"
-                            />
-                            <KpiCard
-                                accent={accentColor}
-                                icon="fa-clock"
+                            <Stat hint="rolling 7 days" label="Week" unit="yd" value={weekYardage.toLocaleString()} />
+                            <Stat hint="truck loads" label="Loads" value={totalTrucks.toLocaleString()} />
+                            <Stat
+                                hint={earliestTime && latestTime ? 'first → last start' : undefined}
                                 label="Window"
                                 value={earliestTime && latestTime ? `${earliestTime}–${latestTime}` : '—'}
-                                hint={earliestTime && latestTime ? 'first → last start' : undefined}
                             />
                         </div>
-
-                        {/* Time-bucket quick chips — collapsible on mobile */}
-                        {filtersOpen && (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span
-                                    className="text-[10px] font-bold uppercase tracking-wider mr-1"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                >
-                                    Time
-                                </span>
-                                <Pill
-                                    accent={accentColor}
-                                    active={bucket === 'all'}
-                                    icon="fa-border-all"
-                                    onClick={() => setBucket('all')}
-                                >
-                                    All · {allOrders.length}
-                                </Pill>
-                                {TIME_BUCKETS.map((b) => (
-                                    <Pill
-                                        key={b.key}
-                                        accent={accentColor}
-                                        active={bucket === b.key}
-                                        icon={b.icon}
-                                        onClick={() => setBucket(b.key)}
-                                    >
-                                        {b.label} · {bucketCounts[b.key] || 0}
-                                    </Pill>
-                                ))}
-                            </div>
-                        )}
 
                         {/* Filter bar — collapsible on mobile */}
                         {filtersOpen && (

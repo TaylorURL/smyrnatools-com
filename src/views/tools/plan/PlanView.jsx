@@ -20,6 +20,7 @@ import {
     getEffectiveBase,
     getMissingOperators,
     getOffsetDate,
+    getTodayDate,
     getTomorrowDate,
     isBigPourOrder,
     isCancelledOrder,
@@ -34,7 +35,6 @@ import {
 import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
 import PlanFlowView from './PlanFlowView'
-import PlanPlantCard from './PlanPlantCard'
 import PlanRealtimeView from './PlanRealtimeView'
 import PlanScheduleView from './PlanScheduleView'
 import PlanSettingsModal from './PlanSettingsModal'
@@ -54,14 +54,20 @@ function PlanView() {
     const isMobile = useIsMobile()
     const [planDate, setPlanDate] = useState(getTomorrowDate)
     const hasInitializedDateRef = useRef(false)
-    const [viewMode, setViewModeRaw] = useState('schedule')
+    const [viewMode, setViewModeRaw] = useState('dashboard')
+    // Switching to Realtime always snaps the plan date to today so the live
+    // clock has something to anchor to. Other tabs leave the date untouched.
     // Mobile users get the Schedule view only — Planner and Plan tabs depend on
     // wide layouts (zoomable canvas, sticky scrollspy) that don't fit a phone.
-    const setViewMode = (mode) => setViewModeRaw(mode)
+    const setViewMode = (mode) => {
+        if (mode === 'realtime') setPlanDate(getTodayDate())
+        setViewModeRaw(mode)
+    }
     const effectiveViewMode = isMobile ? 'schedule' : viewMode
     const [selectedPlant, setSelectedPlant] = useState(null)
     const [productionPopoverPlant, setProductionPopoverPlant] = useState(null)
     const [userPlantCode, setUserPlantCode] = useState('')
+    const [hasDefaultPlantPermission, setHasDefaultPlantPermission] = useState(false)
     const [userRoleNames, setUserRoleNames] = useState([])
     const [canSeeYourTab, setCanSeeYourTab] = useState(false)
 
@@ -420,18 +426,21 @@ function PlanView() {
             setUserPlantCode('')
             setUserRoleNames([])
             setCanSeeYourTab(false)
+            setHasDefaultPlantPermission(false)
             return
         }
         let cancelled = false
         Promise.all([
             UserService.getUserPlant(userId).catch(() => null),
             UserService.getUserRoles(userId).catch(() => []),
-            UserService.hasPermission(userId, 'plan.yourtab').catch(() => false)
-        ]).then(([plantCode, roles, canSee]) => {
+            UserService.hasPermission(userId, 'plan.yourtab').catch(() => false),
+            UserService.hasPermission(userId, 'plan.defaultplant').catch(() => false)
+        ]).then(([plantCode, roles, canSee, hasDefaultPlant]) => {
             if (cancelled) return
             setUserPlantCode(plantCode || '')
             setUserRoleNames((roles || []).map((r) => r?.name).filter(Boolean))
             setCanSeeYourTab(!!canSee)
+            setHasDefaultPlantPermission(!!hasDefaultPlant)
         })
         return () => {
             cancelled = true
@@ -667,9 +676,9 @@ function PlanView() {
                         style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
                     >
                         {[
+                            { mode: 'dashboard', icon: 'fa-gauge-high', label: 'Plan Dashboard' },
                             { mode: 'schedule', icon: 'fa-calendar-days', label: 'Schedule' },
                             { mode: 'flow', icon: 'fa-project-diagram', label: 'Planner' },
-                            { mode: 'dashboard', icon: 'fa-gauge-high', label: 'Plan' },
                             { mode: 'demand', icon: 'fa-chart-column', label: 'Demand' },
                             { mode: 'realtime', icon: 'fa-circle-dot', label: 'Realtime' }
                         ].map(({ mode, icon, label }) => (
@@ -727,103 +736,6 @@ function PlanView() {
                                 removeTravelTime={removeTravelTime}
                                 onClose={() => setShowSettings(false)}
                             />
-                        )}
-
-                        {/* Region totals — combined yardage, trucks have / need,
-                            and combined YPH so dispatch can see at a glance whether
-                            today is overbooked across the whole region. The Schedule
-                            tab has its own KPI panel, so the bar is hidden there. */}
-                        {effectiveViewMode !== 'schedule' && (
-                            <RegionTotalsBar
-                                accentColor={accentColor}
-                                shiftSpanHours={shiftSpanHours}
-                                totals={regionTotals}
-                            />
-                        )}
-
-                        {/* Plant Strip — horizontal cards, used by Planner / Plan
-                            modes for plant selection. Schedule has its own per-row
-                            plant badges so the strip just adds noise there. */}
-                        {effectiveViewMode !== 'schedule' && (
-                            <div
-                                className="shrink-0 flex items-center gap-2 overflow-x-auto px-4 py-2 border-b"
-                                style={{ borderColor: 'var(--border-light)', background: 'var(--bg-secondary)' }}
-                            >
-                                <span
-                                    className="text-[9px] font-semibold uppercase tracking-wider shrink-0 mr-1"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
-                                    Plants
-                                </span>
-                                {stats.map((s) => {
-                                    const isSelected = selectedPlant === s.code
-                                    const isPopoverOpen = productionPopoverPlant === s.code
-                                    return (
-                                        <PlanPlantCard
-                                            key={s.code}
-                                            accentColor={accentColor}
-                                            stat={s}
-                                            plantName={plantNameByCode[s.code]}
-                                            production={plantProduction[s.code] || {}}
-                                            earliestClockIn={planEarliestClockInByPlant[s.code]}
-                                            earliestArrival={planEarliestArrivalByPlant[s.code]}
-                                            isSelected={isSelected}
-                                            isPopoverOpen={isPopoverOpen}
-                                            onSelect={() => {
-                                                setSelectedPlant(s.code)
-                                                setProductionPopoverPlant(null)
-                                            }}
-                                            onTogglePopover={() =>
-                                                setProductionPopoverPlant(isPopoverOpen ? null : s.code)
-                                            }
-                                            updatePlantProduction={updatePlantProduction}
-                                        />
-                                    )
-                                })}
-                                {selectedPlant && (
-                                    <button
-                                        onClick={() => {
-                                            setSelectedPlant(null)
-                                            setProductionPopoverPlant(null)
-                                        }}
-                                        className="shrink-0 border-none rounded-md cursor-pointer text-[10px] font-semibold px-2 py-1"
-                                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                                    >
-                                        <i className="fas fa-times mr-1" />
-                                        Clear
-                                    </button>
-                                )}
-                                <div className="flex-1" />
-                                <span
-                                    className="shrink-0 text-[11px] font-medium whitespace-nowrap"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
-                                    {validAssignmentCount} route{validAssignmentCount !== 1 ? 's' : ''}, {totalOps} op
-                                    {totalOps !== 1 ? 's' : ''}
-                                    {earliestClockIn && (
-                                        <>
-                                            {' '}
-                                            · <span className="font-bold text-[#16a34a]">{earliestClockIn}</span>{' '}
-                                            earliest
-                                        </>
-                                    )}
-                                    {shiftSpanHours && (
-                                        <>
-                                            {' '}
-                                            ·{' '}
-                                            <span
-                                                className={
-                                                    shiftSpanHours > OVERTIME_THRESHOLD_HOURS
-                                                        ? 'font-bold text-[#ef4444]'
-                                                        : ''
-                                                }
-                                            >
-                                                {shiftSpanHours}h span
-                                            </span>
-                                        </>
-                                    )}
-                                </span>
-                            </div>
                         )}
 
                         {effectiveViewMode === 'dashboard' && (
@@ -901,6 +813,7 @@ function PlanView() {
                             <PlanRealtimeView
                                 accentColor={accentColor}
                                 assignments={assignments}
+                                defaultPlantCode={hasDefaultPlantPermission ? userPlantCode : ''}
                                 planDate={planDate}
                                 plantNameByCode={plantNameByCode}
                                 plantProduction={plantProduction}

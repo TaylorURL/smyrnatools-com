@@ -86,122 +86,121 @@ function DetailViewSection({
         }
     }, [sections, activeSection])
     const legacyStyles = `
-.detail-card { background: var(--bg-primary); border-radius: 16px; border: 1px solid var(--border-light); padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; min-width: 0; }
-.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light); }
-.card-header h2 { font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0; }
-.form-sections { display: flex; flex-direction: column; gap: 1.5rem; }
+/* Plan-tab-style: flat 1px borders, 6px radius, no shadows, dense padding */
+.detail-card { background: var(--bg-primary); border-radius: 6px; border: 1px solid var(--border-light); padding: 0.875rem 1rem; margin-bottom: 0.75rem; overflow: hidden; min-width: 0; }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; padding-bottom: 0.625rem; border-bottom: 1px solid var(--border-light); }
+.card-header h2 { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+.form-sections { display: flex; flex-direction: column; gap: 1rem; }
 .form-section { }
-.form-section h3 { font-size: 0.9375rem; font-weight: 600; color: ${accent}; margin: 0 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid ${accent}; }
-.form-group { margin-bottom: 1.25rem; overflow: hidden; }
+.form-section h3 { font-size: 0.6875rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 0.625rem 0; padding-bottom: 0.375rem; border-bottom: 1px solid var(--border-light); }
+.form-group { margin-bottom: 0.75rem; overflow: hidden; }
 .form-group:last-child { margin-bottom: 0; }
-.form-group label { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.02em; }
-.form-control { width: 100%; max-width: 100%; padding: 0.875rem 1rem; border: 1.5px solid var(--border-light); border-radius: 10px; font-size: 0.9375rem; color: var(--text-primary); background: var(--bg-primary); box-sizing: border-box; transition: all 0.2s; }
-.form-control:focus { outline: none; border-color: ${accent}; box-shadow: 0 0 0 3px ${accent}15; }
+.form-group label { display: block; font-size: 0.6875rem; font-weight: 700; color: var(--text-tertiary); margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.form-control { width: 100%; max-width: 100%; padding: 0.4375rem 0.625rem; border: 1px solid var(--border-light); border-radius: 4px; font-size: 0.8125rem; color: var(--text-primary); background: var(--bg-primary); box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
+.form-control:focus { outline: none; border-color: ${accent}; box-shadow: 0 0 0 2px ${accent}20; }
 .form-control:disabled, .form-control[readonly] { background: var(--bg-secondary); color: var(--text-secondary); cursor: not-allowed; border-color: var(--border-light); }
-select.form-control { appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 1rem center; background-repeat: no-repeat; background-size: 1rem 1rem; padding-right: 2.75rem; cursor: pointer; }
+select.form-control { appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 0.875rem 0.875rem; padding-right: 1.875rem; cursor: pointer; }
 select.form-control:disabled { cursor: not-allowed; }
-textarea.form-control { min-height: 120px; resize: vertical; line-height: 1.6; }
-.operator-select-button { width: 100%; padding: 0.875rem 1rem; border: 1.5px solid var(--border-light); border-radius: 10px; font-size: 0.9375rem; color: var(--text-primary); background: var(--bg-primary); text-align: left; cursor: pointer; transition: all 0.2s; }
+textarea.form-control { min-height: 90px; resize: vertical; line-height: 1.5; }
+.operator-select-button { width: 100%; padding: 0.4375rem 0.625rem; border: 1px solid var(--border-light); border-radius: 4px; font-size: 0.8125rem; color: var(--text-primary); background: var(--bg-primary); text-align: left; cursor: pointer; transition: all 0.15s; }
 .operator-select-button:hover:not(:disabled) { border-color: ${accent}; background: var(--bg-secondary); }
 .operator-select-button:disabled { background: var(--bg-secondary); color: var(--text-secondary); cursor: not-allowed; }
-.operator-select-container { display: flex; gap: 0.5rem; }
+.operator-select-container { display: flex; gap: 0.375rem; }
 .operator-select-container .operator-select-button { flex: 1; }
-.unassign-operator-button { padding: 0.875rem; background: #fef2f2; color: #dc2626; border: 1.5px solid #fecaca; border-radius: 10px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.unassign-operator-button { padding: 0.4375rem 0.625rem; background: transparent; color: #dc2626; border: 1px solid #fecaca; border-radius: 4px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; font-size: 0.8125rem; }
 .unassign-operator-button:hover { background: #fee2e2; border-color: #f87171; }
-html.dark .unassign-operator-button { background: #3b1114; color: #f87171; border-color: #5c1d21; }
+html.dark .unassign-operator-button { color: #f87171; border-color: #5c1d21; }
 html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #7f1d1d; }
-.assign-operator-button { padding: 0.875rem; background: #f0fdf4; color: #16a34a; border: 1.5px solid #bbf7d0; border-radius: 10px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.assign-operator-button { padding: 0.4375rem 0.625rem; background: transparent; color: #16a34a; border: 1px solid #bbf7d0; border-radius: 4px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; font-size: 0.8125rem; }
 .assign-operator-button:hover { background: #dcfce7; border-color: #86efac; }
-.primary-button { width: 100%; padding: 0.875rem 1.5rem; background: ${accent}; color: white; border: none; border-radius: 10px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-.primary-button:hover { filter: brightness(0.92); transform: translateY(-1px); }
-.primary-button:active { transform: translateY(0); }
-.primary-button:disabled { background: var(--text-secondary); cursor: not-allowed; transform: none; }
-.danger-button { width: 100%; padding: 0.875rem 1.5rem; background: #dc2626; color: white; border: none; border-radius: 10px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-.danger-button:hover { background: #b91c1c; transform: translateY(-1px); }
-.danger-button:active { transform: translateY(0); }
-.danger-button:disabled { background: var(--text-secondary); cursor: not-allowed; transform: none; }
-.cancel-button { width: 100%; padding: 0.875rem 1.5rem; background: var(--bg-secondary); color: var(--text-secondary); border: 1.5px solid var(--border-light); border-radius: 10px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-.cancel-button:hover { background: var(--bg-tertiary); border-color: var(--border-medium); }
-.global-button-secondary { padding: 0.625rem 1rem; background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 0.5rem; }
-.global-button-secondary:hover { background: var(--bg-tertiary); border-color: var(--border-medium); }
+.primary-button { width: 100%; padding: 0.4375rem 0.875rem; background: ${accent}; color: white; border: 1px solid ${accent}; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.375rem; }
+.primary-button:hover { filter: brightness(0.92); }
+.primary-button:disabled { background: var(--text-secondary); border-color: var(--text-secondary); cursor: not-allowed; }
+.danger-button { width: 100%; padding: 0.4375rem 0.875rem; background: #dc2626; color: white; border: 1px solid #dc2626; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.375rem; }
+.danger-button:hover { background: #b91c1c; border-color: #b91c1c; }
+.danger-button:disabled { background: var(--text-secondary); border-color: var(--text-secondary); cursor: not-allowed; }
+.cancel-button { width: 100%; padding: 0.4375rem 0.875rem; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-light); border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+.cancel-button:hover { background: var(--bg-tertiary); }
+.global-button-secondary { padding: 0.375rem 0.625rem; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-light); border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 0.375rem; }
+.global-button-secondary:hover { background: var(--bg-tertiary); }
 .global-button-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
-.global-button-secondary i { font-size: 0.8125rem; }
-.sidebar-readonly-notice { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #fcd34d; border-radius: 10px; color: #92400e; font-size: 0.8125rem; font-weight: 600; width: 100%; }
-.sidebar-readonly-notice i { font-size: 0.875rem; color: #b45309; }
+.global-button-secondary i { font-size: 0.6875rem; }
+.sidebar-readonly-notice { display: flex; align-items: center; justify-content: center; gap: 0.375rem; padding: 0.4375rem 0.625rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 4px; color: #92400e; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; width: 100%; }
+.sidebar-readonly-notice i { font-size: 0.6875rem; color: #b45309; }
 .save-button { width: 100%; justify-content: center; }
-.form-actions { display: flex; flex-direction: column; gap: 0.75rem; }
+.form-actions { display: flex; flex-direction: column; gap: 0.5rem; }
 .form-actions button { width: 100%; }
-.transfer-region-button { padding: 0.875rem 1.5rem; background: #f59e0b; color: white; border: none; border-radius: 10px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; }
-.transfer-region-button:hover { background: #d97706; }
-.transfer-region-button:disabled { background: var(--text-secondary); cursor: not-allowed; }
-.spare-status-note { padding: 1rem 1.25rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; color: #92400e; font-size: 0.875rem; margin-top: 0.75rem; display: flex; align-items: flex-start; gap: 0.75rem; line-height: 1.5; }
-.spare-status-note::before { content: '\\f071'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #f59e0b; }
-.down-in-yard-container { margin-top: 1rem; }
-.down-in-yard-toggle { margin-bottom: 0.5rem; }
-.down-in-yard-note { padding: 0.75rem 1rem; background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 8px; color: #0369a1; font-size: 0.875rem; }
-.toggle-label { display: inline-flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+.transfer-region-button { padding: 0.4375rem 0.875rem; background: transparent; color: #d97706; border: 1px solid #fcd34d; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.375rem; width: 100%; }
+.transfer-region-button:hover { background: #fef3c7; border-color: #f59e0b; }
+.transfer-region-button:disabled { color: var(--text-secondary); border-color: var(--border-light); cursor: not-allowed; }
+.spare-status-note { padding: 0.5rem 0.75rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; color: #92400e; font-size: 0.75rem; margin-top: 0.5rem; display: flex; align-items: flex-start; gap: 0.5rem; line-height: 1.4; }
+.spare-status-note::before { content: '\\f071'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #f59e0b; font-size: 0.75rem; }
+.down-in-yard-container { margin-top: 0.625rem; }
+.down-in-yard-toggle { margin-bottom: 0.375rem; }
+.down-in-yard-note { padding: 0.4375rem 0.625rem; background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 4px; color: #0369a1; font-size: 0.75rem; }
+.toggle-label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
 .toggle-label.disabled { opacity: 0.6; cursor: not-allowed; }
 .toggle-checkbox { display: none; }
-.toggle-switch { position: relative; width: 44px; height: 24px; background: var(--border-medium); border-radius: 12px; transition: all 0.2s; }
+.toggle-switch { position: relative; width: 32px; height: 18px; background: var(--border-medium); border-radius: 9px; transition: background 0.15s; }
 .toggle-checkbox:checked + .toggle-switch { background: ${accent}; }
-.toggle-slider { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-.toggle-checkbox:checked + .toggle-switch .toggle-slider { left: 22px; }
-.toggle-text { font-size: 0.9375rem; font-weight: 500; color: var(--text-primary); }
-.error-message { padding: 1rem; background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; color: #dc2626; font-size: 0.875rem; }
-.error-text { color: #dc2626; font-size: 0.875rem; }
-.form-row { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
-@media (min-width: 480px) { .form-row { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
-.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
+.toggle-slider { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: white; border-radius: 50%; transition: left 0.15s; }
+.toggle-checkbox:checked + .toggle-switch .toggle-slider { left: 16px; }
+.toggle-text { font-size: 0.8125rem; font-weight: 500; color: var(--text-primary); }
+.error-message { padding: 0.5rem 0.75rem; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.3); border-radius: 4px; color: #dc2626; font-size: 0.75rem; }
+.error-text { color: #dc2626; font-size: 0.75rem; }
+.form-row { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+@media (min-width: 480px) { .form-row { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); } }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
 @media (max-width: 640px) { .form-row-2, .form-row-3 { grid-template-columns: 1fr; } }
-.cleanliness-rating { display: flex; gap: 0.375rem; }
-.cleanliness-star { font-size: 1.75rem; color: var(--border-light); cursor: pointer; transition: all 0.15s; }
+.cleanliness-rating { display: flex; gap: 0.25rem; }
+.cleanliness-star { font-size: 1rem; color: var(--border-light); cursor: pointer; transition: color 0.15s; }
 .cleanliness-star.active { color: #f59e0b; }
-.cleanliness-star:hover { color: #fbbf24; transform: scale(1.1); }
-.cleanliness-rating-display { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--bg-primary); border: 1.5px solid var(--border-light); border-radius: 10px; }
-.cleanliness-rating-stars { display: flex; gap: 0.375rem; }
-.cleanliness-rating-stars i { font-size: 1.375rem; color: #f59e0b; }
+.cleanliness-star:hover { color: #fbbf24; }
+.cleanliness-rating-display { display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 4px; }
+.cleanliness-rating-stars { display: flex; gap: 0.25rem; }
+.cleanliness-rating-stars i { font-size: 0.875rem; color: #f59e0b; }
 .cleanliness-rating-stars i.empty { color: var(--border-light); }
-.cleanliness-rating-label { font-size: 0.9375rem; font-weight: 600; color: var(--text-primary); }
-.cleanliness-rating-editor { display: flex; align-items: center; gap: 1.25rem; padding: 1rem 1.25rem; background: var(--bg-primary); border: 1.5px solid var(--border-light); border-radius: 10px; }
-.star-input { display: flex; gap: 0.375rem; }
-.star-button { background: none; border: none; padding: 0.375rem; cursor: pointer; transition: all 0.15s; border-radius: 6px; }
-.star-button:hover:not(.disabled) { transform: scale(1.15); background: #fef3c7; }
+.cleanliness-rating-label { font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); }
+.cleanliness-rating-editor { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 4px; }
+.star-input { display: flex; gap: 0.25rem; }
+.star-button { background: none; border: none; padding: 0.1875rem; cursor: pointer; transition: color 0.15s; border-radius: 3px; }
+.star-button:hover:not(.disabled) { background: rgba(245, 158, 11, 0.1); }
 .star-button.disabled { cursor: not-allowed; opacity: 0.5; }
-.star-button i { font-size: 1.625rem; color: var(--border-light); transition: color 0.15s; }
+.star-button i { font-size: 1rem; color: var(--border-light); transition: color 0.15s; }
 .star-button.active i, .star-button i.filled { color: #f59e0b; }
 .star-button:hover:not(.disabled) i { color: #fbbf24; }
-.rating-value-display { display: flex; align-items: center; gap: 0.75rem; padding-left: 1rem; border-left: 2px solid var(--border-light); }
-.rating-label { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
-.rating-container { display: flex; flex-direction: column; gap: 0.75rem; }
-.rating-stars { display: flex; gap: 0.5rem; }
-.rating-stars .star { font-size: 1.75rem; color: var(--border-light); cursor: pointer; transition: all 0.15s; background: none; border: none; padding: 0.25rem; border-radius: 6px; }
-.rating-stars .star:hover { transform: scale(1.15); background: #fef3c7; }
+.rating-value-display { display: flex; align-items: center; gap: 0.5rem; padding-left: 0.625rem; border-left: 1px solid var(--border-light); }
+.rating-label { font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); }
+.rating-container { display: flex; flex-direction: column; gap: 0.5rem; }
+.rating-stars { display: flex; gap: 0.25rem; }
+.rating-stars .star { font-size: 1rem; color: var(--border-light); cursor: pointer; transition: color 0.15s; background: none; border: none; padding: 0.1875rem; border-radius: 3px; }
+.rating-stars .star:hover { background: rgba(245, 158, 11, 0.1); }
 .rating-stars .star.filled { color: #f59e0b; }
 .rating-stars .star.hovered { color: #fbbf24; }
-.rating-value { font-size: 0.9375rem; color: var(--text-secondary); font-weight: 500; }
-.rating-text { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
-.warning-text { color: #dc2626; font-size: 0.875rem; margin-top: 0.75rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; }
+.rating-value { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
+.rating-text { font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); }
+.warning-text { color: #dc2626; font-size: 0.75rem; margin-top: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.375rem; }
 .date-input-container { position: relative; }
 .date-input-container input { width: 100%; }
-.overdue-warning { display: flex; align-items: center; gap: 0.625rem; padding: 0.75rem 1rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; color: #92400e; font-size: 0.875rem; margin-top: 0.75rem; }
-.overdue-warning i { color: #f59e0b; font-size: 1rem; }
-.view-only-mode { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; border-radius: 12px; margin-bottom: 1.25rem; }
-.view-only-mode i { font-size: 1.375rem; color: #d97706; }
+.overdue-warning { display: flex; align-items: center; gap: 0.5rem; padding: 0.4375rem 0.625rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; color: #92400e; font-size: 0.75rem; margin-top: 0.5rem; }
+.overdue-warning i { color: #f59e0b; font-size: 0.75rem; }
+.view-only-mode { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.75rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; margin-bottom: 0.75rem; }
+.view-only-mode i { font-size: 0.875rem; color: #d97706; }
 .view-only-mode-content { flex: 1; }
-.view-only-mode-title { font-size: 1rem; font-weight: 600; color: #92400e; margin: 0 0 0.25rem 0; }
-.view-only-mode-message { font-size: 0.875rem; color: #b45309; margin: 0; line-height: 1.5; }
-.view-only-banner { display: flex; align-items: center; gap: 0.625rem; padding: 0.75rem 1.25rem; background: #fffbeb; border-bottom: 1px solid #fde68a; color: #92400e; font-size: 0.9375rem; font-weight: 500; }
-.view-only-banner i { color: #f59e0b; }
-.restriction-warning { display: flex; align-items: flex-start; gap: 1rem; padding: 1.25rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; margin-bottom: 1.25rem; }
-.restriction-warning i { color: #dc2626; font-size: 1.25rem; margin-top: 0.125rem; }
+.view-only-mode-title { font-size: 0.8125rem; font-weight: 700; color: #92400e; margin: 0 0 0.125rem 0; }
+.view-only-mode-message { font-size: 0.75rem; color: #b45309; margin: 0; line-height: 1.4; }
+.view-only-banner { display: flex; align-items: center; gap: 0.5rem; padding: 0.4375rem 0.875rem; background: #fffbeb; border-bottom: 1px solid #fde68a; color: #92400e; font-size: 0.75rem; font-weight: 600; }
+.view-only-banner i { color: #f59e0b; font-size: 0.75rem; }
+.restriction-warning { display: flex; align-items: flex-start; gap: 0.625rem; padding: 0.625rem 0.75rem; background: rgba(220, 38, 38, 0.06); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 4px; margin-bottom: 0.75rem; }
+.restriction-warning i { color: #dc2626; font-size: 0.875rem; margin-top: 0.0625rem; }
 .restriction-warning-content { flex: 1; }
-.restriction-warning-title { font-size: 1rem; font-weight: 600; color: #991b1b; margin: 0 0 0.375rem 0; }
-.restriction-warning-message { font-size: 0.875rem; color: #b91c1c; margin: 0; line-height: 1.5; }
+.restriction-warning-title { font-size: 0.8125rem; font-weight: 700; color: #991b1b; margin: 0 0 0.1875rem 0; }
+.restriction-warning-message { font-size: 0.75rem; color: #b91c1c; margin: 0; line-height: 1.4; }
 .read-only-field { position: relative; }
 .read-only-field::after { content: ''; position: absolute; inset: 0; background: transparent; pointer-events: none; }
-.read-only-indicator { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background: var(--bg-secondary); border-radius: 6px; font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.5rem; font-weight: 500; }
-.read-only-indicator i { font-size: 0.625rem; }
+.read-only-indicator { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.0625rem 0.375rem; background: var(--bg-tertiary); border-radius: 3px; font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-left: 0.375rem; }
+.read-only-indicator i { font-size: 0.5625rem; }
 `
     useEffect(() => {
         if (itemAssignedPlant === undefined) {
@@ -398,7 +397,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                 {isSaving && (
                     <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3.5 bg-white/95">
                         <div
-                            className="h-12 w-12 rounded-full border-[3px] border-slate-200"
+                            className="h-12 w-12 rounded-full border-[3px] border-border-light"
                             style={{
                                 animation: 'dv-spin 0.7s linear infinite',
                                 borderTopColor: accent
@@ -407,7 +406,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                         <span className="text-sm font-medium text-slate-500">Saving changes...</span>
                     </div>
                 )}
-                <div className="relative overflow-hidden border-b border-slate-200 bg-white">
+                <div className="relative overflow-hidden border-b border-border-light bg-white">
                     <div
                         className="absolute inset-0 opacity-[0.03]"
                         style={{
@@ -438,7 +437,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                     {isLoading ? (
                         <div className="flex flex-1 flex-col items-center justify-center gap-3.5">
                             <div
-                                className="h-12 w-12 rounded-full border-[3px] border-slate-200"
+                                className="h-12 w-12 rounded-full border-[3px] border-border-light"
                                 style={{
                                     animation: 'dv-spin 0.7s linear infinite',
                                     borderTopColor: accent
@@ -449,7 +448,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                     ) : (
                         <>
                             <aside
-                                className={`dv-sidebar ${sidebarCollapsed ? 'dv-sidebar-collapsed' : ''} flex flex-shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-slate-200 bg-white`}
+                                className={`dv-sidebar ${sidebarCollapsed ? 'dv-sidebar-collapsed' : ''} flex flex-shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-border-light bg-white`}
                                 style={{ width: sidebarCollapsed ? 64 : 240 }}
                             >
                                 <div style={{ padding: sidebarCollapsed ? '12px 8px' : '16px' }}>
@@ -504,7 +503,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                                 </nav>
                                 {(footerActions || (hasTransferPerm && onRegionTransfer && currentRegion)) && (
                                     <div
-                                        className="dv-footer-actions mt-auto border-t border-slate-200"
+                                        className="dv-footer-actions mt-auto border-t border-border-light"
                                         style={{ padding: sidebarCollapsed ? '12px 8px' : '16px' }}
                                     >
                                         {footerActions}
@@ -542,7 +541,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                                     </button>
                                 ))}
                                 {footerActions && (
-                                    <div className="ml-auto flex gap-1 border-l border-slate-200 pl-2">
+                                    <div className="ml-auto flex gap-1 border-l border-border-light pl-2">
                                         {footerActions}
                                     </div>
                                 )}
@@ -570,15 +569,15 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                 {showDeleteConfirmation &&
                     ReactDOM.createPortal(
                         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-5">
-                            <div className="w-full max-w-[360px] overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+                            <div className="w-full max-w-[360px] overflow-hidden rounded bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
                                 <div className="p-6 text-center">
-                                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
+                                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded bg-red-50">
                                         <i className="fas fa-trash-alt text-2xl text-red-600"></i>
                                     </div>
                                     <h3 className="m-0 mb-1.5 text-lg font-bold text-slate-800">{deleteTitle}</h3>
                                     <p className="m-0 text-[13px] text-slate-500">{deleteMessage}</p>
                                 </div>
-                                <div className="flex gap-2.5 border-t border-slate-200 bg-slate-50 px-5 py-3.5">
+                                <div className="flex gap-2.5 border-t border-border-light bg-slate-50 px-5 py-3.5">
                                     <button
                                         className="dv-btn flex-1 rounded-[10px] border-none bg-slate-100 px-4 py-2.5 text-[13px] font-semibold text-slate-600 cursor-pointer"
                                         onClick={onDeleteCancel}
@@ -602,7 +601,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                             onClick={(e) => e.target === e.currentTarget && closeTransfer()}
                             className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 p-5"
                         >
-                            <div className="flex w-full max-w-[400px] max-h-[85vh] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+                            <div className="flex w-full max-w-[400px] max-h-[85vh] flex-col overflow-hidden rounded bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
                                 <div
                                     className="flex items-center justify-between gap-3 px-5 py-4"
                                     style={{ background: accent }}
@@ -631,7 +630,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                                             Target Region
                                         </label>
                                         <select
-                                            className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-slate-200 text-sm text-slate-800 outline-none"
+                                            className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-border-light text-sm text-slate-800 outline-none"
                                             value={targetRegion}
                                             onChange={(e) => setTargetRegion(e.target.value)}
                                             disabled={transferring}
@@ -661,7 +660,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                                                 Target Plant
                                             </label>
                                             <select
-                                                className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-slate-200 text-sm text-slate-800 outline-none"
+                                                className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-border-light text-sm text-slate-800 outline-none"
                                                 value={targetPlant}
                                                 onChange={(e) => setTargetPlant(e.target.value)}
                                                 disabled={transferring || !plants.length}
@@ -689,7 +688,7 @@ html.dark .unassign-operator-button:hover { background: #4c1d21; border-color: #
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex gap-2.5 border-t border-slate-200 bg-slate-50 px-5 py-3.5">
+                                <div className="flex gap-2.5 border-t border-border-light bg-slate-50 px-5 py-3.5">
                                     <button
                                         className="dv-btn flex-1 rounded-[10px] border-none bg-slate-100 px-4 py-2.5 text-[13px] font-semibold text-slate-600 cursor-pointer"
                                         onClick={closeTransfer}
@@ -785,10 +784,10 @@ DetailViewSection.Card = function Card({ title, icon, children, actions, fullWid
     const accent = preferences.accentColor || '#1e3a5f'
     return (
         <div
-            className={`overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] ${fullWidth ? 'col-[1_/_-1]' : ''}`}
+            className={`overflow-hidden rounded border border-border-light bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] ${fullWidth ? 'col-[1_/_-1]' : ''}`}
         >
             {title && (
-                <div className="flex items-center justify-between gap-2.5 border-b border-gray-200 bg-slate-50 px-5 py-3.5">
+                <div className="flex items-center justify-between gap-2.5 border-b border-border-light bg-slate-50 px-5 py-3.5">
                     <div className="flex items-center gap-2.5 text-[15px] font-semibold text-slate-800">
                         {icon && <i className={icon} style={{ color: accent, fontSize: 15 }}></i>}
                         {title}
@@ -817,7 +816,7 @@ DetailViewSection.Field = function Field({ label, value, empty = '-', icon }) {
                 {label}
             </span>
             <span
-                className={`rounded-[10px] border border-gray-200 bg-slate-50 px-3.5 py-2.5 text-sm font-medium ${value ? 'text-slate-800' : 'text-slate-400'}`}
+                className={`rounded-[10px] border border-border-light bg-slate-50 px-3.5 py-2.5 text-sm font-medium ${value ? 'text-slate-800' : 'text-slate-400'}`}
             >
                 {value || empty}
             </span>
@@ -837,7 +836,7 @@ DetailViewSection.Input = function Input({ label, icon, ...props }) {
             )}
             <input
                 {...props}
-                className="dv-input w-full rounded-[10px] border-[1.5px] border-gray-200 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition-[border-color,box-shadow] duration-150"
+                className="dv-input w-full rounded-[10px] border-[1.5px] border-border-light bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition-[border-color,box-shadow] duration-150"
                 style={props.style}
             />
         </div>
@@ -858,7 +857,7 @@ DetailViewSection.Select = function Select({ label, icon, options = [], placehol
             )}
             <select
                 {...props}
-                className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-gray-200 text-sm text-slate-800 outline-none"
+                className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-border-light text-sm text-slate-800 outline-none"
                 style={{
                     background: selectBg,
                     padding: '12px 40px 12px 14px',
@@ -891,7 +890,7 @@ DetailViewSection.Textarea = function Textarea({ label, icon, ...props }) {
             )}
             <textarea
                 {...props}
-                className="dv-input w-full min-h-[120px] resize-y rounded-[10px] border-[1.5px] border-gray-200 bg-white px-3.5 py-3 text-sm leading-[1.6] text-slate-800 outline-none transition-[border-color,box-shadow] duration-150"
+                className="dv-input w-full min-h-[120px] resize-y rounded-[10px] border-[1.5px] border-border-light bg-white px-3.5 py-3 text-sm leading-[1.6] text-slate-800 outline-none transition-[border-color,box-shadow] duration-150"
                 style={props.style}
             />
         </div>

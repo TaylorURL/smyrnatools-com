@@ -100,7 +100,7 @@ const RoleCard = ({
     }
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
             {/* Header — always visible */}
             <div
                 className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
@@ -136,10 +136,10 @@ const RoleCard = ({
 
             {/* Expanded content */}
             {isExpanded && (
-                <div className="border-t border-slate-100">
+                <div className="border-t border-border-light">
                     {/* Actions bar */}
                     {hasITAccess && (
-                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50 border-b border-slate-100">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50 border-b border-border-light">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation()
@@ -174,7 +174,7 @@ const RoleCard = ({
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddPerm()}
                                 placeholder="e.g. reports.qc_strength"
                                 autoFocus
-                                className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                                className="flex-1 bg-white border border-border-light rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
                             />
                             <button
                                 onClick={handleAddPerm}
@@ -361,7 +361,7 @@ const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor }) => {
                         </button>
                         <span className="text-[11px] text-slate-400 ml-auto">{selectedRoleIds.size} selected</span>
                     </div>
-                    <div className="max-h-[280px] overflow-y-auto border border-slate-200 rounded-lg">
+                    <div className="max-h-[280px] overflow-y-auto border border-border-light rounded-lg">
                         {sortedRoles.map((role) => {
                             const isSelected = selectedRoleIds.has(role.id)
                             const alreadyHasIt =
@@ -371,7 +371,7 @@ const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor }) => {
                             return (
                                 <label
                                     key={role.id}
-                                    className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors border-b border-slate-100 last:border-b-0 ${
+                                    className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors border-b border-border-light last:border-b-0 ${
                                         isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'
                                     } ${alreadyHasIt ? 'opacity-40' : ''}`}
                                 >
@@ -627,7 +627,7 @@ function RolesView() {
                         />
                     ))}
                     {sortedRoles.length === 0 && (
-                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center text-slate-400">
+                        <div className="bg-white rounded-xl border border-border-light shadow-sm p-12 text-center text-slate-400">
                             <i className="fas fa-search text-3xl mb-3 block" />
                             <div className="text-sm">No roles match your search</div>
                         </div>

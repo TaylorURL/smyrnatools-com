@@ -316,7 +316,7 @@ function TaskSelectorModal({ isOpen, onClose, items, onSelect, accentColor, onIt
         <>
             <div onClick={onClose} className="fixed inset-0 z-[9999] backdrop-blur-[4px] bg-[rgba(15,23,42,0.6)]" />
             <div
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35)] flex flex-col max-h-[75vh] max-w-[520px] w-[92vw] animate-[modalSlideIn_0.2s_ease-out]"
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] rounded shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35)] flex flex-col max-h-[75vh] max-w-[520px] w-[92vw] animate-[modalSlideIn_0.2s_ease-out]"
                 style={{ background: 'var(--bg-primary)' }}
             >
                 <style>{`@keyframes modalSlideIn { from { opacity: 0; transform: translate(-50%, -48%); } to { opacity: 1; transform: translate(-50%, -50%); } }`}</style>

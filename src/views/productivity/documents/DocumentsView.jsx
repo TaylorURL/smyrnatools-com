@@ -100,7 +100,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
 
     if (isMobile) {
         return (
-            <div className="flex items-start gap-3 px-4 py-3.5 border-b border-slate-100 last:border-b-0">
+            <div className="flex items-start gap-3 px-4 py-3.5 border-b border-border-light last:border-b-0">
                 <div
                     className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center mt-0.5"
                     style={{ backgroundColor: `${color}15` }}
@@ -117,7 +117,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                         {previewable && (
                             <button
                                 onClick={() => onPreview(doc)}
-                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors"
+                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-white text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors"
                             >
                                 <i className="fas fa-eye mr-1" />
                                 Preview
@@ -128,7 +128,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                             target="_blank"
                             rel="noopener noreferrer"
                             download
-                            className="text-xs font-medium px-2.5 py-1 rounded-md border border-slate-200 bg-white text-slate-600 no-underline hover:bg-slate-50 transition-colors"
+                            className="text-xs font-medium px-2.5 py-1 rounded-md border border-border-light bg-white text-slate-600 no-underline hover:bg-slate-50 transition-colors"
                         >
                             <i className="fas fa-download mr-1" />
                             Download
@@ -149,24 +149,38 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
     }
 
     return (
-        <div className="grid grid-cols-[1fr_100px_120px_160px_140px] items-center px-4 lg:px-7 py-3.5 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 transition-colors">
-            <div className="flex items-center gap-3 min-w-0">
-                <div
-                    className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: `${color}15` }}
+        <div className="grid grid-cols-[1fr_90px_110px_140px_110px] items-center gap-2 px-3 py-1.5 border-b border-border-light last:border-b-0 hover:bg-bg-tertiary transition-colors">
+            <div className="flex items-center gap-2 min-w-0">
+                <span
+                    className="shrink-0 w-5 h-5 rounded flex items-center justify-center"
+                    style={{ background: `${color}14`, color }}
                 >
-                    <i className={`fas ${icon} text-sm`} style={{ color }} />
-                </div>
-                <span className="text-sm font-medium text-slate-800 truncate">{doc.name}</span>
+                    <i className={`fas ${icon} text-[10px]`} />
+                </span>
+                <span
+                    className="text-[12px] font-semibold truncate"
+                    style={{ color: 'var(--text-primary)' }}
+                    title={doc.name}
+                >
+                    {doc.name}
+                </span>
             </div>
-            <div className="text-xs text-slate-500">{formatFileSize(doc.file_size)}</div>
-            <div className="text-xs text-slate-500">{DateUtility.formatDate(doc.created_at)}</div>
-            <div className="text-xs text-slate-500 truncate">{uploaderName || '\u2014'}</div>
-            <div className="flex items-center justify-end gap-1.5">
+            <div className="text-[11px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+                {formatFileSize(doc.file_size)}
+            </div>
+            <div className="text-[11px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+                {DateUtility.formatDate(doc.created_at)}
+            </div>
+            <div className="text-[11px] truncate" style={{ color: 'var(--text-secondary)' }} title={uploaderName || ''}>
+                {uploaderName || '\u2014'}
+            </div>
+            <div className="flex items-center justify-end gap-0.5">
                 {previewable && (
                     <button
+                        type="button"
                         onClick={() => onPreview(doc)}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 cursor-pointer hover:bg-slate-50 transition-colors text-xs"
+                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent hover:brightness-90 transition-colors"
+                        style={{ color: 'var(--text-tertiary)' }}
                         title="Preview"
                     >
                         <i className="fas fa-eye" />
@@ -177,15 +191,18 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     target="_blank"
                     rel="noopener noreferrer"
                     download
-                    className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 no-underline hover:bg-slate-50 transition-colors text-xs"
+                    className="flex items-center justify-center w-5 h-5 rounded text-[11px] no-underline hover:brightness-90 transition-colors"
+                    style={{ color: 'var(--text-tertiary)' }}
                     title="Download"
                 >
                     <i className="fas fa-download" />
                 </a>
                 {canDelete && (
                     <button
+                        type="button"
                         onClick={() => onDelete(doc)}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-red-200 bg-white text-red-400 cursor-pointer hover:bg-red-50 transition-colors text-xs"
+                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90"
+                        style={{ color: '#dc2626' }}
                         title="Delete"
                     >
                         <i className="fas fa-trash" />
@@ -199,7 +216,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
 /** Shimmer skeleton shown while documents are loading. */
 function DocumentsSkeleton() {
     return Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 px-4 lg:px-7 py-4 border-b border-slate-100 animate-pulse">
+        <div key={i} className="flex items-center gap-3 px-4 lg:px-7 py-4 border-b border-border-light animate-pulse">
             <div className="w-9 h-9 rounded-lg bg-slate-200" />
             <div className="flex-1">
                 <div className="h-3.5 rounded w-2/5 bg-slate-200 mb-1.5" />
@@ -214,7 +231,7 @@ function EmptyState({ canUpload, onUpload, accentColor }) {
     return (
         <div className="flex flex-col items-center justify-center py-20 text-center">
             <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                className="w-16 h-16 rounded flex items-center justify-center mb-4"
                 style={{ backgroundColor: `${accentColor}10` }}
             >
                 <i className="fas fa-folder-open text-2xl" style={{ color: accentColor }} />
@@ -240,9 +257,9 @@ function EmptyState({ canUpload, onUpload, accentColor }) {
 /** Page-size selector and prev/next navigation for paginated document lists. */
 function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPageChange }) {
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 bg-slate-50">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border-light bg-slate-50">
             <select
-                className="appearance-none bg-white border border-slate-200 rounded-md text-sm text-slate-600 py-1.5 pl-3 pr-8 cursor-pointer"
+                className="appearance-none bg-white border border-border-light rounded-md text-sm text-slate-600 py-1.5 pl-3 pr-8 cursor-pointer"
                 value={pageSize}
                 onChange={(e) => onPageSizeChange(Number(e.target.value))}
             >
@@ -256,8 +273,8 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
                 <button
                     className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-all ${
                         currentPage === 1
-                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                            : 'bg-white text-slate-700 border-gray-200 hover:bg-slate-50 cursor-pointer'
+                            ? 'bg-slate-100 text-slate-400 border-border-light cursor-not-allowed'
+                            : 'bg-white text-slate-700 border-border-light hover:bg-slate-50 cursor-pointer'
                     }`}
                     onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
@@ -271,8 +288,8 @@ function Pagination({ currentPage, totalPages, pageSize, onPageSizeChange, onPag
                 <button
                     className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-all ${
                         currentPage === totalPages
-                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                            : 'bg-white text-slate-700 border-gray-200 hover:bg-slate-50 cursor-pointer'
+                            ? 'bg-slate-100 text-slate-400 border-border-light cursor-not-allowed'
+                            : 'bg-white text-slate-700 border-border-light hover:bg-slate-50 cursor-pointer'
                     }`}
                     onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
@@ -337,7 +354,7 @@ export default function DocumentsView() {
     /** File-type dropdown rendered inside TopSection's custom filter slot. */
     const typeFilterSelect = (
         <select
-            className="appearance-none bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat"
+            className="appearance-none bg-slate-50 border border-border-light rounded-xl text-slate-900 text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat"
             style={{
                 backgroundImage:
                     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
@@ -394,7 +411,7 @@ export default function DocumentsView() {
                 </div>
             )}
             <div className="px-3 py-4 sm:px-4 md:px-6 lg:px-8">
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
                     {loading ? (
                         <DocumentsSkeleton />
                     ) : filtered.length === 0 ? (
@@ -402,7 +419,7 @@ export default function DocumentsView() {
                     ) : (
                         <>
                             {!isMobile && (
-                                <div className="grid grid-cols-[1fr_100px_120px_160px_140px] px-4 lg:px-7 py-2.5 bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                                <div className="grid grid-cols-[1fr_100px_120px_160px_140px] px-4 lg:px-7 py-2.5 bg-slate-50 border-b border-border-light text-[11px] font-bold uppercase tracking-wide text-slate-500">
                                     <div>Name</div>
                                     <div>Size</div>
                                     <div>Date</div>

@@ -84,15 +84,15 @@ function Field({ label, children }) {
 }
 
 const INPUT_CLS =
-    'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
+    'w-full rounded-lg border border-border-light bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
 const SELECT_CLS =
-    'w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 cursor-pointer'
+    'w-full appearance-none rounded-lg border border-border-light bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 cursor-pointer'
 
 function Modal({ title, onClose, onSubmit, submitting, children }) {
     return (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <div className="sticky top-0 flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white rounded-t-2xl z-10">
+            <div className="bg-white rounded shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <div className="sticky top-0 flex items-center justify-between px-6 py-4 border-b border-border-light bg-white rounded-t-2xl z-10">
                     <h2 className="text-base font-bold text-slate-800">{title}</h2>
                     <button
                         type="button"
@@ -111,11 +111,11 @@ function Modal({ title, onClose, onSubmit, submitting, children }) {
                 >
                     {children}
                 </form>
-                <div className="sticky bottom-0 flex justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-white rounded-b-2xl">
+                <div className="sticky bottom-0 flex justify-end gap-3 px-6 py-4 border-t border-border-light bg-white rounded-b-2xl">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                        className="px-4 py-2 text-sm font-semibold rounded-lg border border-border-light bg-white text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                         Cancel
                     </button>
@@ -141,7 +141,7 @@ function IconBtn({ icon, onClick, danger }) {
             className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors ${
                 danger
                     ? 'border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600'
-                    : 'border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                    : 'border-border-light text-slate-400 hover:bg-slate-100 hover:text-slate-600'
             }`}
             aria-label={danger ? 'Delete' : 'Edit'}
         >
@@ -435,7 +435,7 @@ function ScaleRow({ scale, allPlants, onReload }) {
 
     return (
         <>
-            <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60 transition-colors">
+            <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0 hover:bg-slate-50/60 transition-colors">
                 <div className="w-4 shrink-0" /> {/* indent under plant */}
                 <div className={`flex items-center justify-center w-7 h-7 rounded-lg text-[10px] shrink-0 ${iconBg}`}>
                     <i className="fas fa-balance-scale" />
@@ -463,7 +463,7 @@ function ScaleRow({ scale, allPlants, onReload }) {
                     <button
                         type="button"
                         onClick={() => setCalibModal(true)}
-                        className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
+                        className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-border-light bg-white text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
                     >
                         Log Calibration
                     </button>
@@ -518,7 +518,7 @@ function PlantGroup({ plant, scales, allPlants, regionPlants, onReload }) {
     return (
         <>
             {/* Plant header */}
-            <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 bg-slate-50 border-b border-slate-200">
+            <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 bg-slate-50 border-b border-border-light">
                 <div className="flex items-center justify-center w-7 h-7 rounded-lg text-[10px] bg-blue-100 text-blue-500 shrink-0">
                     <i className="fas fa-certificate" />
                 </div>
@@ -542,7 +542,7 @@ function PlantGroup({ plant, scales, allPlants, regionPlants, onReload }) {
                     <button
                         type="button"
                         onClick={() => setRenewModal(true)}
-                        className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
+                        className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-border-light bg-white text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
                     >
                         Log Renewal
                     </button>
@@ -557,7 +557,7 @@ function PlantGroup({ plant, scales, allPlants, regionPlants, onReload }) {
             ))}
 
             {/* Add scale */}
-            <div className="flex items-center gap-3 px-4 sm:px-5 py-2.5 border-b border-slate-100 bg-white">
+            <div className="flex items-center gap-3 px-4 sm:px-5 py-2.5 border-b border-border-light bg-white">
                 <div className="w-4 shrink-0" />
                 <div className="w-7 shrink-0" />
                 <button
@@ -610,10 +610,10 @@ function PlantGroup({ plant, scales, allPlants, regionPlants, onReload }) {
 
 function NRMCASkeleton() {
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
             {[1, 2, 3].map((g) => (
                 <React.Fragment key={g}>
-                    <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 bg-slate-50 border-b border-slate-200">
+                    <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 bg-slate-50 border-b border-border-light">
                         <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse shrink-0" />
                         <div className="flex-1 min-w-0">
                             <div className="h-4 w-40 rounded bg-slate-200 animate-pulse mb-1.5" />
@@ -623,7 +623,10 @@ function NRMCASkeleton() {
                         <div className="h-7 w-24 rounded-lg bg-slate-200 animate-pulse" />
                     </div>
                     {[1, 2].map((r) => (
-                        <div key={r} className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-100">
+                        <div
+                            key={r}
+                            className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-border-light"
+                        >
                             <div className="w-4 shrink-0" />
                             <div className="w-7 h-7 rounded-lg bg-slate-100 animate-pulse shrink-0" />
                             <div className="flex-1 min-w-0">
@@ -727,9 +730,9 @@ export default function NRMCAView() {
                 {loading ? (
                     <NRMCASkeleton />
                 ) : (
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
                         {/* Toolbar */}
-                        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-200">
+                        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-border-light">
                             <span className="text-sm font-semibold text-slate-700">
                                 {plants.length} {plants.length === 1 ? 'plant' : 'plants'} · {scales.length}{' '}
                                 {scales.length === 1 ? 'scale' : 'scales'}

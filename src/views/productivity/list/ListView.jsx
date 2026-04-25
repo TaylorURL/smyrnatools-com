@@ -507,7 +507,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                 sticky={true}
                 hideViewModeToggle={true}
                 customBottomSkeleton={
-                    <div className="flex items-center gap-2 bg-slate-50 border-t border-slate-200 -mx-7 mt-4 -mb-6 px-7 py-3">
+                    <div className="flex items-center gap-2 bg-bg-secondary border-t border-border-light -mx-7 mt-4 -mb-6 px-7 py-3">
                         {[72, 56, 64, 80].map((w, i) => (
                             <div
                                 key={i}
@@ -523,7 +523,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                     </div>
                 }
                 customBottomContent={
-                    <div className="flex items-center flex-wrap gap-2 bg-slate-50 border border-gray-200 rounded-[10px] px-3.5 py-2.5">
+                    <div className="flex items-center flex-wrap gap-2 bg-bg-secondary border border-border-light rounded-[10px] px-3.5 py-2.5">
                         <div className="flex items-center gap-1.5">
                             {VIEW_MODES.map((mode) => (
                                 <button
@@ -532,7 +532,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                     className={`flex items-center rounded-md text-xs font-medium gap-1.5 px-3 py-1.5 cursor-pointer ${
                                         viewMode === mode.id
                                             ? 'bg-gray-900 text-white border-none'
-                                            : 'bg-transparent text-gray-500 border border-gray-200'
+                                            : 'bg-transparent text-gray-500 border border-border-light'
                                     }`}
                                 >
                                     <i className={`fas ${mode.icon} text-[11px]`} />
@@ -561,7 +561,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                         setStatusDropdownOpen((p) => !p)
                                         setRoleDropdownOpen(false)
                                     }}
-                                    className={`flex items-center rounded-lg cursor-pointer font-medium transition-all duration-150 ${
+                                    className={`flex items-center rounded cursor-pointer font-medium transition-all duration-150 ${
                                         isMobile ? 'text-[11px] gap-1 px-2 py-[5px]' : 'text-xs gap-1.5 px-2.5 py-1.5'
                                     }`}
                                     style={{
@@ -580,7 +580,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                 </button>
                                 {statusDropdownOpen && (
                                     <div
-                                        className="absolute top-full left-0 mt-1.5 z-50 rounded-xl shadow-lg overflow-hidden min-w-[180px] animate-[filterFadeIn_0.15s_ease-out]"
+                                        className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-[filterFadeIn_0.15s_ease-out]"
                                         style={{
                                             background: 'var(--bg-primary)',
                                             border: '1px solid var(--border-light)'
@@ -597,7 +597,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                             handleStatusFilterChange(opt)
                                                             setStatusDropdownOpen(false)
                                                         }}
-                                                        className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
+                                                        className="flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
                                                         style={{
                                                             background: 'transparent',
                                                             color: 'var(--text-primary)'
@@ -644,7 +644,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                         setRoleDropdownOpen((p) => !p)
                                         setStatusDropdownOpen(false)
                                     }}
-                                    className={`flex items-center rounded-lg cursor-pointer font-medium transition-all duration-150 ${
+                                    className={`flex items-center rounded cursor-pointer font-medium transition-all duration-150 ${
                                         isMobile ? 'text-[11px] gap-1 px-2 py-[5px]' : 'text-xs gap-1.5 px-2.5 py-1.5'
                                     }`}
                                     style={{
@@ -663,7 +663,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                 </button>
                                 {roleDropdownOpen && (
                                     <div
-                                        className="absolute top-full left-0 mt-1.5 z-50 rounded-xl shadow-lg overflow-hidden min-w-[170px] animate-[filterFadeIn_0.15s_ease-out]"
+                                        className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-[filterFadeIn_0.15s_ease-out]"
                                         style={{
                                             background: 'var(--bg-primary)',
                                             border: '1px solid var(--border-light)'
@@ -677,7 +677,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                         handleRoleFilterChange(opt)
                                                         setRoleDropdownOpen(false)
                                                     }}
-                                                    className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
+                                                    className="flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
                                                     style={{ background: 'transparent', color: 'var(--text-primary)' }}
                                                     onMouseEnter={(e) =>
                                                         (e.currentTarget.style.background = 'var(--bg-secondary)')
@@ -733,13 +733,13 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                         <TaskListSkeleton />
                     ) : filteredItems.length === 0 ? (
                         <div className="flex flex-col items-center justify-center mx-auto max-w-[600px] px-8 py-16 text-center">
-                            <div className="text-slate-300 text-[4rem] mb-6">
+                            <div className="text-text-tertiary text-[4rem] mb-6">
                                 <i className="fas fa-clipboard-list" />
                             </div>
-                            <h3 className="text-slate-800 text-xl font-bold mb-2 m-0">
+                            <h3 className="text-text-primary text-xl font-bold mb-2 m-0">
                                 {statusFilter === 'completed' ? 'No Completed Items Found' : 'No List Items Found'}
                             </h3>
-                            <p className="text-slate-500 text-[0.9375rem] mb-6 m-0">
+                            <p className="text-text-secondary text-[0.9375rem] mb-6 m-0">
                                 {searchText || selectedPlant
                                     ? 'No items match your search criteria.'
                                     : statusFilter === 'completed'
@@ -748,7 +748,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                             </p>
                             <button
                                 onClick={() => setShowAddSheet(true)}
-                                className="flex items-center border-none rounded-lg text-white cursor-pointer text-sm font-semibold gap-2 outline-none px-5 py-2.5 transition-all duration-200"
+                                className="flex items-center border-none rounded text-white cursor-pointer text-sm font-semibold gap-2 outline-none px-5 py-2.5 transition-all duration-200"
                                 style={{ background: accentColor }}
                             >
                                 <i className="fas fa-plus" />
@@ -757,18 +757,18 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                         </div>
                     ) : viewMode === 'activity' ? (
                         <div className={`flex flex-col w-full ${isMobile ? 'pb-6' : 'pb-8'}`}>
-                            <div className="bg-white border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden rounded-xl">
+                            <div className="bg-bg-primary border border-border-light overflow-hidden rounded">
                                 <div
-                                    className={`bg-slate-50 border-b border-gray-200 ${isMobile ? 'px-4 py-3' : 'px-6 py-4'}`}
+                                    className={`bg-bg-secondary border-b border-border-light ${isMobile ? 'px-4 py-3' : 'px-6 py-4'}`}
                                 >
                                     <div
-                                        className={`flex items-center text-slate-800 font-bold ${isMobile ? 'text-sm gap-2' : 'text-base gap-3'}`}
+                                        className={`flex items-center text-text-primary font-bold ${isMobile ? 'text-sm gap-2' : 'text-base gap-3'}`}
                                     >
                                         <i className="fas fa-history" style={{ color: accentColor }} />
                                         <span>Recent Activity</span>
                                         {!activityLoading && (
                                             <span
-                                                className={`inline-flex items-center justify-center rounded-xl text-white font-bold px-2 ${
+                                                className={`inline-flex items-center justify-center rounded text-white font-bold px-2 ${
                                                     isMobile
                                                         ? 'text-[0.6875rem] h-5 min-w-[20px]'
                                                         : 'text-xs h-6 min-w-[24px]'
@@ -786,7 +786,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                             {[...Array(6)].map((_, i) => (
                                                 <div
                                                     key={i}
-                                                    className={`flex border-b border-slate-100 ${isMobile ? 'gap-3 px-4 py-3' : 'gap-4 px-6 py-4'}`}
+                                                    className={`flex border-b border-border-light ${isMobile ? 'gap-3 px-4 py-3' : 'gap-4 px-6 py-4'}`}
                                                 >
                                                     <div
                                                         className={`rounded-full bg-slate-200 animate-pulse shrink-0 ${isMobile ? 'h-7 w-7' : 'h-8 w-8'}`}
@@ -800,10 +800,10 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                         </div>
                                     ) : activityFeed.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-12 text-center">
-                                            <div className="text-slate-300 text-3xl mb-3">
+                                            <div className="text-text-tertiary text-3xl mb-3">
                                                 <i className="fas fa-stream" />
                                             </div>
-                                            <p className="text-slate-500 text-sm m-0">No activity recorded yet</p>
+                                            <p className="text-text-secondary text-sm m-0">No activity recorded yet</p>
                                         </div>
                                     ) : (
                                         activityFeed.map((entry, index) => {
@@ -825,7 +825,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                     onClick={() =>
                                                         entry.list_item_id && onSelectItem(entry.list_item_id)
                                                     }
-                                                    className={`flex border-b border-slate-100 cursor-pointer transition-all duration-200 ${
+                                                    className={`flex border-b border-border-light cursor-pointer transition-all duration-200 ${
                                                         isMobile ? 'gap-3 px-4 py-3' : 'gap-4 px-6 py-4'
                                                     }`}
                                                     style={{ background: 'var(--bg-primary)' }}
@@ -852,11 +852,11 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                         <p
                                                             className={`m-0 ${isMobile ? 'text-xs' : 'text-[0.8125rem]'}`}
                                                         >
-                                                            <span className="text-slate-800 font-semibold">
+                                                            <span className="text-text-primary font-semibold">
                                                                 {actorName}
                                                             </span>
-                                                            <span className="text-slate-500">{` ${display.verb} `}</span>
-                                                            <span className="text-slate-700 font-medium">
+                                                            <span className="text-text-secondary">{` ${display.verb} `}</span>
+                                                            <span className="text-text-primary font-medium">
                                                                 {ListService.truncateText(
                                                                     entry.item_description || 'an item',
                                                                     60
@@ -867,11 +867,11 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                             <div
                                                                 className={`flex items-center gap-1.5 ${isMobile ? 'text-[0.625rem]' : 'text-xs'}`}
                                                             >
-                                                                <span className="text-slate-400 bg-slate-100 rounded px-1.5 py-0.5 line-through">
+                                                                <span className="text-text-tertiary bg-slate-100 rounded px-1.5 py-0.5 line-through">
                                                                     {entry.old_value || 'none'}
                                                                 </span>
-                                                                <i className="fas fa-arrow-right text-slate-300 text-[8px]" />
-                                                                <span className="text-slate-600 bg-slate-100 rounded px-1.5 py-0.5 font-medium">
+                                                                <i className="fas fa-arrow-right text-text-tertiary text-[8px]" />
+                                                                <span className="text-text-secondary bg-slate-100 rounded px-1.5 py-0.5 font-medium">
                                                                     {entry.new_value || 'none'}
                                                                 </span>
                                                             </div>
@@ -879,12 +879,12 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                         <div
                                                             className={`flex items-center gap-2 ${isMobile ? 'text-[0.625rem]' : 'text-xs'}`}
                                                         >
-                                                            <span className="text-slate-400 font-medium">
+                                                            <span className="text-text-tertiary font-medium">
                                                                 {ListService.formatRelativeTime(entry.created_at)}
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center justify-center text-slate-300 text-sm pt-0.5">
+                                                    <div className="flex items-center justify-center text-text-tertiary text-sm pt-0.5">
                                                         <i className="fas fa-chevron-right" />
                                                     </div>
                                                 </div>
@@ -895,7 +895,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                             </div>
                         </div>
                     ) : (
-                        <div className={`flex flex-col gap-5 w-full ${isMobile ? 'pb-6' : 'pb-8'}`}>
+                        <div className={`flex flex-col gap-3 w-full ${isMobile ? 'pb-4' : 'pb-6'}`}>
                             {Object.entries(groupedItems).map(([key, group]) => {
                                 if (!group.items.length) return null
                                 if (statusFilter === 'completed' && key !== 'completed') return null
@@ -904,33 +904,25 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                 return (
                                     <div
                                         key={key}
-                                        className={`bg-white border border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden ${
-                                            isMobile ? 'rounded-lg' : 'rounded-xl'
-                                        }`}
+                                        className="bg-bg-primary border border-border-light overflow-hidden rounded"
                                     >
-                                        <div
-                                            className={`bg-slate-50 border-b border-gray-200 ${
-                                                isMobile ? 'px-4 py-3' : 'px-6 py-4'
-                                            }`}
-                                        >
-                                            <div
-                                                className={`flex items-center text-slate-800 font-bold ${
-                                                    isMobile ? 'text-sm gap-2' : 'text-base gap-3'
-                                                }`}
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border-light bg-bg-tertiary">
+                                            <i
+                                                className={`fas ${group.icon} text-[10px]`}
+                                                style={{ color: accentColor }}
+                                            />
+                                            <span
+                                                className="text-[10.5px] font-bold uppercase tracking-wider"
+                                                style={{ color: 'var(--text-secondary)' }}
                                             >
-                                                <i className={`fas ${group.icon}`} style={{ color: accentColor }} />
-                                                <span>{group.label}</span>
-                                                <span
-                                                    className={`inline-flex items-center justify-center rounded-xl text-white font-bold px-2 ${
-                                                        isMobile
-                                                            ? 'text-[0.6875rem] h-5 min-w-[20px]'
-                                                            : 'text-xs h-6 min-w-[24px]'
-                                                    }`}
-                                                    style={{ background: accentColor }}
-                                                >
-                                                    {group.items.length}
-                                                </span>
-                                            </div>
+                                                {group.label}
+                                            </span>
+                                            <span
+                                                className="inline-flex items-center justify-center rounded text-[9px] font-bold tabular-nums px-1 min-w-[16px] h-3.5"
+                                                style={{ background: `${accentColor}14`, color: accentColor }}
+                                            >
+                                                {group.items.length}
+                                            </span>
                                         </div>
                                         <div className="flex flex-col">
                                             {group.items.map((item) => {
@@ -941,190 +933,127 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                 const isItemOverdue =
                                                     (ListService.isOverdue(item) || item.status === 'overdue') &&
                                                     !item.completed
+                                                const pc = ListService.getPriorityConfig(item.priority || 'none')
                                                 return (
                                                     <div
                                                         key={item.id}
                                                         onClick={() => onSelectItem(item.id)}
-                                                        onMouseEnter={(e) => {
-                                                            if (!isSelected && !item.completed)
-                                                                e.currentTarget.style.background = 'var(--bg-secondary)'
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            if (!isSelected && !item.completed)
-                                                                e.currentTarget.style.background = 'var(--bg-primary)'
-                                                        }}
-                                                        className={`flex border-b border-slate-100 cursor-pointer transition-all duration-200 ${
-                                                            isMobile
-                                                                ? 'items-start gap-3 px-4 py-3'
-                                                                : 'items-center gap-4 px-6 py-4'
-                                                        } ${item.completed ? 'opacity-70' : ''}`}
+                                                        className={`flex items-center gap-2 cursor-pointer border-b border-border-light transition-colors ${
+                                                            isMobile ? 'px-2 py-1.5' : 'px-3 py-1.5'
+                                                        } ${item.completed ? 'opacity-65' : ''} hover:bg-bg-tertiary`}
                                                         style={{
                                                             background: isSelected
                                                                 ? 'var(--bg-tertiary)'
-                                                                : item.completed
-                                                                  ? 'var(--bg-secondary)'
-                                                                  : 'var(--bg-primary)'
+                                                                : 'transparent'
                                                         }}
                                                     >
-                                                        <div
-                                                            className="flex items-center justify-center shrink-0 cursor-pointer"
+                                                        <button
+                                                            type="button"
                                                             onClick={(e) => {
                                                                 e.stopPropagation()
                                                                 toggleSelect(item.id)
                                                             }}
+                                                            className="flex items-center justify-center h-4 w-4 rounded shrink-0 transition-colors border-none cursor-pointer"
+                                                            style={{
+                                                                background: isSelected ? accentColor : 'transparent',
+                                                                border: `1.5px solid ${
+                                                                    isSelected ? accentColor : 'var(--border-medium)'
+                                                                }`
+                                                            }}
+                                                            aria-label="Select"
                                                         >
-                                                            <div
-                                                                className="flex items-center justify-center h-5 w-5 rounded transition-all duration-150"
+                                                            {isSelected && (
+                                                                <i className="fas fa-check text-white text-[8px]" />
+                                                            )}
+                                                        </button>
+                                                        <span
+                                                            className="inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5"
+                                                            style={getItemStatusStyle(itemStatus, isMobile)}
+                                                        >
+                                                            <i
+                                                                className={`fas ${ListService.getStatusIcon(itemStatus)} text-[8px]`}
+                                                            />
+                                                            {ListService.getStatusLabel(itemStatus)}
+                                                        </span>
+                                                        <span
+                                                            className={`inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border ${pc.bg} ${pc.border} ${pc.color}`}
+                                                        >
+                                                            <i className={`fas ${pc.icon} text-[8px]`} />
+                                                            {pc.label}
+                                                        </span>
+                                                        <div className="flex flex-1 min-w-0 items-baseline gap-2">
+                                                            <span
+                                                                className="text-[12px] font-semibold truncate"
                                                                 style={{
-                                                                    background: isSelected
-                                                                        ? accentColor
-                                                                        : 'transparent',
-                                                                    border: isSelected
-                                                                        ? `2px solid ${accentColor}`
-                                                                        : '2px solid var(--border-medium)'
+                                                                    color: 'var(--text-primary)',
+                                                                    textDecoration: item.completed
+                                                                        ? 'line-through'
+                                                                        : 'none'
                                                                 }}
+                                                                title={item.description}
                                                             >
-                                                                {isSelected && (
-                                                                    <i className="fas fa-check text-white text-[10px]" />
-                                                                )}
-                                                            </div>
+                                                                {item.description}
+                                                            </span>
+                                                            {item.comments && !isMobile && (
+                                                                <span
+                                                                    className="text-[11px] truncate"
+                                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                                    title={item.comments}
+                                                                >
+                                                                    · {item.comments}
+                                                                </span>
+                                                            )}
                                                         </div>
-                                                        <div
-                                                            className={`flex flex-1 flex-col min-w-0 ${
-                                                                isMobile ? 'gap-1.5' : 'gap-2'
-                                                            }`}
+                                                        <span
+                                                            className="hidden md:inline-flex items-center gap-1 text-[11px] shrink-0"
+                                                            style={{ color: 'var(--text-secondary)' }}
+                                                            title={ListService.getPlantName(item.plant_code)}
                                                         >
-                                                            <div
-                                                                className={`flex items-start justify-between ${
-                                                                    isMobile ? 'flex-col gap-2' : 'flex-row gap-4'
-                                                                }`}
+                                                            <i className="fas fa-building text-[9px] opacity-70" />
+                                                            <span className="truncate max-w-[120px]">
+                                                                {ListService.getPlantName(item.plant_code)}
+                                                            </span>
+                                                        </span>
+                                                        <span
+                                                            className="inline-flex items-center gap-1 text-[11px] font-mono tabular-nums shrink-0"
+                                                            style={{
+                                                                color: isItemOverdue
+                                                                    ? '#dc2626'
+                                                                    : 'var(--text-secondary)',
+                                                                fontWeight: isItemOverdue ? 700 : 500
+                                                            }}
+                                                        >
+                                                            <i className="fas fa-calendar text-[9px] opacity-70" />
+                                                            {new Date(item.deadline).toLocaleDateString('en-US', {
+                                                                day: 'numeric',
+                                                                month: 'short'
+                                                            })}
+                                                        </span>
+                                                        {item.responsible_role && !isMobile && (
+                                                            <span
+                                                                className="hidden lg:inline-flex items-center gap-1 text-[11px] shrink-0"
+                                                                style={{ color: 'var(--text-secondary)' }}
                                                             >
-                                                                <div className="flex flex-1 flex-col gap-1 min-w-0">
-                                                                    <h4
-                                                                        className={`text-slate-800 font-semibold m-0 break-words ${
-                                                                            isMobile
-                                                                                ? 'text-[0.8125rem]'
-                                                                                : 'text-[0.9375rem]'
-                                                                        }`}
-                                                                    >
-                                                                        {ListService.truncateText(item.description, 80)}
-                                                                    </h4>
-                                                                    {item.comments && (
-                                                                        <p
-                                                                            className={`text-slate-500 m-0 ${
-                                                                                isMobile
-                                                                                    ? 'text-xs'
-                                                                                    : 'text-[0.8125rem]'
-                                                                            }`}
-                                                                        >
-                                                                            {ListService.truncateText(
-                                                                                item.comments,
-                                                                                60
-                                                                            )}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                                <div
-                                                                    className={`flex items-center shrink-0 ${isMobile ? 'gap-1.5' : 'gap-2'}`}
-                                                                >
-                                                                    {(() => {
-                                                                        const pc = ListService.getPriorityConfig(
-                                                                            item.priority || 'none'
-                                                                        )
-                                                                        return (
-                                                                            <span
-                                                                                className={`flex items-center shrink-0 rounded-md font-bold tracking-[0.5px] uppercase whitespace-nowrap ${pc.bg} ${pc.border} border ${pc.color} ${
-                                                                                    isMobile
-                                                                                        ? 'text-[0.625rem] gap-1 px-1.5 py-1'
-                                                                                        : 'text-xs gap-1.5 px-2.5 py-1.5'
-                                                                                }`}
-                                                                            >
-                                                                                <i className={`fas ${pc.icon}`} />
-                                                                                {pc.label}
-                                                                            </span>
-                                                                        )
-                                                                    })()}
-                                                                    <span
-                                                                        className={`flex items-center shrink-0 rounded-md font-bold tracking-[0.5px] uppercase whitespace-nowrap ${
-                                                                            isMobile
-                                                                                ? 'text-[0.625rem] gap-1.5 px-2 py-1'
-                                                                                : 'text-xs gap-1.5 px-3 py-1.5'
-                                                                        }`}
-                                                                        style={getItemStatusStyle(itemStatus, isMobile)}
-                                                                    >
-                                                                        <i
-                                                                            className={`fas ${ListService.getStatusIcon(itemStatus)}`}
-                                                                        />
-                                                                        {ListService.getStatusLabel(itemStatus)}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <div
-                                                                className={`flex items-center flex-wrap ${
-                                                                    isMobile ? 'gap-2' : 'gap-3'
-                                                                }`}
-                                                            >
-                                                                <span
-                                                                    className={`flex items-center text-slate-500 font-medium gap-1.5 ${
-                                                                        isMobile
-                                                                            ? 'text-[0.6875rem]'
-                                                                            : 'text-[0.8125rem]'
-                                                                    }`}
-                                                                >
-                                                                    <i className="fas fa-building" />
-                                                                    {ListService.getPlantName(item.plant_code)}
-                                                                </span>
-                                                                <span
-                                                                    className={`flex items-center gap-1.5 ${
-                                                                        isMobile
-                                                                            ? 'text-[0.6875rem]'
-                                                                            : 'text-[0.8125rem]'
-                                                                    } ${
-                                                                        isItemOverdue
-                                                                            ? 'text-red-500 font-bold'
-                                                                            : 'text-slate-500 font-medium'
-                                                                    }`}
-                                                                >
-                                                                    <i className="fas fa-calendar" />
-                                                                    {new Date(item.deadline).toLocaleDateString(
-                                                                        'en-US',
-                                                                        { day: 'numeric', month: 'short' }
+                                                                <i
+                                                                    className={`fas ${ListService.getResponsibleRoleIcon(item.responsible_role)} text-[9px] opacity-70`}
+                                                                />
+                                                                <span className="truncate max-w-[110px]">
+                                                                    {ListService.getResponsibleRoleLabel(
+                                                                        item.responsible_role
                                                                     )}
                                                                 </span>
-                                                                {item.responsible_role && (
-                                                                    <span
-                                                                        className={`flex items-center text-slate-500 font-medium gap-1.5 ${
-                                                                            isMobile
-                                                                                ? 'text-[0.6875rem]'
-                                                                                : 'text-[0.8125rem]'
-                                                                        }`}
-                                                                    >
-                                                                        <i
-                                                                            className={`fas ${ListService.getResponsibleRoleIcon(item.responsible_role)}`}
-                                                                        />
-                                                                        {ListService.getResponsibleRoleLabel(
-                                                                            item.responsible_role
-                                                                        )}
-                                                                    </span>
-                                                                )}
-                                                                <span
-                                                                    className={`flex items-center text-slate-500 font-medium gap-1.5 ${
-                                                                        isMobile
-                                                                            ? 'text-[0.6875rem]'
-                                                                            : 'text-[0.8125rem]'
-                                                                    }`}
-                                                                >
-                                                                    <i className="fas fa-user" />
-                                                                    {ListService.truncateText(
-                                                                        ListService.getCreatorName(item.user_id),
-                                                                        15
-                                                                    )}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center justify-center text-slate-300 text-sm">
-                                                            <i className="fas fa-chevron-right" />
-                                                        </div>
+                                                            </span>
+                                                        )}
+                                                        <span
+                                                            className="hidden lg:inline-flex items-center gap-1 text-[11px] shrink-0"
+                                                            style={{ color: 'var(--text-tertiary)' }}
+                                                        >
+                                                            <i className="fas fa-user text-[9px] opacity-70" />
+                                                            {ListService.truncateText(
+                                                                ListService.getCreatorName(item.user_id),
+                                                                12
+                                                            )}
+                                                        </span>
                                                     </div>
                                                 )
                                             })}
@@ -1138,7 +1067,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
             </div>
             {selectedIds.size > 0 && (
                 <div
-                    className={`flex items-center bg-white border border-gray-200 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.15)] fixed left-1/2 -translate-x-1/2 z-[1000] ${
+                    className={`flex items-center bg-white border border-border-light rounded shadow-[0_8px_24px_rgba(0,0,0,0.15)] fixed left-1/2 -translate-x-1/2 z-[1000] ${
                         isMobile
                             ? 'bottom-4 flex-wrap gap-2 justify-center max-w-[calc(100%-2rem)] px-4 py-3'
                             : 'bottom-8 flex-nowrap gap-4 justify-start px-6 py-4'
@@ -1150,7 +1079,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                     <div className="flex gap-2">
                         <button
                             onClick={() => bulkToggleCompletion(true)}
-                            className="flex items-center border-none rounded-lg cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                            className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
                             style={getBulkButtonStyle('complete')}
                             onMouseEnter={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.complete.hover)}
                             onMouseLeave={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.complete.bg)}
@@ -1164,7 +1093,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                     setBulkStatusOpen((p) => !p)
                                     setBulkPriorityOpen(false)
                                 }}
-                                className="flex items-center border-none rounded-lg cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                                className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
                                 style={getBulkButtonStyle('neutral')}
                                 onMouseEnter={(e) =>
                                     (e.currentTarget.style.background = BULK_ACTION_COLORS.neutral.hover)
@@ -1179,7 +1108,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                             </button>
                             {bulkStatusOpen && (
                                 <div
-                                    className="absolute bottom-full left-0 mb-2 z-50 rounded-xl shadow-lg overflow-hidden min-w-[180px] animate-[filterFadeIn_0.15s_ease-out]"
+                                    className="absolute bottom-full left-0 mb-2 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-[filterFadeIn_0.15s_ease-out]"
                                     style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                                 >
                                     <div className="p-1.5">
@@ -1189,7 +1118,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                 <button
                                                     key={opt.value}
                                                     onClick={() => bulkUpdateStatus(opt.value)}
-                                                    className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
+                                                    className="flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
                                                     style={{ background: 'transparent', color: 'var(--text-primary)' }}
                                                     onMouseEnter={(e) =>
                                                         (e.currentTarget.style.background = 'var(--bg-secondary)')
@@ -1218,7 +1147,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                     setBulkPriorityOpen((p) => !p)
                                     setBulkStatusOpen(false)
                                 }}
-                                className="flex items-center border-none rounded-lg cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                                className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
                                 style={getBulkButtonStyle('neutral')}
                                 onMouseEnter={(e) =>
                                     (e.currentTarget.style.background = BULK_ACTION_COLORS.neutral.hover)
@@ -1233,7 +1162,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                             </button>
                             {bulkPriorityOpen && (
                                 <div
-                                    className="absolute bottom-full left-0 mb-2 z-50 rounded-xl shadow-lg overflow-hidden min-w-[170px] animate-[filterFadeIn_0.15s_ease-out]"
+                                    className="absolute bottom-full left-0 mb-2 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-[filterFadeIn_0.15s_ease-out]"
                                     style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                                 >
                                     <div className="p-1.5">
@@ -1243,7 +1172,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                 <button
                                                     key={opt.value}
                                                     onClick={() => bulkUpdatePriority(opt.value)}
-                                                    className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
+                                                    className="flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
                                                     style={{ background: 'transparent', color: 'var(--text-primary)' }}
                                                     onMouseEnter={(e) =>
                                                         (e.currentTarget.style.background = 'var(--bg-secondary)')
@@ -1267,7 +1196,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                         </div>
                         <button
                             onClick={bulkDelete}
-                            className="flex items-center border-none rounded-lg cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                            className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
                             style={getBulkButtonStyle('delete')}
                             onMouseEnter={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.delete.hover)}
                             onMouseLeave={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.delete.bg)}
@@ -1277,7 +1206,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                         </button>
                         <button
                             onClick={() => setSelectedIds(new Set())}
-                            className="flex items-center border-none rounded-lg cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                            className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
                             style={getBulkButtonStyle('cancel')}
                             onMouseEnter={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.cancel.hover)}
                             onMouseLeave={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.cancel.bg)}

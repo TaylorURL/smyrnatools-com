@@ -55,7 +55,7 @@ const SlumpAdjustmentCalculator = () => {
     const batchSize = parseFloat(values.batchSize) || 0
     const hasResult = parseFloat(values.currentSlump) > 0 && parseFloat(values.targetSlump) > 0 && batchSize > 0
 
-    const containerClass = `bg-[var(--card-background)] border border-[var(--border-light)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${isMobile ? 'rounded-lg p-4' : 'rounded-xl p-8'}`
+    const containerClass = `bg-[var(--card-background)] border border-[var(--border-light)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${isMobile ? 'rounded-lg p-4' : 'rounded p-8'}`
     const sectionClass = isMobile ? 'mb-6' : 'mb-8'
     const sectionHeaderClass = `flex items-center gap-3 font-bold border-b-2 border-[var(--border-light)] pb-4 text-[var(--text-primary)] ${isMobile ? 'text-base mb-4' : 'text-lg mb-6'}`
     const labelClass = `text-[var(--text-secondary)] font-semibold uppercase tracking-wide text-center ${isMobile ? 'text-[0.625rem]' : 'text-xs'}`
@@ -86,7 +86,7 @@ const SlumpAdjustmentCalculator = () => {
                     <span>Water Adjustment Formula</span>
                 </div>
                 <div
-                    className={`flex items-center justify-center rounded-xl bg-[var(--bg-secondary)] ${isMobile ? 'flex-col gap-2 p-4' : 'flex-row flex-wrap gap-4 p-8'}`}
+                    className={`flex items-center justify-center rounded bg-[var(--bg-secondary)] ${isMobile ? 'flex-col gap-2 p-4' : 'flex-row flex-wrap gap-4 p-8'}`}
                 >
                     <div
                         className={`flex items-center ${isMobile ? 'flex-wrap justify-center gap-2' : 'flex-nowrap gap-3'}`}
@@ -155,7 +155,7 @@ const SlumpAdjustmentCalculator = () => {
                     </div>
                     <span className={eqOpClass}>=</span>
                     <div
-                        className={`flex flex-col items-center gap-2 rounded-xl border-[3px] ${resultBg} ${resultBorder} ${isMobile ? 'min-w-full p-4' : 'min-w-[150px] p-6'}`}
+                        className={`flex flex-col items-center gap-2 rounded border-[3px] ${resultBg} ${resultBorder} ${isMobile ? 'min-w-full p-4' : 'min-w-[150px] p-6'}`}
                     >
                         {hasResult ? (
                             <>
@@ -188,7 +188,7 @@ const SlumpAdjustmentCalculator = () => {
                         <span>New Total</span>
                     </div>
                     <div
-                        className={`flex items-center justify-center rounded-xl bg-[var(--bg-secondary)] ${isMobile ? 'flex-col gap-4 p-4' : 'flex-row flex-wrap gap-6 p-8'}`}
+                        className={`flex items-center justify-center rounded bg-[var(--bg-secondary)] ${isMobile ? 'flex-col gap-4 p-4' : 'flex-row flex-wrap gap-6 p-8'}`}
                     >
                         <div className={`flex flex-col items-center gap-2 ${isMobile ? 'w-full' : 'w-auto'}`}>
                             <label className={labelClass}>Current Water</label>
@@ -212,7 +212,7 @@ const SlumpAdjustmentCalculator = () => {
                         </div>
                         <span className={eqOpClass}>=</span>
                         <div
-                            className={`flex flex-col items-center gap-1 rounded-xl bg-green-100 border-[3px] border-green-600 ${isMobile ? 'w-full p-4' : 'w-auto p-6'}`}
+                            className={`flex flex-col items-center gap-1 rounded bg-green-100 border-[3px] border-green-600 ${isMobile ? 'w-full p-4' : 'w-auto p-6'}`}
                         >
                             <span className={`text-green-600 font-bold ${isMobile ? 'text-2xl' : 'text-3xl'}`}>
                                 {result?.newWater.toFixed(1)}
@@ -249,7 +249,7 @@ const SlumpAdjustmentCalculator = () => {
             )}
             {result && result.strengthImpact > 0 && (
                 <div
-                    className={`flex gap-3 rounded-xl bg-amber-50 border-2 border-amber-400 text-amber-800 text-[0.9375rem] font-semibold mb-8 ${isMobile ? 'items-start py-3 px-4' : 'items-center py-4 px-6'}`}
+                    className={`flex gap-3 rounded bg-amber-50 border-2 border-amber-400 text-amber-800 text-[0.9375rem] font-semibold mb-8 ${isMobile ? 'items-start py-3 px-4' : 'items-center py-4 px-6'}`}
                 >
                     <i className="fas fa-exclamation-triangle"></i>
                     <span>Adding water may reduce strength by ~{result.strengthImpact}%</span>

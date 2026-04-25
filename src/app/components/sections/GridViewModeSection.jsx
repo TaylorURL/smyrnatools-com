@@ -1,14 +1,10 @@
 import React from 'react'
 
 import { useIsMobile } from '../../hooks/useIsMobile'
+
 /**
- * Grid-based view mode rendering asset cards with staggered fade-in animation.
- * Resolves operator, plant, and tractor references for each item.
- * @param {Object} props
- * @param {Array} props.filteredItems - Items to render as cards.
- * @param {React.ComponentType} props.cardComponent - Card component to render for each item.
- * @param {string} props.itemPropName - Prop name for passing the item to the card.
- * @param {Function} [props.getCardProps] - Returns additional props for each card.
+ * Grid view mode for assets — flat container, no shadow, padding tuned to
+ * match the Plan-tab rhythm. Cards arrange in a responsive auto-fill grid.
  */
 function GridViewModeSection({
     filteredItems,
@@ -28,9 +24,9 @@ function GridViewModeSection({
     tractors = tractors || []
     const isMobile = useIsMobile()
     return (
-        <div className="block m-0 mb-6 max-h-[calc(100vh-250px)] max-w-[100vw] overflow-auto overflow-x-hidden overscroll-none p-0 w-full bg-transparent">
+        <div className="block max-h-[calc(100vh-250px)] max-w-[100vw] overflow-auto overflow-x-hidden overscroll-none w-full">
             <div
-                className={`grid ${isMobile ? 'gap-3 p-3' : 'gap-4 p-4'} ${gridClassName || ''}`}
+                className={`grid ${isMobile ? 'gap-2.5 px-3 py-3' : 'gap-3 px-4 lg:px-6 py-4'} ${gridClassName || ''}`}
                 style={{
                     gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '260px' : '300px'}, 1fr))`
                 }}
@@ -77,4 +73,5 @@ function GridViewModeSection({
         </div>
     )
 }
+
 export default GridViewModeSection

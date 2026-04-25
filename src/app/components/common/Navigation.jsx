@@ -13,7 +13,7 @@ import OnlineUsersModal from './OnlineUsersModal'
 /** Menu items visible only for Office-type regions. */
 const OFFICE_VISIBLE_ITEMS = ['Reports', 'Dashboard', 'Managers', 'Plants', 'Regions']
 /** Items hidden for Aggregate-type regions. */
-const AGGREGATE_HIDDEN_ITEMS = ['Mixers', 'Plants', 'Regions', 'Leaderboards', 'Calculators', 'Maintenance']
+const AGGREGATE_HIDDEN_ITEMS = ['Mixers', 'Plants', 'Regions', 'Calculators', 'Maintenance']
 /** Items hidden by default for standard regions. */
 const DEFAULT_HIDDEN_ITEMS = ['Plants', 'Regions']
 /** Items exclusively available to Office regions. */
@@ -26,7 +26,6 @@ const ICONS = {
     Dashboard: 'fa-tachometer-alt',
     Documents: 'fa-folder-open',
     'Heavy Equipment': 'fa-snowplow',
-    Leaderboards: 'fa-trophy',
     List: 'fa-list',
     Logout: 'fa-sign-out-alt',
     Maintenance: 'fa-wrench',
@@ -39,7 +38,6 @@ const ICONS = {
     'Pickup Trucks': 'fa-truck-pickup',
     Plan: 'fa-calendar-alt',
     Plants: 'fa-industry',
-    Productivity: 'fa-chart-line',
     Regions: 'fa-map-marker-alt',
     Reporting: 'fa-file-alt',
     Reports: 'fa-file-alt',
@@ -65,7 +63,6 @@ const menuItems = [
     { id: 'Regions', permission: 'regions.view', text: 'Regions' },
     { id: 'Roles', permission: 'roles.view', text: 'Roles' },
     { id: 'Calculators', permission: 'calculator.view', text: 'Calculators' },
-    { id: 'Leaderboards', permission: 'leaderboards.view', text: 'Leaderboards' },
     { id: 'Documents', permission: 'documents.view', text: 'Documents' },
     { id: 'Maintenance', permission: 'maintenance.view', text: 'Maintenance' },
     { id: 'NRMCA', permission: 'nrmca.view', text: 'Calibrations & Certifications' }
@@ -74,23 +71,20 @@ const menuItems = [
 const ASSET_ITEMS = ['Mixers', 'Tractors', 'Trailers', 'Heavy Equipment', 'Pickup Trucks']
 /** Navigation item IDs grouped under the "People" dropdown. */
 const PEOPLE_ITEMS = ['Operators', 'Managers']
-/** Navigation item IDs grouped under the "Productivity" dropdown. */
-const PRODUCTIVITY_ITEMS = ['List', 'Leaderboards', 'Documents']
 /** Navigation item IDs grouped under the "Reporting" dropdown. */
 const REPORTING_ITEMS = ['Reports', 'Maintenance', 'NRMCA']
 /** Navigation item IDs grouped under the "Tools" dropdown. */
-const TOOLS_ITEMS = ['Plan', 'Calculators']
+const TOOLS_ITEMS = ['Plan', 'List', 'Documents', 'Calculators']
 /** Navigation item IDs grouped under the "Admin" category (two-level mode). */
 const ADMIN_ITEMS = ['Plants', 'Regions', 'Roles']
 
 /** Category definitions for the two-level tab nav row. */
 const CATEGORIES = [
     { icon: 'fa-tachometer-alt', id: 'dashboard', items: [], label: 'Dashboard' },
+    { icon: 'fa-toolbox', id: 'tools', items: TOOLS_ITEMS, label: 'Tools' },
     { icon: 'fa-truck', id: 'assets', items: ASSET_ITEMS, label: 'Assets' },
     { icon: 'fa-users', id: 'people', items: PEOPLE_ITEMS, label: 'People' },
-    { icon: 'fa-chart-bar', id: 'productivity', items: PRODUCTIVITY_ITEMS, label: 'Productivity' },
     { icon: 'fa-file-alt', id: 'reporting', items: REPORTING_ITEMS, label: 'Reporting' },
-    { icon: 'fa-toolbox', id: 'tools', items: TOOLS_ITEMS, label: 'Tools' },
     { icon: 'fa-cog', id: 'admin', items: ADMIN_ITEMS, label: 'Admin' }
 ]
 
@@ -99,7 +93,6 @@ const getCategoryForView = (viewId) => {
     if (!viewId || viewId === 'Dashboard') return 'dashboard'
     if (ASSET_ITEMS.includes(viewId)) return 'assets'
     if (PEOPLE_ITEMS.includes(viewId)) return 'people'
-    if (PRODUCTIVITY_ITEMS.includes(viewId)) return 'productivity'
     if (REPORTING_ITEMS.includes(viewId)) return 'reporting'
     if (TOOLS_ITEMS.includes(viewId)) return 'tools'
     if (ADMIN_ITEMS.includes(viewId)) return 'admin'
@@ -341,7 +334,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
     /* ── Top-bar: derived grouping flags ── */
     const hasAssets = visibleMenuItems.some((i) => ASSET_ITEMS.includes(i.id))
     const hasPeople = visibleMenuItems.some((i) => PEOPLE_ITEMS.includes(i.id))
-    const hasProductivity = visibleMenuItems.some((i) => PRODUCTIVITY_ITEMS.includes(i.id))
     const hasReporting = visibleMenuItems.some((i) => REPORTING_ITEMS.includes(i.id))
     const hasTools = visibleMenuItems.some((i) => TOOLS_ITEMS.includes(i.id))
     const hasAdmin = visibleMenuItems.some((i) => ADMIN_ITEMS.includes(i.id))
@@ -349,7 +341,6 @@ export default function Navigation({ selectedView, onSelectView, children, userN
         (i) =>
             !ASSET_ITEMS.includes(i.id) &&
             !(hasPeople && PEOPLE_ITEMS.includes(i.id)) &&
-            !(hasProductivity && PRODUCTIVITY_ITEMS.includes(i.id)) &&
             !(hasReporting && REPORTING_ITEMS.includes(i.id)) &&
             !(hasTools && TOOLS_ITEMS.includes(i.id)) &&
             !(hasAdmin && ADMIN_ITEMS.includes(i.id))
@@ -700,6 +691,23 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                         accentColor={accentColor}
                                     />
                                 )}
+                                {hasTools && (
+                                    <MobileSection title="Tools">
+                                        {TOOLS_ITEMS.map((id) => {
+                                            const item = visibleMenuItems.find((i) => i.id === id)
+                                            if (!item) return null
+                                            return (
+                                                <MobileMenuItem
+                                                    key={id}
+                                                    item={item}
+                                                    isActive={selectedView === id}
+                                                    onClick={() => handleMenuClick(id)}
+                                                    accentColor={accentColor}
+                                                />
+                                            )
+                                        })}
+                                    </MobileSection>
+                                )}
                                 {hasAssets && (
                                     <MobileSection title="Assets">
                                         {ASSET_ITEMS.map((id) => {
@@ -734,43 +742,9 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                         })}
                                     </MobileSection>
                                 )}
-                                {hasProductivity && (
-                                    <MobileSection title="Productivity">
-                                        {PRODUCTIVITY_ITEMS.map((id) => {
-                                            const item = visibleMenuItems.find((i) => i.id === id)
-                                            if (!item) return null
-                                            return (
-                                                <MobileMenuItem
-                                                    key={id}
-                                                    item={item}
-                                                    isActive={selectedView === id}
-                                                    onClick={() => handleMenuClick(id)}
-                                                    accentColor={accentColor}
-                                                />
-                                            )
-                                        })}
-                                    </MobileSection>
-                                )}
                                 {hasReporting && (
                                     <MobileSection title="Reporting">
                                         {REPORTING_ITEMS.map((id) => {
-                                            const item = visibleMenuItems.find((i) => i.id === id)
-                                            if (!item) return null
-                                            return (
-                                                <MobileMenuItem
-                                                    key={id}
-                                                    item={item}
-                                                    isActive={selectedView === id}
-                                                    onClick={() => handleMenuClick(id)}
-                                                    accentColor={accentColor}
-                                                />
-                                            )
-                                        })}
-                                    </MobileSection>
-                                )}
-                                {hasTools && (
-                                    <MobileSection title="Tools">
-                                        {TOOLS_ITEMS.map((id) => {
                                             const item = visibleMenuItems.find((i) => i.id === id)
                                             if (!item) return null
                                             return (
@@ -1213,6 +1187,10 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                     {!isTablet && <span>Dashboard</span>}
                                 </div>
                             )}
+                            {hasTools &&
+                                renderDropdown('Tools', ICONS.Tools, TOOLS_ITEMS, 'tools', () =>
+                                    TOOLS_ITEMS.includes(selectedView)
+                                )}
                             {hasAssets &&
                                 renderDropdown('Assets', ICONS.Assets, ASSET_ITEMS, 'assets', () =>
                                     ASSET_ITEMS.includes(selectedView)
@@ -1221,21 +1199,9 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                 renderDropdown('People', ICONS.People, PEOPLE_ITEMS, 'people', () =>
                                     PEOPLE_ITEMS.includes(selectedView)
                                 )}
-                            {hasProductivity &&
-                                renderDropdown(
-                                    'Productivity',
-                                    ICONS.Productivity,
-                                    PRODUCTIVITY_ITEMS,
-                                    'productivity',
-                                    () => PRODUCTIVITY_ITEMS.includes(selectedView)
-                                )}
                             {hasReporting &&
                                 renderDropdown('Reporting', ICONS.Reporting, REPORTING_ITEMS, 'reporting', () =>
                                     REPORTING_ITEMS.includes(selectedView)
-                                )}
-                            {hasTools &&
-                                renderDropdown('Tools', ICONS.Tools, TOOLS_ITEMS, 'tools', () =>
-                                    TOOLS_ITEMS.includes(selectedView)
                                 )}
                             {hasAdmin &&
                                 renderDropdown('Admin', 'fa-cog', ADMIN_ITEMS, 'admin', () =>

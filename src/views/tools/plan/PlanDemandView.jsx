@@ -17,6 +17,7 @@ import {
     YAxis
 } from 'recharts'
 
+import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
 import {
     getCalculatedTruckCount,
     getEffectiveBase,
@@ -94,12 +95,18 @@ const toCumulative = (arr) => {
 }
 
 /** Build every chart's underlying data set once. Everything downstream
- *  renders off the same derived payloads so totals are always consistent. */
-function useDemandData(plantProduction, stats, plantNameByCode, planDate) {
+ *  renders off the same derived payloads so totals are always consistent.
+ *  When `plantFilter` is set to a plant code, every aggregate is narrowed
+ *  to that single plant — KPIs, hourly demand, top-customers, product mix,
+ *  and the per-plant breakdown all reflect just that plant. */
+function useDemandData(plantProduction, stats, plantNameByCode, planDate, plantFilter) {
     return useMemo(() => {
+        const filterActive = !!plantFilter && plantFilter !== 'all'
+        const passesPlantFilter = (code) => !filterActive || code === plantFilter
         const plants = new Map()
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
+            if (!passesPlantFilter(s.code)) return
             const rawBase = Number.isFinite(s.base) ? s.base : 0
             // Match the schedule tab's starting-pool math: apply date/holiday
             // adjustments AND missing-operator shortfalls, then subtract help
@@ -121,6 +128,7 @@ function useDemandData(plantProduction, stats, plantNameByCode, planDate) {
         })
         Object.entries(plantProduction || {}).forEach(([code, prod]) => {
             if (code === PLAN_META_KEY) return
+            if (!passesPlantFilter(code)) return
             if (!plants.has(code)) {
                 plants.set(code, {
                     adjustedBase: 0,
@@ -167,6 +175,7 @@ function useDemandData(plantProduction, stats, plantNameByCode, planDate) {
 
         Object.entries(plantProduction || {}).forEach(([code, prod]) => {
             if (code === PLAN_META_KEY) return
+            if (!passesPlantFilter(code)) return
             const list = Array.isArray(prod?.orders) ? prod.orders : []
             list.forEach((o) => {
                 if (isExcludedOrder(o)) return
@@ -307,7 +316,21 @@ function useDemandData(plantProduction, stats, plantNameByCode, planDate) {
 
 function PlanDemandView({ accentColor, planDate, plantNameByCode, plantProduction, stats }) {
     const [chartMode, setChartMode] = useState('hourly')
-    const data = useDemandData(plantProduction, stats, plantNameByCode, planDate)
+    const [plantFilter, setPlantFilter] = useState('all')
+    const filterActive = plantFilter !== 'all'
+
+    /** Every plant code that shows up in the day — drives the filter
+     *  dropdown so the dispatcher can scope to any plant in the plan. */
+    const plantOptions = useMemo(() => {
+        const codes = new Set()
+        ;(stats || []).forEach((s) => s?.code && codes.add(s.code))
+        Object.keys(plantProduction || {}).forEach((code) => {
+            if (code !== PLAN_META_KEY) codes.add(code)
+        })
+        return Array.from(codes).sort()
+    }, [stats, plantProduction])
+
+    const data = useDemandData(plantProduction, stats, plantNameByCode, planDate, plantFilter)
     const plantColorByCode = useMemo(() => {
         const out = {}
         data.perPlant.forEach((p, i) => {
@@ -365,104 +388,110 @@ function PlanDemandView({ accentColor, planDate, plantNameByCode, plantProductio
 
     const utilColor = data.capacityUtilization > 100 ? '#dc2626' : data.capacityUtilization > 85 ? '#d97706' : '#16a34a'
 
+    const scopeLabel = filterActive
+        ? `Plant ${plantFilter}${plantNameByCode?.[plantFilter] ? ` · ${plantNameByCode[plantFilter]}` : ''}`
+        : `All plants (${plantOptions.length})`
+
     return (
         <div className="flex-1 overflow-y-auto">
-            <div className="w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-5 flex flex-col gap-4">
-                {/* Title + export */}
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div>
-                        <div
-                            className="text-[20px] sm:text-[24px] font-bold leading-tight"
-                            style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                        >
+            <div className="w-full px-3 sm:px-4 lg:px-6 py-3 flex flex-col gap-3">
+                {/* Header — single tight row: title + scope, filter, export */}
+                <div
+                    className="flex items-center justify-between gap-3 flex-wrap pb-2 border-b"
+                    style={{ borderColor: 'var(--border-light)' }}
+                >
+                    <div className="flex items-baseline gap-2 min-w-0">
+                        <h2 className="text-[15px] font-bold m-0 shrink-0" style={{ color: 'var(--text-primary)' }}>
                             Demand
-                        </div>
-                        <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                            Total truck demand across every plant for{' '}
-                            <b style={{ color: 'var(--text-primary)' }}>{friendlyDate || 'today'}</b>.
-                        </div>
+                        </h2>
+                        <span className="text-[12px] truncate" style={{ color: 'var(--text-secondary)' }}>
+                            {scopeLabel} · {friendlyDate || 'today'}
+                        </span>
                     </div>
-                    <button
-                        type="button"
-                        onClick={handleExportCsv}
-                        disabled={data.perPlant.length === 0}
-                        className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{
-                            background: 'var(--bg-tertiary)',
-                            color: 'var(--text-secondary)'
-                        }}
-                        title="Download the per-plant breakdown as CSV"
-                    >
-                        <i className="fas fa-file-csv" />
-                        <span>Export CSV</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                        <select
+                            value={plantFilter}
+                            onChange={(e) => setPlantFilter(e.target.value)}
+                            className="px-2 py-1 rounded text-[12px] cursor-pointer font-medium"
+                            style={{
+                                background: filterActive ? `${accentColor}14` : 'var(--bg-secondary)',
+                                border: `1px solid ${filterActive ? accentColor : 'var(--border-light)'}`,
+                                color: filterActive ? accentColor : 'var(--text-primary)'
+                            }}
+                            title="Filter Demand to a single plant"
+                        >
+                            <option value="all">All plants</option>
+                            {plantOptions.map((code) => (
+                                <option key={code} value={code}>
+                                    {code}
+                                    {plantNameByCode?.[code] ? ` · ${plantNameByCode[code]}` : ''}
+                                </option>
+                            ))}
+                        </select>
+                        {filterActive && (
+                            <button
+                                type="button"
+                                onClick={() => setPlantFilter('all')}
+                                className="border-none bg-transparent cursor-pointer text-[11px] font-medium px-1"
+                                style={{ color: 'var(--text-secondary)' }}
+                                title="Clear plant filter"
+                            >
+                                Clear
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={handleExportCsv}
+                            disabled={data.perPlant.length === 0}
+                            className="border-none rounded text-[12px] font-medium px-2 py-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                            title="Download the per-plant breakdown as CSV"
+                        >
+                            Export CSV
+                        </button>
+                    </div>
                 </div>
 
-                {/* KPI strip — two rows worth of tiles */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                    <KpiTile accent={accentColor} icon="fa-truck" label="Trucks required" value={data.totals.trucks} />
-                    <KpiTile
-                        accent="#16a34a"
-                        icon="fa-cubes-stacked"
-                        label="Total yardage"
-                        value={`${Math.round(data.totals.yardage).toLocaleString()} yd`}
-                    />
-                    <KpiTile
-                        accent="#8b5cf6"
-                        icon="fa-list-check"
+                {/* Demand at-a-glance — Plan-tab style stat row */}
+                <StatGroup columns={8}>
+                    <Stat label="Trucks" value={data.totals.trucks} />
+                    <Stat label="Yardage" value={`${Math.round(data.totals.yardage).toLocaleString()} yd`} />
+                    <Stat
                         label="Orders"
-                        sublabel={data.avgLoadSize ? `avg ${data.avgLoadSize} yd / load` : null}
                         value={data.totals.orders}
+                        hint={data.avgLoadSize ? `${data.avgLoadSize} yd avg` : null}
                     />
-                    <KpiTile
-                        accent="#d97706"
-                        icon="fa-gauge-high"
+                    <Stat
                         label="Peak hour"
-                        sublabel={data.peakHour.total > 0 ? `${data.peakHour.total} trucks` : '—'}
                         value={data.peakHour.label || '—'}
+                        hint={data.peakHour.total > 0 ? `${data.peakHour.total} trucks` : null}
                     />
-                    <KpiTile
-                        accent="#0ea5e9"
-                        icon="fa-crown"
+                    <Stat
                         label="Biggest pour"
-                        sublabel={
-                            data.biggestOrder
-                                ? `${data.biggestOrder.customer} · Plant ${data.biggestOrder.plantCode}`
-                                : '—'
-                        }
                         value={data.biggestOrder ? `${Math.round(data.biggestOrder.yardage).toLocaleString()} yd` : '—'}
+                        hint={data.biggestOrder ? data.biggestOrder.customer : null}
                     />
-                    <KpiTile
-                        accent="#dc2626"
-                        icon="fa-triangle-exclamation"
+                    <Stat
                         label="Big pours"
-                        sublabel={data.bigPourCount === 0 ? 'None today' : '120+ yd · back-to-back'}
                         value={data.bigPourCount}
+                        hint={data.bigPourCount === 0 ? null : '120+ yd, back-to-back'}
                     />
-                    <KpiTile
-                        accent={utilColor}
-                        icon="fa-gauge-simple-high"
-                        label="Capacity utilization"
-                        sublabel={
-                            data.totalBase > 0
-                                ? `${data.peakHour.total} of ${data.totalBase} at peak`
-                                : 'No base assigned'
-                        }
+                    <Stat
+                        label="Utilization"
                         value={`${data.capacityUtilization}%`}
+                        valueColor={utilColor}
+                        hint={data.totalBase > 0 ? `${data.peakHour.total}/${data.totalBase} at peak` : null}
                     />
-                    <KpiTile
-                        accent="#0d9488"
-                        icon="fa-industry"
-                        label="Plants active"
-                        sublabel={`of ${data.perPlant.length} in plan`}
-                        value={data.perPlant.filter((p) => p.orders > 0).length}
+                    <Stat
+                        label="Active plants"
+                        value={`${data.perPlant.filter((p) => p.orders > 0).length}/${data.perPlant.length}`}
                     />
-                </div>
+                </StatGroup>
 
-                {/* Time-of-day strip — morning / afternoon / evening */}
-                <TimeOfDayStrip totals={data.timeOfDay} grandTotal={data.totals.yardage} />
+                {/* Time-of-day — single segmented bar with inline legend */}
+                <TimeOfDayBar totals={data.timeOfDay} grandTotal={data.totals.yardage} />
 
-                {/* Chart mode toggle */}
+                {/* Chart mode toggle — flat segmented row */}
                 <ChartModeToggle
                     accentColor={accentColor}
                     onChange={setChartMode}
@@ -470,10 +499,13 @@ function PlanDemandView({ accentColor, planDate, plantNameByCode, plantProductio
                     value={chartMode}
                 />
 
-                {/* Main chart panel */}
-                <div
-                    className="rounded-xl p-3 sm:p-4"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                <Panel
+                    title={chartOptions.find((o) => o.key === chartMode)?.label || 'Chart'}
+                    right={
+                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                            {chartOptions.find((o) => o.key === chartMode)?.group || ''}
+                        </span>
+                    }
                 >
                     {data.totals.trucks === 0 && chartMode !== 'capacity' ? (
                         <EmptyState />
@@ -502,7 +534,7 @@ function PlanDemandView({ accentColor, planDate, plantNameByCode, plantProductio
                     ) : chartMode === 'products' ? (
                         <ProductMixPie rows={data.productMix} total={data.totals.yardage} />
                     ) : null}
-                </div>
+                </Panel>
 
                 {/* Per-plant breakdown table */}
                 <PerPlantTable
@@ -526,169 +558,83 @@ function csvCell(value) {
    ═══════════════════════════════════════════════════════════════════════ */
 
 function ChartModeToggle({ accentColor, onChange, options, value }) {
-    const groups = useMemo(() => {
-        const out = new Map()
-        options.forEach((o) => {
-            const group = o.group || 'Charts'
-            if (!out.has(group)) out.set(group, [])
-            out.get(group).push(o)
-        })
-        return Array.from(out.entries())
-    }, [options])
     return (
-        <div className="flex flex-wrap gap-3">
-            {groups.map(([label, opts]) => (
-                <div key={label} className="flex flex-col gap-1">
-                    <span
-                        className="text-[9.5px] font-bold uppercase tracking-wider"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
-                        {label}
-                    </span>
-                    <div
-                        className="inline-flex rounded-lg p-0.5 overflow-x-auto max-w-full"
-                        style={{
-                            background: 'var(--bg-tertiary)',
-                            border: '1px solid var(--border-light)'
-                        }}
-                    >
-                        {opts.map((opt) => {
-                            const active = value === opt.key
-                            return (
-                                <button
-                                    key={opt.key}
-                                    type="button"
-                                    onClick={() => onChange(opt.key)}
-                                    className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 whitespace-nowrap"
-                                    style={{
-                                        background: active ? accentColor : 'transparent',
-                                        color: active ? '#fff' : 'var(--text-secondary)'
-                                    }}
-                                >
-                                    <i className={`fas ${opt.icon}`} />
-                                    <span>{opt.label}</span>
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
-            ))}
-        </div>
-    )
-}
-
-function KpiTile({ accent, icon, label, sublabel, value }) {
-    return (
-        <div
-            className="rounded-xl p-3 flex items-center gap-3"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="flex items-center justify-center rounded-lg shrink-0"
-                style={{ background: `${accent}14`, color: accent, height: 40, width: 40 }}
-            >
-                <i className={`fas ${icon}`} />
-            </div>
-            <div className="min-w-0">
-                <div
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
-                    {label}
-                </div>
-                <div
-                    className="font-bold text-[18px] leading-tight truncate"
-                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                >
-                    {value}
-                </div>
-                {sublabel && (
-                    <div className="text-[10.5px] truncate" style={{ color: 'var(--text-secondary)' }}>
-                        {sublabel}
-                    </div>
-                )}
-            </div>
-        </div>
-    )
-}
-
-function TimeOfDayStrip({ grandTotal, totals }) {
-    const sections = [
-        {
-            color: '#f59e0b',
-            hint: '06:00 – 12:00',
-            icon: 'fa-mug-hot',
-            key: 'morning',
-            label: 'Morning'
-        },
-        {
-            color: '#0ea5e9',
-            hint: '12:00 – 18:00',
-            icon: 'fa-sun',
-            key: 'afternoon',
-            label: 'Afternoon'
-        },
-        {
-            color: '#8b5cf6',
-            hint: '18:00+',
-            icon: 'fa-moon',
-            key: 'evening',
-            label: 'Evening'
-        }
-    ]
-    return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-            {sections.map((s) => {
-                const value = Math.round(totals[s.key] || 0)
-                const pct = grandTotal > 0 ? (value / grandTotal) * 100 : 0
+        <div className="flex flex-wrap gap-1">
+            {options.map((opt) => {
+                const active = value === opt.key
                 return (
-                    <div
-                        key={s.key}
-                        className="rounded-xl p-3"
+                    <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => onChange(opt.key)}
+                        className="flex items-center gap-1.5 rounded text-[12px] font-medium cursor-pointer px-2.5 py-1 whitespace-nowrap"
                         style={{
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border-light)'
+                            background: active ? accentColor : 'var(--bg-secondary)',
+                            color: active ? '#fff' : 'var(--text-secondary)',
+                            border: `1px solid ${active ? accentColor : 'var(--border-light)'}`
                         }}
+                        title={opt.group ? `${opt.group} · ${opt.label}` : opt.label}
                     >
-                        <div className="flex items-start gap-3">
-                            <div
-                                className="flex items-center justify-center rounded-lg shrink-0"
-                                style={{
-                                    background: `${s.color}14`,
-                                    color: s.color,
-                                    height: 36,
-                                    width: 36
-                                }}
-                            >
-                                <i className={`fas ${s.icon}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div
-                                    className="text-[10px] font-bold uppercase tracking-wider"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                >
-                                    {s.label} <span style={{ color: 'var(--text-tertiary)' }}>· {s.hint}</span>
-                                </div>
-                                <div
-                                    className="font-bold text-[18px] leading-tight"
-                                    style={{
-                                        color: 'var(--text-primary)',
-                                        fontFamily: 'var(--font-heading)'
-                                    }}
-                                >
-                                    {value.toLocaleString()} yd
-                                </div>
-                                <div className="rounded h-1.5 mt-2" style={{ background: 'var(--bg-tertiary)' }}>
-                                    <div className="h-1.5 rounded" style={{ background: s.color, width: `${pct}%` }} />
-                                </div>
-                                <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-secondary)' }}>
-                                    {pct.toFixed(1)}% of day
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        <i className={`fas ${opt.icon} text-[10px]`} />
+                        <span>{opt.label}</span>
+                    </button>
                 )
             })}
+        </div>
+    )
+}
+
+const TIME_OF_DAY_SECTIONS = [
+    { color: '#f59e0b', hint: '06:00–12:00', key: 'morning', label: 'Morning' },
+    { color: '#0ea5e9', hint: '12:00–18:00', key: 'afternoon', label: 'Afternoon' },
+    { color: '#8b5cf6', hint: '18:00+', key: 'evening', label: 'Evening' }
+]
+
+function TimeOfDayBar({ grandTotal, totals }) {
+    if (grandTotal <= 0) return null
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="flex items-baseline justify-between text-[10px] font-semibold uppercase tracking-wider">
+                <span style={{ color: 'var(--text-tertiary)' }}>Time of day</span>
+                <span style={{ color: 'var(--text-secondary)' }}>
+                    {Math.round(grandTotal).toLocaleString()} yd total
+                </span>
+            </div>
+            <div className="flex h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+                {TIME_OF_DAY_SECTIONS.map((s) => {
+                    const value = totals[s.key] || 0
+                    const pct = (value / grandTotal) * 100
+                    if (pct <= 0) return null
+                    return (
+                        <div
+                            key={s.key}
+                            style={{ background: s.color, width: `${pct}%` }}
+                            title={`${s.label}: ${Math.round(value).toLocaleString()} yd (${pct.toFixed(1)}%)`}
+                        />
+                    )
+                })}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                {TIME_OF_DAY_SECTIONS.map((s) => {
+                    const value = Math.round(totals[s.key] || 0)
+                    const pct = grandTotal > 0 ? (value / grandTotal) * 100 : 0
+                    return (
+                        <span key={s.key} className="flex items-center gap-1.5">
+                            <span
+                                className="inline-block rounded-sm shrink-0"
+                                style={{ background: s.color, height: 8, width: 8 }}
+                            />
+                            <span style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
+                            <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
+                                {value.toLocaleString()} yd
+                            </span>
+                            <span style={{ color: 'var(--text-tertiary)' }}>
+                                · {pct.toFixed(0)}% · {s.hint}
+                            </span>
+                        </span>
+                    )
+                })}
+            </div>
         </div>
     )
 }

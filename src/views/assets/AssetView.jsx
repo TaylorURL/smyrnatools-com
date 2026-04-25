@@ -663,13 +663,23 @@ function AssetView({
     const selectedIdValue = config.selectsFullObject ? selectedId?.id : selectedId
 
     // --- Custom actions for TopSection ---
+    // Both buttons use the Plan-tab subtle `ActionButton` aesthetic so they
+    // sit flush with the rest of the top toolbar — bg-secondary, 1px border,
+    // 12px font, no accent fill.
     const customActions = useMemo(() => {
+        const subtleClass =
+            'hidden md:flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
+        const subtleStyle = {
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)',
+            color: 'var(--text-primary)'
+        }
         const recapButton = config.hasRecap ? (
             <button
-                className="hidden md:flex items-center gap-2 rounded-xl border-none px-4 py-3 text-sm font-semibold text-white cursor-pointer transition-all duration-150"
-                style={{ backgroundColor: preferences.accentColor || '#1e3a5f' }}
-                onClick={() => modalsRef.current?.openRecap()}
                 type="button"
+                className={subtleClass}
+                style={subtleStyle}
+                onClick={() => modalsRef.current?.openRecap()}
                 aria-label="Recap"
             >
                 <i className="fa-solid fa-clock-rotate-left" />
@@ -677,17 +687,18 @@ function AssetView({
             </button>
         ) : null
 
+        const isExportDisabled = isExportingIssues || data.items.length === 0
         const exportButton = (
             <button
-                className="hidden md:flex items-center gap-2 rounded-xl border-none px-4 py-3 text-sm font-semibold text-white cursor-pointer transition-all duration-150 disabled:opacity-50"
-                style={{ backgroundColor: '#6b7280' }}
-                onClick={handleExportIssues}
-                disabled={isExportingIssues || data.items.length === 0}
                 type="button"
+                className={subtleClass}
+                style={subtleStyle}
+                onClick={handleExportIssues}
+                disabled={isExportDisabled}
                 aria-label="Export Issues"
             >
                 <i className={`fas ${isExportingIssues ? 'fa-spinner fa-spin' : 'fa-file-export'}`} />
-                <span>{isExportingIssues ? 'Exporting...' : 'Export Issues'}</span>
+                <span>{isExportingIssues ? 'Exporting…' : 'Export Issues'}</span>
             </button>
         )
 
@@ -700,29 +711,21 @@ function AssetView({
             exportButton
         )
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [config.hasRecap, isExportingIssues, data.items.length, preferences.accentColor])
+    }, [config.hasRecap, isExportingIssues, data.items.length])
 
     // --- Custom filters JSX for TopSection ---
+    // Matches the Plan-tab `FilterSelect` chrome — flat 1px border, 12px font.
     const customFiltersJSX = useMemo(() => {
         if (!config.extraTypeFilter) return undefined
-        const dropdownStyle = {
-            appearance: 'none',
-            backgroundColor: 'var(--bg-secondary)',
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-            backgroundPosition: 'right 12px center',
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: '18px',
-            border: '1px solid var(--border-light)',
-            borderRadius: '12px',
-            color: 'var(--text-primary)',
-            cursor: 'pointer',
-            fontSize: '14px',
-            minWidth: '140px',
-            padding: '12px 40px 12px 16px'
-        }
         return (
             <select
-                style={dropdownStyle}
+                className="text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7"
+                style={{
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-light)',
+                    color: 'var(--text-primary)',
+                    minWidth: 130
+                }}
                 value={filters.extraTypeFilter}
                 onChange={(e) => {
                     filters.setExtraTypeFilter(e.target.value)

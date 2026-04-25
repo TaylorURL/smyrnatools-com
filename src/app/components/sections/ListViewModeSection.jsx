@@ -1,9 +1,11 @@
 import React from 'react'
 
 import { useIsMobile } from '../../hooks/useIsMobile'
-const BASE_ROW_DELAY_MS = 160
-const MIN_ROW_DELAY_MS = 12
-const DECAY_FACTOR = 0.9
+
+const BASE_ROW_DELAY_MS = 80
+const MIN_ROW_DELAY_MS = 6
+const DECAY_FACTOR = 0.88
+
 /**
  * Computes cumulative animation delay for a row index using exponential decay.
  * Early rows cascade slowly; later rows arrive almost simultaneously.
@@ -15,10 +17,38 @@ function getRowDelay(index) {
     }
     return Math.round(total)
 }
+
 /**
- * Table-based list view mode for assets.
- * Renders rows with action buttons for comments, issues, history, and verification.
- * Responsive layout with compact sizing on mobile.
+ * Status badge — colors sourced from mixerConfig.statusBadgeClasses so the
+ * list view reads identically to Fleet Overview / Schedule tab.
+ */
+const STATUS_BADGE_COLORS = {
+    Active: 'bg-[#dcfce7] text-[#166534]',
+    'Down In Yard': 'bg-[#fee2e2] text-[#dc2626]',
+    'In Shop': 'bg-[#dbeafe] text-[#1e40af]',
+    Spare: 'bg-[#f3e8ff] text-[#7c3aed]',
+    'Third Party Work': 'bg-[#fef9c3] text-[#a16207]',
+    'Waiting For Shop': 'bg-[#ffedd5] text-[#c2410c]'
+}
+
+/** Minimal row icon button — 20px tap target, no chrome, hover brightness. */
+const RowIconButton = ({ icon, title, onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent hover:brightness-90 transition-colors"
+        style={{ color: 'var(--text-tertiary)' }}
+    >
+        <i className={`fas ${icon}`} />
+    </button>
+)
+
+/**
+ * Asset list — dense, single-line rows on a solid `var(--bg-primary)`
+ * surface with hairline dividers. Tightened from the previous version:
+ * cell padding 1.5/2.5 (was 2/3), 12px body (was 12.5px), 9.5px status
+ * pills, 5×5 row icons. Hover darkens the row to `var(--bg-tertiary)`.
  */
 function ListViewModeSection({
     filteredItems,
@@ -32,54 +62,53 @@ function ListViewModeSection({
     onVerify
 }) {
     const isMobile = useIsMobile()
-    const cellBase = `text-text-primary font-medium text-left align-middle whitespace-nowrap ${isMobile ? 'text-xs py-2.5 px-2' : 'text-sm py-4 px-5'}`
-    const cellHighlight = `text-text-secondary font-bold text-left align-middle whitespace-nowrap ${isMobile ? 'text-[13px] py-2.5 px-2' : 'text-[15px] py-4 px-5'}`
-    const cellSecondary = `text-text-secondary text-left align-middle whitespace-nowrap ${isMobile ? 'text-[11px] py-2.5 px-2' : 'text-[13px] py-4 px-5'}`
+    const cellBase = 'text-[12px] font-medium text-left align-middle whitespace-nowrap py-1.5 px-2.5'
+    const cellHighlight = `font-bold text-left align-middle whitespace-nowrap font-mono tabular-nums py-1.5 ${
+        isMobile ? 'text-[12px] px-2' : 'text-[12.5px] px-2.5'
+    }`
+    const cellSecondary = `text-left align-middle whitespace-nowrap py-1.5 ${
+        isMobile ? 'text-[11px] px-2' : 'text-[12px] px-2.5'
+    }`
+
     const statusBadge = (status) => {
-        const colorMap = {
-            Active: 'bg-[#dcfce7] text-[#166534]',
-            'Down In Yard': 'bg-[#fee2e2] text-[#dc2626]',
-            'In Shop': 'bg-[#dbeafe] text-[#1e40af]',
-            Spare: 'bg-[#f3e8ff] text-[#7c3aed]',
-            'Third Party Work': 'bg-[#fef9c3] text-[#a16207]',
-            'Waiting For Shop': 'bg-[#ffedd5] text-[#c2410c]'
-        }
-        const colors = colorMap[status] || 'bg-bg-tertiary text-text-secondary'
-        const size = isMobile ? 'text-[10px] px-2 py-1' : 'text-xs px-3 py-1.5'
-        return `inline-block rounded-2xl font-semibold ${size} ${colors}`
+        const colors = STATUS_BADGE_COLORS[status] || 'bg-bg-tertiary text-text-secondary'
+        return `inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${colors}`
     }
+
     const verifyBtnClass = (isVerified) => {
-        const colors = isVerified ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#fef3c7] text-[#92400e]'
+        const colors = isVerified ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#fef3c7] text-[#92400e] hover:brightness-95'
         const cursor = isVerified ? 'cursor-default' : 'cursor-pointer'
-        const size = isMobile ? 'text-[10px] gap-1 px-2.5 py-1.5' : 'text-xs gap-1.5 px-3.5 py-2'
-        return `inline-flex items-center border-none rounded-lg font-semibold whitespace-nowrap ${size} ${cursor} ${colors}`
+        return `inline-flex items-center gap-1 border-none rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${cursor} ${colors}`
     }
-    const wrapperClasses = `overflow-x-auto mb-6 ${isMobile ? 'mx-1 mt-3' : 'mx-6 mt-[30px]'}`
-    const containerClasses = `bg-bg-primary border border-border-light w-full overflow-hidden box-border ${isMobile ? 'rounded-t-lg min-w-[1100px]' : 'rounded-t-xl'}`
+
+    const wrapperClasses = `mb-5 ${isMobile ? 'mx-1 mt-2' : 'mx-4 lg:mx-6 mt-3'}`
+    const containerStyle = {
+        background: 'var(--bg-primary)',
+        border: '1px solid var(--border-light)',
+        borderRadius: 6,
+        overflow: 'hidden'
+    }
+    const containerClasses = `w-full overflow-x-auto box-border ${isMobile ? 'min-w-[1100px]' : ''}`
+
     if (!filteredItems || filteredItems.length === 0) {
         return (
             <div className={wrapperClasses} style={{ WebkitOverflowScrolling: 'touch' }}>
-                <div className={containerClasses}>
-                    <div className={`bg-bg-primary text-center ${isMobile ? 'py-10 px-5' : 'py-20 px-10'}`}>
-                        <i
-                            className={`fas fa-inbox text-slate-300 mb-4 ${isMobile ? 'text-[40px]' : 'text-[56px]'}`}
-                        ></i>
-                        <p className={`text-text-secondary font-medium m-0 ${isMobile ? 'text-sm' : 'text-lg'}`}>
-                            No items to display
-                        </p>
+                <div className={containerClasses} style={containerStyle}>
+                    <div className="text-center py-6 px-4 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                        No items match the current filters.
                     </div>
                 </div>
             </div>
         )
     }
+
     if (renderRow) {
         return (
             <div className={wrapperClasses} style={{ WebkitOverflowScrolling: 'touch' }}>
-                <div className={containerClasses}>
+                <div className={containerClasses} style={containerStyle}>
                     <table className="border-collapse w-full">
                         <tbody>
                             {filteredItems.map((item, index) => {
-                                const alternatingBg = index % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)'
                                 const row = renderRow(
                                     item,
                                     handleSelectItem,
@@ -88,13 +117,14 @@ function ListViewModeSection({
                                     onVerify,
                                     onShowHistoryModal,
                                     index,
-                                    alternatingBg
+                                    'var(--bg-primary)'
                                 )
                                 return React.cloneElement(row, {
-                                    className: `animate-slide-in-row ${row.props.className || ''}`.trim(),
+                                    className:
+                                        `animate-slide-in-row hover:[&>td]:bg-bg-tertiary ${row.props.className || ''}`.trim(),
                                     key: row.key || item.id,
                                     style: {
-                                        backgroundColor: alternatingBg,
+                                        backgroundColor: 'var(--bg-primary)',
                                         borderBottom: '1px solid var(--border-light)',
                                         cursor: 'pointer',
                                         animationDelay: `${getRowDelay(index)}ms`,
@@ -108,10 +138,13 @@ function ListViewModeSection({
             </div>
         )
     }
+
     const renderStars = (rating) => {
         if (!rating) {
             return (
-                <span className={`text-text-secondary italic ${isMobile ? 'text-[10px]' : 'text-xs'}`}>Not Rated</span>
+                <span className="text-[10px] italic" style={{ color: 'var(--text-tertiary)' }}>
+                    —
+                </span>
             )
         }
         const stars = []
@@ -119,16 +152,17 @@ function ListViewModeSection({
             stars.push(
                 <i
                     key={i}
-                    className={`fas fa-star ${isMobile ? 'text-xs' : 'text-sm'}`}
-                    style={{ color: i <= rating ? '#f59e0b' : '#e2e8f0' }}
-                ></i>
+                    className="fas fa-star text-[9px]"
+                    style={{ color: i <= rating ? '#f59e0b' : 'var(--bg-tertiary)' }}
+                />
             )
         }
         return <div className="flex items-center gap-px">{stars}</div>
     }
+
     return (
         <div className={wrapperClasses} style={{ WebkitOverflowScrolling: 'touch' }}>
-            <div className={containerClasses}>
+            <div className={containerClasses} style={containerStyle}>
                 <table className="border-collapse w-full">
                     <tbody>
                         {filteredItems.map((item, index) => {
@@ -136,48 +170,63 @@ function ListViewModeSection({
                             const plant = plants?.find((p) => p.code === item.assignedPlant)
                             const number = item.identifyingNumber || item.truckNumber || item.trailerNumber || ''
                             const isVerified = typeof item.isVerified === 'function' ? item.isVerified() : item.verified
-                            const alternatingBg = index % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)'
                             return (
                                 <tr
                                     key={item.id}
-                                    className="animate-slide-in-row border-b border-border-light cursor-pointer hover:[&>td]:bg-bg-hover"
+                                    className="animate-slide-in-row cursor-pointer hover:[&>td]:bg-bg-tertiary"
                                     style={{
                                         animationDelay: `${getRowDelay(index)}ms`,
-                                        backgroundColor: alternatingBg
+                                        backgroundColor: 'var(--bg-primary)',
+                                        borderBottom: '1px solid var(--border-light)'
                                     }}
                                     onClick={() => handleSelectItem(item.id)}
                                 >
-                                    <td className={cellBase}>{plant?.name || item.assignedPlant || '-'}</td>
-                                    <td className={cellHighlight}>{item.truckNumber || item.trailerNumber || '-'}</td>
-                                    <td className={cellSecondary}>
+                                    <td className={cellBase} style={{ color: 'var(--text-primary)' }}>
+                                        {plant?.name || item.assignedPlant || '—'}
+                                    </td>
+                                    <td className={cellHighlight} style={{ color: 'var(--text-primary)' }}>
+                                        {item.truckNumber || item.trailerNumber || '—'}
+                                    </td>
+                                    <td className={cellSecondary} style={{ color: 'var(--text-secondary)' }}>
                                         <span className={statusBadge(item.status)}>{item.status}</span>
                                     </td>
-                                    <td className={cellSecondary}>
+                                    <td className={cellSecondary} style={{ color: 'var(--text-secondary)' }}>
                                         {operator?.name || (
-                                            <span className="text-text-secondary italic">Not Assigned</span>
+                                            <span className="italic" style={{ color: 'var(--text-tertiary)' }}>
+                                                —
+                                            </span>
                                         )}
                                     </td>
                                     <td className={cellSecondary}>{renderStars(item.cleanlinessRating)}</td>
-                                    <td className={cellSecondary}>
+                                    <td className={cellSecondary} style={{ color: 'var(--text-secondary)' }}>
                                         {item.vinNumber || item.vin ? (
                                             <span
-                                                className={`bg-bg-secondary rounded font-mono ${isMobile ? 'text-[10px] py-0.5 px-1.5' : 'text-xs py-1 px-2'} text-text-secondary`}
+                                                className="rounded font-mono text-[10.5px] py-0.5 px-1 tabular-nums"
+                                                style={{
+                                                    background: 'var(--bg-tertiary)',
+                                                    color: 'var(--text-secondary)'
+                                                }}
                                             >
                                                 {item.vinNumber || item.vin}
                                             </span>
                                         ) : (
-                                            <span className="text-text-secondary">-</span>
+                                            <span style={{ color: 'var(--text-tertiary)' }}>—</span>
                                         )}
                                     </td>
                                     <td className={cellSecondary}>
                                         {item.status === 'Retired' ? (
                                             <span
-                                                className={`inline-block bg-bg-tertiary rounded-lg text-text-secondary font-semibold ${isMobile ? 'text-[10px] py-1.5 px-2.5' : 'text-xs py-2 px-3.5'}`}
+                                                className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5"
+                                                style={{
+                                                    background: 'var(--bg-tertiary)',
+                                                    color: 'var(--text-tertiary)'
+                                                }}
                                             >
                                                 N/A
                                             </span>
                                         ) : (
                                             <button
+                                                type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     if (!isVerified && onVerify) {
@@ -189,34 +238,32 @@ function ListViewModeSection({
                                                 disabled={isVerified}
                                             >
                                                 <i
-                                                    className={`fas ${isVerified ? 'fa-check-circle' : 'fa-exclamation-circle'}`}
-                                                ></i>
+                                                    className={`fas ${
+                                                        isVerified ? 'fa-check-circle' : 'fa-exclamation-circle'
+                                                    } text-[8px]`}
+                                                />
                                                 <span>{isVerified ? 'Verified' : 'Verify'}</span>
                                             </button>
                                         )}
                                     </td>
                                     <td className={cellSecondary}>
-                                        <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-2'}`}>
-                                            <button
+                                        <div className="flex items-center gap-0.5">
+                                            <RowIconButton
+                                                icon="fa-comment"
+                                                title="Comments"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     onShowCommentModal && onShowCommentModal(item.id, number)
                                                 }}
-                                                title="Comments"
-                                                className={`flex items-center justify-center bg-bg-primary border border-border-light rounded-lg text-text-secondary cursor-pointer hover:bg-accent hover:text-white hover:border-accent transition-colors ${isMobile ? 'w-7 h-7 text-xs' : 'w-9 h-9 text-sm'}`}
-                                            >
-                                                <i className="fas fa-comment"></i>
-                                            </button>
-                                            <button
+                                            />
+                                            <RowIconButton
+                                                icon="fa-wrench"
+                                                title="Issues"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     onShowIssueModal && onShowIssueModal(item.id, number)
                                                 }}
-                                                title="Issues"
-                                                className={`flex items-center justify-center bg-bg-primary border border-border-light rounded-lg text-text-secondary cursor-pointer hover:bg-accent hover:text-white hover:border-accent transition-colors ${isMobile ? 'w-7 h-7 text-xs' : 'w-9 h-9 text-sm'}`}
-                                            >
-                                                <i className="fas fa-wrench"></i>
-                                            </button>
+                                            />
                                         </div>
                                     </td>
                                 </tr>
@@ -228,4 +275,5 @@ function ListViewModeSection({
         </div>
     )
 }
+
 export default ListViewModeSection

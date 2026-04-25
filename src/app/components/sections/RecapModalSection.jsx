@@ -597,7 +597,7 @@ function RecapModalSection({
             onClick={() => setIsOpen(false)}
         >
             <div
-                className="rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+                className="rounded shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
                 style={{ backgroundColor: 'var(--bg-primary)' }}
                 onClick={(e) => e.stopPropagation()}
             >

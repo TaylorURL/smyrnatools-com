@@ -63,11 +63,11 @@ function StatusBadge({ status }) {
 
 function FormTabSkeleton({ count = 5 }) {
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
             {Array.from({ length: count }, (_, i) => (
                 <div
                     key={i}
-                    className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0"
+                    className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0"
                 >
                     <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -120,7 +120,7 @@ function getRowDelay(index) {
 function FormTable({ columns, rows, emptyIcon, emptyTitle, emptyMessage, emptyChildren, onRowClick }) {
     if (!rows || rows.length === 0) {
         return (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
                 <EmptyState icon={emptyIcon} title={emptyTitle} message={emptyMessage}>
                     {emptyChildren}
                 </EmptyState>
@@ -134,11 +134,11 @@ function FormTable({ columns, rows, emptyIcon, emptyTitle, emptyMessage, emptyCh
     const metaCols = columns.filter((c) => c !== titleCol && c !== statusCol)
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
             {rows.map((row) => (
                 <div
                     key={row.id}
-                    className="flex items-center px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0 cursor-pointer transition-colors hover:bg-slate-50"
+                    className="flex items-center px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0 cursor-pointer transition-colors hover:bg-slate-50"
                     onClick={() => onRowClick?.(row)}
                 >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -731,7 +731,7 @@ export default function MaintenanceView() {
     const categoryFilterSelect =
         categoryOptions.length > 1 ? (
             <select
-                className="appearance-none bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat"
+                className="appearance-none bg-slate-50 border border-border-light rounded-xl text-slate-900 text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat"
                 style={{
                     backgroundImage:
                         "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",

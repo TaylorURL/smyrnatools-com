@@ -3,80 +3,27 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import PlantDropdownModal from '../common/PlantDropdownModal'
+
 /** Default column header labels for asset list views. */
 const DEFAULT_LIST_LABELS = ['Plant', 'Truck #', 'Status', 'Operator', 'Cleanliness', 'VIN', 'Verified', 'More']
 /** Default column widths matching DEFAULT_LIST_LABELS. */
 const DEFAULT_COL_WIDTHS = ['10%', '12%', '12%', '18%', '12%', '18%', '10%', '8%']
-/** Search input with icon and optional clear button. */
-const SearchInput = ({ value, onChange, onClear, placeholder, className = '' }) => (
-    <div className={`relative ${className}`} role="search">
-        <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[15px]" />
-        <input
-            type="text"
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm outline-none py-3 pl-11 pr-4 placeholder:text-slate-400"
-            placeholder={placeholder}
-            value={value || ''}
-            onChange={(e) => onChange?.(e.target.value)}
-            aria-label="Search"
-        />
-        {value && onClear && (
-            <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6 bg-gray-200 rounded-lg text-slate-500 text-xs cursor-pointer"
-                onClick={onClear}
-                type="button"
-                aria-label="Clear search"
-            >
-                <i className="fas fa-times" />
-            </button>
-        )}
-    </div>
-)
-const BADGE_PILL_STYLES = {
-    Total: {
-        icon: 'fa-hashtag',
-        light: { bg: 'rgba(100,116,139,0.1)', color: '#475569' },
-        dark: { bg: 'rgba(148,163,184,0.2)', color: '#94a3b8' }
-    },
-    Shop: {
-        icon: 'fa-wrench',
-        light: { bg: 'rgba(239,68,68,0.1)', color: '#dc2626' },
-        dark: { bg: 'rgba(239,68,68,0.2)', color: '#f87171' }
-    },
-    Active: {
-        icon: 'fa-check-circle',
-        light: { bg: 'rgba(22,163,74,0.1)', color: '#15803d' },
-        dark: { bg: 'rgba(34,197,94,0.2)', color: '#4ade80' }
-    },
-    Spare: {
-        icon: 'fa-exchange-alt',
-        light: { bg: 'rgba(59,130,246,0.1)', color: '#2563eb' },
-        dark: { bg: 'rgba(59,130,246,0.2)', color: '#60a5fa' }
-    },
-    Unassigned: {
-        icon: 'fa-user-slash',
-        light: { bg: 'rgba(245,158,11,0.1)', color: '#b45309' },
-        lightZero: { bg: 'rgba(100,116,139,0.08)', color: '#64748b' },
-        dark: { bg: 'rgba(251,191,36,0.2)', color: '#fbbf24' },
-        darkZero: { bg: 'rgba(148,163,184,0.15)', color: '#64748b' }
-    },
-    OK: {
-        icon: 'fa-check-circle',
-        light: { bg: 'rgba(22,163,74,0.1)', color: '#15803d' },
-        dark: { bg: 'rgba(34,197,94,0.2)', color: '#4ade80' }
-    },
-    'Due Soon': {
-        icon: 'fa-clock',
-        light: { bg: 'rgba(245,158,11,0.1)', color: '#b45309' },
-        dark: { bg: 'rgba(251,191,36,0.2)', color: '#fbbf24' }
-    },
-    Overdue: {
-        icon: 'fa-exclamation-triangle',
-        light: { bg: 'rgba(239,68,68,0.1)', color: '#dc2626' },
-        dark: { bg: 'rgba(239,68,68,0.2)', color: '#f87171' }
-    }
+
+/* ── Visual atoms — flat, Plan-tab aesthetic ────────────────────────── */
+
+const BADGE_PILL_TINTS = {
+    Total: '#475569',
+    Shop: '#dc2626',
+    Active: '#16a34a',
+    Spare: '#7c3aed',
+    Unassigned: '#a16207',
+    OK: '#16a34a',
+    'Due Soon': '#d97706',
+    Overdue: '#dc2626'
 }
-const Badge = ({ children, onClick, onPillClick, accentColor, isDark }) => {
-    // Parse "X Label · Y Label · ..." format into pills
+
+/** Inline badge — parses "X Label · Y Label" into a row of compact pills. */
+const Badge = ({ children, onClick, onPillClick, accentColor }) => {
     const text = typeof children === 'string' ? children : ''
     const parts = text.split('·').map((s) => s.trim())
     const parsed = parts
@@ -88,31 +35,27 @@ const Badge = ({ children, onClick, onPillClick, accentColor, isDark }) => {
 
     if (parsed.length >= 2) {
         return (
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1 flex-wrap">
                 {parsed.map(({ count, label }) => {
-                    const pillConfig = BADGE_PILL_STYLES[label]
-                    if (!pillConfig) return null
+                    const tint = BADGE_PILL_TINTS[label]
+                    if (!tint) return null
                     const num = parseInt(count, 10)
                     const isZeroVariant = label === 'Unassigned' && num === 0
-                    const theme = isDark
-                        ? isZeroVariant
-                            ? pillConfig.darkZero || pillConfig.dark
-                            : pillConfig.dark
-                        : isZeroVariant
-                          ? pillConfig.lightZero || pillConfig.light
-                          : pillConfig.light
+                    const color = isZeroVariant ? '#64748b' : tint
                     const clickHandler = onPillClick ? () => onPillClick(label) : onClick
                     const Tag = clickHandler ? 'button' : 'span'
                     const clickProps = clickHandler ? { onClick: clickHandler, type: 'button' } : {}
                     return (
                         <Tag
                             key={label}
-                            className={`inline-flex items-center gap-1.5 rounded-lg text-xs font-bold px-2.5 py-1.5${clickHandler ? ' border-none bg-transparent cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-                            style={{ backgroundColor: theme.bg, color: theme.color }}
+                            className={`inline-flex items-center gap-1 rounded text-[11px] font-semibold px-1.5 py-0.5${
+                                clickHandler ? ' border-none cursor-pointer hover:brightness-95' : ''
+                            }`}
+                            style={{ background: `${color}14`, color, border: `1px solid ${color}30` }}
                             {...clickProps}
                         >
-                            <i className={`fas ${pillConfig.icon} text-[10px]`} />
-                            {count} {label}
+                            <span className="font-mono tabular-nums">{count}</span>
+                            <span>{label}</span>
                         </Tag>
                     )
                 })}
@@ -120,49 +63,86 @@ const Badge = ({ children, onClick, onPillClick, accentColor, isDark }) => {
         )
     }
 
-    // Fallback for non-standard badge content
-    const Wrapper = onClick ? 'button' : 'div'
+    const Wrapper = onClick ? 'button' : 'span'
     const wrapperProps = onClick
         ? {
               onClick,
               type: 'button',
-              className: 'border-none bg-transparent p-0 cursor-pointer flex items-center gap-1.5 flex-wrap'
+              className: 'border-none bg-transparent p-0 cursor-pointer'
           }
-        : { className: 'flex items-center gap-1.5 flex-wrap' }
-    const baseClasses = 'inline-flex items-center gap-2 rounded-lg text-xs font-bold px-2.5 py-1.5'
-    const style = { backgroundColor: `${accentColor}${isDark ? '30' : '12'}`, color: accentColor }
+        : {}
     return (
         <Wrapper {...wrapperProps}>
-            <span className={baseClasses} style={style}>
-                <i className="fas fa-users text-[10px]" />
+            <span
+                className="inline-flex items-center gap-1 rounded text-[11px] font-semibold px-1.5 py-0.5"
+                style={{ background: `${accentColor}14`, color: accentColor, border: `1px solid ${accentColor}30` }}
+            >
                 {children}
             </span>
         </Wrapper>
     )
 }
-const ActionButton = ({ icon, label, onClick, variant = 'subtle', accentColor, className = '' }) => {
-    const baseClasses =
-        'flex items-center gap-2 border-none rounded-xl text-sm font-semibold px-5 py-3 cursor-pointer transition-all duration-150'
+
+/** Search input — flat, single-row, matches Plan-tab filter styling. */
+const SearchInput = ({ value, onChange, onClear, placeholder, className = '' }) => (
+    <div className={`relative ${className}`} role="search">
+        <i
+            className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px]"
+            style={{ color: 'var(--text-tertiary)' }}
+        />
+        <input
+            type="text"
+            className="w-full text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7"
+            style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-light)',
+                color: 'var(--text-primary)'
+            }}
+            placeholder={placeholder}
+            value={value || ''}
+            onChange={(e) => onChange?.(e.target.value)}
+            aria-label="Search"
+        />
+        {value && onClear && (
+            <button
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                onClick={onClear}
+                type="button"
+                aria-label="Clear search"
+            >
+                <i className="fas fa-times" />
+            </button>
+        )}
+    </div>
+)
+
+/** Action button — flat. `primary` is the accent-color CTA, `subtle` is bg-secondary. */
+const ActionButton = ({ icon, label, onClick, variant = 'subtle', accentColor }) => {
     const isPrimary = variant === 'primary'
     return (
         <button
-            className={`${baseClasses} ${className}`}
+            type="button"
+            className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer border-none"
             style={{
-                backgroundColor: isPrimary ? accentColor : 'var(--bg-tertiary)',
-                color: isPrimary ? 'white' : 'var(--text-secondary)'
+                background: isPrimary ? accentColor : 'var(--bg-secondary)',
+                border: isPrimary ? `1px solid ${accentColor}` : '1px solid var(--border-light)',
+                color: isPrimary ? '#fff' : 'var(--text-primary)'
             }}
             onClick={onClick}
-            type="button"
             aria-label={label}
         >
-            <i className={`fas ${icon}`} />
+            {icon && <i className={`fas ${icon}`} />}
             {label && <span>{label}</span>}
         </button>
     )
 }
+
+/** Two-button list/grid view toggle — flat, no slate-100 frame. */
 const ViewToggle = ({ viewMode, onChange, accentColor }) => (
     <div
-        className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-1"
+        className="inline-flex items-center rounded overflow-hidden"
+        style={{ border: '1px solid var(--border-light)' }}
         role="group"
         aria-label="View mode"
     >
@@ -171,15 +151,15 @@ const ViewToggle = ({ viewMode, onChange, accentColor }) => (
             return (
                 <button
                     key={mode}
-                    className="flex items-center justify-center w-10 h-10 rounded-lg text-[15px] border-none cursor-pointer transition-all duration-150"
+                    type="button"
+                    className="flex items-center justify-center w-7 h-7 text-[12px] cursor-pointer border-none"
                     style={{
-                        backgroundColor: isActive ? accentColor : 'transparent',
-                        color: isActive ? 'white' : 'var(--text-secondary)'
+                        background: isActive ? accentColor : 'var(--bg-secondary)',
+                        color: isActive ? '#fff' : 'var(--text-secondary)'
                     }}
                     onClick={() => onChange?.(mode)}
-                    aria-label={`${mode} view`}
                     aria-pressed={isActive}
-                    type="button"
+                    aria-label={`${mode} view`}
                 >
                     <i className={`fas ${mode === 'list' ? 'fa-list' : 'fa-th-large'}`} />
                 </button>
@@ -187,13 +167,16 @@ const ViewToggle = ({ viewMode, onChange, accentColor }) => (
         })}
     </div>
 )
+
+/** Standard select — uses native browser chrome with var(--bg-secondary) styling. */
 const FilterSelect = ({ value, options, onChange, ariaLabel, className = '' }) => (
     <select
-        className={`appearance-none bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat ${className}`}
+        className={`text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 ${className}`}
         style={{
-            backgroundImage: CHEVRON_SVG,
-            backgroundPosition: 'right 12px center',
-            backgroundSize: '18px'
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)',
+            color: 'var(--text-primary)',
+            minWidth: 130
         }}
         value={value || ''}
         onChange={(e) => onChange?.(e.target.value)}
@@ -206,62 +189,85 @@ const FilterSelect = ({ value, options, onChange, ariaLabel, className = '' }) =
         ))}
     </select>
 )
-const CHEVRON_SVG =
-    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")"
+
+/** Plant filter button — same chrome as FilterSelect, opens the modal picker. */
 const PlantFilterButton = ({ displayText, onClick }) => (
     <button
-        className="bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-medium cursor-pointer py-3 pl-4 pr-10 bg-no-repeat"
+        type="button"
+        className="text-[12px] font-medium cursor-pointer rounded py-1.5 px-2 flex items-center gap-1.5"
         style={{
-            backgroundImage: CHEVRON_SVG,
-            backgroundPosition: 'right 12px center',
-            backgroundSize: '18px'
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)',
+            color: 'var(--text-primary)'
         }}
         onClick={onClick}
         aria-label="Filter by plant"
     >
-        {displayText}
+        <span className="truncate max-w-[200px]">{displayText}</span>
+        <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
     </button>
 )
+
+/** Reset filters button — square, flat. */
 const ResetButton = ({ onClick }) => (
     <button
-        className="flex items-center justify-center w-[46px] h-[46px] bg-slate-50 border border-slate-200 rounded-xl text-slate-500 text-[15px] cursor-pointer"
-        onClick={onClick}
         type="button"
+        className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none"
+        style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)',
+            color: 'var(--text-secondary)'
+        }}
+        onClick={onClick}
         aria-label="Reset filters"
+        title="Reset filters"
     >
         <i className="fas fa-undo" />
     </button>
 )
+
+/** List column header row — bg-tertiary, 10.5px uppercase tracked-wider, mono sort caret. */
 const ListHeader = ({ labels, colWidths, sortKey, sortDirection, onHeaderClick, accentColor }) => (
-    <div className="flex items-center bg-slate-50 border-t border-slate-200 -mx-7 mt-4 -mb-6 px-7">
+    <div
+        className="flex items-center -mx-4 px-4 mt-3 -mb-3"
+        style={{
+            background: 'var(--bg-tertiary)',
+            borderTop: '1px solid var(--border-light)',
+            borderBottom: '1px solid var(--border-light)'
+        }}
+    >
         {labels.map((label, index) => {
             const colWidth = colWidths[index] || 'auto'
             const isFlex = colWidth === 'flex' || colWidth === 'auto'
             const isActive = sortKey === label
             return (
-                <div
+                <button
                     key={label}
-                    className="flex items-center gap-1.5 text-slate-500 text-[11px] font-bold uppercase tracking-wide py-3 px-2 cursor-pointer select-none hover:text-[--accent]"
+                    type="button"
+                    className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider py-2 px-2 cursor-pointer select-none border-none bg-transparent"
                     style={{
                         ...(isFlex ? { flex: 1, minWidth: 0 } : { flexShrink: 0, width: colWidth }),
-                        '--accent': accentColor
+                        color: isActive ? accentColor : 'var(--text-secondary)',
+                        textAlign: 'left'
                     }}
                     onClick={() => onHeaderClick?.(label)}
                 >
                     <span>{label}</span>
                     {isActive && (
                         <i
-                            className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} text-[10px]`}
+                            className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} text-[9px]`}
                             style={{ color: accentColor }}
                         />
                     )}
-                </div>
+                </button>
             )
         })}
     </div>
 )
+
+/** Mobile-only stacked view toggle. */
 const MobileViewToggle = ({ viewMode, onChange, accentColor }) => (
-    <div className="flex gap-2.5">
+    <div className="flex gap-2">
         {[
             { icon: 'fa-list', label: 'List', mode: 'list' },
             { icon: 'fa-th-large', label: 'Grid', mode: 'grid' }
@@ -270,15 +276,15 @@ const MobileViewToggle = ({ viewMode, onChange, accentColor }) => (
             return (
                 <button
                     key={mode}
-                    className="flex items-center justify-center gap-2 flex-1 rounded-lg text-sm font-semibold py-3 border-2 cursor-pointer"
+                    type="button"
+                    className="flex items-center justify-center gap-1.5 flex-1 rounded text-[12px] font-semibold py-2 cursor-pointer"
                     style={{
-                        backgroundColor: isActive ? `${accentColor}15` : 'white',
-                        borderColor: isActive ? accentColor : '#e5e7eb',
+                        background: isActive ? `${accentColor}14` : 'var(--bg-secondary)',
+                        border: `1px solid ${isActive ? accentColor : 'var(--border-light)'}`,
                         color: isActive ? accentColor : 'var(--text-secondary)'
                     }}
                     onClick={() => onChange?.(mode)}
                     aria-label={`${label} view`}
-                    type="button"
                 >
                     <i className={`fas ${icon}`} />
                     <span>{label}</span>
@@ -287,12 +293,18 @@ const MobileViewToggle = ({ viewMode, onChange, accentColor }) => (
         })}
     </div>
 )
+
 const MobileFilterItem = ({ label, children, fullWidth = false }) => (
-    <div className={`flex flex-col gap-2 ${fullWidth ? 'col-span-2' : ''}`}>
-        <label className="text-slate-500 text-[11px] font-bold uppercase tracking-wide">{label}</label>
+    <div className={`flex flex-col gap-1.5 ${fullWidth ? 'col-span-2' : ''}`}>
+        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+            {label}
+        </span>
         {children}
     </div>
 )
+
+/* ── Main ────────────────────────────────────────────────────────────── */
+
 function TopSection({
     title,
     badge,
@@ -343,7 +355,6 @@ function TopSection({
 }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
-    const isDark = preferences.themeMode === 'dark'
     const isMobile = useIsMobile()
     const [isPlantModalOpen, setIsPlantModalOpen] = useState(false)
     const [showMobileFilters, setShowMobileFilters] = useState(false)
@@ -369,6 +380,7 @@ function TopSection({
         : selectedPlant && selectedPlantObj
           ? `(${selectedPlantObj.plantCode || selectedPlantObj.plant_code}) ${selectedPlantObj.plantName || selectedPlantObj.plant_name}`
           : 'All Plants'
+
     useLayoutEffect(() => {
         if (!forwardedRef?.current) return
         const element = forwardedRef.current
@@ -380,15 +392,11 @@ function TopSection({
         resizeObserver.observe(element)
         return () => resizeObserver.disconnect()
     }, [forwardedRef])
-    const sectionClasses = `bg-white border-b border-slate-200 shadow-sm ${tightTop ? 'px-6 py-4 pb-5' : 'px-7 py-5 pb-6'} ${sticky ? 'sticky top-0 z-50' : ''}`
+
+    const sectionClasses = `${tightTop ? 'px-4 py-3' : 'px-4 lg:px-6 py-3'} ${sticky ? 'sticky top-0 z-50' : ''}`
     const sectionStyle = {
-        backgroundImage: `
-            linear-gradient(${accentColor}10 1px, transparent 1px),
-            linear-gradient(90deg, ${accentColor}10 1px, transparent 1px),
-            radial-gradient(circle at center, ${accentColor}08 0%, transparent 50%)
-        `,
-        backgroundPosition: '0 0, 0 0, 0 0',
-        backgroundSize: '20px 20px, 20px 20px, 40px 40px'
+        background: 'var(--bg-primary)',
+        borderBottom: '1px solid var(--border-light)'
     }
     const wasLoadingRef = useRef(isLoading)
     const hasRevealedRef = useRef(false)
@@ -407,54 +415,31 @@ function TopSection({
         }
         wasLoadingRef.current = isLoading
     }, [isLoading])
-    // While loading or awaiting reveal animation start, hide real content completely
     const hideRealContent = !hasRevealedRef.current && (isLoading || (needsRevealRef.current && !revealControls))
+
     const skeletonContent = (
-        <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-3">
-                <div className={`${isMobile ? 'h-6 w-36' : 'h-8 w-48'} rounded-lg bg-slate-200 animate-pulse`} />
-                <div className="flex items-center gap-2.5">
-                    <div
-                        className={`${isMobile ? 'w-11 h-11' : 'w-[88px] h-[46px]'} rounded-xl bg-slate-200 animate-pulse`}
-                    />
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+                <div className="h-5 w-40 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                <div className="flex items-center gap-2">
+                    <div className="h-7 w-20 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
                 </div>
             </div>
-            <div className={`flex items-center ${isMobile ? 'gap-3' : 'gap-3.5 justify-between'}`}>
+            <div className="flex items-center gap-2 flex-wrap">
                 <div
-                    className={`${isMobile ? 'flex-1 h-[46px]' : 'h-[46px] min-w-[220px] max-w-[420px] flex-[0_1_auto]'} rounded-xl bg-slate-100 animate-pulse`}
+                    className={`${isMobile ? 'flex-1 h-8' : 'h-8 min-w-[220px] max-w-[420px] flex-[0_1_auto]'} rounded animate-pulse`}
+                    style={{ background: 'var(--bg-tertiary)' }}
                 />
-                {isMobile ? (
-                    <div className="w-[50px] h-[50px] rounded-xl bg-slate-100 animate-pulse" />
-                ) : (
-                    <div className="flex items-center gap-3 ml-auto">
-                        <div className="w-[88px] h-[44px] rounded-lg bg-slate-100 animate-pulse" />
-                        <div className="w-[120px] h-[46px] rounded-xl bg-slate-100 animate-pulse" />
-                        <div className="w-[140px] h-[46px] rounded-xl bg-slate-100 animate-pulse" />
-                    </div>
-                )}
+                <div className="flex items-center gap-2 ml-auto">
+                    <div className="h-7 w-16 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                    <div className="h-7 w-28 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                    <div className="h-7 w-32 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                </div>
             </div>
             {customBottomSkeleton}
-            {!isMobile && viewMode === 'list' && (
-                <div className="flex items-center bg-slate-50 border-t border-slate-200 -mx-7 mt-4 -mb-6 px-7 py-3">
-                    {safeColWidths.map((w, i) => {
-                        const isFlex = w === 'flex' || w === 'auto'
-                        return (
-                            <div
-                                key={i}
-                                className="px-2"
-                                style={isFlex ? { flex: 1, minWidth: 0 } : { flexShrink: 0, width: w }}
-                            >
-                                <div
-                                    className="h-3 rounded bg-slate-200 animate-pulse"
-                                    style={{ width: `${50 + ((i * 13) % 40)}%` }}
-                                />
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
         </div>
     )
+
     if (isMobile) {
         return (
             <>
@@ -466,58 +451,47 @@ function TopSection({
                     aria-label="Page controls"
                 >
                     {hideRealContent && skeletonContent}
-                    <div className="flex flex-col gap-4" style={hideRealContent ? { display: 'none' } : undefined}>
-                        <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-3" style={hideRealContent ? { display: 'none' } : undefined}>
+                        <div className="flex items-center justify-between gap-2">
                             <div
-                                className={`flex items-center gap-3${revealControls ? ' animate-reveal-left' : ''}`}
-                                style={revealControls ? { animationDelay: '0ms' } : undefined}
+                                className={`flex items-center gap-2 min-w-0${revealControls ? ' animate-reveal-left' : ''}`}
                             >
-                                <h1 className="text-[22px] font-bold text-slate-900 m-0">{title}</h1>
+                                <h1
+                                    className="text-[16px] font-bold m-0 truncate"
+                                    style={{ color: 'var(--text-primary)' }}
+                                >
+                                    {title}
+                                </h1>
                                 {badge && (
-                                    <Badge
-                                        onClick={onBadgeClick}
-                                        onPillClick={onPillClick}
-                                        accentColor={accentColor}
-                                        isDark={isDark}
-                                    >
+                                    <Badge onClick={onBadgeClick} onPillClick={onPillClick} accentColor={accentColor}>
                                         {badge}
                                     </Badge>
                                 )}
                             </div>
-                            <div
-                                className={`flex items-center gap-2.5${revealControls ? ' animate-reveal-right' : ''}`}
-                                style={revealControls ? { animationDelay: '60ms' } : undefined}
-                            >
+                            <div className={`flex items-center gap-2${revealControls ? ' animate-reveal-right' : ''}`}>
                                 {customActions}
                                 {onAddClick && (
-                                    <button
-                                        className="flex items-center justify-center w-11 h-11 rounded-xl border-none text-white text-lg cursor-pointer"
-                                        style={{ backgroundColor: accentColor }}
+                                    <ActionButton
+                                        icon="fa-plus"
+                                        label={addButtonLabel}
                                         onClick={onAddClick}
-                                        type="button"
-                                        aria-label={addButtonLabel}
-                                    >
-                                        <i className="fas fa-plus" />
-                                    </button>
+                                        variant="primary"
+                                        accentColor={accentColor}
+                                    />
                                 )}
                                 {onToggleSidebar && (
-                                    <button
-                                        className="flex items-center justify-center w-11 h-11 rounded-xl border-none bg-slate-100 text-slate-600 text-lg cursor-pointer"
+                                    <ActionButton
+                                        icon="fa-bars"
                                         onClick={onToggleSidebar}
-                                        type="button"
-                                        aria-label="Toggle menu"
-                                    >
-                                        <i className="fas fa-bars" />
-                                    </button>
+                                        variant="subtle"
+                                        accentColor={accentColor}
+                                    />
                                 )}
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 mt-0.5">
+                        <div className="flex items-center gap-2">
                             {!hideSearchBar && (
-                                <div
-                                    className={`flex-1${revealControls ? ' animate-reveal-left' : ''}`}
-                                    style={revealControls ? { animationDelay: '120ms' } : undefined}
-                                >
+                                <div className="flex-1">
                                     <SearchInput
                                         value={searchInput}
                                         onChange={onSearchInputChange}
@@ -527,28 +501,26 @@ function TopSection({
                                     />
                                 </div>
                             )}
-                            <div
-                                className={revealControls ? 'animate-reveal-right' : ''}
-                                style={revealControls ? { animationDelay: '140ms' } : undefined}
+                            <button
+                                type="button"
+                                className="flex items-center justify-center w-8 h-8 rounded text-[12px] cursor-pointer"
+                                style={{
+                                    background: showMobileFilters ? `${accentColor}14` : 'var(--bg-secondary)',
+                                    border: `1px solid ${showMobileFilters ? accentColor : 'var(--border-light)'}`,
+                                    color: showMobileFilters ? accentColor : 'var(--text-secondary)'
+                                }}
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                aria-label="Toggle filters"
                             >
-                                <button
-                                    className="flex items-center justify-center w-[50px] h-[50px] rounded-xl text-lg border-2 cursor-pointer"
-                                    style={{
-                                        backgroundColor: showMobileFilters ? `${accentColor}15` : '#f8fafc',
-                                        borderColor: showMobileFilters ? accentColor : '#e5e7eb',
-                                        color: showMobileFilters ? accentColor : 'var(--text-secondary)'
-                                    }}
-                                    onClick={() => setShowMobileFilters(!showMobileFilters)}
-                                    type="button"
-                                    aria-label="Toggle filters"
-                                >
-                                    <i className="fas fa-filter" />
-                                </button>
-                            </div>
+                                <i className="fas fa-filter" />
+                            </button>
                         </div>
                         {showMobileFilters && (
-                            <div className="bg-slate-50 border border-slate-200 rounded-2xl mt-4 p-5">
-                                <div className="grid grid-cols-2 gap-3.5">
+                            <div
+                                className="rounded p-3"
+                                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                            >
+                                <div className="grid grid-cols-2 gap-2.5">
                                     {viewMode && !hideViewModeToggle && (
                                         <MobileFilterItem label="View Mode" fullWidth>
                                             <MobileViewToggle
@@ -561,70 +533,69 @@ function TopSection({
                                     {!hidePlantFilter && (
                                         <MobileFilterItem label="Plant">
                                             <button
-                                                className="flex items-center justify-between w-full bg-white border border-slate-200 rounded-lg text-slate-900 text-sm py-3 px-4 cursor-pointer"
+                                                type="button"
+                                                className="flex items-center justify-between w-full rounded text-[12px] py-2 px-2 cursor-pointer"
+                                                style={{
+                                                    background: 'var(--bg-primary)',
+                                                    border: '1px solid var(--border-light)',
+                                                    color: 'var(--text-primary)'
+                                                }}
                                                 onClick={() => setIsPlantModalOpen(true)}
                                                 aria-label="Filter by plant"
                                             >
                                                 <span className="truncate">{plantDisplayText}</span>
-                                                <i className="fas fa-chevron-down text-slate-500" />
+                                                <i
+                                                    className="fas fa-chevron-down text-[10px]"
+                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                />
                                             </button>
                                         </MobileFilterItem>
                                     )}
                                     {safeStatusOptions.length > 0 && (
                                         <MobileFilterItem label="Status">
-                                            <select
-                                                className="w-full bg-white border border-slate-200 rounded-lg text-slate-900 text-sm py-3 px-4"
-                                                value={statusFilter || ''}
-                                                onChange={(e) => onStatusFilterChange?.(e.target.value)}
-                                                aria-label="Status filter"
-                                            >
-                                                {safeStatusOptions.map((opt) => (
-                                                    <option key={opt} value={opt}>
-                                                        {opt}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <FilterSelect
+                                                value={statusFilter}
+                                                options={safeStatusOptions}
+                                                onChange={onStatusFilterChange}
+                                                ariaLabel="Status filter"
+                                                className="w-full"
+                                            />
                                         </MobileFilterItem>
                                     )}
                                     {safePositionOptions.length > 0 && (
                                         <MobileFilterItem label="Position">
-                                            <select
-                                                className="w-full bg-white border border-slate-200 rounded-lg text-slate-900 text-sm py-3 px-4"
-                                                value={positionFilter || ''}
-                                                onChange={(e) => onPositionFilterChange?.(e.target.value)}
-                                                aria-label="Position filter"
-                                            >
-                                                {safePositionOptions.map((opt) => (
-                                                    <option key={opt} value={opt === 'All Positions' ? '' : opt}>
-                                                        {opt}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <FilterSelect
+                                                value={positionFilter}
+                                                options={safePositionOptions}
+                                                onChange={onPositionFilterChange}
+                                                ariaLabel="Position filter"
+                                                className="w-full"
+                                            />
                                         </MobileFilterItem>
                                     )}
                                     {safeFreightOptions.length > 0 && (
                                         <MobileFilterItem label="Freight">
-                                            <select
-                                                className="w-full bg-white border border-slate-200 rounded-lg text-slate-900 text-sm py-3 px-4"
-                                                value={freightFilter || ''}
-                                                onChange={(e) => onFreightFilterChange?.(e.target.value)}
-                                                aria-label="Freight filter"
-                                            >
-                                                {safeFreightOptions.map((opt) => (
-                                                    <option key={opt} value={opt === 'All Freight' ? '' : opt}>
-                                                        {opt}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <FilterSelect
+                                                value={freightFilter}
+                                                options={safeFreightOptions}
+                                                onChange={onFreightFilterChange}
+                                                ariaLabel="Freight filter"
+                                                className="w-full"
+                                            />
                                         </MobileFilterItem>
                                     )}
                                     {customFilters}
                                     {showReset && onReset && (
                                         <MobileFilterItem fullWidth>
                                             <button
-                                                className="flex items-center justify-center gap-2.5 w-full bg-white border border-slate-200 rounded-lg text-slate-500 text-sm font-semibold py-3.5 cursor-pointer"
-                                                onClick={onReset}
                                                 type="button"
+                                                className="flex items-center justify-center gap-2 w-full rounded text-[12px] font-semibold py-2 cursor-pointer"
+                                                style={{
+                                                    background: 'var(--bg-primary)',
+                                                    border: '1px solid var(--border-light)',
+                                                    color: 'var(--text-secondary)'
+                                                }}
+                                                onClick={onReset}
                                             >
                                                 <i className="fas fa-undo" />
                                                 Reset Filters
@@ -634,14 +605,7 @@ function TopSection({
                                 </div>
                             </div>
                         )}
-                        {customBottomContent && (
-                            <div
-                                className={revealControls ? 'animate-reveal-left' : ''}
-                                style={revealControls ? { animationDelay: '200ms' } : undefined}
-                            >
-                                {customBottomContent}
-                            </div>
-                        )}
+                        {customBottomContent && <div>{customBottomContent}</div>}
                     </div>
                 </div>
                 {isPlantModalOpen && (
@@ -657,6 +621,7 @@ function TopSection({
             </>
         )
     }
+
     return (
         <>
             <div
@@ -667,31 +632,27 @@ function TopSection({
                 aria-label="Page controls"
             >
                 {hideRealContent && skeletonContent}
-                <div className="flex flex-col gap-4" style={hideRealContent ? { display: 'none' } : undefined}>
-                    <div className="flex items-center gap-4 justify-between">
+                <div className="flex flex-col gap-3" style={hideRealContent ? { display: 'none' } : undefined}>
+                    <div className="flex items-center gap-3 justify-between flex-wrap">
                         <div
-                            className={`flex items-center gap-4${revealControls ? ' animate-reveal-left' : ''}`}
-                            style={revealControls ? { animationDelay: '0ms' } : undefined}
+                            className={`flex items-center gap-3 min-w-0${revealControls ? ' animate-reveal-left' : ''}`}
                         >
-                            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight m-0">{title}</h1>
+                            <h1
+                                className="text-[18px] font-bold tracking-tight m-0 truncate"
+                                style={{ color: 'var(--text-primary)' }}
+                            >
+                                {title}
+                            </h1>
                             {badge && (
-                                <div className="ml-4">
-                                    <Badge
-                                        onClick={onBadgeClick}
-                                        onPillClick={onPillClick}
-                                        accentColor={accentColor}
-                                        isDark={isDark}
-                                    >
-                                        {badge}
-                                    </Badge>
-                                </div>
+                                <Badge onClick={onBadgeClick} onPillClick={onPillClick} accentColor={accentColor}>
+                                    {badge}
+                                </Badge>
                             )}
                         </div>
                         <div
-                            className={`flex items-center gap-3 ml-auto${revealControls ? ' animate-reveal-right' : ''}`}
+                            className={`flex items-center gap-2 ml-auto${revealControls ? ' animate-reveal-right' : ''}`}
                             role="group"
                             aria-label="Primary actions"
-                            style={revealControls ? { animationDelay: '60ms' } : undefined}
                         >
                             {customActions}
                             {onToggleSidebar && (
@@ -715,15 +676,12 @@ function TopSection({
                         </div>
                     </div>
                     <div
-                        className="flex items-center flex-wrap gap-3.5 justify-between"
+                        className="flex items-center flex-wrap gap-2 justify-between"
                         role="region"
                         aria-label="Search and filters"
                     >
                         {!hideSearchBar && (
-                            <div
-                                className={revealControls ? 'animate-reveal-left' : ''}
-                                style={revealControls ? { animationDelay: '120ms' } : undefined}
-                            >
+                            <div className={revealControls ? 'animate-reveal-left' : ''}>
                                 <SearchInput
                                     value={searchInput}
                                     onChange={onSearchInputChange}
@@ -734,10 +692,9 @@ function TopSection({
                             </div>
                         )}
                         <div
-                            className={`flex items-center flex-wrap gap-3 ml-auto${revealControls ? ' animate-reveal-right' : ''}`}
+                            className={`flex items-center flex-wrap gap-2 ml-auto${revealControls ? ' animate-reveal-right' : ''}`}
                             role="group"
                             aria-label="Filters and view options"
-                            style={revealControls ? { animationDelay: '140ms' } : undefined}
                         >
                             {viewMode && !hideViewModeToggle && (
                                 <ViewToggle viewMode={viewMode} onChange={onViewModeChange} accentColor={accentColor} />
@@ -776,28 +733,16 @@ function TopSection({
                             {showReset && onReset && <ResetButton onClick={onReset} />}
                         </div>
                     </div>
-                    {customBottomContent && (
-                        <div
-                            className={revealControls ? 'animate-reveal-left' : ''}
-                            style={revealControls ? { animationDelay: '200ms' } : undefined}
-                        >
-                            {customBottomContent}
-                        </div>
-                    )}
+                    {customBottomContent && <div>{customBottomContent}</div>}
                     {viewMode === 'list' && safeListLabels.length > 0 && (
-                        <div
-                            className={revealControls ? 'animate-reveal-left' : ''}
-                            style={revealControls ? { animationDelay: '260ms' } : undefined}
-                        >
-                            <ListHeader
-                                labels={safeListLabels}
-                                colWidths={safeColWidths}
-                                sortKey={sortKey}
-                                sortDirection={sortDirection}
-                                onHeaderClick={onHeaderClick}
-                                accentColor={accentColor}
-                            />
-                        </div>
+                        <ListHeader
+                            labels={safeListLabels}
+                            colWidths={safeColWidths}
+                            sortKey={sortKey}
+                            sortDirection={sortDirection}
+                            onHeaderClick={onHeaderClick}
+                            accentColor={accentColor}
+                        />
                     )}
                 </div>
             </div>
@@ -814,4 +759,5 @@ function TopSection({
         </>
     )
 }
+
 export default TopSection

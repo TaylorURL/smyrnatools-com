@@ -127,7 +127,7 @@ function RegionsView({ title = 'Regions' }) {
                                 </button>
                             </div>
                         ) : (
-                            <div className="bg-white border border-slate-200 overflow-hidden">
+                            <div className="bg-white border border-border-light overflow-hidden">
                                 <table className="w-full">
                                     <tbody className="divide-y divide-slate-100">
                                         {filteredRegions.map((region, index) => {

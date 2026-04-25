@@ -3,64 +3,166 @@ import React from 'react'
 import TopSection from '../../../app/components/sections/TopSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 
-const RefreshButton = ({ accentColor, isRefreshing, onClick }) => (
-    <button
-        className="flex items-center gap-1.5 px-3 py-2.5 sm:px-4 rounded-lg text-white text-xs sm:text-sm font-semibold transition-all"
-        style={{ background: accentColor }}
-        onClick={onClick}
-        type="button"
+/* ── Shared atoms — all flat, Plan-tab aesthetic ────────────────────────── */
+
+/** Flat select with native chevron — no SVG-bg hack, matches the Plan tab. */
+const flatSelectClass = 'text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7'
+const flatSelectStyle = {
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-light)',
+    color: 'var(--text-primary)'
+}
+
+const FlatSelect = ({ value, onChange, options, ariaLabel, className = '' }) => (
+    <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${flatSelectClass} ${className}`}
+        style={flatSelectStyle}
+        aria-label={ariaLabel}
     >
-        <i className={`fas fa-sync ${isRefreshing ? 'fa-spin' : ''}`} />
-        <span className="hidden sm:inline">Refresh</span>
+        {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+                {opt.label}
+            </option>
+        ))}
+    </select>
+)
+
+/** Refresh button — Plan-tab subtle action button. */
+const RefreshButton = ({ isRefreshing, onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        disabled={isRefreshing}
+        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+        style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)',
+            color: 'var(--text-primary)'
+        }}
+    >
+        <i className={`fas fa-rotate ${isRefreshing ? 'fa-spin' : ''}`} />
+        <span className="hidden sm:inline">{isRefreshing ? 'Syncing…' : 'Refresh'}</span>
     </button>
 )
 
-const QC_TYPE_OPTIONS = [
-    { value: 'all', label: 'All Types' },
-    { value: 'qc_strength', label: 'QC Strength' },
-    { value: 'third_party_lab', label: 'Third Party Lab' }
-]
+/** Plant filter button — same chrome as the rest of the filter row. */
+const PlantFilterButton = ({ displayText, onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className="text-[12px] font-medium cursor-pointer rounded py-1.5 px-2 flex items-center gap-1.5 max-w-[200px]"
+        style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)',
+            color: 'var(--text-primary)'
+        }}
+        title={displayText}
+    >
+        <span className="truncate">{displayText}</span>
+        <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
+    </button>
+)
 
-const QC_STATUS_OPTIONS = [
-    { value: 'all', label: 'All Status' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'reviewed', label: 'Reviewed' }
-]
+/** Compact pill toggle — sliding-segment look matching Plan tab's view-mode toggle. */
+const PillToggle = ({ options, value, onChange }) => {
+    const { preferences } = usePreferences()
+    const accentColor = preferences.accentColor || '#1e3a5f'
+    return (
+        <div
+            className="inline-flex items-center rounded p-0.5 gap-0.5"
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
+        >
+            {options.map((opt) => {
+                const active = value === opt.value
+                return (
+                    <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => onChange(opt.value)}
+                        className="rounded text-[11.5px] font-semibold cursor-pointer border-none px-2 py-1 transition-colors"
+                        style={{
+                            background: active ? accentColor : 'transparent',
+                            color: active ? '#fff' : 'var(--text-secondary)'
+                        }}
+                    >
+                        {opt.label}
+                    </button>
+                )
+            })}
+        </div>
+    )
+}
 
-const PillToggle = ({ options, value, onChange }) => (
-    <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
-        {options.map((opt) => (
-            <button
-                key={opt.value}
-                type="button"
-                onClick={() => onChange(opt.value)}
-                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
-                    value === opt.value
-                        ? 'bg-slate-800 text-white'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                }`}
-            >
-                {opt.label}
-            </button>
-        ))}
+/** Compact date-range picker matching FlatSelect chrome. */
+const DateRange = ({ from, to, onFromChange, onToChange }) => (
+    <div
+        className="flex items-center gap-1 rounded px-2 py-1 w-full sm:w-auto"
+        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+    >
+        <i className="fas fa-calendar-alt text-[10px] shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+        <input
+            type="date"
+            value={from}
+            onChange={(e) => onFromChange(e.target.value)}
+            className="text-[12px] bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem]"
+            style={{ color: 'var(--text-primary)' }}
+        />
+        <span className="text-[10px] select-none mx-0.5" style={{ color: 'var(--text-tertiary)' }}>
+            –
+        </span>
+        <input
+            type="date"
+            value={to}
+            onChange={(e) => onToChange(e.target.value)}
+            className="text-[12px] bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem]"
+            style={{ color: 'var(--text-primary)' }}
+        />
     </div>
 )
 
-/** Sticky page header — search, plant picker, pill tab strip. */
+const SortSelect = ({ value, onChange, options }) => (
+    <FlatSelect
+        value={value}
+        onChange={onChange}
+        options={options}
+        ariaLabel="Sort"
+        className="flex-1 sm:flex-none min-w-[130px]"
+    />
+)
+
+const ClearButton = ({ onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className="flex items-center gap-1 rounded text-[12px] font-semibold px-2 py-1.5 cursor-pointer transition-colors"
+        style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)',
+            color: 'var(--text-secondary)'
+        }}
+    >
+        <i className="fas fa-times text-[10px]" />
+        Clear
+    </button>
+)
+
+/* ── Top toolbar — wraps TopSection with search + plant + refresh ─────── */
+
+/**
+ * Sticky page header for Reports. Drops the in-toolbar tab strip — the tab
+ * pills now live in `<ReportsActionBar>` rendered below this toolbar so the
+ * page reads like the Plan tab (TopSection on top, action bar underneath).
+ */
 function ReportsToolbar({
     plantDisplayText,
     onPlantModalOpen,
-    isRefreshing,
-    onRefresh,
     isLoading = false,
     searchInput,
     onSearchInputChange,
-    onClearSearch,
-    tabStrip = null
+    onClearSearch
 }) {
-    const { preferences } = usePreferences()
-    const accentColor = preferences.accentColor || '#1e3a5f'
-
     return (
         <TopSection
             isLoading={isLoading}
@@ -73,21 +175,121 @@ function ReportsToolbar({
             onSearchInputChange={onSearchInputChange}
             onClearSearch={onClearSearch}
             customFilters={
-                <div className="flex items-center flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-                    <RefreshButton accentColor={accentColor} isRefreshing={isRefreshing} onClick={onRefresh} />
-                    <button
-                        className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2.5 sm:px-4 text-xs sm:text-sm font-medium text-slate-800 cursor-pointer max-w-[140px] sm:max-w-[200px] truncate pr-8 sm:pr-9 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_8px_center] sm:bg-[right_10px_center] bg-no-repeat transition-all text-left"
-                        onClick={onPlantModalOpen}
-                        type="button"
-                    >
-                        {plantDisplayText}
-                    </button>
+                <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto">
+                    <PlantFilterButton displayText={plantDisplayText} onClick={onPlantModalOpen} />
                 </div>
             }
-            customBottomContent={tabStrip}
         />
     )
 }
+
+/* ── Action bar — Plan-tab style toolbar that hosts the tab pills ─────── */
+
+/**
+ * Slim sticky bar rendered directly below `ReportsToolbar`. Mirrors the
+ * PlanView header bar: scope chip on the left, action buttons in the
+ * middle, and the tab segmented control on the right. Tabs replace the
+ * old in-toolbar tab strip so the layout matches Plan / Schedule / Demand.
+ */
+export function ReportsActionBar({
+    tabs,
+    activeTab,
+    onTabChange,
+    onExport,
+    canExport = false,
+    isExporting = false,
+    isRefreshing = false,
+    onRefresh,
+    scopeLabel,
+    leftChildren,
+    rightChildren
+}) {
+    const { preferences } = usePreferences()
+    const accentColor = preferences.accentColor || '#1e3a5f'
+    const isDark = preferences.themeMode === 'dark'
+    const safeTabs = Array.isArray(tabs) ? tabs : []
+
+    return (
+        <div
+            className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2"
+            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+        >
+            {onRefresh && <RefreshButton isRefreshing={isRefreshing} onClick={onRefresh} />}
+            {scopeLabel && (
+                <span
+                    className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1"
+                    style={{
+                        background: `${accentColor}${isDark ? '30' : '15'}`,
+                        color: accentColor
+                    }}
+                >
+                    <i className="fas fa-bullseye text-[9px]" />
+                    {scopeLabel}
+                </span>
+            )}
+            {leftChildren}
+            <div className="flex items-center gap-1.5 ml-auto flex-wrap">
+                {onExport && (
+                    <button
+                        type="button"
+                        onClick={onExport}
+                        disabled={!canExport || isExporting}
+                        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-primary)'
+                        }}
+                        title="Export the current view to CSV"
+                    >
+                        <i className={`fas ${isExporting ? 'fa-spinner fa-spin' : 'fa-file-export'}`} />
+                        <span className="hidden sm:inline">{isExporting ? 'Exporting…' : 'Export'}</span>
+                    </button>
+                )}
+                {rightChildren}
+                {safeTabs.length > 1 && (
+                    <div
+                        className="flex items-center rounded p-0.5 overflow-x-auto"
+                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
+                    >
+                        {safeTabs.map(({ key, label, icon }) => {
+                            const isActive = activeTab === key
+                            return (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => onTabChange?.(key)}
+                                    className="flex items-center gap-1.5 rounded text-[12px] font-semibold border-none cursor-pointer px-2.5 py-1.5 whitespace-nowrap"
+                                    style={{
+                                        backgroundColor: isActive ? accentColor : 'transparent',
+                                        color: isActive ? '#fff' : 'var(--text-secondary)'
+                                    }}
+                                >
+                                    {icon && <i className={`fas ${icon} text-[11px]`} />}
+                                    <span>{label}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+/* ── Per-tab filter bars — same flat chrome as Plan tab dropdowns ─────── */
+
+const QC_TYPE_OPTIONS = [
+    { value: 'all', label: 'All Types' },
+    { value: 'qc_strength', label: 'QC Strength' },
+    { value: 'third_party_lab', label: 'Third Party Lab' }
+]
+
+const QC_STATUS_OPTIONS = [
+    { value: 'all', label: 'All Status' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'reviewed', label: 'Reviewed' }
+]
 
 export function QcFilterBar({
     qcTypeFilter,
@@ -107,27 +309,18 @@ export function QcFilterBar({
         <div className="flex items-stretch sm:items-center flex-wrap gap-2 w-full">
             <PillToggle options={QC_TYPE_OPTIONS} value={qcTypeFilter} onChange={onQcTypeFilterChange} />
             <PillToggle options={QC_STATUS_OPTIONS} value={qcStatusFilter} onChange={onQcStatusFilterChange} />
-            {qcHasActiveFilters && (
-                <button
-                    type="button"
-                    onClick={onClearQcFilters}
-                    className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium bg-white border border-gray-200 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                >
-                    <i className="fas fa-times text-[10px]" />
-                    Clear
-                </button>
-            )}
+            {qcHasActiveFilters && <ClearButton onClick={onClearQcFilters} />}
             <div className="flex items-stretch sm:items-center flex-wrap gap-2 w-full sm:w-auto sm:ml-auto">
-                <select
+                <SortSelect
                     value={qcSort}
-                    onChange={(e) => onQcSortChange(e.target.value)}
-                    className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 cursor-pointer pr-7 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E')] bg-[length:14px] bg-[right_6px_center] bg-no-repeat focus:outline-none flex-1 sm:flex-none"
-                >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="cast_desc">Cast Date ↓</option>
-                    <option value="cast_asc">Cast Date ↑</option>
-                </select>
+                    onChange={onQcSortChange}
+                    options={[
+                        { value: 'newest', label: 'Newest First' },
+                        { value: 'oldest', label: 'Oldest First' },
+                        { value: 'cast_desc', label: 'Cast Date ↓' },
+                        { value: 'cast_asc', label: 'Cast Date ↑' }
+                    ]}
+                />
                 <DateRange
                     from={qcDateFrom}
                     to={qcDateTo}
@@ -145,50 +338,6 @@ const REVIEW_STATUS_OPTIONS = [
     { label: 'Reviewed', value: 'reviewed' }
 ]
 
-const DateRange = ({ from, to, onFromChange, onToChange }) => (
-    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2.5 py-2 w-full sm:w-auto">
-        <i className="fas fa-calendar-alt text-slate-400 text-[10px] shrink-0" />
-        <input
-            type="date"
-            value={from}
-            onChange={(e) => onFromChange(e.target.value)}
-            className="text-xs text-slate-600 bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem]"
-        />
-        <span className="text-slate-300 text-[10px] select-none mx-0.5">–</span>
-        <input
-            type="date"
-            value={to}
-            onChange={(e) => onToChange(e.target.value)}
-            className="text-xs text-slate-600 bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem]"
-        />
-    </div>
-)
-
-const SortSelect = ({ value, onChange, options }) => (
-    <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 cursor-pointer pr-7 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E')] bg-[length:14px] bg-[right_6px_center] bg-no-repeat focus:outline-none flex-1 sm:flex-none"
-    >
-        {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-                {opt.label}
-            </option>
-        ))}
-    </select>
-)
-
-const ClearButton = ({ onClick }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium bg-white border border-gray-200 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-    >
-        <i className="fas fa-times text-[10px]" />
-        Clear
-    </button>
-)
-
 export function ReviewFilterBar({
     statusFilter,
     onStatusFilterChange,
@@ -204,29 +353,28 @@ export function ReviewFilterBar({
     hasActiveFilters,
     onClear
 }) {
+    const reportTypeSelectOptions = [
+        { value: '', label: 'All Report Types' },
+        ...reportTypeOptions.map((opt) => ({ value: opt.name, label: opt.title }))
+    ]
     return (
         <div className="flex items-stretch sm:items-center flex-wrap gap-2 w-full">
             <PillToggle options={REVIEW_STATUS_OPTIONS} value={statusFilter} onChange={onStatusFilterChange} />
-            <select
+            <FlatSelect
                 value={reportTypeFilter || ''}
-                onChange={(e) => onReportTypeFilterChange(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 cursor-pointer pr-7 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E')] bg-[length:14px] bg-[right_6px_center] bg-no-repeat focus:outline-none min-w-0 sm:min-w-[150px] flex-1 sm:flex-none"
-            >
-                <option value="">All Report Types</option>
-                {reportTypeOptions.map((opt) => (
-                    <option key={opt.name} value={opt.name}>
-                        {opt.title}
-                    </option>
-                ))}
-            </select>
+                onChange={onReportTypeFilterChange}
+                options={reportTypeSelectOptions}
+                ariaLabel="Report type"
+                className="min-w-0 sm:min-w-[150px] flex-1 sm:flex-none"
+            />
             {hasActiveFilters && <ClearButton onClick={onClear} />}
             <div className="flex items-stretch sm:items-center flex-wrap gap-2 w-full sm:w-auto sm:ml-auto">
                 <SortSelect
                     value={sort}
                     onChange={onSortChange}
                     options={[
-                        { label: 'Newest First', value: 'newest' },
-                        { label: 'Oldest First', value: 'oldest' }
+                        { value: 'newest', label: 'Newest First' },
+                        { value: 'oldest', label: 'Oldest First' }
                     ]}
                 />
                 <DateRange from={dateFrom} to={dateTo} onFromChange={onDateFromChange} onToChange={onDateToChange} />
@@ -267,45 +415,43 @@ export function LossFilterBar({
     onClear,
     onExport
 }) {
-    const selectClass =
-        "appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 cursor-pointer pr-7 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E')] bg-[length:14px] bg-[right_6px_center] bg-no-repeat focus:outline-none flex-1 sm:flex-none"
     return (
         <div className="flex items-stretch sm:items-center flex-wrap gap-2 w-full">
-            <select
+            <FlatSelect
                 value={dumpLocationFilter}
-                onChange={(e) => onDumpLocationFilterChange(e.target.value)}
-                className={selectClass}
-            >
-                {LOSS_DUMP_LOCATION_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                    </option>
-                ))}
-            </select>
-            <select value={reasonFilter} onChange={(e) => onReasonFilterChange(e.target.value)} className={selectClass}>
-                {LOSS_REASON_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                    </option>
-                ))}
-            </select>
+                onChange={onDumpLocationFilterChange}
+                options={LOSS_DUMP_LOCATION_OPTIONS}
+                ariaLabel="Dump location"
+            />
+            <FlatSelect
+                value={reasonFilter}
+                onChange={onReasonFilterChange}
+                options={LOSS_REASON_OPTIONS}
+                ariaLabel="Reason"
+            />
             {hasActiveFilters && <ClearButton onClick={onClear} />}
             <div className="flex items-stretch sm:items-center flex-wrap gap-2 w-full sm:w-auto sm:ml-auto">
                 {onExport && (
                     <button
                         type="button"
                         onClick={onExport}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-gray-200 text-slate-700 hover:bg-slate-50 transition-colors flex-1 sm:flex-none"
+                        className="flex items-center justify-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer flex-1 sm:flex-none"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-primary)'
+                        }}
                     >
-                        <i className="fas fa-file-export text-[10px]" /> Export
+                        <i className="fas fa-file-export text-[10px]" />
+                        Export
                     </button>
                 )}
                 <SortSelect
                     value={sort}
                     onChange={onSortChange}
                     options={[
-                        { label: 'Newest First', value: 'newest' },
-                        { label: 'Oldest First', value: 'oldest' }
+                        { value: 'newest', label: 'Newest First' },
+                        { value: 'oldest', label: 'Oldest First' }
                     ]}
                 />
                 <DateRange from={dateFrom} to={dateTo} onFromChange={onDateFromChange} onToChange={onDateToChange} />
@@ -327,16 +473,27 @@ export function MobileFilterShell({ activeCount = 0, children, defaultOpen = fal
                 <button
                     type="button"
                     onClick={() => setOpen((v) => !v)}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-gray-200 text-slate-700"
+                    className="inline-flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5"
+                    style={{
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-light)',
+                        color: 'var(--text-primary)'
+                    }}
                 >
-                    <i className={`fas fa-sliders text-[10px]`} />
+                    <i className="fas fa-sliders text-[10px]" />
                     {label}
                     {activeCount > 0 && (
-                        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-slate-800 text-white text-[10px] font-bold">
+                        <span
+                            className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold"
+                            style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)' }}
+                        >
                             {activeCount}
                         </span>
                     )}
-                    <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px] text-slate-400`} />
+                    <i
+                        className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`}
+                        style={{ color: 'var(--text-tertiary)' }}
+                    />
                 </button>
             </div>
             <div className={`${open ? 'block' : 'hidden'} sm:block`}>{children}</div>

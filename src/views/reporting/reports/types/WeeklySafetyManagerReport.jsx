@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom'
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
 import { ReportUtility } from '../../../../utils/ReportUtility'
 const SAFETY_INPUT =
-    'w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800 box-border disabled:bg-slate-50 disabled:text-slate-500'
+    'w-full rounded-lg border border-border-light bg-white px-4 py-3 text-[0.9375rem] text-slate-800 box-border disabled:bg-bg-secondary disabled:text-slate-500'
 const SAFETY_TEXTAREA = `${SAFETY_INPUT} min-h-[120px] resize-y`
 const TAG_OPTIONS = ['Accident', 'Injury', 'Non-DOT', 'DOT', 'Compliance', 'Environmental', 'Reprimand', 'Safety']
 const TAG_COLORS = {
@@ -43,7 +43,7 @@ function TagPicker({ value, options, disabled, placeholder, onChange }) {
             onClick={() => setOpen(false)}
         >
             <div
-                className="flex w-full max-w-[400px] max-h-[80vh] flex-col overflow-hidden rounded-xl bg-[var(--bg-primary)] shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
+                className="flex w-full max-w-[400px] max-h-[80vh] flex-col overflow-hidden rounded bg-[var(--bg-primary)] shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between border-b border-[var(--border-light)] bg-[var(--bg-secondary)] px-5 py-4">
@@ -137,7 +137,7 @@ function TagPicker({ value, options, disabled, placeholder, onChange }) {
         <div className="relative w-full">
             <button
                 type="button"
-                className="flex items-center justify-between w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800 text-left cursor-pointer disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                className="flex items-center justify-between w-full rounded-lg border border-border-light bg-white px-4 py-3 text-[0.9375rem] text-slate-800 text-left cursor-pointer disabled:bg-bg-secondary disabled:text-slate-500 disabled:cursor-not-allowed"
                 ref={btnRef}
                 disabled={disabled}
                 aria-expanded={open}
@@ -269,7 +269,7 @@ export function SafetyManagerSubmitPlugin({ form, setForm, plants, readOnly }) {
     }
     return (
         <>
-            <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
+            <div className="rounded border border-border-light bg-white p-6 mb-6">
                 <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
                     <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-red-100 text-red-600 text-base">
@@ -307,9 +307,9 @@ export function SafetyManagerSubmitPlugin({ form, setForm, plants, readOnly }) {
                             return (
                                 <div
                                     key={issue.id}
-                                    className="rounded-xl border border-gray-200 bg-slate-50 overflow-hidden"
+                                    className="rounded border border-border-light bg-bg-secondary overflow-hidden"
                                 >
-                                    <div className="flex items-center justify-between gap-4 p-4 bg-slate-100 border-b border-gray-200 flex-wrap">
+                                    <div className="flex items-center justify-between gap-4 p-4 bg-slate-100 border-b border-border-light flex-wrap">
                                         <div className="flex items-center justify-center h-7 w-7 rounded-full bg-accent text-white text-[0.8125rem] font-semibold">
                                             <span>{idx + 1}</span>
                                         </div>
@@ -355,7 +355,7 @@ export function SafetyManagerSubmitPlugin({ form, setForm, plants, readOnly }) {
                                                         setSelectedIssueIdForPlant(issue.id)
                                                         setShowPlantModal(true)
                                                     }}
-                                                    className="flex items-center justify-between w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800 text-left cursor-pointer disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                                    className="flex items-center justify-between w-full rounded-lg border border-border-light bg-white px-4 py-3 text-[0.9375rem] text-slate-800 text-left cursor-pointer disabled:bg-bg-secondary disabled:text-slate-500 disabled:cursor-not-allowed"
                                                 >
                                                     <span>
                                                         {issue.plant
@@ -505,7 +505,7 @@ function getIssueTags(issue) {
 }
 function IssueCardHeader({ issue, idx, onRemove, readOnly }) {
     return (
-        <div className="flex items-center justify-between gap-4 p-4 bg-slate-100 border-b border-gray-200 flex-wrap">
+        <div className="flex items-center justify-between gap-4 p-4 bg-slate-100 border-b border-border-light flex-wrap">
             <div className="flex items-center justify-center h-7 w-7 rounded-full bg-accent text-white text-[0.8125rem] font-semibold">
                 <span>{idx + 1}</span>
             </div>
@@ -603,7 +603,7 @@ export function SafetyManagerReviewPlugin({ form }) {
     const issues = normalizeIssues(form.issues)
     if (issues.length === 0) {
         return (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
+            <div className="rounded border border-border-light bg-white p-6 mb-6">
                 <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
                     <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-emerald-100 text-emerald-600 text-base">
@@ -622,7 +622,7 @@ export function SafetyManagerReviewPlugin({ form }) {
         )
     }
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
+        <div className="rounded border border-border-light bg-white p-6 mb-6">
             <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
                 <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-red-100 text-red-600 text-base">
@@ -646,12 +646,12 @@ export function SafetyManagerReviewPlugin({ form }) {
                     return (
                         <div
                             key={issue.id || idx}
-                            className="rounded-xl border border-gray-200 bg-slate-50 overflow-hidden"
+                            className="rounded border border-border-light bg-bg-secondary overflow-hidden"
                         >
                             <IssueCardHeader issue={issue} idx={idx} readOnly />
                             <div className="flex flex-col gap-4 p-5">
                                 <TagsDisplay tags={tags} readOnly />
-                                <div className="rounded-lg border border-gray-200 bg-white p-4">
+                                <div className="rounded-lg border border-border-light bg-white p-4">
                                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
                                         <i className="fas fa-file-alt"></i>Description
                                     </div>

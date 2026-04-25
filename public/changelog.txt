@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [38.5.45] - 2026-04-24
+
+- Added JobMapModal component for viewing plant-to-job routes on an embedded Google Map with live traffic data, travel time comparison, and round-trip estimates
+- Added TruckCoverageHoverCard component showing detailed truck coverage breakdowns on hover, including pool timeline, dispatch vs computed truck counts, and big-pour flags
+- Integrated JobMapModal and TruckCoverageHoverCard into DashboardScheduleSection so job addresses are clickable map links and truck counts show rich hover details
+- Extracted JobMapModal and TruckCoverageHoverCard into shared schedule components for reuse across PlanView and Dashboard
+- Refactored PlanScheduleView to remove inlined map modal and truck hover card logic in favor of the new shared components
+- Expanded PlanView with schedule-tab integration, wiring up the shared JobMapModal and TruckCoverageHoverCard with full pool-timeline data
+- Updated PlanDemandView with layout and prop adjustments for consistency with the schedule tab changes
+- Added plant address lookup support to DashboardScheduleSection for powering map routes
+- Updated usePlanActions hook with adjusted plan action handling
+
 ## [38.5.44] - 2026-04-24
 
 - Redesigned DashboardHeader with frosted-glass backdrop blur, gradient accent band, region name as primary title, and a labeled "Dashboard" badge pill

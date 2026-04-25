@@ -660,11 +660,11 @@ function OperatorsView({
                                             (t) => t.employeeId === operator.assignedTrainer
                                         )
                                         const cellCls =
-                                            'text-text-primary text-[15px] font-medium py-5 px-6 text-left align-middle'
+                                            'text-text-primary text-[12px] font-medium py-1.5 px-2.5 text-left align-middle'
                                         const cellSecondaryCls =
-                                            'text-text-secondary text-sm py-5 px-6 text-left align-middle'
+                                            'text-text-secondary text-[11.5px] py-1.5 px-2.5 text-left align-middle'
                                         const cellHighlightCls =
-                                            'text-text-secondary text-base font-bold py-5 px-6 text-left align-middle'
+                                            'text-text-primary text-[12.5px] font-bold py-1.5 px-2.5 text-left align-middle'
                                         const statusBadgeStyle = (status) => {
                                             const colorMap = {
                                                 Active: 'bg-[#dcfce7] text-[#166534]',
@@ -674,11 +674,11 @@ function OperatorsView({
                                                 Terminated: 'bg-[#fecaca] text-[#991b1b]',
                                                 Training: 'bg-[#e0e7ff] text-[#4338ca]'
                                             }
-                                            const colors = colorMap[status] || 'bg-[#f1f5f9] text-[#475569]'
-                                            return `inline-block rounded-3xl text-[13px] font-semibold px-4 py-2 ${colors}`
+                                            const colors = colorMap[status] || 'bg-bg-tertiary text-text-secondary'
+                                            return `inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${colors}`
                                         }
                                         const actionBtnCls =
-                                            'inline-flex items-center justify-center w-[42px] h-[42px] mr-2 rounded-xl border border-border-light bg-bg-primary text-text-secondary text-base cursor-pointer hover:bg-accent hover:text-white hover:border-accent transition-colors'
+                                            'inline-flex items-center justify-center w-5 h-5 mr-0.5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90'
                                         return (
                                             <tr
                                                 key={operator.employeeId}
@@ -743,7 +743,7 @@ function OperatorsView({
                                                                               )
                                                                           )
                                                                         : 1
-                                                                    return ` (${days} day${days !== 1 ? 's' : ''})`
+                                                                    return ` · ${days}d`
                                                                 })()}
                                                         </span>
                                                         <StatusHistoryBar
@@ -781,7 +781,7 @@ function OperatorsView({
                                                         >
                                                             <i className="fas fa-comments"></i>
                                                             {operator.commentsCount > 0 && (
-                                                                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 bg-blue-500 text-white text-[10px] font-bold rounded-full shadow-[0_2px_8px_rgba(59,130,246,0.4)]">
+                                                                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[12px] h-3 px-0.5 bg-blue-500 text-white text-[8px] font-bold rounded leading-none">
                                                                     {operator.commentsCount > 9
                                                                         ? '9+'
                                                                         : operator.commentsCount}

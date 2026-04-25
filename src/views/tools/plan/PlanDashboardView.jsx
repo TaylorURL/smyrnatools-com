@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
 import { timeToMinutes } from '../../../utils/PlanUtility'
 import PlanFlowPreview from './PlanFlowPreview'
-import PlanMiniTimeline from './PlanMiniTimeline'
 import PlanNotesSection from './PlanNotesSection'
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
@@ -37,75 +37,44 @@ const writeMeta = (setPlantProduction, updater) => {
 const makeId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 const emptyJob = () => ({ contractor: '', description: '', id: makeId(), plant: '', time: '', title: '' })
 
-/* ── Sub-components ────────────────────────────────────────────────────── */
+/* ── Sub-components ──────────────────────────────────────────────────────
+ *  Local aliases for the shared `Panel` / `Stat` primitives. Keeping them
+ *  named `StatCard` / `Card` preserves every existing call site in this
+ *  file without a churn-heavy rename. */
 
-function StatCard({ accent, hint, icon, label, value, valueColor }) {
+const StatCard = SharedStat
+const Card = (props) => <SharedPanel {...props} />
+
+function FlowSummary({ color, label, routes, summary }) {
     return (
-        <div
-            className="rounded-xl p-4 flex flex-col gap-0.5"
-            style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                boxShadow: 'var(--shadow-sm)'
-            }}
-        >
-            <div className="flex items-center gap-2">
-                {icon && (
-                    <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: `${accent}14`, color: accent }}
-                    >
-                        <i className={`fas ${icon} text-[11px]`} />
-                    </div>
-                )}
-                <span
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
+        <div className="flex flex-col">
+            <div className="flex items-baseline gap-2 mb-0.5">
+                <span className="inline-block rounded-sm" style={{ background: color, height: 8, width: 8 }} />
+                <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                     {label}
                 </span>
             </div>
-            <div
-                className="font-bold text-[26px] leading-none mt-1"
-                style={{ color: valueColor || 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-            >
-                {value}
+            <div className="text-[13px] font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+                {summary}
             </div>
-            {hint && (
-                <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                    {hint}
+            {routes.length > 0 && (
+                <div className="flex flex-col gap-0.5 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                    {routes.map((r, i) => (
+                        <div key={`${label}-${i}`} className="flex items-baseline gap-2">
+                            <span className="font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                +{r.ops}
+                            </span>
+                            <span>
+                                {r.prefix} {r.partner}
+                            </span>
+                            <span className="font-mono" style={{ color: 'var(--text-tertiary)' }}>
+                                {r.time}
+                            </span>
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
-    )
-}
-
-function Card({ children, icon, iconColor, id, right, title }) {
-    return (
-        <section
-            id={id}
-            className="rounded-xl scroll-mt-4"
-            style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                boxShadow: 'var(--shadow-sm)'
-            }}
-        >
-            <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--border-light)' }}>
-                {icon && (
-                    <i className={`fas ${icon} text-[12px]`} style={{ color: iconColor || 'var(--text-secondary)' }} />
-                )}
-                <span
-                    className="text-[12px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                >
-                    {title}
-                </span>
-                <div className="flex-1" />
-                {right}
-            </div>
-            <div className="p-4">{children}</div>
-        </section>
     )
 }
 
@@ -175,14 +144,14 @@ function JobEditor({ accent, job, onCancel, onSave, plants, tint, titleLabel = '
                 boxShadow: 'var(--shadow-sm)'
             }}
         >
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input
                     autoFocus
                     type="text"
                     value={draft.title || ''}
                     onChange={(e) => update('title', e.target.value)}
                     placeholder={titleLabel}
-                    className="col-span-2 w-full px-3 py-2 rounded-md text-sm font-semibold outline-none"
+                    className="sm:col-span-2 w-full px-3 py-2 rounded-md text-sm font-semibold outline-none"
                     style={{
                         background: 'var(--bg-secondary)',
                         border: '1px solid var(--border-light)',
@@ -223,7 +192,7 @@ function JobEditor({ accent, job, onCancel, onSave, plants, tint, titleLabel = '
                     value={draft.contractor || ''}
                     onChange={(e) => update('contractor', e.target.value)}
                     placeholder="Contractor or job ref"
-                    className="col-span-2 w-full px-3 py-2 rounded-md text-sm"
+                    className="sm:col-span-2 w-full px-3 py-2 rounded-md text-sm"
                     style={{
                         background: 'var(--bg-primary)',
                         border: '1px solid var(--border-medium)',
@@ -235,7 +204,7 @@ function JobEditor({ accent, job, onCancel, onSave, plants, tint, titleLabel = '
                     onChange={(e) => update('description', e.target.value)}
                     placeholder="What needs attention? Any crew / spec / timing notes…"
                     rows={3}
-                    className="col-span-2 w-full px-3 py-2 rounded-md text-sm outline-none resize-none"
+                    className="sm:col-span-2 w-full px-3 py-2 rounded-md text-sm outline-none resize-none"
                     style={{
                         background: 'var(--bg-primary)',
                         border: '1px solid var(--border-medium)',
@@ -347,8 +316,6 @@ function JobsSection({
     accent,
     canEdit = true,
     emptyHint,
-    icon,
-    iconColor,
     id,
     jobs,
     onCreate,
@@ -386,8 +353,6 @@ function JobsSection({
         <Card
             id={id}
             title={`${title} · ${jobs.length}`}
-            icon={icon}
-            iconColor={iconColor}
             right={
                 canEdit && (
                     <button
@@ -458,13 +423,6 @@ const YOUR_SECTION_LABELS = {
     plant: 'Your Plant',
     region: 'Your Region'
 }
-const YOUR_SECTION_ICONS = {
-    dispatch: 'fa-truck-fast',
-    district: 'fa-map-location-dot',
-    plant: 'fa-user-tie',
-    region: 'fa-map'
-}
-
 const NAV_SECTIONS = [
     { icon: 'fa-chart-line', id: 'overview', label: 'Overview' },
     { icon: 'fa-user-tie', id: 'my-plant', label: 'Your Plant', requiresYourScope: true },
@@ -473,8 +431,7 @@ const NAV_SECTIONS = [
     { icon: 'fa-circle-exclamation', id: 'special', label: 'Special Attention' },
     { icon: 'fa-vial-circle-check', id: 'qc', label: 'QC Attention' },
     { icon: 'fa-triangle-exclamation', id: 'insights', label: 'Plan Insights' },
-    { icon: 'fa-cubes', id: 'yardage', label: 'Yardage by Plant' },
-    { icon: 'fa-chart-gantt', id: 'timeline', label: 'Timeline' }
+    { icon: 'fa-cubes', id: 'yardage', label: 'Yardage by Plant' }
 ]
 
 function SideNav({
@@ -486,61 +443,38 @@ function SideNav({
     sections,
     specialCount,
     qcCount,
-    yourSectionLabel,
-    yourSectionIcon
+    yourSectionLabel
 }) {
     return (
-        <aside className="hidden lg:block sticky top-0 self-start py-5 pr-3" style={{ width: 240 }}>
-            <div
-                className="rounded-xl p-3"
-                style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-light)',
-                    boxShadow: 'var(--shadow-sm)'
-                }}
-            >
-                <div
-                    className="text-[10px] font-bold uppercase tracking-wider mb-2 px-2"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
-                    Plan sections
-                </div>
-                <nav className="flex flex-col gap-0.5">
-                    {sections.map((section) => {
-                        if (section.requiresYourScope && !hasYourScope) return null
-                        if (section.id === 'insights' && !hasInsights) return null
-                        const isActive = activeId === section.id
-                        const badge = section.id === 'special' ? specialCount : section.id === 'qc' ? qcCount : null
-                        const icon = section.id === 'my-plant' ? yourSectionIcon || section.icon : section.icon
-                        const label = section.id === 'my-plant' ? yourSectionLabel || section.label : section.label
-                        return (
-                            <button
-                                key={section.id}
-                                onClick={() => onJump(section.id)}
-                                className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg border-none cursor-pointer text-[12.5px] font-semibold text-left transition-colors"
-                                style={{
-                                    background: isActive ? `${accent}14` : 'transparent',
-                                    color: isActive ? accent : 'var(--text-secondary)'
-                                }}
-                            >
-                                <i className={`fas ${icon} text-[11px] w-4 text-center`} />
-                                <span className="flex-1">{label}</span>
-                                {badge != null && badge > 0 && (
-                                    <span
-                                        className="text-[10px] font-bold rounded-full px-1.5 py-0.5"
-                                        style={{
-                                            background: isActive ? accent : 'var(--bg-tertiary)',
-                                            color: isActive ? '#fff' : 'var(--text-secondary)'
-                                        }}
-                                    >
-                                        {badge}
-                                    </span>
-                                )}
-                            </button>
-                        )
-                    })}
-                </nav>
-            </div>
+        <aside className="hidden lg:block sticky top-0 self-start py-5 pr-3" style={{ width: 200 }}>
+            <nav className="flex flex-col">
+                {sections.map((section) => {
+                    if (section.requiresYourScope && !hasYourScope) return null
+                    if (section.id === 'insights' && !hasInsights) return null
+                    const isActive = activeId === section.id
+                    const badge = section.id === 'special' ? specialCount : section.id === 'qc' ? qcCount : null
+                    const label = section.id === 'my-plant' ? yourSectionLabel || section.label : section.label
+                    return (
+                        <button
+                            key={section.id}
+                            onClick={() => onJump(section.id)}
+                            className="flex items-center gap-2 px-2 py-1.5 border-none cursor-pointer text-[13px] text-left bg-transparent"
+                            style={{
+                                borderLeft: `2px solid ${isActive ? accent : 'transparent'}`,
+                                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                fontWeight: isActive ? 600 : 400
+                            }}
+                        >
+                            <span className="flex-1 truncate">{label}</span>
+                            {badge != null && badge > 0 && (
+                                <span className="text-[11px] font-mono" style={{ color: 'var(--text-tertiary)' }}>
+                                    {badge}
+                                </span>
+                            )}
+                        </button>
+                    )
+                })}
+            </nav>
         </aside>
     )
 }
@@ -548,7 +482,6 @@ function SideNav({
 /* ── Right "at a glance" rail ──────────────────────────────────────────── */
 
 function AtAGlancePanel({
-    accent,
     earliestClockIn,
     planDate,
     shiftSpanHours,
@@ -566,78 +499,46 @@ function AtAGlancePanel({
               year: 'numeric'
           })
         : ''
-    const row = (icon, label, value, color) => (
-        <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-                style={{ background: `${accent}14`, color: accent }}
-            >
-                <i className={`fas ${icon} text-[11px]`} />
-            </div>
-            <div className="flex-1 min-w-0">
-                <div
-                    className="text-[10px] uppercase tracking-wider font-bold"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
-                    {label}
-                </div>
-                <div
-                    className="font-bold text-[15px]"
-                    style={{ color: color || 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                >
-                    {value}
-                </div>
-            </div>
-        </div>
-    )
+    const rows = [
+        { label: 'Routes', value: (validAssignmentCount || 0).toString() },
+        { label: 'Operators', value: (totalOps || 0).toString() },
+        { label: 'Yardage', value: totalYardage.toLocaleString() },
+        {
+            color: earliestClockIn ? '#16a34a' : undefined,
+            label: 'Earliest clock-in',
+            value: earliestClockIn || '—'
+        },
+        {
+            color: shiftSpanHours && shiftSpanHours > 10 ? '#d97706' : undefined,
+            label: 'Shift span',
+            value: shiftSpanHours ? `${shiftSpanHours}h` : '—'
+        },
+        { label: 'Special attention', value: specialCount.toString() },
+        { label: 'QC attention', value: qcCount.toString() }
+    ]
     return (
-        <aside className="hidden xl:block sticky top-0 self-start py-5 pl-3" style={{ width: 280 }}>
-            <div
-                className="rounded-xl p-4 flex flex-col gap-2"
-                style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-light)',
-                    boxShadow: 'var(--shadow-sm)'
-                }}
-            >
-                <div
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
-                    Plan snapshot
-                </div>
-                <div
-                    className="text-[13px] font-semibold"
-                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                >
-                    {dateLabel}
-                </div>
-                <div className="flex flex-col gap-1.5 mt-1">
-                    {row('fa-route', 'Routes', validAssignmentCount || 0)}
-                    {row('fa-users', 'Operators', totalOps || 0)}
-                    {row('fa-cubes', 'Yardage', totalYardage.toLocaleString())}
-                    {row(
-                        'fa-clock',
-                        'Earliest clock-in',
-                        earliestClockIn || '—',
-                        earliestClockIn ? '#16a34a' : undefined
-                    )}
-                    {row(
-                        'fa-hourglass-half',
-                        'Shift span',
-                        shiftSpanHours ? `${shiftSpanHours}h` : '—',
-                        shiftSpanHours && shiftSpanHours > 10 ? '#d97706' : undefined
-                    )}
-                    {row('fa-circle-exclamation', 'Special attention', specialCount)}
-                    {row('fa-vial-circle-check', 'QC attention', qcCount)}
-                </div>
-                <div className="flex items-center gap-1 text-[11px] mt-1" style={{ color: accent }}>
-                    <i className="fas fa-check-circle" />
-                    <span>Auto-saved</span>
-                </div>
+        <aside className="hidden xl:block sticky top-0 self-start py-5 pl-4" style={{ width: 240 }}>
+            <div className="text-[12px] mb-1" style={{ color: 'var(--text-tertiary)' }}>
+                {dateLabel}
+            </div>
+            <div className="flex flex-col">
+                {rows.map((r) => (
+                    <div
+                        key={r.label}
+                        className="flex items-baseline justify-between py-1.5 border-b"
+                        style={{ borderColor: 'var(--border-light)' }}
+                    >
+                        <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                            {r.label}
+                        </span>
+                        <span
+                            className="text-[13px] font-semibold font-mono"
+                            style={{ color: r.color || 'var(--text-primary)' }}
+                        >
+                            {r.value}
+                        </span>
+                    </div>
+                ))}
             </div>
         </aside>
     )
@@ -685,7 +586,6 @@ function PlanDashboardView({
     const hasYourScope = scopePlantSet.size > 0
     const yourSectionKind = yourPlantScope?.kind || 'plant'
     const yourSectionLabel = YOUR_SECTION_LABELS[yourSectionKind]
-    const yourSectionIcon = YOUR_SECTION_ICONS[yourSectionKind]
     const yourSectionTitle = yourPlantScope?.label || yourSectionLabel
     const [checked, setChecked] = useState({})
     const toggle = (key) => setChecked((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -901,7 +801,7 @@ function PlanDashboardView({
 
     return (
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-            <div className="mx-auto w-full max-w-[1600px] px-4 lg:px-6 flex gap-4">
+            <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 lg:px-6 flex gap-4">
                 {/* LEFT — sticky scrollspy nav */}
                 <SideNav
                     accent={accentColor}
@@ -912,41 +812,33 @@ function PlanDashboardView({
                     sections={NAV_SECTIONS}
                     specialCount={specialJobs.length}
                     qcCount={qcJobs.length}
-                    yourSectionIcon={yourSectionIcon}
                     yourSectionLabel={yourSectionLabel}
                 />
 
                 {/* CENTER — main content */}
-                <div className="flex-1 min-w-0 py-5 flex flex-col gap-5">
-                    {/* Overview — hero stats (fleet-wide figures with in-plan context) */}
+                <div className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
+                    {/* Overview — fleet-wide stats with in-plan context */}
                     <section id="overview" className="scroll-mt-4">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        <div
+                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden"
+                            style={{ border: '1px solid var(--border-light)' }}
+                        >
                             <StatCard
-                                accent={accentColor}
-                                icon="fa-users"
                                 label="Operators"
                                 value={totalOperatorsFleet.toLocaleString()}
-                                hint={
-                                    totalOps > 0
-                                        ? `${totalOps} moving today · ${movementPct}% of fleet`
-                                        : 'No operators being moved today'
-                                }
+                                hint={totalOps > 0 ? `${totalOps} moving · ${movementPct}%` : 'None moving today'}
                             />
                             <StatCard
-                                accent={accentColor}
-                                icon="fa-industry"
                                 label="Plants"
                                 value={`${stats.length}/${regionPlantCount || stats.length}`}
                                 valueColor={stats.length < regionPlantCount ? '#d97706' : undefined}
                                 hint={
                                     stats.length < regionPlantCount
-                                        ? `${regionPlantCount - stats.length} not in today's plan`
-                                        : 'All plants in plan'
+                                        ? `${regionPlantCount - stats.length} not in plan`
+                                        : 'All in plan'
                                 }
                             />
                             <StatCard
-                                accent={accentColor}
-                                icon="fa-route"
                                 label="Routes"
                                 value={validAssignmentCount}
                                 hint={
@@ -964,45 +856,39 @@ function PlanDashboardView({
                                                   ? ''
                                                   : 's'
                                           }`
-                                        : 'Nothing scheduled yet'
+                                        : 'Nothing scheduled'
                                 }
                             />
                             <StatCard
-                                accent={accentColor}
-                                icon="fa-cubes"
-                                label="Total yardage"
+                                label="Yardage"
                                 value={totalYardage.toLocaleString()}
                                 hint={
                                     plantsMissingProduction > 0
-                                        ? `${plantsWithYardage}/${stats.length} plants reporting · avg ${avgYardagePerPlant} yd`
+                                        ? `${plantsWithYardage}/${stats.length} reporting · avg ${avgYardagePerPlant}`
                                         : plantsWithYardage > 0
                                           ? `Avg ${avgYardagePerPlant} yd / plant`
-                                          : 'No production entered'
+                                          : 'No production'
                                 }
                                 valueColor={
                                     plantsMissingProduction > 0 && plantsWithYardage > 0 ? '#d97706' : undefined
                                 }
                             />
                             <StatCard
-                                accent={accentColor}
-                                icon="fa-clock"
                                 label="Earliest clock-in"
                                 value={earliestClockIn || '—'}
                                 valueColor={earliestClockIn ? '#16a34a' : undefined}
-                                hint={earliestClockIn ? 'First operator departs' : 'No routes scheduled'}
+                                hint={earliestClockIn ? 'First departure' : 'No routes'}
                             />
                             <StatCard
-                                accent={accentColor}
-                                icon="fa-hourglass-half"
                                 label="Shift span"
                                 value={shiftSpanHours ? `${shiftSpanHours}h` : '—'}
                                 valueColor={shiftSpanHours && shiftSpanHours > 10 ? '#d97706' : undefined}
                                 hint={
                                     shiftSpanHours
                                         ? shiftSpanHours > 10
-                                            ? 'Overtime likely across fleet'
-                                            : 'Within normal limits'
-                                        : 'No routes scheduled'
+                                            ? 'Overtime likely'
+                                            : 'Within normal'
+                                        : 'No routes'
                                 }
                             />
                         </div>
@@ -1013,231 +899,93 @@ function PlanDashboardView({
                         <Card
                             id="my-plant"
                             title={yourSectionTitle}
-                            icon={yourSectionIcon}
-                            iconColor={accentColor}
                             right={
                                 onSwitchToPlanner && (
                                     <button
                                         onClick={onSwitchToPlanner}
-                                        className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer"
+                                        className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer shrink-0"
                                         style={{ background: accentColor, color: '#fff' }}
+                                        title="Open Planner"
                                     >
-                                        <i className="fas fa-project-diagram mr-1" /> Open Planner
+                                        <i className="fas fa-project-diagram sm:mr-1" />
+                                        <span className="hidden sm:inline">Open Planner</span>
                                     </button>
                                 )
                             }
                         >
                             {myAlertCount > 0 && (
                                 <div
-                                    className="rounded-lg p-3 mb-4 flex items-start gap-3"
+                                    className="rounded p-3 mb-3"
                                     style={{
-                                        background: 'linear-gradient(90deg, #fef3c740, #fee2e240)',
-                                        border: '1px solid #fbbf24'
+                                        background: 'var(--bg-secondary)',
+                                        borderLeft: '3px solid #d97706'
                                     }}
                                 >
-                                    <div
-                                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                                        style={{ background: '#f59e0b', color: '#fff' }}
-                                    >
-                                        <i className="fas fa-triangle-exclamation text-[14px]" />
+                                    <div className="text-[12.5px] mb-1.5" style={{ color: 'var(--text-primary)' }}>
+                                        <span className="font-semibold">
+                                            {myAlertCount} flagged job{myAlertCount === 1 ? '' : 's'}
+                                        </span>{' '}
+                                        in your {scopeNoun}
+                                        {(mySpecialJobs.length > 0 || myQcJobs.length > 0) && (
+                                            <span style={{ color: 'var(--text-secondary)' }}>
+                                                {' — '}
+                                                {mySpecialJobs.length > 0 && `${mySpecialJobs.length} special`}
+                                                {mySpecialJobs.length > 0 && myQcJobs.length > 0 && ', '}
+                                                {myQcJobs.length > 0 && `${myQcJobs.length} QC`}
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div
-                                            className="text-[13px] font-bold"
-                                            style={{ color: '#78350f', fontFamily: 'var(--font-heading)' }}
-                                        >
-                                            {myAlertCount} flagged job{myAlertCount === 1 ? '' : 's'} in your{' '}
-                                            {scopeNoun}
-                                        </div>
-                                        <div className="text-[11px]" style={{ color: '#92400e' }}>
-                                            {mySpecialJobs.length > 0 && (
-                                                <>
-                                                    <b>{mySpecialJobs.length}</b> special attention
-                                                    {myQcJobs.length > 0 && ' · '}
-                                                </>
-                                            )}
-                                            {myQcJobs.length > 0 && (
-                                                <>
-                                                    <b>{myQcJobs.length}</b> QC attention
-                                                </>
-                                            )}
-                                        </div>
-                                        <div className="mt-2 flex flex-col gap-1.5">
-                                            {mySpecialJobs.map((j) => (
-                                                <button
-                                                    key={`alert-s-${j.id}`}
-                                                    onClick={() => jumpTo('special')}
-                                                    className="text-left rounded-md px-2.5 py-1.5 text-[11.5px] border-none cursor-pointer flex items-center gap-2"
-                                                    style={{
-                                                        background: 'rgba(217, 119, 6, 0.15)',
-                                                        color: '#78350f'
-                                                    }}
-                                                >
-                                                    <i
-                                                        className="fas fa-circle-exclamation text-[10px]"
-                                                        style={{ color: '#d97706' }}
-                                                    />
-                                                    <span className="font-semibold flex-1 truncate">
-                                                        {j.title || 'Untitled'}
-                                                    </span>
-                                                    {j.time && (
-                                                        <span
-                                                            className="font-mono text-[10.5px]"
-                                                            style={{ color: '#92400e' }}
-                                                        >
-                                                            {j.time}
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            ))}
-                                            {myQcJobs.map((j) => (
-                                                <button
-                                                    key={`alert-q-${j.id}`}
-                                                    onClick={() => jumpTo('qc')}
-                                                    className="text-left rounded-md px-2.5 py-1.5 text-[11.5px] border-none cursor-pointer flex items-center gap-2"
-                                                    style={{
-                                                        background: 'rgba(124, 58, 237, 0.12)',
-                                                        color: '#5b21b6'
-                                                    }}
-                                                >
-                                                    <i
-                                                        className="fas fa-vial-circle-check text-[10px]"
-                                                        style={{ color: '#7c3aed' }}
-                                                    />
-                                                    <span className="font-semibold flex-1 truncate">
-                                                        {j.title || 'Untitled'}
-                                                    </span>
-                                                    {j.time && (
-                                                        <span
-                                                            className="font-mono text-[10.5px]"
-                                                            style={{ color: '#6d28d9' }}
-                                                        >
-                                                            {j.time}
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            ))}
-                                        </div>
+                                    <div className="flex flex-col gap-1">
+                                        {mySpecialJobs.map((j) => (
+                                            <button
+                                                key={`alert-s-${j.id}`}
+                                                onClick={() => jumpTo('special')}
+                                                className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5"
+                                                style={{ color: 'var(--text-secondary)' }}
+                                            >
+                                                <span style={{ color: '#d97706' }}>•</span>
+                                                <span className="flex-1 truncate">{j.title || 'Untitled'}</span>
+                                                {j.time && <span className="font-mono text-[11px]">{j.time}</span>}
+                                            </button>
+                                        ))}
+                                        {myQcJobs.map((j) => (
+                                            <button
+                                                key={`alert-q-${j.id}`}
+                                                onClick={() => jumpTo('qc')}
+                                                className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5"
+                                                style={{ color: 'var(--text-secondary)' }}
+                                            >
+                                                <span style={{ color: '#7c3aed' }}>•</span>
+                                                <span className="flex-1 truncate">{j.title || 'Untitled'}</span>
+                                                {j.time && <span className="font-mono text-[11px]">{j.time}</span>}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
                             )}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                                <div
-                                    className="rounded-lg p-3 flex items-start gap-3"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
-                                    <div
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                                        style={{
-                                            background: myOutbound.length ? '#dc262614' : 'var(--bg-tertiary)',
-                                            color: '#dc2626'
-                                        }}
-                                    >
-                                        <i className="fas fa-up-right-from-square text-[12px]" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div
-                                            className="text-[11px] font-bold uppercase tracking-wider"
-                                            style={{ color: 'var(--text-secondary)' }}
-                                        >
-                                            Outbound help
-                                        </div>
-                                        <div
-                                            className="font-bold text-[15px]"
-                                            style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                                        >
-                                            {outboundSummary}
-                                        </div>
-                                        {myOutbound.length > 0 && (
-                                            <div
-                                                className="mt-1 flex flex-wrap gap-1.5 text-[11px]"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
-                                                {myOutbound.map((a, i) => (
-                                                    <span
-                                                        key={`out-${i}`}
-                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded"
-                                                        style={{ background: 'var(--bg-tertiary)' }}
-                                                    >
-                                                        <span
-                                                            style={{
-                                                                fontFamily: 'var(--font-heading)',
-                                                                fontWeight: 700
-                                                            }}
-                                                        >
-                                                            +{parseInt(a.driverCount, 10) || 0}
-                                                        </span>
-                                                        → {a.toPlant}
-                                                        <span style={{ color: 'var(--text-tertiary)' }}>
-                                                            · {a.time}
-                                                        </span>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div
-                                    className="rounded-lg p-3 flex items-start gap-3"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
-                                    <div
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                                        style={{
-                                            background: myInbound.length ? '#16a34a14' : 'var(--bg-tertiary)',
-                                            color: '#16a34a'
-                                        }}
-                                    >
-                                        <i className="fas fa-down-left-from-circle text-[12px]" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div
-                                            className="text-[11px] font-bold uppercase tracking-wider"
-                                            style={{ color: 'var(--text-secondary)' }}
-                                        >
-                                            Inbound help
-                                        </div>
-                                        <div
-                                            className="font-bold text-[15px]"
-                                            style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                                        >
-                                            {inboundSummary}
-                                        </div>
-                                        {myInbound.length > 0 && (
-                                            <div
-                                                className="mt-1 flex flex-wrap gap-1.5 text-[11px]"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
-                                                {myInbound.map((a, i) => (
-                                                    <span
-                                                        key={`in-${i}`}
-                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded"
-                                                        style={{ background: 'var(--bg-tertiary)' }}
-                                                    >
-                                                        <span
-                                                            style={{
-                                                                fontFamily: 'var(--font-heading)',
-                                                                fontWeight: 700
-                                                            }}
-                                                        >
-                                                            +{parseInt(a.driverCount, 10) || 0}
-                                                        </span>
-                                                        from {a.fromPlant}
-                                                        <span style={{ color: 'var(--text-tertiary)' }}>
-                                                            · {a.time}
-                                                        </span>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-3">
+                                <FlowSummary
+                                    color="#dc2626"
+                                    label="Outbound"
+                                    summary={outboundSummary}
+                                    routes={myOutbound.map((a) => ({
+                                        ops: parseInt(a.driverCount, 10) || 0,
+                                        partner: a.toPlant,
+                                        prefix: '→',
+                                        time: a.time
+                                    }))}
+                                />
+                                <FlowSummary
+                                    color="#16a34a"
+                                    label="Inbound"
+                                    summary={inboundSummary}
+                                    routes={myInbound.map((a) => ({
+                                        ops: parseInt(a.driverCount, 10) || 0,
+                                        partner: a.fromPlant,
+                                        prefix: 'from',
+                                        time: a.time
+                                    }))}
+                                />
                             </div>
 
                             {pmChecklist.length > 0 ? (
@@ -1279,7 +1027,7 @@ function PlanDashboardView({
                         </Card>
                     )}
 
-                    <Card id="notes" title="Notes" icon="fa-sticky-note" iconColor={accentColor}>
+                    <Card id="notes" title="Notes">
                         <PlanNotesSection
                             accentColor={accentColor}
                             cachedFormatted={formattedNotes}
@@ -1294,16 +1042,16 @@ function PlanDashboardView({
                     <Card
                         id="flow-preview"
                         title="Flow preview"
-                        icon="fa-project-diagram"
-                        iconColor={accentColor}
                         right={
                             onSwitchToPlanner && (
                                 <button
                                     onClick={onSwitchToPlanner}
-                                    className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer flex items-center gap-1.5"
+                                    className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer flex items-center gap-1.5 shrink-0"
                                     style={{ background: accentColor, color: '#fff' }}
+                                    title="Open Planner"
                                 >
-                                    <i className="fas fa-up-right-from-square text-[9px]" /> Open Planner
+                                    <i className="fas fa-up-right-from-square text-[9px]" />
+                                    <span className="hidden sm:inline">Open Planner</span>
                                 </button>
                             )
                         }
@@ -1322,8 +1070,6 @@ function PlanDashboardView({
                         accent={accentColor}
                         canEdit={canEdit}
                         tint="#d97706"
-                        icon="fa-circle-exclamation"
-                        iconColor="#d97706"
                         title="Special Attention"
                         emptyHint="No special-attention jobs yet. Add anything the crew needs to double-check — VIP pours, tight sequences, high-slump runs, late starts, etc."
                         jobs={specialJobs}
@@ -1340,8 +1086,6 @@ function PlanDashboardView({
                         accent={accentColor}
                         canEdit={canEdit}
                         tint="#7c3aed"
-                        icon="fa-vial-circle-check"
-                        iconColor="#7c3aed"
                         title="QC Attention"
                         emptyHint="No QC-flagged jobs yet. Add any pour that needs cylinders cast, mix-design watch, slump re-checks, temp monitoring, or technician on site."
                         jobs={qcJobs}
@@ -1357,33 +1101,23 @@ function PlanDashboardView({
                         <Card
                             id="insights"
                             title={`Plan insights · ${planInsights.warnings.length + planInsights.suggestions.length}`}
-                            icon="fa-triangle-exclamation"
-                            iconColor="#f59e0b"
                         >
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-1.5">
                                 {planInsights.warnings.map((w, i) => (
                                     <div
                                         key={`w-${i}`}
-                                        className="flex items-start gap-2.5 rounded-lg px-3 py-2 text-[12px]"
-                                        style={{ background: '#fef3c720', border: '1px solid #fbbf2440' }}
+                                        className="flex items-baseline gap-2 text-[12.5px] py-1"
+                                        style={{ borderLeft: '2px solid #f59e0b', paddingLeft: 10 }}
                                     >
-                                        <i
-                                            className={`fas ${w.icon} text-[10px] mt-0.5 shrink-0`}
-                                            style={{ color: '#f59e0b' }}
-                                        />
                                         <span style={{ color: 'var(--text-primary)' }}>{w.message}</span>
                                     </div>
                                 ))}
                                 {planInsights.suggestions.map((s, i) => (
                                     <div
                                         key={`s-${i}`}
-                                        className="flex items-start gap-2.5 rounded-lg px-3 py-2 text-[12px]"
-                                        style={{ background: 'var(--bg-secondary)' }}
+                                        className="flex items-baseline gap-2 text-[12.5px] py-1"
+                                        style={{ borderLeft: '2px solid var(--border-medium)', paddingLeft: 10 }}
                                     >
-                                        <i
-                                            className={`fas ${s.icon} text-[10px] mt-0.5 shrink-0`}
-                                            style={{ color: 'var(--text-secondary)' }}
-                                        />
                                         <span style={{ color: 'var(--text-secondary)' }}>{s.message}</span>
                                     </div>
                                 ))}
@@ -1392,7 +1126,7 @@ function PlanDashboardView({
                     )}
 
                     {stats.length > 0 && (
-                        <Card id="yardage" title="Yardage by plant" icon="fa-cubes" iconColor={accentColor}>
+                        <Card id="yardage" title="Yardage by plant">
                             <div className="flex flex-col gap-2">
                                 {stats
                                     .map((s) => ({
@@ -1450,24 +1184,11 @@ function PlanDashboardView({
                         </Card>
                     )}
 
-                    {validAssignmentCount > 0 && (
-                        <Card id="timeline" title="Timeline preview" icon="fa-chart-gantt" iconColor={accentColor}>
-                            <PlanMiniTimeline
-                                accentColor={accentColor}
-                                assignments={assignments}
-                                getTravelTime={getTravelTime}
-                                mixerCountsByPlant={mixerCountsByPlant}
-                                plantProduction={plantProduction}
-                            />
-                        </Card>
-                    )}
-
                     <div className="h-8" />
                 </div>
 
                 {/* RIGHT — at-a-glance */}
                 <AtAGlancePanel
-                    accent={accentColor}
                     earliestClockIn={earliestClockIn}
                     planDate={planDate}
                     shiftSpanHours={shiftSpanHours}

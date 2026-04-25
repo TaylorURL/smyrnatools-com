@@ -40,7 +40,6 @@ const CalculatorView = lazyWithRetry(() => import('../views/tools/calculator/Cal
 const DashboardView = lazyWithRetry(() => import('../views/common/dashboard/DashboardView'))
 const DocumentsView = lazyWithRetry(() => import('../views/productivity/documents/DocumentsView'))
 const EquipmentsView = lazyWithRetry(() => import('../views/assets/equipment/EquipmentsView'))
-const LeaderboardsView = lazyWithRetry(() => import('../views/productivity/leaderboards/LeaderboardsView'))
 const ListDetailView = lazyWithRetry(() => import('../views/productivity/list/ListDetailView'))
 const ListView = lazyWithRetry(() => import('../views/productivity/list/ListView'))
 const MaintenanceView = lazyWithRetry(() => import('../views/reporting/maintenance/MaintenanceView'))
@@ -296,8 +295,6 @@ function AppContent() {
                 return <ListView title="Archived Items" showArchived />
             case 'Reports':
                 return <ReportsView />
-            case 'Leaderboards':
-                return <LeaderboardsView />
             case 'Calculators':
                 return <CalculatorView />
             case 'Maintenance':

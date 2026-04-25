@@ -12,6 +12,7 @@ import ReportsToolbar, {
     LossFilterBar,
     MobileFilterShell,
     QcFilterBar,
+    ReportsActionBar,
     ReviewFilterBar
 } from '../../../app/components/reports/ReportsToolbar'
 import ThirdPartyLabDetailModal from '../../../app/components/reports/ThirdPartyLabDetailModal'
@@ -1015,7 +1016,10 @@ function ReportsView() {
     const ribbonSkeleton = (
         <div className="flex gap-2.5 py-1">
             {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3.5 animate-pulse">
+                <div
+                    key={i}
+                    className="flex-1 bg-white border border-border-light rounded-xl px-4 py-3.5 animate-pulse"
+                >
                     <div className="h-2.5 w-16 rounded bg-slate-200 mb-2" />
                     <div className="h-4 w-24 rounded bg-slate-200 mb-2.5" />
                     <div className="h-2.5 w-20 rounded bg-slate-100" />
@@ -1024,7 +1028,7 @@ function ReportsView() {
         </div>
     )
     const fuseSkeleton = (
-        <div className="bg-white border border-gray-200 rounded-xl px-5 py-4 flex items-center gap-5 animate-pulse">
+        <div className="bg-white border border-border-light rounded-xl px-5 py-4 flex items-center gap-5 animate-pulse">
             <div className="hidden sm:block">
                 <div className="h-2.5 w-14 rounded bg-slate-200 mb-2" />
                 <div className="h-4 w-28 rounded bg-slate-200" />
@@ -1039,8 +1043,8 @@ function ReportsView() {
     const trackGridSkeleton = (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse">
-                    <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100">
+                <div key={i} className="bg-white rounded-xl border border-border-light overflow-hidden animate-pulse">
+                    <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border-light">
                         <div className="w-9 h-9 rounded-lg bg-slate-200" />
                         <div className="flex-1">
                             <div className="h-3.5 w-48 rounded bg-slate-200 mb-1.5" />
@@ -1062,11 +1066,11 @@ function ReportsView() {
         </div>
     )
     const listRowsSkeleton = (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-border-light overflow-hidden">
             {[1, 2, 3, 4, 5].map((i) => (
                 <div
                     key={i}
-                    className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 animate-pulse"
+                    className="flex items-center gap-3 px-4 py-3 border-b border-border-light last:border-b-0 animate-pulse"
                 >
                     <div className="w-9 h-9 rounded-lg bg-slate-200" />
                     <div className="flex-1">
@@ -1080,7 +1084,7 @@ function ReportsView() {
         </div>
     )
     const railSkeleton = (
-        <aside className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+        <aside className="bg-white border border-border-light rounded-xl p-4 animate-pulse">
             <div className="flex items-center gap-2 mb-3">
                 <div className="w-4 h-4 rounded bg-slate-200" />
                 <div className="h-3.5 w-28 rounded bg-slate-200" />
@@ -1109,31 +1113,6 @@ function ReportsView() {
     const showAllSkeleton = tab === 'all' && isMyReportsLoading
     const showReviewSkeleton = tab === 'review' && (isReviewLoading || isLoadingMissing)
     const showBootSkeleton = tab === null
-
-    const tabStrip =
-        pillTabs.length > 1 ? (
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-                {pillTabs.map(({ key, label, icon }) => {
-                    const isActive = tab === key
-                    return (
-                        <button
-                            key={key}
-                            type="button"
-                            onClick={() => selectTab(key)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
-                                isActive
-                                    ? 'text-white shadow-sm'
-                                    : 'bg-white border border-gray-200 text-slate-500 hover:text-slate-700'
-                            }`}
-                            style={isActive ? { background: accent } : {}}
-                        >
-                            <i className={`fas ${icon} text-[11px]`} />
-                            {label}
-                        </button>
-                    )
-                })}
-            </div>
-        ) : null
 
     return (
         <div className="bg-slate-50 min-h-screen w-full pb-16">
@@ -1194,12 +1173,16 @@ function ReportsView() {
                 isLoading={isCurrentTabLoading}
                 plantDisplayText={plantDisplayText}
                 onPlantModalOpen={() => setIsPlantModalOpen(true)}
-                isRefreshing={isRefreshing}
-                onRefresh={triggerRefresh}
                 searchInput={searchInput}
                 onSearchInputChange={setSearchInput}
                 onClearSearch={() => setSearchInput('')}
-                tabStrip={tabStrip}
+            />
+            <ReportsActionBar
+                tabs={pillTabs}
+                activeTab={tab}
+                onTabChange={selectTab}
+                isRefreshing={isRefreshing}
+                onRefresh={triggerRefresh}
             />
 
             <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4">
@@ -1245,7 +1228,7 @@ function ReportsView() {
                                           : `${selectedWeekRange} · Archive`}
                                 </div>
                                 {isSelectedWeekFuture ? (
-                                    <div className="bg-white rounded-xl border border-gray-200 py-12 px-4 text-center text-slate-400 text-sm">
+                                    <div className="bg-white rounded-xl border border-border-light py-12 px-4 text-center text-slate-400 text-sm">
                                         Next week opens Monday — nothing to file yet.
                                     </div>
                                 ) : myItemsForSelectedWeek.length === 0 ? (
@@ -1308,7 +1291,7 @@ function ReportsView() {
                                 (reviewDateTo ? 1 : 0)
                             }
                         >
-                            <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
+                            <div className="bg-white border border-border-light rounded-xl px-3 py-2.5">
                                 <ReviewFilterBar
                                     statusFilter={reviewStatusFilter}
                                     onStatusFilterChange={setReviewStatusFilter}
@@ -1381,7 +1364,7 @@ function ReportsView() {
                                     (lossDateTo ? 1 : 0)
                                 }
                             >
-                                <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
+                                <div className="bg-white border border-border-light rounded-xl px-3 py-2.5">
                                     <LossFilterBar
                                         dumpLocationFilter={lossDumpLocation}
                                         onDumpLocationFilterChange={setLossDumpLocation}
@@ -1467,7 +1450,7 @@ function ReportsView() {
                                     (qcDateTo ? 1 : 0)
                                 }
                             >
-                                <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
+                                <div className="bg-white border border-border-light rounded-xl px-3 py-2.5">
                                     <QcFilterBar
                                         qcTypeFilter={qcTypeFilter}
                                         onQcTypeFilterChange={setQcTypeFilter}
@@ -1485,11 +1468,11 @@ function ReportsView() {
                                 </div>
                             </MobileFilterShell>
                             {isLoadingQC ? (
-                                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                <div className="bg-white rounded-xl border border-border-light overflow-hidden">
                                     {[1, 2, 3, 4, 5].map((i) => (
                                         <div
                                             key={i}
-                                            className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0"
+                                            className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0"
                                         >
                                             <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse shrink-0" />
                                             <div className="flex-1 min-w-0">
@@ -1505,7 +1488,7 @@ function ReportsView() {
                                     ))}
                                 </div>
                             ) : qcReports.length === 0 ? (
-                                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                <div className="bg-white rounded-xl border border-border-light overflow-hidden">
                                     <div className="flex flex-col items-center justify-center py-12 px-4 text-slate-400">
                                         <i className="fas fa-flask text-4xl mb-3" />
                                         <div className="text-sm">No quality reports submitted yet</div>
@@ -1522,14 +1505,14 @@ function ReportsView() {
                                         </span>
                                     </div>
                                     {visibleQcReports.length === 0 ? (
-                                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                        <div className="bg-white rounded-xl border border-border-light overflow-hidden">
                                             <div className="flex flex-col items-center justify-center py-10 px-4 text-slate-400">
                                                 <i className="fas fa-filter text-3xl mb-2" />
                                                 <div className="text-sm">No reports match your filters</div>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                        <div className="bg-white rounded-xl border border-border-light overflow-hidden">
                                             {visibleQcReports.map((report) => {
                                                 const submittedLabel = report.submittedAt
                                                     ? new Date(report.submittedAt).toLocaleDateString(undefined, {
@@ -1560,7 +1543,7 @@ function ReportsView() {
                                                 return (
                                                     <div
                                                         key={report.id}
-                                                        className="flex items-center px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0 cursor-pointer transition-colors hover:bg-slate-50"
+                                                        className="flex items-center px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0 cursor-pointer transition-colors hover:bg-slate-50"
                                                         onClick={() =>
                                                             isLabReport
                                                                 ? setSelectedLabReport(report)

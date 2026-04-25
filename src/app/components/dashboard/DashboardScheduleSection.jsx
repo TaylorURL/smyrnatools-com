@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { getCalculatedTruckCount, isBigPourOrder, plantBadgeColor } from '../../../utils/PlanUtility'
 import { summarizeSchedule } from '../../hooks/useDashboardSchedule'
@@ -178,7 +178,7 @@ const TABLE_HEADERS = [
  * full planner's pool-timeline math, which isn't available in a dashboard
  * preview context.
  */
-function ScheduleTable({ orders, accentColor, plantNameByCode, plantCityByCode, plantAddressByCode, onOpenLocation }) {
+function ScheduleTable({ orders, accentColor, plantNameByCode, plantCityByCode, onOpenLocation }) {
     return (
         <div
             className="rounded-xl overflow-auto"
@@ -220,7 +220,6 @@ function ScheduleTable({ orders, accentColor, plantNameByCode, plantCityByCode, 
                             order={o}
                             plantName={plantNameByCode.get(o.plantCode) || ''}
                             plantCity={plantCityByCode?.[o.plantCode] || ''}
-                            plantAddress={plantAddressByCode?.[o.plantCode] || ''}
                             onOpenLocation={onOpenLocation}
                         />
                     ))}
@@ -241,7 +240,7 @@ const parseHhmmToMinutes = (value) => {
     return hours * 60 + mins
 }
 
-function ScheduleTableRow({ order: o, accentColor, plantName, plantCity, plantAddress, onOpenLocation }) {
+function ScheduleTableRow({ order: o, accentColor, plantName, plantCity, onOpenLocation }) {
     const status = getOrderStatus(o.startTime)
     const isCancelled = status?.kind === 'cancelled'
     const isTest = status?.kind === 'test'
@@ -254,6 +253,25 @@ function ScheduleTableRow({ order: o, accentColor, plantName, plantCity, plantAd
     const address = clean(o.address)
     const city = clean(o.city)
     const [truckHoverOpen, setTruckHoverOpen] = useState(false)
+    // Mirror PlanScheduleView: delay hover close so the user can move their
+    // cursor from the cell onto the fixed-center modal without it snapping
+    // shut. Both the td trigger and the modal itself use these handlers.
+    const hoverCloseTimer = useRef(null)
+    const cancelHoverClose = useCallback(() => {
+        if (hoverCloseTimer.current) {
+            clearTimeout(hoverCloseTimer.current)
+            hoverCloseTimer.current = null
+        }
+    }, [])
+    const openHover = useCallback(() => {
+        cancelHoverClose()
+        setTruckHoverOpen(true)
+    }, [cancelHoverClose])
+    const queueCloseHover = useCallback(() => {
+        cancelHoverClose()
+        hoverCloseTimer.current = setTimeout(() => setTruckHoverOpen(false), 400)
+    }, [cancelHoverClose])
+    useEffect(() => () => cancelHoverClose(), [cancelHoverClose])
 
     return (
         <tr
@@ -362,8 +380,8 @@ function ScheduleTableRow({ order: o, accentColor, plantName, plantCity, plantAd
             <td
                 className="px-3 py-2 font-mono text-right whitespace-nowrap"
                 style={{ color: 'var(--text-secondary)', position: 'relative' }}
-                onMouseEnter={() => !isNonProduction && setTruckHoverOpen(true)}
-                onMouseLeave={() => setTruckHoverOpen(false)}
+                onMouseEnter={() => !isNonProduction && openHover()}
+                onMouseLeave={queueCloseHover}
             >
                 <span
                     className="inline-flex items-center gap-1 justify-end"
@@ -389,8 +407,8 @@ function ScheduleTableRow({ order: o, accentColor, plantName, plantCity, plantAd
                         dispatchTrucks={dispatchTrucks}
                         helpInWindow={0}
                         liveTravel={false}
-                        onMouseEnter={() => setTruckHoverOpen(true)}
-                        onMouseLeave={() => setTruckHoverOpen(false)}
+                        onMouseEnter={openHover}
+                        onMouseLeave={queueCloseHover}
                         orderNum={o.orderNum}
                         overbooked={false}
                         plantCode={o.plantCode}
@@ -555,7 +573,6 @@ export default function DashboardScheduleSection({
                         accentColor={accentColor}
                         plantNameByCode={plantNameByCode}
                         plantCityByCode={plantCityByCode}
-                        plantAddressByCode={plantAddressByCode}
                         onOpenLocation={setMapOrder}
                     />
 

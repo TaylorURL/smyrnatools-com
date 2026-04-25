@@ -327,13 +327,13 @@ function ManagersView({ title = 'Managers', onSelectManager }) {
                                     colWidths={['10%', '23%', '14%', '14%', '17%', '22%']}
                                     renderRow={(manager, handleSelect) => {
                                         const cellCls =
-                                            'text-text-primary text-[15px] font-medium py-5 px-6 text-left align-middle'
+                                            'text-text-primary text-[12px] font-medium py-1.5 px-2.5 text-left align-middle'
                                         const cellSecondaryCls =
-                                            'text-text-secondary text-sm py-5 px-6 text-left align-middle'
+                                            'text-text-secondary text-[11.5px] py-1.5 px-2.5 text-left align-middle'
                                         const cellHighlightCls =
-                                            'text-text-secondary text-base font-bold py-5 px-6 text-left align-middle'
+                                            'text-text-primary text-[12.5px] font-bold py-1.5 px-2.5 text-left align-middle'
                                         const roleBadgeCls =
-                                            'bg-[#e0e7ff] text-[#4338ca] inline-block rounded-3xl text-[13px] font-semibold px-4 py-2'
+                                            'inline-flex items-center bg-[#e0e7ff] text-[#4338ca] rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5'
                                         return (
                                             <tr
                                                 key={manager.id}

@@ -271,7 +271,7 @@ const SetTimeCalculator = () => {
         setResult(null)
     }
 
-    const containerClass = `bg-[var(--card-background)] border border-[var(--border-light)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${isMobile ? 'rounded-lg p-4' : 'rounded-xl p-8'}`
+    const containerClass = `bg-[var(--card-background)] border border-[var(--border-light)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${isMobile ? 'rounded-lg p-4' : 'rounded p-8'}`
     const sectionClass = isMobile ? 'mb-6' : 'mb-8'
     const sectionHeaderClass = `flex border-b-2 border-[var(--border-light)] pb-4 text-[var(--text-primary)] font-bold gap-3 ${isMobile ? 'flex-col items-start text-base mb-4' : 'flex-row items-center text-lg mb-6'}`
     const labelClass = `text-[var(--text-secondary)] font-semibold uppercase tracking-wide ${isMobile ? 'text-xs' : 'text-sm'}`
@@ -370,7 +370,7 @@ const SetTimeCalculator = () => {
                         </div>
                     ) : (
                         <div
-                            className={`flex items-center justify-center rounded-xl bg-[var(--bg-secondary)] ${isMobile ? 'min-h-[100px] p-6 px-4' : 'min-h-[120px] p-8'}`}
+                            className={`flex items-center justify-center rounded bg-[var(--bg-secondary)] ${isMobile ? 'min-h-[100px] p-6 px-4' : 'min-h-[120px] p-8'}`}
                         >
                             {loading && (
                                 <div
@@ -527,7 +527,7 @@ const SetTimeCalculator = () => {
             </div>
             {result ? (
                 <div
-                    className={`${RISK_CONTAINER[result.riskLevel] || RISK_CONTAINER.normal} ${isMobile ? 'rounded-lg mb-6 p-4' : 'rounded-xl mb-8 p-8'}`}
+                    className={`${RISK_CONTAINER[result.riskLevel] || RISK_CONTAINER.normal} ${isMobile ? 'rounded-lg mb-6 p-4' : 'rounded mb-8 p-8'}`}
                 >
                     <div
                         className={`flex items-center gap-3 text-[var(--text-primary)] font-bold ${isMobile ? 'text-base mb-4' : 'text-lg mb-6'}`}
@@ -608,7 +608,7 @@ const SetTimeCalculator = () => {
                         className={`flex items-center flex-wrap justify-center ${isMobile ? 'flex-col gap-4 mb-4' : 'flex-row gap-8 mb-6'}`}
                     >
                         <div
-                            className={`flex flex-col items-center gap-2 rounded-xl bg-[var(--card-background)] border-[3px] border-[var(--border-color)] ${isMobile ? 'min-w-full p-4' : 'min-w-[180px] p-6'}`}
+                            className={`flex flex-col items-center gap-2 rounded bg-[var(--card-background)] border-[3px] border-[var(--border-color)] ${isMobile ? 'min-w-full p-4' : 'min-w-[180px] p-6'}`}
                         >
                             <span
                                 className={`text-[var(--text-secondary)] font-semibold uppercase tracking-wide ${isMobile ? 'text-xs' : 'text-sm'}`}
@@ -627,7 +627,7 @@ const SetTimeCalculator = () => {
                             <i className="fas fa-arrow-right"></i>
                         </div>
                         <div
-                            className={`flex flex-col items-center gap-2 rounded-xl bg-green-100 border-[3px] border-green-600 ${isMobile ? 'min-w-full p-4' : 'min-w-[180px] p-6'}`}
+                            className={`flex flex-col items-center gap-2 rounded bg-green-100 border-[3px] border-green-600 ${isMobile ? 'min-w-full p-4' : 'min-w-[180px] p-6'}`}
                         >
                             <span
                                 className={`text-[var(--text-secondary)] font-semibold uppercase tracking-wide ${isMobile ? 'text-xs' : 'text-sm'}`}
@@ -644,7 +644,7 @@ const SetTimeCalculator = () => {
                     </div>
                     {result.riskMessage && (
                         <div
-                            className={`flex gap-3 rounded-xl font-semibold ${isMobile ? 'items-start text-[0.8125rem] py-3 px-4' : 'items-center text-[0.9375rem] py-4 px-6'} ${RISK_WARNING[result.riskLevel] || 'bg-[var(--card-background)] border-2 border-[var(--border-color)] text-[var(--text-primary)]'}`}
+                            className={`flex gap-3 rounded font-semibold ${isMobile ? 'items-start text-[0.8125rem] py-3 px-4' : 'items-center text-[0.9375rem] py-4 px-6'} ${RISK_WARNING[result.riskLevel] || 'bg-[var(--card-background)] border-2 border-[var(--border-color)] text-[var(--text-primary)]'}`}
                         >
                             <i className="fas fa-exclamation-triangle"></i>
                             <span>{result.riskMessage}</span>
@@ -653,7 +653,7 @@ const SetTimeCalculator = () => {
                 </div>
             ) : (
                 <div
-                    className={`bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-color)] rounded-xl text-center ${isMobile ? 'mb-6 py-8 px-4' : 'mb-8 py-12 px-8'}`}
+                    className={`bg-[var(--bg-secondary)] border-2 border-dashed border-[var(--border-color)] rounded text-center ${isMobile ? 'mb-6 py-8 px-4' : 'mb-8 py-12 px-8'}`}
                 >
                     <div className={`text-[var(--text-tertiary)] mb-4 ${isMobile ? 'text-3xl' : 'text-5xl'}`}>
                         <i className="fas fa-clock"></i>

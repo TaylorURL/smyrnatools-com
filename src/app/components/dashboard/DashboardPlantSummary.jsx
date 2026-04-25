@@ -18,11 +18,11 @@ const STORAGE_KEY = 'dashboard-plant-summary-minimized'
 
 /** Skeleton for the metrics row. */
 const MetricsSkeleton = () => (
-    <div className="flex flex-wrap gap-2.5 bg-slate-50 border-b border-slate-200 px-6 py-4">
+    <div className="flex flex-wrap gap-2.5 bg-bg-secondary border-b border-border-light px-6 py-4">
         {[1, 2, 3, 4, 5].map((i) => (
             <div
                 key={i}
-                className="flex items-center gap-2.5 bg-white rounded-lg shadow-sm border border-slate-100 px-3.5 py-2.5 min-w-[130px] flex-1"
+                className="flex items-center gap-2.5 bg-white rounded-lg shadow-sm border border-border-light px-3.5 py-2.5 min-w-[130px] flex-1"
             >
                 <Skeleton className="w-8 h-8 rounded-lg" />
                 <div className="flex flex-col gap-1.5">
@@ -56,7 +56,7 @@ const AlertsSkeleton = () => (
 const AISkeleton = ({ accentColor }) => (
     <div className="flex flex-col">
         <div
-            className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-200"
+            className="flex items-center gap-2.5 px-4 py-3 border-b border-border-light"
             style={{ background: `${accentColor}08` }}
         >
             <Skeleton className="w-7 h-7 rounded-lg" />
@@ -67,7 +67,7 @@ const AISkeleton = ({ accentColor }) => (
         </div>
         <div className="px-4 py-3 flex flex-col gap-3">
             <Skeleton style={{ height: 8, width: 140 }} className="mx-auto" />
-            <div className="bg-slate-100 rounded-xl rounded-tl-sm px-3.5 py-2.5">
+            <div className="bg-slate-100 rounded rounded-tl-sm px-3.5 py-2.5">
                 <Skeleton style={{ height: 10, width: '100%' }} className="mb-2" />
                 <Skeleton style={{ height: 10, width: '90%' }} className="mb-2" />
                 <Skeleton style={{ height: 10, width: '70%' }} />
@@ -95,7 +95,7 @@ const AICopilotPane = ({
     <div className="flex flex-col">
         {/* Header */}
         <div
-            className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-200"
+            className="flex items-center gap-2.5 px-4 py-3 border-b border-border-light"
             style={{ background: `${accentColor}08` }}
         >
             <div
@@ -113,7 +113,7 @@ const AICopilotPane = ({
             {!aiSummaryLoading && isTypingComplete && (
                 <button
                     onClick={handleRegenerateAISummary}
-                    className="flex items-center justify-center w-7 h-7 bg-transparent border border-slate-200 rounded-lg text-slate-400 cursor-pointer hover:text-slate-600 hover:border-slate-300 transition-colors"
+                    className="flex items-center justify-center w-7 h-7 bg-transparent border border-border-light rounded-lg text-slate-400 cursor-pointer hover:text-slate-600 hover:border-border-light transition-colors"
                     title="Regenerate analysis"
                 >
                     <i className="fas fa-sync-alt text-[10px]" />
@@ -178,7 +178,7 @@ const AICopilotPane = ({
         </div>
         {/* Chat */}
         {!aiSummaryLoading && chat && (
-            <div className="border-t border-slate-200">
+            <div className="border-t border-border-light">
                 {chat.chatMessages.length > 0 && (
                     <div className="px-4 pt-3 flex flex-col gap-2 max-h-48 overflow-y-auto">
                         {chat.chatMessages.map((msg, i) => (
@@ -208,13 +208,13 @@ const AICopilotPane = ({
                             chat.atLimit ? 'Daily limit reached' : `Ask a follow-up... (${chat.remainingMessages} left)`
                         }
                         disabled={chat.atLimit || chat.isChatLoading}
-                        className="flex-1 text-[13px] border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-slate-400 transition-colors"
+                        className="flex-1 text-[13px] border border-border-light rounded-lg px-3 py-2 outline-none focus:border-slate-400 transition-colors"
                     />
                     <button
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={chat.sendMessage}
                         disabled={chat.atLimit || !chat.chatInput.trim() || chat.isChatLoading}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 text-slate-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-light text-slate-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         style={
                             chat.chatInput.trim() && !chat.atLimit
                                 ? { background: accentColor, borderColor: accentColor, color: 'white' }
@@ -452,7 +452,7 @@ const DashboardPlantSummary = memo(function DashboardPlantSummary({
     const hasAI = aiSummary || aiSummaryLoading || aiSummaryFailed
     // Desktop: Split pane layout
     return (
-        <div className="bg-white border border-slate-200 rounded-2xl mb-6 overflow-hidden transition-all duration-300">
+        <div className="bg-white border border-border-light rounded mb-6 overflow-hidden transition-all duration-300">
             {/* Accent header bar */}
             <div
                 onClick={toggleMinimized}
@@ -470,7 +470,7 @@ const DashboardPlantSummary = memo(function DashboardPlantSummary({
             >
                 <div className="flex items-center flex-1 gap-4">
                     <div
-                        className={`flex items-center justify-center bg-white/15 rounded-xl transition-all duration-300 ${isMinimized ? 'w-10 h-10' : 'w-12 h-12'}`}
+                        className={`flex items-center justify-center bg-white/15 rounded transition-all duration-300 ${isMinimized ? 'w-10 h-10' : 'w-12 h-12'}`}
                     >
                         <img
                             src={FlagSmyrnaLogo}
@@ -489,7 +489,7 @@ const DashboardPlantSummary = memo(function DashboardPlantSummary({
                         )}
                     </div>
                     {isMinimized && alertCount > 0 && (
-                        <div className="flex items-center gap-1.5 bg-red-600 rounded-xl text-white text-sm font-semibold px-3 py-1.5">
+                        <div className="flex items-center gap-1.5 bg-red-600 rounded text-white text-sm font-semibold px-3 py-1.5">
                             <i className="fas fa-bell" />
                             {alertCount}
                         </div>
@@ -518,7 +518,7 @@ const DashboardPlantSummary = memo(function DashboardPlantSummary({
                         <MetricsSkeleton />
                     ) : leaderboardMetrics ? (
                         <div
-                            className={`flex flex-wrap gap-2.5 bg-slate-50 border-b border-slate-200 ${isMobile ? 'p-4' : 'px-6 py-4'}`}
+                            className={`flex flex-wrap gap-2.5 bg-bg-secondary border-b border-border-light ${isMobile ? 'p-4' : 'px-6 py-4'}`}
                         >
                             <MetricPill
                                 label="Raw YPH"
@@ -571,7 +571,7 @@ const DashboardPlantSummary = memo(function DashboardPlantSummary({
                     <div className={isMobile ? 'flex flex-col' : 'flex'}>
                         {/* Left pane — Alerts & Operators */}
                         <div
-                            className={`${isMobile ? 'p-4' : 'px-5 py-4'} ${!isMobile && (hasAI || isDataLoading) ? 'border-r border-slate-200' : ''}`}
+                            className={`${isMobile ? 'p-4' : 'px-5 py-4'} ${!isMobile && (hasAI || isDataLoading) ? 'border-r border-border-light' : ''}`}
                             style={
                                 !isMobile
                                     ? {

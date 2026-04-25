@@ -33,6 +33,7 @@ const TOOLBAR_CLEAR = 64
 const MIN_ZOOM = 0.4
 const MAX_ZOOM = 2.5
 const ZOOM_STEP = 0.15
+const DEFAULT_ZOOM = 0.6
 
 /** Scale a plant's render radius from its effective operator count. */
 function radiusForOps(ops) {
@@ -173,7 +174,7 @@ function PlanFlowView({
     const [canvasSize, setCanvasSize] = useState({ height: 600, width: 800 })
     const [selectedCode, setSelectedCode] = useState(null)
     const [hoverEdgeKey, setHoverEdgeKey] = useState(null)
-    const [zoom, setZoom] = useState(1)
+    const [zoom, setZoom] = useState(DEFAULT_ZOOM)
     const [isPanning, setIsPanning] = useState(false)
     const panStateRef = useRef(null)
     // Panel editor state
@@ -603,7 +604,7 @@ function PlanFlowView({
     /* ── Zoom helpers ─────────────────────────────────────────────────── */
     const zoomIn = () => setZoom((z) => Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100))
     const zoomOut = () => setZoom((z) => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100))
-    const zoomReset = () => setZoom(1)
+    const zoomReset = () => setZoom(DEFAULT_ZOOM)
 
     /* ── Data derived for panel ───────────────────────────────────────── */
     // `allPlantStats` already contains every plant — there's no separate
