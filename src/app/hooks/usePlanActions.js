@@ -57,10 +57,6 @@ export function usePlanActions({
         }))
     }
 
-    const clearPlantProduction = () => {
-        setPlantProduction({})
-    }
-
     const updateAssignment = (id, field, value) => {
         setAssignments((prev) =>
             prev.map((a) => {
@@ -232,7 +228,6 @@ export function usePlanActions({
         addTravelTime,
         buildPlanMessage,
         calcClockIn,
-        clearPlantProduction,
         copied,
         copyToClipboard,
         deleteTemplate,

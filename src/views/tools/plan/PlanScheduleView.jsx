@@ -218,18 +218,19 @@ function Stat({ badge, first, hint, label, unit, value }) {
 
 /** +/- percentage pill shown next to the Yardage KPI value. Green when
  *  up day-over-day, red when down, gray at zero. */
-function YardageDeltaBadge({ pct, yesterdayYardage }) {
+function YardageDeltaBadge({ comparisonLabel, comparisonYardage, pct }) {
     if (!Number.isFinite(pct)) return null
     const isFlat = pct === 0
     const isUp = pct > 0
     const color = isFlat ? '#64748b' : isUp ? '#16a34a' : '#dc2626'
     const icon = isFlat ? 'fa-minus' : isUp ? 'fa-arrow-up' : 'fa-arrow-down'
     const sign = isUp ? '+' : ''
+    const label = comparisonLabel || 'previous business day'
     return (
         <span
             className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5"
             style={{ background: `${color}1a`, color }}
-            title={`Day-over-day change · yesterday ${yesterdayYardage.toLocaleString()} yd`}
+            title={`Day-over-day change · ${label} ${comparisonYardage.toLocaleString()} yd`}
         >
             <i className={`fas ${icon} text-[9px]`} />
             {sign}
@@ -2215,32 +2216,56 @@ function PlanScheduleView({
         return sum
     }
 
-    /** Yesterday's yardage (for the day-over-day delta) + a rolling 7-day
-     *  total (today + previous 6). Both fall back gracefully when the
-     *  adjacent fetch hasn't hydrated yet. */
-    const yesterdayYardage = useMemo(() => {
-        if (!planDate) return 0
-        const key = getOffsetDate(planDate, -1)
-        return sumDayYardage(adjacentProduction?.[key])
-    }, [adjacentProduction, planDate])
-
-    const weekYardage = useMemo(() => {
-        if (!planDate) return totalYards
-        let sum = totalYards
-        for (let i = 1; i <= 6; i++) {
-            const key = getOffsetDate(planDate, -i)
-            sum += sumDayYardage(adjacentProduction?.[key])
+    /** Most recent NON-CLOSED day before planDate. On Mondays this snaps to
+     *  Saturday so the comparison reflects an actual production day, not the
+     *  Sunday closure. Walks back up to 7 days before giving up. */
+    const previousBusinessDate = useMemo(() => {
+        if (!planDate) return null
+        for (let offset = -1; offset >= -7; offset--) {
+            const candidate = getOffsetDate(planDate, offset)
+            if (!isClosedDay(candidate)) return candidate
         }
-        return sum
-    }, [adjacentProduction, planDate, totalYards])
+        return null
+    }, [planDate])
 
-    /** Percent change vs yesterday. Null when yesterday has no data so the
-     *  badge renders a neutral "—" instead of a misleading "+∞%". */
+    const previousBusinessDayLabel = useMemo(() => {
+        if (!previousBusinessDate) return ''
+        return new Date(previousBusinessDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })
+    }, [previousBusinessDate])
+
+    const previousBusinessDayYardage = useMemo(() => {
+        if (!previousBusinessDate) return 0
+        return sumDayYardage(adjacentProduction?.[previousBusinessDate])
+    }, [adjacentProduction, previousBusinessDate])
+
+    /** Mon–Sat date strings of the week containing planDate. Sunday is
+     *  excluded (plants are closed). When planDate is Sunday, the week is
+     *  the prior Mon–Sat that just ended. */
+    const currentWeekDates = useMemo(() => {
+        if (!planDate) return []
+        const dow = new Date(planDate + 'T00:00:00').getDay()
+        const mondayOffset = dow === 0 ? -6 : -(dow - 1)
+        return Array.from({ length: 6 }, (_, i) => getOffsetDate(planDate, mondayOffset + i))
+    }, [planDate])
+
+    /** Total yardage for the current Mon–Sat week. Today's yardage comes
+     *  from the live `totalYards` (already filtered for cancellations);
+     *  every other day is summed from the adjacent fetch cache. */
+    const weekYardage = useMemo(() => {
+        if (currentWeekDates.length === 0) return totalYards
+        return currentWeekDates.reduce((sum, date) => {
+            if (date === planDate) return sum + totalYards
+            return sum + sumDayYardage(adjacentProduction?.[date])
+        }, 0)
+    }, [adjacentProduction, currentWeekDates, planDate, totalYards])
+
+    /** Percent change vs the previous business day. Null when that day has
+     *  no data so the badge renders nothing instead of a misleading "+∞%". */
     const yardageDeltaPct = useMemo(() => {
-        if (!(yesterdayYardage > 0)) return null
-        const delta = totalYards - yesterdayYardage
-        return Math.round((delta / yesterdayYardage) * 1000) / 10
-    }, [totalYards, yesterdayYardage])
+        if (!(previousBusinessDayYardage > 0)) return null
+        const delta = totalYards - previousBusinessDayYardage
+        return Math.round((delta / previousBusinessDayYardage) * 1000) / 10
+    }, [totalYards, previousBusinessDayYardage])
     // Sum our canonical per-order truck count (excludes cancelled). Falls back
     // to `truckCount` only when we can't compute — same rule as the table cell.
     const totalTrucks = liveOrders.reduce((sum, o) => {
@@ -2462,19 +2487,28 @@ function PlanScheduleView({
                             <Stat
                                 badge={
                                     yardageDeltaPct != null ? (
-                                        <YardageDeltaBadge pct={yardageDeltaPct} yesterdayYardage={yesterdayYardage} />
+                                        <YardageDeltaBadge
+                                            comparisonLabel={previousBusinessDayLabel}
+                                            comparisonYardage={previousBusinessDayYardage}
+                                            pct={yardageDeltaPct}
+                                        />
                                     ) : null
                                 }
                                 hint={
                                     yardageDeltaPct != null
-                                        ? `vs ${yesterdayYardage.toLocaleString()} yd yesterday`
+                                        ? `vs ${previousBusinessDayYardage.toLocaleString()} yd ${previousBusinessDayLabel}`
                                         : 'cancelled excluded'
                                 }
                                 label="Yardage"
                                 unit="yd"
                                 value={totalYards.toLocaleString()}
                             />
-                            <Stat hint="rolling 7 days" label="Week" unit="yd" value={weekYardage.toLocaleString()} />
+                            <Stat
+                                hint="this week (Mon–Sat)"
+                                label="Week"
+                                unit="yd"
+                                value={weekYardage.toLocaleString()}
+                            />
                             <Stat hint="truck loads" label="Loads" value={totalTrucks.toLocaleString()} />
                             <Stat
                                 hint={earliestTime && latestTime ? 'first → last start' : undefined}
