@@ -24,6 +24,7 @@ export class Tractor {
         this.model = data.model ?? ''
         this.year = data.year ?? ''
         this.freight = data.freight ?? ''
+        this.hours = data.hours ?? null
         this.latestHistoryDate = data.latestHistoryDate ?? null
         this.openIssuesCount = data.openIssuesCount ?? 0
         this.commentsCount = data.commentsCount ?? 0
@@ -47,6 +48,7 @@ export class Tractor {
             created_at: DateUtility.toDbTimestamp(this.createdAt) || DateUtility.nowDb(),
             freight: this.freight || null,
             has_blower: this.hasBlower,
+            hours: this.hours ?? null,
             last_service_date: DateUtility.toDbDate(this.lastServiceDate),
             make: this.make,
             model: this.model,

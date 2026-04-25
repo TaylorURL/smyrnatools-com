@@ -15,21 +15,24 @@ const CALIBRATION_WARN_DAYS = 30
 const SCALE_TYPES = ['batch', 'aggregate', 'truck', 'water', 'admixture', 'cement', 'other']
 
 const STATUS_BADGE = {
-    valid: { label: 'Valid', cls: 'bg-emerald-100 text-emerald-700 border border-emerald-500' },
-    expiring: { label: 'Expiring Soon', cls: 'bg-amber-100 text-amber-700 border border-amber-500' },
-    expired: { label: 'Expired', cls: 'bg-red-100 text-red-700 border border-red-500' },
-    ok: { label: 'OK', cls: 'bg-emerald-100 text-emerald-700 border border-emerald-500' },
-    due_soon: { label: 'Due Soon', cls: 'bg-amber-100 text-amber-700 border border-amber-500' },
-    overdue: { label: 'Overdue', cls: 'bg-red-100 text-red-700 border border-red-500' },
-    unknown: { label: 'Not Set', cls: 'bg-slate-100 text-slate-500 border border-slate-300' }
+    valid: { label: 'Valid', bg: '#dcfce7', color: '#166534' },
+    expiring: { label: 'Expiring', bg: '#fef3c7', color: '#92400e' },
+    expired: { label: 'Expired', bg: '#fee2e2', color: '#b91c1c' },
+    ok: { label: 'OK', bg: '#dcfce7', color: '#166534' },
+    due_soon: { label: 'Due Soon', bg: '#fef3c7', color: '#92400e' },
+    overdue: { label: 'Overdue', bg: '#fee2e2', color: '#b91c1c' },
+    unknown: { label: 'Not Set', bg: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }
 }
 
 const SCALE_ICON_BY_STATUS = {
-    ok: 'bg-emerald-100 text-emerald-500',
-    due_soon: 'bg-amber-100 text-amber-500',
-    overdue: 'bg-red-100 text-red-500',
-    unknown: 'bg-slate-100 text-slate-400'
+    ok: { bg: '#dcfce7', color: '#166534' },
+    due_soon: { bg: '#fef3c7', color: '#92400e' },
+    overdue: { bg: '#fee2e2', color: '#b91c1c' },
+    unknown: { bg: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }
 }
+
+const STATUS_PILL_CLS =
+    'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -69,7 +72,7 @@ function getNextCalibrationDueDate(calibratedAt, intervalDays) {
 function StatusBadge({ status }) {
     const cfg = STATUS_BADGE[status] ?? STATUS_BADGE.unknown
     return (
-        <span className={`inline-block rounded-md text-xs font-bold uppercase tracking-wide px-2.5 py-1 ${cfg.cls}`}>
+        <span className={STATUS_PILL_CLS} style={{ background: cfg.bg, color: cfg.color }}>
             {cfg.label}
         </span>
     )
@@ -134,19 +137,21 @@ function Modal({ title, onClose, onSubmit, submitting, children }) {
     )
 }
 
-function IconBtn({ icon, onClick, danger }) {
+function IconBtn({ icon, onClick, danger, title }) {
     return (
         <button
             type="button"
             onClick={onClick}
-            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors ${
-                danger
-                    ? 'border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600'
-                    : 'border-border-light text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-            }`}
-            aria-label={danger ? 'Delete' : 'Edit'}
+            title={title}
+            className="px-2 py-1 text-[10.5px] font-semibold rounded shrink-0 inline-flex items-center justify-center transition-colors"
+            style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-light)',
+                color: danger ? '#dc2626' : 'var(--text-secondary)'
+            }}
+            aria-label={title || (danger ? 'Delete' : 'Edit')}
         >
-            <i className={`fas ${icon} text-[11px]`} />
+            <i className={`fas ${icon} text-[10px]`} />
         </button>
     )
 }
@@ -418,14 +423,14 @@ function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, onSaved }
 
 // ─── Scale Row ────────────────────────────────────────────────────────────────
 
-function ScaleRow({ scale, allPlants, onReload }) {
+function ScaleRow({ scale, allPlants, onReload, accentColor }) {
     const [calibModal, setCalibModal] = useState(false)
     const [editModal, setEditModal] = useState(false)
 
     const status = getCalibrationStatus(scale.calibrated_at, scale.calibration_interval_days)
     const nextDue = getNextCalibrationDueDate(scale.calibrated_at, scale.calibration_interval_days)
     const days = nextDue ? daysFromNow(nextDue) : null
-    const iconBg = SCALE_ICON_BY_STATUS[status] ?? SCALE_ICON_BY_STATUS.unknown
+    const iconCfg = SCALE_ICON_BY_STATUS[status] ?? SCALE_ICON_BY_STATUS.unknown
 
     function confirmDelete() {
         if (!window.confirm(`Delete scale "${scale.scale_name}"?`)) return
@@ -436,41 +441,42 @@ function ScaleRow({ scale, allPlants, onReload }) {
 
     return (
         <>
-            <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0 hover:bg-slate-50/60 transition-colors">
-                <div className="w-4 shrink-0" /> {/* indent under plant */}
-                <div className={`flex items-center justify-center w-7 h-7 rounded-lg text-[10px] shrink-0 ${iconBg}`}>
-                    <i className="fas fa-balance-scale" />
+            <div
+                className="flex items-center gap-2.5 px-3 py-2 transition-colors hover:bg-bg-tertiary"
+                style={{ borderBottom: '1px solid var(--border-light)' }}
+            >
+                <div className="w-4 shrink-0" />
+                <div
+                    className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                    style={{ background: iconCfg.bg, color: iconCfg.color }}
+                >
+                    <i className="fas fa-balance-scale text-[10px]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-[var(--text-primary)]">{scale.scale_name}</span>
-                        <span className="text-[11px] text-slate-400 capitalize">{scale.scale_type}</span>
-                    </div>
-                    <div className="flex items-center gap-3 mt-0.5 text-[12px] text-[var(--text-secondary)] flex-wrap">
-                        <span>
-                            {scale.calibrated_at ? `Calibrated ${fmt(scale.calibrated_at)}` : 'Never calibrated'}
-                            {scale.calibrated_by ? ` · ${scale.calibrated_by}` : ''}
+                    <div className="font-semibold text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
+                        {scale.scale_name}
+                        <span className="ml-1.5 capitalize font-normal" style={{ color: 'var(--text-tertiary)' }}>
+                            · {scale.scale_type}
                         </span>
-                        {nextDue && (
-                            <span>
-                                Due {fmt(nextDue)}
-                                {days !== null && ` (${days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`})`}
-                            </span>
-                        )}
+                    </div>
+                    <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
+                        {scale.calibrated_at ? `Calibrated ${fmt(scale.calibrated_at)}` : 'Never calibrated'}
+                        {scale.calibrated_by ? ` · ${scale.calibrated_by}` : ''}
+                        {nextDue &&
+                            ` · due ${fmt(nextDue)}${days !== null ? ` (${days < 0 ? `${Math.abs(days)}d late` : `${days}d`})` : ''}`}
                     </div>
                 </div>
                 <StatusBadge status={status} />
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                        type="button"
-                        onClick={() => setCalibModal(true)}
-                        className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-border-light bg-white text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
-                    >
-                        Log Calibration
-                    </button>
-                    <IconBtn icon="fa-pencil-alt" onClick={() => setEditModal(true)} />
-                    <IconBtn icon="fa-trash-alt" onClick={confirmDelete} danger />
-                </div>
+                <button
+                    type="button"
+                    onClick={() => setCalibModal(true)}
+                    className="text-white text-[10.5px] font-semibold px-2 py-1 rounded shrink-0 hidden sm:inline-flex items-center gap-1 uppercase tracking-wider"
+                    style={{ background: accentColor }}
+                >
+                    Log
+                </button>
+                <IconBtn icon="fa-pencil-alt" onClick={() => setEditModal(true)} title="Edit scale" />
+                <IconBtn icon="fa-trash-alt" onClick={confirmDelete} danger title="Delete scale" />
             </div>
 
             {calibModal && (
@@ -500,13 +506,27 @@ function ScaleRow({ scale, allPlants, onReload }) {
 
 // ─── Plant Group ──────────────────────────────────────────────────────────────
 
-function PlantGroup({ plant, scales, allPlants, regionPlants, onReload }) {
+/**
+ * Plant header row + nested scale rows. Mirrors the dense list chrome used by
+ * `MergedReviewList` (Reports' review tab): tight padding, 6×6 icons, 12px
+ * titles, 10.5px secondary text, accent CTA with uppercase tracking.
+ */
+function PlantGroup({ plant, scales, allPlants, regionPlants, onReload, accentColor }) {
     const [renewModal, setRenewModal] = useState(false)
     const [editModal, setEditModal] = useState(false)
     const [addScaleModal, setAddScaleModal] = useState(false)
 
     const renewalStatus = getRenewalStatus(plant.renewal_expires_at)
     const plantScales = scales.filter((s) => s.nrmca_plant_id === plant.id)
+    const expiryDays = daysFromNow(plant.renewal_expires_at)
+
+    const contextLine = plant.renewal_expires_at
+        ? renewalStatus === 'expired'
+            ? `Expired ${fmt(plant.renewal_expires_at)}${expiryDays !== null ? ` · ${Math.abs(expiryDays)}d ago` : ''}`
+            : `Expires ${fmt(plant.renewal_expires_at)}${expiryDays !== null && expiryDays >= 0 ? ` · ${expiryDays}d left` : ''}`
+        : plant.renewed_at
+          ? `Renewed ${fmt(plant.renewed_at)}`
+          : 'No certification on file'
 
     function confirmDeletePlant() {
         if (!window.confirm(`Delete "${plant.plant_label}"? This will also remove all associated scales and history.`))
@@ -518,55 +538,69 @@ function PlantGroup({ plant, scales, allPlants, regionPlants, onReload }) {
 
     return (
         <>
-            {/* Plant header */}
-            <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 bg-slate-50 border-b border-border-light">
-                <div className="flex items-center justify-center w-7 h-7 rounded-lg text-[10px] bg-blue-100 text-blue-500 shrink-0">
-                    <i className="fas fa-certificate" />
+            {/* Plant header row */}
+            <div
+                className="flex items-center gap-2.5 px-3 py-2"
+                style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
+            >
+                <div
+                    className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                    style={{ background: `${accentColor}22`, color: accentColor }}
+                >
+                    <i className="fas fa-certificate text-[10px]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-[var(--text-primary)]">{plant.plant_label}</span>
-                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                            {plant.plant_code}
+                    <div className="font-semibold text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
+                        {plant.plant_label}
+                        <span
+                            className="ml-1.5 font-semibold uppercase tracking-wider"
+                            style={{ color: 'var(--text-tertiary)' }}
+                        >
+                            · {plant.plant_code}
                         </span>
-                        <span className="text-[11px] text-slate-400">NRMCA Certification</span>
-                        <StatusBadge status={renewalStatus} />
                     </div>
-                    {(plant.renewed_at || plant.renewal_expires_at) && (
-                        <div className="flex items-center gap-3 mt-0.5 text-[12px] text-[var(--text-secondary)] flex-wrap">
-                            {plant.renewed_at && <span>Cert. renewed {fmt(plant.renewed_at)}</span>}
-                            {plant.renewal_expires_at && <span>Expires {fmt(plant.renewal_expires_at)}</span>}
-                        </div>
-                    )}
+                    <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
+                        NRMCA Certification · {contextLine}
+                    </div>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                        type="button"
-                        onClick={() => setRenewModal(true)}
-                        className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-border-light bg-white text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap"
-                    >
-                        Log Renewal
-                    </button>
-                    <IconBtn icon="fa-pencil-alt" onClick={() => setEditModal(true)} />
-                    <IconBtn icon="fa-trash-alt" onClick={confirmDeletePlant} danger />
-                </div>
+                <StatusBadge status={renewalStatus} />
+                <button
+                    type="button"
+                    onClick={() => setRenewModal(true)}
+                    className="text-white text-[10.5px] font-semibold px-2 py-1 rounded shrink-0 hidden sm:inline-flex items-center gap-1 uppercase tracking-wider"
+                    style={{ background: accentColor }}
+                >
+                    Log Renewal
+                </button>
+                <IconBtn icon="fa-pencil-alt" onClick={() => setEditModal(true)} title="Edit plant" />
+                <IconBtn icon="fa-trash-alt" onClick={confirmDeletePlant} danger title="Delete plant" />
             </div>
 
             {/* Scale rows */}
             {plantScales.map((scale) => (
-                <ScaleRow key={scale.id} scale={scale} allPlants={allPlants} onReload={onReload} />
+                <ScaleRow
+                    key={scale.id}
+                    scale={scale}
+                    allPlants={allPlants}
+                    onReload={onReload}
+                    accentColor={accentColor}
+                />
             ))}
 
-            {/* Add scale */}
-            <div className="flex items-center gap-3 px-4 sm:px-5 py-2.5 border-b border-border-light bg-white">
+            {/* Add scale row */}
+            <div
+                className="flex items-center gap-2.5 px-3 py-1.5"
+                style={{ borderBottom: '1px solid var(--border-light)' }}
+            >
                 <div className="w-4 shrink-0" />
-                <div className="w-7 shrink-0" />
+                <div className="w-6 shrink-0" />
                 <button
                     type="button"
                     onClick={() => setAddScaleModal(true)}
-                    className="flex items-center gap-1.5 text-[12px] font-medium text-slate-400 hover:text-blue-600 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider"
+                    style={{ color: 'var(--text-tertiary)' }}
                 >
-                    <i className="fas fa-plus text-[10px]" />
+                    <i className="fas fa-plus text-[9px]" />
                     Add scale
                 </button>
             </div>
@@ -611,31 +645,57 @@ function PlantGroup({ plant, scales, allPlants, regionPlants, onReload }) {
 
 function NRMCASkeleton() {
     return (
-        <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
+        <div
+            className="rounded overflow-hidden"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
             {[1, 2, 3].map((g) => (
                 <React.Fragment key={g}>
-                    <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 bg-slate-50 border-b border-border-light">
-                        <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse shrink-0" />
+                    <div
+                        className="flex items-center gap-2.5 px-3 py-2"
+                        style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
+                    >
+                        <div
+                            className="w-6 h-6 rounded animate-pulse shrink-0"
+                            style={{ background: 'var(--bg-tertiary)' }}
+                        />
                         <div className="flex-1 min-w-0">
-                            <div className="h-4 w-40 rounded bg-slate-200 animate-pulse mb-1.5" />
-                            <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
+                            <div
+                                className="h-3 w-40 rounded animate-pulse mb-1"
+                                style={{ background: 'var(--bg-tertiary)' }}
+                            />
+                            <div
+                                className="h-2.5 w-28 rounded animate-pulse"
+                                style={{ background: 'var(--bg-tertiary)' }}
+                            />
                         </div>
-                        <div className="h-6 w-16 rounded-md bg-slate-200 animate-pulse" />
-                        <div className="h-7 w-24 rounded-lg bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-14 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
                     </div>
                     {[1, 2].map((r) => (
                         <div
                             key={r}
-                            className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-border-light"
+                            className="flex items-center gap-2.5 px-3 py-2"
+                            style={{ borderBottom: '1px solid var(--border-light)' }}
                         >
                             <div className="w-4 shrink-0" />
-                            <div className="w-7 h-7 rounded-lg bg-slate-100 animate-pulse shrink-0" />
+                            <div
+                                className="w-6 h-6 rounded animate-pulse shrink-0"
+                                style={{ background: 'var(--bg-tertiary)' }}
+                            />
                             <div className="flex-1 min-w-0">
-                                <div className="h-3.5 w-36 rounded bg-slate-200 animate-pulse mb-1.5" />
-                                <div className="h-3 w-48 rounded bg-slate-100 animate-pulse" />
+                                <div
+                                    className="h-3 w-36 rounded animate-pulse mb-1"
+                                    style={{ background: 'var(--bg-tertiary)' }}
+                                />
+                                <div
+                                    className="h-2.5 w-48 rounded animate-pulse"
+                                    style={{ background: 'var(--bg-tertiary)' }}
+                                />
                             </div>
-                            <div className="h-6 w-14 rounded-md bg-slate-200 animate-pulse" />
-                            <div className="h-7 w-28 rounded-lg bg-slate-200 animate-pulse" />
+                            <div
+                                className="h-4 w-12 rounded animate-pulse"
+                                style={{ background: 'var(--bg-tertiary)' }}
+                            />
                         </div>
                     ))}
                 </React.Fragment>
@@ -793,27 +853,38 @@ export default function NRMCAView() {
                 {loading ? (
                     <NRMCASkeleton />
                 ) : plants.length === 0 ? (
-                    <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
-                        <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-                            <i className="fas fa-certificate text-[4rem] mb-4 text-[var(--border-medium)]" />
-                            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">No plants defined yet</h3>
-                            <p className="text-[0.9375rem] text-[var(--text-secondary)] mb-6">
-                                Add a plant to start tracking certifications and scale calibrations.
-                            </p>
+                    <div
+                        className="rounded overflow-hidden"
+                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    >
+                        <div
+                            className="flex flex-col items-center justify-center py-10 px-4 text-center"
+                            style={{ color: 'var(--text-tertiary)' }}
+                        >
+                            <i className="fas fa-certificate text-2xl mb-2" />
+                            <div className="text-[12px]">
+                                No plants defined yet — add one to start tracking certifications and calibrations.
+                            </div>
                         </div>
                     </div>
                 ) : visiblePlants.length === 0 ? (
-                    <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
-                        <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-                            <i className="fas fa-circle-check text-[4rem] mb-4 text-emerald-300" />
-                            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">All clear</h3>
-                            <p className="text-[0.9375rem] text-[var(--text-secondary)]">
-                                No expired certifications or overdue calibrations.
-                            </p>
+                    <div
+                        className="rounded overflow-hidden"
+                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    >
+                        <div
+                            className="flex flex-col items-center justify-center py-10 px-4 text-center"
+                            style={{ color: 'var(--text-tertiary)' }}
+                        >
+                            <i className="fas fa-circle-check text-2xl mb-2" />
+                            <div className="text-[12px]">No expired certifications or overdue calibrations.</div>
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
+                    <div
+                        className="rounded overflow-hidden"
+                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    >
                         {visiblePlants.map((plant) => (
                             <PlantGroup
                                 key={plant.id}
@@ -822,6 +893,7 @@ export default function NRMCAView() {
                                 allPlants={plants}
                                 regionPlants={regionPlants}
                                 onReload={loadData}
+                                accentColor={accentColor}
                             />
                         ))}
                     </div>

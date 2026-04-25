@@ -1,6 +1,31 @@
 # Changelog
 
 
+## [38.5.50] - 2026-04-25
+
+- Added hours column to mixers, tractors, and equipment with full CRUD support across models, configs, add/detail views, edge functions, and a new database migration
+- Added hours to TractorService history tracking diff fields
+- Added fetchPlantManagerReportsForYear to ReportService with a 2-minute cache, replacing duplicate per-consumer database queries in useReviewData, useYphCalculation, and WeeklyTrendsSection
+- Added priority-week loading to loadReviewReports so the review tab renders the selected week immediately, then background-prefetches the full 52-week history
+- Added computePullUpRows to PlanUtility for identifying later orders that could be moved into earlier surplus windows to compact the schedule
+- Added pull-up recommendation rows to PlanScheduleView with teal-tinted synthetic rows showing the suggested earlier start time and customer notification deadline
+- Added closer-plant detection to PlanScheduleView using live travel times across all plants, surfacing a blue badge on orders where a non-assigned plant is 5+ minutes closer
+- Added "Overall Job Coverage" stat card to PlanDashboardView showing covered/total jobs with deficit and surplus counts
+- Added overnight (00:00-06:00) time-of-day bucket to PlanDemandView demand splits
+- Added district and "My Plants" filter support to PlantDropdownModal in PlanDemandView and PlanRealtimeView, replacing single-plant-only filtering
+- Added Sunday-skipping to PlanView date navigation so the plan selector never lands on a Sunday
+- Added a realtime-tab date display that locks to today and auto-snaps forward when the day rolls over
+- Added roundUpToSlotGrid to PlanUtility so suggested start times always land on 30-minute marks
+- Fixed pool timeline inbound-help counting to only credit true inter-plant transfer returns (orderKey === null), preventing over-counting that made overbooked plants look covered
+- Fixed TrafficService to only latch unavailable on the explicit not_configured signal, allowing transient 503s and network errors to retry on subsequent calls
+- Added TrafficService.reset() method for clearing the unavailability latch
+- Fixed Equipment model hoursMileage fallback to exclude the new hours field from the fuzzy key lookup
+- Redesigned MaintenanceFormReview, MaintenanceFormViewOnly, MaintenanceFormView, MaintenanceCreateFormView, and MaintenanceLogView with Plan-tab aesthetic using CSS custom properties, smaller typography, and compact spacing
+- Redesigned RecapModalSection with flat card chrome, grid-based metrics row, button-based asset rows, and CSS custom property theming
+- Redesigned NRMCAView with CSS custom property theming, compact plant/scale rows, and inline status pill styling
+- Added All/Issues tab filter to NRMCAView with badge count for expired plants and overdue scales
+- Removed unused YPH calculation hook call from PlantManagerReviewPlugin, using pre-computed props instead
+
 ## [38.5.49] - 2026-04-25
 
 - Extracted PlantFilterButton into a shared ui component and replaced duplicate implementations in TopSection, ReportsToolbar, PlanDemandView, and PlanRealtimeView

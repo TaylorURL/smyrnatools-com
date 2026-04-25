@@ -8,6 +8,7 @@ import {
     buildAssignmentDriverTimes,
     computePlantPoolTimeline,
     computePlantPoolTimelines,
+    computePullUpRows,
     computeSendHomeRows,
     computeSuggestedSlots,
     estimateOrderTiming,
@@ -270,6 +271,7 @@ function Pill({ accent, active, children, icon, onClick }) {
 
 function OrderCard({
     accentColor,
+    closerPlant,
     onOpenLocation,
     onPickPlant,
     onPickProduct,
@@ -389,18 +391,30 @@ function OrderCard({
                                 Bad Address
                             </span>
                         ) : onOpenLocation ? (
-                            <button
-                                type="button"
-                                onClick={() => onOpenLocation(order)}
-                                className="text-[12px] mt-1 flex items-center gap-1.5 border-none bg-transparent p-0 cursor-pointer underline-offset-2 hover:underline w-full text-left"
-                                style={{ color: accentColor }}
-                                title="Open route map"
-                            >
-                                <i className="fas fa-location-dot text-[10px] opacity-80" />
-                                <span className="truncate uppercase tracking-wide font-semibold">
-                                    {composeAddress(order).toUpperCase()}
-                                </span>
-                            </button>
+                            <div className="mt-1 flex flex-col gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => onOpenLocation(order)}
+                                    className="text-[12px] flex items-center gap-1.5 border-none bg-transparent p-0 cursor-pointer underline-offset-2 hover:underline w-full text-left"
+                                    style={{ color: accentColor }}
+                                    title="Open route map"
+                                >
+                                    <i className="fas fa-location-dot text-[10px] opacity-80" />
+                                    <span className="truncate uppercase tracking-wide font-semibold">
+                                        {composeAddress(order).toUpperCase()}
+                                    </span>
+                                </button>
+                                {closerPlant && (
+                                    <span
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start"
+                                        style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#1d4ed8' }}
+                                        title={`Live drive time: ${closerPlant.minutes} min from plant ${closerPlant.plantCode}${closerPlant.plantName ? ` (${closerPlant.plantName})` : ''} vs ${closerPlant.assignedMinutes} min from assigned plant ${plantCode}. Saves ~${closerPlant.savings} min one-way.`}
+                                    >
+                                        <i className="fas fa-route text-[9px]" />
+                                        Closer to {closerPlant.plantCode} · −{closerPlant.savings}m
+                                    </span>
+                                )}
+                            </div>
                         ) : (
                             <div
                                 className="text-[12px] mt-1 flex items-center gap-1.5"
@@ -694,6 +708,7 @@ function SyntheticRow({ accentColor, chips, icon, pillIcon, pillLabel, plantCell
 function ScheduleTable({
     accentColor,
     filteredPlantCode = null,
+    getCloserPlantForOrder,
     getTravelOverrides,
     helpRows = [],
     isPlantFiltered = false,
@@ -705,6 +720,7 @@ function ScheduleTable({
     poolSourceByCode,
     poolTimeline,
     poolTimelinesByPlant,
+    pullUpRows = [],
     sendHomeRows = [],
     showExtraRows = true,
     suggestedSlotRows = []
@@ -747,6 +763,13 @@ function ScheduleTable({
     const filteredSuggestedSlotRows = useMemo(
         () => (isPlantFiltered ? suggestedSlotRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
         [suggestedSlotRows, visiblePlantCodes, isPlantFiltered]
+    )
+    /** Pull-up recommendations follow the same gating as send-home / help —
+     *  they're per-plant, only meaningful with an active plant filter and
+     *  when the dispatcher has the extra-rows toggle on. */
+    const filteredPullUpRows = useMemo(
+        () => (extrasActive ? pullUpRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
+        [pullUpRows, visiblePlantCodes, extrasActive]
     )
 
     /* ── Truck-coverage hover modal state ─────────────────────────────────
@@ -903,6 +926,22 @@ function ScheduleTable({
                 truckRange: row.truckRange
             })
         })
+        filteredPullUpRows.forEach((row, i) => {
+            rows.push({
+                kind: 'pullUp',
+                notifyByMin: row.notifyByMin,
+                order: row.order,
+                originalStartMin: row.originalStartMin,
+                plantCode: row.plantCode,
+                pourDurationMin: row.pourDurationMin,
+                pullUpDeltaMin: row.pullUpDeltaMin,
+                pullUpKey: `${row.plantCode}-${row.suggestedStartMin}-${i}`,
+                suggestedStartMin: row.suggestedStartMin,
+                time: row.time,
+                truckCount: row.truckCount,
+                yardage: row.yardage
+            })
+        })
         // Chronological sort runs whenever any synthetic row is in play —
         // they only make sense at their actual minute between orders. With
         // NO synthetic rows (pure order list), we preserve the Sort by
@@ -916,8 +955,8 @@ function ScheduleTable({
                 // At the same minute: returns first (pool up), then help,
                 // then send-home / trade-off, then slot suggestions, then
                 // real orders.
-                const order = { help: 1, order: 4, return: 0, sendHome: 2, slot: 3, tradeoff: 2 }
-                return (order[a.kind] ?? 5) - (order[b.kind] ?? 5)
+                const order = { help: 1, order: 5, pullUp: 3, return: 0, sendHome: 2, slot: 4, tradeoff: 2 }
+                return (order[a.kind] ?? 6) - (order[b.kind] ?? 6)
             })
         }
         return rows
@@ -928,6 +967,7 @@ function ScheduleTable({
         filteredHelpRows,
         filteredSendHomeRows,
         filteredSuggestedSlotRows,
+        filteredPullUpRows,
         extrasActive
     ])
 
@@ -1118,6 +1158,66 @@ function ScheduleTable({
                                     }
                                     time={row.time}
                                     tint="rgba(14, 165, 233, 0.06)"
+                                />
+                            )
+                        }
+                        if (row.kind === 'pullUp') {
+                            const plantName = plantNameByCode?.[row.plantCode] || ''
+                            const customerName = clean(row.order?.customer)
+                            const orderTag = row.order?.orderNum
+                                ? `#${row.order.orderNum}`
+                                : row.order?.startTime
+                                  ? String(row.order.startTime).slice(0, 5)
+                                  : 'order'
+                            const deltaH = Math.floor(row.pullUpDeltaMin / 60)
+                            const deltaM = row.pullUpDeltaMin % 60
+                            const deltaLabel =
+                                deltaH > 0 ? `${deltaH}h${deltaM > 0 ? ` ${deltaM}m` : ''}` : `${deltaM}m`
+                            return (
+                                <SyntheticRow
+                                    key={`pull-up-${row.pullUpKey}`}
+                                    accentColor="#0d9488"
+                                    icon="fa-arrow-left-long"
+                                    pillIcon="fa-clock-rotate-left"
+                                    pillLabel={`Compact · ${deltaLabel} earlier`}
+                                    plantCell={
+                                        <PlantBadge code={row.plantCode} fallback={accentColor} name={plantName} />
+                                    }
+                                    primary={
+                                        <>
+                                            Try moving <b>{orderTag}</b>
+                                            {customerName ? (
+                                                <>
+                                                    {' '}
+                                                    · <b>{customerName}</b>
+                                                </>
+                                            ) : null}{' '}
+                                            from <b>{formatMinutesClock(row.originalStartMin)}</b> to{' '}
+                                            <b>{formatMinutesClock(row.suggestedStartMin)}</b>.
+                                        </>
+                                    }
+                                    secondary={
+                                        <>
+                                            <b>{row.plantCode}</b> has <b>{row.truckCount}</b> truck
+                                            {row.truckCount === 1 ? '' : 's'} idle here that{' '}
+                                            {row.order?.yardage ? (
+                                                <>
+                                                    could pour this <b>{Math.round(row.yardage)} yd</b> job
+                                                </>
+                                            ) : (
+                                                <>could absorb this pour</>
+                                            )}{' '}
+                                            instead of waiting until <b>{formatMinutesClock(row.originalStartMin)}</b>.
+                                            Notify customer by <b>{formatMinutesClock(row.notifyByMin)}</b>.
+                                            <span style={{ color: 'var(--text-tertiary)' }}>
+                                                {' '}
+                                                · When working the phones, start with the latest-scheduled customers
+                                                first.
+                                            </span>
+                                        </>
+                                    }
+                                    time={row.time}
+                                    tint="rgba(13, 148, 136, 0.06)"
                                 />
                             )
                         }
@@ -1331,32 +1431,48 @@ function ScheduleTable({
                                             .join(', ')
                                             .toUpperCase()
                                         const orderForMap = usingFallback ? { ...o, city: fallbackCity } : o
+                                        const closerPlant = getCloserPlantForOrder?.(o)
                                         return (
-                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onOpenLocation?.(orderForMap)}
-                                                    className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 uppercase tracking-wide font-semibold"
-                                                    style={{ color: 'var(--text-primary)', fontSize: 12 }}
-                                                    title={`Open map for ${composeAddress(orderForMap)}`}
-                                                >
-                                                    <i
-                                                        className="fas fa-location-dot text-[10px] mr-1.5"
-                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                    />
-                                                    {displayText}
-                                                </button>
-                                                {usingFallback && (
-                                                    <span
-                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
-                                                        style={{
-                                                            background: 'rgba(217, 119, 6, 0.15)',
-                                                            color: '#b45309'
-                                                        }}
-                                                        title={`City wasn't entered by dispatch — we filled in "${fallbackCity}" from plant ${o.plantCode}. The actual delivery city could be different.`}
+                                            <div className="flex flex-col gap-1 min-w-0">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onOpenLocation?.(orderForMap)}
+                                                        className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 uppercase tracking-wide font-semibold"
+                                                        style={{ color: 'var(--text-primary)', fontSize: 12 }}
+                                                        title={`Open map for ${composeAddress(orderForMap)}`}
                                                     >
-                                                        <i className="fas fa-circle-exclamation text-[9px]" />
-                                                        City?
+                                                        <i
+                                                            className="fas fa-location-dot text-[10px] mr-1.5"
+                                                            style={{ color: 'var(--text-tertiary)' }}
+                                                        />
+                                                        {displayText}
+                                                    </button>
+                                                    {usingFallback && (
+                                                        <span
+                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
+                                                            style={{
+                                                                background: 'rgba(217, 119, 6, 0.15)',
+                                                                color: '#b45309'
+                                                            }}
+                                                            title={`City wasn't entered by dispatch — we filled in "${fallbackCity}" from plant ${o.plantCode}. The actual delivery city could be different.`}
+                                                        >
+                                                            <i className="fas fa-circle-exclamation text-[9px]" />
+                                                            City?
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {closerPlant && (
+                                                    <span
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start"
+                                                        style={{
+                                                            background: 'rgba(37, 99, 235, 0.12)',
+                                                            color: '#1d4ed8'
+                                                        }}
+                                                        title={`Live drive time: ${closerPlant.minutes} min from plant ${closerPlant.plantCode}${closerPlant.plantName ? ` (${closerPlant.plantName})` : ''} vs ${closerPlant.assignedMinutes} min from assigned plant ${o.plantCode}. Saves ~${closerPlant.savings} min one-way.`}
+                                                    >
+                                                        <i className="fas fa-route text-[9px]" />
+                                                        Closer to {closerPlant.plantCode} · −{closerPlant.savings}m
                                                     </span>
                                                 )}
                                             </div>
@@ -1669,21 +1785,28 @@ function PlanScheduleView({
 
     /** Unique (plant → job) pairs that have addresses on both sides. Orders
      *  missing a city borrow the plant's city so the geocoder doesn't fail
-     *  on an ambiguous street-only lookup. */
+     *  on an ambiguous street-only lookup.
+     *
+     *  Includes pairs for every plant in `plantOptionsForMap` so the address
+     *  column can flag jobs that are closer to a non-assigned plant. The edge
+     *  function caches by 15-min bucket, so the additional pairs hit the cache
+     *  on every render after the first fetch wave. */
     const travelPairs = useMemo(() => {
         const seen = new Map()
+        const candidatePlants = (plantOptionsForMap || []).filter((p) => p.address)
         for (const o of allOrders) {
-            const plantAddr = plantAddressByCode?.[o.plantCode]
-            if (!plantAddr || isLikelyBadAddress(clean(o.address))) continue
+            if (isLikelyBadAddress(clean(o.address))) continue
             const fallbackCity = clean(o.city) ? '' : plantCityByCode?.[o.plantCode] || ''
             const orderForGeocode = fallbackCity ? { ...o, city: fallbackCity } : o
             const jobAddr = composeAddress(orderForGeocode)
             if (!jobAddr) continue
-            const key = `${o.plantCode}::${jobAddr}`
-            if (!seen.has(key)) seen.set(key, { destination: jobAddr, key, origin: plantAddr })
+            for (const p of candidatePlants) {
+                const key = `${p.code}::${jobAddr}`
+                if (!seen.has(key)) seen.set(key, { destination: jobAddr, key, origin: p.address })
+            }
         }
         return Array.from(seen.values())
-    }, [allOrders, plantAddressByCode, plantCityByCode])
+    }, [allOrders, plantCityByCode, plantOptionsForMap])
 
     /** Prefetch Google live travel for every unique pair. The edge function
      *  caches by 15-min departure bucket, so repeat calls hit the cache
@@ -1742,6 +1865,81 @@ function PlanScheduleView({
             return { toJobMin: mins, toPlantMin: mins }
         },
         [liveTravelByKey, plantCityByCode]
+    )
+
+    /** Minimum savings (minutes) for a non-assigned plant to count as "closer"
+     *  in the address column. Below this we don't surface it — the variance
+     *  in live traffic estimates is enough that small savings aren't reliable. */
+    const CLOSER_PLANT_MIN_SAVINGS = 5
+
+    /** For each order, find a non-assigned plant whose live drive time to the
+     *  job is shorter than the assigned plant's by at least
+     *  `CLOSER_PLANT_MIN_SAVINGS`. Returns null when there's no such plant or
+     *  we don't yet have enough live data to compare. Keyed by job address so
+     *  every order at the same address shares the same lookup. */
+    const closerPlantByJobAddr = useMemo(() => {
+        const out = {}
+        const byJob = new Map()
+        for (const o of allOrders) {
+            if (!o.plantCode) continue
+            const fallbackCity = clean(o.city) ? '' : plantCityByCode?.[o.plantCode] || ''
+            const orderForKey = fallbackCity ? { ...o, city: fallbackCity } : o
+            const jobAddr = composeAddress(orderForKey)
+            if (!jobAddr) continue
+            if (!byJob.has(jobAddr)) byJob.set(jobAddr, new Set())
+            byJob.get(jobAddr).add(o.plantCode)
+        }
+        for (const [jobAddr, assignedPlants] of byJob.entries()) {
+            const candidatePlants = plantOptionsForMap || []
+            let bestPlant = null
+            let bestMinutes = Infinity
+            for (const p of candidatePlants) {
+                if (!p.address) continue
+                const mins = liveTravelByKey[`${p.code}::${jobAddr}`]
+                if (!Number.isFinite(mins)) continue
+                if (mins < bestMinutes) {
+                    bestMinutes = mins
+                    bestPlant = p
+                }
+            }
+            if (!bestPlant) continue
+            // Compare against the best assigned plant for this job — if the
+            // job is split between two assigned plants we don't want to flag
+            // it as "closer to plant X" if X is already one of them.
+            if (assignedPlants.has(bestPlant.code)) continue
+            let assignedMin = Infinity
+            for (const code of assignedPlants) {
+                const mins = liveTravelByKey[`${code}::${jobAddr}`]
+                if (Number.isFinite(mins) && mins < assignedMin) assignedMin = mins
+            }
+            if (!Number.isFinite(assignedMin)) continue
+            const savings = assignedMin - bestMinutes
+            if (savings < CLOSER_PLANT_MIN_SAVINGS) continue
+            out[jobAddr] = {
+                assignedMinutes: assignedMin,
+                minutes: bestMinutes,
+                plantCode: bestPlant.code,
+                plantName: bestPlant.name,
+                savings
+            }
+        }
+        return out
+    }, [allOrders, liveTravelByKey, plantCityByCode, plantOptionsForMap])
+
+    const getCloserPlantForOrder = useCallback(
+        (order) => {
+            if (!order?.plantCode) return null
+            const fallbackCity = clean(order.city) ? '' : plantCityByCode?.[order.plantCode] || ''
+            const orderForKey = fallbackCity ? { ...order, city: fallbackCity } : order
+            const jobAddr = composeAddress(orderForKey)
+            if (!jobAddr) return null
+            const closer = closerPlantByJobAddr[jobAddr]
+            if (!closer) return null
+            // Only flag for orders whose assigned plant is the slow one.
+            if (closer.plantCode === order.plantCode) return null
+            return closer
+        },
+        [closerPlantByJobAddr, plantCityByCode]
     )
 
     /** Canonical orderKey, mirroring what `computePlantPoolTimeline` builds. */
@@ -1919,6 +2117,13 @@ function PlanScheduleView({
      *  disrupting the current plan. */
     const suggestedSlotRows = useMemo(
         () => computeSuggestedSlots(allOrders, initialPoolByCode, getTravelOverrides, helpTransfers),
+        [allOrders, initialPoolByCode, getTravelOverrides, helpTransfers]
+    )
+
+    /** Pull-up recommendations — later orders that could be moved earlier into
+     *  surplus windows so the schedule compacts instead of trucks sitting idle. */
+    const pullUpRows = useMemo(
+        () => computePullUpRows(allOrders, initialPoolByCode, getTravelOverrides, helpTransfers),
         [allOrders, initialPoolByCode, getTravelOverrides, helpTransfers]
     )
 
@@ -2475,6 +2680,7 @@ function PlanScheduleView({
                         ) : viewMode === 'table' && !isMobile ? (
                             <ScheduleTable
                                 accentColor={accentColor}
+                                getCloserPlantForOrder={getCloserPlantForOrder}
                                 getTravelOverrides={getTravelOverrides}
                                 helpRows={helpRows}
                                 filteredPlantCode={plantFilter !== 'all' ? plantFilter : null}
@@ -2488,6 +2694,7 @@ function PlanScheduleView({
                                 poolSourceByCode={poolSourceByCode}
                                 poolTimeline={poolTimeline}
                                 poolTimelinesByPlant={poolTimelinesByPlant}
+                                pullUpRows={pullUpRows}
                                 sendHomeRows={sendHomeRows}
                                 suggestedSlotRows={suggestedSlotRows}
                             />
@@ -2522,6 +2729,7 @@ function PlanScheduleView({
                                                 <OrderCard
                                                     key={`${code}-${o.orderId || idx}`}
                                                     accentColor={accentColor}
+                                                    closerPlant={getCloserPlantForOrder(o)}
                                                     onOpenLocation={setMapOrder}
                                                     onPickPlant={(c) =>
                                                         setPlantFilter((prev) => (prev === c ? 'all' : c))

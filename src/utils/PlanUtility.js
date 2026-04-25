@@ -453,21 +453,20 @@ const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides
             truckCount
         }
     }
-    // After building all events, credit each order with inbound trucks
-    // landing at its plant during its pour window — help arrivals AND other
-    // orders' trucks returning. These trucks are physically at the plant
-    // while the pour is still running, so they naturally cover later trips.
-    //
-    // Outbound events during the window are intentionally NOT subtracted:
-    // trucks already committed to this pour are locked until it ends, so a
-    // scheduled help-leave or another dispatch can't actually pull trucks
-    // off it, and the order shouldn't be penalised for plan-level conflicts.
+    // Credit each order only with TRUE inbound help — inter-plant transfers
+    // arriving at this plant during its pour window. Help-transfer events
+    // carry `orderKey === null`; order-cycle returns carry a real orderKey
+    // and are excluded because those trucks are committed to keeping their
+    // own order cycling, not free to absorb extra trips on this one. Counting
+    // them previously made the per-order coverage hover disagree with the
+    // plant timeline (which correctly showed a deficit) and the planner's
+    // YPH flag — every order looked "covered" while the plant was overbooked.
     Object.entries(byOrder).forEach(([orderKey, entry]) => {
         let inboundDuringPour = 0
         for (const event of events) {
             if (event.plantCode !== entry.plantCode) continue
             if (event.type !== 'return') continue
-            if (event.orderKey === orderKey) continue
+            if (event.orderKey !== null) continue
             if (event.time <= entry.dispatchMinutes || event.time > entry.lastReturnMinutes) continue
             inboundDuringPour += event.count
         }
@@ -589,6 +588,17 @@ export const SUGGESTED_SLOT_TYPES = [
 
 const SLOT_DAY_START_MIN = 6 * 60
 const SLOT_DAY_END_MIN = 18 * 60
+const SLOT_GRID_MIN = 30
+
+/** Round a minute value UP to the next 30-minute mark so suggested start
+ *  times read as 11:00 / 11:30 — never 11:13. Already-aligned values stay
+ *  put. Dispatchers schedule on the half-hour, so any algorithmic time we
+ *  surface needs to land on that grid. */
+const roundUpToSlotGrid = (mins) => {
+    if (!Number.isFinite(mins)) return mins
+    const remainder = mins % SLOT_GRID_MIN
+    return remainder === 0 ? mins : mins + (SLOT_GRID_MIN - remainder)
+}
 
 /** Walk a plant's pool timeline and return the earliest start time (in minutes)
  *  within business hours where the plant has `minTrucks` GENUINELY spare —
@@ -615,7 +625,8 @@ const findEarliestIdleTime = (timeline, minTrucks) => {
         const segEnd = i + 1 < segments.length ? segments[i + 1].startTime : SLOT_DAY_END_MIN
         const clippedStart = Math.max(seg.startTime, SLOT_DAY_START_MIN)
         const clippedEnd = Math.min(segEnd, SLOT_DAY_END_MIN)
-        if (clippedStart < clippedEnd) return clippedStart
+        const grid = roundUpToSlotGrid(clippedStart)
+        if (grid < clippedEnd) return grid
     }
     return null
 }
@@ -709,7 +720,12 @@ export const findNextViableStart = (timeline, minTrucks, afterMin, durationMin) 
             const clippedEnd = Math.min(segEnd, SLOT_DAY_END_MIN)
             if (clippedEnd <= clippedStart) continue
             if (runStart == null) runStart = clippedStart
-            if (clippedEnd - runStart >= durationMin) return runStart
+            // Snap to the next 30-minute mark so the suggested start reads
+            // 11:00 / 11:30, never 11:13. The window must still hold the full
+            // pour after snapping; if it doesn't, fall through to the next
+            // segment in the run.
+            const gridStart = roundUpToSlotGrid(runStart)
+            if (clippedEnd - gridStart >= durationMin) return gridStart
         } else {
             runStart = null
         }
@@ -783,6 +799,93 @@ export const computeSendHomeRows = (orders, initialPoolByCode, getTravelOverride
                 sentHome = budget
             }
         }
+    })
+    return rows
+}
+
+/**
+ * Minimum pull-up delta worth recommending. Moving a customer by less than
+ * this is more disruption than it's worth — trivial nudges aren't surfaced.
+ */
+export const PULL_UP_MIN_DELTA_MIN = 60
+
+/**
+ * Realistic notice required to actually call a customer and confirm a moved
+ * start time. Used to chalk a "notify by HH:MM" timestamp on the row so the
+ * dispatcher knows when outreach must happen.
+ */
+export const PULL_UP_LEAD_NOTICE_MIN = 120
+
+/**
+ * Find later orders that could be pulled into earlier surplus windows so the
+ * schedule compacts instead of leaving idle trucks waiting for a downstream
+ * spike. The trigger is dip-then-spike: a plant has surplus trucks now AND
+ * needs them again later (the candidate order itself is the spike). Pulling
+ * the order up keeps those trucks productive instead of sitting idle.
+ *
+ * Selection is best-fit by truck count — largest order that fits the surplus
+ * window goes first so we maximize utilization. The dispatcher's outreach
+ * sequencing (call latest customers first) is surfaced in the row's
+ * advisory text in the view layer; we don't bias the algorithm toward the
+ * latest job.
+ *
+ * @returns {Array<{plantCode, order, originalStartMin, suggestedStartMin,
+ *                  pullUpDeltaMin, notifyByMin, truckCount, yardage,
+ *                  pourDurationMin, time}>}
+ */
+export const computePullUpRows = (orders, initialPoolByCode, getTravelOverrides, helpTransfers) => {
+    const { timelineByPlant } = simulatePoolTimeline(orders, initialPoolByCode, getTravelOverrides, helpTransfers)
+    const ordersByPlant = new Map()
+    for (const order of orders || []) {
+        if (isExcludedOrder(order)) continue
+        const startMin = timeToMinutes(order?.startTime)
+        if (startMin == null) continue
+        const list = ordersByPlant.get(order.plantCode) || []
+        list.push({ order, startMin })
+        ordersByPlant.set(order.plantCode, list)
+    }
+    const rows = []
+    ordersByPlant.forEach((plantOrders, plantCode) => {
+        const timeline = timelineByPlant?.[plantCode]
+        if (!Array.isArray(timeline) || timeline.length === 0) return
+        // Best-fit ordering: largest truck count first, ties broken by larger
+        // yardage. Maximises window utilisation when the same surplus could
+        // host multiple candidates.
+        const candidates = plantOrders
+            .map(({ order, startMin }) => {
+                const overrides = typeof getTravelOverrides === 'function' ? getTravelOverrides(order) || {} : {}
+                const truckCount = getCalculatedTruckCount(order, overrides)
+                const pourDurationMin = getOrderPourDurationMinutes(order) || 60
+                const yardage = parseFloat(order?.yardage) || 0
+                return { order, overrides, plantCode, pourDurationMin, startMin, truckCount, yardage }
+            })
+            .filter((c) => c.truckCount > 0)
+            .sort((a, b) => b.truckCount - a.truckCount || b.yardage - a.yardage)
+        // Reserve every 30-minute window we recommend so two candidates don't
+        // both target the same surplus slot — once a window is claimed, the
+        // next candidate has to find a different one.
+        const reservedSlotKeys = new Set()
+        candidates.forEach((c) => {
+            const viableStart = findNextViableStart(timeline, c.truckCount, SLOT_DAY_START_MIN, c.pourDurationMin)
+            if (viableStart == null || viableStart >= c.startMin) return
+            const pullUpDeltaMin = c.startMin - viableStart
+            if (pullUpDeltaMin < PULL_UP_MIN_DELTA_MIN) return
+            const slotKey = Math.floor(viableStart / 30)
+            if (reservedSlotKeys.has(slotKey)) return
+            reservedSlotKeys.add(slotKey)
+            rows.push({
+                notifyByMin: viableStart - PULL_UP_LEAD_NOTICE_MIN,
+                order: c.order,
+                originalStartMin: c.startMin,
+                plantCode,
+                pourDurationMin: c.pourDurationMin,
+                pullUpDeltaMin,
+                suggestedStartMin: viableStart,
+                time: viableStart,
+                truckCount: c.truckCount,
+                yardage: c.yardage
+            })
+        })
     })
     return rows
 }

@@ -42,7 +42,8 @@ const ALLOWED_HISTORY_FIELDS = [
     'model',
     'year',
     'freight',
-    'status'
+    'status',
+    'hours'
 ]
 /** Attaches an isVerified() method and uppercases VIN on a tractor instance. */
 function enrichTractorWithVerification(tractor) {

@@ -144,7 +144,7 @@ function PlanRealtimeView({
 
     const [plantFilter, setPlantFilter] = useState(() => defaultPlantCode || 'all')
     const [sortKey, setSortKey] = useState('priority')
-    const filterActive = plantFilter !== 'all'
+    const filterActive = plantFilter !== 'all' && plantFilter !== 'All' && plantFilter !== ''
 
     const plantOptions = useMemo(() => {
         const codes = new Set()
@@ -158,8 +158,28 @@ function PlanRealtimeView({
         return Array.from(codes).sort()
     }, [stats, flatOrders, assignments])
 
-    const touchesFilter = (codes) => !filterActive || codes.some((c) => c === plantFilter)
-    const passesPlant = (o) => !filterActive || o.plantCode === plantFilter
+    // Resolve the active filter into a concrete Set of plant codes so
+    // single-plant, district, and "My Plants" selections all share one
+    // membership check downstream.
+    const activeFilterCodes = useMemo(() => {
+        if (!filterActive) return null
+        if (plantFilter === 'MY_PLANTS') return userPlantCode ? new Set([userPlantCode]) : new Set()
+        if (plantFilter.startsWith('DISTRICT:')) {
+            const districtName = plantFilter.slice(9)
+            const codes = new Set()
+            ;(plants || []).forEach((p) => {
+                const code = p.plantCode || p.plant_code
+                if (!code) return
+                const dists = p.districts || []
+                if (dists.some((d) => (typeof d === 'string' ? d : d?.name) === districtName)) codes.add(code)
+            })
+            return codes
+        }
+        return new Set([plantFilter])
+    }, [filterActive, plantFilter, plants, userPlantCode])
+
+    const touchesFilter = (codes) => !filterActive || codes.some((c) => activeFilterCodes?.has(c))
+    const passesPlant = (o) => !filterActive || activeFilterCodes?.has(o.plantCode)
 
     const initialPoolByCode = useMemo(() => {
         const out = {}
@@ -281,15 +301,15 @@ function PlanRealtimeView({
     const upcomingSendHome = useMemo(() => {
         return sendHomeRows
             .filter((r) => r.time >= nowMin && r.time - nowMin <= TIME_WINDOW_MIN)
-            .filter((r) => !filterActive || r.plantCode === plantFilter)
+            .filter((r) => !filterActive || activeFilterCodes?.has(r.plantCode))
             .sort((a, b) => a.time - b.time)
-    }, [sendHomeRows, nowMin, filterActive, plantFilter])
+    }, [sendHomeRows, nowMin, filterActive, activeFilterCodes])
 
     const plantSnapshots = useMemo(() => {
         const out = []
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
-            if (filterActive && s.code !== plantFilter) return
+            if (filterActive && !activeFilterCodes?.has(s.code)) return
             const timeline = poolTimelinesByPlant?.[s.code] || []
             const currentPool = poolAtTime(timeline, nowMin)
             const base = initialPoolByCode[s.code] || 0
@@ -418,13 +438,16 @@ function PlanRealtimeView({
         weekday: 'short'
     })
 
-    const plantPickerOptions = useMemo(() => {
-        const allowed = new Set(plantOptions)
-        return (plants || []).filter((p) => allowed.has(p.plant_code || p.plantCode))
-    }, [plants, plantOptions])
-    const plantFilterDisplay = filterActive
-        ? `Plant ${plantFilter}${plantNameByCode?.[plantFilter] ? ` · ${plantNameByCode[plantFilter]}` : ''}`
-        : `All plants (${plantOptions.length})`
+    // Hand the full plant list (including district memberships) to the
+    // modal so the district groupings render. Filter behavior on the
+    // page is handled by `activeFilterCodes`.
+    const plantPickerOptions = plants || []
+    const plantFilterDisplay = (() => {
+        if (!filterActive) return `All plants (${plantOptions.length})`
+        if (plantFilter === 'MY_PLANTS') return 'My Plants'
+        if (plantFilter.startsWith('DISTRICT:')) return plantFilter.slice(9)
+        return `Plant ${plantFilter}${plantNameByCode?.[plantFilter] ? ` · ${plantNameByCode[plantFilter]}` : ''}`
+    })()
 
     const filterControls = (
         <div className="flex items-center gap-1.5">
@@ -616,6 +639,7 @@ function PlanRealtimeView({
                         setIsPlantModalOpen(false)
                     }}
                     showAllPlants
+                    showMyPlants={!!userPlantCode}
                     userPlantCode={userPlantCode}
                 />
             )}

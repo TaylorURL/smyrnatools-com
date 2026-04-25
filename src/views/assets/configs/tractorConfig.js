@@ -77,6 +77,13 @@ const tractorConfig = {
             getValue: (item) => item.cleanlinessRating || 0,
             label: 'Cleanliness',
             type: 'stars'
+        },
+        {
+            getValue: (item) =>
+                typeof item.hours === 'number' && Number.isFinite(item.hours)
+                    ? item.hours.toLocaleString()
+                    : 'Not Recorded',
+            label: 'Hours'
         }
     ],
 
@@ -110,30 +117,38 @@ const tractorConfig = {
     key: 'tractor',
 
     listConfig: {
-        colWidths: ['10%', '12%', '12%', '18%', '12%', '16%', '10%', '10%'],
+        colWidths: ['9%', '11%', '11%', '15%', '11%', '8%', '14%', '11%', '10%'],
         columns: [
-            { key: 'assignedPlant', label: 'Plant', type: 'plant', width: '10%' },
-            { copyTitle: 'Copy truck number', key: 'truckNumber', label: 'Truck #', type: 'truckNumber', width: '12%' },
-            { key: 'status', label: 'Status', type: 'status', width: '12%' },
+            { key: 'assignedPlant', label: 'Plant', type: 'plant', width: '9%' },
+            { copyTitle: 'Copy truck number', key: 'truckNumber', label: 'Truck #', type: 'truckNumber', width: '11%' },
+            { key: 'status', label: 'Status', type: 'status', width: '11%' },
             {
                 key: 'assignedOperator',
                 label: 'Operator',
                 lookupField: 'assignedOperator',
                 type: 'operator',
-                width: '18%'
+                width: '15%'
             },
             {
                 key: 'cleanlinessRating',
                 label: 'Cleanliness',
                 ratingField: 'cleanlinessRating',
                 type: 'stars',
-                width: '12%'
+                width: '11%'
             },
-            { getValue: (item) => item.vinNumber || item.vin, key: 'vin', label: 'VIN', type: 'vin', width: '16%' },
-            { key: 'verified', label: 'Verified', type: 'verified', width: '10%' },
+            {
+                getValue: (item) =>
+                    typeof item.hours === 'number' && Number.isFinite(item.hours) ? item.hours.toLocaleString() : null,
+                key: 'hours',
+                label: 'Hours',
+                type: 'number',
+                width: '8%'
+            },
+            { getValue: (item) => item.vinNumber || item.vin, key: 'vin', label: 'VIN', type: 'vin', width: '14%' },
+            { key: 'verified', label: 'Verified', type: 'verified', width: '11%' },
             { key: '_actions', label: 'More', type: 'actions', width: '10%' }
         ],
-        headerLabels: ['Plant', 'Truck #', 'Status', 'Operator', 'Cleanliness', 'VIN', 'Verified', 'More']
+        headerLabels: ['Plant', 'Truck #', 'Status', 'Operator', 'Cleanliness', 'Hours', 'VIN', 'Verified', 'More']
     },
 
     operatorConfig: {
@@ -156,6 +171,7 @@ const tractorConfig = {
         cleanliness_rating: 'cleanlinessRating',
         freight: 'freight',
         has_blower: 'hasBlower',
+        hours: 'hours',
         last_service_date: 'lastServiceDate',
         make: 'make',
         model: 'model',
@@ -197,6 +213,7 @@ const tractorConfig = {
 
     sortMappings: {
         Cleanliness: 'cleanlinessRating',
+        Hours: 'hours',
         More: null,
         Operator: 'assignedOperator',
         Plant: 'assignedPlant',

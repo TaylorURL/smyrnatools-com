@@ -21,6 +21,7 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
     const [truckNumber, setTruckNumber] = useState('')
     const [assignedPlant, setAssignedPlant] = useState('')
     const [status, setStatus] = useState('')
+    const [hours, setHours] = useState('')
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
     const [regionPlantCodes, setRegionPlantCodes] = useState(null)
@@ -86,11 +87,17 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
             const userId = sessionStorage.getItem('userId')
             if (!userId) throw new Error('User ID not available. Please log in again.')
             const now = DateUtility.formatDateForDb(new Date())
+            const parsedHours = (() => {
+                if (hours === '' || hours == null) return null
+                const n = Number(hours)
+                return Number.isFinite(n) && n >= 0 ? n : null
+            })()
             const newMixer = new Mixer({
                 assigned_operator: '0',
                 assigned_plant: assignedPlant,
                 cleanliness_rating: 5,
                 created_at: now,
+                hours: parsedHours,
                 status,
                 truck_number: truckNumber,
                 updated_at: now,
@@ -155,6 +162,18 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
                                     <option value="In Shop">In Shop</option>
                                     <option value="Retired">Retired</option>
                                 </select>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="hours">Hours</label>
+                                <input
+                                    id="hours"
+                                    type="number"
+                                    value={hours}
+                                    onChange={(e) => setHours(e.target.value)}
+                                    placeholder="Enter hours"
+                                    min="0"
+                                    step="any"
+                                />
                             </div>
                         </div>
                     </div>

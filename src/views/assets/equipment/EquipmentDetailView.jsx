@@ -48,6 +48,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
     const [conditionRating, setConditionRating] = useState(0)
     const [lastServiceDate, setLastServiceDate] = useState(null)
     const [hoursMileage, setHoursMileage] = useState('')
+    const [hours, setHours] = useState('')
     const [make, setMake] = useState('')
     const [model, setModel] = useState('')
     const [year, setYear] = useState('')
@@ -77,6 +78,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                 setConditionRating(equipmentData.conditionRating || 0)
                 setLastServiceDate(equipmentData.lastServiceDate || null)
                 setHoursMileage(equipmentData.hoursMileage ? equipmentData.hoursMileage.toString() : '')
+                setHours(equipmentData.hours != null ? String(equipmentData.hours) : '')
                 setMake(equipmentData.equipmentMake || '')
                 setModel(equipmentData.equipmentModel || '')
                 setYear(equipmentData.yearMade ? equipmentData.yearMade.toString() : '')
@@ -90,6 +92,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                     equipmentModel: equipmentData.equipmentModel || '',
                     equipmentType: equipmentData.equipmentType || '',
                     hoursMileage: equipmentData.hoursMileage ? equipmentData.hoursMileage.toString() : '',
+                    hours: equipmentData.hours != null ? String(equipmentData.hours) : '',
                     identifyingNumber: equipmentData.identifyingNumber || '',
                     lastServiceDate: equipmentData.lastServiceDate || null,
                     status: equipmentData.status || '',
@@ -173,6 +176,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
             conditionRating !== originalValues.conditionRating ||
             formatDateForComparison(lastServiceDate) !== formatDateForComparison(originalValues.lastServiceDate) ||
             hoursMileage !== originalValues.hoursMileage ||
+            hours !== originalValues.hours ||
             make !== originalValues.equipmentMake ||
             model !== originalValues.equipmentModel ||
             year !== originalValues.yearMade
@@ -186,6 +190,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
         conditionRating,
         lastServiceDate,
         hoursMileage,
+        hours,
         make,
         model,
         year,
@@ -286,6 +291,11 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
             let cleanlinessValue = cleanlinessRating
             let conditionValue = conditionRating
             if (!conditionValue || isNaN(conditionValue) || conditionValue < 1) conditionValue = 1
+            const parsedHours = (() => {
+                if (hours === '' || hours == null) return null
+                const n = Number(hours)
+                return Number.isFinite(n) && n >= 0 ? n : null
+            })()
             const updatedEquipment = {
                 assignedPlant,
                 cleanlinessRating: cleanlinessValue,
@@ -293,6 +303,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                 equipmentMake: make,
                 equipmentModel: model,
                 equipmentType,
+                hours: parsedHours,
                 hoursMileage: hoursMileage ? parseFloat(hoursMileage) : null,
                 identifyingNumber,
                 lastServiceDate,
@@ -319,6 +330,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                 equipmentModel: result.equipmentModel,
                 equipmentType: result.equipmentType,
                 hoursMileage: result.hoursMileage ? result.hoursMileage.toString() : '',
+                hours: result.hours != null ? String(result.hours) : '',
                 identifyingNumber: result.identifyingNumber,
                 lastServiceDate: result.lastServiceDate,
                 status: result.status,
@@ -814,6 +826,19 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                                 className="form-control"
                                 readOnly={!canEditEquipment}
                                 min="0"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Hours</label>
+                            <input
+                                type="number"
+                                value={hours}
+                                onChange={(e) => setHours(e.target.value)}
+                                className="form-control"
+                                readOnly={!canEditEquipment}
+                                min="0"
+                                step="any"
+                                placeholder="Enter hours"
                             />
                         </div>
                     </DetailViewSection.Card>

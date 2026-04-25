@@ -10,11 +10,11 @@ const SERVICE_PREFIX = 'traffic-service'
  * Response shape on success:
  *   { durationSeconds, durationInTrafficSeconds, distanceMeters, provider, cached }
  *
- * Once the edge function reports `not_configured` (GOOGLE_MAPS_API_KEY not
- * set), or repeatedly 503s, we latch "unavailable" for the rest of the page
- * lifecycle so subsequent calls short-circuit without hitting the network.
- * Prevents the devtools console from filling with 503s every time the
- * schedule view re-renders.
+ * Latching behavior: only the explicit `not_configured` signal (GOOGLE_MAPS_API_KEY
+ * missing on the edge function) is treated as permanent — retrying that case
+ * never helps. Transient failures (502, network errors, generic 503) are NOT
+ * latched so callers like the JobMapModal origin-plant switcher can retry on
+ * subsequent calls and actually get live data when conditions recover.
  */
 class TrafficServiceImpl {
     constructor() {
@@ -24,6 +24,11 @@ class TrafficServiceImpl {
     /** Flag the service as unavailable so subsequent calls bail locally. */
     markUnavailable() {
         this._unavailable = true
+    }
+
+    /** Clear the latch so the next call retries the upstream service. */
+    reset() {
+        this._unavailable = false
     }
 
     isUnavailable() {
@@ -42,18 +47,17 @@ class TrafficServiceImpl {
                 origin: o
             })
             if (!res.ok) {
-                // 503s generally mean the edge function is misconfigured or
-                // can't reach Google. Latch unavailable either way — the UI
-                // already falls back to the dispatch report's travel times.
-                if (res.status === 503) {
+                // Only the explicit `not_configured` payload is permanent
+                // (API key missing). Other 503s and non-2xx responses can be
+                // transient — let the caller retry on the next interaction.
+                if (res.status === 503 && json?.error === 'not_configured') {
                     this._unavailable = true
-                    return { error: json?.error || 'not_configured' }
+                    return { error: 'not_configured' }
                 }
-                return { error: 'lookup_failed', status: res.status }
+                return { error: json?.error || 'lookup_failed', status: res.status }
             }
             return json
         } catch {
-            this._unavailable = true
             return { error: 'network' }
         }
     }

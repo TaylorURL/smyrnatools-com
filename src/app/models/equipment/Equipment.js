@@ -19,8 +19,7 @@ export class Equipment {
         this.equipmentType = data.equipment_type ?? data.equipmentType ?? data.type ?? data.category ?? ''
         this.status = data.status ?? data.state ?? 'Active'
         this.lastServiceDate = data.last_service_date ?? data.lastServiceDate ?? data.service_date ?? null
-        this.hoursMileage =
-            data.hours_mileage ?? data.hoursMileage ?? data.hours ?? data.mileage ?? data.odometer ?? null
+        this.hoursMileage = data.hours_mileage ?? data.hoursMileage ?? data.mileage ?? data.odometer ?? null
         this.cleanlinessRating =
             data.cleanliness_rating ?? data.cleanlinessRating ?? data.cleanliness ?? data.cleanliness_score ?? null
         this.conditionRating =
@@ -28,6 +27,7 @@ export class Equipment {
         this.equipmentMake = data.equipment_make ?? data.equipmentMake ?? data.make ?? ''
         this.equipmentModel = data.equipment_model ?? data.equipmentModel ?? data.model ?? ''
         this.yearMade = data.year_made ?? data.yearMade ?? data.year ?? ''
+        this.hours = data.hours ?? null
         this.createdAt = data.created_at ?? data.createdAt ?? new Date().toISOString()
         this.updatedAt = data.updated_at ?? data.updatedAt ?? new Date().toISOString()
         this.updatedLast = data.updated_last ?? data.updatedLast ?? new Date().toISOString()
@@ -60,7 +60,7 @@ export class Equipment {
         if (this.hoursMileage == null) {
             const key = Object.keys(lower).find(
                 (k) =>
-                    (k.includes('hour') || k.includes('mile') || k.includes('odo')) &&
+                    (k.includes('mile') || k.includes('odo') || (k.includes('hour') && k !== 'hours')) &&
                     typeof data[lower[k]] !== 'object'
             )
             if (key) this.hoursMileage = data[lower[key]]

@@ -399,24 +399,44 @@ export function useReportsData() {
                 .sort((a, b) => new Date(b.week).getTime() - new Date(a.week).getTime()),
         [localReports, hasReviewPermission, hasOneOffReviewPermission, user?.id, regionType]
     )
-    const loadReviewReports = useCallback(async () => {
+    const loadReviewReports = useCallback(
+        async (priorityWeeks = null) => {
+            if (!user || isLoadingPermissions) return
+            const weeksSpan = Math.max(52, ReportUtility.getTotalWeeksSince(REPORTS_START_DATE))
+            const allWeeks = ReportUtility.getLastNWeekIsos(weeksSpan, new Date())
+            let toLoad
+            if (Array.isArray(priorityWeeks) && priorityWeeks.length > 0) {
+                toLoad = priorityWeeks.filter((w) => w && !reviewLoadedWeeks.has(w))
+            } else {
+                const newWeeks = allWeeks.filter((w) => !reviewLoadedWeeks.has(w))
+                // Once all weeks are loaded, re-fetch the most recent 4 so freshly
+                // submitted reports surface without a full page refresh.
+                const recentWeeks = newWeeks.length === 0 ? allWeeks.slice(0, 4) : []
+                toLoad = [...newWeeks, ...recentWeeks]
+            }
+            if (toLoad.length === 0) {
+                if (isLoadingReview) setIsLoadingReview(false)
+                return
+            }
+            setIsLoadingReview(true)
+            await fetchReportsBatch({ scope: 'review', weeks: toLoad })
+            setReviewLoadedWeeks((prev) => new Set([...toLoad, ...prev]))
+            setIsLoadingReview(false)
+        },
+        [user, isLoadingPermissions, reviewLoadedWeeks, isLoadingReview, fetchReportsBatch]
+    )
+    // Background prefetch of any review weeks not yet loaded. Does not toggle
+    // the loading flag — the UI keeps the active week visible while history
+    // streams in behind it.
+    const prefetchRemainingReviewWeeks = useCallback(async () => {
         if (!user || isLoadingPermissions) return
         const weeksSpan = Math.max(52, ReportUtility.getTotalWeeksSince(REPORTS_START_DATE))
         const allWeeks = ReportUtility.getLastNWeekIsos(weeksSpan, new Date())
-        const newWeeks = allWeeks.filter((w) => !reviewLoadedWeeks.has(w))
-        // On subsequent calls (all weeks already loaded), re-fetch last 4 weeks
-        // so newly submitted reports appear without a full page refresh
-        const recentWeeks = newWeeks.length === 0 ? allWeeks.slice(0, 4) : []
-        const toLoad = [...newWeeks, ...recentWeeks]
-        if (toLoad.length === 0) {
-            if (isLoadingReview) setIsLoadingReview(false)
-            return
-        }
-        if (newWeeks.length > 0) setIsLoadingReview(true)
+        const toLoad = allWeeks.filter((w) => !reviewLoadedWeeks.has(w))
+        if (toLoad.length === 0) return
         await fetchReportsBatch({ scope: 'review', weeks: toLoad })
         setReviewLoadedWeeks((prev) => new Set([...toLoad, ...prev]))
-        setIsLoadingReview(false)
-    }, [user, isLoadingPermissions, reviewLoadedWeeks, isLoadingReview, fetchReportsBatch])
+    }, [user, isLoadingPermissions, reviewLoadedWeeks, fetchReportsBatch])
     const loadLostLoadReports = useCallback(async () => {
         if (!user || isLoadingPermissions || lostLoadsLoaded) return
         setIsLoadingLostLoads(true)
@@ -512,6 +532,7 @@ export function useReportsData() {
         myReportsByWeek,
         plants,
         preferences,
+        prefetchRemainingReviewWeeks,
         regionPlantCodes,
         regionPlantsWithDistricts,
         regionType,

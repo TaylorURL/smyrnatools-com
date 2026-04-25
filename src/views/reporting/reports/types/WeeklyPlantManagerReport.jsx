@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
 import { usePreferences } from '../../../../app/context/PreferencesContext'
 import { Database } from '../../../../services/DatabaseService'
+import { ReportService } from '../../../../services/ReportService'
 import { UserService } from '../../../../services/UserService'
 import { ReportUtility } from '../../../../utils/ReportUtility'
 import OperatorSelectModal from '../../../assets/mixers/OperatorSelectModal'
@@ -72,41 +73,35 @@ function useYphCalculation(weekIso, plantCode, form) {
     const [grade, setGrade] = useState({ adjusted: '', raw: '' })
     const [label, setLabel] = useState({ adjusted: '', raw: '' })
     useEffect(() => {
+        let mounted = true
         async function calculate() {
-            if (!weekIso || !plantCode) {
-                const metrics = ReportUtility.getFullYphMetrics(form, 0)
+            const applyMetrics = (hoursReceived) => {
+                const metrics = ReportUtility.getFullYphMetrics(form, hoursReceived)
+                if (!mounted) return
                 setYph({ adjusted: metrics.adjusted, raw: metrics.raw })
                 setGrade({ adjusted: metrics.adjustedGrade, raw: metrics.rawGrade })
                 setLabel({ adjusted: metrics.adjustedLabel, raw: metrics.rawLabel })
+            }
+            if (!weekIso || !plantCode) {
+                applyMetrics(0)
                 return
             }
             try {
-                const weekStart = weekIso.split('T')[0]
-                const [year] = weekStart.split('-').map(Number)
-                const startOfYear = new Date(year, 0, 1)
-                const endOfYear = new Date(year, 11, 31, 23, 59, 59)
-                const { data: allReports } = await Database.from('reports')
-                    .select('*')
-                    .eq('report_name', 'plant_manager')
-                    .eq('completed', true)
-                    .gte('week', startOfYear.toISOString())
-                    .lte('week', endOfYear.toISOString())
-                const hoursReceivedByWeek = ReportUtility.buildHoursReceivedByWeek(allReports || [], plantCode)
-                const normalizedWeek = ReportUtility.normalizeWeekStr(weekIso)
-                const hoursReceived = hoursReceivedByWeek[normalizedWeek] || 0
-                const metrics = ReportUtility.getFullYphMetrics(form, hoursReceived)
-                setYph({ adjusted: metrics.adjusted, raw: metrics.raw })
-                setGrade({ adjusted: metrics.adjustedGrade, raw: metrics.rawGrade })
-                setLabel({ adjusted: metrics.adjustedLabel, raw: metrics.rawLabel })
+                const [year] = weekIso.split('T')[0].split('-').map(Number)
+                const allReports = await ReportService.fetchPlantManagerReportsForYear(year)
+                if (!mounted) return
+                const completedReports = (allReports || []).filter((r) => r.completed)
+                const hoursReceived = ReportUtility.calculateHoursReceivedForWeek(completedReports, weekIso, plantCode)
+                applyMetrics(hoursReceived)
             } catch (err) {
                 console.error('Error calculating YPH:', err)
-                const metrics = ReportUtility.getFullYphMetrics(form, 0)
-                setYph({ adjusted: metrics.adjusted, raw: metrics.raw })
-                setGrade({ adjusted: metrics.adjustedGrade, raw: metrics.rawGrade })
-                setLabel({ adjusted: metrics.adjustedLabel, raw: metrics.rawLabel })
+                applyMetrics(0)
             }
         }
         calculate()
+        return () => {
+            mounted = false
+        }
     }, [weekIso, plantCode, form])
     return { grade, label, yph }
 }
@@ -164,32 +159,22 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                 const currentDate = new Date(year, month - 1, day)
                 const currentMonth = currentDate.getMonth()
                 const currentYear = currentDate.getFullYear()
-                const startOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`
+                const startOfMonthDate = new Date(currentYear, currentMonth, 1)
                 const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
-                const endOfMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-                const startOfYear = new Date(currentYear, 0, 1)
-                const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59)
-                const [{ data, error }, { data: yearData, error: yearError }] = await Promise.all([
-                    Database.from('reports')
-                        .select('*')
-                        .eq('report_name', 'plant_manager')
-                        .eq('completed', true)
-                        .gte('week', startOfMonthStr)
-                        .lte('week', endOfMonthStr + 'T23:59:59.999Z')
-                        .order('week', { ascending: true }),
-                    Database.from('reports')
-                        .select('*')
-                        .eq('report_name', 'plant_manager')
-                        .eq('completed', true)
-                        .gte('week', startOfYear.toISOString())
-                        .lte('week', endOfYear.toISOString())
-                ])
-                if (error) throw error
-                if (yearError) throw yearError
+                const endOfMonthDate = new Date(currentYear, currentMonth, lastDay, 23, 59, 59, 999)
+                const yearReports = await ReportService.fetchPlantManagerReportsForYear(currentYear)
                 if (!mounted) {
                     setLoading(false)
                     return
                 }
+                const yearData = yearReports || []
+                const data = yearData
+                    .filter((r) => {
+                        if (!r.completed || !r.week) return false
+                        const weekTime = new Date(r.week).getTime()
+                        return weekTime >= startOfMonthDate.getTime() && weekTime <= endOfMonthDate.getTime()
+                    })
+                    .sort((a, b) => new Date(a.week) - new Date(b.week))
                 const hoursReceivedByWeek = ReportUtility.buildHoursReceivedByWeek(yearData, effectivePlantCode)
                 const userIds = [...new Set(data.map((r) => r.user_id).filter(Boolean))]
                 const usersMap = {}
@@ -305,19 +290,12 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                 const weekDateStr = currentWeekIso.split('T')[0]
                 const [yearNum] = weekDateStr.split('-').map(Number)
                 const currentYear = yearNum
-                const startOfYear = new Date(currentYear, 0, 1)
-                const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59)
-                const { data: allData, error } = await Database.from('reports')
-                    .select('*')
-                    .eq('report_name', 'plant_manager')
-                    .gte('week', startOfYear.toISOString())
-                    .lte('week', endOfYear.toISOString())
-                    .order('week', { ascending: false })
-                if (error) throw error
+                const yearReports = await ReportService.fetchPlantManagerReportsForYear(currentYear)
                 if (!mounted) {
                     setYearlyLoading(false)
                     return
                 }
+                const allData = (yearReports || []).slice().sort((a, b) => new Date(b.week) - new Date(a.week))
                 const userIds = [...new Set(allData.map((r) => r.user_id).filter(Boolean))]
                 const usersMap = {}
                 if (userIds.length > 0) {
@@ -1297,9 +1275,9 @@ export function PlantManagerSubmitPlugin({
 }
 /** Review-mode plugin for the Plant Manager report — read-only view of metrics, maintenance items, and weekly trends. */
 export function PlantManagerReviewPlugin({
-    yph: _propYph,
-    yphGrade: _propYphGrade,
-    yphLabel: _propYphLabel,
+    yph,
+    yphGrade,
+    yphLabel,
     form,
     weekIso,
     user,
@@ -1307,10 +1285,8 @@ export function PlantManagerReviewPlugin({
     reportUserId: _reportUserId,
     plants: propPlants
 }) {
-    const { preferences: _preferences } = usePreferences()
     const plantCode = assignedPlant || user?.plant_code || form?.plant || ''
     const timelinePlantCode = form?.plant || assignedPlant || user?.plant_code || ''
-    const { yph, grade: yphGrade, label: yphLabel } = useYphCalculation(weekIso, plantCode, form)
     return (
         <div>
             <OperatorsSentToHelp

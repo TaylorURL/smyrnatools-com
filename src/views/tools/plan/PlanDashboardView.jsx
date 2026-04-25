@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
-import { timeToMinutes } from '../../../utils/PlanUtility'
+import {
+    buildAssignmentDriverTimes,
+    computePlantPoolTimeline,
+    getEffectiveBase,
+    timeToMinutes
+} from '../../../utils/PlanUtility'
 import PlanFlowPreview from './PlanFlowPreview'
 import PlanNotesSection from './PlanNotesSection'
 
@@ -606,6 +611,62 @@ function PlanDashboardView({
         [plantProduction]
     )
 
+    /* ── Overall job coverage ──────────────────────────────────────────────
+     * Replays the same pool simulation the Schedule's Trucks column uses, so
+     * the dashboard "needs help vs covered" totals match what dispatchers
+     * see per-row. An order whose effective post-dispatch pool drops below
+     * zero is flagged "needs help"; the gap (`-poolAfterDispatchEffective`)
+     * is the truck deficit we surface as the net over/under. */
+    const jobCoverage = useMemo(() => {
+        const flatOrders = []
+        Object.entries(plantProduction || {}).forEach(([code, data]) => {
+            if (code === PLAN_META_KEY || !Array.isArray(data?.orders)) return
+            data.orders.forEach((order) => flatOrders.push({ ...order, plantCode: code }))
+        })
+        if (flatOrders.length === 0) return null
+
+        const initialPoolByCode = {}
+        ;(stats || []).forEach((s) => {
+            if (!s?.code) return
+            const base = Number.isFinite(s.base) ? s.base : 0
+            initialPoolByCode[s.code] = getEffectiveBase(base, s.code, plantProduction, planDate)
+        })
+
+        const helpTransfers = []
+        ;(assignments || []).forEach((a) => {
+            if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
+            const home = a.returnPlant || a.fromPlant
+            buildAssignmentDriverTimes(a).forEach((dt) => {
+                if (!Number.isFinite(dt.arriveMin)) return
+                helpTransfers.push({ delta: -1, plantCode: a.fromPlant, time: dt.arriveMin })
+                helpTransfers.push({ delta: 1, plantCode: a.toPlant, time: dt.arriveMin })
+                if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
+                    helpTransfers.push({ delta: -1, plantCode: a.toPlant, time: dt.leaveMin })
+                    helpTransfers.push({ delta: 1, plantCode: home, time: dt.leaveMin })
+                }
+            })
+        })
+
+        const byOrder = computePlantPoolTimeline(flatOrders, initialPoolByCode, null, helpTransfers)
+        let totalJobs = 0
+        let needHelp = 0
+        let deficit = 0
+        let surplus = 0
+        Object.values(byOrder || {}).forEach((entry) => {
+            const eff = entry?.poolAfterDispatchEffective
+            if (!Number.isFinite(eff)) return
+            totalJobs += 1
+            if (eff < 0) {
+                needHelp += 1
+                deficit += -eff
+            } else {
+                surplus += eff
+            }
+        })
+        if (totalJobs === 0) return null
+        return { covered: totalJobs - needHelp, deficit, needHelp, net: surplus - deficit, surplus, totalJobs }
+    }, [plantProduction, stats, assignments, planDate])
+
     // Broader fleet-wide numbers to set today's plan in context.
     const totalOperatorsFleet = useMemo(
         () => Object.values(mixerCountsByPlant || {}).reduce((sum, count) => sum + (count || 0), 0),
@@ -818,7 +879,7 @@ function PlanDashboardView({
                     {/* Overview — fleet-wide stats with in-plan context */}
                     <section id="overview" className="scroll-mt-4">
                         <div
-                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden"
+                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 rounded overflow-hidden"
                             style={{ border: '1px solid var(--border-light)' }}
                         >
                             <StatCard
@@ -887,6 +948,24 @@ function PlanDashboardView({
                                             ? 'Overtime likely'
                                             : 'Within normal'
                                         : 'No routes'
+                                }
+                            />
+                            <StatCard
+                                label="Overall Job Coverage"
+                                value={jobCoverage ? `${jobCoverage.covered}/${jobCoverage.totalJobs}` : '—'}
+                                valueColor={
+                                    jobCoverage && jobCoverage.needHelp > 0
+                                        ? '#d97706'
+                                        : jobCoverage
+                                          ? '#16a34a'
+                                          : undefined
+                                }
+                                hint={
+                                    jobCoverage
+                                        ? jobCoverage.needHelp > 0
+                                            ? `${jobCoverage.needHelp} need help · ${jobCoverage.deficit} truck${jobCoverage.deficit === 1 ? '' : 's'} short`
+                                            : `All covered · ${jobCoverage.surplus} spare`
+                                        : 'No production'
                                 }
                             />
                         </div>

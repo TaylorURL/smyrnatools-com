@@ -108,6 +108,7 @@ function ReportsView() {
         myReportsByWeek,
         plants,
         preferences,
+        prefetchRemainingReviewWeeks,
         regionPlantCodes,
         regionPlantsWithDistricts,
         regionType,
@@ -731,12 +732,26 @@ function ReportsView() {
 
     useEffect(() => {
         if (tab === 'review') {
-            loadReviewReports()
+            // Prioritize the currently visible week so the list renders fast,
+            // then stream the remaining 52-week history in via the prefetch
+            // effect below.
+            loadReviewReports(selectedWeekIso ? [selectedWeekIso] : null)
             loadMissingReports()
         }
         if (tab === 'lost_loads') loadLostLoadReports()
         if (tab === 'quality') loadQCReports()
-    }, [tab, loadReviewReports, loadLostLoadReports, loadQCReports, loadMissingReports])
+    }, [tab, selectedWeekIso, loadReviewReports, loadLostLoadReports, loadQCReports, loadMissingReports])
+    const reviewHistoryPrefetchedRef = useRef(false)
+    useEffect(() => {
+        if (tab !== 'review') return undefined
+        if (reviewHistoryPrefetchedRef.current) return undefined
+        if (isLoadingReview) return undefined
+        const handle = setTimeout(() => {
+            reviewHistoryPrefetchedRef.current = true
+            prefetchRemainingReviewWeeks()
+        }, 1200)
+        return () => clearTimeout(handle)
+    }, [tab, isLoadingReview, prefetchRemainingReviewWeeks])
 
     const hasAnyAssigned = Object.values(hasAssigned || {}).some(Boolean)
 

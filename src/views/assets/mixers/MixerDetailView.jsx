@@ -57,6 +57,7 @@ function MixerDetailView({ mixerId, onClose }) {
     const [make, setMake] = useState('')
     const [model, setModel] = useState('')
     const [year, setYear] = useState('')
+    const [hours, setHours] = useState('')
     const [operatorModalOperators, setOperatorModalOperators] = useState([])
     const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null)
     const [_comments, setComments] = useState([])
@@ -94,11 +95,13 @@ function MixerDetailView({ mixerId, onClose }) {
                 setMake(mixerData.make || '')
                 setModel(mixerData.model || '')
                 setYear(mixerData.year || '')
+                setHours(mixerData.hours != null ? String(mixerData.hours) : '')
                 setShopStatus(mixerData.shopStatus || null)
                 setOriginalValues({
                     assignedOperator: mixerData.assignedOperator || '',
                     assignedPlant: mixerData.assignedPlant || '',
                     cleanlinessRating: mixerData.cleanlinessRating || 0,
+                    hours: mixerData.hours != null ? String(mixerData.hours) : '',
                     lastChipDate: mixerData.lastChipDate ? DateUtility.parseLocalDate(mixerData.lastChipDate) : null,
                     lastServiceDate: mixerData.lastServiceDate
                         ? DateUtility.parseLocalDate(mixerData.lastServiceDate)
@@ -216,7 +219,8 @@ function MixerDetailView({ mixerId, onClose }) {
             make !== originalValues.make ||
             model !== originalValues.model ||
             year !== originalValues.year ||
-            shopStatus !== originalValues.shopStatus
+            shopStatus !== originalValues.shopStatus ||
+            hours !== originalValues.hours
         setHasUnsavedChanges(hasChanges)
     }, [
         truckNumber,
@@ -230,6 +234,7 @@ function MixerDetailView({ mixerId, onClose }) {
         model,
         year,
         shopStatus,
+        hours,
         originalValues,
         isLoading
     ])
@@ -338,11 +343,18 @@ function MixerDetailView({ mixerId, onClose }) {
             if (!cleanlinessValue || isNaN(cleanlinessValue) || cleanlinessValue < 1) cleanlinessValue = 1
             const finalShopStatus =
                 statusValue === 'In Shop' ? (overrideValues.shopStatus ?? shopStatus ?? 'in_shop') : null
+            const parsedHours = (() => {
+                const raw = overrideValues.hours ?? hours
+                if (raw === '' || raw == null) return null
+                const n = Number(raw)
+                return Number.isFinite(n) && n >= 0 ? n : null
+            })()
             const updatedMixer = {
                 ...mixer,
                 assignedOperator: assignedOperatorValue || null,
                 assignedPlant: overrideValues.assignedPlant ?? assignedPlant,
                 cleanlinessRating: cleanlinessValue,
+                hours: parsedHours,
                 id: mixer.id,
                 lastChipDate: DateUtility.toDbDate(overrideValues.lastChipDate ?? lastChipDate),
                 lastServiceDate: DateUtility.toDbDate(overrideValues.lastServiceDate ?? lastServiceDate),
@@ -387,6 +399,7 @@ function MixerDetailView({ mixerId, onClose }) {
                 assignedOperator: updatedMixer.assignedOperator,
                 assignedPlant: updatedMixer.assignedPlant,
                 cleanlinessRating: updatedMixer.cleanlinessRating,
+                hours: updatedMixer.hours != null ? String(updatedMixer.hours) : '',
                 lastChipDate: updatedMixer.lastChipDate ? DateUtility.parseLocalDate(updatedMixer.lastChipDate) : null,
                 lastServiceDate: updatedMixer.lastServiceDate
                     ? DateUtility.parseLocalDate(updatedMixer.lastServiceDate)
@@ -1177,6 +1190,19 @@ function MixerDetailView({ mixerId, onClose }) {
                                 Service will show as overdue if it has been more than 6 months since last serviced.
                                 Service is determined by hours on the asset - check hours of service.
                             </div>
+                        </div>
+                        <div className="form-group">
+                            <label>Hours</label>
+                            <input
+                                type="number"
+                                value={hours}
+                                onChange={(e) => setHours(e.target.value)}
+                                className="form-control"
+                                readOnly={!canEditMixer}
+                                min="0"
+                                step="any"
+                                placeholder="Enter hours"
+                            />
                         </div>
                         <div className="form-group">
                             <label>Last Chip Date</label>

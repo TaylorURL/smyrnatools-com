@@ -107,7 +107,14 @@ const equipmentConfig = {
             label: 'Condition',
             type: 'stars'
         },
-        { getValue: (item) => item.hoursMileage || 'Not Recorded', label: 'Hours/Mileage' }
+        { getValue: (item) => item.hoursMileage || 'Not Recorded', label: 'Hours/Mileage' },
+        {
+            getValue: (item) =>
+                typeof item.hours === 'number' && Number.isFinite(item.hours)
+                    ? item.hours.toLocaleString()
+                    : 'Not Recorded',
+            label: 'Hours'
+        }
     ],
 
     hasEmbeddedMode: true,
@@ -140,17 +147,17 @@ const equipmentConfig = {
     key: 'equipment',
 
     listConfig: {
-        colWidths: ['10%', '15%', '10%', '15%', '8%', '10%', '10%', '10%', '12%'],
+        colWidths: ['9%', '13%', '9%', '13%', '8%', '9%', '9%', '8%', '10%', '12%'],
         columns: [
-            { key: 'assignedPlant', label: 'Plant', width: '10%' },
-            { key: 'equipmentType', label: 'Type', width: '15%' },
+            { key: 'assignedPlant', label: 'Plant', width: '9%' },
+            { key: 'equipmentType', label: 'Type', width: '13%' },
             {
                 bold: true,
                 copyTitle: 'Copy equipment number',
                 key: 'identifyingNumber',
                 label: 'Equipment #',
                 type: 'truckNumber',
-                width: '10%'
+                width: '9%'
             },
             {
                 getValue: (item) => {
@@ -159,7 +166,7 @@ const equipmentConfig = {
                 },
                 key: 'makeModel',
                 label: 'Make & Model',
-                width: '15%'
+                width: '13%'
             },
             { key: 'status', label: 'Status', type: 'status', width: '8%' },
             {
@@ -167,9 +174,17 @@ const equipmentConfig = {
                 label: 'Cleanliness',
                 ratingField: 'cleanlinessRating',
                 type: 'stars',
-                width: '10%'
+                width: '9%'
             },
-            { key: 'conditionRating', label: 'Condition', ratingField: 'conditionRating', type: 'stars', width: '10%' },
+            { key: 'conditionRating', label: 'Condition', ratingField: 'conditionRating', type: 'stars', width: '9%' },
+            {
+                getValue: (item) =>
+                    typeof item.hours === 'number' && Number.isFinite(item.hours) ? item.hours.toLocaleString() : null,
+                key: 'hours',
+                label: 'Hours',
+                type: 'number',
+                width: '8%'
+            },
             {
                 getIsVerified: (item) =>
                     typeof item.isVerified === 'function'
@@ -195,6 +210,7 @@ const equipmentConfig = {
             'Status',
             'Cleanliness',
             'Condition',
+            'Hours',
             'Verified',
             'More'
         ]
@@ -213,6 +229,7 @@ const equipmentConfig = {
         equipment_make: 'equipmentMake',
         equipment_model: 'equipmentModel',
         equipment_type: 'equipmentType',
+        hours: 'hours',
         hours_mileage: 'hoursMileage',
         identifying_number: 'identifyingNumber',
         last_service_date: 'lastServiceDate',
@@ -246,6 +263,7 @@ const equipmentConfig = {
         Cleanliness: 'cleanlinessRating',
         Condition: 'conditionRating',
         'Equipment #': 'identifyingNumber',
+        Hours: 'hours',
         'Make & Model': 'equipmentMake',
         More: null,
         Plant: 'assignedPlant',

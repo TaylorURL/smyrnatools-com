@@ -1,30 +1,21 @@
 import React from 'react'
 
 import { formatMaintenanceDateShort } from '../../../utils/MaintenanceUtility'
+import { useAccentColor } from '../../hooks/useAccentColor'
 import { getImageDisplayUrl } from '../../hooks/useMaintenanceImages'
 import ImagePreviewModal from '../ui/ImagePreviewModal'
+
+const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+const FIELD_STYLE = {
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-light)',
+    color: 'var(--text-primary)'
+}
+
 /**
  * Full-page review interface for submitted maintenance forms.
- * Displays all form responses (text fields, checklists with images),
- * and provides approve/reject controls with optional reviewer notes.
- * @param {Object} props
- * @param {Object} props.checklistComments - Per-field, per-item comment map for checklist fields.
- * @param {Object} props.checklistStates - Per-field, per-item boolean map for checklist fields.
- * @param {Object} [props.errors] - Validation/submission error messages (keyed by field).
- * @param {Object} props.fieldImages - Map of field IDs to uploaded image data.
- * @param {Array} props.fields - Ordered array of form field definitions.
- * @param {Object} props.formObj - Form metadata (title, etc.).
- * @param {string|null} props.imagePreview - URL of the currently previewed image, or null.
- * @param {Object} props.item - Submitted form record with metadata like `submitted_at`.
- * @param {Function} props.onBack - Navigates back from the review screen.
- * @param {Function} props.onClosePreview - Closes the image preview modal.
- * @param {Function} props.onOpenPreview - Opens the image preview modal for a given URL.
- * @param {Function} props.onReview - Called with 'approved' or 'rejected' to submit the review decision.
- * @param {Object} props.responses - Map of field IDs to submitted text responses.
- * @param {string} props.reviewNotes - Current reviewer notes text.
- * @param {Function} props.setReviewNotes - Setter for reviewer notes.
- * @param {string} [props.submitterName] - Display name of the user who submitted the form.
- * @param {boolean} props.submitting - Whether a review submission is in progress.
+ * Displays all responses (text fields, checklists with images),
+ * with approve / reject controls + reviewer notes.
  */
 export default function MaintenanceFormReview({
     checklistComments,
@@ -45,126 +36,185 @@ export default function MaintenanceFormReview({
     submitterName,
     submitting
 }) {
+    const accentColor = useAccentColor()
     return (
-        <div className="flex min-h-screen w-full flex-col bg-slate-50">
-            <div className="sticky top-0 z-40 flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-4">
+        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+            <div
+                className="sticky top-0 z-40 flex items-center gap-2.5 px-3 sm:px-4 py-2"
+                style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
+            >
                 <button
-                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                    onClick={onBack}
                     type="button"
+                    onClick={onBack}
+                    className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer"
+                    style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                    aria-label="Back"
                 >
-                    <i className="fas fa-arrow-left" />
+                    <i className="fas fa-arrow-left text-[11px]" />
                 </button>
-                <div>
-                    <h1 className="m-0 text-xl font-bold text-slate-800">{formObj?.title}</h1>
-                    <p className="m-0 text-sm text-slate-500">
-                        Submitted by {submitterName || 'Unknown'} on {formatMaintenanceDateShort(item?.submitted_at)}
-                    </p>
+                <div
+                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                    style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                >
+                    <i className="fas fa-clipboard-check text-[11px]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                        Form Review
+                    </div>
+                    <div className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                        {formObj?.title}
+                    </div>
+                    <div className="text-[10.5px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                        Submitted by {submitterName || 'Unknown'} · {formatMaintenanceDateShort(item?.submitted_at)}
+                    </div>
                 </div>
             </div>
-            <div className="mx-auto w-full max-w-3xl p-6">
+
+            <div className="mx-auto w-full max-w-3xl px-3 sm:px-4 py-3 flex flex-col gap-2.5">
                 {fields.length === 0 ? (
-                    <p className="text-slate-500">No form fields found.</p>
+                    <p className="text-[12px]" style={{ color: 'var(--text-tertiary)' }}>
+                        No form fields found.
+                    </p>
                 ) : (
-                    <div className="flex flex-col gap-4">
-                        {fields.map((field, idx) => {
-                            const imageData = fieldImages[field.id]
-                            const imageUrl = imageData?.uploadedUrl
-                            return (
+                    fields.map((field, idx) => {
+                        const imageData = fieldImages[field.id]
+                        const imageUrl = imageData?.uploadedUrl
+                        return (
+                            <div
+                                key={field.id}
+                                className="flex gap-2.5 rounded p-3"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    border: '1px solid var(--border-light)'
+                                }}
+                            >
                                 <div
-                                    key={field.id}
-                                    className="flex gap-4 rounded-xl border border-gray-200 bg-white p-5"
+                                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[10px] font-bold font-mono tabular-nums"
+                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
                                 >
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
-                                        {idx + 1}
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="mb-2 text-base font-semibold text-slate-800">{field.label}</h4>
-                                        {field.field_type === 'checklist' ? (
-                                            <div className="flex flex-col gap-2">
-                                                {(field.options?.items || []).map((checkItem, cidx) => {
-                                                    const isChecked = checklistStates[field.id]?.[checkItem]
-                                                    const comment = checklistComments[field.id]?.[checkItem]
-                                                    const itemImageKey = `${field.id}_${checkItem.trim()}`
-                                                    const itemImageUrl = fieldImages[itemImageKey]?.uploadedUrl
-                                                    return (
-                                                        <div key={cidx} className="flex flex-col gap-1">
-                                                            <span
-                                                                className={`flex items-center gap-2 text-sm ${isChecked ? 'text-green-600' : comment ? 'text-amber-600' : 'text-slate-500'}`}
-                                                            >
-                                                                <i
-                                                                    className={`fas ${isChecked ? 'fa-check-square' : 'fa-square'}`}
-                                                                />
-                                                                {checkItem}
-                                                            </span>
-                                                            {comment && !isChecked && (
-                                                                <span className="ml-6 text-xs text-slate-500 italic">
-                                                                    {comment}
-                                                                </span>
-                                                            )}
-                                                            {itemImageUrl && (
-                                                                <img
-                                                                    src={itemImageUrl}
-                                                                    alt="Attached"
-                                                                    className="ml-6 mt-1 max-w-[200px] cursor-pointer rounded-lg border border-gray-200"
-                                                                    onClick={() => onOpenPreview(itemImageUrl)}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-slate-600">
-                                                {responses[field.id] || (
-                                                    <span className="text-slate-400 italic">No response</span>
-                                                )}
-                                            </p>
-                                        )}
-                                        {imageUrl && field.field_type !== 'checklist' && (
-                                            <img
-                                                src={getImageDisplayUrl(imageUrl)}
-                                                alt="Attached"
-                                                className="mt-2 max-w-[200px] cursor-pointer rounded-lg border border-gray-200"
-                                                onClick={() => onOpenPreview(getImageDisplayUrl(imageUrl))}
-                                            />
-                                        )}
-                                    </div>
+                                    {idx + 1}
                                 </div>
-                            )
-                        })}
-                    </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4
+                                        className="mb-1.5 text-[12.5px] font-semibold m-0"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        {field.label}
+                                    </h4>
+                                    {field.field_type === 'checklist' ? (
+                                        <div className="flex flex-col gap-1.5">
+                                            {(field.options?.items || []).map((checkItem, cidx) => {
+                                                const isChecked = checklistStates[field.id]?.[checkItem]
+                                                const comment = checklistComments[field.id]?.[checkItem]
+                                                const itemImageKey = `${field.id}_${checkItem.trim()}`
+                                                const itemImageUrl = fieldImages[itemImageKey]?.uploadedUrl
+                                                const tone = isChecked
+                                                    ? '#16a34a'
+                                                    : comment
+                                                      ? '#92400e'
+                                                      : 'var(--text-tertiary)'
+                                                return (
+                                                    <div key={cidx} className="flex flex-col gap-0.5">
+                                                        <span
+                                                            className="flex items-center gap-1.5 text-[12px]"
+                                                            style={{ color: tone }}
+                                                        >
+                                                            <i
+                                                                className={`fas ${isChecked ? 'fa-check-square' : 'fa-square'} text-[10px]`}
+                                                            />
+                                                            {checkItem}
+                                                        </span>
+                                                        {comment && !isChecked && (
+                                                            <span
+                                                                className="ml-5 text-[10.5px] italic"
+                                                                style={{ color: 'var(--text-secondary)' }}
+                                                            >
+                                                                {comment}
+                                                            </span>
+                                                        )}
+                                                        {itemImageUrl && (
+                                                            <img
+                                                                src={itemImageUrl}
+                                                                alt="Attached"
+                                                                className="ml-5 mt-1 max-w-[180px] cursor-pointer rounded"
+                                                                style={{ border: '1px solid var(--border-light)' }}
+                                                                onClick={() => onOpenPreview(itemImageUrl)}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[12px] m-0" style={{ color: 'var(--text-secondary)' }}>
+                                            {responses[field.id] || (
+                                                <span className="italic" style={{ color: 'var(--text-tertiary)' }}>
+                                                    No response
+                                                </span>
+                                            )}
+                                        </p>
+                                    )}
+                                    {imageUrl && field.field_type !== 'checklist' && (
+                                        <img
+                                            src={getImageDisplayUrl(imageUrl)}
+                                            alt="Attached"
+                                            className="mt-1.5 max-w-[180px] cursor-pointer rounded"
+                                            style={{ border: '1px solid var(--border-light)' }}
+                                            onClick={() => onOpenPreview(getImageDisplayUrl(imageUrl))}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })
                 )}
-                <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6">
-                    <h3 className="mb-4 text-lg font-bold text-slate-800">Review Decision</h3>
+
+                {/* Review decision */}
+                <div
+                    className="rounded p-3 mt-2"
+                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                >
+                    <div className={`${SECTION_LABEL_CLASS} mb-2`} style={{ color: 'var(--text-secondary)' }}>
+                        Review Decision
+                    </div>
                     <textarea
-                        className="w-full rounded-lg border-2 border-gray-200 px-4 py-3 text-sm text-slate-800 outline-none resize-y min-h-[100px] focus:border-accent focus:ring-[3px] focus:ring-accent/10 transition-colors"
                         value={reviewNotes}
                         onChange={(e) => setReviewNotes(e.target.value)}
-                        placeholder="Add notes (optional)..."
+                        placeholder="Add notes (optional)…"
                         rows={3}
+                        className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none resize-y min-h-[80px]"
+                        style={FIELD_STYLE}
                     />
                     {errors?.submit && (
-                        <div className="mt-2 rounded-lg border border-red-500 bg-red-100 px-4 py-3 text-sm font-medium text-red-600">
-                            <i className="fas fa-exclamation-circle" /> {errors.submit}
+                        <div
+                            className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
+                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
+                        >
+                            <i className="fas fa-exclamation-circle text-[11px]" />
+                            {errors.submit}
                         </div>
                     )}
-                    <div className="mt-4 flex gap-4">
+                    <div className="mt-2 flex gap-1.5">
                         <button
-                            className="flex items-center gap-2 rounded-lg bg-emerald-500 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                            type="button"
                             onClick={() => onReview('approved')}
                             disabled={submitting}
-                            type="button"
+                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{ background: '#16a34a' }}
                         >
-                            <i className="fas fa-check" /> Approve
+                            <i className="fas fa-check text-[10px]" />
+                            Approve
                         </button>
                         <button
-                            className="flex items-center gap-2 rounded-lg bg-red-500 px-6 py-3 text-sm font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                            type="button"
                             onClick={() => onReview('rejected')}
                             disabled={submitting}
-                            type="button"
+                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{ background: '#dc2626' }}
                         >
-                            <i className="fas fa-times" /> Reject
+                            <i className="fas fa-times text-[10px]" />
+                            Reject
                         </button>
                     </div>
                 </div>

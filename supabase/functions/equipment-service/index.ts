@@ -11,7 +11,13 @@ const COMMENTS_TABLE = "heavy_equipment_comments";
 const MAINTENANCE_TABLE = "heavy_equipment_maintenance";
 const ID_KEY = "equipment_id";
 const ORDER_BY = "identifying_number";
-const DIFF_FIELDS = ["identifying_number", "assigned_plant", "equipment_type", "status", "last_service_date", "hours_mileage", "cleanliness_rating", "condition_rating", "equipment_make", "equipment_model", "year_made"];
+const DIFF_FIELDS = ["identifying_number", "assigned_plant", "equipment_type", "status", "last_service_date", "hours_mileage", "cleanliness_rating", "condition_rating", "equipment_make", "equipment_model", "year_made", "hours"];
+
+function parseHours(raw: any, fallback: any = null): number | null {
+    if (raw === null || raw === undefined || raw === "") return fallback;
+    const n = typeof raw === "number" ? raw : Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
 
 function getUserFriendlyError(error: string): string {
     if (!error) return "An unknown error occurred";
@@ -98,6 +104,7 @@ Deno.serve(async (req) => {
                     equipment_make: equipment?.equipmentMake ?? equipment?.equipment_make ?? null,
                     equipment_model: equipment?.equipmentModel ?? equipment?.equipment_model ?? null,
                     year_made: equipment?.yearMade != null ? Number(equipment.yearMade) : (equipment?.year_made != null ? Number(equipment.year_made) : null),
+                    hours: parseHours(equipment?.hours),
                     created_at: now, updated_at: now, updated_by: userId
                 };
                 const {data, error} = await supabase.from(MAIN_TABLE).insert([apiData]).select().maybeSingle();
@@ -132,6 +139,7 @@ Deno.serve(async (req) => {
                     make: "make" in equipment ? equipment.make : current.make,
                     model: "model" in equipment ? equipment.model : current.model,
                     year: "year" in equipment ? Number(equipment.year) : current.year,
+                    hours: "hours" in equipment ? parseHours(equipment.hours, current.hours) : current.hours,
                     updated_last: typeof equipment?.updatedLast === "string" ? equipment.updatedLast : current.updated_last
                 };
                 const diffs = computeDiffs(current, apiData, DIFF_FIELDS, ID_KEY, id, userId);

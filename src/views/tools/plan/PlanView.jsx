@@ -22,6 +22,20 @@ import {
 } from '../../../utils/PlanUtility'
 
 const SCHEDULE_STALE_THRESHOLD_MS = 30 * 60 * 1000
+
+/** Returns dateStr if it isn't a Sunday; otherwise advances by `direction`
+ *  (+1 = forward, -1 = backward) until a non-Sunday is reached. Used so the
+ *  Plan date selector skips Sundays entirely (no plans are made on Sundays). */
+const skipSundayDate = (dateStr, direction = 1) => {
+    if (!dateStr) return dateStr
+    const step = direction < 0 ? -1 : 1
+    let d = new Date(dateStr + 'T00:00:00')
+    while (d.getDay() === 0) d.setDate(d.getDate() + step)
+    return d.toISOString().split('T')[0]
+}
+
+/** Same direction as getOffsetDate, but lands on the next non-Sunday. */
+const offsetDateSkipSunday = (dateStr, offset) => skipSundayDate(getOffsetDate(dateStr, offset), offset)
 import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
 import PlanFlowView from './PlanFlowView'
@@ -42,7 +56,7 @@ function PlanView() {
     const accentColor = preferences.accentColor || '#1e3a5f'
     const isDark = preferences.themeMode === 'dark'
     const isMobile = useIsMobile()
-    const [planDate, setPlanDate] = useState(getTomorrowDate)
+    const [planDate, setPlanDate] = useState(() => skipSundayDate(getTomorrowDate(), 1))
     const hasInitializedDateRef = useRef(false)
     const [viewMode, setViewModeRaw] = useState('dashboard')
     // Switching to Realtime always snaps the plan date to today so the live
@@ -54,6 +68,19 @@ function PlanView() {
         setViewModeRaw(mode)
     }
     const effectiveViewMode = isMobile ? 'schedule' : viewMode
+    // While the realtime tab is active, force planDate to today on every render
+    // and re-check once a minute so the date snaps forward when the day rolls
+    // over without requiring a tab switch.
+    useEffect(() => {
+        if (effectiveViewMode !== 'realtime') return undefined
+        const snap = () => {
+            const today = getTodayDate()
+            setPlanDate((prev) => (prev === today ? prev : today))
+        }
+        snap()
+        const interval = setInterval(snap, 60_000)
+        return () => clearInterval(interval)
+    }, [effectiveViewMode])
     const [selectedPlant, setSelectedPlant] = useState(null)
     const [productionPopoverPlant, setProductionPopoverPlant] = useState(null)
     const [userPlantCode, setUserPlantCode] = useState('')
@@ -380,59 +407,82 @@ function PlanView() {
                 <h1 className="text-lg font-bold tracking-tight m-0 shrink-0" style={{ color: 'var(--text-primary)' }}>
                     Plan
                 </h1>
-                {/* Date nav — always visible */}
-                <div
-                    className="inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1.5 py-1"
-                    style={{ backgroundColor: `${accentColor}${isDark ? '30' : '15'}`, color: accentColor }}
-                >
-                    <button
-                        onClick={() => setPlanDate(getOffsetDate(planDate, -1))}
-                        className="border-none bg-transparent cursor-pointer p-1 rounded hover:opacity-80"
-                        style={{ color: accentColor }}
-                        title="Previous day"
+                {/* Date nav — hidden on the realtime tab. Realtime is anchored
+                    to "right now", so a date selector is misleading. The
+                    effect below keeps planDate snapped to today while the user
+                    is on this tab, even if the day rolls over. */}
+                {effectiveViewMode === 'realtime' ? (
+                    <div
+                        className="inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold px-2.5 py-1"
+                        style={{ backgroundColor: `${accentColor}${isDark ? '30' : '15'}`, color: accentColor }}
+                        title="Realtime is locked to today"
                     >
-                        <i className="fas fa-chevron-left text-xs" />
-                    </button>
-                    <button
-                        className="relative border-none bg-transparent cursor-pointer px-2 py-0.5 rounded font-semibold text-sm"
-                        style={{ color: accentColor }}
-                        title="Click to pick date"
-                    >
-                        {new Date(planDate + 'T00:00:00').toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric'
-                        })}
-                        <input
-                            type="date"
-                            value={planDate}
-                            onChange={(e) => e.target.value && setPlanDate(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer"
-                            style={{ width: '100%', height: '100%' }}
-                        />
-                    </button>
-                    <button
-                        onClick={() => setPlanDate(getOffsetDate(planDate, 1))}
-                        className="border-none bg-transparent cursor-pointer p-1 rounded hover:opacity-80"
-                        style={{ color: accentColor }}
-                        title="Next day"
-                    >
-                        <i className="fas fa-chevron-right text-xs" />
-                    </button>
-                </div>
-                <button
-                    onClick={() => setPlanDate(getTomorrowDate())}
-                    className="border-none rounded-lg cursor-pointer text-xs font-semibold px-2.5 py-1.5"
-                    style={{
-                        background:
-                            planDate === getTomorrowDate()
-                                ? `${accentColor}${isDark ? '30' : '15'}`
-                                : 'var(--bg-tertiary)',
-                        color: planDate === getTomorrowDate() ? accentColor : 'var(--text-secondary)'
-                    }}
-                >
-                    Tomorrow
-                </button>
+                        <i className="fas fa-circle-dot text-[10px]" />
+                        <span>
+                            Today ·{' '}
+                            {new Date(planDate + 'T00:00:00').toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric'
+                            })}
+                        </span>
+                    </div>
+                ) : (
+                    <>
+                        <div
+                            className="inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1.5 py-1"
+                            style={{ backgroundColor: `${accentColor}${isDark ? '30' : '15'}`, color: accentColor }}
+                        >
+                            <button
+                                onClick={() => setPlanDate(offsetDateSkipSunday(planDate, -1))}
+                                className="border-none bg-transparent cursor-pointer p-1 rounded hover:opacity-80"
+                                style={{ color: accentColor }}
+                                title="Previous day"
+                            >
+                                <i className="fas fa-chevron-left text-xs" />
+                            </button>
+                            <button
+                                className="relative border-none bg-transparent cursor-pointer px-2 py-0.5 rounded font-semibold text-sm"
+                                style={{ color: accentColor }}
+                                title="Click to pick date"
+                            >
+                                {new Date(planDate + 'T00:00:00').toLocaleDateString('en-US', {
+                                    weekday: 'short',
+                                    month: 'short',
+                                    day: 'numeric'
+                                })}
+                                <input
+                                    type="date"
+                                    value={planDate}
+                                    onChange={(e) => e.target.value && setPlanDate(skipSundayDate(e.target.value, 1))}
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    style={{ width: '100%', height: '100%' }}
+                                />
+                            </button>
+                            <button
+                                onClick={() => setPlanDate(offsetDateSkipSunday(planDate, 1))}
+                                className="border-none bg-transparent cursor-pointer p-1 rounded hover:opacity-80"
+                                style={{ color: accentColor }}
+                                title="Next day"
+                            >
+                                <i className="fas fa-chevron-right text-xs" />
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => setPlanDate(skipSundayDate(getTomorrowDate(), 1))}
+                            className="border-none rounded-lg cursor-pointer text-xs font-semibold px-2.5 py-1.5"
+                            style={{
+                                background:
+                                    planDate === getTomorrowDate()
+                                        ? `${accentColor}${isDark ? '30' : '15'}`
+                                        : 'var(--bg-tertiary)',
+                                color: planDate === getTomorrowDate() ? accentColor : 'var(--text-secondary)'
+                            }}
+                        >
+                            Tomorrow
+                        </button>
+                    </>
+                )}
                 <div className="flex-1 min-w-[8px]" />
                 {/* Action buttons — compact. Kept together and allowed to wrap
                     to a second row on narrow mobile so the settings cog

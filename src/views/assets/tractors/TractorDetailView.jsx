@@ -58,6 +58,7 @@ function TractorDetailView({ tractorId, onClose }) {
     const [model, setModel] = useState('')
     const [year, setYear] = useState('')
     const [freight, setFreight] = useState('')
+    const [hours, setHours] = useState('')
     const [operatorModalOperators, setOperatorModalOperators] = useState([])
     const [lastUnassignedOperatorId, setLastUnassignedOperatorId] = useState(null)
     const [_comments, setComments] = useState([])
@@ -93,12 +94,14 @@ function TractorDetailView({ tractorId, onClose }) {
                 setModel(tractorData.model || '')
                 setYear(String(tractorData.year || ''))
                 setFreight(tractorData.freight || '')
+                setHours(tractorData.hours != null ? String(tractorData.hours) : '')
                 setOriginalValues({
                     assignedOperator: tractorData.assignedOperator || '',
                     assignedPlant: tractorData.assignedPlant || '',
                     cleanlinessRating: tractorData.cleanlinessRating || 0,
                     freight: tractorData.freight || '',
                     hasBlower: tractorData.hasBlower || false,
+                    hours: tractorData.hours != null ? String(tractorData.hours) : '',
                     lastServiceDate: tractorData.lastServiceDate ? new Date(tractorData.lastServiceDate) : null,
                     make: tractorData.make || '',
                     model: tractorData.model || '',
@@ -199,7 +202,8 @@ function TractorDetailView({ tractorId, onClose }) {
             make !== originalValues.make ||
             model !== originalValues.model ||
             String(year) !== String(originalValues.year) ||
-            freight !== originalValues.freight
+            freight !== originalValues.freight ||
+            hours !== originalValues.hours
         setHasUnsavedChanges(hasChanges)
     }, [
         truckNumber,
@@ -213,6 +217,7 @@ function TractorDetailView({ tractorId, onClose }) {
         model,
         year,
         freight,
+        hours,
         originalValues,
         isLoading
     ])
@@ -333,6 +338,12 @@ function TractorDetailView({ tractorId, onClose }) {
             }
             let cleanlinessValue = overrideValues.cleanlinessRating ?? cleanlinessRating
             if (!cleanlinessValue || isNaN(cleanlinessValue) || cleanlinessValue < 1) cleanlinessValue = 1
+            const parsedHours = (() => {
+                const raw = overrideValues.hours ?? hours
+                if (raw === '' || raw == null) return null
+                const n = Number(raw)
+                return Number.isFinite(n) && n >= 0 ? n : null
+            })()
             const updatedTractor = {
                 ...tractor,
                 assignedOperator: assignedOperatorValue || null,
@@ -340,6 +351,7 @@ function TractorDetailView({ tractorId, onClose }) {
                 cleanlinessRating: cleanlinessValue,
                 freight: overrideValues.freight ?? freight,
                 hasBlower: overrideValues.hasBlower ?? hasBlower,
+                hours: parsedHours,
                 id: tractor.id,
                 lastServiceDate: formatDate(overrideValues.lastServiceDate ?? lastServiceDate),
                 make: overrideValues.make ?? make,
@@ -389,6 +401,7 @@ function TractorDetailView({ tractorId, onClose }) {
                 cleanlinessRating: refreshedTractor.cleanlinessRating,
                 freight: refreshedTractor.freight || '',
                 hasBlower: refreshedTractor.hasBlower,
+                hours: refreshedTractor.hours != null ? String(refreshedTractor.hours) : '',
                 lastServiceDate: refreshedTractor.lastServiceDate ? new Date(refreshedTractor.lastServiceDate) : null,
                 make: refreshedTractor.make,
                 model: refreshedTractor.model,
@@ -1059,6 +1072,19 @@ function TractorDetailView({ tractorId, onClose }) {
                                 Service will show as overdue if it has been more than 6 months since last serviced.
                                 Service is determined by hours on the asset - check hours of service.
                             </div>
+                        </div>
+                        <div className="form-group">
+                            <label>Hours</label>
+                            <input
+                                type="number"
+                                value={hours}
+                                onChange={(e) => setHours(e.target.value)}
+                                className="form-control"
+                                readOnly={!canEditTractor}
+                                min="0"
+                                step="any"
+                                placeholder="Enter hours"
+                            />
                         </div>
                         <div className="form-group">
                             <label>Has Blower</label>

@@ -24,6 +24,7 @@ export class Mixer {
         this.model = data.model ?? ''
         this.year = data.year ?? ''
         this.shopStatus = data.shop_status ?? data.shopStatus ?? null
+        this.hours = data.hours ?? null
         this.latestHistoryDate = data.latestHistoryDate ?? null
         this.openIssuesCount = data.openIssuesCount ?? 0
         this.commentsCount = data.commentsCount ?? 0
@@ -46,6 +47,7 @@ export class Mixer {
             assigned_plant: this.assignedPlant,
             cleanliness_rating: this.cleanlinessRating,
             created_at: DateUtility.toDbTimestamp(this.createdAt) || DateUtility.nowDb(),
+            hours: this.hours ?? null,
             last_chip_date: DateUtility.toDbDate(this.lastChipDate),
             last_service_date: DateUtility.toDbDate(this.lastServiceDate),
             make: this.make,

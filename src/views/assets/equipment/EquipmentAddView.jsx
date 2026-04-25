@@ -18,6 +18,7 @@ function EquipmentAddView({ plants, onClose, onEquipmentAdded }) {
     const [assignedPlant, setAssignedPlant] = useState('')
     const [equipmentType, setEquipmentType] = useState('')
     const [status, setStatus] = useState('Active')
+    const [hours, setHours] = useState('')
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState('')
     const [isPlantModalOpen, setIsPlantModalOpen] = useState(false)
@@ -44,9 +45,15 @@ function EquipmentAddView({ plants, onClose, onEquipmentAdded }) {
         try {
             const userId = sessionStorage.getItem('userId')
             if (!userId) throw new Error('User ID not available. Please log in again.')
+            const parsedHours = (() => {
+                if (hours === '' || hours == null) return null
+                const n = Number(hours)
+                return Number.isFinite(n) && n >= 0 ? n : null
+            })()
             const newEquipment = {
                 assigned_plant: assignedPlant,
                 equipment_type: equipmentType,
+                hours: parsedHours,
                 identifying_number: identifyingNumber,
                 status
             }
@@ -153,6 +160,18 @@ function EquipmentAddView({ plants, onClose, onEquipmentAdded }) {
                                     <option value="In Shop">In Shop</option>
                                     <option value="Retired">Retired</option>
                                 </select>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="hours">Hours</label>
+                                <input
+                                    id="hours"
+                                    type="number"
+                                    value={hours}
+                                    onChange={(e) => setHours(e.target.value)}
+                                    placeholder="Enter hours"
+                                    min="0"
+                                    step="any"
+                                />
                             </div>
                         </div>
                     </div>

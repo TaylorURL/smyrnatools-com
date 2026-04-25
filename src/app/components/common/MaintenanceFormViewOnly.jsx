@@ -1,30 +1,22 @@
 import React from 'react'
 
 import { formatMaintenanceDateShort } from '../../../utils/MaintenanceUtility'
+import { useAccentColor } from '../../hooks/useAccentColor'
 import { getImageDisplayUrl } from '../../hooks/useMaintenanceImages'
 import ImagePreviewModal from '../ui/ImagePreviewModal'
+
+const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+
 /** Status badge configuration mapping submission status to display props. */
 const STATUS_CONFIG = {
-    approved: { className: 'bg-green-100 text-green-700', icon: 'fa-check-circle', label: 'Approved' },
-    rejected: { className: 'bg-red-100 text-red-700', icon: 'fa-times-circle', label: 'Rejected' },
-    submitted: { className: 'bg-blue-100 text-blue-700', icon: 'fa-clock', label: 'Pending Review' }
+    approved: { bg: '#dcfce7', fg: '#166534', icon: 'fa-check-circle', label: 'Approved' },
+    rejected: { bg: '#fee2e2', fg: '#b91c1c', icon: 'fa-times-circle', label: 'Rejected' },
+    submitted: { bg: '#dbeafe', fg: '#1e40af', icon: 'fa-clock', label: 'Pending Review' }
 }
+
 /**
- * Read-only view of a submitted maintenance form.
- * Displays the submission status badge, optional reviewer notes,
- * all field responses (text and checklist with images), and an image preview modal.
- * @param {Object} props
- * @param {Object} props.checklistStates - Per-field, per-item boolean map for checklist fields.
- * @param {Object} props.fieldImages - Map of field IDs to uploaded image data.
- * @param {Array} props.fields - Ordered array of form field definitions.
- * @param {Object} props.formObj - Form metadata (title, etc.).
- * @param {string|null} props.imagePreview - URL of the currently previewed image, or null.
- * @param {Object} props.item - Submitted form record with metadata like `due_date` and `status`.
- * @param {Function} props.onBack - Navigates back from the view-only screen.
- * @param {Function} props.onClosePreview - Closes the image preview modal.
- * @param {Function} props.onOpenPreview - Opens the image preview modal for a given URL.
- * @param {Object} props.responses - Map of field IDs to submitted text responses.
- * @param {string} [props.reviewNotes] - Notes left by the reviewer, if any.
+ * Read-only view of a submitted maintenance form. Status pill, optional
+ * reviewer notes, then all field responses (text + checklist with images).
  */
 export default function MaintenanceFormViewOnly({
     checklistStates,
@@ -39,91 +31,123 @@ export default function MaintenanceFormViewOnly({
     responses,
     reviewNotes
 }) {
+    const accentColor = useAccentColor()
     const statusInfo = STATUS_CONFIG[item?.status]
     return (
-        <div className="flex min-h-screen w-full flex-col bg-slate-50">
-            <div className="sticky top-0 z-40 flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-4">
+        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+            <div
+                className="sticky top-0 z-40 flex items-center gap-2.5 px-3 sm:px-4 py-2"
+                style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
+            >
                 <button
-                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                    onClick={onBack}
                     type="button"
+                    onClick={onBack}
+                    className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer"
+                    style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                    aria-label="Back"
                 >
-                    <i className="fas fa-arrow-left" />
+                    <i className="fas fa-arrow-left text-[11px]" />
                 </button>
-                <div>
-                    <h1 className="m-0 text-xl font-bold text-slate-800">{formObj?.title}</h1>
-                    <p className="m-0 text-sm text-slate-500">Due: {formatMaintenanceDateShort(item?.due_date)}</p>
+                <div
+                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                    style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                >
+                    <i className="fas fa-clipboard-list text-[11px]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                        Submission
+                    </div>
+                    <div className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                        {formObj?.title}
+                    </div>
+                    <div className="text-[10.5px] font-mono tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
+                        Due {formatMaintenanceDateShort(item?.due_date)}
+                    </div>
                 </div>
             </div>
-            <div className="mx-auto w-full max-w-3xl p-6">
+            <div className="mx-auto w-full max-w-3xl px-3 sm:px-4 py-3 flex flex-col gap-2.5">
                 {statusInfo && (
                     <div
-                        className={`mb-4 flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold ${statusInfo.className}`}
+                        className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[10.5px] font-bold uppercase tracking-wider"
+                        style={{ background: statusInfo.bg, color: statusInfo.fg }}
                     >
-                        <i className={`fas ${statusInfo.icon}`} />
+                        <i className={`fas ${statusInfo.icon} text-[10px]`} />
                         {statusInfo.label}
                     </div>
                 )}
                 {reviewNotes && (
-                    <div className="mb-4 rounded-xl border border-gray-200 bg-white p-5">
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <div
+                        className="rounded p-3"
+                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    >
+                        <div className={`${SECTION_LABEL_CLASS} mb-1`} style={{ color: 'var(--text-secondary)' }}>
                             Reviewer Notes
-                        </label>
-                        <p className="m-0 text-sm text-slate-800">{reviewNotes}</p>
+                        </div>
+                        <p className="m-0 text-[12px]" style={{ color: 'var(--text-primary)' }}>
+                            {reviewNotes}
+                        </p>
                     </div>
                 )}
-                <div className="flex flex-col gap-3">
-                    {fields.map((field) => {
-                        const imageData = fieldImages[field.id]
-                        const imageUrl = imageData?.uploadedUrl
-                        return (
-                            <div key={field.id} className="rounded-xl border border-gray-200 bg-white p-5">
-                                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                    {field.label}
-                                </span>
-                                {field.field_type === 'checklist' ? (
-                                    <div className="mt-2 flex flex-col gap-1.5">
-                                        {(field.options?.items || []).map((checkItem, cidx) => {
-                                            const isChecked = checklistStates[field.id]?.[checkItem]
-                                            const itemImageKey = `${field.id}_${checkItem.trim()}`
-                                            const itemImageUrl = fieldImages[itemImageKey]?.uploadedUrl
-                                            return (
-                                                <div key={cidx} className="flex flex-col">
-                                                    <span
-                                                        className={`flex items-center gap-2 text-sm ${isChecked ? 'text-green-600' : 'text-red-500'}`}
-                                                    >
-                                                        <i className={`fas ${isChecked ? 'fa-check' : 'fa-times'}`} />
-                                                        {checkItem}
-                                                    </span>
-                                                    {itemImageUrl && (
-                                                        <img
-                                                            src={getImageDisplayUrl(itemImageUrl)}
-                                                            alt="Attached"
-                                                            className="ml-6 mt-1 max-w-[200px] cursor-pointer rounded-lg border border-gray-200"
-                                                            onClick={() =>
-                                                                onOpenPreview(getImageDisplayUrl(itemImageUrl))
-                                                            }
-                                                        />
-                                                    )}
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                ) : (
-                                    <span className="text-sm text-slate-800">{responses[field.id] || '-'}</span>
-                                )}
-                                {imageUrl && field.field_type !== 'checklist' && (
-                                    <img
-                                        src={getImageDisplayUrl(imageUrl)}
-                                        alt="Attached"
-                                        className="mt-2 max-w-[200px] cursor-pointer rounded-lg border border-gray-200"
-                                        onClick={() => onOpenPreview(getImageDisplayUrl(imageUrl))}
-                                    />
-                                )}
+                {fields.map((field) => {
+                    const imageData = fieldImages[field.id]
+                    const imageUrl = imageData?.uploadedUrl
+                    return (
+                        <div
+                            key={field.id}
+                            className="rounded p-3"
+                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                        >
+                            <div className={`${SECTION_LABEL_CLASS} mb-1`} style={{ color: 'var(--text-secondary)' }}>
+                                {field.label}
                             </div>
-                        )
-                    })}
-                </div>
+                            {field.field_type === 'checklist' ? (
+                                <div className="flex flex-col gap-1">
+                                    {(field.options?.items || []).map((checkItem, cidx) => {
+                                        const isChecked = checklistStates[field.id]?.[checkItem]
+                                        const itemImageKey = `${field.id}_${checkItem.trim()}`
+                                        const itemImageUrl = fieldImages[itemImageKey]?.uploadedUrl
+                                        return (
+                                            <div key={cidx} className="flex flex-col">
+                                                <span
+                                                    className="flex items-center gap-1.5 text-[12px]"
+                                                    style={{ color: isChecked ? '#16a34a' : '#dc2626' }}
+                                                >
+                                                    <i
+                                                        className={`fas ${isChecked ? 'fa-check' : 'fa-times'} text-[10px]`}
+                                                    />
+                                                    {checkItem}
+                                                </span>
+                                                {itemImageUrl && (
+                                                    <img
+                                                        src={getImageDisplayUrl(itemImageUrl)}
+                                                        alt="Attached"
+                                                        className="ml-5 mt-1 max-w-[180px] cursor-pointer rounded"
+                                                        style={{ border: '1px solid var(--border-light)' }}
+                                                        onClick={() => onOpenPreview(getImageDisplayUrl(itemImageUrl))}
+                                                    />
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            ) : (
+                                <span className="text-[12px]" style={{ color: 'var(--text-primary)' }}>
+                                    {responses[field.id] || '—'}
+                                </span>
+                            )}
+                            {imageUrl && field.field_type !== 'checklist' && (
+                                <img
+                                    src={getImageDisplayUrl(imageUrl)}
+                                    alt="Attached"
+                                    className="mt-1.5 max-w-[180px] cursor-pointer rounded"
+                                    style={{ border: '1px solid var(--border-light)' }}
+                                    onClick={() => onOpenPreview(getImageDisplayUrl(imageUrl))}
+                                />
+                            )}
+                        </div>
+                    )
+                })}
             </div>
             <ImagePreviewModal imageUrl={imagePreview} onClose={onClosePreview} />
         </div>

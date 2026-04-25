@@ -12,7 +12,13 @@ const MAINTENANCE_TABLE = "mixers_maintenance";
 const IMAGES_TABLE = "mixers_images";
 const ID_KEY = "mixer_id";
 const ORDER_BY = "truck_number";
-const DIFF_FIELDS = ["truck_number", "assigned_plant", "assigned_operator", "last_service_date", "last_chip_date", "cleanliness_rating", "vin", "make", "model", "year", "status", "shop_status"];
+const DIFF_FIELDS = ["truck_number", "assigned_plant", "assigned_operator", "last_service_date", "last_chip_date", "cleanliness_rating", "vin", "make", "model", "year", "status", "shop_status", "hours"];
+
+function parseHours(raw: any, fallback: any = null): number | null {
+    if (raw === null || raw === undefined || raw === "") return fallback;
+    const n = typeof raw === "number" ? raw : Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
 const INACTIVE_STATUSES = ["In Shop", "Retired", "Spare"];
 
 function resolveOperatorStatus(assignedOperator: any, status: string): { operator: any; status: string } {
@@ -83,6 +89,7 @@ Deno.serve(async (req) => {
                     year: normalizeYear(mixer?.year),
                     status: mixer?.status ?? "Active",
                     shop_status: mixer?.shopStatus ?? mixer?.shop_status ?? null,
+                    hours: parseHours(mixer?.hours),
                     created_at: now, updated_at: now, updated_by: userId
                 };
                 const {data, error} = await supabase.from(MAIN_TABLE).insert([apiData]).select().maybeSingle();
@@ -116,6 +123,7 @@ Deno.serve(async (req) => {
                     year: "year" in mixer ? (normalizeYear(mixer.year) ?? current.year) : current.year,
                     status,
                     shop_status: "shopStatus" in mixer ? mixer.shopStatus : ("shop_status" in mixer ? mixer.shop_status : current.shop_status),
+                    hours: "hours" in mixer ? parseHours(mixer.hours, current.hours) : current.hours,
                     updated_last: typeof mixer?.updatedLast === "string" ? mixer.updatedLast : current.updated_last
                 };
                 const diffs = computeDiffs(current, apiData, DIFF_FIELDS, ID_KEY, id, userId);

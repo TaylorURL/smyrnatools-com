@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { Database } from '../../services/DatabaseService'
 import { ReportService } from '../../services/ReportService'
 import { UserService } from '../../services/UserService'
 import { ReportUtility } from '../../utils/ReportUtility'
@@ -42,42 +41,12 @@ export function useReviewData({ report, initialData, user, completedByUser }) {
             }
             try {
                 const weekStart = report.weekIso.split('T')[0]
-                const [year, month, day] = weekStart.split('-').map(Number)
-                const normalizedWeekStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                const startOfYear = new Date(year, 0, 1)
-                const endOfYear = new Date(year, 11, 31, 23, 59, 59)
-                const { data: allReports, error } = await Database.from('reports')
-                    .select('*')
-                    .eq('report_name', 'plant_manager')
-                    .eq('completed', true)
-                    .gte('week', startOfYear.toISOString())
-                    .lte('week', endOfYear.toISOString())
-                if (error || !mounted) {
-                    if (mounted) setHoursReceivedFromOtherPlants(0)
-                    return
-                }
-                let totalReceived = 0
-                if (allReports && Array.isArray(allReports)) {
-                    allReports.forEach((otherReport) => {
-                        const rawWeekStr = otherReport.week.split('T')[0]
-                        const [wy, wm, wd] = rawWeekStr.split('-').map(Number)
-                        const reportWeekStr = `${wy}-${String(wm).padStart(2, '0')}-${String(wd).padStart(2, '0')}`
-                        if (reportWeekStr === normalizedWeekStr) {
-                            const helpEntries = otherReport.data?.operators_sent_to_help || []
-                            if (Array.isArray(helpEntries)) {
-                                helpEntries.forEach((entry) => {
-                                    const destPlant = String(entry.destination_plant || '')
-                                    if (destPlant === pCode && entry.operators && Array.isArray(entry.operators)) {
-                                        entry.operators.forEach((op) => {
-                                            totalReceived += parseFloat(op.hours) || 0
-                                        })
-                                    }
-                                })
-                            }
-                        }
-                    })
-                }
-                if (mounted) setHoursReceivedFromOtherPlants(totalReceived)
+                const [year] = weekStart.split('-').map(Number)
+                const allReports = await ReportService.fetchPlantManagerReportsForYear(year)
+                if (!mounted) return
+                const completedReports = (allReports || []).filter((r) => r.completed)
+                const hours = ReportUtility.calculateHoursReceivedForWeek(completedReports, report.weekIso, pCode)
+                if (mounted) setHoursReceivedFromOtherPlants(hours)
             } catch {
                 if (mounted) setHoursReceivedFromOtherPlants(0)
             }

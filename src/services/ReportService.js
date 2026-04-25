@@ -389,6 +389,28 @@ class ReportServiceImpl {
         return items
     }
     /**
+     * Fetches every plant_manager report for a given year (drafts + completed) with
+     * narrowed columns and a 2-minute cache. Multiple consumers within the review
+     * flow (hours-received calc, weekly trends, yearly totals, YPH calc) share one
+     * network call instead of each issuing its own SELECT * across thousands of rows.
+     */
+    async fetchPlantManagerReportsForYear(year) {
+        if (!year || Number.isNaN(Number(year))) return []
+        const cacheKey = `plantManagerReports:year:${year}`
+        const cached = CacheUtility.get(cacheKey)
+        if (cached) return cached
+        const startOfYear = new Date(year, 0, 1).toISOString()
+        const endOfYear = new Date(year, 11, 31, 23, 59, 59).toISOString()
+        const { data, error } = await Database.from('reports')
+            .select('id, user_id, week, completed, submitted_at, updated_at, data')
+            .eq('report_name', 'plant_manager')
+            .gte('week', startOfYear)
+            .lte('week', endOfYear)
+        const reports = !error && Array.isArray(data) ? data : []
+        CacheUtility.set(cacheKey, reports, 2 * 60 * 1000)
+        return reports
+    }
+    /**
      * Detects overdue report assignments by cross-referencing user permissions
      * against submitted reports across the last 52 weeks. Checks multiple report
      * date fields (week, date range, submitted_at) to handle format variations.

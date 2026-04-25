@@ -101,10 +101,10 @@ const toCumulative = (arr) => {
  *  When `plantFilter` is set to a plant code, every aggregate is narrowed
  *  to that single plant — KPIs, hourly demand, top-customers, product mix,
  *  and the per-plant breakdown all reflect just that plant. */
-function useDemandData(plantProduction, stats, plantNameByCode, planDate, plantFilter) {
+function useDemandData(plantProduction, stats, plantNameByCode, planDate, allowedCodes) {
     return useMemo(() => {
-        const filterActive = !!plantFilter && plantFilter !== 'all'
-        const passesPlantFilter = (code) => !filterActive || code === plantFilter
+        const filterActive = allowedCodes instanceof Set
+        const passesPlantFilter = (code) => !filterActive || allowedCodes.has(code)
         const plants = new Map()
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
@@ -250,9 +250,10 @@ function useDemandData(plantProduction, stats, plantNameByCode, planDate, plantF
         })
 
         // Time-of-day splits (dispatcher-relevant morning/afternoon/evening).
-        const timeOfDay = { afternoon: 0, evening: 0, morning: 0 }
+        const timeOfDay = { afternoon: 0, evening: 0, morning: 0, overnight: 0 }
         hours.forEach((h) => {
-            if (h.hour < 12) timeOfDay.morning += h.yardage
+            if (h.hour < 6) timeOfDay.overnight += h.yardage
+            else if (h.hour < 12) timeOfDay.morning += h.yardage
             else if (h.hour < 18) timeOfDay.afternoon += h.yardage
             else timeOfDay.evening += h.yardage
         })
@@ -309,7 +310,7 @@ function useDemandData(plantProduction, stats, plantNameByCode, planDate, plantF
             totalBase,
             totals
         }
-    }, [plantProduction, stats, plantNameByCode, planDate])
+    }, [plantProduction, stats, plantNameByCode, planDate, allowedCodes])
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -328,7 +329,7 @@ function PlanDemandView({
     const [isPlantModalOpen, setIsPlantModalOpen] = useState(false)
     const [chartMode, setChartMode] = useState('hourly')
     const [plantFilter, setPlantFilter] = useState('all')
-    const filterActive = plantFilter !== 'all'
+    const filterActive = plantFilter !== 'all' && plantFilter !== 'All' && plantFilter !== ''
 
     /** Every plant code that shows up in the day — drives the filter
      *  dropdown so the dispatcher can scope to any plant in the plan. */
@@ -341,7 +342,26 @@ function PlanDemandView({
         return Array.from(codes).sort()
     }, [stats, plantProduction])
 
-    const data = useDemandData(plantProduction, stats, plantNameByCode, planDate, plantFilter)
+    // Resolve the active filter into a Set of plant codes so single-plant,
+    // district, and "My Plants" selections share one membership rule.
+    const activeFilterCodes = useMemo(() => {
+        if (!filterActive) return null
+        if (plantFilter === 'MY_PLANTS') return userPlantCode ? new Set([userPlantCode]) : new Set()
+        if (plantFilter.startsWith('DISTRICT:')) {
+            const districtName = plantFilter.slice(9)
+            const codes = new Set()
+            ;(plants || []).forEach((p) => {
+                const code = p.plantCode || p.plant_code
+                if (!code) return
+                const dists = p.districts || []
+                if (dists.some((d) => (typeof d === 'string' ? d : d?.name) === districtName)) codes.add(code)
+            })
+            return codes
+        }
+        return new Set([plantFilter])
+    }, [filterActive, plantFilter, plants, userPlantCode])
+
+    const data = useDemandData(plantProduction, stats, plantNameByCode, planDate, activeFilterCodes)
     const plantColorByCode = useMemo(() => {
         const out = {}
         data.perPlant.forEach((p, i) => {
@@ -399,9 +419,12 @@ function PlanDemandView({
 
     const utilColor = data.capacityUtilization > 100 ? '#dc2626' : data.capacityUtilization > 85 ? '#d97706' : '#16a34a'
 
-    const scopeLabel = filterActive
-        ? `Plant ${plantFilter}${plantNameByCode?.[plantFilter] ? ` · ${plantNameByCode[plantFilter]}` : ''}`
-        : `All plants (${plantOptions.length})`
+    const scopeLabel = (() => {
+        if (!filterActive) return `All plants (${plantOptions.length})`
+        if (plantFilter === 'MY_PLANTS') return 'My Plants'
+        if (plantFilter.startsWith('DISTRICT:')) return plantFilter.slice(9)
+        return `Plant ${plantFilter}${plantNameByCode?.[plantFilter] ? ` · ${plantNameByCode[plantFilter]}` : ''}`
+    })()
 
     return (
         <div className="flex-1 overflow-y-auto">
@@ -423,13 +446,9 @@ function PlanDemandView({
                         <PlantFilterButton
                             accentColor={accentColor}
                             active={filterActive}
-                            displayText={
-                                filterActive
-                                    ? `Plant ${plantFilter}${plantNameByCode?.[plantFilter] ? ` · ${plantNameByCode[plantFilter]}` : ''}`
-                                    : `All plants (${plantOptions.length})`
-                            }
+                            displayText={scopeLabel}
                             onClick={() => setIsPlantModalOpen(true)}
-                            title="Filter Demand to a single plant"
+                            title="Filter Demand to a plant, district, or My Plants"
                         />
                         {filterActive && (
                             <button
@@ -551,12 +570,13 @@ function PlanDemandView({
                 <PlantDropdownModal
                     isOpen={isPlantModalOpen}
                     onClose={() => setIsPlantModalOpen(false)}
-                    plants={(plants || []).filter((p) => plantOptions.includes(p.plant_code || p.plantCode))}
+                    plants={plants || []}
                     onSelect={(code) => {
                         setPlantFilter(!code || code === 'All' ? 'all' : code)
                         setIsPlantModalOpen(false)
                     }}
                     showAllPlants
+                    showMyPlants={!!userPlantCode}
                     userPlantCode={userPlantCode}
                 />
             )}
@@ -601,6 +621,7 @@ function ChartModeToggle({ accentColor, onChange, options, value }) {
 }
 
 const TIME_OF_DAY_SECTIONS = [
+    { color: '#6366f1', hint: '00:00–06:00', key: 'overnight', label: 'Overnight' },
     { color: '#f59e0b', hint: '06:00–12:00', key: 'morning', label: 'Morning' },
     { color: '#0ea5e9', hint: '12:00–18:00', key: 'afternoon', label: 'Afternoon' },
     { color: '#8b5cf6', hint: '18:00+', key: 'evening', label: 'Evening' }
