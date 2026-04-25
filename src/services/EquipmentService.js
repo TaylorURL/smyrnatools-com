@@ -53,26 +53,11 @@ class EquipmentServiceImpl {
         const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-all`, {}, 'Failed to fetch equipment')
         return (json?.data ?? []).map((row) => new Equipment(row))
     }
-    /** Alias for getAllEquipments for backward compatibility. */
-    static async fetchEquipments() {
-        return this.getAllEquipments()
-    }
-    /** Fetches a single equipment record by UUID with model instantiation. */
-    static async getEquipmentById(id) {
-        ValidationUtility.requireUUID(id, 'Equipment ID is required')
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-by-id`, { id }, 'Failed to fetch equipment')
-        return json?.data ? new Equipment(json.data) : null
-    }
     /** Fetches equipment by ID with verification status attached. */
     static async fetchEquipmentById(id) {
         ValidationUtility.requireUUID(id, 'Invalid equipment ID')
-        const equipment = await this.getEquipmentById(id)
-        return equipment ? attachIsVerified(equipment) : null
-    }
-    /** Fetches only active-status equipment records. */
-    static async getActiveEquipments() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-active`, {}, 'Failed to fetch active equipment')
-        return (json?.data ?? []).map((row) => new Equipment(row))
+        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-by-id`, { id }, 'Failed to fetch equipment')
+        return json?.data ? attachIsVerified(new Equipment(json.data)) : null
     }
     /** Fetches change history for a specific equipment, optionally limited. */
     static async getEquipmentHistory(equipmentId, limit = null) {
@@ -86,20 +71,16 @@ class EquipmentServiceImpl {
         )
         return (json?.data ?? []).map((entry) => EquipmentHistory.fromApiFormat(entry))
     }
-    /** Creates a new equipment record via the edge function. */
-    static async addEquipment(equipment, userId) {
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/create`,
-            { equipment, userId },
-            'Failed to create equipment'
-        )
-        return json?.data ? new Equipment(json.data) : null
-    }
     /** Creates equipment with user ID resolution and ID cleanup. */
     static async createEquipment(equipment, userId) {
         const resolvedUserId = await requireUserId(userId, 'Authentication required')
         if (equipment.id) delete equipment.id
-        return this.addEquipment(equipment, resolvedUserId)
+        const json = await apiPostOrThrow(
+            `${SERVICE_PREFIX}/create`,
+            { equipment, userId: resolvedUserId },
+            'Failed to create equipment'
+        )
+        return json?.data ? new Equipment(json.data) : null
     }
     /**
      * Updates an equipment record and dispatches a notifications refresh
@@ -124,59 +105,6 @@ class EquipmentServiceImpl {
     /** Records a field-level change in the equipment history audit trail. */
     static async createHistoryEntry(equipmentId, fieldName, oldValue, newValue, changedBy) {
         return baseService.createHistoryEntry(equipmentId, fieldName, oldValue, newValue, changedBy)
-    }
-    /** Fetches cleanliness rating history, optionally filtered by equipment ID and time range. */
-    static async getCleanlinessHistory(equipmentId = null, months = 6) {
-        const payload = {}
-        if (equipmentId) payload.equipmentId = equipmentId
-        if (months) payload.months = months
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-cleanliness-history`,
-            payload,
-            'Failed to fetch cleanliness history'
-        )
-        return json?.data ?? []
-    }
-    /** Fetches condition rating history, optionally filtered by equipment ID and time range. */
-    static async getConditionHistory(equipmentId = null, months = 6) {
-        const payload = {}
-        if (equipmentId) payload.equipmentId = equipmentId
-        if (months) payload.months = months
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-condition-history`,
-            payload,
-            'Failed to fetch condition history'
-        )
-        return json?.data ?? []
-    }
-    /** Fetches all equipment with a specific status value. */
-    static async getEquipmentsByStatus(status) {
-        if (!status) throw new Error('Status is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-by-status`,
-            { status },
-            'Failed to fetch equipment by status'
-        )
-        return (json?.data ?? []).map((row) => new Equipment(row))
-    }
-    /** Searches equipment by identifying number (partial match). */
-    static async searchEquipmentsByIdentifyingNumber(query) {
-        if (!query?.trim()) throw new Error('Search query is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/search-by-identifying-number`,
-            { query: query.trim() },
-            'Failed to search equipment'
-        )
-        return (json?.data ?? []).map((row) => new Equipment(row))
-    }
-    /** Fetches equipment that hasn't been serviced within the given day threshold. */
-    static async getEquipmentsNeedingService(dayThreshold = 30) {
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-needing-service`,
-            { dayThreshold },
-            'Failed to fetch equipment needing service'
-        )
-        return (json?.data ?? []).map((row) => new Equipment(row))
     }
     /** Fetches all comments for a specific equipment record. */
     static async fetchComments(equipmentId) {

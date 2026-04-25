@@ -1,6 +1,47 @@
 # Changelog
 
 
+## [38.5.46] - 2026-04-25
+
+- Removed Leaderboards view and its navigation entry entirely
+- Reorganized navigation categories: dissolved "Productivity" group, moved List and Documents into "Tools" alongside Plan and Calculators
+- Reordered navigation category tabs to place Tools first (after Dashboard), followed by Assets, People, Reporting, Admin
+- Simplified DashboardOperationsSection to a KPI-only band, removing the people pipeline panels, asset attention chips, and historical status distribution chart
+- Extracted people pipeline (training, pending start, light duty operators) into a new DashboardPeopleSection component
+- Added useDashboardManagers hook for fetching and filtering manager data for the dashboard
+- Created reusable Panel component in ui/Panel.jsx
+- Significantly refactored DashboardSidebar with restructured layout and content organization
+- Overhauled FleetOverviewSection with expanded fleet detail views and improved asset breakdown display
+- Simplified KeyMetricsStrip with reduced metric set and cleaner layout
+- Refactored DashboardView to slim down state management, removing inline logic that moved into child components and hooks
+- Reworked ReportsToolbar with restructured filter controls and layout adjustments
+- Refactored TopSection with simplified layout, streamlined header controls and search bar
+- Refactored DetailViewSection and ListViewModeSection with updated layout and prop handling
+- Simplified HistoryViewSection with reduced prop surface and cleaner rendering
+- Updated GridViewModeSection with minor layout tweaks
+- Refactored AssetListRow with updated column layout and display formatting
+- Updated AssetView with simplified state handling and adjusted grid/list rendering
+- Cleaned up MyAccountView with streamlined profile section layout
+- Refactored ListView (task list) with reorganized toolbar, filters, and list rendering
+- Refactored DocumentsView with simplified layout and controls
+- Updated MaintenanceLogView with adjusted table layout and filtering
+- Simplified NRMCAView, ReportsView, ReportsReviewView, and ReportsSubmitView with layout and prop updates
+- Updated WeeklySafetyManagerReport with adjusted field rendering
+- Refactored PlanRealtimeView with significant restructuring and reduced line count
+- Simplified PlanDashboardView with streamlined chart and summary layout
+- Refactored PlanDemandView with updated grid layout and demand display
+- Simplified PlanScheduleView and PlanView with reduced inline logic
+- Updated PlanFlowPreview with minor layout adjustments
+- Updated calculator views (SetTime, SlumpAdjustment, WaterCement, YardagePerHour) with minor formatting and layout tweaks
+- Added helper methods to PlanUtility for plan data processing
+- Updated Plant model with adjusted field handling
+- Minor updates to RolesView, PlantsView, RegionsView, ManagersView, OperatorsView, OperatorDetailView, and NotificationsView
+- Updated DashboardPlantSummary and DashboardRegionSummary with adjusted props and rendering
+- Updated DashboardScheduleSection with layout and prop changes
+- Updated DashboardSkeleton with adjusted skeleton layout
+- Updated EfficiencyInfoCard and WeeklyPlanner with minor tweaks
+- Updated RecapModalSection with minor adjustment
+
 ## [38.5.45] - 2026-04-24
 
 - Added JobMapModal component for viewing plant-to-job routes on an embedded Google Map with live traffic data, travel time comparison, and round-trip estimates

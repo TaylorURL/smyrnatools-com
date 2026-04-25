@@ -21,7 +21,7 @@ const baseService = new BaseAssetService({
 })
 
 /**
- * Trailer CRUD, comments, issues, history, and search service.
+ * Trailer CRUD, comments, issues, and history service.
  * Delegates shared asset operations to BaseAssetService.
  */
 class TrailerServiceImpl {
@@ -111,66 +111,12 @@ class TrailerServiceImpl {
             regionCodes
         })
     }
-    static async getActiveTrailers() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-active`, {}, 'Failed to fetch active trailers')
-        return (json?.data ?? []).map(Trailer.fromApiFormat)
-    }
-    static async getCleanlinessHistory(trailerId = null, months = 6) {
-        const payload = {}
-        if (trailerId) {
-            ValidationUtility.requireUUID(trailerId, `Invalid trailer ID format: ${trailerId}`)
-            payload.trailerId = trailerId
-        }
-        if (months) payload.months = months
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-cleanliness-history`,
-            payload,
-            'Failed to fetch cleanliness history'
-        )
-        return json?.data ?? []
-    }
     static async getTrailerHistory(trailerId, limit = null) {
         ValidationUtility.requireUUID(trailerId, `Invalid trailer ID format: ${trailerId}`)
         const payload = { trailerId }
         if (limit && Number.isInteger(limit)) payload.limit = limit
         const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-history`, payload, 'Failed to fetch trailer history')
         return json?.data ?? []
-    }
-    static async getTrailersByStatus(status) {
-        if (!status) throw new Error('Status is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-by-status`,
-            { status },
-            'Failed to fetch trailers by status'
-        )
-        return (json?.data ?? []).map(Trailer.fromApiFormat)
-    }
-    static async searchTrailersByTrailerNumber(query) {
-        if (!query?.trim()) throw new Error('Search query is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/search-by-trailer-number`,
-            { query: query.trim() },
-            'Failed to search trailers'
-        )
-        return (json?.data ?? []).map(Trailer.fromApiFormat)
-    }
-    static async searchTrailersByVin(query) {
-        if (!query?.trim()) throw new Error('Search query is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/search-by-vin`,
-            { query: query.trim().toUpperCase() },
-            'Failed to search trailers by VIN'
-        )
-        return (json?.data ?? []).map(Trailer.fromApiFormat)
-    }
-    /** Searches trailers by VIN with defaults for missing count properties. */
-    static async searchTrailersByVinProcessed(query) {
-        const vinTrailers = await this.searchTrailersByVin(query)
-        return vinTrailers.map((t) => {
-            if (typeof t.openIssuesCount !== 'number') t.openIssuesCount = 0
-            if (typeof t.commentsCount !== 'number') t.commentsCount = 0
-            return t
-        })
     }
     /** Updates a trailer record, ensuring proper model instantiation. */
     static async updateTrailer(trailerId, updatedTrailer, userId, _oldTrailer) {

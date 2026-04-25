@@ -9,12 +9,6 @@ const GRADIENT_URGENT = 'linear-gradient(90deg, #f59e0b 0%, #f97316 55%, #dc2626
 const GRADIENT_PAST = 'linear-gradient(90deg, #94a3b8 0%, #64748b 100%)'
 const GRADIENT_FUTURE = 'linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%)'
 
-/**
- * Horizontal Mon→Sun fuse showing how much of the week has elapsed
- * and how many days remain until the cutoff. The gradient bar turns
- * from green (early week) to red (urgent) and animates smoothly as
- * the value changes. Active weeks display a shimmer on the leading edge.
- */
 function DeadlineFuse({ daysLeft, cutoffLabel = 'Sat · 11:59 PM', todayIndex, caption, mode = 'current' }) {
     const { preferences } = usePreferences()
     const accent = preferences.accentColor || '#1e3a5f'
@@ -66,8 +60,12 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Sat · 11:59 PM', todayIndex, c
 
     return (
         <div
-            className="bg-white border border-gray-200 rounded-xl px-5 py-4 flex items-center gap-5 flex-col sm:flex-row overflow-hidden"
-            style={{ transition: 'border-color 0.4s ease' }}
+            className="rounded px-3 py-2.5 flex items-center gap-4 flex-col sm:flex-row overflow-hidden"
+            style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-light)',
+                transition: 'border-color 0.4s ease'
+            }}
         >
             <style>{`
                 @keyframes fuse-shimmer {
@@ -100,21 +98,24 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Sat · 11:59 PM', todayIndex, c
                     animation: fuse-shimmer 2.2s ease-in-out infinite;
                     pointer-events: none;
                 }
-                .fuse-days {
-                    transition: color 0.4s ease, font-size 0.3s ease;
-                }
-                .fuse-number {
-                    transition: color 0.4s ease, transform 0.25s ease;
-                }
+                .fuse-number { transition: color 0.4s ease; }
             `}</style>
             <div className="w-full sm:w-auto">
-                <div className="text-[11px] font-bold uppercase tracking-[.08em] text-slate-400">Cutoff</div>
-                <div className="font-bold text-[16px] mt-0.5" style={{ fontFamily: 'var(--font-heading)' }}>
+                <div
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
+                    Cutoff
+                </div>
+                <div
+                    className="text-[13px] font-semibold mt-0.5 font-mono tabular-nums"
+                    style={{ color: 'var(--text-primary)' }}
+                >
                     {cutoffLabel}
                 </div>
             </div>
-            <div className="flex-1 relative w-full pt-6">
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="flex-1 relative w-full pt-5">
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
                     <div
                         className={`fuse-fill${showPulse ? ' pulse' : ''}`}
                         style={{ background: gradient, width: `${pct}%` }}
@@ -122,7 +123,7 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Sat · 11:59 PM', todayIndex, c
                         {showShimmer && <span className="fuse-shimmer" />}
                     </div>
                 </div>
-                <div className="absolute top-0 left-0 right-0 flex justify-between text-[10px] font-semibold text-slate-400">
+                <div className="absolute top-0 left-0 right-0 flex justify-between text-[9.5px] font-semibold uppercase tracking-wider">
                     {DAY_LABELS.map((d, i) => {
                         const isToday = i === resolvedTodayIndex
                         const isPastDay = !isFuture && !isPast && i < resolvedTodayIndex
@@ -133,12 +134,10 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Sat · 11:59 PM', todayIndex, c
                               : isPast
                                 ? 'var(--text-secondary)'
                                 : 'var(--text-tertiary)'
-                        const weight = isToday ? 700 : 600
-                        const size = isToday ? 11 : 10
                         return (
-                            <span key={d} className="fuse-days" style={{ color, fontSize: size, fontWeight: weight }}>
+                            <span key={d} style={{ color, fontWeight: isToday ? 700 : 600 }}>
                                 {d}
-                                {isToday ? ' (today)' : ''}
+                                {isToday ? ' •' : ''}
                             </span>
                         )
                     })}
@@ -146,12 +145,15 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Sat · 11:59 PM', todayIndex, c
             </div>
             <div className="flex items-baseline gap-2 sm:block text-left sm:text-right w-full sm:w-auto">
                 <div
-                    className="fuse-number font-bold text-[28px] leading-none"
-                    style={{ color: numberColor, fontFamily: 'var(--font-heading)' }}
+                    className="fuse-number font-semibold text-[22px] leading-none font-mono tabular-nums"
+                    style={{ color: numberColor }}
                 >
                     {renderedDays}
                 </div>
-                <div className="text-[11px] font-semibold text-slate-500 mt-0 sm:mt-0.5 fuse-days">
+                <div
+                    className="text-[10px] font-semibold uppercase tracking-wider mt-0 sm:mt-1"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
                     {resolvedCaption}
                 </div>
             </div>

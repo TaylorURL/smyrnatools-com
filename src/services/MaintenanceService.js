@@ -173,14 +173,6 @@ function extractStoragePath(imagePath) {
  * image uploads, and plant-scoped access control for reviewers.
  */
 export class MaintenanceService {
-    /** Checks if a user has access to a specific plant (via bypass permission or direct match). */
-    static async checkPlantAccess(userId, plantCode) {
-        if (!userId || !plantCode) return false
-        const hasBypass = await UserService.hasPermission(userId, PERMISSION_BYPASS_PLANT).catch(() => false)
-        if (hasBypass) return true
-        const userPlantCode = await fetchUserPlantCode(userId)
-        return userPlantCode === plantCode
-    }
     /** Fetches all active maintenance forms, optionally filtered by region, plant, or creator. */
     static async fetchForms(filters = {}) {
         let query = Database.from('maintenance_forms')
@@ -222,19 +214,6 @@ export class MaintenanceService {
         await requirePermission(user.id, PERMISSION_CREATE)
         await postMaint('delete-form', { formId })
         return true
-    }
-    /** Fetches due items with their associated forms and submissions. */
-    static async fetchDueItems(filters = {}) {
-        await requireAuthenticatedUser()
-        let query = Database.from('maintenance_due_items')
-            .select(`*, maintenance_forms(*, maintenance_form_fields(*)), maintenance_submissions(*)`)
-            .order('due_date', { ascending: true })
-        if (filters.userId) query = query.eq('assigned_user_id', filters.userId)
-        if (filters.status) query = query.eq('status', filters.status)
-        if (filters.formId) query = query.eq('form_id', filters.formId)
-        const { data, error } = await query
-        if (error) throw error
-        return data || []
     }
     /**
      * Fetches the current user's due maintenance items across all assigned forms.
@@ -444,19 +423,6 @@ export class MaintenanceService {
         const { data, error } = await query.maybeSingle()
         return error ? null : data
     }
-    /** Fetches submissions with optional filters, including full form and response details. */
-    static async fetchSubmissions(filters = {}) {
-        let query = Database.from('maintenance_submissions')
-            .select(`*, maintenance_forms(*), maintenance_submission_responses(*, maintenance_form_fields(*))`)
-            .order('submitted_at', { ascending: false })
-        if (filters.formId) query = query.eq('form_id', filters.formId)
-        if (filters.submittedBy) query = query.eq('submitted_by', filters.submittedBy)
-        if (filters.status) query = query.eq('status', filters.status)
-        if (filters.reviewedBy) query = query.eq('reviewed_by', filters.reviewedBy)
-        const { data, error } = await query
-        if (error) throw error
-        return data || []
-    }
     /** Fetches a single submission with full details (form fields, responses). */
     static async fetchSubmissionById(submissionId) {
         const { data, error } = await Database.from('maintenance_submissions')
@@ -528,13 +494,6 @@ export class MaintenanceService {
         if (error) throw new Error('Failed to upload image: ' + error.message)
         const { data: urlData } = Database.storage.from(STORAGE_BUCKET).getPublicUrl(fileName)
         return urlData?.publicUrl || fileName
-    }
-    /** Deletes an image from database storage by its path. */
-    static async deleteImage(imagePath) {
-        const path = extractStoragePath(imagePath)
-        const { error } = await Database.storage.from(STORAGE_BUCKET).remove([path])
-        if (error) throw new Error('Failed to delete image: ' + error.message)
-        return true
     }
     /** Resolves an image path to its public URL, handling both relative and absolute paths. */
     static getImageUrl(imagePath) {

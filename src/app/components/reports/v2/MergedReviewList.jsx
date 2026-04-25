@@ -4,16 +4,16 @@ import { ReportUtility } from '../../../../utils/ReportUtility'
 import { usePreferences } from '../../../context/PreferencesContext'
 import { reportTypeMap } from '../../../types/ReportTypes'
 
-const REPORT_ICONS = {
-    aggregate_production: { bg: 'bg-cyan-600', icon: 'fa-cubes' },
-    district_manager: { bg: 'bg-purple-600', icon: 'fa-map-marker-alt' },
-    general_manager: { bg: 'bg-slate-700', icon: 'fa-user-tie' },
-    plant_manager: { bg: 'bg-blue-700', icon: 'fa-building' },
-    plant_production: { bg: 'bg-teal-600', icon: 'fa-chart-bar' },
-    quality_control_manager: { bg: 'bg-violet-600', icon: 'fa-flask' },
-    ready_mix_instructor: { bg: 'bg-indigo-600', icon: 'fa-chalkboard-teacher' },
-    safety_environmental_rep: { bg: 'bg-green-600', icon: 'fa-leaf' },
-    safety_manager: { bg: 'bg-orange-500', icon: 'fa-hard-hat' }
+const REPORT_ICON = {
+    aggregate_production: 'fa-cubes',
+    district_manager: 'fa-map-marker-alt',
+    general_manager: 'fa-user-tie',
+    plant_manager: 'fa-building',
+    plant_production: 'fa-chart-bar',
+    quality_control_manager: 'fa-flask',
+    ready_mix_instructor: 'fa-chalkboard-teacher',
+    safety_environmental_rep: 'fa-leaf',
+    safety_manager: 'fa-hard-hat'
 }
 
 const isSubmittedLate = (item) => {
@@ -54,28 +54,37 @@ const computeMissingDue = (weekIso) => {
     return { daysLate, dueLabel }
 }
 
-/**
- * Merged list for GMs. Missing reports from prior weeks surface first
- * (subtle amber row tint) with a "Nudge" action, followed by the current
- * review queue with primary "Review" actions.
- */
+const STATUS_PILL_BASE =
+    'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0'
+
 function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, getUserName, onReview, onNudge }) {
     const { preferences } = usePreferences()
     const accent = preferences.accentColor || '#1e3a5f'
     const reviewedSet = reviewedByCurrentUser instanceof Set ? reviewedByCurrentUser : new Set()
     const hasItems = missing.length > 0 || review.length > 0
+
     if (!hasItems) {
         return (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-slate-400">
-                    <i className="fas fa-clipboard-check text-4xl mb-3" />
-                    <div className="text-sm">Nothing to review right now</div>
+            <div
+                className="rounded overflow-hidden"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+            >
+                <div
+                    className="flex flex-col items-center justify-center py-10 px-4"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    <i className="fas fa-clipboard-check text-2xl mb-2" />
+                    <div className="text-[12px]">Nothing to review right now</div>
                 </div>
             </div>
         )
     }
+
     return (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div
+            className="rounded overflow-hidden"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
             {missing.map((item) => {
                 const reporterName = resolveReporterName(item, getUserName)
                 const rt = reportTypeMap[item.report_name] || reportTypeMap[item.name]
@@ -85,22 +94,32 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                 return (
                     <div
                         key={`missing-${item.id || `${item.plant_code || item.plant}-${weekIso}-${item.report_name || item.name}`}`}
-                        className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0"
-                        style={{ background: '#fffbf5' }}
+                        className="flex items-center gap-2.5 px-3 py-2"
+                        style={{ borderBottom: '1px solid var(--border-light)' }}
                     >
-                        <div className="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                            <i className="fas fa-exclamation-circle text-[13px]" />
+                        <div
+                            className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                            style={{ background: '#fee2e2', color: '#b91c1c' }}
+                        >
+                            <i className="fas fa-exclamation-circle text-[11px]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-[13px] text-slate-800 truncate">Missing · {title}</div>
-                            <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                            <div
+                                className="font-semibold text-[12px] truncate"
+                                style={{ color: 'var(--text-primary)' }}
+                            >
+                                Missing · {title}
+                            </div>
+                            <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
                                 {(item.plant_code || item.plant) && <>{item.plant_code || item.plant} · </>}
                                 {reporterName}
                                 {dueLabel && <> · was due {dueLabel}</>}
                                 {daysLate !== null && daysLate > 0 && (
                                     <>
                                         {' · '}
-                                        <span className="text-red-600 font-semibold">{daysLate}d late</span>
+                                        <span className="font-semibold" style={{ color: '#dc2626' }}>
+                                            {daysLate}d late
+                                        </span>
                                     </>
                                 )}
                             </div>
@@ -108,9 +127,14 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                         <button
                             type="button"
                             onClick={() => onNudge?.(item)}
-                            className="px-3 py-1.5 text-xs font-semibold rounded-md border border-gray-200 bg-white text-slate-700 hover:bg-slate-50 shrink-0 inline-flex items-center gap-1.5"
+                            className="px-2 py-1 text-[10.5px] font-semibold rounded shrink-0 inline-flex items-center gap-1 uppercase tracking-wider"
+                            style={{
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-light)',
+                                color: 'var(--text-primary)'
+                            }}
                         >
-                            <i className="fas fa-paper-plane text-[10px]" /> Nudge
+                            <i className="fas fa-paper-plane text-[9px]" /> Nudge
                         </button>
                     </div>
                 )
@@ -118,23 +142,29 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
             {review.map((item) => {
                 const reporterName = resolveReporterName(item, getUserName)
                 const rt = reportTypeMap[item.name]
-                const cfg = REPORT_ICONS[item.name] || { bg: 'bg-slate-600', icon: 'fa-file-alt' }
+                const iconClass = REPORT_ICON[item.name] || 'fa-file-alt'
                 const isReviewed = reviewedSet.has(item.id)
+                const submittedLate = isSubmittedLate(item)
                 return (
                     <div
                         key={`review-${item.id}`}
-                        className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2 transition-colors hover:bg-bg-tertiary"
+                        style={{ borderBottom: '1px solid var(--border-light)' }}
                     >
                         <div
-                            className={`w-9 h-9 rounded-lg ${cfg.bg} text-white flex items-center justify-center shrink-0`}
+                            className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
                         >
-                            <i className={`fas ${cfg.icon} text-[13px]`} />
+                            <i className={`fas ${iconClass} text-[11px]`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-[13px] text-slate-800 truncate">
+                            <div
+                                className="font-semibold text-[12px] truncate"
+                                style={{ color: 'var(--text-primary)' }}
+                            >
                                 {item.title || rt?.title || item.name}
                             </div>
-                            <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                            <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
                                 {reporterName}
                                 {item.plant ? ` · ${item.plant}` : ''}
                                 {item.completedDate || item.submittedAt || item.submitted_at
@@ -142,24 +172,24 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                                     : ''}
                             </div>
                         </div>
-                        {isSubmittedLate(item) && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-700 shrink-0">
-                                <i className="fas fa-clock text-[9px]" /> Submitted Late
+                        {submittedLate && (
+                            <span className={STATUS_PILL_BASE} style={{ background: '#ffedd5', color: '#9a3412' }}>
+                                Late
                             </span>
                         )}
                         {isReviewed ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-700 shrink-0">
-                                <i className="fas fa-check text-[9px]" /> Reviewed
+                            <span className={STATUS_PILL_BASE} style={{ background: '#dcfce7', color: '#166534' }}>
+                                Reviewed
                             </span>
                         ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-700 shrink-0">
-                                <i className="fas fa-flag text-[9px]" /> Pending
+                            <span className={STATUS_PILL_BASE} style={{ background: '#fef3c7', color: '#92400e' }}>
+                                Pending
                             </span>
                         )}
                         <button
                             type="button"
                             onClick={() => onReview?.(item)}
-                            className="text-white text-xs font-semibold px-3 py-1.5 rounded-md shrink-0 ml-2 hidden sm:inline-flex items-center gap-1.5"
+                            className="text-white text-[10.5px] font-semibold px-2 py-1 rounded shrink-0 ml-1 hidden sm:inline-flex items-center gap-1 uppercase tracking-wider"
                             style={{ background: accent }}
                         >
                             {isReviewed ? 'View' : 'Review'}

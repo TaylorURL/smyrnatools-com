@@ -73,7 +73,6 @@ function AppContent() {
     const [selectedView, setSelectedView] = useState({ initialStatusFilter: null, view: 'Dashboard' })
     const [title, setTitle] = useState('Dashboard')
     const [selectedMixer, setSelectedMixer] = useState(null)
-    const [_selectedTractor, setSelectedTractor] = useState(null)
     const [selectedItem, setSelectedItem] = useState(null)
     const [webViewURL, setWebViewURL] = useState(null)
     const [userDisplayName, setUserDisplayName] = useState('')
@@ -186,7 +185,6 @@ function AppContent() {
             })
             setTitle(viewId === 'Guest' ? 'Access Pending' : viewId)
             setSelectedMixer((prev) => (prev && viewId !== 'Mixers' ? null : prev))
-            setSelectedTractor((prev) => (prev && viewId !== 'Tractors' ? null : prev))
             setSelectedItem((prev) => (prev && viewId !== 'List' ? null : prev))
         },
         [isGuestOnly]
@@ -262,13 +260,7 @@ function AppContent() {
             case 'Managers':
                 return <ManagersView title={title} />
             case 'Tractors':
-                return (
-                    <TractorsView
-                        title="Tractor Fleet"
-                        onSelectTractor={setSelectedTractor}
-                        setSelectedView={handleSetSelectedView}
-                    />
-                )
+                return <TractorsView title="Tractor Fleet" setSelectedView={handleSetSelectedView} />
             case 'Trailers':
                 return <TrailersView title="Trailer Fleet" onSelectTrailer={() => {}} />
             case 'Heavy Equipment':

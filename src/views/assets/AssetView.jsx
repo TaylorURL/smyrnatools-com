@@ -507,54 +507,59 @@ function AssetView({
             return Math.max(1, Math.floor((Date.now() - new Date(dateToUse).getTime()) / 86400000))
         }
 
-        const renderGridCards = (itemsToRender) => (
-            <div className="overflow-auto" style={{ marginBottom: 24, maxHeight: 'calc(100vh - 250px)' }}>
-                <div
-                    className="grid gap-4 p-4"
-                    style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}
-                >
-                    {itemsToRender.map((item, index) => {
-                        const operator = data.operators?.find((op) => op.employeeId === item.assignedOperator)
-                        const plant = data.plants?.find((p) => p.code === item.assignedPlant)
-                        const tractor = data.tractors?.find((t) => t.id === item.assignedTractor)
-                        const isVer =
-                            typeof item.isVerified === 'function' ? item.isVerified(item.latestHistoryDate) : undefined
-                        const number = config.getModalIdentifier(item)
-                        return (
-                            <div
-                                key={item.id}
-                                className="grid-card-animated"
-                                style={{ animationDelay: `${Math.max(40, 80 - index * 2)}ms` }}
-                            >
-                                <AssetGridCard
-                                    item={item}
-                                    config={config}
-                                    operator={operator}
-                                    tractor={tractor}
-                                    plantName={plant?.name || item.assignedPlant || '---'}
-                                    isVerified={isVer}
-                                    displayStatus={getDisplayStatus(item)}
-                                    statusDays={getStatusDays(item)}
-                                    onSelect={handleSelectItem}
-                                    onShowCommentModal={() => onShowCommentModal(item.id, number)}
-                                    onShowIssueModal={() => onShowIssueModal(item.id, number)}
-                                    onShowHistoryModal={() => onShowHistoryModal(item)}
-                                    onShowOperatorCommentModal={(op) => modalsRef.current?.openOperatorCommentModal(op)}
-                                    onShowOperatorHistoryModal={(op) => modalsRef.current?.openOperatorHistoryModal(op)}
-                                />
-                            </div>
-                        )
-                    })}
+        const renderGridCards = (itemsToRender) => {
+            const baseDelay = 80
+            const minDelay = baseDelay / 2
+            const delayDecrement = Math.max(0, (baseDelay - minDelay) / Math.max(itemsToRender.length, 1))
+            return (
+                <div className="overflow-auto" style={{ marginBottom: 24, maxHeight: 'calc(100vh - 250px)' }}>
+                    <div
+                        className="grid gap-4 p-4"
+                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}
+                    >
+                        {itemsToRender.map((item, index) => {
+                            const operator = data.operators?.find((op) => op.employeeId === item.assignedOperator)
+                            const plant = data.plants?.find((p) => p.code === item.assignedPlant)
+                            const tractor = data.tractors?.find((t) => t.id === item.assignedTractor)
+                            const isVer =
+                                typeof item.isVerified === 'function'
+                                    ? item.isVerified(item.latestHistoryDate)
+                                    : undefined
+                            const number = config.getModalIdentifier(item)
+                            const delay = Math.max(minDelay, baseDelay - delayDecrement * index)
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="animate-fade-in-up"
+                                    style={{ animationDelay: `${index * delay}ms` }}
+                                >
+                                    <AssetGridCard
+                                        item={item}
+                                        config={config}
+                                        operator={operator}
+                                        tractor={tractor}
+                                        plantName={plant?.name || item.assignedPlant || '---'}
+                                        isVerified={isVer}
+                                        displayStatus={getDisplayStatus(item)}
+                                        statusDays={getStatusDays(item)}
+                                        onSelect={handleSelectItem}
+                                        onShowCommentModal={() => onShowCommentModal(item.id, number)}
+                                        onShowIssueModal={() => onShowIssueModal(item.id, number)}
+                                        onShowHistoryModal={() => onShowHistoryModal(item)}
+                                        onShowOperatorCommentModal={(op) =>
+                                            modalsRef.current?.openOperatorCommentModal(op)
+                                        }
+                                        onShowOperatorHistoryModal={(op) =>
+                                            modalsRef.current?.openOperatorHistoryModal(op)
+                                        }
+                                    />
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
-                <style>{`
-                    @keyframes fadeInUp {
-                        from { opacity: 0; transform: translateY(16px); }
-                        to { opacity: 1; transform: translateY(0); }
-                    }
-                    .grid-card-animated { animation: fadeInUp 0.45s ease-out both; }
-                `}</style>
-            </div>
-        )
+            )
+        }
 
         const listProps = {
             colWidths: config.listConfig.colWidths,

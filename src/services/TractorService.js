@@ -4,7 +4,6 @@ import { TractorHistory } from '../app/models/tractors/TractorHistory'
 import {
     apiPostOrThrow,
     apiPostRequireSuccess,
-    ensureSpareIfNoOperatorBase,
     fetchWithDetailsBase,
     normalizeSeverity,
     requireUserId,
@@ -63,23 +62,14 @@ export class TractorService {
     static async fetchTractors() {
         return this.getAllTractors()
     }
-    static async getTractorById(id) {
-        ValidationUtility.requireUUID(id, 'Tractor ID is required')
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-by-id`, { id }, 'Failed to fetch tractor')
-        return json?.data ? Tractor.fromApiFormat(json.data) : null
-    }
     static async fetchTractorById(id) {
         ValidationUtility.requireUUID(id, 'Invalid tractor ID')
-        const tractor = await this.getTractorById(id)
-        return tractor ? enrichTractorWithVerification(tractor) : null
+        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-by-id`, { id }, 'Failed to fetch tractor')
+        return json?.data ? enrichTractorWithVerification(Tractor.fromApiFormat(json.data)) : null
     }
     /** Fetches the most recent history entry date for a tractor. */
     static async getLatestHistoryDate(tractorId) {
         return baseService.getLatestHistoryDate(tractorId)
-    }
-    static async getActiveTractors() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-active`, {}, 'Failed to fetch active tractors')
-        return (json?.data ?? []).map(Tractor.fromApiFormat)
     }
     static async getTractorHistory(tractorId, limit = null) {
         ValidationUtility.requireUUID(tractorId, 'Tractor ID is required')
@@ -162,41 +152,12 @@ export class TractorService {
         )
         return json?.data
     }
-    static async getCleanlinessHistory(tractorId = null, months = 6) {
-        const payload = {}
-        if (tractorId) payload.tractorId = tractorId
-        if (months) payload.months = months
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-cleanliness-history`,
-            payload,
-            'Failed to fetch cleanliness history'
-        )
-        return json?.data ?? []
-    }
     static async getTractorsByOperator(operatorId) {
         ValidationUtility.requireUUID(operatorId, 'Operator ID is required')
         const json = await apiPostOrThrow(
             `${SERVICE_PREFIX}/fetch-by-operator`,
             { operatorId },
             'Failed to fetch tractors by operator'
-        )
-        return (json?.data ?? []).map(Tractor.fromApiFormat)
-    }
-    static async getTractorsByStatus(status) {
-        if (!status) throw new Error('Status is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-by-status`,
-            { status },
-            'Failed to fetch tractors by status'
-        )
-        return (json?.data ?? []).map(Tractor.fromApiFormat)
-    }
-    static async searchTractorsByTruckNumber(query) {
-        if (!query?.trim()) throw new Error('Search query is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/search-by-truck-number`,
-            { query: query.trim() },
-            'Failed to search tractors'
         )
         return (json?.data ?? []).map(Tractor.fromApiFormat)
     }
@@ -218,14 +179,6 @@ export class TractorService {
             return t
         })
     }
-    static async getTractorsNeedingService(dayThreshold = 30) {
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-needing-service`,
-            { dayThreshold },
-            'Failed to fetch tractors needing service'
-        )
-        return (json?.data ?? []).map(Tractor.fromApiFormat)
-    }
     static async fetchAllCommentsCounts(tractorIds) {
         return baseService.fetchAllCommentsCounts(tractorIds)
     }
@@ -240,10 +193,6 @@ export class TractorService {
     }
     static async deleteComment(commentId) {
         return baseService.deleteComment(commentId)
-    }
-    static async _fetchHistoryDates() {
-        const tractors = await this.getAllTractors()
-        return Object.fromEntries(tractors.map((t) => [t.id, t.latestHistoryDate ?? null]))
     }
     static async fetchIssues(tractorId) {
         return baseService.fetchIssues(tractorId)
@@ -280,12 +229,6 @@ export class TractorService {
             historyTableName: 'tractors_history',
             idColumnName: 'tractor_id',
             regionCodes
-        })
-    }
-    /** Sets unassigned-operator tractors to Spare status in batch. */
-    static async ensureSpareIfNoOperator(tractorsList) {
-        return ensureSpareIfNoOperatorBase(tractorsList, async (t) => {
-            await this.updateTractor(t.id, { ...t, status: 'Spare' }, undefined, t)
         })
     }
     /** Batch-corrects null operator fields by setting affected tractors to Spare. */

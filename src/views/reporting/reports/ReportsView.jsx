@@ -1348,10 +1348,10 @@ function ReportsView() {
                                     <button
                                         type="button"
                                         onClick={() => setShowLostLoadModal(true)}
-                                        className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-transparent text-white text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
+                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
                                         style={{ background: accent }}
                                     >
-                                        <i className="fas fa-truck text-[10px]" /> Submit Lost Load Report
+                                        <i className="fas fa-truck text-[10px]" /> Submit Lost Load
                                     </button>
                                 </div>
                             )}
@@ -1426,18 +1426,18 @@ function ReportsView() {
                                     <button
                                         type="button"
                                         onClick={() => setShowQCStrengthModal(true)}
-                                        className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-transparent text-white text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
+                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
                                         style={{ background: accent }}
                                     >
-                                        <i className="fas fa-flask text-[10px]" /> Submit QC Strength Report
+                                        <i className="fas fa-flask text-[10px]" /> Submit QC Strength
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setShowLabReportModal(true)}
-                                        className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-transparent text-white text-xs font-semibold shadow-sm hover:opacity-90 transition-opacity"
+                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
                                         style={{ background: '#e11d48' }}
                                     >
-                                        <i className="fas fa-vial text-[10px]" /> Submit Third-Party Lab Report
+                                        <i className="fas fa-vial text-[10px]" /> Submit Lab Report
                                     </button>
                                 </div>
                             )}
@@ -1468,51 +1468,101 @@ function ReportsView() {
                                 </div>
                             </MobileFilterShell>
                             {isLoadingQC ? (
-                                <div className="bg-white rounded-xl border border-border-light overflow-hidden">
+                                <div
+                                    className="rounded overflow-hidden"
+                                    style={{
+                                        background: 'var(--bg-primary)',
+                                        border: '1px solid var(--border-light)'
+                                    }}
+                                >
                                     {[1, 2, 3, 4, 5].map((i) => (
                                         <div
                                             key={i}
-                                            className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0"
+                                            className="flex items-center gap-2.5 px-3 py-2"
+                                            style={{ borderBottom: '1px solid var(--border-light)' }}
                                         >
-                                            <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse shrink-0" />
+                                            <div
+                                                className="w-6 h-6 rounded animate-pulse shrink-0"
+                                                style={{ background: 'var(--bg-tertiary)' }}
+                                            />
                                             <div className="flex-1 min-w-0">
-                                                <div className="h-4 w-44 rounded bg-slate-200 animate-pulse mb-1.5" />
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-5 h-5 rounded-full bg-slate-200 animate-pulse" />
-                                                    <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
-                                                    <div className="h-3 w-16 rounded bg-slate-100 animate-pulse" />
-                                                </div>
+                                                <div
+                                                    className="h-3 w-44 rounded animate-pulse mb-1"
+                                                    style={{ background: 'var(--bg-tertiary)' }}
+                                                />
+                                                <div
+                                                    className="h-2.5 w-56 rounded animate-pulse"
+                                                    style={{ background: 'var(--bg-secondary)' }}
+                                                />
                                             </div>
-                                            <div className="h-6 w-16 rounded bg-slate-200 animate-pulse shrink-0" />
+                                            <div
+                                                className="h-4 w-16 rounded animate-pulse shrink-0"
+                                                style={{ background: 'var(--bg-tertiary)' }}
+                                            />
                                         </div>
                                     ))}
                                 </div>
                             ) : qcReports.length === 0 ? (
-                                <div className="bg-white rounded-xl border border-border-light overflow-hidden">
-                                    <div className="flex flex-col items-center justify-center py-12 px-4 text-slate-400">
-                                        <i className="fas fa-flask text-4xl mb-3" />
-                                        <div className="text-sm">No quality reports submitted yet</div>
+                                <div
+                                    className="rounded overflow-hidden"
+                                    style={{
+                                        background: 'var(--bg-primary)',
+                                        border: '1px solid var(--border-light)'
+                                    }}
+                                >
+                                    <div
+                                        className="flex flex-col items-center justify-center py-10 px-4"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    >
+                                        <i className="fas fa-flask text-2xl mb-2" />
+                                        <div className="text-[12px]">No quality reports submitted yet</div>
                                     </div>
                                 </div>
                             ) : (
                                 <div>
-                                    <div className="flex items-center gap-3 mb-2 px-1">
-                                        <span className="text-sm font-bold text-slate-700">Quality Reports</span>
-                                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-slate-600 bg-slate-100">
+                                    <div className="flex items-center gap-2 mb-2 px-1">
+                                        <span
+                                            className="text-[10px] font-semibold uppercase tracking-wider"
+                                            style={{ color: 'var(--text-secondary)' }}
+                                        >
+                                            Quality Reports
+                                        </span>
+                                        <span
+                                            className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono tabular-nums"
+                                            style={{
+                                                background: 'var(--bg-tertiary)',
+                                                color: 'var(--text-secondary)'
+                                            }}
+                                        >
                                             {qcHasActiveFilters
-                                                ? `${visibleQcReports.length} of ${qcReports.length}`
-                                                : `${qcReports.length} submitted`}
+                                                ? `${visibleQcReports.length} / ${qcReports.length}`
+                                                : qcReports.length}
                                         </span>
                                     </div>
                                     {visibleQcReports.length === 0 ? (
-                                        <div className="bg-white rounded-xl border border-border-light overflow-hidden">
-                                            <div className="flex flex-col items-center justify-center py-10 px-4 text-slate-400">
-                                                <i className="fas fa-filter text-3xl mb-2" />
-                                                <div className="text-sm">No reports match your filters</div>
+                                        <div
+                                            className="rounded overflow-hidden"
+                                            style={{
+                                                background: 'var(--bg-primary)',
+                                                border: '1px solid var(--border-light)'
+                                            }}
+                                        >
+                                            <div
+                                                className="flex flex-col items-center justify-center py-10 px-4"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
+                                                <i className="fas fa-filter text-2xl mb-2" />
+                                                <div className="text-[12px]">No reports match your filters</div>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="bg-white rounded-xl border border-border-light overflow-hidden">
+                                        <div
+                                            className="rounded overflow-hidden"
+                                            style={{
+                                                background: 'var(--bg-primary)',
+                                                border: '1px solid var(--border-light)'
+                                            }}
+                                        >
                                             {visibleQcReports.map((report) => {
                                                 const submittedLabel = report.submittedAt
                                                     ? new Date(report.submittedAt).toLocaleDateString(undefined, {
@@ -1521,12 +1571,6 @@ function ReportsView() {
                                                       })
                                                     : ''
                                                 const submitterName = getUserName(report.userId) || 'Unknown'
-                                                const initials = submitterName
-                                                    .split(' ')
-                                                    .map((w) => w[0])
-                                                    .join('')
-                                                    .slice(0, 2)
-                                                    .toUpperCase()
                                                 const d = report.data || {}
                                                 const isLabReport = report.name === 'third_party_lab'
                                                 const meaningfulStr = (val) =>
@@ -1539,50 +1583,52 @@ function ReportsView() {
                                                       meaningfulStr(d.project) ||
                                                       'QC Strength Report'
                                                 const iconClass = isLabReport ? 'fa-vial' : 'fa-flask'
-                                                const iconBg = isLabReport ? 'bg-rose-600' : 'bg-violet-600'
+                                                const iconTint = isLabReport
+                                                    ? { bg: '#ffe4e6', fg: '#9f1239' }
+                                                    : { bg: '#ede9fe', fg: '#6d28d9' }
                                                 return (
                                                     <div
                                                         key={report.id}
-                                                        className="flex items-center px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0 cursor-pointer transition-colors hover:bg-slate-50"
+                                                        className="flex items-center px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary"
+                                                        style={{ borderBottom: '1px solid var(--border-light)' }}
                                                         onClick={() =>
                                                             isLabReport
                                                                 ? setSelectedLabReport(report)
                                                                 : setSelectedQCReport(report)
                                                         }
                                                     >
-                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
                                                             <div
-                                                                className={`w-7 h-7 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}
+                                                                className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                                                                style={{
+                                                                    background: iconTint.bg,
+                                                                    color: iconTint.fg
+                                                                }}
                                                             >
-                                                                <i
-                                                                    className={`fas ${iconClass} text-white text-[10px]`}
-                                                                />
+                                                                <i className={`fas ${iconClass} text-[11px]`} />
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <span className="text-sm font-medium text-slate-800 block truncate">
+                                                                <span
+                                                                    className="text-[12px] font-semibold block truncate"
+                                                                    style={{ color: 'var(--text-primary)' }}
+                                                                >
                                                                     {title}
                                                                 </span>
-                                                                <div className="flex items-center gap-2 mt-0.5">
-                                                                    <div
-                                                                        className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                                                                        style={{
-                                                                            background: `${accent}20`,
-                                                                            color: accent
-                                                                        }}
-                                                                    >
-                                                                        <span className="text-[8px] font-bold">
-                                                                            {initials}
-                                                                        </span>
-                                                                    </div>
-                                                                    <span className="text-xs text-slate-500 truncate">
-                                                                        {submitterName}
-                                                                    </span>
+                                                                <div
+                                                                    className="flex items-center gap-1.5 mt-0.5 text-[10.5px]"
+                                                                    style={{ color: 'var(--text-secondary)' }}
+                                                                >
+                                                                    <span className="truncate">{submitterName}</span>
                                                                     {submittedLabel && (
                                                                         <>
-                                                                            <span className="text-slate-300 text-[8px]">
-                                                                                ●
+                                                                            <span
+                                                                                style={{
+                                                                                    color: 'var(--text-tertiary)'
+                                                                                }}
+                                                                            >
+                                                                                ·
                                                                             </span>
-                                                                            <span className="text-xs text-slate-400">
+                                                                            <span className="font-mono tabular-nums">
                                                                                 {submittedLabel}
                                                                             </span>
                                                                         </>
@@ -1591,16 +1637,28 @@ function ReportsView() {
                                                             </div>
                                                         </div>
                                                         {report.reviewed ? (
-                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-700 shrink-0">
-                                                                <i className="fas fa-check text-[9px]" /> Reviewed
+                                                            <span
+                                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0"
+                                                                style={{
+                                                                    background: '#dcfce7',
+                                                                    color: '#166534'
+                                                                }}
+                                                            >
+                                                                Reviewed
                                                             </span>
                                                         ) : (
-                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-700 shrink-0">
-                                                                <i className="fas fa-flag text-[9px]" /> Pending
+                                                            <span
+                                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0"
+                                                                style={{
+                                                                    background: '#fef3c7',
+                                                                    color: '#92400e'
+                                                                }}
+                                                            >
+                                                                Pending
                                                             </span>
                                                         )}
                                                         <button
-                                                            className="ml-3 px-3 py-1.5 rounded-md text-white text-xs font-semibold shrink-0 hidden sm:block"
+                                                            className="ml-2 px-2 py-1 rounded text-white text-[10.5px] font-semibold shrink-0 hidden sm:inline-flex uppercase tracking-wider"
                                                             style={{ background: accent }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation()
@@ -1617,12 +1675,16 @@ function ReportsView() {
                                                                 e.stopPropagation()
                                                                 handleDeleteQCReport(report)
                                                             }}
-                                                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0 ml-2 hidden sm:flex"
+                                                            className="w-6 h-6 flex items-center justify-center rounded shrink-0 ml-1.5 hidden sm:flex transition-colors hover:bg-bg-tertiary"
+                                                            style={{ color: 'var(--text-tertiary)' }}
                                                             title="Delete"
                                                         >
-                                                            <i className="fas fa-trash-alt text-xs" />
+                                                            <i className="fas fa-trash-alt text-[10px]" />
                                                         </button>
-                                                        <i className="fas fa-chevron-right text-slate-300 text-xs ml-3 sm:hidden" />
+                                                        <i
+                                                            className="fas fa-chevron-right text-[10px] ml-2 sm:hidden"
+                                                            style={{ color: 'var(--text-tertiary)' }}
+                                                        />
                                                     </div>
                                                 )
                                             })}

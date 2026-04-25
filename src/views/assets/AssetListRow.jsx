@@ -10,6 +10,7 @@ import StatusHistoryBar from '../../app/components/common/StatusHistoryBar'
  * (`hover:[&>td]:bg-bg-tertiary`) apply cleanly without inline overrides.
  */
 export default function AssetListRow({
+    className,
     config,
     duplicates,
     item,
@@ -23,6 +24,7 @@ export default function AssetListRow({
     onVerify,
     operators,
     plants,
+    style,
     tractors
 }) {
     const { columns } = config.listConfig
@@ -455,7 +457,7 @@ export default function AssetListRow({
     }
 
     return (
-        <tr onClick={() => onSelect(item.id)} style={{ cursor: 'pointer' }}>
+        <tr className={className} onClick={() => onSelect(item.id)} style={{ cursor: 'pointer', ...style }}>
             {columns.map(renderCell)}
         </tr>
     )

@@ -5,7 +5,6 @@ import tractorConfig from '../configs/tractorConfig'
 
 function TractorsView({
     title = 'Tractor Fleet',
-    onSelectTractor,
     setSelectedView,
     embedded = false,
     initialSearch = '',
@@ -15,7 +14,6 @@ function TractorsView({
         <AssetView
             config={tractorConfig}
             title={title}
-            onSelectItem={onSelectTractor}
             setSelectedView={setSelectedView}
             embedded={embedded}
             initialSearch={initialSearch}

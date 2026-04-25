@@ -4,13 +4,21 @@ import { usePreferences } from '../../../app/context/PreferencesContext'
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 9999]
 
+const STATUS_PILL_BASE =
+    'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0'
+
 const PageSizeSelect = ({ value, onChange }) => (
-    <div className="flex items-center gap-2 text-sm text-slate-500">
-        <label className="hidden sm:inline">Show:</label>
+    <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+        <label className="hidden sm:inline uppercase tracking-wider text-[10px]">Show</label>
         <select
             value={value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="bg-white border border-gray-200 rounded-md px-2 py-1.5 text-sm cursor-pointer"
+            className="rounded px-2 py-1 text-[11px] cursor-pointer"
+            style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-light)',
+                color: 'var(--text-primary)'
+            }}
         >
             {PAGE_SIZE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -21,92 +29,96 @@ const PageSizeSelect = ({ value, onChange }) => (
     </div>
 )
 
+const PageButton = ({ disabled, onClick, children }) => (
+    <button
+        className="px-2.5 py-1 text-[11px] font-semibold rounded uppercase tracking-wider"
+        style={{
+            background: disabled ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+            border: '1px solid var(--border-light)',
+            color: disabled ? 'var(--text-tertiary)' : 'var(--text-primary)',
+            cursor: disabled ? 'not-allowed' : 'pointer'
+        }}
+        onClick={onClick}
+        disabled={disabled}
+    >
+        {children}
+    </button>
+)
+
 const Pagination = ({ currentPage, totalPages, pageSize, onPageSizeChange, onPageChange }) => (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 mt-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-1 py-2 mt-3">
         <PageSizeSelect value={pageSize} onChange={onPageSizeChange} />
         <div className="flex items-center gap-2">
-            <button
-                className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-all ${currentPage === 1 ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border-gray-200 hover:bg-slate-50'}`}
-                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-            >
+            <PageButton disabled={currentPage === 1} onClick={() => onPageChange(Math.max(1, currentPage - 1))}>
                 Prev
-            </button>
-            <span className="text-sm text-slate-500">
+            </PageButton>
+            <span className="text-[11px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
                 {currentPage} / {totalPages}
             </span>
-            <button
-                className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-all ${currentPage === totalPages ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-700 border-gray-200 hover:bg-slate-50'}`}
-                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            <PageButton
                 disabled={currentPage === totalPages}
+                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             >
                 Next
-            </button>
+            </PageButton>
         </div>
     </div>
 )
 
-/** Single lost load row matching the ReviewRow pattern. */
 const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, onClick }) => {
     const lostDate = report.data?.lost_load_date
         ? new Date(report.data.lost_load_date + 'T12:00:00')
         : report.submitted_at
           ? new Date(report.submitted_at)
           : null
-    const dateLabel = lostDate ? lostDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''
+    const dateLabel = lostDate ? lostDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : ''
     const submitterName = getUserName(report.userId) || 'Unknown'
-    const initials = submitterName
-        .split(' ')
-        .map((w) => w[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
     const title = report.data?.truck_number
         ? `Truck ${report.data.truck_number}${report.data?.yardage != null ? ` — ${report.data.yardage} yds` : ''}`
         : 'Lost Load'
 
     return (
         <div
-            className="flex items-center px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0 cursor-pointer transition-colors hover:bg-slate-50"
+            className="flex items-center px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary"
+            style={{ borderBottom: '1px solid var(--border-light)' }}
             onClick={() => onClick?.(report)}
         >
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-red-500 flex items-center justify-center shrink-0">
-                    <i className="fas fa-truck text-white text-[10px]" />
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div
+                    className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                    style={{ background: '#fee2e2', color: '#b91c1c' }}
+                >
+                    <i className="fas fa-truck text-[10px]" />
                 </div>
                 <div className="min-w-0">
-                    <span className="text-sm font-medium text-slate-800 block truncate">{title}</span>
-                    <div className="flex items-center gap-2 mt-0.5">
-                        <div className="flex items-center gap-1.5">
-                            <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                                style={{ background: `${accentColor}20`, color: accentColor }}
-                            >
-                                <span className="text-[8px] font-bold">{initials}</span>
-                            </div>
-                            <span className="text-xs text-slate-500 truncate">{submitterName}</span>
-                        </div>
+                    <span className="text-[12px] font-semibold block truncate" style={{ color: 'var(--text-primary)' }}>
+                        {title}
+                    </span>
+                    <div
+                        className="flex items-center gap-1.5 mt-0.5 text-[10.5px]"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        <span className="truncate">{submitterName}</span>
                         {dateLabel && (
                             <>
-                                <span className="text-slate-300 text-[8px]">●</span>
-                                <span className="text-xs text-slate-400">{dateLabel}</span>
+                                <span style={{ color: 'var(--text-tertiary)' }}>·</span>
+                                <span className="font-mono tabular-nums">{dateLabel}</span>
                             </>
                         )}
                         {report.data?.plant && (
                             <>
-                                <span className="text-slate-300 text-[8px]">●</span>
-                                <span className="text-xs text-slate-400">{report.data.plant}</span>
+                                <span style={{ color: 'var(--text-tertiary)' }}>·</span>
+                                <span>{report.data.plant}</span>
                             </>
                         )}
                     </div>
                 </div>
             </div>
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-700 shrink-0">
-                <i className="fas fa-check text-[9px]" />
+            <span className={STATUS_PILL_BASE} style={{ background: '#dcfce7', color: '#166534' }}>
                 Submitted
             </span>
             <button
-                className="ml-3 px-3 py-1.5 rounded-md text-white text-xs font-semibold shrink-0 hidden sm:block"
+                className="ml-2 px-2 py-1 rounded text-white text-[10.5px] font-semibold shrink-0 hidden sm:inline-flex uppercase tracking-wider"
                 style={{ background: accentColor }}
                 onClick={(e) => {
                     e.stopPropagation()
@@ -122,18 +134,18 @@ const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, on
                         e.stopPropagation()
                         if (window.confirm('Delete this lost load report?')) onDelete(report.id)
                     }}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0 ml-2 hidden sm:flex"
+                    className="w-6 h-6 flex items-center justify-center rounded shrink-0 ml-1.5 hidden sm:flex transition-colors hover:bg-bg-tertiary"
+                    style={{ color: 'var(--text-tertiary)' }}
                     title="Delete"
                 >
-                    <i className="fas fa-trash-alt text-xs" />
+                    <i className="fas fa-trash-alt text-[10px]" />
                 </button>
             )}
-            <i className="fas fa-chevron-right text-slate-300 text-xs ml-3 sm:hidden" />
+            <i className="fas fa-chevron-right text-[10px] ml-2 sm:hidden" style={{ color: 'var(--text-tertiary)' }} />
         </div>
     )
 }
 
-/** Paginated list of lost load reports matching the review grouped style. */
 function LostLoadsList({
     isLoading,
     items,
@@ -152,10 +164,16 @@ function LostLoadsList({
 
     if (items.length === 0 && !isLoading) {
         return (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-slate-400">
-                    <i className="fas fa-truck text-4xl mb-3" />
-                    <div className="text-sm">No loss reports</div>
+            <div
+                className="rounded overflow-hidden"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+            >
+                <div
+                    className="flex flex-col items-center justify-center py-10 px-4"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    <i className="fas fa-truck text-2xl mb-2" />
+                    <div className="text-[12px]">No loss reports</div>
                 </div>
             </div>
         )
@@ -163,31 +181,50 @@ function LostLoadsList({
 
     return (
         <div>
-            <div className="mb-5">
-                <div className="flex items-center gap-3 mb-2 px-1">
-                    <span className="text-sm font-bold text-slate-700">Loss Reports</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-slate-600 bg-slate-100">
-                        {items.length} submitted
+            <div className="mb-3">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                    <span
+                        className="text-[10px] font-semibold uppercase tracking-wider"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        Loss Reports
+                    </span>
+                    <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono tabular-nums"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                    >
+                        {items.length}
                     </span>
                 </div>
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div
+                    className="rounded overflow-hidden"
+                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                >
                     {isLoading
                         ? [1, 2, 3, 4, 5].map((i) => (
                               <div
                                   key={i}
-                                  className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-100 last:border-b-0"
+                                  className="flex items-center gap-2.5 px-3 py-2"
+                                  style={{ borderBottom: '1px solid var(--border-light)' }}
                               >
-                                  <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse shrink-0" />
+                                  <div
+                                      className="w-6 h-6 rounded animate-pulse shrink-0"
+                                      style={{ background: 'var(--bg-tertiary)' }}
+                                  />
                                   <div className="flex-1 min-w-0">
-                                      <div className="h-4 w-40 rounded bg-slate-200 animate-pulse mb-1.5" />
-                                      <div className="flex items-center gap-2">
-                                          <div className="w-5 h-5 rounded-full bg-slate-200 animate-pulse" />
-                                          <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
-                                          <div className="h-3 w-16 rounded bg-slate-100 animate-pulse" />
-                                      </div>
+                                      <div
+                                          className="h-3 w-40 rounded animate-pulse mb-1"
+                                          style={{ background: 'var(--bg-tertiary)' }}
+                                      />
+                                      <div
+                                          className="h-2.5 w-56 rounded animate-pulse"
+                                          style={{ background: 'var(--bg-secondary)' }}
+                                      />
                                   </div>
-                                  <div className="h-6 w-16 rounded bg-slate-200 animate-pulse shrink-0" />
-                                  <div className="h-7 w-14 rounded bg-slate-200 animate-pulse shrink-0 hidden sm:block" />
+                                  <div
+                                      className="h-4 w-16 rounded animate-pulse shrink-0"
+                                      style={{ background: 'var(--bg-tertiary)' }}
+                                  />
                               </div>
                           ))
                         : items.map((report) => (

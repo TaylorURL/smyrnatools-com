@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
-import { PlanSkeleton } from '../../../app/components/common/PlanComponents'
+import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { usePlanActions } from '../../../app/hooks/usePlanActions'
@@ -703,7 +703,7 @@ function PlanView() {
                 style={{ overflow: 'hidden', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
             >
                 {isLoading ? (
-                    <PlanSkeleton />
+                    <PlanTabSkeleton mode={effectiveViewMode} />
                 ) : (
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                         {/* Read-only banner for users without plan.edit */}

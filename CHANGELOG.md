@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [38.5.47] - 2026-04-25
+
+- Removed unused selectedTractor state and its setter from App.js, simplified TractorsView rendering by dropping the onSelectTractor prop
+- Deleted legacy dashboard components: DashboardCharts, DashboardOperationsSection, DashboardPlantSummary, DashboardRegionSummary, DashboardScheduleSection, MaintenanceQualitySection, RegionOverviewCard
+- Deleted legacy report components: MissingReportsList, MyReportsList, ReportsStatsCards, ReviewReportsList
+- Deleted WeeklyPlanner, DistrictManagerPlantsSection, and AssetListSkeleton components
+- Deleted AuthService entirely
+- Extracted PlanSkeleton from PlanComponents into a new dedicated PlanSkeletons module with per-tab skeleton variants: DashboardSkeleton, ScheduleSkeleton, FlowSkeleton, DemandSkeleton, RealtimeSkeleton, and a PlanTabSkeleton switcher
+- Refactored LostLoadsList with updated layout and rendering
+- Refactored DeadlineFuse and MergedReviewList with updated structure and prop handling
+- Refactored ReportsView with restructured layout, filters, and reduced inline logic
+- Cleaned up asset services (EquipmentService, MixerService, TractorService, TrailerService, MaintenanceService) by removing dead code and unused methods
+- Updated AssetListRow and AssetView with adjusted column layout and simplified state handling
+- Removed unused import from TractorsView
+- Updated PlanView with minor rendering adjustments
+
 ## [38.5.46] - 2026-04-25
 
 - Removed Leaderboards view and its navigation entry entirely
