@@ -14,8 +14,13 @@ import APIUtility from '../../../utils/APIUtility'
 const AUTH_FUNCTION = '/auth-service'
 import { CacheUtility } from '../../../utils/CacheUtility'
 import DashboardUtility from '../../../utils/DashboardUtility'
+
 const MAX_BRIGHTNESS_HEX = '#D6D6D6'
 const MAX_BRIGHTNESS_VALUE = 214
+
+const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+const FIELD_LABEL_CLASS = 'block text-[10px] font-semibold uppercase tracking-wider mb-1.5'
+
 /** Parses a 6-digit hex color string into its {r, g, b} components. */
 const getRgbFromHex = (hex) => {
     const cleanHex = hex.replace('#', '')
@@ -25,6 +30,7 @@ const getRgbFromHex = (hex) => {
         r: parseInt(cleanHex.substring(0, 2), 16)
     }
 }
+
 /** Darkens a color if its average brightness exceeds the threshold, ensuring sufficient contrast on white backgrounds. */
 const clampColorToMaxBrightness = (hex) => {
     const { b, g, r } = getRgbFromHex(hex)
@@ -36,6 +42,7 @@ const clampColorToMaxBrightness = (hex) => {
     const clampedB = Math.round(b * scale)
     return `#${clampedR.toString(16).padStart(2, '0')}${clampedG.toString(16).padStart(2, '0')}${clampedB.toString(16).padStart(2, '0')}`
 }
+
 const START_PAGE_OPTIONS = [
     { icon: 'fa-chart-pie', id: 'Dashboard' },
     { icon: 'fa-truck-moving', id: 'Mixers' },
@@ -50,6 +57,112 @@ const START_PAGE_OPTIONS = [
     { icon: 'fa-truck-pickup', id: 'Pickup Trucks' },
     { icon: 'fa-calculator', id: 'Calculators' }
 ]
+
+/* ── Plan-tab styled atoms ─────────────────────────────────────────────── */
+
+const FieldStyle = {
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-light)',
+    color: 'var(--text-primary)'
+}
+
+function Card({ children, className = '' }) {
+    return (
+        <div
+            className={`rounded ${className}`}
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
+            {children}
+        </div>
+    )
+}
+
+function CardHeader({ icon, title, description, accentColor }) {
+    return (
+        <div className="flex items-center gap-2.5 px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+            <div
+                className="flex h-7 w-7 items-center justify-center rounded shrink-0"
+                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+            >
+                <i className={`fas ${icon} text-[12px]`} />
+            </div>
+            <div className="min-w-0">
+                <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                    {title}
+                </div>
+                {description && (
+                    <div className="text-[11px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                        {description}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+function PrimaryButton({ accentColor, children, disabled, icon, onClick, type = 'button' }) {
+    return (
+        <button
+            type={type}
+            onClick={onClick}
+            disabled={disabled}
+            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: accentColor }}
+        >
+            {icon && <i className={`fas ${icon} text-[10px]`} />}
+            {children}
+        </button>
+    )
+}
+
+function SubtleButton({ children, danger = false, disabled = false, icon, onClick, type = 'button' }) {
+    return (
+        <button
+            type={type}
+            onClick={onClick}
+            disabled={disabled}
+            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95"
+            style={{
+                background: danger ? '#fee2e2' : 'var(--bg-secondary)',
+                border: '1px solid var(--border-light)',
+                color: danger ? '#b91c1c' : 'var(--text-secondary)'
+            }}
+        >
+            {icon && <i className={`fas ${icon} text-[10px]`} />}
+            {children}
+        </button>
+    )
+}
+
+function Toggle({ accentColor, checked, onChange, ariaLabel }) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            aria-label={ariaLabel}
+            onClick={onChange}
+            className="relative inline-flex shrink-0 rounded transition-colors"
+            style={{
+                background: checked ? accentColor : 'var(--bg-tertiary)',
+                border: '1px solid var(--border-light)',
+                height: 18,
+                width: 32
+            }}
+        >
+            <span
+                className="absolute top-1/2 -translate-y-1/2 rounded transition-all bg-white"
+                style={{
+                    boxShadow: '0 1px 1px rgba(0,0,0,0.15)',
+                    height: 12,
+                    left: checked ? 16 : 2,
+                    width: 12
+                }}
+            />
+        </button>
+    )
+}
+
 /** Custom styled dropdown for selecting the default start page. */
 function StartPageDropdown({ value, accentColor, onChange }) {
     const [open, setOpen] = useState(false)
@@ -69,24 +182,30 @@ function StartPageDropdown({ value, accentColor, onChange }) {
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-xl border border-border-light bg-white px-4 py-3 text-left transition-all hover:border-gray-300 focus:outline-none"
-                style={open ? { borderColor: accentColor, boxShadow: `0 0 0 3px ${accentColor}20` } : undefined}
+                className="flex w-full items-center justify-between rounded px-2.5 py-1.5 text-left transition-colors"
+                style={FieldStyle}
             >
-                <span className="flex items-center gap-3">
+                <span className="flex items-center gap-2">
                     <span
-                        className="flex h-8 w-8 items-center justify-center rounded-lg"
-                        style={{ backgroundColor: `${accentColor}15` }}
+                        className="flex h-6 w-6 items-center justify-center rounded"
+                        style={{ background: 'var(--bg-tertiary)', color: accentColor }}
                     >
-                        <i className={`fas ${selected.icon} text-xs`} style={{ color: accentColor }}></i>
+                        <i className={`fas ${selected.icon} text-[10px]`} />
                     </span>
-                    <span className="text-sm font-medium text-gray-800">{selected.id}</span>
+                    <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        {selected.id}
+                    </span>
                 </span>
                 <i
-                    className={`fas fa-chevron-down text-xs text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
-                ></i>
+                    className={`fas fa-chevron-down text-[9px] transition-transform ${open ? 'rotate-180' : ''}`}
+                    style={{ color: 'var(--text-tertiary)' }}
+                />
             </button>
             {open && (
-                <div className="absolute left-0 right-0 z-50 mt-2 max-h-64 overflow-y-auto rounded-xl border border-border-light bg-white py-1 shadow-lg">
+                <div
+                    className="absolute left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded py-1"
+                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                >
                     {START_PAGE_OPTIONS.map(({ icon, id }) => {
                         const isActive = id === value
                         return (
@@ -97,26 +216,24 @@ function StartPageDropdown({ value, accentColor, onChange }) {
                                     onChange(id)
                                     setOpen(false)
                                 }}
-                                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
-                                    isActive ? 'font-semibold text-white' : 'text-gray-700 hover:bg-gray-50'
-                                }`}
-                                style={isActive ? { backgroundColor: accentColor } : undefined}
+                                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] transition-colors hover:bg-bg-tertiary"
+                                style={{
+                                    background: isActive ? `${accentColor}14` : 'transparent',
+                                    color: isActive ? accentColor : 'var(--text-primary)',
+                                    fontWeight: isActive ? 600 : 500
+                                }}
                             >
                                 <span
-                                    className="flex h-7 w-7 items-center justify-center rounded-lg"
-                                    style={
-                                        isActive
-                                            ? { backgroundColor: 'rgba(255,255,255,0.2)' }
-                                            : { backgroundColor: `${accentColor}10` }
-                                    }
+                                    className="flex h-5 w-5 items-center justify-center rounded"
+                                    style={{
+                                        background: isActive ? `${accentColor}20` : 'var(--bg-tertiary)',
+                                        color: accentColor
+                                    }}
                                 >
-                                    <i
-                                        className={`fas ${icon} text-xs`}
-                                        style={{ color: isActive ? 'white' : accentColor }}
-                                    ></i>
+                                    <i className={`fas ${icon} text-[10px]`} />
                                 </span>
                                 {id}
-                                {isActive && <i className="fas fa-check ml-auto text-xs text-white"></i>}
+                                {isActive && <i className="fas fa-check ml-auto text-[10px]" />}
                             </button>
                         )
                     })}
@@ -125,22 +242,15 @@ function StartPageDropdown({ value, accentColor, onChange }) {
         </div>
     )
 }
-/**
- * Tabbed account settings view with Profile, Security, and Preferences sections.
- * Profile: editable name, read-only email/role/plant, and region selector scoped
- * to the user's permitted regions. Security: password change with current-password
- * verification (forces re-login), active session management with revoke.
- * Preferences: accent color picker (with brightness clamping) and tutorial toggles.
- * Session deduplication runs on load, keeping only one session per browser/OS/device.
- *
- * @param {string} [userId] - Explicit user ID; falls back to auth session or sessionStorage.
- */
+
 function MyAccountView({ userId }) {
     const { preferences, updatePreferences } = usePreferences()
     const { isMobile, resetAllTutorials, triggerTutorial } = useTutorial()
     const { signOut: authSignOut, verifyPassword, updatePassword: authUpdatePassword } = useAuth()
     const { themeMode } = useThemeMode()
     const version = useVersion()
+    const accentColor = preferences.accentColor || '#2A3163'
+
     const [loading, setLoading] = useState(true)
     const [message, setMessage] = useState('')
     const [firstName, setFirstName] = useState('')
@@ -164,6 +274,7 @@ function MyAccountView({ userId }) {
     const [currentSessionId, setCurrentSessionId] = useState('')
     const [showChangelog, setShowChangelog] = useState(false)
     const [cacheClearing, setCacheClearing] = useState(false)
+
     const formatSessionTime = (timestamp) => {
         const date = new Date(timestamp)
         const now = new Date()
@@ -176,6 +287,7 @@ function MyAccountView({ userId }) {
         if (diffHours < 24) return `${diffHours}h ago`
         return `${diffDays}d ago`
     }
+
     /** Deletes a remote session record. Refuses to revoke the current session — user must sign out instead. */
     const handleRevokeSession = async (sessionId) => {
         if (sessionId === currentSessionId) {
@@ -193,11 +305,12 @@ function MyAccountView({ userId }) {
             setTimeout(() => setMessage(''), 3000)
         }
     }
+
     useEffect(() => {
         triggerTutorial('preferences-tab-hint', 500)
     }, [triggerTutorial])
+
     // Loads profile, roles, permitted regions, and active sessions.
-    // Deduplicates sessions per browser/OS/device combo to prevent ghost entries.
     useEffect(() => {
         let cancelled = false
         async function load() {
@@ -351,6 +464,7 @@ function MyAccountView({ userId }) {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId])
+
     const updateProfile = async (e) => {
         e.preventDefault()
         setLoading(true)
@@ -388,6 +502,7 @@ function MyAccountView({ userId }) {
             setLoading(false)
         }
     }
+
     /** Verifies the current password server-side, updates to the new one, then forces sign-out so the user re-authenticates. */
     const updatePassword = async (e) => {
         e.preventDefault()
@@ -414,7 +529,7 @@ function MyAccountView({ userId }) {
             setLoading(false)
         }
     }
-    /** Signs out via AuthContext (which handles session cleanup) and redirects to root. */
+
     const handleSignOut = async () => {
         setLoading(true)
         try {
@@ -426,7 +541,7 @@ function MyAccountView({ userId }) {
             setLoading(false)
         }
     }
-    /** Updates the globally-stored selected region preference when the user picks a different region. */
+
     const handleChangeRegion = (e) => {
         const code = e.target.value
         if (!code) {
@@ -441,10 +556,12 @@ function MyAccountView({ userId }) {
         updatePreferences('selectedRegion', { code, name, type })
         setRegionName(name)
     }
+
     const getInitials = () => {
         if (firstName && lastName) return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
         return null
     }
+
     const handleClearCache = () => {
         setCacheClearing(true)
         try {
@@ -475,145 +592,17 @@ function MyAccountView({ userId }) {
             setCacheClearing(false)
         }
     }
+
     if (loading) {
-        return (
-            <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                <div
-                    className="relative overflow-hidden"
-                    style={{ backgroundColor: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-                >
-                    <div className="relative mx-auto max-w-6xl px-4 py-6 md:px-8">
-                        <div
-                            className="h-8 w-48 animate-pulse rounded"
-                            style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                        ></div>
-                        <div
-                            className="mt-2 h-4 w-72 animate-pulse rounded"
-                            style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                        ></div>
-                    </div>
-                </div>
-                <div className="mx-auto max-w-6xl px-4 py-8 md:px-8">
-                    <div className="grid gap-8 lg:grid-cols-3">
-                        <div className="lg:col-span-1">
-                            <div
-                                className="animate-pulse overflow-hidden rounded shadow-sm"
-                                style={{ backgroundColor: 'var(--bg-primary)' }}
-                            >
-                                <div className="h-32" style={{ backgroundColor: 'var(--bg-tertiary)' }}></div>
-                                <div className="-mt-8 px-6 pb-6">
-                                    <div
-                                        className="rounded-xl p-4 shadow-lg"
-                                        style={{ backgroundColor: 'var(--bg-primary)' }}
-                                    >
-                                        <div
-                                            className="mx-auto mb-2 h-6 w-32 rounded"
-                                            style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                                        ></div>
-                                        <div
-                                            className="mx-auto h-4 w-48 rounded"
-                                            style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div
-                                className="mt-6 animate-pulse rounded p-2 shadow-sm"
-                                style={{ backgroundColor: 'var(--bg-primary)' }}
-                            >
-                                <div
-                                    className="h-12 rounded-lg"
-                                    style={{ backgroundColor: 'var(--bg-secondary)' }}
-                                ></div>
-                                <div
-                                    className="mt-1 h-12 rounded-lg"
-                                    style={{ backgroundColor: 'var(--bg-secondary)' }}
-                                ></div>
-                            </div>
-                        </div>
-                        <div className="space-y-6 lg:col-span-2">
-                            <div
-                                className="animate-pulse rounded p-6 shadow-sm md:p-8"
-                                style={{ backgroundColor: 'var(--bg-primary)' }}
-                            >
-                                <div className="mb-6 flex items-center gap-3">
-                                    <div
-                                        className="h-10 w-10 rounded-xl"
-                                        style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                                    ></div>
-                                    <div>
-                                        <div
-                                            className="h-5 w-40 rounded"
-                                            style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                                        ></div>
-                                        <div
-                                            className="mt-2 h-4 w-56 rounded"
-                                            style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                                        ></div>
-                                    </div>
-                                </div>
-                                <div className="grid gap-5 sm:grid-cols-2">
-                                    <div
-                                        className="h-20 rounded-xl"
-                                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                                    ></div>
-                                    <div
-                                        className="h-20 rounded-xl"
-                                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                                    ></div>
-                                </div>
-                                <div
-                                    className="mt-5 h-12 w-36 rounded-xl"
-                                    style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                                ></div>
-                            </div>
-                            <div
-                                className="animate-pulse rounded p-6 shadow-sm md:p-8"
-                                style={{ backgroundColor: 'var(--bg-primary)' }}
-                            >
-                                <div className="mb-6 flex items-center gap-3">
-                                    <div
-                                        className="h-10 w-10 rounded-xl"
-                                        style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                                    ></div>
-                                    <div>
-                                        <div
-                                            className="h-5 w-36 rounded"
-                                            style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                                        ></div>
-                                        <div
-                                            className="mt-2 h-4 w-48 rounded"
-                                            style={{ backgroundColor: 'var(--bg-tertiary)' }}
-                                        ></div>
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <div
-                                        className="h-14 rounded-lg"
-                                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                                    ></div>
-                                    <div
-                                        className="h-14 rounded-lg"
-                                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                                    ></div>
-                                    <div
-                                        className="h-14 rounded-lg"
-                                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                                    ></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
+        return <AccountSkeleton />
     }
+
     if (showChangelog) {
         return (
             <Suspense
                 fallback={
                     <div className="flex h-screen items-center justify-center">
-                        <i className="fas fa-spinner fa-spin text-2xl text-accent" />
+                        <i className="fas fa-spinner fa-spin text-2xl" style={{ color: accentColor }} />
                     </div>
                 }
             >
@@ -621,850 +610,998 @@ function MyAccountView({ userId }) {
             </Suspense>
         )
     }
+
+    const TABS = [
+        { id: 'profile', icon: 'fa-user', label: 'Profile' },
+        { id: 'security', icon: 'fa-shield-alt', label: 'Security' },
+        { id: 'preferences', icon: 'fa-cog', label: 'Preferences' },
+        { id: 'notifications', icon: 'fa-bell', label: 'Notifications' }
+    ]
+
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="relative overflow-hidden border-b border-border-light bg-white">
-                <div className="relative mx-auto max-w-6xl px-4 py-6 md:px-8">
-                    <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
-                    <p className="mt-1 text-sm text-gray-500">Manage your profile, security, and preferences</p>
+        <div className="min-h-screen" style={{ background: 'var(--bg-secondary)' }}>
+            {/* Page header */}
+            <div
+                className="sticky top-0 z-30"
+                style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
+            >
+                <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-2">
+                    <div className="flex items-center gap-2">
+                        <div
+                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                        >
+                            <i className="fas fa-user-cog text-[11px]" />
+                        </div>
+                        <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            Account Settings
+                        </span>
+                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                            · profile, security, preferences
+                        </span>
+                    </div>
                 </div>
             </div>
-            <div className="mx-auto max-w-6xl px-4 py-8 md:px-8">
+
+            <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-4">
                 {message && (
                     <div
-                        className={`mb-6 flex items-center gap-3 rounded-xl p-4 ${message.includes('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}
+                        className="mb-3 flex items-center gap-2 rounded px-3 py-2"
+                        style={{
+                            background: message.includes('Error') ? '#fee2e2' : '#dcfce7',
+                            border: `1px solid ${message.includes('Error') ? '#fca5a5' : '#86efac'}`,
+                            color: message.includes('Error') ? '#b91c1c' : '#166534'
+                        }}
                     >
                         <i
-                            className={`fas ${message.includes('Error') ? 'fa-exclamation-circle' : 'fa-check-circle'}`}
-                        ></i>
-                        <span className="flex-1 text-sm font-medium">{message}</span>
-                        <button onClick={() => setMessage('')} className="text-current opacity-60 hover:opacity-100">
-                            <i className="fas fa-times"></i>
+                            className={`fas ${message.includes('Error') ? 'fa-exclamation-circle' : 'fa-check-circle'} text-[12px]`}
+                        />
+                        <span className="flex-1 text-[12px] font-medium">{message}</span>
+                        <button
+                            onClick={() => setMessage('')}
+                            className="opacity-60 hover:opacity-100"
+                            aria-label="Dismiss"
+                        >
+                            <i className="fas fa-times text-[11px]" />
                         </button>
                     </div>
                 )}
-                <div className="grid gap-8 lg:grid-cols-3">
+
+                <div className="grid gap-4 lg:grid-cols-3">
+                    {/* Sidebar */}
                     <div className="lg:col-span-1">
-                        <div className="sticky top-8 space-y-6">
-                            <div className="overflow-hidden rounded bg-white shadow-sm">
-                                <div
-                                    className="px-6 pb-16 pt-8"
-                                    style={{
-                                        background: `linear-gradient(to bottom right, ${preferences.accentColor || '#2A3163'}, ${preferences.accentColor || '#2A3163'}dd)`
-                                    }}
-                                >
-                                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/20 bg-white/10 text-2xl font-bold text-white backdrop-blur-sm">
-                                        {getInitials() || <i className="fas fa-user"></i>}
+                        <div className="lg:sticky lg:top-16 flex flex-col gap-3">
+                            {/* Profile card */}
+                            <Card>
+                                <div className="flex items-center gap-3 px-4 py-3">
+                                    <div
+                                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded text-[14px] font-bold text-white"
+                                        style={{ background: accentColor }}
+                                    >
+                                        {getInitials() || <i className="fas fa-user text-[14px]" />}
                                     </div>
-                                </div>
-                                <div className="-mt-8 px-6 pb-6">
-                                    <div className="rounded-xl bg-white p-4 shadow-lg">
-                                        <h2 className="text-center text-lg font-bold text-gray-900">
+                                    <div className="min-w-0 flex-1">
+                                        <div
+                                            className="text-[13px] font-semibold truncate"
+                                            style={{ color: 'var(--text-primary)' }}
+                                        >
                                             {firstName || lastName
                                                 ? `${firstName || ''} ${lastName || ''}`.trim()
                                                 : 'My Account'}
-                                        </h2>
-                                        <p className="mt-1 text-center text-sm text-gray-500">{email || 'No email'}</p>
+                                        </div>
+                                        <div className="text-[11px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                                            {email || 'No email'}
+                                        </div>
                                         {userRole && (
-                                            <div className="mt-3 flex justify-center">
-                                                <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-                                                    {userRole}
-                                                </span>
-                                            </div>
+                                            <span
+                                                className="mt-1 inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider"
+                                                style={{ background: `${accentColor}14`, color: accentColor }}
+                                            >
+                                                {userRole}
+                                            </span>
                                         )}
                                     </div>
                                 </div>
-                            </div>
-                            <div className="overflow-hidden rounded bg-white shadow-sm">
+                            </Card>
+
+                            {/* Tab nav */}
+                            <Card>
                                 <nav className="flex flex-col">
-                                    <button
-                                        onClick={() => setActiveTab('profile')}
-                                        className={`flex items-center gap-3 px-5 py-4 text-left transition-all ${activeTab === 'profile' ? 'border-l-4' : 'border-l-4 border-transparent text-gray-600 hover:bg-gray-50'}`}
-                                        style={
-                                            activeTab === 'profile'
-                                                ? {
-                                                      backgroundColor: `${preferences.accentColor || '#2A3163'}10`,
-                                                      borderLeftColor: preferences.accentColor || '#2A3163',
-                                                      color: preferences.accentColor || '#2A3163'
-                                                  }
-                                                : {}
-                                        }
-                                    >
-                                        <i className="fas fa-user w-5 text-center"></i>
-                                        <span className="font-medium">Profile</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('security')}
-                                        className={`flex items-center gap-3 px-5 py-4 text-left transition-all ${activeTab === 'security' ? 'border-l-4' : 'border-l-4 border-transparent text-gray-600 hover:bg-gray-50'}`}
-                                        style={
-                                            activeTab === 'security'
-                                                ? {
-                                                      backgroundColor: `${preferences.accentColor || '#2A3163'}10`,
-                                                      borderLeftColor: preferences.accentColor || '#2A3163',
-                                                      color: preferences.accentColor || '#2A3163'
-                                                  }
-                                                : {}
-                                        }
-                                    >
-                                        <i className="fas fa-shield-alt w-5 text-center"></i>
-                                        <span className="font-medium">Security</span>
-                                    </button>
-                                    <button
-                                        data-tutorial-target="preferences-tab"
-                                        onClick={() => setActiveTab('preferences')}
-                                        className={`flex items-center gap-3 px-5 py-4 text-left transition-all ${activeTab === 'preferences' ? 'border-l-4' : 'border-l-4 border-transparent text-gray-600 hover:bg-gray-50'}`}
-                                        style={
-                                            activeTab === 'preferences'
-                                                ? {
-                                                      backgroundColor: `${preferences.accentColor || '#2A3163'}10`,
-                                                      borderLeftColor: preferences.accentColor || '#2A3163',
-                                                      color: preferences.accentColor || '#2A3163'
-                                                  }
-                                                : {}
-                                        }
-                                    >
-                                        <i className="fas fa-cog w-5 text-center"></i>
-                                        <span className="font-medium">Preferences</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveTab('notifications')}
-                                        className={`flex items-center gap-3 px-5 py-4 text-left transition-all ${activeTab === 'notifications' ? 'border-l-4' : 'border-l-4 border-transparent text-gray-600 hover:bg-gray-50'}`}
-                                        style={
-                                            activeTab === 'notifications'
-                                                ? {
-                                                      backgroundColor: `${preferences.accentColor || '#2A3163'}10`,
-                                                      borderLeftColor: preferences.accentColor || '#2A3163',
-                                                      color: preferences.accentColor || '#2A3163'
-                                                  }
-                                                : {}
-                                        }
-                                    >
-                                        <i className="fas fa-bell w-5 text-center"></i>
-                                        <span className="font-medium">Notifications</span>
-                                    </button>
-                                    <div className="mx-4 my-2 border-t border-border-light"></div>
-                                    <button
-                                        onClick={handleSignOut}
-                                        className="flex items-center gap-3 px-5 py-4 text-left text-red-600 transition-all hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
-                                    >
-                                        <i className="fas fa-sign-out-alt w-5 text-center"></i>
-                                        <span className="font-medium">Sign Out</span>
-                                    </button>
+                                    {TABS.map(({ id, icon, label }, idx) => {
+                                        const isActive = activeTab === id
+                                        return (
+                                            <button
+                                                key={id}
+                                                onClick={() => setActiveTab(id)}
+                                                data-tutorial-target={id === 'preferences' ? 'preferences-tab' : null}
+                                                className="flex items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-bg-tertiary"
+                                                style={{
+                                                    background: isActive ? `${accentColor}14` : 'transparent',
+                                                    borderBottom:
+                                                        idx < TABS.length - 1
+                                                            ? '1px solid var(--border-light)'
+                                                            : 'none',
+                                                    borderLeft: isActive
+                                                        ? `2px solid ${accentColor}`
+                                                        : '2px solid transparent',
+                                                    color: isActive ? accentColor : 'var(--text-secondary)'
+                                                }}
+                                            >
+                                                <i className={`fas ${icon} text-[12px] w-4 text-center`} />
+                                                <span className="text-[12px] font-semibold">{label}</span>
+                                            </button>
+                                        )
+                                    })}
                                 </nav>
-                            </div>
+                            </Card>
+
+                            <button
+                                onClick={handleSignOut}
+                                className="flex items-center gap-2 px-3 py-2 rounded text-[10.5px] font-semibold uppercase tracking-wider transition-colors hover:brightness-95"
+                                style={{
+                                    background: '#fee2e2',
+                                    border: '1px solid #fca5a5',
+                                    color: '#b91c1c'
+                                }}
+                            >
+                                <i className="fas fa-sign-out-alt text-[10px]" />
+                                Sign Out
+                            </button>
                         </div>
                     </div>
-                    <div className="space-y-6 lg:col-span-2">
+
+                    {/* Main column */}
+                    <div className="flex flex-col gap-3 lg:col-span-2">
                         {activeTab === 'profile' && (
-                            <>
-                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
-                                    <div className="mb-6 flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                                            <i className="fas fa-id-card text-accent"></i>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">Personal Information</h3>
-                                            <p className="text-sm text-gray-500">
-                                                Update your name and contact details
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <form onSubmit={updateProfile} className="space-y-5">
-                                        <div className="grid gap-5 sm:grid-cols-2">
-                                            <div>
-                                                <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                    First Name
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={firstName}
-                                                    onChange={(e) => setFirstName(e.target.value)}
-                                                    placeholder="Enter first name"
-                                                    required
-                                                    className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-2 block text-sm font-medium text-gray-700">
-                                                    Last Name
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={lastName}
-                                                    onChange={(e) => setLastName(e.target.value)}
-                                                    placeholder="Enter last name"
-                                                    required
-                                                    className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                                                />
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={loading}
-                                            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                                            style={{ backgroundColor: preferences.accentColor || '#2A3163' }}
-                                        >
-                                            <i className="fas fa-save"></i>
-                                            Save Changes
-                                        </button>
-                                    </form>
-                                </div>
-                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
-                                    <div className="mb-6 flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                                            <i className="fas fa-info-circle text-accent"></i>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">Account Details</h3>
-                                            <p className="text-sm text-gray-500">View your account information</p>
-                                        </div>
-                                    </div>
-                                    <div className="divide-y divide-gray-100">
-                                        <div className="flex items-center justify-between py-4">
-                                            <div className="flex items-center gap-3 text-gray-600">
-                                                <i className="fas fa-envelope w-5"></i>
-                                                <span className="text-sm font-medium">Email</span>
-                                            </div>
-                                            <span className="font-semibold text-gray-900">{email || 'Not set'}</span>
-                                        </div>
-                                        {userRole && (
-                                            <div className="flex items-center justify-between py-4">
-                                                <div className="flex items-center gap-3 text-gray-600">
-                                                    <i className="fas fa-user-tag w-5"></i>
-                                                    <span className="text-sm font-medium">Role</span>
-                                                </div>
-                                                <span className="font-semibold text-gray-900">{userRole}</span>
-                                            </div>
-                                        )}
-                                        <div className="flex items-center justify-between py-4">
-                                            <div className="flex items-center gap-3 text-gray-600">
-                                                <i className="fas fa-globe w-5"></i>
-                                                <span className="text-sm font-medium">Region</span>
-                                            </div>
-                                            <div className="relative">
-                                                <select
-                                                    value={preferences.selectedRegion?.code || ''}
-                                                    onChange={handleChangeRegion}
-                                                    disabled={!regionsLoaded}
-                                                    className="appearance-none rounded-xl border border-border-light bg-gray-50 py-2.5 pl-4 pr-10 text-sm font-semibold text-gray-900 transition-all hover:border-gray-300 focus:border-accent focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    {permittedRegions.map((r) => (
-                                                        <option
-                                                            key={r.regionCode || r.region_code}
-                                                            value={r.regionCode || r.region_code}
-                                                        >
-                                                            {r.regionName || r.region_name || ''}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                                    <i className="fas fa-chevron-down text-xs text-gray-400"></i>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {plantCode && (
-                                            <div className="flex items-center justify-between py-4">
-                                                <div className="flex items-center gap-3 text-gray-600">
-                                                    <i className="fas fa-building w-5"></i>
-                                                    <span className="text-sm font-medium">Plant Code</span>
-                                                </div>
-                                                <span className="font-semibold text-gray-900">{plantCode}</span>
-                                            </div>
-                                        )}
-                                        {additionalPlants.length > 0 && (
-                                            <div className="py-4">
-                                                <div className="flex items-center gap-3 text-gray-600">
-                                                    <i className="fas fa-building w-5"></i>
-                                                    <span className="text-sm font-medium">Additional Plants</span>
-                                                </div>
-                                                <div className="mt-2 flex flex-wrap gap-2">
-                                                    {additionalPlants.map((code) => (
-                                                        <span
-                                                            key={code}
-                                                            className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700"
-                                                        >
-                                                            {code}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </>
+                            <ProfileTab
+                                accentColor={accentColor}
+                                additionalPlants={additionalPlants}
+                                email={email}
+                                firstName={firstName}
+                                lastName={lastName}
+                                loading={loading}
+                                onChangeRegion={handleChangeRegion}
+                                onSubmit={updateProfile}
+                                permittedRegions={permittedRegions}
+                                plantCode={plantCode}
+                                preferences={preferences}
+                                regionsLoaded={regionsLoaded}
+                                setFirstName={setFirstName}
+                                setLastName={setLastName}
+                                userRole={userRole}
+                            />
                         )}
                         {activeTab === 'security' && (
-                            <>
-                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
-                                    <div className="mb-6 flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                                            <i className="fas fa-key text-accent"></i>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">Password</h3>
-                                            <p className="text-sm text-gray-500">
-                                                Keep your account secure with a strong password
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setShowPasswordModal(true)}
-                                        className="inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold text-white transition-all"
-                                        style={{ backgroundColor: preferences.accentColor || '#2A3163' }}
-                                    >
-                                        <i className="fas fa-lock"></i>
-                                        Change Password
-                                    </button>
-                                </div>
-                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
-                                    <div className="mb-6 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                                                <i className="fas fa-laptop text-accent"></i>
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-gray-900">Active Sessions</h3>
-                                                <p className="text-sm text-gray-500">Manage your login sessions</p>
-                                            </div>
-                                        </div>
-                                        <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-600">
-                                            {sessions.length} active
-                                        </span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {sessions.length > 0 ? (
-                                            sessions.map((session) => (
-                                                <div
-                                                    key={session.id}
-                                                    className={`flex items-center justify-between rounded-xl border p-4 ${session.isCurrent ? 'border-green-200 bg-green-50' : 'border-border-light bg-gray-50'}`}
-                                                >
-                                                    <div className="flex items-center gap-4">
-                                                        <div
-                                                            className={`flex h-10 w-10 items-center justify-center rounded-lg ${session.isCurrent ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500'}`}
-                                                        >
-                                                            <i
-                                                                className={`fas ${session.device === 'Mobile' ? 'fa-mobile-alt' : session.device === 'Tablet' ? 'fa-tablet-alt' : 'fa-desktop'}`}
-                                                            ></i>
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-semibold text-gray-900">
-                                                                    {session.browser}
-                                                                </span>
-                                                                {session.isCurrent && (
-                                                                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-                                                                        Current
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-sm text-gray-500">
-                                                                {session.os} · {session.device} ·{' '}
-                                                                {formatSessionTime(session.lastActive)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    {!session.isCurrent && (
-                                                        <button
-                                                            onClick={() => handleRevokeSession(session.id)}
-                                                            className="rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-red-100"
-                                                        >
-                                                            Revoke
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="py-8 text-center text-gray-500">
-                                                <i className="fas fa-laptop mb-2 text-2xl"></i>
-                                                <p>No active sessions found</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div
-                                    className="overflow-hidden rounded"
-                                    style={{
-                                        background: 'rgba(239,68,68,0.06)',
-                                        border: '1px solid rgba(239,68,68,0.15)'
-                                    }}
-                                >
-                                    <div className="flex items-center justify-between p-6">
-                                        <div className="flex items-center gap-4">
-                                            <div
-                                                className="flex h-12 w-12 items-center justify-center rounded-xl"
-                                                style={{ background: 'rgba(239,68,68,0.1)' }}
-                                            >
-                                                <i className="fas fa-sign-out-alt text-lg text-red-600"></i>
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                                    Sign Out
-                                                </h3>
-                                                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                                    End your current session
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={handleSignOut}
-                                            className="rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition-all hover:bg-red-700"
-                                        >
-                                            Sign Out
-                                        </button>
-                                    </div>
-                                </div>
-                            </>
+                            <SecurityTab
+                                accentColor={accentColor}
+                                formatSessionTime={formatSessionTime}
+                                onOpenPasswordModal={() => setShowPasswordModal(true)}
+                                onRevokeSession={handleRevokeSession}
+                                onSignOut={handleSignOut}
+                                sessions={sessions}
+                            />
                         )}
                         {activeTab === 'preferences' && (
-                            <>
-                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
-                                    <div className="mb-6 flex items-center gap-3">
-                                        <div
-                                            className="flex h-10 w-10 items-center justify-center rounded-xl"
-                                            style={{ backgroundColor: `${preferences.accentColor || '#2A3163'}15` }}
-                                        >
-                                            <i
-                                                className="fas fa-rocket"
-                                                style={{ color: preferences.accentColor || '#2A3163' }}
-                                            ></i>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">Start Page</h3>
-                                            <p className="text-sm text-gray-500">
-                                                Choose which page loads when you open the app
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <StartPageDropdown
-                                        value={preferences.startPage || 'Dashboard'}
-                                        accentColor={preferences.accentColor || '#2A3163'}
-                                        onChange={(id) => updatePreferences('startPage', id)}
-                                    />
-                                </div>
-                                <div className="rounded bg-white p-6 shadow-sm md:p-8">
-                                    <div className="mb-6 flex items-center gap-3">
-                                        <div
-                                            className="flex h-10 w-10 items-center justify-center rounded-xl"
-                                            style={{ backgroundColor: `${preferences.accentColor || '#2A3163'}15` }}
-                                        >
-                                            <i
-                                                className="fas fa-palette"
-                                                style={{ color: preferences.accentColor || '#2A3163' }}
-                                            ></i>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">Appearance</h3>
-                                            <p className="text-sm text-gray-500">
-                                                Customize the look of the application
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-6">
-                                        <div>
-                                            <div className="mb-4">
-                                                <div className="font-medium text-gray-900">Accent Color</div>
-                                                <div className="text-sm text-gray-500">
-                                                    Choose an accent color for the navigation and buttons
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-wrap items-center gap-3">
-                                                {[
-                                                    { color: '#2A3163', name: 'Navy' },
-                                                    { color: '#7f1d1d', name: 'Red' },
-                                                    { color: '#374151', name: 'Gray' },
-                                                    { color: '#0a0a0a', name: 'Black' }
-                                                ].map(({ color, name }) => (
-                                                    <button
-                                                        key={color}
-                                                        onClick={() => updatePreferences('accentColor', color)}
-                                                        className={`group relative h-10 w-10 rounded-xl transition-all hover:scale-110 ${(preferences.accentColor || '#2A3163') === color ? 'ring-2 ring-offset-2' : ''}`}
-                                                        style={{
-                                                            backgroundColor: color,
-                                                            ringColor: color
-                                                        }}
-                                                        title={name}
-                                                    >
-                                                        {(preferences.accentColor || '#2A3163') === color && (
-                                                            <i className="fas fa-check text-white text-sm"></i>
-                                                        )}
-                                                    </button>
-                                                ))}
-                                                <div className="relative">
-                                                    <input
-                                                        type="color"
-                                                        value={preferences.accentColor || '#2A3163'}
-                                                        onChange={(e) => {
-                                                            const clampedColor = clampColorToMaxBrightness(
-                                                                e.target.value
-                                                            )
-                                                            updatePreferences('accentColor', clampedColor)
-                                                        }}
-                                                        className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
-                                                    />
-                                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 transition-all hover:border-gray-400 hover:bg-gray-100">
-                                                        <i className="fas fa-eyedropper text-gray-400"></i>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p className="mt-2 text-xs text-gray-400">
-                                                Very light colors will be adjusted for readability (max:{' '}
-                                                {MAX_BRIGHTNESS_HEX})
-                                            </p>
-                                            <div className="mt-4 flex items-center gap-4">
-                                                <div className="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3">
-                                                    <div
-                                                        className="h-8 w-8 rounded-lg shadow-sm"
-                                                        style={{
-                                                            backgroundColor: preferences.accentColor || '#2A3163'
-                                                        }}
-                                                    ></div>
-                                                    <div>
-                                                        <div className="text-xs font-medium text-gray-500">Current</div>
-                                                        <div className="font-mono text-sm font-semibold text-gray-900">
-                                                            {(preferences.accentColor || '#2A3163').toUpperCase()}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                {preferences.accentColor && preferences.accentColor !== '#2A3163' && (
-                                                    <button
-                                                        onClick={() => updatePreferences('accentColor', '#2A3163')}
-                                                        className="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-600 transition-all hover:bg-gray-200"
-                                                    >
-                                                        <i className="fas fa-undo text-xs"></i>
-                                                        Reset to Default
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="mb-4">
-                                                <div className="font-medium text-gray-900">Theme</div>
-                                                <div className="text-sm text-gray-500">
-                                                    Switch between light and dark mode
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <button
-                                                    onClick={() => updatePreferences('themeMode', 'light')}
-                                                    className={`rounded-xl px-6 py-3 text-sm font-medium transition-all flex items-center gap-2 ${themeMode === 'light' ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                                                    style={
-                                                        themeMode === 'light'
-                                                            ? { backgroundColor: preferences.accentColor || '#2A3163' }
-                                                            : {}
-                                                    }
-                                                >
-                                                    <i className="fas fa-sun"></i>
-                                                    Light
-                                                </button>
-                                                <button
-                                                    onClick={() => updatePreferences('themeMode', 'dark')}
-                                                    className={`rounded-xl px-6 py-3 text-sm font-medium transition-all flex items-center gap-2 ${themeMode === 'dark' ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                                                    style={
-                                                        themeMode === 'dark'
-                                                            ? { backgroundColor: preferences.accentColor || '#2A3163' }
-                                                            : {}
-                                                    }
-                                                >
-                                                    <i className="fas fa-moon"></i>
-                                                    Dark
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* Navigation Style */}
-                                <div className="rounded border border-border-light bg-white p-6">
-                                    <div className="mb-6 flex items-center gap-3">
-                                        <div
-                                            className="flex h-10 w-10 items-center justify-center rounded-xl"
-                                            style={{ backgroundColor: `${preferences.accentColor || '#2A3163'}15` }}
-                                        >
-                                            <i
-                                                className="fas fa-bars"
-                                                style={{ color: preferences.accentColor || '#2A3163' }}
-                                            ></i>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">Navigation Style</h3>
-                                            <p className="text-sm text-gray-500">
-                                                Choose your preferred navigation layout
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={() => updatePreferences('navStyle', 'top_bar_basic')}
-                                            className={`rounded-xl px-6 py-3 text-sm font-medium transition-all flex items-center gap-2 ${preferences.navStyle === 'top_bar_basic' || !preferences.navStyle ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                                            style={
-                                                preferences.navStyle === 'top_bar_basic' || !preferences.navStyle
-                                                    ? { backgroundColor: preferences.accentColor || '#2A3163' }
-                                                    : {}
-                                            }
-                                        >
-                                            <i className="fas fa-bars"></i>
-                                            Top Bar
-                                        </button>
-                                        <button
-                                            onClick={() => updatePreferences('navStyle', 'two_level_tabs')}
-                                            className={`rounded-xl px-6 py-3 text-sm font-medium transition-all flex items-center gap-2 ${preferences.navStyle === 'two_level_tabs' ? 'text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                                            style={
-                                                preferences.navStyle === 'two_level_tabs'
-                                                    ? { backgroundColor: preferences.accentColor || '#2A3163' }
-                                                    : {}
-                                            }
-                                        >
-                                            <i className="fas fa-layer-group"></i>
-                                            Two-Level Tabs
-                                        </button>
-                                    </div>
-                                </div>
-                                {!isMobile && (
-                                    <div className="rounded border border-border-light bg-white p-6">
-                                        <div className="mb-6 flex items-center gap-3">
-                                            <div
-                                                className="flex h-10 w-10 items-center justify-center rounded-xl"
-                                                style={{ backgroundColor: `${preferences.accentColor || '#2A3163'}15` }}
-                                            >
-                                                <i
-                                                    className="fas fa-graduation-cap"
-                                                    style={{ color: preferences.accentColor || '#2A3163' }}
-                                                ></i>
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-gray-900">Tutorials</h3>
-                                                <p className="text-sm text-gray-500">
-                                                    Manage tutorial hints and guides
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
-                                                <div>
-                                                    <div className="font-medium text-gray-900">Enable Tutorials</div>
-                                                    <div className="text-sm text-gray-500">
-                                                        Show helpful tips and guides throughout the app
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() =>
-                                                        updatePreferences('tutorials', !preferences.tutorials)
-                                                    }
-                                                    className="relative h-7 w-12 rounded-full transition-colors"
-                                                    style={{
-                                                        backgroundColor: preferences.tutorials
-                                                            ? preferences.accentColor || '#2A3163'
-                                                            : '#d1d5db'
-                                                    }}
-                                                >
-                                                    <div
-                                                        className="absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all"
-                                                        style={{ left: preferences.tutorials ? '26px' : '4px' }}
-                                                    ></div>
-                                                </button>
-                                            </div>
-                                            <button
-                                                onClick={async () => {
-                                                    await resetAllTutorials()
-                                                    setMessage('Tutorials reset! Refresh the page to see them again.')
-                                                    setTimeout(() => setMessage(''), 3000)
-                                                }}
-                                                className="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-600 transition-all hover:bg-gray-200"
-                                            >
-                                                <i className="fas fa-redo text-xs"></i>
-                                                Reset All Tutorials
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                                <div className="rounded border border-border-light bg-white p-6">
-                                    <div className="mb-6 flex items-center gap-3">
-                                        <div
-                                            className="flex h-10 w-10 items-center justify-center rounded-xl"
-                                            style={{ backgroundColor: `${preferences.accentColor || '#2A3163'}15` }}
-                                        >
-                                            <i
-                                                className="fas fa-database"
-                                                style={{ color: preferences.accentColor || '#2A3163' }}
-                                            ></i>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">Cache</h3>
-                                            <p className="text-sm text-gray-500">
-                                                Clear cached data to free up space and fix stale content
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={handleClearCache}
-                                        disabled={cacheClearing}
-                                        className="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-600 transition-all hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        <i
-                                            className={`fas ${cacheClearing ? 'fa-spinner fa-spin' : 'fa-broom'} text-xs`}
-                                        ></i>
-                                        {cacheClearing ? 'Clearing...' : 'Clear All Caches'}
-                                    </button>
-                                </div>
-                            </>
+                            <PreferencesTab
+                                accentColor={accentColor}
+                                cacheClearing={cacheClearing}
+                                isMobile={isMobile}
+                                onClearCache={handleClearCache}
+                                onResetTutorials={async () => {
+                                    await resetAllTutorials()
+                                    setMessage('Tutorials reset! Refresh the page to see them again.')
+                                    setTimeout(() => setMessage(''), 3000)
+                                }}
+                                preferences={preferences}
+                                themeMode={themeMode}
+                                updatePreferences={updatePreferences}
+                            />
                         )}
                         {activeTab === 'notifications' && (
-                            <div className="rounded bg-white p-6 shadow-sm md:p-8">
-                                <div className="mb-6 flex items-center gap-3">
-                                    <div
-                                        className="flex h-10 w-10 items-center justify-center rounded-xl"
-                                        style={{ backgroundColor: `${preferences.accentColor || '#2A3163'}15` }}
-                                    >
-                                        <i
-                                            className="fas fa-bell text-base"
-                                            style={{ color: preferences.accentColor || '#2A3163' }}
-                                        ></i>
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg font-bold text-gray-900">Email Notifications</h2>
-                                        <p className="text-sm text-gray-500">
-                                            Control which email notifications you receive
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between rounded-xl border border-border-light bg-gray-50 p-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <i className="fas fa-comment-dots text-sm text-gray-400"></i>
-                                                <span className="text-sm font-semibold text-gray-800">
-                                                    Asset Comment Emails
-                                                </span>
-                                            </div>
-                                            <p className="mt-1 text-xs text-gray-500 leading-relaxed">
-                                                Receive an email when someone comments on an asset assigned to your
-                                                plant. Applies to Plant Managers and District Managers only.
-                                            </p>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                updatePreferences(
-                                                    'acceptCommentEmails',
-                                                    !preferences.acceptCommentEmails
-                                                )
-                                            }
-                                            className={`relative ml-4 inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${preferences.acceptCommentEmails ? '' : 'bg-gray-300'}`}
-                                            style={
-                                                preferences.acceptCommentEmails
-                                                    ? { backgroundColor: preferences.accentColor || '#2A3163' }
-                                                    : {}
-                                            }
-                                            role="switch"
-                                            aria-checked={preferences.acceptCommentEmails}
-                                            aria-label="Toggle asset comment email notifications"
-                                        >
-                                            <span
-                                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${preferences.acceptCommentEmails ? 'translate-x-5' : 'translate-x-0'}`}
-                                            />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <NotificationsTab
+                                accentColor={accentColor}
+                                preferences={preferences}
+                                updatePreferences={updatePreferences}
+                            />
                         )}
                     </div>
                 </div>
             </div>
+
             <VersionPopup version={version} onClick={() => setShowChangelog(true)} />
+
             {showPasswordModal && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-                    onClick={() => setShowPasswordModal(false)}
-                >
-                    <div className="w-full max-w-md rounded bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-between border-b border-border-light px-6 py-4">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                                    <i className="fas fa-key text-accent"></i>
-                                </div>
-                                <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
-                            </div>
-                            <button
-                                onClick={() => setShowPasswordModal(false)}
-                                className="rounded-lg p-2 text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600"
-                            >
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <form onSubmit={updatePassword} className="p-6">
-                            {passwordError && (
-                                <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                                    <i className="fas fa-exclamation-circle"></i>
-                                    <span>{passwordError}</span>
-                                </div>
-                            )}
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                                        Current Password
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={currentPassword}
-                                        onChange={(e) => setCurrentPassword(e.target.value)}
-                                        placeholder="Enter current password"
-                                        required
-                                        className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">New Password</label>
-                                    <input
-                                        type="password"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        placeholder="Enter new password"
-                                        required
-                                        className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                                    />
-                                    <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters</p>
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                                        Confirm Password
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        placeholder="Confirm new password"
-                                        required
-                                        className="w-full rounded-xl border border-border-light px-4 py-3 text-gray-900 transition-all focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
-                                    />
-                                </div>
-                            </div>
-                            <div className="mt-6 flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPasswordModal(false)}
-                                    className="flex-1 rounded-xl border border-border-light bg-gray-50 py-3 font-semibold text-gray-600 transition-all hover:bg-gray-100"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={
-                                        loading ||
-                                        !currentPassword ||
-                                        !newPassword ||
-                                        newPassword !== confirmPassword ||
-                                        newPassword.length < 8
-                                    }
-                                    className="flex-1 rounded-xl py-3 font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                                    style={{ backgroundColor: preferences.accentColor || '#2A3163' }}
-                                >
-                                    Update Password
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <PasswordModal
+                    accentColor={accentColor}
+                    confirmPassword={confirmPassword}
+                    currentPassword={currentPassword}
+                    loading={loading}
+                    newPassword={newPassword}
+                    onClose={() => setShowPasswordModal(false)}
+                    onSubmit={updatePassword}
+                    passwordError={passwordError}
+                    setConfirmPassword={setConfirmPassword}
+                    setCurrentPassword={setCurrentPassword}
+                    setNewPassword={setNewPassword}
+                />
             )}
         </div>
     )
 }
+
+/* ── Tab content components ───────────────────────────────────────────── */
+
+function ProfileTab({
+    accentColor,
+    additionalPlants,
+    email,
+    firstName,
+    lastName,
+    loading,
+    onChangeRegion,
+    onSubmit,
+    permittedRegions,
+    plantCode,
+    preferences,
+    regionsLoaded,
+    setFirstName,
+    setLastName,
+    userRole
+}) {
+    return (
+        <>
+            <Card>
+                <CardHeader
+                    accentColor={accentColor}
+                    icon="fa-id-card"
+                    title="Personal Information"
+                    description="Update your name and contact details"
+                />
+                <form onSubmit={onSubmit} className="px-4 py-3 flex flex-col gap-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                            <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                                First Name
+                            </label>
+                            <input
+                                type="text"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                placeholder="Enter first name"
+                                required
+                                className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                                style={FieldStyle}
+                            />
+                        </div>
+                        <div>
+                            <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                                Last Name
+                            </label>
+                            <input
+                                type="text"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                placeholder="Enter last name"
+                                required
+                                className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                                style={FieldStyle}
+                            />
+                        </div>
+                    </div>
+                    <PrimaryButton accentColor={accentColor} disabled={loading} icon="fa-save" type="submit">
+                        Save Changes
+                    </PrimaryButton>
+                </form>
+            </Card>
+
+            <Card>
+                <CardHeader
+                    accentColor={accentColor}
+                    icon="fa-info-circle"
+                    title="Account Details"
+                    description="View your account information"
+                />
+                <div className="px-4">
+                    <DetailRow icon="fa-envelope" label="Email" value={email || 'Not set'} />
+                    {userRole && <DetailRow icon="fa-user-tag" label="Role" value={userRole} />}
+                    <div
+                        className="flex items-center justify-between py-2.5"
+                        style={{ borderBottom: '1px solid var(--border-light)' }}
+                    >
+                        <div className="flex items-center gap-2.5">
+                            <i
+                                className="fas fa-globe text-[11px] w-4 text-center"
+                                style={{ color: 'var(--text-tertiary)' }}
+                            />
+                            <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                                Region
+                            </span>
+                        </div>
+                        <div className="relative">
+                            <select
+                                value={preferences.selectedRegion?.code || ''}
+                                onChange={onChangeRegion}
+                                disabled={!regionsLoaded}
+                                className="appearance-none rounded py-1 pl-2.5 pr-7 text-[12px] font-semibold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                style={FieldStyle}
+                            >
+                                {permittedRegions.map((r) => (
+                                    <option key={r.regionCode || r.region_code} value={r.regionCode || r.region_code}>
+                                        {r.regionName || r.region_name || ''}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                <i
+                                    className="fas fa-chevron-down text-[9px]"
+                                    style={{ color: 'var(--text-tertiary)' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    {plantCode && <DetailRow icon="fa-building" label="Plant Code" value={plantCode} mono />}
+                    {additionalPlants.length > 0 && (
+                        <div className="py-2.5">
+                            <div className="flex items-center gap-2.5 mb-1.5">
+                                <i
+                                    className="fas fa-building text-[11px] w-4 text-center"
+                                    style={{ color: 'var(--text-tertiary)' }}
+                                />
+                                <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                                    Additional Plants
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 ml-7">
+                                {additionalPlants.map((code) => (
+                                    <span
+                                        key={code}
+                                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider font-mono tabular-nums"
+                                        style={{
+                                            background: `${accentColor}14`,
+                                            color: accentColor
+                                        }}
+                                    >
+                                        {code}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </Card>
+        </>
+    )
+}
+
+function DetailRow({ icon, label, mono, value }) {
+    return (
+        <div
+            className="flex items-center justify-between py-2.5"
+            style={{ borderBottom: '1px solid var(--border-light)' }}
+        >
+            <div className="flex items-center gap-2.5">
+                <i className={`fas ${icon} text-[11px] w-4 text-center`} style={{ color: 'var(--text-tertiary)' }} />
+                <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                    {label}
+                </span>
+            </div>
+            <span
+                className={`text-[12px] font-semibold ${mono ? 'font-mono tabular-nums' : ''}`}
+                style={{ color: 'var(--text-primary)' }}
+            >
+                {value}
+            </span>
+        </div>
+    )
+}
+
+function SecurityTab({ accentColor, formatSessionTime, onOpenPasswordModal, onRevokeSession, onSignOut, sessions }) {
+    return (
+        <>
+            <Card>
+                <CardHeader
+                    accentColor={accentColor}
+                    icon="fa-key"
+                    title="Password"
+                    description="Keep your account secure with a strong password"
+                />
+                <div className="px-4 py-3">
+                    <PrimaryButton accentColor={accentColor} icon="fa-lock" onClick={onOpenPasswordModal}>
+                        Change Password
+                    </PrimaryButton>
+                </div>
+            </Card>
+
+            <Card>
+                <div
+                    className="flex items-center gap-2.5 px-4 py-3"
+                    style={{ borderBottom: '1px solid var(--border-light)' }}
+                >
+                    <div
+                        className="flex h-7 w-7 items-center justify-center rounded shrink-0"
+                        style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                    >
+                        <i className="fas fa-laptop text-[12px]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            Active Sessions
+                        </div>
+                        <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                            Manage your login sessions
+                        </div>
+                    </div>
+                    <span
+                        className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                    >
+                        {sessions.length}
+                    </span>
+                </div>
+                <div>
+                    {sessions.length > 0 ? (
+                        sessions.map((session, idx) => (
+                            <div
+                                key={session.id}
+                                className="flex items-center justify-between gap-3 px-4 py-2.5"
+                                style={{
+                                    background: session.isCurrent ? '#dcfce780' : 'transparent',
+                                    borderBottom: idx < sessions.length - 1 ? '1px solid var(--border-light)' : 'none'
+                                }}
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div
+                                        className="flex h-7 w-7 items-center justify-center rounded shrink-0"
+                                        style={{
+                                            background: session.isCurrent ? '#dcfce7' : 'var(--bg-tertiary)',
+                                            color: session.isCurrent ? '#166534' : 'var(--text-secondary)'
+                                        }}
+                                    >
+                                        <i
+                                            className={`fas ${session.device === 'Mobile' ? 'fa-mobile-alt' : session.device === 'Tablet' ? 'fa-tablet-alt' : 'fa-desktop'} text-[11px]`}
+                                        />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <span
+                                                className="text-[12px] font-semibold truncate"
+                                                style={{ color: 'var(--text-primary)' }}
+                                            >
+                                                {session.browser}
+                                            </span>
+                                            {session.isCurrent && (
+                                                <span
+                                                    className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                                                    style={{ background: '#dcfce7', color: '#166534' }}
+                                                >
+                                                    Current
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div
+                                            className="text-[10.5px] font-mono tabular-nums"
+                                            style={{ color: 'var(--text-tertiary)' }}
+                                        >
+                                            {session.os} · {session.device} · {formatSessionTime(session.lastActive)}
+                                        </div>
+                                    </div>
+                                </div>
+                                {!session.isCurrent && (
+                                    <SubtleButton danger onClick={() => onRevokeSession(session.id)}>
+                                        Revoke
+                                    </SubtleButton>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        <div
+                            className="flex flex-col items-center justify-center py-8"
+                            style={{ color: 'var(--text-tertiary)' }}
+                        >
+                            <i className="fas fa-laptop text-2xl mb-2" />
+                            <span className="text-[12px]">No active sessions found</span>
+                        </div>
+                    )}
+                </div>
+            </Card>
+
+            <div
+                className="rounded flex items-center justify-between gap-3 px-4 py-3"
+                style={{ background: '#fee2e280', border: '1px solid #fca5a580' }}
+            >
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                        className="flex h-7 w-7 items-center justify-center rounded shrink-0"
+                        style={{ background: '#fee2e2', color: '#b91c1c' }}
+                    >
+                        <i className="fas fa-sign-out-alt text-[12px]" />
+                    </div>
+                    <div className="min-w-0">
+                        <div className={SECTION_LABEL_CLASS} style={{ color: '#b91c1c' }}>
+                            Sign Out
+                        </div>
+                        <div className="text-[11px]" style={{ color: '#b91c1c', opacity: 0.85 }}>
+                            End your current session
+                        </div>
+                    </div>
+                </div>
+                <button
+                    onClick={onSignOut}
+                    className="rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5"
+                    style={{ background: '#dc2626' }}
+                >
+                    Sign Out
+                </button>
+            </div>
+        </>
+    )
+}
+
+function PreferencesTab({
+    accentColor,
+    cacheClearing,
+    isMobile,
+    onClearCache,
+    onResetTutorials,
+    preferences,
+    themeMode,
+    updatePreferences
+}) {
+    const ACCENT_PRESETS = [
+        { color: '#2A3163', name: 'Navy' },
+        { color: '#7f1d1d', name: 'Red' },
+        { color: '#374151', name: 'Gray' },
+        { color: '#0a0a0a', name: 'Black' }
+    ]
+    return (
+        <>
+            <Card>
+                <CardHeader
+                    accentColor={accentColor}
+                    icon="fa-rocket"
+                    title="Start Page"
+                    description="Choose which page loads when you open the app"
+                />
+                <div className="px-4 py-3">
+                    <StartPageDropdown
+                        value={preferences.startPage || 'Dashboard'}
+                        accentColor={accentColor}
+                        onChange={(id) => updatePreferences('startPage', id)}
+                    />
+                </div>
+            </Card>
+
+            <Card>
+                <CardHeader
+                    accentColor={accentColor}
+                    icon="fa-palette"
+                    title="Appearance"
+                    description="Customize the look of the application"
+                />
+                <div className="px-4 py-3 flex flex-col gap-4">
+                    {/* Accent color */}
+                    <div>
+                        <div className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            Accent Color
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            {ACCENT_PRESETS.map(({ color, name }) => {
+                                const isActive = (preferences.accentColor || '#2A3163') === color
+                                return (
+                                    <button
+                                        key={color}
+                                        onClick={() => updatePreferences('accentColor', color)}
+                                        className="relative h-8 w-8 rounded transition-transform hover:scale-105"
+                                        style={{
+                                            background: color,
+                                            boxShadow: isActive
+                                                ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${color}`
+                                                : 'none'
+                                        }}
+                                        title={name}
+                                        aria-label={`Set accent color to ${name}`}
+                                    >
+                                        {isActive && (
+                                            <i className="fas fa-check text-white text-[11px] absolute inset-0 flex items-center justify-center" />
+                                        )}
+                                    </button>
+                                )
+                            })}
+                            <div className="relative">
+                                <input
+                                    type="color"
+                                    value={preferences.accentColor || '#2A3163'}
+                                    onChange={(e) => {
+                                        const clampedColor = clampColorToMaxBrightness(e.target.value)
+                                        updatePreferences('accentColor', clampedColor)
+                                    }}
+                                    className="absolute inset-0 h-8 w-8 cursor-pointer opacity-0"
+                                    aria-label="Custom accent color"
+                                />
+                                <div
+                                    className="flex h-8 w-8 items-center justify-center rounded"
+                                    style={{
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px dashed var(--border-light)',
+                                        color: 'var(--text-tertiary)'
+                                    }}
+                                >
+                                    <i className="fas fa-eyedropper text-[11px]" />
+                                </div>
+                            </div>
+                        </div>
+                        <p className="mt-1.5 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                            Very light colors will be clamped for readability (max {MAX_BRIGHTNESS_HEX})
+                        </p>
+                        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-2.5 rounded px-2.5 py-1.5" style={FieldStyle}>
+                                <div className="h-5 w-5 rounded" style={{ background: accentColor }} />
+                                <div>
+                                    <div
+                                        className="text-[9.5px] font-semibold uppercase tracking-wider"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    >
+                                        Current
+                                    </div>
+                                    <div
+                                        className="font-mono text-[12px] font-semibold tabular-nums"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        {(preferences.accentColor || '#2A3163').toUpperCase()}
+                                    </div>
+                                </div>
+                            </div>
+                            {preferences.accentColor && preferences.accentColor !== '#2A3163' && (
+                                <SubtleButton
+                                    icon="fa-undo"
+                                    onClick={() => updatePreferences('accentColor', '#2A3163')}
+                                >
+                                    Reset
+                                </SubtleButton>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Theme */}
+                    <div>
+                        <div className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            Theme
+                        </div>
+                        <SegmentedControl
+                            accentColor={accentColor}
+                            options={[
+                                { icon: 'fa-sun', label: 'Light', value: 'light' },
+                                { icon: 'fa-moon', label: 'Dark', value: 'dark' }
+                            ]}
+                            value={themeMode}
+                            onChange={(v) => updatePreferences('themeMode', v)}
+                        />
+                    </div>
+                </div>
+            </Card>
+
+            <Card>
+                <CardHeader
+                    accentColor={accentColor}
+                    icon="fa-bars"
+                    title="Navigation Style"
+                    description="Choose your preferred navigation layout"
+                />
+                <div className="px-4 py-3">
+                    <SegmentedControl
+                        accentColor={accentColor}
+                        options={[
+                            { icon: 'fa-bars', label: 'Top Bar', value: 'top_bar_basic' },
+                            { icon: 'fa-layer-group', label: 'Two-Level Tabs', value: 'two_level_tabs' }
+                        ]}
+                        value={preferences.navStyle || 'top_bar_basic'}
+                        onChange={(v) => updatePreferences('navStyle', v)}
+                    />
+                </div>
+            </Card>
+
+            {!isMobile && (
+                <Card>
+                    <CardHeader
+                        accentColor={accentColor}
+                        icon="fa-graduation-cap"
+                        title="Tutorials"
+                        description="Manage tutorial hints and guides"
+                    />
+                    <div className="px-4 py-3 flex flex-col gap-2.5">
+                        <div className="flex items-center justify-between gap-3 rounded px-3 py-2" style={FieldStyle}>
+                            <div className="min-w-0">
+                                <div className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                    Enable Tutorials
+                                </div>
+                                <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                                    Show helpful tips and guides throughout the app
+                                </div>
+                            </div>
+                            <Toggle
+                                accentColor={accentColor}
+                                ariaLabel="Toggle tutorials"
+                                checked={!!preferences.tutorials}
+                                onChange={() => updatePreferences('tutorials', !preferences.tutorials)}
+                            />
+                        </div>
+                        <SubtleButton icon="fa-redo" onClick={onResetTutorials}>
+                            Reset All Tutorials
+                        </SubtleButton>
+                    </div>
+                </Card>
+            )}
+
+            <Card>
+                <CardHeader
+                    accentColor={accentColor}
+                    icon="fa-database"
+                    title="Cache"
+                    description="Clear cached data to free up space and fix stale content"
+                />
+                <div className="px-4 py-3">
+                    <SubtleButton
+                        disabled={cacheClearing}
+                        icon={cacheClearing ? 'fa-spinner fa-spin' : 'fa-broom'}
+                        onClick={onClearCache}
+                    >
+                        {cacheClearing ? 'Clearing…' : 'Clear All Caches'}
+                    </SubtleButton>
+                </div>
+            </Card>
+        </>
+    )
+}
+
+function SegmentedControl({ accentColor, options, value, onChange }) {
+    return (
+        <div
+            className="inline-flex items-center rounded p-0.5 gap-0.5"
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
+        >
+            {options.map((opt) => {
+                const active = value === opt.value
+                return (
+                    <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => onChange(opt.value)}
+                        className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1 transition-colors flex items-center gap-1.5"
+                        style={{
+                            background: active ? accentColor : 'transparent',
+                            color: active ? '#fff' : 'var(--text-secondary)'
+                        }}
+                    >
+                        {opt.icon && <i className={`fas ${opt.icon} text-[10px]`} />}
+                        {opt.label}
+                    </button>
+                )
+            })}
+        </div>
+    )
+}
+
+function NotificationsTab({ accentColor, preferences, updatePreferences }) {
+    return (
+        <Card>
+            <CardHeader
+                accentColor={accentColor}
+                icon="fa-bell"
+                title="Email Notifications"
+                description="Control which email notifications you receive"
+            />
+            <div className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3 rounded px-3 py-2.5" style={FieldStyle}>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                            <i className="fas fa-comment-dots text-[11px]" style={{ color: 'var(--text-tertiary)' }} />
+                            <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                Asset Comment Emails
+                            </span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                            Receive an email when someone comments on an asset assigned to your plant. Applies to Plant
+                            Managers and District Managers only.
+                        </p>
+                    </div>
+                    <Toggle
+                        accentColor={accentColor}
+                        ariaLabel="Toggle asset comment email notifications"
+                        checked={!!preferences.acceptCommentEmails}
+                        onChange={() => updatePreferences('acceptCommentEmails', !preferences.acceptCommentEmails)}
+                    />
+                </div>
+            </div>
+        </Card>
+    )
+}
+
+function PasswordModal({
+    accentColor,
+    confirmPassword,
+    currentPassword,
+    loading,
+    newPassword,
+    onClose,
+    onSubmit,
+    passwordError,
+    setConfirmPassword,
+    setCurrentPassword,
+    setNewPassword
+}) {
+    const canSubmit =
+        !loading && currentPassword && newPassword && newPassword === confirmPassword && newPassword.length >= 8
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-md rounded overflow-hidden"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div
+                    className="flex items-center justify-between px-3 py-2"
+                    style={{ borderBottom: '1px solid var(--border-light)' }}
+                >
+                    <div className="flex items-center gap-2">
+                        <div
+                            className="flex h-6 w-6 items-center justify-center rounded"
+                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                        >
+                            <i className="fas fa-key text-[11px]" />
+                        </div>
+                        <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            Change Password
+                        </span>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary"
+                        style={{ color: 'var(--text-secondary)' }}
+                        aria-label="Close"
+                    >
+                        <i className="fas fa-times text-[11px]" />
+                    </button>
+                </div>
+                <form onSubmit={onSubmit} className="px-4 py-3 flex flex-col gap-3">
+                    {passwordError && (
+                        <div
+                            className="flex items-center gap-2 rounded px-2.5 py-1.5 text-[12px] font-medium"
+                            style={{ background: '#fee2e2', color: '#b91c1c' }}
+                        >
+                            <i className="fas fa-exclamation-circle text-[11px]" />
+                            <span>{passwordError}</span>
+                        </div>
+                    )}
+                    <div>
+                        <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            Current Password
+                        </label>
+                        <input
+                            type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="Enter current password"
+                            required
+                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                            style={FieldStyle}
+                        />
+                    </div>
+                    <div>
+                        <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            New Password
+                        </label>
+                        <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Enter new password"
+                            required
+                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                            style={FieldStyle}
+                        />
+                        <p className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                            Must be at least 8 characters
+                        </p>
+                    </div>
+                    <div>
+                        <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            Confirm Password
+                        </label>
+                        <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Confirm new password"
+                            required
+                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                            style={FieldStyle}
+                        />
+                    </div>
+                    <div className="flex gap-2 mt-1">
+                        <SubtleButton onClick={onClose}>Cancel</SubtleButton>
+                        <button
+                            type="submit"
+                            disabled={!canSubmit}
+                            className="flex-1 rounded py-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{ background: accentColor }}
+                        >
+                            Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
+}
+
+function AccountSkeleton() {
+    const Bar = ({ className = '', style }) => (
+        <div className={`rounded animate-pulse ${className}`} style={{ background: 'var(--bg-tertiary)', ...style }} />
+    )
+    return (
+        <div className="min-h-screen" style={{ background: 'var(--bg-secondary)' }}>
+            <div style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}>
+                <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-2 flex items-center gap-2">
+                    <Bar className="h-6 w-6" />
+                    <Bar className="h-3 w-32" />
+                </div>
+            </div>
+            <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-4 grid gap-4 lg:grid-cols-3">
+                <div className="lg:col-span-1 flex flex-col gap-3">
+                    <div
+                        className="rounded p-4 flex items-center gap-3"
+                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    >
+                        <Bar className="h-12 w-12" />
+                        <div className="flex-1 flex flex-col gap-1.5">
+                            <Bar className="h-3 w-32" />
+                            <Bar className="h-2.5 w-40" />
+                        </div>
+                    </div>
+                    <div
+                        className="rounded"
+                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    >
+                        {[1, 2, 3, 4].map((i) => (
+                            <div
+                                key={i}
+                                className="px-3 py-2 flex items-center gap-2"
+                                style={{ borderBottom: i < 4 ? '1px solid var(--border-light)' : 'none' }}
+                            >
+                                <Bar className="h-3 w-3" />
+                                <Bar className="h-3 w-20" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="lg:col-span-2 flex flex-col gap-3">
+                    {[1, 2].map((i) => (
+                        <div
+                            key={i}
+                            className="rounded"
+                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                        >
+                            <div
+                                className="px-4 py-3 flex items-center gap-2.5"
+                                style={{ borderBottom: '1px solid var(--border-light)' }}
+                            >
+                                <Bar className="h-7 w-7" />
+                                <Bar className="h-3 w-32" />
+                            </div>
+                            <div className="px-4 py-3 flex flex-col gap-2">
+                                <Bar className="h-8 w-full" />
+                                <Bar className="h-8 w-full" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )
+}
+
 export default MyAccountView

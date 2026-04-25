@@ -199,7 +199,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                 ...pickup,
                 assignedPlant: newPlantCode
             }
-            const result = await PickupTruckService.updatePickupTruck(pickup.id, updatedPickup, userId)
+            const result = await PickupTruckService.update(pickup.id, updatedPickup, userId)
             setPickup(result)
             setAssignedPlant(newPlantCode)
             setOriginalValues({

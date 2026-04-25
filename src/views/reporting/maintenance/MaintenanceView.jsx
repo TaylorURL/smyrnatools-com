@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { ReportsActionBar } from '../../../app/components/reports/ReportsToolbar'
 import TopSection from '../../../app/components/sections/TopSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { Database } from '../../../services/DatabaseService'
@@ -12,16 +13,16 @@ import MaintenanceCreateFormView from './MaintenanceCreateFormView'
 import MaintenanceFormView from './MaintenanceFormView'
 import MaintenanceLogView from './MaintenanceLogView'
 
-// ── Constants ───────────────────────────────────────────────────
+/* ── Constants ────────────────────────────────────────────────── */
 
-const STATUS_BADGE_CLASSES = {
-    approved: 'bg-emerald-100 text-emerald-700 border border-emerald-500',
-    completed: 'bg-emerald-100 text-emerald-700 border border-emerald-500',
-    default: 'bg-indigo-100 text-indigo-700 border border-indigo-500',
-    overdue: 'bg-red-100 text-red-700 border border-red-500',
-    pending: 'bg-amber-100 text-amber-700 border border-amber-500',
-    rejected: 'bg-red-100 text-red-700 border border-red-500',
-    submitted: 'bg-indigo-100 text-indigo-700 border border-indigo-500'
+// Canonical mixerConfig-style status palette.
+const STATUS_PALETTE = {
+    approved: { bg: '#dcfce7', fg: '#166534' },
+    completed: { bg: '#dcfce7', fg: '#166534' },
+    overdue: { bg: '#fee2e2', fg: '#b91c1c' },
+    pending: { bg: '#fef3c7', fg: '#92400e' },
+    rejected: { bg: '#fee2e2', fg: '#b91c1c' },
+    submitted: { bg: '#dbeafe', fg: '#1e40af' }
 }
 
 const ICON_BY_STATUS = {
@@ -33,14 +34,6 @@ const ICON_BY_STATUS = {
     submitted: 'fa-clock'
 }
 
-const ICON_BG_BY_STATUS = {
-    completed: 'bg-emerald-100 text-emerald-500',
-    overdue: 'bg-red-100 text-red-500',
-    approved: 'bg-emerald-100 text-emerald-500',
-    rejected: 'bg-red-100 text-red-500',
-    submitted: 'bg-blue-100 text-blue-500'
-}
-
 const TAB_DEFS = [
     { key: 'log', icon: 'fa-chart-line', label: 'Maintenance Log' },
     { key: 'due', icon: 'fa-clipboard-list', label: 'Recurring Forms' },
@@ -50,77 +43,108 @@ const TAB_DEFS = [
 
 const STATUS_OPTIONS = ['All Statuses', 'OK', 'Due Soon', 'Overdue', 'Never Serviced']
 
-// ── Sub-components ──────────────────────────────────────────────
+/* ── Plan-tab styled atoms ────────────────────────────────────── */
 
 function StatusBadge({ status }) {
-    const cls = STATUS_BADGE_CLASSES[status] || STATUS_BADGE_CLASSES.default
+    const palette = STATUS_PALETTE[status] || { bg: 'var(--bg-tertiary)', fg: 'var(--text-secondary)' }
     return (
-        <span className={`inline-block rounded-md text-xs font-bold uppercase tracking-wide px-3 py-1.5 ${cls}`}>
+        <span
+            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5"
+            style={{ background: palette.bg, color: palette.fg }}
+        >
             {status}
         </span>
     )
 }
 
+function PlantChip({ code }) {
+    if (!code) return <span style={{ color: 'var(--text-tertiary)' }}>—</span>
+    return (
+        <span
+            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 font-mono tabular-nums"
+            style={{ background: '#dbeafe', color: '#1e40af' }}
+        >
+            {code}
+        </span>
+    )
+}
+
+function ItemIcon({ status }) {
+    const icon = ICON_BY_STATUS[status] || ICON_BY_STATUS.pending
+    const palette = STATUS_PALETTE[status] || { bg: 'var(--bg-tertiary)', fg: 'var(--text-secondary)' }
+    return (
+        <div
+            className="flex items-center justify-center w-6 h-6 rounded shrink-0"
+            style={{ background: palette.bg, color: palette.fg }}
+        >
+            <i className={`fas ${icon} text-[11px]`} />
+        </div>
+    )
+}
+
 function FormTabSkeleton({ count = 5 }) {
     return (
-        <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
+        <div
+            className="rounded overflow-hidden"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
             {Array.from({ length: count }, (_, i) => (
                 <div
                     key={i}
-                    className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0"
+                    className="flex items-center gap-2.5 px-3 py-2"
+                    style={{ borderBottom: '1px solid var(--border-light)' }}
                 >
-                    <div className="w-7 h-7 rounded-lg bg-slate-200 animate-pulse shrink-0" />
+                    <div
+                        className="w-6 h-6 rounded animate-pulse shrink-0"
+                        style={{ background: 'var(--bg-tertiary)' }}
+                    />
                     <div className="flex-1 min-w-0">
-                        <div className="h-4 w-44 rounded bg-slate-200 animate-pulse mb-1.5" />
-                        <div className="flex items-center gap-2">
-                            <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
-                            <div className="h-3 w-16 rounded bg-slate-100 animate-pulse" />
-                        </div>
+                        <div
+                            className="h-3 w-44 rounded animate-pulse mb-1"
+                            style={{ background: 'var(--bg-tertiary)' }}
+                        />
+                        <div
+                            className="h-2.5 w-56 rounded animate-pulse"
+                            style={{ background: 'var(--bg-secondary)' }}
+                        />
                     </div>
-                    <div className="h-6 w-16 rounded bg-slate-200 animate-pulse shrink-0" />
+                    <div
+                        className="h-4 w-16 rounded animate-pulse shrink-0"
+                        style={{ background: 'var(--bg-tertiary)' }}
+                    />
                 </div>
             ))}
         </div>
     )
 }
 
-function ItemIcon({ status }) {
-    const icon = ICON_BY_STATUS[status] || ICON_BY_STATUS.pending
-    const bg = ICON_BG_BY_STATUS[status] || 'bg-blue-100 text-blue-500'
-    return (
-        <div className={`flex items-center justify-center w-7 h-7 rounded-lg text-[10px] shrink-0 ${bg}`}>
-            <i className={`fas ${icon}`} />
-        </div>
-    )
-}
-
 function EmptyState({ icon, title, message, children }) {
     return (
-        <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-            <i className={`fas ${icon} text-[4rem] mb-4 text-[var(--border-medium)]`} />
-            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">{title}</h3>
-            <p className="text-[0.9375rem] text-[var(--text-secondary)] mb-6">{message}</p>
-            {children}
+        <div
+            className="flex flex-col items-center justify-center py-12 px-6 text-center"
+            style={{ color: 'var(--text-tertiary)' }}
+        >
+            <i className={`fas ${icon} text-2xl mb-2`} />
+            <div className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {title}
+            </div>
+            {message && (
+                <p className="m-0 mt-1 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                    {message}
+                </p>
+            )}
+            {children && <div className="mt-3">{children}</div>}
         </div>
     )
-}
-
-const BASE_ROW_DELAY_MS = 160
-const MIN_ROW_DELAY_MS = 12
-const DECAY_FACTOR = 0.9
-
-function getRowDelay(index) {
-    let total = 0
-    for (let i = 0; i < index; i++) {
-        total += Math.max(MIN_ROW_DELAY_MS, BASE_ROW_DELAY_MS * Math.pow(DECAY_FACTOR, i))
-    }
-    return Math.round(total)
 }
 
 function FormTable({ columns, rows, emptyIcon, emptyTitle, emptyMessage, emptyChildren, onRowClick }) {
     if (!rows || rows.length === 0) {
         return (
-            <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
+            <div
+                className="rounded overflow-hidden"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+            >
                 <EmptyState icon={emptyIcon} title={emptyTitle} message={emptyMessage}>
                     {emptyChildren}
                 </EmptyState>
@@ -128,35 +152,50 @@ function FormTable({ columns, rows, emptyIcon, emptyTitle, emptyMessage, emptyCh
         )
     }
 
-    // First column = title (with icon), last column with 'status' key = badge, rest = metadata
+    // First column = title (with icon), trailing column with key 'status' or 'actions' = badge/action
     const titleCol = columns.find((c) => c.highlight) || columns[0]
     const statusCol = columns.find((c) => c.key === 'status' || c.key === 'actions')
     const metaCols = columns.filter((c) => c !== titleCol && c !== statusCol)
 
     return (
-        <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
-            {rows.map((row) => (
+        <div
+            className="rounded overflow-hidden"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
+            {rows.map((row, idx) => (
                 <div
                     key={row.id}
-                    className="flex items-center px-4 sm:px-5 py-3.5 border-b border-border-light last:border-b-0 cursor-pointer transition-colors hover:bg-slate-50"
+                    className="flex items-center px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary"
+                    style={{ borderBottom: idx < rows.length - 1 ? '1px solid var(--border-light)' : 'none' }}
                     onClick={() => onRowClick?.(row)}
                 >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                         <ItemIcon status={row.status} />
                         <div className="min-w-0">
-                            <span className="text-sm font-medium text-slate-800 block truncate">
+                            <span
+                                className="text-[12px] font-semibold block truncate"
+                                style={{ color: 'var(--text-primary)' }}
+                            >
                                 {titleCol.render ? titleCol.render(row) : row[titleCol.key]}
                             </span>
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <div
+                                className="flex items-center gap-1.5 mt-0.5 text-[10.5px] flex-wrap"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
                                 {metaCols.map((col, i) => {
                                     const val = col.render ? col.render(row) : row[col.key]
                                     if (!val || val === '—') return null
                                     return (
                                         <React.Fragment key={col.key}>
                                             {i > 0 && (
-                                                <span className="text-slate-300 text-[8px] hidden sm:inline">●</span>
+                                                <span
+                                                    className="hidden sm:inline"
+                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                >
+                                                    ·
+                                                </span>
                                             )}
-                                            <span className="text-xs text-slate-500">{val}</span>
+                                            <span className="font-mono tabular-nums">{val}</span>
                                         </React.Fragment>
                                     )
                                 })}
@@ -164,18 +203,21 @@ function FormTable({ columns, rows, emptyIcon, emptyTitle, emptyMessage, emptyCh
                         </div>
                     </div>
                     {statusCol && (
-                        <div className="shrink-0 ml-3">
+                        <div className="shrink-0 ml-2">
                             {statusCol.render ? statusCol.render(row) : row[statusCol.key]}
                         </div>
                     )}
-                    <i className="fas fa-chevron-right text-slate-300 text-xs ml-3 sm:hidden" />
+                    <i
+                        className="fas fa-chevron-right text-[10px] ml-2 sm:hidden"
+                        style={{ color: 'var(--text-tertiary)' }}
+                    />
                 </div>
             ))}
         </div>
     )
 }
 
-// ── Main View ───────────────────────────────────────────────────
+/* ── Main view ──────────────────────────────────────────────── */
 
 export default function MaintenanceView() {
     const { preferences } = usePreferences()
@@ -184,13 +226,13 @@ export default function MaintenanceView() {
 
     const [activeTab, setActiveTab] = useState('log')
 
-    // ── Shared filter state (lives in TopSection) ───────────────
+    // ── Shared filter state ──
     const [searchText, setSearchText] = useState('')
     const [selectedPlant, setSelectedPlant] = useState('')
     const [categoryFilter, setCategoryFilter] = useState('')
     const [statusFilter, setStatusFilter] = useState('')
 
-    // ── Equipment log data ──────────────────────────────────────
+    // ── Equipment log data ──
     const [logLoading, setLogLoading] = useState(true)
     const [equipment, setEquipment] = useState([])
     const [categories, setCategories] = useState([])
@@ -199,7 +241,7 @@ export default function MaintenanceView() {
     const [regionPlants, setRegionPlants] = useState([])
     const [showAddModal, setShowAddModal] = useState(false)
 
-    // ── Form system state ───────────────────────────────────────
+    // ── Form system data ──
     const [formLoading, setFormLoading] = useState(true)
     const [dueItems, setDueItems] = useState([])
     const [pendingReviews, setPendingReviews] = useState([])
@@ -214,8 +256,6 @@ export default function MaintenanceView() {
     const [editingForm, setEditingForm] = useState(null)
 
     const regionCode = preferences.selectedRegion?.code
-
-    // ── Data Loading ────────────────────────────────────────────
 
     const loadFormData = useCallback(async () => {
         setFormLoading(true)
@@ -276,7 +316,7 @@ export default function MaintenanceView() {
         loadFormData()
     }, [loadLogData, loadFormData])
 
-    // ── Derived state ───────────────────────────────────────────
+    // ── Derived state ──
 
     const regionPlantCodes = useMemo(() => {
         const codes = new Set()
@@ -330,7 +370,7 @@ export default function MaintenanceView() {
         ? `${logCounts.total} Total · ${logCounts.ok} OK · ${logCounts.dueSoon} Due Soon · ${logCounts.overdue} Overdue`
         : undefined
 
-    // ── Handlers ────────────────────────────────────────────────
+    // ── Handlers ──
 
     const handlePillClick = useCallback((label) => {
         const map = { 'Due Soon': 'Due Soon', OK: 'OK', Overdue: 'Overdue', Total: 'All Statuses' }
@@ -384,18 +424,12 @@ export default function MaintenanceView() {
         setStatusFilter('')
     }
 
-    // ── Badge counts ────────────────────────────────────────────
+    // ── Badge counts ──
 
     const dueBadgeCount = dueItems.filter((i) => i.status !== 'completed').length
     const reviewBadgeCount = pendingReviews.length
 
-    const getBadge = (tabKey) => {
-        if (tabKey === 'due' && dueBadgeCount > 0) return dueBadgeCount
-        if (tabKey === 'review' && reviewBadgeCount > 0) return reviewBadgeCount
-        return null
-    }
-
-    // ── Full-screen form views ──────────────────────────────────
+    // ── Full-screen drilldown views ──
 
     if (selectedItem) {
         return (
@@ -420,36 +454,18 @@ export default function MaintenanceView() {
         )
     }
 
-    // ── Tab content renderers ───────────────────────────────────
+    // ── Tab content renderers ──
 
     const dueColumns = [
         { highlight: true, key: 'title', label: 'Form', render: (row) => row.form?.title || '—' },
-        {
-            key: 'plant',
-            label: 'Plant',
-            render: (row) =>
-                row.plant_code ? (
-                    <span className="bg-[var(--bg-secondary)] border border-blue-500 rounded-md text-blue-500 font-semibold px-2.5 py-1 text-xs">
-                        {row.plant_code}
-                    </span>
-                ) : (
-                    '—'
-                ),
-            width: '100px'
-        },
-        { key: 'due_date', label: 'Due Date', render: (row) => formatMaintenanceDate(row.due_date), width: '140px' },
+        { key: 'plant', label: 'Plant', render: (row) => <PlantChip code={row.plant_code} /> },
+        { key: 'due_date', label: 'Due Date', render: (row) => formatMaintenanceDate(row.due_date) },
         {
             key: 'frequency',
             label: 'Frequency',
-            render: (row) => formatFrequency(row.form?.frequency, row.form?.frequency_value),
-            width: '140px'
+            render: (row) => formatFrequency(row.form?.frequency, row.form?.frequency_value)
         },
-        {
-            key: 'status',
-            label: 'Status',
-            render: (row) => <StatusBadge status={row.status} />,
-            width: '120px'
-        }
+        { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> }
     ]
 
     const renderDueTab = () => {
@@ -472,7 +488,7 @@ export default function MaintenanceView() {
                 columns={dueColumns}
                 rows={filtered}
                 emptyIcon="fa-check-circle"
-                emptyTitle={dueItems.length === 0 ? 'All caught up!' : 'No matching tasks'}
+                emptyTitle={dueItems.length === 0 ? 'All caught up' : 'No matching tasks'}
                 emptyMessage={
                     dueItems.length === 0
                         ? 'You have no maintenance tasks due at this time.'
@@ -499,35 +515,17 @@ export default function MaintenanceView() {
 
     const reviewColumns = [
         { highlight: true, key: 'title', label: 'Form', render: (row) => row.maintenance_forms?.title || '—' },
-        {
-            key: 'plant',
-            label: 'Plant',
-            render: (row) =>
-                row.plant_code ? (
-                    <span className="bg-[var(--bg-secondary)] border border-blue-500 rounded-md text-blue-500 font-semibold px-2.5 py-1 text-xs">
-                        {row.plant_code}
-                    </span>
-                ) : (
-                    '—'
-                ),
-            width: '100px'
-        },
-        { key: 'submitted_by', label: 'Submitted By', render: (row) => row.submitted_by_name || '—', width: '160px' },
+        { key: 'plant', label: 'Plant', render: (row) => <PlantChip code={row.plant_code} /> },
+        { key: 'submitted_by', label: 'Submitted By', render: (row) => row.submitted_by_name || '—' },
         {
             key: 'date',
             label: 'Date',
             render: (row) =>
                 row.status === 'submitted'
                     ? formatMaintenanceDate(row.submitted_at)
-                    : formatMaintenanceDate(row.reviewed_at),
-            width: '140px'
+                    : formatMaintenanceDate(row.reviewed_at)
         },
-        {
-            key: 'status',
-            label: 'Status',
-            render: (row) => <StatusBadge status={row.status} />,
-            width: '120px'
-        },
+        { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
         {
             key: 'actions',
             label: '',
@@ -535,13 +533,13 @@ export default function MaintenanceView() {
                 <button
                     type="button"
                     onClick={(e) => handleDeleteSubmission(e, row.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors border-none bg-transparent cursor-pointer"
+                    className="w-6 h-6 flex items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none bg-transparent cursor-pointer"
+                    style={{ color: 'var(--text-tertiary)' }}
                     title="Delete"
                 >
-                    <i className="fas fa-trash-alt text-xs" />
+                    <i className="fas fa-trash-alt text-[10px]" />
                 </button>
-            ),
-            width: '50px'
+            )
         }
     ]
 
@@ -549,14 +547,12 @@ export default function MaintenanceView() {
         if (formLoading) return <FormTabSkeleton />
 
         const allItems = [...pendingReviews, ...reviewedSubmissions, ...mySubmissions]
-        // Deduplicate by id
         const seen = new Set()
         const deduped = allItems.filter((item) => {
             if (seen.has(item.id)) return false
             seen.add(item.id)
             return true
         })
-        // Pending first, then by date
         deduped.sort((a, b) => {
             if (a.status === 'submitted' && b.status !== 'submitted') return -1
             if (a.status !== 'submitted' && b.status === 'submitted') return 1
@@ -579,59 +575,13 @@ export default function MaintenanceView() {
         )
     }
 
-    const historyColumns = [
-        { highlight: true, key: 'title', label: 'Form', render: (row) => row.maintenance_forms?.title || '—' },
-        {
-            key: 'submitted_at',
-            label: 'Submitted',
-            render: (row) => formatMaintenanceDate(row.submitted_at),
-            width: '140px'
-        },
-        {
-            key: 'reviewed_at',
-            label: 'Reviewed',
-            render: (row) => (row.reviewed_at ? formatMaintenanceDate(row.reviewed_at) : '—'),
-            width: '140px'
-        },
-        {
-            key: 'notes',
-            label: 'Notes',
-            render: (row) => (
-                <span className="text-[var(--text-secondary)] truncate max-w-[200px] inline-block">
-                    {row.review_notes || '—'}
-                </span>
-            )
-        },
-        {
-            key: 'status',
-            label: 'Status',
-            render: (row) => <StatusBadge status={row.status} />,
-            width: '120px'
-        }
-    ]
-
-    const renderHistoryTab = () => {
-        if (formLoading) return <FormTabSkeleton />
-
-        return (
-            <FormTable
-                columns={historyColumns}
-                rows={mySubmissions}
-                emptyIcon="fa-history"
-                emptyTitle="No submission history"
-                emptyMessage="Your completed submissions will appear here."
-                onRowClick={handleViewSubmission}
-            />
-        )
-    }
-
     const manageColumns = [
         { highlight: true, key: 'title', label: 'Form Title', render: (row) => row.title || '—' },
         {
             key: 'description',
             label: 'Description',
             render: (row) => (
-                <span className="text-[var(--text-secondary)] truncate max-w-[250px] inline-block">
+                <span className="truncate max-w-[250px] inline-block" style={{ color: 'var(--text-secondary)' }}>
                     {row.description || '—'}
                 </span>
             )
@@ -639,21 +589,10 @@ export default function MaintenanceView() {
         {
             key: 'frequency',
             label: 'Frequency',
-            render: (row) => formatFrequency(row.frequency, row.frequency_value),
-            width: '140px'
+            render: (row) => formatFrequency(row.frequency, row.frequency_value)
         },
-        {
-            key: 'fields',
-            label: 'Fields',
-            render: (row) => `${row.maintenance_form_fields?.length || 0}`,
-            width: '80px'
-        },
-        {
-            key: 'created_at',
-            label: 'Created',
-            render: (row) => formatMaintenanceDate(row.created_at),
-            width: '140px'
-        }
+        { key: 'fields', label: 'Fields', render: (row) => `${row.maintenance_form_fields?.length || 0}` },
+        { key: 'created_at', label: 'Created', render: (row) => formatMaintenanceDate(row.created_at) }
     ]
 
     const renderManageTab = () => {
@@ -673,11 +612,13 @@ export default function MaintenanceView() {
                 emptyChildren={
                     permissions.canCreate ? (
                         <button
-                            className="flex items-center gap-2 rounded-xl text-sm font-semibold px-5 py-2.5 border-none cursor-pointer text-white transition-all"
-                            style={{ background: accentColor }}
+                            type="button"
                             onClick={() => setShowCreateForm(true)}
+                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 text-white border-none cursor-pointer"
+                            style={{ background: accentColor }}
                         >
-                            <i className="fas fa-plus" /> Create Form
+                            <i className="fas fa-plus text-[10px]" />
+                            Create Form
                         </button>
                     ) : undefined
                 }
@@ -686,61 +627,29 @@ export default function MaintenanceView() {
         )
     }
 
-    // ── Render ──────────────────────────────────────────────────
+    // ── Tabs for ReportsActionBar ──
 
-    const visibleTabs = TAB_DEFS.filter((tab) => !tab.permission || permissions[tab.permission])
+    const visibleTabs = TAB_DEFS.filter((tab) => !tab.permission || permissions[tab.permission]).map((tab) => ({
+        badge: tab.key === 'due' ? dueBadgeCount : tab.key === 'review' ? reviewBadgeCount : null,
+        icon: tab.icon,
+        key: tab.key,
+        label: tab.label
+    }))
 
-    const tabBar = (
-        <div className="flex gap-2 mt-2 overflow-x-auto scrollbar-hide">
-            {visibleTabs.map((tab) => {
-                const isActive = activeTab === tab.key
-                const tabBadge = getBadge(tab.key)
-                return (
-                    <button
-                        key={tab.key}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full border-none cursor-pointer transition-all whitespace-nowrap shrink-0 ${
-                            isActive
-                                ? 'text-white'
-                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
-                        }`}
-                        style={isActive ? { backgroundColor: accentColor } : undefined}
-                        onClick={() => {
-                            setActiveTab(tab.key)
-                            window.scrollTo({ top: 0, behavior: 'smooth' })
-                        }}
-                        type="button"
-                    >
-                        <i className={`fas ${tab.icon} text-xs`} />
-                        <span>{tab.label}</span>
-                        {tabBadge && (
-                            <span
-                                className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[0.6875rem] font-bold ${
-                                    isActive ? 'bg-white/25 text-white' : 'bg-red-500 text-white'
-                                }`}
-                            >
-                                {tabBadge}
-                            </span>
-                        )}
-                    </button>
-                )
-            })}
-        </div>
-    )
+    // ── Filters: flat category select for the TopSection customFilters slot ──
 
-    // Category filter dropdown for TopSection customFilters
     const categoryFilterSelect =
         categoryOptions.length > 1 ? (
             <select
-                className="appearance-none bg-slate-50 border border-border-light rounded-xl text-slate-900 text-sm cursor-pointer min-w-[140px] py-3 pl-4 pr-10 bg-no-repeat"
-                style={{
-                    backgroundImage:
-                        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")",
-                    backgroundPosition: 'right 12px center',
-                    backgroundSize: '18px'
-                }}
                 value={categoryFilter || 'All Categories'}
                 onChange={(e) => setCategoryFilter(e.target.value === 'All Categories' ? '' : e.target.value)}
                 aria-label="Category filter"
+                className="text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7"
+                style={{
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-light)',
+                    color: 'var(--text-primary)'
+                }}
             >
                 {categoryOptions.map((opt) => (
                     <option key={opt} value={opt}>
@@ -749,6 +658,11 @@ export default function MaintenanceView() {
                 ))}
             </select>
         ) : null
+
+    const onTabChange = (key) => {
+        setActiveTab(key)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
 
     return (
         <div className="min-h-screen w-full" style={{ background: 'var(--bg-secondary)' }}>
@@ -776,21 +690,11 @@ export default function MaintenanceView() {
                 hideViewModeToggle
                 showReset={showReset}
                 onReset={handleReset}
-                customBottomContent={tabBar}
-                customBottomSkeleton={
-                    <div className="flex gap-2 mt-2">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                            <div
-                                key={i}
-                                className="h-9 rounded-full bg-slate-200 animate-pulse shrink-0"
-                                style={{ width: `${70 + i * 14}px` }}
-                            />
-                        ))}
-                    </div>
-                }
             />
 
-            {/* Tab Content */}
+            <ReportsActionBar tabs={visibleTabs} activeTab={activeTab} onTabChange={onTabChange} />
+
+            {/* Tab content */}
             <div>
                 {activeTab === 'log' && (
                     <MaintenanceLogView
@@ -809,11 +713,11 @@ export default function MaintenanceView() {
                         onReload={loadLogData}
                     />
                 )}
-                {activeTab === 'due' && <div className="p-4 md:p-8">{renderDueTab()}</div>}
+                {activeTab === 'due' && <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4">{renderDueTab()}</div>}
                 {activeTab === 'review' && permissions.canReview && (
-                    <div className="p-4 md:p-8">{renderReviewTab()}</div>
+                    <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4">{renderReviewTab()}</div>
                 )}
-                {activeTab === 'manage' && <div className="p-4 md:p-8">{renderManageTab()}</div>}
+                {activeTab === 'manage' && <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4">{renderManageTab()}</div>}
             </div>
         </div>
     )

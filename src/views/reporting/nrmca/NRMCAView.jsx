@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
+import { ReportsActionBar } from '../../../app/components/reports/ReportsToolbar'
 import TopSection from '../../../app/components/sections/TopSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { NRMCAService } from '../../../services/NRMCAService'
@@ -653,8 +654,10 @@ export default function NRMCAView() {
     const [plants, setPlants] = useState([])
     const [scales, setScales] = useState([])
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [regionPlants, setRegionPlants] = useState([])
     const [addPlantModal, setAddPlantModal] = useState(false)
+    const [tab, setTab] = useState('all')
 
     const regionCode = preferences.selectedRegion?.code
 
@@ -671,21 +674,26 @@ export default function NRMCAView() {
         )
     }, [regionCode, regionPlants])
 
-    const loadData = useCallback(async () => {
-        setLoading(true)
-        try {
-            const [fetchedPlants, fetchedScales] = await Promise.all([
-                NRMCAService.fetchPlants(regionPlantCodes),
-                NRMCAService.fetchScales(regionPlantCodes)
-            ])
-            setPlants(fetchedPlants)
-            setScales(fetchedScales)
-        } catch {
-            // stays empty; UI shows empty state
-        } finally {
-            setLoading(false)
-        }
-    }, [regionPlantCodes])
+    const loadData = useCallback(
+        async ({ background = false } = {}) => {
+            if (background) setRefreshing(true)
+            else setLoading(true)
+            try {
+                const [fetchedPlants, fetchedScales] = await Promise.all([
+                    NRMCAService.fetchPlants(regionPlantCodes),
+                    NRMCAService.fetchScales(regionPlantCodes)
+                ])
+                setPlants(fetchedPlants)
+                setScales(fetchedScales)
+            } catch {
+                // stays empty; UI shows empty state
+            } finally {
+                if (background) setRefreshing(false)
+                else setLoading(false)
+            }
+        },
+        [regionPlantCodes]
+    )
 
     useEffect(() => {
         if (regionCode) {
@@ -701,20 +709,57 @@ export default function NRMCAView() {
         loadData()
     }, [loadData])
 
+    const expiredPlantCount = useMemo(
+        () => plants.filter((p) => getRenewalStatus(p.renewal_expires_at) === 'expired').length,
+        [plants]
+    )
+    const overdueScaleCount = useMemo(
+        () =>
+            scales.filter((s) => getCalibrationStatus(s.calibrated_at, s.calibration_interval_days) === 'overdue')
+                .length,
+        [scales]
+    )
+    const issueCount = expiredPlantCount + overdueScaleCount
+
     const badge = useMemo(() => {
         if (loading || !plants.length) return null
-        const expired = plants.filter((p) => getRenewalStatus(p.renewal_expires_at) === 'expired').length
-        const overdue = scales.filter(
-            (s) => getCalibrationStatus(s.calibrated_at, s.calibration_interval_days) === 'overdue'
-        ).length
         const parts = [`${plants.length} Plants`, `${scales.length} Scales`]
-        if (expired > 0) parts.push(`${expired} Expired`)
-        if (overdue > 0) parts.push(`${overdue} Overdue`)
+        if (expiredPlantCount > 0) parts.push(`${expiredPlantCount} Expired`)
+        if (overdueScaleCount > 0) parts.push(`${overdueScaleCount} Overdue`)
         return parts.join(' · ')
-    }, [loading, plants, scales])
+    }, [loading, plants.length, scales.length, expiredPlantCount, overdueScaleCount])
+
+    const visiblePlants = useMemo(() => {
+        if (tab !== 'issues') return plants
+        return plants.filter((plant) => {
+            if (getRenewalStatus(plant.renewal_expires_at) === 'expired') return true
+            return scales.some(
+                (s) =>
+                    s.nrmca_plant_id === plant.id &&
+                    getCalibrationStatus(s.calibrated_at, s.calibration_interval_days) === 'overdue'
+            )
+        })
+    }, [plants, scales, tab])
+
+    const visibleScales = useMemo(() => {
+        if (tab !== 'issues') return scales
+        return scales.filter((s) => getCalibrationStatus(s.calibrated_at, s.calibration_interval_days) === 'overdue')
+    }, [scales, tab])
+
+    const tabs = useMemo(
+        () => [
+            { key: 'all', label: 'All', icon: 'fa-list' },
+            {
+                key: 'issues',
+                label: issueCount > 0 ? `Issues · ${issueCount}` : 'Issues',
+                icon: 'fa-triangle-exclamation'
+            }
+        ],
+        [issueCount]
+    )
 
     return (
-        <div className="min-h-screen w-full" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="bg-slate-50 min-h-screen w-full pb-16">
             <TopSection
                 title="Calibrations & Certifications"
                 forwardedRef={headerRef}
@@ -725,50 +770,60 @@ export default function NRMCAView() {
                 hideViewModeToggle
                 hideSearchBar
             />
+            <ReportsActionBar
+                tabs={tabs}
+                activeTab={tab}
+                onTabChange={setTab}
+                isRefreshing={refreshing}
+                onRefresh={() => loadData({ background: true })}
+                rightChildren={
+                    <button
+                        type="button"
+                        onClick={() => setAddPlantModal(true)}
+                        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer text-white"
+                        style={{ background: accentColor }}
+                    >
+                        <i className="fas fa-plus text-[10px]" />
+                        <span className="hidden sm:inline">Add Plant</span>
+                    </button>
+                }
+            />
 
-            <div className="p-5 flex flex-col gap-4">
+            <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 flex flex-col gap-4">
                 {loading ? (
                     <NRMCASkeleton />
+                ) : plants.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
+                        <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+                            <i className="fas fa-certificate text-[4rem] mb-4 text-[var(--border-medium)]" />
+                            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">No plants defined yet</h3>
+                            <p className="text-[0.9375rem] text-[var(--text-secondary)] mb-6">
+                                Add a plant to start tracking certifications and scale calibrations.
+                            </p>
+                        </div>
+                    </div>
+                ) : visiblePlants.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
+                        <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+                            <i className="fas fa-circle-check text-[4rem] mb-4 text-emerald-300" />
+                            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">All clear</h3>
+                            <p className="text-[0.9375rem] text-[var(--text-secondary)]">
+                                No expired certifications or overdue calibrations.
+                            </p>
+                        </div>
+                    </div>
                 ) : (
                     <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
-                        {/* Toolbar */}
-                        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-border-light">
-                            <span className="text-sm font-semibold text-slate-700">
-                                {plants.length} {plants.length === 1 ? 'plant' : 'plants'} · {scales.length}{' '}
-                                {scales.length === 1 ? 'scale' : 'scales'}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => setAddPlantModal(true)}
-                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg text-white transition-colors"
-                                style={{ backgroundColor: accentColor }}
-                            >
-                                <i className="fas fa-plus" /> Add Plant
-                            </button>
-                        </div>
-
-                        {plants.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-                                <i className="fas fa-certificate text-[4rem] mb-4 text-[var(--border-medium)]" />
-                                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-                                    No plants defined yet
-                                </h3>
-                                <p className="text-[0.9375rem] text-[var(--text-secondary)] mb-6">
-                                    Add a plant to start tracking certifications and scale calibrations.
-                                </p>
-                            </div>
-                        ) : (
-                            plants.map((plant) => (
-                                <PlantGroup
-                                    key={plant.id}
-                                    plant={plant}
-                                    scales={scales}
-                                    allPlants={plants}
-                                    regionPlants={regionPlants}
-                                    onReload={loadData}
-                                />
-                            ))
-                        )}
+                        {visiblePlants.map((plant) => (
+                            <PlantGroup
+                                key={plant.id}
+                                plant={plant}
+                                scales={visibleScales}
+                                allPlants={plants}
+                                regionPlants={regionPlants}
+                                onReload={loadData}
+                            />
+                        ))}
                     </div>
                 )}
             </div>

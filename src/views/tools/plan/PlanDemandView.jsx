@@ -17,7 +17,9 @@ import {
     YAxis
 } from 'recharts'
 
+import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
+import PlantFilterButton from '../../../app/components/ui/PlantFilterButton'
 import {
     getCalculatedTruckCount,
     getEffectiveBase,
@@ -314,7 +316,16 @@ function useDemandData(plantProduction, stats, plantNameByCode, planDate, plantF
    Main view
    ═══════════════════════════════════════════════════════════════════════ */
 
-function PlanDemandView({ accentColor, planDate, plantNameByCode, plantProduction, stats }) {
+function PlanDemandView({
+    accentColor,
+    planDate,
+    plantNameByCode,
+    plantProduction,
+    plants = [],
+    stats,
+    userPlantCode = ''
+}) {
+    const [isPlantModalOpen, setIsPlantModalOpen] = useState(false)
     const [chartMode, setChartMode] = useState('hourly')
     const [plantFilter, setPlantFilter] = useState('all')
     const filterActive = plantFilter !== 'all'
@@ -409,25 +420,17 @@ function PlanDemandView({ accentColor, planDate, plantNameByCode, plantProductio
                         </span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <select
-                            value={plantFilter}
-                            onChange={(e) => setPlantFilter(e.target.value)}
-                            className="px-2 py-1 rounded text-[12px] cursor-pointer font-medium"
-                            style={{
-                                background: filterActive ? `${accentColor}14` : 'var(--bg-secondary)',
-                                border: `1px solid ${filterActive ? accentColor : 'var(--border-light)'}`,
-                                color: filterActive ? accentColor : 'var(--text-primary)'
-                            }}
+                        <PlantFilterButton
+                            accentColor={accentColor}
+                            active={filterActive}
+                            displayText={
+                                filterActive
+                                    ? `Plant ${plantFilter}${plantNameByCode?.[plantFilter] ? ` · ${plantNameByCode[plantFilter]}` : ''}`
+                                    : `All plants (${plantOptions.length})`
+                            }
+                            onClick={() => setIsPlantModalOpen(true)}
                             title="Filter Demand to a single plant"
-                        >
-                            <option value="all">All plants</option>
-                            {plantOptions.map((code) => (
-                                <option key={code} value={code}>
-                                    {code}
-                                    {plantNameByCode?.[code] ? ` · ${plantNameByCode[code]}` : ''}
-                                </option>
-                            ))}
-                        </select>
+                        />
                         {filterActive && (
                             <button
                                 type="button"
@@ -544,6 +547,19 @@ function PlanDemandView({ accentColor, planDate, plantNameByCode, plantProductio
                     totals={data.totals}
                 />
             </div>
+            {isPlantModalOpen && (
+                <PlantDropdownModal
+                    isOpen={isPlantModalOpen}
+                    onClose={() => setIsPlantModalOpen(false)}
+                    plants={(plants || []).filter((p) => plantOptions.includes(p.plant_code || p.plantCode))}
+                    onSelect={(code) => {
+                        setPlantFilter(!code || code === 'All' ? 'all' : code)
+                        setIsPlantModalOpen(false)
+                    }}
+                    showAllPlants
+                    userPlantCode={userPlantCode}
+                />
+            )}
         </div>
     )
 }

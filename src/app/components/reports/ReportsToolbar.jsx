@@ -1,6 +1,7 @@
 import React from 'react'
 
 import TopSection from '../../../app/components/sections/TopSection'
+import PlantFilterButton from '../../../app/components/ui/PlantFilterButton'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 
 /* ── Shared atoms — all flat, Plan-tab aesthetic ────────────────────────── */
@@ -47,23 +48,8 @@ const RefreshButton = ({ isRefreshing, onClick }) => (
     </button>
 )
 
-/** Plant filter button — same chrome as the rest of the filter row. */
-const PlantFilterButton = ({ displayText, onClick }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        className="text-[12px] font-medium cursor-pointer rounded py-1.5 px-2 flex items-center gap-1.5 max-w-[200px]"
-        style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-light)',
-            color: 'var(--text-primary)'
-        }}
-        title={displayText}
-    >
-        <span className="truncate">{displayText}</span>
-        <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
-    </button>
-)
+// Trigger button extracted to `app/components/ui/PlantFilterButton` so the
+// same chip is used wherever a plant picker is exposed.
 
 /** Compact pill toggle — sliding-segment look matching Plan tab's view-mode toggle. */
 const PillToggle = ({ options, value, onChange }) => {
@@ -252,7 +238,7 @@ export function ReportsActionBar({
                         className="flex items-center rounded p-0.5 overflow-x-auto"
                         style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
                     >
-                        {safeTabs.map(({ key, label, icon }) => {
+                        {safeTabs.map(({ key, label, icon, badge }) => {
                             const isActive = activeTab === key
                             return (
                                 <button
@@ -267,6 +253,17 @@ export function ReportsActionBar({
                                 >
                                     {icon && <i className={`fas ${icon} text-[11px]`} />}
                                     <span>{label}</span>
+                                    {badge != null && badge !== 0 && (
+                                        <span
+                                            className="font-mono tabular-nums rounded px-1 text-[9.5px] font-bold uppercase tracking-wider"
+                                            style={{
+                                                background: isActive ? 'rgba(255,255,255,0.25)' : '#dc2626',
+                                                color: '#fff'
+                                            }}
+                                        >
+                                            {badge}
+                                        </span>
+                                    )}
                                 </button>
                             )
                         })}

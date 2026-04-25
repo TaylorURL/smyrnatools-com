@@ -4,10 +4,13 @@ import EmbeddedViewModal from '../../../app/components/dashboard/EmbeddedViewMod
 import { useSharedMessages } from '../../../app/context/MessagesContext'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
+import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import MessageService from '../../../services/MessageService'
 import { UserService } from '../../../services/UserService'
 import DateUtility from '../../../utils/DateUtility'
 import UserUtility from '../../../utils/UserUtility'
+
+const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
 
 function formatMessageTime(dateString) {
     if (!dateString) return ''
@@ -61,16 +64,21 @@ function resolveAttachmentView(type, meta) {
 }
 
 /**
- * Messages center with conversation-threaded inbox.
- * Two modes: conversation list (scrollable page) and conversation thread (fixed full-height chat).
+ * Messages center — split-pane inbox.
+ *
+ * Left rail lists every conversation; right pane renders the active thread
+ * (or a list view when none is selected). On mobile only one pane shows at
+ * a time. All chrome follows the Plan-tab aesthetic: flat 1px borders, 6px
+ * radius, var() tokens, monospace timestamps.
  */
-function NotificationsView({ userId, initialConversationId = null }) {
-    const { preferences } = usePreferences()
+function NotificationsView({ initialConversationId = null }) {
     const accentColor = useAccentColor()
+    const isMobile = useIsMobile()
     const [composing, setComposing] = useState(false)
     const [activeConversationId, setActiveConversationId] = useState(initialConversationId)
     const [embeddedView, setEmbeddedView] = useState(null)
     const [embeddedViewSearch, setEmbeddedViewSearch] = useState('')
+    const [search, setSearch] = useState('')
 
     const {
         conversations,
@@ -123,6 +131,17 @@ function NotificationsView({ userId, initialConversationId = null }) {
         }
     }, [conversations, userNames])
 
+    const filteredConversations = useMemo(() => {
+        const term = search.trim().toLowerCase()
+        if (!term) return conversations
+        return conversations.filter((c) => {
+            const name = (userNames[c.otherId] || '').toLowerCase()
+            const subject = (c.lastMessage?.subject || '').toLowerCase()
+            const body = (c.lastMessage?.body || '').toLowerCase()
+            return name.includes(term) || subject.includes(term) || body.includes(term)
+        })
+    }, [conversations, search, userNames])
+
     const openConversation = (conv) => {
         setActiveConversationId(conv.otherId)
         if (conv.unread > 0) markConversationRead(conv.otherId)
@@ -135,150 +154,402 @@ function NotificationsView({ userId, initialConversationId = null }) {
         setEmbeddedViewSearch(resolved.search)
     }
 
-    // ── Conversation thread mode: absolute fill, no page scroll ──
-    if (activeConversation) {
-        return (
-            <div className="absolute inset-0 flex flex-col" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                {/* Chat header */}
-                <div
-                    className="flex items-center gap-3 px-5 py-3 border-b flex-shrink-0"
-                    style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-                >
-                    <button
-                        onClick={() => setActiveConversationId(null)}
-                        className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors"
-                        style={{ backgroundColor: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
-                    >
-                        <i className="fas fa-arrow-left text-sm"></i>
-                    </button>
-                    <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                        style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}bb)` }}
-                    >
-                        {UserUtility.getInitials(userNames[activeConversation.otherId] || '')}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <h2 className="text-sm font-bold m-0 truncate" style={{ color: 'var(--text-primary)' }}>
-                            {userNames[activeConversation.otherId] || 'Conversation'}
-                        </h2>
-                        <p className="text-[11px] m-0" style={{ color: 'var(--text-secondary)' }}>
-                            {activeConversation.messages.length} message
-                            {activeConversation.messages.length !== 1 ? 's' : ''}
-                        </p>
-                    </div>
-                </div>
+    const showSidebar = !isMobile || !activeConversation
+    const showThreadPane = !isMobile || !!activeConversation
 
-                <ChatMessages
-                    conversation={activeConversation}
-                    userNames={userNames}
-                    accentColor={accentColor}
-                    resolvedUserId={resolvedUserId}
-                    onAttachmentClick={openAttachment}
-                />
-
-                <ReplyBar
-                    accentColor={accentColor}
-                    otherName={userNames[activeConversation.otherId] || 'Unknown'}
-                    onSend={async (body) => {
-                        await sendMessage(activeConversation.otherId, '', body)
-                    }}
-                />
-
-                {composing && (
-                    <ComposeModal accentColor={accentColor} onSend={sendMessage} onClose={() => setComposing(false)} />
-                )}
-
-                {embeddedView && (
-                    <EmbeddedViewModal
-                        embeddedView={embeddedView}
-                        embeddedViewSearch={embeddedViewSearch}
-                        accentColor={accentColor}
-                        onClose={() => {
-                            setEmbeddedView(null)
-                            setEmbeddedViewSearch('')
-                        }}
-                    />
-                )}
-            </div>
-        )
-    }
-
-    // ── Conversation list mode: normal scrollable page ──
     return (
-        <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-            {/* Header */}
-            <div
-                className="sticky top-0 z-30 border-b shadow-sm"
-                style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-            >
-                <div className="flex items-center justify-between px-6 py-4 max-w-4xl mx-auto">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="w-9 h-9 flex items-center justify-center rounded-xl"
-                            style={{ backgroundColor: `${accentColor}18` }}
-                        >
-                            <i className="fas fa-envelope text-sm" style={{ color: accentColor }}></i>
-                        </div>
-                        <div>
-                            <h1
-                                className="text-lg font-bold m-0 leading-tight"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
-                                Messages
-                            </h1>
-                            {unreadCount > 0 && (
-                                <p className="text-xs m-0" style={{ color: 'var(--text-secondary)' }}>
-                                    {unreadCount} unread
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {unreadCount > 0 && (
-                            <button
-                                onClick={markAllMsgRead}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                                style={{ backgroundColor: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
-                            >
-                                <i className="fas fa-check-double text-xs"></i>
-                                Mark all read
-                            </button>
-                        )}
-                        <button
-                            onClick={() => setComposing(true)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
-                            style={{ backgroundColor: accentColor }}
-                        >
-                            <i className="fas fa-pen text-xs"></i>
-                            Compose
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <div className="absolute inset-0 flex flex-col" style={{ background: 'var(--bg-secondary)' }}>
+            <PageHeader
+                accentColor={accentColor}
+                unreadCount={unreadCount}
+                onMarkAllRead={markAllMsgRead}
+                onCompose={() => setComposing(true)}
+            />
 
-            <div className="max-w-4xl mx-auto p-6 flex flex-col gap-6">
-                {/* Conversations */}
-                {msgLoading ? (
-                    <div
-                        className="flex flex-col items-center justify-center py-20"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
-                        <i className="fas fa-spinner fa-spin text-2xl mb-3"></i>
-                        <span className="text-sm">Loading...</span>
-                    </div>
-                ) : (
-                    <ConversationList
-                        conversations={conversations}
-                        userNames={userNames}
+            <div className="flex-1 flex min-h-0">
+                {showSidebar && (
+                    <ConversationSidebar
                         accentColor={accentColor}
+                        activeConversationId={activeConversationId}
+                        conversations={filteredConversations}
+                        loading={msgLoading}
                         onSelect={openConversation}
+                        onSearchChange={setSearch}
+                        search={search}
+                        unreadCount={unreadCount}
+                        userNames={userNames}
                     />
+                )}
+
+                {showThreadPane && (
+                    <div className="flex-1 flex flex-col min-w-0" style={{ background: 'var(--bg-secondary)' }}>
+                        {activeConversation ? (
+                            <>
+                                <ChatHeader
+                                    accentColor={accentColor}
+                                    conversation={activeConversation}
+                                    isMobile={isMobile}
+                                    onBack={() => setActiveConversationId(null)}
+                                    userNames={userNames}
+                                />
+                                <ChatMessages
+                                    conversation={activeConversation}
+                                    userNames={userNames}
+                                    accentColor={accentColor}
+                                    resolvedUserId={resolvedUserId}
+                                    onAttachmentClick={openAttachment}
+                                />
+                                <ReplyBar
+                                    accentColor={accentColor}
+                                    otherName={userNames[activeConversation.otherId] || 'Unknown'}
+                                    onSend={async (body) => {
+                                        await sendMessage(activeConversation.otherId, '', body)
+                                    }}
+                                />
+                            </>
+                        ) : (
+                            <EmptyThreadPane onCompose={() => setComposing(true)} accentColor={accentColor} />
+                        )}
+                    </div>
                 )}
             </div>
 
             {composing && (
                 <ComposeModal accentColor={accentColor} onSend={sendMessage} onClose={() => setComposing(false)} />
             )}
+
+            {embeddedView && (
+                <EmbeddedViewModal
+                    embeddedView={embeddedView}
+                    embeddedViewSearch={embeddedViewSearch}
+                    accentColor={accentColor}
+                    onClose={() => {
+                        setEmbeddedView(null)
+                        setEmbeddedViewSearch('')
+                    }}
+                />
+            )}
+        </div>
+    )
+}
+
+/** Sticky page header — title + actions. Plan-tab aesthetic. */
+function PageHeader({ accentColor, unreadCount, onMarkAllRead, onCompose }) {
+    return (
+        <div
+            className="shrink-0 flex items-center justify-between gap-3 px-3 sm:px-4 py-2"
+            style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
+        >
+            <div className="flex items-center gap-2 min-w-0">
+                <div
+                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                    style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                >
+                    <i className="fas fa-envelope text-[11px]" />
+                </div>
+                <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                    Messages
+                </span>
+                {unreadCount > 0 && (
+                    <span
+                        className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-white"
+                        style={{ background: accentColor }}
+                    >
+                        {unreadCount}
+                    </span>
+                )}
+            </div>
+            <div className="flex items-center gap-1.5">
+                {unreadCount > 0 && (
+                    <button
+                        onClick={onMarkAllRead}
+                        className="flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2 py-1 transition-colors hover:brightness-95"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-secondary)'
+                        }}
+                    >
+                        <i className="fas fa-check-double text-[10px]" />
+                        <span className="hidden sm:inline">Mark all read</span>
+                    </button>
+                )}
+                <button
+                    onClick={onCompose}
+                    className="flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 text-white"
+                    style={{ background: accentColor }}
+                >
+                    <i className="fas fa-pen text-[10px]" />
+                    Compose
+                </button>
+            </div>
+        </div>
+    )
+}
+
+/** Left rail — fixed-width on desktop, full-width on mobile. */
+function ConversationSidebar({
+    accentColor,
+    activeConversationId,
+    conversations,
+    loading,
+    onSelect,
+    onSearchChange,
+    search,
+    unreadCount,
+    userNames
+}) {
+    const unread = conversations.filter((c) => c.unread > 0)
+    const recent = conversations.filter((c) => c.unread === 0)
+
+    return (
+        <aside
+            className="shrink-0 flex flex-col w-full lg:w-[320px] min-h-0"
+            style={{ background: 'var(--bg-primary)', borderRight: '1px solid var(--border-light)' }}
+        >
+            <div className="px-3 py-2 shrink-0" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                <div className="relative">
+                    <i
+                        className="fas fa-magnifying-glass absolute left-2 top-1/2 -translate-y-1/2 text-[10px]"
+                        style={{ color: 'var(--text-tertiary)' }}
+                    />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        placeholder="Search conversations…"
+                        className="w-full rounded text-[12px] pl-7 pr-2 py-1.5 outline-none"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-primary)'
+                        }}
+                    />
+                </div>
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto">
+                {loading ? (
+                    <SidebarSkeleton />
+                ) : conversations.length === 0 ? (
+                    <div
+                        className="flex flex-col items-center justify-center py-12"
+                        style={{ color: 'var(--text-tertiary)' }}
+                    >
+                        <i className="fas fa-inbox text-2xl mb-2" />
+                        <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                            No conversations
+                        </span>
+                        <span className="text-[10.5px] mt-0.5">Start one with Compose</span>
+                    </div>
+                ) : (
+                    <>
+                        {unread.length > 0 && (
+                            <SidebarSection accentColor={accentColor} badge={unreadCount} label="Unread">
+                                {unread.map((conv) => (
+                                    <ConversationRow
+                                        key={conv.otherId}
+                                        accentColor={accentColor}
+                                        active={conv.otherId === activeConversationId}
+                                        conversation={conv}
+                                        displayName={userNames[conv.otherId] || 'Loading…'}
+                                        onSelect={onSelect}
+                                    />
+                                ))}
+                            </SidebarSection>
+                        )}
+                        {recent.length > 0 && (
+                            <SidebarSection accentColor={accentColor} label={unread.length ? 'Recent' : 'All'}>
+                                {recent.map((conv) => (
+                                    <ConversationRow
+                                        key={conv.otherId}
+                                        accentColor={accentColor}
+                                        active={conv.otherId === activeConversationId}
+                                        conversation={conv}
+                                        displayName={userNames[conv.otherId] || 'Loading…'}
+                                        onSelect={onSelect}
+                                    />
+                                ))}
+                            </SidebarSection>
+                        )}
+                    </>
+                )}
+            </div>
+        </aside>
+    )
+}
+
+function SidebarSection({ accentColor, badge, children, label }) {
+    return (
+        <div>
+            <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
+                <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
+                    {label}
+                </span>
+                {badge != null && badge > 0 && (
+                    <span
+                        className="font-mono tabular-nums rounded px-1 text-[9px] font-bold text-white"
+                        style={{ background: accentColor }}
+                    >
+                        {badge}
+                    </span>
+                )}
+            </div>
+            <div>{children}</div>
+        </div>
+    )
+}
+
+function ConversationRow({ accentColor, active, conversation, displayName, onSelect }) {
+    const initials = UserUtility.getInitials(displayName)
+    const latest = conversation.lastMessage
+    const hasUnread = conversation.unread > 0
+    return (
+        <button
+            type="button"
+            onClick={() => onSelect(conversation)}
+            className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-bg-tertiary"
+            style={{
+                background: active ? `${accentColor}14` : hasUnread ? `${accentColor}0A` : 'transparent',
+                borderBottom: '1px solid var(--border-light)',
+                borderLeft: active ? `2px solid ${accentColor}` : '2px solid transparent'
+            }}
+        >
+            <div className="relative shrink-0">
+                <div
+                    className="flex h-7 w-7 items-center justify-center rounded text-[10px] font-bold text-white"
+                    style={{ background: accentColor }}
+                >
+                    {initials}
+                </div>
+                {hasUnread && (
+                    <span
+                        className="absolute -top-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded px-0.5 text-[9px] font-bold text-white font-mono tabular-nums"
+                        style={{ background: accentColor, border: '1px solid var(--bg-primary)' }}
+                    >
+                        {conversation.unread}
+                    </span>
+                )}
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                    <span
+                        className={`truncate text-[12px] ${hasUnread ? 'font-semibold' : 'font-medium'}`}
+                        style={{ color: 'var(--text-primary)' }}
+                    >
+                        {displayName}
+                    </span>
+                    <span
+                        className="shrink-0 text-[10px] font-mono tabular-nums"
+                        style={{ color: 'var(--text-tertiary)' }}
+                    >
+                        {DateUtility.formatTimeAgo(latest?.createdAt)}
+                    </span>
+                </div>
+                {latest?.subject && (
+                    <p
+                        className="m-0 truncate text-[10.5px]"
+                        style={{ color: hasUnread ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                    >
+                        {latest.subject}
+                    </p>
+                )}
+                <p className="m-0 truncate text-[10.5px]" style={{ color: 'var(--text-secondary)' }}>
+                    {latest?.body}
+                </p>
+            </div>
+        </button>
+    )
+}
+
+function SidebarSkeleton() {
+    return (
+        <div>
+            {[0, 1, 2, 3, 4].map((i) => (
+                <div
+                    key={i}
+                    className="flex animate-pulse items-center gap-2.5 px-3 py-2"
+                    style={{ borderBottom: '1px solid var(--border-light)' }}
+                >
+                    <div className="h-7 w-7 shrink-0 rounded" style={{ background: 'var(--bg-tertiary)' }} />
+                    <div className="flex flex-1 min-w-0 flex-col gap-1">
+                        <div
+                            className="h-3 rounded"
+                            style={{ background: 'var(--bg-tertiary)', width: `${60 + i * 8}%` }}
+                        />
+                        <div
+                            className="h-2.5 rounded"
+                            style={{ background: 'var(--bg-secondary)', width: `${78 - i * 6}%` }}
+                        />
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function ChatHeader({ accentColor, conversation, isMobile, onBack, userNames }) {
+    const name = userNames[conversation.otherId] || 'Conversation'
+    return (
+        <div
+            className="flex items-center gap-2.5 px-3 py-2 shrink-0"
+            style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
+        >
+            {isMobile && (
+                <button
+                    onClick={onBack}
+                    className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-bg-tertiary"
+                    style={{ color: 'var(--text-secondary)' }}
+                    aria-label="Back to inbox"
+                >
+                    <i className="fas fa-arrow-left text-[12px]" />
+                </button>
+            )}
+            <div
+                className="flex h-7 w-7 items-center justify-center rounded text-[10px] font-bold text-white shrink-0"
+                style={{ background: accentColor }}
+            >
+                {UserUtility.getInitials(name)}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="text-[12.5px] font-semibold m-0 truncate" style={{ color: 'var(--text-primary)' }}>
+                    {name}
+                </div>
+                <div
+                    className="text-[10px] m-0 font-mono tabular-nums uppercase tracking-wider"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function EmptyThreadPane({ accentColor, onCompose }) {
+    return (
+        <div
+            className="flex-1 flex flex-col items-center justify-center text-center px-4"
+            style={{ color: 'var(--text-tertiary)' }}
+        >
+            <div
+                className="flex h-12 w-12 items-center justify-center rounded mb-3"
+                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+            >
+                <i className="fas fa-comments text-lg" />
+            </div>
+            <div className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Select a conversation
+            </div>
+            <div className="text-[10.5px] mt-1">Pick a thread on the left or start a new message</div>
+            <button
+                onClick={onCompose}
+                className="mt-3 flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 text-white"
+                style={{ background: accentColor }}
+            >
+                <i className="fas fa-pen text-[10px]" />
+                New Message
+            </button>
         </div>
     )
 }
@@ -315,22 +586,25 @@ function ChatMessages({ conversation, userNames, accentColor, resolvedUserId, on
     return (
         <div
             ref={scrollRef}
-            className="flex-1 overflow-y-auto min-h-0 px-4 py-4"
-            style={{ backgroundColor: 'var(--bg-secondary)' }}
+            className="flex-1 overflow-y-auto min-h-0 px-3 sm:px-4 py-3"
+            style={{ background: 'var(--bg-secondary)' }}
         >
             {dateGroups.map((group) => (
                 <React.Fragment key={group.label}>
-                    <div className="flex justify-center my-4 first:mt-0">
+                    <div className="flex justify-center my-3 first:mt-0">
                         <span
-                            className="px-3 py-1 rounded-full text-[11px] font-semibold"
-                            style={{ backgroundColor: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+                            className="px-2 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider font-mono tabular-nums"
+                            style={{
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-light)',
+                                color: 'var(--text-secondary)'
+                            }}
                         >
                             {group.label}
                         </span>
                     </div>
 
                     {group.messages.map((msg, idx) => {
-                        // Compare both raw and string-coerced IDs to handle type mismatches
                         const isMine =
                             resolvedUserId &&
                             (msg.senderId === resolvedUserId || String(msg.senderId) === String(resolvedUserId))
@@ -346,17 +620,14 @@ function ChatMessages({ conversation, userNames, accentColor, resolvedUserId, on
                         return (
                             <div
                                 key={msg.id}
-                                className={`flex ${sameSenderAsPrev ? 'mt-0.5' : 'mt-3'} ${isMine ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}
+                                className={`flex ${sameSenderAsPrev ? 'mt-0.5' : 'mt-2.5'} ${isMine ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}
                             >
-                                {/* Avatar spacer / avatar for incoming */}
                                 {!isMine && (
-                                    <div className="w-7 flex-shrink-0 self-end">
+                                    <div className="w-6 flex-shrink-0 self-end">
                                         {showAvatar && (
                                             <div
-                                                className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-                                                style={{
-                                                    background: `linear-gradient(135deg, ${accentColor}, ${accentColor}bb)`
-                                                }}
+                                                className="w-6 h-6 rounded flex items-center justify-center text-[9px] font-bold text-white"
+                                                style={{ background: accentColor }}
                                             >
                                                 {otherInitials}
                                             </div>
@@ -364,23 +635,18 @@ function ChatMessages({ conversation, userNames, accentColor, resolvedUserId, on
                                     </div>
                                 )}
 
-                                {/* Bubble — sent messages use accent color on right, received use card bg on left */}
                                 <div
-                                    className={`max-w-[75%] px-3.5 py-2 ${
-                                        isMine
-                                            ? `rounded ${sameSenderAsNext ? 'rounded-br-lg' : 'rounded-br-sm'} ${sameSenderAsPrev ? 'rounded-tr-lg' : ''}`
-                                            : `rounded ${sameSenderAsNext ? 'rounded-bl-lg' : 'rounded-bl-sm'} ${sameSenderAsPrev ? 'rounded-tl-lg' : ''}`
-                                    }`}
+                                    className="max-w-[75%] px-3 py-2 rounded"
                                     style={{
-                                        backgroundColor: isMine ? accentColor : 'var(--bg-primary)',
-                                        boxShadow: isMine ? 'none' : '0 1px 2px rgba(0,0,0,0.06)',
+                                        background: isMine ? accentColor : 'var(--bg-primary)',
+                                        border: isMine ? 'none' : '1px solid var(--border-light)',
                                         color: isMine ? 'white' : 'var(--text-primary)'
                                     }}
                                 >
                                     {msg.subject && (
                                         <p
-                                            className="text-[11px] font-bold uppercase tracking-wide m-0 mb-1"
-                                            style={{ opacity: isMine ? 0.75 : 0.45 }}
+                                            className="text-[9.5px] font-semibold uppercase tracking-wider m-0 mb-1"
+                                            style={{ opacity: isMine ? 0.85 : 0.55 }}
                                         >
                                             {msg.subject}
                                         </p>
@@ -395,12 +661,12 @@ function ChatMessages({ conversation, userNames, accentColor, resolvedUserId, on
                                             )
                                             return (
                                                 <div
-                                                    className={`rounded-lg p-2.5 mb-1.5 ${isViewable ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                                                    className={`rounded p-2 mb-1.5 ${isViewable ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
                                                     style={{
-                                                        backgroundColor: isMine
+                                                        background: isMine
                                                             ? 'rgba(255,255,255,0.12)'
                                                             : 'var(--bg-secondary)',
-                                                        border: `1px solid ${isMine ? 'rgba(255,255,255,0.15)' : 'var(--border-light)'}`
+                                                        border: `1px solid ${isMine ? 'rgba(255,255,255,0.18)' : 'var(--border-light)'}`
                                                     }}
                                                     onClick={() =>
                                                         isViewable &&
@@ -417,20 +683,23 @@ function ChatMessages({ conversation, userNames, accentColor, resolvedUserId, on
                                             )
                                         })()}
 
-                                    <p className="text-[13px] m-0 leading-relaxed whitespace-pre-wrap">{msg.body}</p>
+                                    <p className="text-[12.5px] m-0 leading-relaxed whitespace-pre-wrap">{msg.body}</p>
 
                                     {showTimestamp && (
                                         <div
                                             className={`flex items-center gap-1.5 mt-1 ${isMine ? 'justify-end' : ''}`}
                                         >
-                                            <span className="text-[10px]" style={{ opacity: 0.5 }}>
+                                            <span
+                                                className="text-[9.5px] font-mono tabular-nums"
+                                                style={{ opacity: 0.55 }}
+                                            >
                                                 {formatMessageTime(msg.createdAt)}
                                             </span>
                                             {isMine && (
                                                 <i
                                                     className={`fas ${msg.isRead ? 'fa-check-double' : 'fa-check'} text-[9px]`}
-                                                    style={{ opacity: msg.isRead ? 0.7 : 0.4 }}
-                                                ></i>
+                                                    style={{ opacity: msg.isRead ? 0.75 : 0.45 }}
+                                                />
                                             )}
                                         </div>
                                     )}
@@ -465,10 +734,12 @@ function ReplyBar({ accentColor, otherName, onSend }) {
         textareaRef.current?.focus()
     }
 
+    const canSend = !!body.trim() && !sending
+
     return (
         <div
-            className="flex items-end gap-3 px-4 py-3 border-t flex-shrink-0"
-            style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+            className="flex items-end gap-2 px-3 sm:px-4 py-2 shrink-0"
+            style={{ background: 'var(--bg-primary)', borderTop: '1px solid var(--border-light)' }}
         >
             <textarea
                 ref={textareaRef}
@@ -480,23 +751,21 @@ function ReplyBar({ accentColor, otherName, onSend }) {
                         handleSend()
                     }
                 }}
-                placeholder={`Message ${otherName}...`}
+                placeholder={`Message ${otherName}…`}
                 rows="1"
-                className="flex-1 px-4 py-2.5 rounded border text-sm outline-none resize-none transition-all"
+                className="flex-1 px-3 py-1.5 rounded text-[12.5px] outline-none resize-none"
                 style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    borderColor: 'var(--border-light)',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-light)',
                     color: 'var(--text-primary)',
                     fontFamily: 'inherit',
                     maxHeight: '100px'
                 }}
                 onFocus={(e) => {
                     e.currentTarget.style.borderColor = accentColor
-                    e.currentTarget.style.boxShadow = `0 0 0 3px ${accentColor}12`
                 }}
                 onBlur={(e) => {
                     e.currentTarget.style.borderColor = 'var(--border-light)'
-                    e.currentTarget.style.boxShadow = 'none'
                 }}
                 onInput={(e) => {
                     e.target.style.height = 'auto'
@@ -505,125 +774,17 @@ function ReplyBar({ accentColor, otherName, onSend }) {
             />
             <button
                 onClick={handleSend}
-                disabled={!body.trim() || sending}
-                className="w-10 h-10 flex items-center justify-center rounded-full text-white transition-all flex-shrink-0"
+                disabled={!canSend}
+                className="h-8 w-8 flex items-center justify-center rounded text-white shrink-0"
                 style={{
-                    backgroundColor: !body.trim() || sending ? 'var(--border-medium)' : accentColor,
-                    boxShadow: body.trim() && !sending ? `0 2px 8px ${accentColor}40` : 'none',
-                    cursor: !body.trim() || sending ? 'not-allowed' : 'pointer'
+                    background: canSend ? accentColor : 'var(--bg-tertiary)',
+                    color: canSend ? '#fff' : 'var(--text-tertiary)',
+                    cursor: canSend ? 'pointer' : 'not-allowed'
                 }}
+                aria-label="Send message"
             >
-                <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-sm`}></i>
+                <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-[12px]`} />
             </button>
-        </div>
-    )
-}
-
-/** Conversation list. */
-function ConversationList({ conversations, userNames, accentColor, onSelect }) {
-    if (!conversations.length) {
-        return (
-            <div className="flex flex-col items-center justify-center py-24" style={{ color: 'var(--text-secondary)' }}>
-                <div
-                    className="w-16 h-16 rounded flex items-center justify-center mb-4"
-                    style={{ backgroundColor: 'var(--bg-hover)' }}
-                >
-                    <i className="fas fa-inbox text-2xl" style={{ color: 'var(--border-medium)' }}></i>
-                </div>
-                <p className="text-base font-semibold m-0" style={{ color: 'var(--text-primary)' }}>
-                    No messages
-                </p>
-                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                    Start a conversation using the Compose button
-                </p>
-            </div>
-        )
-    }
-    return (
-        <div
-            className="rounded-xl border overflow-hidden"
-            style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-        >
-            {conversations.map((conv) => {
-                const name = userNames[conv.otherId] || 'Loading...'
-                const initials = UserUtility.getInitials(name)
-                const latest = conv.lastMessage
-                const hasUnread = conv.unread > 0
-                return (
-                    <div
-                        key={conv.otherId}
-                        className="flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors border-b last:border-b-0"
-                        style={{
-                            backgroundColor: hasUnread ? `${accentColor}08` : 'transparent',
-                            borderColor: 'var(--bg-hover)'
-                        }}
-                        onClick={() => onSelect(conv)}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = hasUnread ? `${accentColor}08` : 'transparent'
-                        }}
-                    >
-                        <div className="relative flex-shrink-0">
-                            <div
-                                className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                                style={{ background: `linear-gradient(135deg, ${accentColor}, ${accentColor}bb)` }}
-                            >
-                                {initials}
-                            </div>
-                            {hasUnread && (
-                                <div
-                                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2"
-                                    style={{ backgroundColor: accentColor, borderColor: 'var(--bg-primary)' }}
-                                >
-                                    {conv.unread}
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                                <span
-                                    className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-medium'}`}
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
-                                    {name}
-                                </span>
-                                {latest.attachmentType && (
-                                    <i
-                                        className={`${ATTACHMENT_ICONS[latest.attachmentType] || 'fas fa-paperclip'} text-[10px]`}
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    ></i>
-                                )}
-                                <span
-                                    className="text-xs ml-auto flex-shrink-0"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
-                                    {DateUtility.formatTimeAgo(latest.createdAt)}
-                                </span>
-                            </div>
-                            {latest.subject && (
-                                <p
-                                    className={`text-sm m-0 truncate ${hasUnread ? 'font-semibold' : ''}`}
-                                    style={{ color: 'var(--text-primary)', opacity: hasUnread ? 1 : 0.8 }}
-                                >
-                                    {latest.subject}
-                                </p>
-                            )}
-                            <p className="text-xs m-0 mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
-                                {latest.body}
-                            </p>
-                        </div>
-                        <div
-                            className="flex items-center gap-1.5 flex-shrink-0"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
-                            <span className="text-xs">{conv.messages.length}</span>
-                            <i className="fas fa-chevron-right text-[10px]"></i>
-                        </div>
-                    </div>
-                )
-            })}
         </div>
     )
 }
@@ -635,44 +796,48 @@ function AttachmentPreview({ type, meta, accentColor, light }) {
         type === 'issue' ? 'Issue' : type?.replace(/_/g, ' ')?.replace(/\b\w/g, (c) => c.toUpperCase()) || 'Attachment'
     const isViewable = !!resolveAttachmentView(type, meta)
     return (
-        <div className="flex items-start gap-2.5">
+        <div className="flex items-start gap-2">
             <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: light ? 'rgba(255,255,255,0.2)' : `${accentColor}15` }}
+                className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                style={{ background: light ? 'rgba(255,255,255,0.2)' : 'var(--bg-tertiary)' }}
             >
-                <i className={`${icon} text-[10px]`} style={{ color: light ? 'white' : accentColor }}></i>
+                <i className={`${icon} text-[10px]`} style={{ color: light ? 'white' : accentColor }} />
             </div>
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                     <span
-                        className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
                         style={{
-                            backgroundColor: light ? 'rgba(255,255,255,0.2)' : `${accentColor}15`,
+                            background: light ? 'rgba(255,255,255,0.2)' : 'var(--bg-tertiary)',
                             color: light ? 'white' : accentColor
                         }}
                     >
                         {label}
                     </span>
-                    {meta.itemNumber && <span className="text-xs font-semibold">{meta.itemNumber}</span>}
+                    {meta.itemNumber && (
+                        <span className="text-[11px] font-semibold font-mono tabular-nums">{meta.itemNumber}</span>
+                    )}
                     {meta.severity && (
                         <span
-                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded text-white ${
-                                meta.severity === 'High'
-                                    ? 'bg-red-500'
-                                    : meta.severity === 'Low'
-                                      ? 'bg-green-500'
-                                      : 'bg-blue-500'
-                            }`}
+                            className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                            style={{
+                                background:
+                                    meta.severity === 'High'
+                                        ? '#dc2626'
+                                        : meta.severity === 'Low'
+                                          ? '#16a34a'
+                                          : '#2563eb'
+                            }}
                         >
                             {meta.severity}
                         </span>
                     )}
                     {isViewable && (
-                        <i className="fas fa-external-link-alt text-[9px] ml-auto" style={{ opacity: 0.5 }}></i>
+                        <i className="fas fa-external-link-alt text-[9px] ml-auto" style={{ opacity: 0.55 }} />
                     )}
                 </div>
                 {meta.issueText && (
-                    <p className="text-xs m-0 leading-snug" style={{ opacity: 0.8 }}>
+                    <p className="text-[11px] m-0 leading-snug" style={{ opacity: 0.85 }}>
                         {meta.issueText}
                     </p>
                 )}
@@ -744,59 +909,69 @@ function ComposeModal({ accentColor, onSend, onClose }) {
         setSending(false)
     }
 
+    const fieldStyle = {
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-light)',
+        color: 'var(--text-primary)'
+    }
+
     return (
         <div
             className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
-            style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.7)' }}
+            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose()
             }}
         >
             <div
-                className="w-full max-w-lg rounded shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-                style={{ backgroundColor: 'var(--bg-secondary)' }}
+                className="w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden rounded"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="flex items-center justify-between px-6 py-4 border-b"
-                    style={{ borderColor: 'var(--bg-hover)' }}
+                    className="flex items-center justify-between px-3 py-2"
+                    style={{ borderBottom: '1px solid var(--border-light)' }}
                 >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                         <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center"
-                            style={{ backgroundColor: `${accentColor}15` }}
+                            className="flex h-6 w-6 items-center justify-center rounded"
+                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
                         >
-                            <i className="fas fa-pen text-sm" style={{ color: accentColor }}></i>
+                            <i className="fas fa-pen text-[11px]" />
                         </div>
-                        <span className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+                        <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                             New Message
                         </span>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg"
-                        style={{ backgroundColor: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary"
+                        style={{ color: 'var(--text-secondary)' }}
+                        aria-label="Close"
                     >
-                        <i className="fas fa-times text-sm"></i>
+                        <i className="fas fa-times text-[11px]" />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
+                <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
                     {sent ? (
-                        <div className="flex flex-col items-center gap-4 py-8 text-center">
-                            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                                <i className="fas fa-check text-2xl text-green-500"></i>
+                        <div className="flex flex-col items-center gap-3 py-6 text-center">
+                            <div
+                                className="w-12 h-12 rounded flex items-center justify-center"
+                                style={{ background: '#dcfce7', color: '#166534' }}
+                            >
+                                <i className="fas fa-check text-lg" />
                             </div>
-                            <div className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                            <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                                 Message Sent
                             </div>
-                            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                            <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
                                 {selectedRecipient?.firstName} {selectedRecipient?.lastName} will receive your message
                             </p>
                             <button
                                 onClick={onClose}
-                                className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
-                                style={{ backgroundColor: accentColor }}
+                                className="rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5"
+                                style={{ background: accentColor }}
                             >
                                 Done
                             </button>
@@ -805,7 +980,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                         <>
                             <div>
                                 <label
-                                    className="block text-xs font-semibold uppercase tracking-wider mb-2"
+                                    className={`block ${SECTION_LABEL_CLASS} mb-1.5`}
                                     style={{ color: 'var(--text-secondary)' }}
                                 >
                                     To
@@ -813,34 +988,41 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                 <div ref={dropdownRef} className="relative">
                                     {selectedRecipient ? (
                                         <div
-                                            className="flex items-center gap-3 px-4 py-3 rounded-xl border"
-                                            style={{
-                                                backgroundColor: 'var(--bg-primary)',
-                                                borderColor: 'var(--border-light)'
-                                            }}
+                                            className="flex items-center gap-2.5 px-2.5 py-2 rounded"
+                                            style={fieldStyle}
                                         >
                                             <div
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                                                style={{
-                                                    background: `linear-gradient(135deg, ${accentColor}, ${accentColor}bb)`
-                                                }}
+                                                className="w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                                                style={{ background: accentColor }}
                                             >
                                                 {UserUtility.getInitials(
                                                     `${selectedRecipient.firstName} ${selectedRecipient.lastName}`
                                                 )}
                                             </div>
-                                            <span
-                                                className="text-sm font-medium flex-1"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
-                                                {selectedRecipient.firstName} {selectedRecipient.lastName}
-                                            </span>
+                                            <div className="flex-1 min-w-0">
+                                                <div
+                                                    className="text-[12.5px] font-semibold truncate"
+                                                    style={{ color: 'var(--text-primary)' }}
+                                                >
+                                                    {selectedRecipient.firstName} {selectedRecipient.lastName}
+                                                </div>
+                                                <div
+                                                    className="text-[10.5px] truncate"
+                                                    style={{ color: 'var(--text-secondary)' }}
+                                                >
+                                                    {selectedRecipient.roleName}
+                                                    {selectedRecipient.plantCode
+                                                        ? ` · ${selectedRecipient.plantCode}`
+                                                        : ''}
+                                                </div>
+                                            </div>
                                             <button
                                                 onClick={() => setSelectedRecipient(null)}
-                                                className="text-xs"
+                                                className="text-[11px] flex h-6 w-6 items-center justify-center rounded hover:bg-bg-tertiary"
                                                 style={{ color: 'var(--text-secondary)' }}
+                                                aria-label="Clear recipient"
                                             >
-                                                <i className="fas fa-times"></i>
+                                                <i className="fas fa-times" />
                                             </button>
                                         </div>
                                     ) : (
@@ -853,33 +1035,29 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                                     setDropdownOpen(true)
                                                 }}
                                                 onFocus={() => setDropdownOpen(true)}
-                                                placeholder="Search by name, role, or plant..."
-                                                className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all"
-                                                style={{
-                                                    backgroundColor: 'var(--bg-primary)',
-                                                    borderColor: dropdownOpen ? accentColor : 'var(--border-light)',
-                                                    boxShadow: dropdownOpen ? `0 0 0 3px ${accentColor}20` : 'none',
-                                                    color: 'var(--text-primary)'
-                                                }}
+                                                placeholder="Search by name, role, or plant…"
+                                                className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none"
+                                                style={fieldStyle}
                                             />
                                             {dropdownOpen && (
                                                 <div
-                                                    className="absolute left-0 right-0 z-10 mt-2 max-h-52 overflow-y-auto rounded-xl border shadow-lg py-1"
+                                                    className="absolute left-0 right-0 z-10 mt-1 max-h-52 overflow-y-auto rounded py-1"
                                                     style={{
-                                                        backgroundColor: 'var(--bg-primary)',
-                                                        borderColor: 'var(--border-light)'
+                                                        background: 'var(--bg-primary)',
+                                                        border: '1px solid var(--border-light)'
                                                     }}
                                                 >
                                                     {loadingRecipients ? (
                                                         <div
-                                                            className="px-4 py-3 text-sm text-center"
+                                                            className="px-3 py-2 text-[12px] text-center"
                                                             style={{ color: 'var(--text-secondary)' }}
                                                         >
-                                                            <i className="fas fa-spinner fa-spin mr-2"></i>Loading...
+                                                            <i className="fas fa-spinner fa-spin mr-1.5" />
+                                                            Loading…
                                                         </div>
                                                     ) : filteredRecipients.length === 0 ? (
                                                         <div
-                                                            className="px-4 py-3 text-sm text-center"
+                                                            className="px-3 py-2 text-[12px] text-center"
                                                             style={{ color: 'var(--text-secondary)' }}
                                                         >
                                                             No results found
@@ -894,33 +1072,23 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                                                     setDropdownOpen(false)
                                                                     setRecipientSearch('')
                                                                 }}
-                                                                className="flex items-center gap-3 w-full px-4 py-2.5 text-left transition-colors"
+                                                                className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-colors hover:bg-bg-tertiary"
                                                                 style={{ color: 'var(--text-primary)' }}
-                                                                onMouseEnter={(e) => {
-                                                                    e.currentTarget.style.backgroundColor =
-                                                                        'var(--bg-hover)'
-                                                                }}
-                                                                onMouseLeave={(e) => {
-                                                                    e.currentTarget.style.backgroundColor =
-                                                                        'transparent'
-                                                                }}
                                                             >
                                                                 <div
-                                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
-                                                                    style={{
-                                                                        background: `linear-gradient(135deg, ${accentColor}, ${accentColor}bb)`
-                                                                    }}
+                                                                    className="w-6 h-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
+                                                                    style={{ background: accentColor }}
                                                                 >
                                                                     {UserUtility.getInitials(
                                                                         `${r.firstName} ${r.lastName}`
                                                                     )}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <div className="text-sm font-medium">
+                                                                    <div className="text-[12px] font-semibold truncate">
                                                                         {r.firstName} {r.lastName}
                                                                     </div>
                                                                     <div
-                                                                        className="text-xs"
+                                                                        className="text-[10.5px] truncate"
                                                                         style={{ color: 'var(--text-secondary)' }}
                                                                     >
                                                                         {r.roleName}
@@ -939,7 +1107,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
 
                             <div>
                                 <label
-                                    className="block text-xs font-semibold uppercase tracking-wider mb-2"
+                                    className={`block ${SECTION_LABEL_CLASS} mb-1.5`}
                                     style={{ color: 'var(--text-secondary)' }}
                                 >
                                     Subject
@@ -948,27 +1116,15 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                     type="text"
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
-                                    placeholder="Message subject (optional)..."
-                                    className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all"
-                                    style={{
-                                        backgroundColor: 'var(--bg-primary)',
-                                        borderColor: 'var(--border-light)',
-                                        color: 'var(--text-primary)'
-                                    }}
-                                    onFocus={(e) => {
-                                        e.currentTarget.style.borderColor = accentColor
-                                        e.currentTarget.style.boxShadow = `0 0 0 3px ${accentColor}20`
-                                    }}
-                                    onBlur={(e) => {
-                                        e.currentTarget.style.borderColor = 'var(--border-light)'
-                                        e.currentTarget.style.boxShadow = 'none'
-                                    }}
+                                    placeholder="Subject (optional)"
+                                    className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none"
+                                    style={fieldStyle}
                                 />
                             </div>
 
                             <div>
                                 <label
-                                    className="block text-xs font-semibold uppercase tracking-wider mb-2"
+                                    className={`block ${SECTION_LABEL_CLASS} mb-1.5`}
                                     style={{ color: 'var(--text-secondary)' }}
                                 >
                                     Message
@@ -976,30 +1132,19 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                 <textarea
                                     value={body}
                                     onChange={(e) => setBody(e.target.value)}
-                                    placeholder="Write your message..."
+                                    placeholder="Write your message…"
                                     rows="5"
-                                    className="w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all resize-y"
-                                    style={{
-                                        backgroundColor: 'var(--bg-primary)',
-                                        borderColor: 'var(--border-light)',
-                                        color: 'var(--text-primary)',
-                                        fontFamily: 'inherit',
-                                        lineHeight: 1.6
-                                    }}
-                                    onFocus={(e) => {
-                                        e.currentTarget.style.borderColor = accentColor
-                                        e.currentTarget.style.boxShadow = `0 0 0 3px ${accentColor}20`
-                                    }}
-                                    onBlur={(e) => {
-                                        e.currentTarget.style.borderColor = 'var(--border-light)'
-                                        e.currentTarget.style.boxShadow = 'none'
-                                    }}
+                                    className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none resize-y"
+                                    style={{ ...fieldStyle, fontFamily: 'inherit', lineHeight: 1.55 }}
                                 />
                             </div>
 
                             {error && (
-                                <div className="px-4 py-3 rounded-xl bg-red-50 text-red-600 text-sm font-medium">
-                                    <i className="fas fa-exclamation-triangle mr-2"></i>
+                                <div
+                                    className="px-2.5 py-1.5 rounded text-[12px] font-medium"
+                                    style={{ background: '#fee2e2', color: '#b91c1c' }}
+                                >
+                                    <i className="fas fa-exclamation-triangle mr-1.5" />
                                     {error}
                                 </div>
                             )}
@@ -1007,25 +1152,21 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                             <button
                                 onClick={handleSend}
                                 disabled={!selectedRecipient || !body.trim() || sending}
-                                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all"
+                                className="w-full flex items-center justify-center gap-1.5 py-2 rounded text-[10.5px] font-semibold uppercase tracking-wider"
                                 style={{
-                                    backgroundColor:
+                                    background:
                                         !selectedRecipient || !body.trim() || sending
-                                            ? 'var(--border-medium)'
+                                            ? 'var(--bg-tertiary)'
                                             : accentColor,
-                                    boxShadow:
-                                        !selectedRecipient || !body.trim() || sending
-                                            ? 'none'
-                                            : `0 4px 14px ${accentColor}40`,
                                     color:
                                         !selectedRecipient || !body.trim() || sending
-                                            ? 'var(--text-secondary)'
+                                            ? 'var(--text-tertiary)'
                                             : 'white',
                                     cursor: !selectedRecipient || !body.trim() || sending ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-xs`}></i>
-                                {sending ? 'Sending...' : 'Send Message'}
+                                <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-[10px]`} />
+                                {sending ? 'Sending…' : 'Send Message'}
                             </button>
                         </>
                     )}

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
+import PlantFilterButton from '../../../app/components/ui/PlantFilterButton'
 import {
     buildAssignmentDriverTimes,
     computePlantPoolTimeline,
@@ -130,8 +132,11 @@ function PlanRealtimeView({
     planDate,
     plantNameByCode,
     plantProduction,
-    stats
+    plants = [],
+    stats,
+    userPlantCode = ''
 }) {
+    const [isPlantModalOpen, setIsPlantModalOpen] = useState(false)
     const clock = useLiveClock()
     const isToday = planDate === clock.todayStr
     const nowMin = clock.nowMin
@@ -413,26 +418,23 @@ function PlanRealtimeView({
         weekday: 'short'
     })
 
+    const plantPickerOptions = useMemo(() => {
+        const allowed = new Set(plantOptions)
+        return (plants || []).filter((p) => allowed.has(p.plant_code || p.plantCode))
+    }, [plants, plantOptions])
+    const plantFilterDisplay = filterActive
+        ? `Plant ${plantFilter}${plantNameByCode?.[plantFilter] ? ` · ${plantNameByCode[plantFilter]}` : ''}`
+        : `All plants (${plantOptions.length})`
+
     const filterControls = (
         <div className="flex items-center gap-1.5">
-            <select
-                value={plantFilter}
-                onChange={(e) => setPlantFilter(e.target.value)}
-                className="px-2 py-1 rounded text-[12px] cursor-pointer font-medium"
-                style={{
-                    background: filterActive ? `${accentColor}14` : 'var(--bg-secondary)',
-                    border: `1px solid ${filterActive ? accentColor : 'var(--border-light)'}`,
-                    color: filterActive ? accentColor : 'var(--text-primary)'
-                }}
-            >
-                <option value="all">All plants ({plantOptions.length})</option>
-                {plantOptions.map((code) => (
-                    <option key={code} value={code}>
-                        {code}
-                        {plantNameByCode?.[code] ? ` · ${plantNameByCode[code]}` : ''}
-                    </option>
-                ))}
-            </select>
+            <PlantFilterButton
+                accentColor={accentColor}
+                active={filterActive}
+                displayText={plantFilterDisplay}
+                onClick={() => setIsPlantModalOpen(true)}
+                title="Filter Realtime to a single plant"
+            />
             <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value)}
@@ -604,6 +606,19 @@ function PlanRealtimeView({
                     </Panel>
                 </div>
             </div>
+            {isPlantModalOpen && (
+                <PlantDropdownModal
+                    isOpen={isPlantModalOpen}
+                    onClose={() => setIsPlantModalOpen(false)}
+                    plants={plantPickerOptions}
+                    onSelect={(code) => {
+                        setPlantFilter(!code || code === 'All' ? 'all' : code)
+                        setIsPlantModalOpen(false)
+                    }}
+                    showAllPlants
+                    userPlantCode={userPlantCode}
+                />
+            )}
         </div>
     )
 }

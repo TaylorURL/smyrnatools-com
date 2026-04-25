@@ -428,8 +428,7 @@ const NAV_SECTIONS = [
     { icon: 'fa-user-tie', id: 'my-plant', label: 'Your Plant', requiresYourScope: true },
     { icon: 'fa-sticky-note', id: 'notes', label: 'Notes' },
     { icon: 'fa-project-diagram', id: 'flow-preview', label: 'Flow' },
-    { icon: 'fa-circle-exclamation', id: 'special', label: 'Special Attention' },
-    { icon: 'fa-vial-circle-check', id: 'qc', label: 'QC Attention' },
+    { icon: 'fa-circle-exclamation', id: 'extra-diligence', label: 'Extra Diligence' },
     { icon: 'fa-triangle-exclamation', id: 'insights', label: 'Plan Insights' },
     { icon: 'fa-cubes', id: 'yardage', label: 'Yardage by Plant' }
 ]
@@ -452,7 +451,7 @@ function SideNav({
                     if (section.requiresYourScope && !hasYourScope) return null
                     if (section.id === 'insights' && !hasInsights) return null
                     const isActive = activeId === section.id
-                    const badge = section.id === 'special' ? specialCount : section.id === 'qc' ? qcCount : null
+                    const badge = section.id === 'extra-diligence' ? (specialCount || 0) + (qcCount || 0) : null
                     const label = section.id === 'my-plant' ? yourSectionLabel || section.label : section.label
                     return (
                         <button
@@ -513,8 +512,7 @@ function AtAGlancePanel({
             label: 'Shift span',
             value: shiftSpanHours ? `${shiftSpanHours}h` : '—'
         },
-        { label: 'Special attention', value: specialCount.toString() },
-        { label: 'QC attention', value: qcCount.toString() }
+        { label: 'Extra diligence', value: ((specialCount || 0) + (qcCount || 0)).toString() }
     ]
     return (
         <aside className="hidden xl:block sticky top-0 self-start py-5 pl-4" style={{ width: 240 }}>
@@ -1065,37 +1063,44 @@ function PlanDashboardView({
                         />
                     </Card>
 
-                    <JobsSection
-                        id="special"
-                        accent={accentColor}
-                        canEdit={canEdit}
-                        tint="#d97706"
-                        title="Special Attention"
-                        emptyHint="No special-attention jobs yet. Add anything the crew needs to double-check — VIP pours, tight sequences, high-slump runs, late starts, etc."
-                        jobs={specialJobs}
-                        plants={plants}
-                        plantNameByCode={plantNameByCode}
-                        onCreate={addSpecialJob}
-                        onSave={saveSpecialJob}
-                        onDelete={deleteSpecialJob}
-                        titleLabel="Title (e.g. Harbor Dev · Mix 4000-B pour at 6:00)"
-                    />
+                    {/* Extra Diligence — combined Special Attention + QC Attention block.
+                        The wrapper id matches the consolidated nav entry; inner ids stay
+                        so existing inline jumpTo('special') / jumpTo('qc') links still scroll
+                        to the right subsection. Uses <section> + scroll-mt-4 to match the
+                        scrollIntoView landing pattern of every other anchor on the page. */}
+                    <section id="extra-diligence" className="scroll-mt-4 flex flex-col gap-3 sm:gap-5">
+                        <JobsSection
+                            id="special"
+                            accent={accentColor}
+                            canEdit={canEdit}
+                            tint="#d97706"
+                            title="Special Attention"
+                            emptyHint="No special-attention jobs yet. Add anything the crew needs to double-check — VIP pours, tight sequences, high-slump runs, late starts, etc."
+                            jobs={specialJobs}
+                            plants={plants}
+                            plantNameByCode={plantNameByCode}
+                            onCreate={addSpecialJob}
+                            onSave={saveSpecialJob}
+                            onDelete={deleteSpecialJob}
+                            titleLabel="Title (e.g. Harbor Dev · Mix 4000-B pour at 6:00)"
+                        />
 
-                    <JobsSection
-                        id="qc"
-                        accent={accentColor}
-                        canEdit={canEdit}
-                        tint="#7c3aed"
-                        title="QC Attention"
-                        emptyHint="No QC-flagged jobs yet. Add any pour that needs cylinders cast, mix-design watch, slump re-checks, temp monitoring, or technician on site."
-                        jobs={qcJobs}
-                        plants={plants}
-                        plantNameByCode={plantNameByCode}
-                        onCreate={addQcJob}
-                        onSave={saveQcJob}
-                        onDelete={deleteQcJob}
-                        titleLabel="Title (e.g. QC cylinders on Mix 4500 · Plant 214)"
-                    />
+                        <JobsSection
+                            id="qc"
+                            accent={accentColor}
+                            canEdit={canEdit}
+                            tint="#7c3aed"
+                            title="QC Attention"
+                            emptyHint="No QC-flagged jobs yet. Add any pour that needs cylinders cast, mix-design watch, slump re-checks, temp monitoring, or technician on site."
+                            jobs={qcJobs}
+                            plants={plants}
+                            plantNameByCode={plantNameByCode}
+                            onCreate={addQcJob}
+                            onSave={saveQcJob}
+                            onDelete={deleteQcJob}
+                            titleLabel="Title (e.g. QC cylinders on Mix 4500 · Plant 214)"
+                        />
+                    </section>
 
                     {hasInsights && (
                         <Card

@@ -259,6 +259,7 @@ export function usePlanData(planDate) {
     // — dispatcher's workstation auto-uploads today + 7 days of schedule HTML
     // so production data is always current.
     const {
+        fileUpdatedAt: scheduleFileUpdatedAt,
         isSyncing: isSchedulesSyncing,
         lastSyncedAt: scheduleLastSyncedAt,
         refresh: refreshSchedule
@@ -285,6 +286,7 @@ export function usePlanData(planDate) {
         refreshSchedule,
         refreshTravelTimes,
         regionPlants,
+        scheduleFileUpdatedAt,
         scheduleLastSyncedAt,
         setAssignments,
         setNotes,

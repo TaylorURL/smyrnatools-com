@@ -24,6 +24,7 @@ const BUCKET_NAME = 'dispatch-reports'
  */
 export function useScheduleSync({ planDate, plants, setPlantProduction, enabled = true }) {
     const [lastSyncedAt, setLastSyncedAt] = useState(null)
+    const [fileUpdatedAt, setFileUpdatedAt] = useState(null)
     const [isSyncing, setIsSyncing] = useState(false)
     const plantsRef = useRef(plants)
     plantsRef.current = plants
@@ -39,8 +40,12 @@ export function useScheduleSync({ planDate, plants, setPlantProduction, enabled 
         if (!date) return false
         setIsSyncing(true)
         try {
-            const html = await ScheduleBucketService.fetchScheduleByDate(date)
+            const [html, updatedAt] = await Promise.all([
+                ScheduleBucketService.fetchScheduleByDate(date),
+                ScheduleBucketService.fetchScheduleUpdatedAt(date)
+            ])
             if (cancelledRef.current) return false
+            if (updatedAt) setFileUpdatedAt(updatedAt)
             if (!html) return false
             const production = parseDailyOrderHtml(html, plantsRef.current)
             if (cancelledRef.current || !production || Object.keys(production).length === 0) return false
@@ -108,5 +113,5 @@ export function useScheduleSync({ planDate, plants, setPlantProduction, enabled 
         }
     }, [enabled, sync])
 
-    return { isSyncing, lastSyncedAt, refresh: sync }
+    return { fileUpdatedAt, isSyncing, lastSyncedAt, refresh: sync }
 }

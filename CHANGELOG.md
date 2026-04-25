@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [38.5.49] - 2026-04-25
+
+- Extracted PlantFilterButton into a shared ui component and replaced duplicate implementations in TopSection, ReportsToolbar, PlanDemandView, and PlanRealtimeView
+- Replaced native <select> plant pickers in PlanDemandView and PlanRealtimeView with the full PlantDropdownModal (district groupings, search)
+- Enriched plan plant list with district memberships from region service so PlantDropdownModal renders district groupings correctly
+- Added stale-schedule warning banner to PlanView when the dispatch workstation hasn't pushed an update in 30+ minutes
+- Added fetchScheduleUpdatedAt to ScheduleBucketService and surfaced the file timestamp through useScheduleSync and usePlanData
+- Consolidated Special Attention and QC Attention into a single "Extra Diligence" nav section in PlanDashboardView with combined badge count
+- Simplified the Copy Plan output to a short dispatcher-focused format with just help routes instead of the full day briefing
+- Redesigned CalculatorView to use TopSection and ReportsActionBar for consistent app chrome, replacing the custom header/tab bar
+- Created CalculatorShell with CalcSection, CalcField, and StatTile atoms for a result-first calculator layout with status badges
+- Refactored all five calculators (Proportions, SetTime, SlumpAdjustment, WaterCement, YardagePerHour) to use CalculatorShell instead of custom card layouts
+- Redesigned MyAccountView with Plan-tab aesthetic — extracted Card, CardHeader, PrimaryButton, SubtleButton, and Toggle atoms, smaller/flatter typography throughout
+- Redesigned NotificationsView as a split-pane inbox with sidebar conversation list, search filtering, and dedicated PageHeader/ChatHeader/ReplyBar/EmptyThreadPane sub-components
+- Redesigned NotificationsModal with more compact conversation rows, smaller avatars, monospace timestamps, and flat border styling
+- Redesigned OnlineUsersModal with smaller avatars, flat 6px-radius cards, and role-color tinted backgrounds
+- Redesigned MaintenanceView with Plan-tab aesthetic — replaced Tailwind status badge classes with a STATUS_PALETTE config, added PlantChip and ItemIcon atoms, integrated ReportsActionBar for tab navigation
+- Added All/Issues tab filter to NRMCAView with a badge count for expired plants and overdue scales, plus background refresh support
+- Added badge support to ReportsActionBar tab pills
+- Fixed ListViewModeSection horizontal scroll on mobile by moving overflow-x-auto to the outer wrapper
+- Fixed PickupTrucksDetailView to call PickupTruckService.update instead of the removed updatePickupTruck method
+
 ## [38.5.48] - 2026-04-25
 
 - Added plant origin switcher to JobMapModal so dispatchers can compare drive times from any plant, not just the assigned one

@@ -1,13 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
-import { usePreferences } from '../../../app/context/PreferencesContext'
-import { useIsMobile } from '../../../app/hooks/useIsMobile'
+import { ReportsActionBar } from '../../../app/components/reports/ReportsToolbar'
+import TopSection from '../../../app/components/sections/TopSection'
 import ProportionsCalculator from './types/ProportionsCalculator'
 import SetTimeCalculator from './types/SetTimeCalculator'
 import SlumpAdjustmentCalculator from './types/SlumpAdjustmentCalculator'
 import WaterCementCalculator from './types/WaterCementCalculator'
 import YardagePerHourCalculator from './types/YardagePerHourCalculator'
-/** Tab definitions for each available calculator type with display metadata. */
+
+/** Tab definitions for each concrete industry calculator surfaced in the action bar. */
 const CALCULATOR_TYPES = [
     { icon: 'fa-tachometer-alt', id: 'yardage-hour', name: 'Yd/Hr' },
     { icon: 'fa-balance-scale', id: 'proportions', name: 'Overweight Fix' },
@@ -15,133 +16,73 @@ const CALCULATOR_TYPES = [
     { icon: 'fa-tint', id: 'water-cement', name: 'W/C Ratio' },
     { icon: 'fa-clock', id: 'set-time', name: 'Set Time' }
 ]
-/** Subtle grid overlay for the header background, tinted to the user's accent color. */
-const GRID_PATTERN_STYLE = (accentColor) => ({
-    backgroundImage: `
-        linear-gradient(${accentColor}10 1px, transparent 1px),
-        linear-gradient(90deg, ${accentColor}10 1px, transparent 1px)
-    `,
-    backgroundSize: '20px 20px'
-})
+
+const CALCULATOR_COMPONENTS = {
+    proportions: ProportionsCalculator,
+    'set-time': SetTimeCalculator,
+    slump: SlumpAdjustmentCalculator,
+    'water-cement': WaterCementCalculator,
+    'yardage-hour': YardagePerHourCalculator
+}
+
 /**
- * Main calculator hub view. Renders a tab bar for switching between concrete
- * industry calculators (Yd/Hr, Overweight Fix, Slump, W/C Ratio, Set Time).
+ * Calculator hub. Wraps the active concrete calculator in the same chrome as
+ * the rest of the app — sticky `TopSection` with a search input and a slim
+ * Plan/Reports-style action bar that hosts the pill-segmented tab control.
+ * Search filters which calculator pills are visible so a user can jump to a
+ * specific tool by name.
  */
 const CalculatorView = () => {
-    const { preferences } = usePreferences()
-    const accentColor = preferences.accentColor || '#1e3a5f'
     const [selectedCalculator, setSelectedCalculator] = useState('yardage-hour')
-    const isMobile = useIsMobile()
+    const [searchInput, setSearchInput] = useState('')
     const [initialLoading, setInitialLoading] = useState(true)
-    const hasRevealedRef = useRef(false)
-    const [revealControls, setRevealControls] = useState(false)
+
     useEffect(() => {
         const timer = setTimeout(() => setInitialLoading(false), 150)
         return () => clearTimeout(timer)
     }, [])
-    useEffect(() => {
-        if (!initialLoading && !hasRevealedRef.current) {
-            hasRevealedRef.current = true
-            setRevealControls(true)
-            const timer = setTimeout(() => setRevealControls(false), 1200)
-            return () => clearTimeout(timer)
-        }
-    }, [initialLoading])
-    const hideRealContent = initialLoading
-    const renderCalculator = () => {
-        switch (selectedCalculator) {
-            case 'yardage-hour':
-                return <YardagePerHourCalculator />
-            case 'proportions':
-                return <ProportionsCalculator />
-            case 'slump':
-                return <SlumpAdjustmentCalculator />
-            case 'water-cement':
-                return <WaterCementCalculator />
-            case 'set-time':
-                return <SetTimeCalculator />
-            default:
-                return (
-                    <div className="rounded-xl text-center p-8 md:p-16 bg-bg-primary border border-border-light">
-                        <div className="text-4xl md:text-6xl mb-4 md:mb-6 text-text-secondary">
+
+    const visibleTabs = useMemo(() => {
+        const search = searchInput.trim().toLowerCase()
+        const filtered = search
+            ? CALCULATOR_TYPES.filter((c) => c.name.toLowerCase().includes(search))
+            : CALCULATOR_TYPES
+        return filtered.map((c) => ({ icon: c.icon, key: c.id, label: c.name }))
+    }, [searchInput])
+
+    const ActiveCalculator = CALCULATOR_COMPONENTS[selectedCalculator]
+
+    return (
+        <div className="bg-slate-50 min-h-full w-full pb-16">
+            <TopSection
+                title="Calculators"
+                sticky
+                hidePlantFilter
+                hideViewModeToggle
+                isLoading={initialLoading}
+                searchInput={searchInput}
+                searchPlaceholder="Search calculators"
+                onSearchInputChange={setSearchInput}
+                onClearSearch={() => setSearchInput('')}
+            />
+            <ReportsActionBar tabs={visibleTabs} activeTab={selectedCalculator} onTabChange={setSelectedCalculator} />
+            <main className="px-3 sm:px-4 md:px-6 lg:px-8 py-4">
+                {ActiveCalculator ? (
+                    <ActiveCalculator />
+                ) : (
+                    <div className="rounded-xl text-center p-8 md:p-16 bg-white border border-border-light">
+                        <div className="text-4xl md:text-6xl mb-4 md:mb-6 text-slate-400">
                             <i className="fas fa-hard-hat" />
                         </div>
-                        <h3 className="text-lg md:text-2xl font-bold m-0 text-text-primary">Coming Soon</h3>
-                        <p className="text-sm md:text-base mt-2 mb-0 text-text-secondary">
+                        <h3 className="text-lg md:text-2xl font-bold m-0 text-slate-900">Coming Soon</h3>
+                        <p className="text-sm md:text-base mt-2 mb-0 text-slate-500">
                             This calculator is under development
                         </p>
                     </div>
-                )
-        }
-    }
-    const headerSkeleton = (
-        <div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8">
-            <div className="mb-6">
-                <div className="h-8 w-44 rounded-lg animate-pulse bg-bg-tertiary" />
-                <div className="h-4 w-64 rounded animate-pulse mt-2 bg-bg-secondary" />
-            </div>
-            <div className={`flex ${isMobile ? 'flex-wrap' : ''} gap-2`}>
-                {[72, 112, 104, 80, 72].map((w, i) => (
-                    <div key={i} className="h-9 rounded-lg animate-pulse bg-bg-secondary" style={{ width: w }} />
-                ))}
-            </div>
-        </div>
-    )
-    return (
-        <div className="min-h-full bg-gradient-to-br from-bg-secondary to-bg-tertiary">
-            <header
-                className="border-b border-border-light bg-bg-primary shadow-sm"
-                style={GRID_PATTERN_STYLE(accentColor)}
-            >
-                {hideRealContent && headerSkeleton}
-                <div
-                    className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8"
-                    style={hideRealContent ? { display: 'none' } : undefined}
-                >
-                    <div
-                        className={`mb-6${revealControls ? ' animate-reveal-left' : ''}`}
-                        style={revealControls ? { animationDelay: '0ms' } : undefined}
-                    >
-                        <h1 className="text-2xl font-bold md:text-3xl m-0 text-text-primary">Calculators</h1>
-                        <p className="mt-1 text-sm text-text-secondary">
-                            Concrete industry tools and quick-reference calculators
-                        </p>
-                    </div>
-                    <div
-                        className={`flex flex-wrap gap-2${revealControls ? ' animate-reveal-left' : ''}`}
-                        style={revealControls ? { animationDelay: '120ms' } : undefined}
-                    >
-                        {CALCULATOR_TYPES.map((calc) => {
-                            const isActive = selectedCalculator === calc.id
-                            return (
-                                <button
-                                    key={calc.id}
-                                    type="button"
-                                    onClick={() => setSelectedCalculator(calc.id)}
-                                    className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-all md:px-4"
-                                    style={
-                                        isActive
-                                            ? {
-                                                  background: accentColor,
-                                                  boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-                                                  color: '#fff'
-                                              }
-                                            : {
-                                                  backgroundColor: 'var(--bg-primary)',
-                                                  color: 'var(--text-secondary)'
-                                              }
-                                    }
-                                >
-                                    <i className={`fas ${calc.icon} text-xs`} />
-                                    <span>{calc.name}</span>
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
-            </header>
-            <main className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8">{renderCalculator()}</main>
+                )}
+            </main>
         </div>
     )
 }
+
 export default CalculatorView

@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [38.5.48] - 2026-04-25
+
+- Added plant origin switcher to JobMapModal so dispatchers can compare drive times from any plant, not just the assigned one
+- Redesigned CommentModalSection with a compact header, smaller typography, accent-colored submit button, and streamlined comment card layout
+- Refactored IssueModalSection with major reduction in code (~500 lines removed), simplified structure and cleaner styling
+- Redesigned HistoryViewSection with a more compact layout, sortable columns, and improved empty/loading states
+- Added "No reports found" empty state to ReportsView when filters produce zero results
+- Added built-in plant list to PlanScheduleView and passed plants array down to JobMapModal for origin selection
+
 ## [38.5.47] - 2026-04-25
 
 - Removed unused selectedTractor state and its setter from App.js, simplified TractorsView rendering by dropping the onSelectTractor prop

@@ -81,14 +81,17 @@ function ListViewModeSection({
         return `inline-flex items-center gap-1 border-none rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${cursor} ${colors}`
     }
 
-    const wrapperClasses = `mb-5 ${isMobile ? 'mx-1 mt-2' : 'mx-4 lg:mx-6 mt-3'}`
+    // Horizontal scroll lives on the outer wrapper; the inner container sets a
+    // min-width on mobile so the dense column set forces overflow inside the
+    // table area instead of bleeding past the viewport edge.
+    const wrapperClasses = `mb-5 overflow-x-auto ${isMobile ? 'mx-1 mt-2' : 'mx-4 lg:mx-6 mt-3'}`
     const containerStyle = {
         background: 'var(--bg-primary)',
         border: '1px solid var(--border-light)',
         borderRadius: 6,
         overflow: 'hidden'
     }
-    const containerClasses = `w-full overflow-x-auto box-border ${isMobile ? 'min-w-[1100px]' : ''}`
+    const containerClasses = `box-border ${isMobile ? 'min-w-[1100px]' : 'w-full'}`
 
     if (!filteredItems || filteredItems.length === 0) {
         return (

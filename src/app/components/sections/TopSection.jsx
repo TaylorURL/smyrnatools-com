@@ -3,6 +3,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import PlantDropdownModal from '../common/PlantDropdownModal'
+import PlantFilterButton from '../ui/PlantFilterButton'
 
 /** Default column header labels for asset list views. */
 const DEFAULT_LIST_LABELS = ['Plant', 'Truck #', 'Status', 'Operator', 'Cleanliness', 'VIN', 'Verified', 'More']
@@ -190,23 +191,8 @@ const FilterSelect = ({ value, options, onChange, ariaLabel, className = '' }) =
     </select>
 )
 
-/** Plant filter button — same chrome as FilterSelect, opens the modal picker. */
-const PlantFilterButton = ({ displayText, onClick }) => (
-    <button
-        type="button"
-        className="text-[12px] font-medium cursor-pointer rounded py-1.5 px-2 flex items-center gap-1.5"
-        style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-light)',
-            color: 'var(--text-primary)'
-        }}
-        onClick={onClick}
-        aria-label="Filter by plant"
-    >
-        <span className="truncate max-w-[200px]">{displayText}</span>
-        <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
-    </button>
-)
+// Trigger button extracted to `app/components/ui/PlantFilterButton` so all
+// surfaces (TopSection, Reports, Plan tabs) render the exact same chip.
 
 /** Reset filters button — square, flat. */
 const ResetButton = ({ onClick }) => (
