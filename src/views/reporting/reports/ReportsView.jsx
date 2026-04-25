@@ -793,7 +793,7 @@ function ReportsView() {
         if (tab !== null || isLoadingPermissions) return
         if (hasAnyAssigned) return selectTab('all')
         if (hasAnyReviewPermission) return selectTab('review')
-        if (hasOneOffReviewPermission?.qc_strength) return selectTab('quality')
+        if (hasOneOffReviewPermission?.qc_strength || hasQCStrengthPermission) return selectTab('quality')
         if (hasLostLoadsPermission) return selectTab('lost_loads')
     }, [
         tab,
@@ -801,6 +801,7 @@ function ReportsView() {
         hasAnyAssigned,
         hasAnyReviewPermission,
         hasOneOffReviewPermission,
+        hasQCStrengthPermission,
         hasLostLoadsPermission,
         selectTab
     ])
@@ -1002,7 +1003,7 @@ function ReportsView() {
     const pillTabs = [
         ...(hasAnyAssigned ? [{ icon: 'fa-file-alt', key: 'all', label: 'My Reports' }] : []),
         ...(hasAnyReviewPermission ? [{ icon: 'fa-clipboard-check', key: 'review', label: 'Review' }] : []),
-        ...(hasOneOffReviewPermission?.qc_strength
+        ...(hasOneOffReviewPermission?.qc_strength || hasQCStrengthPermission
             ? [{ icon: 'fa-flask', key: 'quality', label: 'Quality Reports' }]
             : []),
         ...(hasLostLoadsPermission ? [{ icon: 'fa-truck', key: 'lost_loads', label: 'Loss Reports' }] : [])
@@ -1158,10 +1159,14 @@ function ReportsView() {
                         transform: translateX(28px);
                     }
                 }
-                /* Pin rail content to its natural width so collapsing clips it
-                   instead of re-wrapping, keeping scrollHeight stable and
-                   preventing the trigger-point from oscillating. */
-                .rv-rail-fixed { width: 320px; }
+                /* On mobile/tablet the rail stacks below the main column and
+                   should fill the viewport. Pin to 320px only at lg+ where the
+                   rail sits beside the content and collapsing must clip cleanly
+                   (so scrollHeight stays stable and the trigger doesn't oscillate). */
+                .rv-rail-fixed { width: 100%; }
+                @media (min-width: 1024px) {
+                    .rv-rail-fixed { width: 320px; }
+                }
             `}</style>
             {loadError && (
                 <div className="flex items-center gap-2 m-3 sm:m-4 p-3 sm:p-4 bg-red-100 text-red-700 rounded-lg text-sm font-medium">

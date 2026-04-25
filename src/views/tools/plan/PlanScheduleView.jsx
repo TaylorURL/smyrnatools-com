@@ -1619,6 +1619,15 @@ function PlanScheduleView({
         return out
     }, [plantAddressByCode])
 
+    const plantOptionsForMap = useMemo(() => {
+        const codes = new Set([...Object.keys(plantAddressByCode || {}), ...Object.keys(plantNameByCode || {})])
+        return Array.from(codes).map((code) => ({
+            address: plantAddressByCode?.[code] || '',
+            code,
+            name: plantNameByCode?.[code] || ''
+        }))
+    }, [plantAddressByCode, plantNameByCode])
+
     const [query, setQuery] = useState('')
     const [plantFilter, setPlantFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
@@ -2545,6 +2554,7 @@ function PlanScheduleView({
                     plantAddress={plantAddressByCode?.[mapOrder?.plantCode] || ''}
                     plantCode={mapOrder?.plantCode}
                     plantName={plantNameByCode?.[mapOrder?.plantCode] || ''}
+                    plants={plantOptionsForMap}
                     travelMinutes={parseHhmmToMinutes(mapOrder?.toJobTime)}
                 />
             )}

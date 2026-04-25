@@ -6,12 +6,45 @@ import { UserService } from '../../../services/UserService'
 import { usePreferences } from '../../context/PreferencesContext'
 import ErrorMessage from '../common/ErrorMessage'
 import LoadingScreen from '../common/LoadingScreen'
-const SEVERITY_COLORS = {
-    High: { accent: '#dc2626', bg: 'rgba(220, 38, 38, 0.1)', icon: 'fa-fire' },
-    Low: { accent: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)', icon: 'fa-leaf' },
-    Medium: { accent: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', icon: 'fa-bolt' }
+
+const SEVERITY_PALETTE = {
+    High: { bg: '#fee2e2', fg: '#b91c1c', icon: 'fa-fire' },
+    Low: { bg: '#dcfce7', fg: '#166534', icon: 'fa-leaf' },
+    Medium: { bg: '#dbeafe', fg: '#1e40af', icon: 'fa-bolt' }
 }
-/** Modal for sending a message about an issue to a regional manager. */
+
+const PILL_BASE =
+    'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider'
+
+const formatDate = (dateString) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now - date
+    const mins = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+    if (mins < 1) return 'Just now'
+    if (mins < 60) return `${mins}m ago`
+    if (hours < 24) return `${hours}h ago`
+    if (days < 7) return `${days}d ago`
+    return date.toLocaleDateString()
+}
+
+const getInitials = (mgr) => {
+    if (!mgr) return '?'
+    const f = mgr.firstName?.[0] || ''
+    const l = mgr.lastName?.[0] || ''
+    return (f + l).toUpperCase() || '?'
+}
+
+const getNameInitials = (name) => {
+    if (!name || name === 'Unknown') return '?'
+    const parts = name.split(' ')
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    return name.slice(0, 2).toUpperCase()
+}
+
 function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClose }) {
     const [managers, setManagers] = useState([])
     const [selectedManager, setSelectedManager] = useState(null)
@@ -23,9 +56,9 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
     const [managerDropdownOpen, setManagerDropdownOpen] = useState(false)
     const dropdownRef = useRef(null)
     const { preferences } = usePreferences()
-    const accentColor = preferences?.accentColor || '#1e3a5f'
+    const accent = preferences?.accentColor || '#1e3a5f'
     const regionCode = preferences?.selectedRegion?.code || ''
-    const sevConfig = SEVERITY_COLORS[issue.severity] || SEVERITY_COLORS.Medium
+    const sevConfig = SEVERITY_PALETTE[issue.severity] || SEVERITY_PALETTE.Medium
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -86,333 +119,164 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
         setSending(false)
     }
 
-    const getInitials = (mgr) => {
-        const f = mgr.firstName?.[0] || ''
-        const l = mgr.lastName?.[0] || ''
-        return (f + l).toUpperCase() || '?'
-    }
-
     return (
         <div
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose()
             }}
-            style={{
-                alignItems: 'center',
-                animation: 'issueFadeIn 0.2s ease',
-                background: 'rgba(15, 23, 42, 0.8)',
-                bottom: 0,
-                display: 'flex',
-                justifyContent: 'center',
-                left: 0,
-                padding: '1rem',
-                position: 'fixed',
-                right: 0,
-                top: 0,
-                zIndex: 2100
-            }}
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4"
+            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                    animation: 'issueSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                    background: 'var(--bg-secondary)',
-                    borderRadius: '20px',
-                    boxShadow: '0 25px 60px rgba(0, 0, 0, 0.4)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    maxHeight: '90vh',
-                    maxWidth: '520px',
-                    overflow: 'hidden',
-                    width: '100%'
-                }}
+                className="flex flex-col max-h-[90vh] max-w-[520px] w-full overflow-hidden rounded"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
             >
-                {/* Header */}
                 <div
-                    style={{
-                        alignItems: 'center',
-                        borderBottom: '1px solid var(--bg-hover)',
-                        display: 'flex',
-                        gap: '0.75rem',
-                        justifyContent: 'space-between',
-                        padding: '1.25rem 1.5rem'
-                    }}
+                    className="flex items-center justify-between px-4 py-3"
+                    style={{ borderBottom: '1px solid var(--border-light)' }}
                 >
-                    <div style={{ alignItems: 'center', display: 'flex', gap: '0.75rem' }}>
+                    <div className="flex items-center gap-2.5 min-w-0">
                         <div
-                            style={{
-                                alignItems: 'center',
-                                background: `${accentColor}20`,
-                                borderRadius: '12px',
-                                display: 'flex',
-                                height: '42px',
-                                justifyContent: 'center',
-                                width: '42px'
-                            }}
+                            className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+                            style={{ background: 'var(--bg-tertiary)', color: accent }}
                         >
-                            <i className="fas fa-paper-plane" style={{ color: accentColor, fontSize: '1rem' }}></i>
+                            <i className="fas fa-paper-plane text-[12px]" />
                         </div>
-                        <div>
-                            <div style={{ color: 'var(--text-primary)', fontSize: '1.125rem', fontWeight: 700 }}>
+                        <div className="min-w-0">
+                            <div
+                                className="text-[10px] font-semibold uppercase tracking-wider"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
                                 Send Message
                             </div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                                Notify a team member about this issue
+                            <div className="text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
+                                Notify a team member
                             </div>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        style={{
-                            alignItems: 'center',
-                            background: 'var(--bg-hover)',
-                            border: 'none',
-                            borderRadius: '10px',
-                            color: 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            fontSize: '0.875rem',
-                            height: '34px',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s',
-                            width: '34px'
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--border-medium)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                        className="w-7 h-7 flex items-center justify-center rounded transition-colors"
+                        style={{ background: 'transparent', color: 'var(--text-secondary)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
-                        <i className="fas fa-times"></i>
+                        <i className="fas fa-times text-[12px]" />
                     </button>
                 </div>
 
-                <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem 1.5rem' }}>
+                <div className="flex-1 overflow-y-auto px-4 py-3">
                     {sent ? (
-                        <div
-                            style={{
-                                alignItems: 'center',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '1rem',
-                                padding: '2rem 0',
-                                textAlign: 'center'
-                            }}
-                        >
+                        <div className="flex flex-col items-center gap-3 py-8 text-center">
                             <div
-                                style={{
-                                    alignItems: 'center',
-                                    background: 'rgba(34, 197, 94, 0.1)',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    height: '64px',
-                                    justifyContent: 'center',
-                                    width: '64px'
-                                }}
+                                className="w-12 h-12 rounded flex items-center justify-center"
+                                style={{ background: '#dcfce7', color: '#166534' }}
                             >
-                                <i className="fas fa-check" style={{ color: '#22c55e', fontSize: '1.5rem' }}></i>
+                                <i className="fas fa-check text-[18px]" />
                             </div>
-                            <div style={{ color: 'var(--text-primary)', fontSize: '1.125rem', fontWeight: 600 }}>
+                            <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                                 Message Sent
                             </div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                            <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                                 {selectedManager?.firstName} {selectedManager?.lastName} will be notified
                             </div>
                             <button
                                 onClick={onClose}
-                                style={{
-                                    background: accentColor,
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    color: 'white',
-                                    cursor: 'pointer',
-                                    fontSize: '0.875rem',
-                                    fontWeight: 600,
-                                    marginTop: '0.5rem',
-                                    padding: '0.625rem 1.5rem',
-                                    transition: 'opacity 0.2s'
-                                }}
+                                className="rounded text-[10.5px] font-semibold uppercase tracking-wider px-3 py-1.5 mt-1"
+                                style={{ background: accent, color: '#fff' }}
                             >
                                 Done
                             </button>
                         </div>
                     ) : (
                         <>
-                            {/* Issue Preview Card */}
                             <div
+                                className="rounded mb-3 overflow-hidden"
                                 style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--bg-hover)',
-                                    borderLeft: `4px solid ${sevConfig.accent}`,
-                                    borderRadius: '12px',
-                                    marginBottom: '1.25rem',
-                                    overflow: 'hidden'
+                                    background: 'var(--bg-secondary)',
+                                    border: '1px solid var(--border-light)',
+                                    borderLeft: `3px solid ${sevConfig.fg}`
                                 }}
                             >
-                                <div style={{ padding: '1rem 1.25rem' }}>
-                                    <div
-                                        style={{
-                                            alignItems: 'center',
-                                            display: 'flex',
-                                            gap: '0.625rem',
-                                            marginBottom: '0.75rem'
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                alignItems: 'center',
-                                                background: 'var(--bg-hover)',
-                                                borderRadius: '8px',
-                                                display: 'flex',
-                                                gap: '0.375rem',
-                                                padding: '0.25rem 0.5rem'
-                                            }}
-                                        >
-                                            <i
-                                                className="fas fa-tag"
-                                                style={{ color: 'var(--text-secondary)', fontSize: '0.625rem' }}
-                                            ></i>
-                                            <span
-                                                style={{
-                                                    color: 'var(--text-secondary)',
-                                                    fontSize: '0.6875rem',
-                                                    fontWeight: 600,
-                                                    letterSpacing: '0.5px',
-                                                    textTransform: 'uppercase'
-                                                }}
-                                            >
-                                                {itemType}
-                                            </span>
-                                        </div>
+                                <div className="px-3 py-2.5">
+                                    <div className="flex items-center gap-2 mb-1.5">
                                         <span
-                                            style={{
-                                                color: 'var(--text-primary)',
-                                                fontSize: '0.9375rem',
-                                                fontWeight: 700
-                                            }}
+                                            className="text-[10px] font-semibold uppercase tracking-wider"
+                                            style={{ color: 'var(--text-secondary)' }}
+                                        >
+                                            {itemType}
+                                        </span>
+                                        <span
+                                            className="text-[12px] font-semibold font-mono tabular-nums"
+                                            style={{ color: 'var(--text-primary)' }}
                                         >
                                             {itemNumber || 'N/A'}
                                         </span>
                                         <span
-                                            style={{
-                                                alignItems: 'center',
-                                                background: sevConfig.bg,
-                                                borderRadius: '6px',
-                                                color: sevConfig.accent,
-                                                display: 'inline-flex',
-                                                fontSize: '0.625rem',
-                                                fontWeight: 700,
-                                                gap: '0.25rem',
-                                                marginLeft: 'auto',
-                                                padding: '0.2rem 0.5rem'
-                                            }}
+                                            className={PILL_BASE + ' ml-auto'}
+                                            style={{ background: sevConfig.bg, color: sevConfig.fg }}
                                         >
-                                            <i className={`fas ${sevConfig.icon}`} style={{ fontSize: '0.5rem' }}></i>
+                                            <i className={`fas ${sevConfig.icon} text-[8px]`} />
                                             {issue.severity}
                                         </span>
                                     </div>
                                     <p
-                                        style={{
-                                            color: 'var(--text-primary)',
-                                            fontSize: '0.875rem',
-                                            lineHeight: 1.6,
-                                            margin: 0,
-                                            whiteSpace: 'pre-wrap'
-                                        }}
+                                        className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap"
+                                        style={{ color: 'var(--text-primary)' }}
                                     >
                                         {issue.issue}
                                     </p>
-                                    <div
-                                        style={{
-                                            color: 'var(--text-secondary)',
-                                            fontSize: '0.75rem',
-                                            marginTop: '0.625rem'
-                                        }}
-                                    >
+                                    <div className="text-[10.5px] mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
                                         Reported by {creatorName}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Manager Selector */}
-                            <div style={{ marginBottom: '1rem' }}>
+                            <div className="mb-3">
                                 <label
-                                    style={{
-                                        color: 'var(--text-secondary)',
-                                        display: 'block',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        letterSpacing: '0.5px',
-                                        marginBottom: '0.5rem',
-                                        textTransform: 'uppercase'
-                                    }}
+                                    className="block text-[10px] font-semibold uppercase tracking-wider mb-1"
+                                    style={{ color: 'var(--text-secondary)' }}
                                 >
                                     Send to
                                 </label>
                                 {loading ? (
                                     <div
+                                        className="rounded px-3 py-2"
                                         style={{
-                                            alignItems: 'center',
-                                            background: 'var(--bg-primary)',
-                                            borderRadius: '12px',
-                                            display: 'flex',
-                                            gap: '0.75rem',
-                                            padding: '0.875rem 1rem'
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)'
                                         }}
                                     >
                                         <LoadingScreen message="Loading team members..." inline />
                                     </div>
                                 ) : (
-                                    <div ref={dropdownRef} style={{ position: 'relative' }}>
+                                    <div ref={dropdownRef} className="relative">
                                         <button
                                             type="button"
                                             onClick={() => setManagerDropdownOpen((prev) => !prev)}
+                                            className="w-full flex items-center gap-2.5 rounded px-3 py-2 text-left text-[12px]"
                                             style={{
-                                                alignItems: 'center',
-                                                background: 'var(--bg-primary)',
-                                                border: managerDropdownOpen
-                                                    ? `2px solid ${accentColor}`
-                                                    : '2px solid transparent',
-                                                borderRadius: '12px',
-                                                boxShadow: managerDropdownOpen ? `0 0 0 3px ${accentColor}20` : 'none',
-                                                color: selectedManager
-                                                    ? 'var(--text-primary)'
-                                                    : 'var(--text-secondary)',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                fontSize: '0.875rem',
-                                                gap: '0.75rem',
-                                                padding: '0.75rem 1rem',
-                                                textAlign: 'left',
-                                                transition: 'all 0.2s',
-                                                width: '100%'
+                                                background: 'var(--bg-secondary)',
+                                                border: `1px solid ${managerDropdownOpen ? accent : 'var(--border-light)'}`,
+                                                color: selectedManager ? 'var(--text-primary)' : 'var(--text-tertiary)'
                                             }}
                                         >
                                             {selectedManager ? (
                                                 <>
                                                     <div
-                                                        style={{
-                                                            alignItems: 'center',
-                                                            background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
-                                                            borderRadius: '8px',
-                                                            color: 'white',
-                                                            display: 'flex',
-                                                            flexShrink: 0,
-                                                            fontSize: '0.6875rem',
-                                                            fontWeight: 700,
-                                                            height: '32px',
-                                                            justifyContent: 'center',
-                                                            width: '32px'
-                                                        }}
+                                                        className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold text-white"
+                                                        style={{ background: accent }}
                                                     >
                                                         {getInitials(selectedManager)}
                                                     </div>
-                                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                                        <div style={{ fontWeight: 600 }}>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-semibold truncate">
                                                             {selectedManager.firstName} {selectedManager.lastName}
                                                         </div>
                                                         <div
-                                                            style={{
-                                                                color: 'var(--text-secondary)',
-                                                                fontSize: '0.75rem'
-                                                            }}
+                                                            className="text-[10.5px] truncate"
+                                                            style={{ color: 'var(--text-secondary)' }}
                                                         >
                                                             {selectedManager.roleName}
                                                             {selectedManager.plantCode
@@ -423,48 +287,33 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                 </>
                                             ) : (
                                                 <>
-                                                    <i
-                                                        className="fas fa-user-plus"
-                                                        style={{ fontSize: '0.875rem' }}
-                                                    ></i>
+                                                    <i className="fas fa-user-plus text-[12px]" />
                                                     <span>Select a recipient...</span>
                                                 </>
                                             )}
                                             <i
-                                                className={`fas fa-chevron-down`}
+                                                className="fas fa-chevron-down text-[9px] ml-auto"
                                                 style={{
                                                     color: 'var(--text-secondary)',
-                                                    fontSize: '0.625rem',
-                                                    marginLeft: 'auto',
                                                     transform: managerDropdownOpen ? 'rotate(180deg)' : 'none',
                                                     transition: 'transform 0.2s'
                                                 }}
-                                            ></i>
+                                            />
                                         </button>
                                         {managerDropdownOpen && (
                                             <div
+                                                className="absolute left-0 right-0 mt-1 rounded overflow-y-auto z-10"
                                                 style={{
                                                     background: 'var(--bg-primary)',
-                                                    border: '1px solid var(--bg-hover)',
-                                                    borderRadius: '12px',
-                                                    boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
-                                                    left: 0,
-                                                    maxHeight: '220px',
-                                                    overflowY: 'auto',
-                                                    position: 'absolute',
-                                                    right: 0,
-                                                    top: 'calc(100% + 6px)',
-                                                    zIndex: 10
+                                                    border: '1px solid var(--border-light)',
+                                                    maxHeight: 220,
+                                                    top: '100%'
                                                 }}
                                             >
                                                 {managers.length === 0 ? (
                                                     <div
-                                                        style={{
-                                                            color: 'var(--text-secondary)',
-                                                            fontSize: '0.8125rem',
-                                                            padding: '1rem',
-                                                            textAlign: 'center'
-                                                        }}
+                                                        className="text-center py-3 text-[11px]"
+                                                        style={{ color: 'var(--text-tertiary)' }}
                                                     >
                                                         No team members found
                                                     </div>
@@ -479,24 +328,17 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                                     setSelectedManager(mgr)
                                                                     setManagerDropdownOpen(false)
                                                                 }}
+                                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
                                                                 style={{
-                                                                    alignItems: 'center',
                                                                     background: isSelected
-                                                                        ? `${accentColor}15`
+                                                                        ? 'var(--bg-tertiary)'
                                                                         : 'transparent',
-                                                                    border: 'none',
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    gap: '0.75rem',
-                                                                    padding: '0.625rem 1rem',
-                                                                    textAlign: 'left',
-                                                                    transition: 'background 0.15s',
-                                                                    width: '100%'
+                                                                    borderBottom: '1px solid var(--border-light)'
                                                                 }}
                                                                 onMouseEnter={(e) => {
                                                                     if (!isSelected)
                                                                         e.currentTarget.style.background =
-                                                                            'var(--bg-hover)'
+                                                                            'var(--bg-secondary)'
                                                                 }}
                                                                 onMouseLeave={(e) => {
                                                                     if (!isSelected)
@@ -504,41 +346,28 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                                 }}
                                                             >
                                                                 <div
+                                                                    className="w-6 h-6 rounded flex items-center justify-center shrink-0 text-[9px] font-bold"
                                                                     style={{
-                                                                        alignItems: 'center',
                                                                         background: isSelected
-                                                                            ? accentColor
-                                                                            : 'var(--bg-hover)',
-                                                                        borderRadius: '8px',
+                                                                            ? accent
+                                                                            : 'var(--bg-tertiary)',
                                                                         color: isSelected
-                                                                            ? 'white'
-                                                                            : 'var(--text-secondary)',
-                                                                        display: 'flex',
-                                                                        flexShrink: 0,
-                                                                        fontSize: '0.625rem',
-                                                                        fontWeight: 700,
-                                                                        height: '30px',
-                                                                        justifyContent: 'center',
-                                                                        width: '30px'
+                                                                            ? '#fff'
+                                                                            : 'var(--text-secondary)'
                                                                     }}
                                                                 >
                                                                     {getInitials(mgr)}
                                                                 </div>
-                                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div className="flex-1 min-w-0">
                                                                     <div
-                                                                        style={{
-                                                                            color: 'var(--text-primary)',
-                                                                            fontSize: '0.8125rem',
-                                                                            fontWeight: 600
-                                                                        }}
+                                                                        className="text-[12px] font-semibold truncate"
+                                                                        style={{ color: 'var(--text-primary)' }}
                                                                     >
                                                                         {mgr.firstName} {mgr.lastName}
                                                                     </div>
                                                                     <div
-                                                                        style={{
-                                                                            color: 'var(--text-secondary)',
-                                                                            fontSize: '0.6875rem'
-                                                                        }}
+                                                                        className="text-[10.5px] truncate"
+                                                                        style={{ color: 'var(--text-secondary)' }}
                                                                     >
                                                                         {mgr.roleName}
                                                                         {mgr.plantCode ? ` · ${mgr.plantCode}` : ''}
@@ -546,12 +375,9 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                                 </div>
                                                                 {isSelected && (
                                                                     <i
-                                                                        className="fas fa-check"
-                                                                        style={{
-                                                                            color: accentColor,
-                                                                            fontSize: '0.75rem'
-                                                                        }}
-                                                                    ></i>
+                                                                        className="fas fa-check text-[10px]"
+                                                                        style={{ color: accent }}
+                                                                    />
                                                                 )}
                                                             </button>
                                                         )
@@ -563,95 +389,52 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                 )}
                             </div>
 
-                            {/* Commentary */}
-                            <div style={{ marginBottom: '1.25rem' }}>
+                            <div className="mb-3">
                                 <label
-                                    style={{
-                                        color: 'var(--text-secondary)',
-                                        display: 'block',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        letterSpacing: '0.5px',
-                                        marginBottom: '0.5rem',
-                                        textTransform: 'uppercase'
-                                    }}
+                                    className="block text-[10px] font-semibold uppercase tracking-wider mb-1"
+                                    style={{ color: 'var(--text-secondary)' }}
                                 >
-                                    Message <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional)</span>
+                                    Message{' '}
+                                    <span className="font-normal normal-case" style={{ color: 'var(--text-tertiary)' }}>
+                                        (optional)
+                                    </span>
                                 </label>
                                 <textarea
                                     value={commentary}
                                     onChange={(e) => setCommentary(e.target.value)}
                                     placeholder="Add context, questions, or instructions..."
                                     rows="3"
+                                    className="w-full rounded outline-none px-3 py-2 text-[12px] resize-vertical"
                                     style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '2px solid transparent',
-                                        borderRadius: '12px',
-                                        color: 'var(--text-primary)',
-                                        fontFamily: 'inherit',
-                                        fontSize: '0.875rem',
-                                        lineHeight: 1.6,
-                                        outline: 'none',
-                                        padding: '0.875rem 1rem',
-                                        resize: 'vertical',
-                                        transition: 'all 0.2s',
-                                        width: '100%'
-                                    }}
-                                    onFocus={(e) => {
-                                        e.currentTarget.style.borderColor = accentColor
-                                        e.currentTarget.style.boxShadow = `0 0 0 3px ${accentColor}20`
-                                    }}
-                                    onBlur={(e) => {
-                                        e.currentTarget.style.borderColor = 'transparent'
-                                        e.currentTarget.style.boxShadow = 'none'
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-light)',
+                                        color: 'var(--text-primary)'
                                     }}
                                 />
                             </div>
 
                             {error && (
                                 <div
-                                    style={{
-                                        background: 'rgba(239, 68, 68, 0.1)',
-                                        borderRadius: '10px',
-                                        color: '#ef4444',
-                                        fontSize: '0.8125rem',
-                                        fontWeight: 500,
-                                        marginBottom: '1rem',
-                                        padding: '0.75rem 1rem'
-                                    }}
+                                    className="rounded px-3 py-2 mb-3 text-[11px] font-semibold"
+                                    style={{ background: '#fee2e2', color: '#b91c1c' }}
                                 >
-                                    <i className="fas fa-exclamation-triangle" style={{ marginRight: '0.5rem' }}></i>
+                                    <i className="fas fa-exclamation-triangle mr-2 text-[10px]" />
                                     {error}
                                 </div>
                             )}
 
-                            {/* Send Button */}
                             <button
                                 onClick={handleSend}
                                 disabled={!selectedManager || sending}
+                                className="w-full rounded text-[11px] font-semibold uppercase tracking-wider py-2 inline-flex items-center justify-center gap-1.5"
                                 style={{
-                                    alignItems: 'center',
-                                    background: !selectedManager || sending ? 'var(--border-medium)' : accentColor,
-                                    border: 'none',
-                                    borderRadius: '12px',
-                                    boxShadow: !selectedManager || sending ? 'none' : `0 4px 14px ${accentColor}40`,
-                                    color: !selectedManager || sending ? 'var(--text-secondary)' : 'white',
-                                    cursor: !selectedManager || sending ? 'not-allowed' : 'pointer',
-                                    display: 'flex',
-                                    fontSize: '0.9375rem',
-                                    fontWeight: 600,
-                                    gap: '0.5rem',
-                                    justifyContent: 'center',
-                                    padding: '0.875rem',
-                                    transition: 'all 0.2s',
-                                    width: '100%'
+                                    background: !selectedManager || sending ? 'var(--bg-tertiary)' : accent,
+                                    color: !selectedManager || sending ? 'var(--text-tertiary)' : '#fff',
+                                    cursor: !selectedManager || sending ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                <i
-                                    className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}
-                                    style={{ fontSize: '0.8125rem' }}
-                                ></i>
-                                {sending ? 'Sending...' : 'Send Message'}
+                                <i className={`fas ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-[10px]`} />
+                                {sending ? 'Sending' : 'Send Message'}
                             </button>
                         </>
                     )}
@@ -660,12 +443,10 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
         </div>
     )
 }
-/**
- * Portal-rendered modal for managing asset issues.
- * Supports creating, resolving, and deleting issues with severity levels.
- * Shows open and resolved issues in tabbed views.
- */
+
 function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
+    const { preferences } = usePreferences()
+    const accent = preferences?.accentColor || '#1e3a5f'
     const [issues, setIssues] = useState([])
     const [newIssue, setNewIssue] = useState('')
     const [severity, setSeverity] = useState('Medium')
@@ -676,6 +457,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
     const [canDelete, setCanDelete] = useState(false)
     const [activeTab, setActiveTab] = useState('open')
     const [messageIssue, setMessageIssue] = useState(null)
+
     useEffect(() => {
         async function checkDeletePermission() {
             try {
@@ -691,9 +473,11 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
         }
         checkDeletePermission()
     }, [])
+
     const sortedIssues = [...issues].sort((a, b) => new Date(b.time_created) - new Date(a.time_created))
     const openIssues = sortedIssues.filter((issue) => !issue.time_completed)
     const resolvedIssues = sortedIssues.filter((issue) => issue.time_completed)
+
     const fetchIssues = useCallback(async () => {
         setIsLoading(true)
         setError(null)
@@ -721,11 +505,11 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
             setIsLoading(false)
         }
     }, [itemId, service])
+
     useEffect(() => {
-        if (itemId) {
-            fetchIssues()
-        }
+        if (itemId) fetchIssues()
     }, [itemId, fetchIssues])
+
     const handleDeleteIssue = async (issueId) => {
         if (!window.confirm('Are you sure you want to delete this issue?')) return
         try {
@@ -735,6 +519,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
             setError('Failed to delete issue. Please try again.')
         }
     }
+
     const handleCompleteIssue = async (issueId) => {
         try {
             await service.completeIssue(issueId)
@@ -743,6 +528,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
             setError('Failed to complete issue. Please try again.')
         }
     }
+
     const handleAddIssue = async (e) => {
         e.preventDefault()
         if (!newIssue.trim()) {
@@ -768,286 +554,114 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
             setIsSubmitting(false)
         }
     }
-    const formatDate = (dateString) => {
-        if (!dateString) return ''
-        const date = new Date(dateString)
-        const now = new Date()
-        const diff = now - date
-        const mins = Math.floor(diff / 60000)
-        const hours = Math.floor(diff / 3600000)
-        const days = Math.floor(diff / 86400000)
-        if (mins < 1) return 'Just now'
-        if (mins < 60) return `${mins}m ago`
-        if (hours < 24) return `${hours}h ago`
-        if (days < 7) return `${days}d ago`
-        return date.toLocaleDateString()
-    }
+
     const getCreatorName = (issue) => {
         if (issue.created_by && userNames[issue.created_by]) return userNames[issue.created_by]
         return 'Unknown'
     }
-    const getInitials = (name) => {
-        if (!name || name === 'Unknown') return '?'
-        const parts = name.split(' ')
-        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-        return name.slice(0, 2).toUpperCase()
-    }
-    const getAvatarGradient = (name) => {
-        const gradients = [
-            'linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)',
-            'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-            'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
-            'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
-            'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-            'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-            'linear-gradient(135deg, #ec4899 0%, #db2777 100%)'
-        ]
-        if (!name) return gradients[0]
-        let hash = 0
-        for (let i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash)
-        }
-        return gradients[Math.abs(hash) % gradients.length]
-    }
-    const getSeverityConfig = (sev) => {
-        const configs = {
-            High: { bg: '#dc2626', color: '#fff', icon: 'fa-fire' },
-            Low: { bg: '#22c55e', color: '#fff', icon: 'fa-leaf' },
-            Medium: { bg: '#3b82f6', color: '#fff', icon: 'fa-bolt' }
-        }
-        return configs[sev] || configs.Medium
-    }
+
     const handleBackdropClick = (e) => {
         if (e.target === e.currentTarget) onClose()
     }
+
     const displayIssues = activeTab === 'open' ? openIssues : resolvedIssues
     if (typeof document === 'undefined' || !document.body) return null
+
+    const TabBtn = ({ id, label, count, icon }) => {
+        const isActive = activeTab === id
+        return (
+            <button
+                onClick={() => setActiveTab(id)}
+                className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
+                style={{
+                    background: isActive ? accent : 'var(--bg-tertiary)',
+                    color: isActive ? '#fff' : 'var(--text-secondary)'
+                }}
+            >
+                <i className={`fas ${icon} text-[10px]`} />
+                {label}
+                {count > 0 && (
+                    <span
+                        className="rounded px-1 font-mono tabular-nums"
+                        style={{
+                            background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--bg-secondary)',
+                            color: isActive ? '#fff' : 'var(--text-secondary)'
+                        }}
+                    >
+                        {count}
+                    </span>
+                )}
+            </button>
+        )
+    }
+
     return ReactDOM.createPortal(
         <>
-            <style>{`
-                @keyframes issueSlideIn {
-                    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
-                }
-                @keyframes issueFadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes issuePulse {
-                    0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.05); }
-                }
-                .issue-card-hover:hover {
-                    transform: translateX(4px);
-                    box-shadow: -4px 0 0 0 var(--text-secondary), 0 4px 20px rgba(0,0,0,0.08);
-                }
-                .issue-card-resolved:hover {
-                    transform: translateX(4px);
-                    box-shadow: -4px 0 0 0 var(--text-secondary), 0 4px 20px rgba(0,0,0,0.08);
-                }
-                @media (max-width: 480px) {
-                    .issue-modal-header { padding: 1rem !important; }
-                    .issue-modal-header-icon { height: 40px !important; width: 40px !important; border-radius: 10px !important; }
-                    .issue-modal-header-icon i { font-size: 1.125rem !important; }
-                    .issue-modal-title { font-size: 1.125rem !important; }
-                    .issue-modal-body { padding: 0.75rem !important; }
-                    .issue-modal-form-inner { padding: 0.75rem !important; }
-                    .issue-severity-row { flex-wrap: wrap !important; }
-                    .issue-severity-btn { padding: 0.375rem 0.5rem !important; font-size: 0.6875rem !important; }
-                }
-            `}</style>
             <div
                 onClick={handleBackdropClick}
-                style={{
-                    alignItems: 'center',
-                    animation: 'issueFadeIn 0.2s ease',
-                    backdropFilter: 'blur(8px)',
-                    background: 'rgba(15, 23, 42, 0.7)',
-                    bottom: 0,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    left: 0,
-                    padding: '1rem',
-                    position: 'fixed',
-                    right: 0,
-                    top: 0,
-                    zIndex: 2000
-                }}
+                className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
+                style={{ background: 'rgba(15, 23, 42, 0.65)' }}
             >
                 <div
                     onClick={(e) => e.stopPropagation()}
-                    style={{
-                        animation: 'issueSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                        background: 'var(--bg-secondary)',
-                        borderRadius: '20px',
-                        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.3)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        maxHeight: '90vh',
-                        maxWidth: '580px',
-                        overflow: 'hidden',
-                        width: '100%'
-                    }}
+                    className="flex flex-col max-h-[90vh] max-w-[580px] w-full overflow-hidden rounded"
+                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                 >
-                    <div
-                        className="issue-modal-header"
-                        style={{
-                            background: 'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-hover) 100%)',
-                            borderBottom: '1px solid var(--bg-hover)',
-                            padding: '1.5rem',
-                            position: 'relative'
-                        }}
-                    >
-                        <button
-                            onClick={onClose}
-                            style={{
-                                alignItems: 'center',
-                                background: 'var(--bg-hover)',
-                                border: 'none',
-                                borderRadius: '10px',
-                                color: 'var(--text-secondary)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                fontSize: '1rem',
-                                height: '36px',
-                                justifyContent: 'center',
-                                position: 'absolute',
-                                right: '1rem',
-                                top: '1rem',
-                                transition: 'all 0.2s',
-                                width: '36px'
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--border-medium)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
-                        >
-                            <i className="fas fa-times"></i>
-                        </button>
-                        <div style={{ alignItems: 'center', display: 'flex', gap: '0.75rem' }}>
-                            <div
-                                className="issue-modal-header-icon"
-                                style={{
-                                    alignItems: 'center',
-                                    background: 'var(--bg-hover)',
-                                    borderRadius: '14px',
-                                    display: 'flex',
-                                    height: '52px',
-                                    justifyContent: 'center',
-                                    width: '52px'
-                                }}
+                    <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div
+                                    className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                                >
+                                    <i className="fas fa-exclamation-circle text-[12px]" />
+                                </div>
+                                <div className="min-w-0">
+                                    <div
+                                        className="text-[10px] font-semibold uppercase tracking-wider"
+                                        style={{ color: 'var(--text-secondary)' }}
+                                    >
+                                        {itemType} · Issues
+                                    </div>
+                                    <div
+                                        className="text-[14px] font-semibold font-mono tabular-nums truncate"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        {itemNumber || itemId}
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={onClose}
+                                className="w-7 h-7 flex items-center justify-center rounded transition-colors"
+                                style={{ background: 'transparent', color: 'var(--text-secondary)' }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                             >
-                                <i
-                                    className="fas fa-exclamation-circle"
-                                    style={{ color: 'var(--text-secondary)', fontSize: '1.5rem' }}
-                                ></i>
-                            </div>
-                            <div>
-                                <div
-                                    style={{
-                                        color: 'var(--text-secondary)',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        letterSpacing: '1px',
-                                        marginBottom: '2px',
-                                        textTransform: 'uppercase'
-                                    }}
-                                >
-                                    {itemType}
-                                </div>
-                                <div
-                                    className="issue-modal-title"
-                                    style={{ color: 'var(--text-primary)', fontSize: '1.375rem', fontWeight: 700 }}
-                                >
-                                    {itemNumber || itemId}
-                                </div>
-                            </div>
+                                <i className="fas fa-times text-[12px]" />
+                            </button>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
-                            <button
-                                onClick={() => setActiveTab('open')}
-                                style={{
-                                    alignItems: 'center',
-                                    background: activeTab === 'open' ? 'var(--text-primary)' : 'var(--bg-hover)',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    color: activeTab === 'open' ? 'var(--bg-primary)' : 'var(--text-secondary)',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    fontSize: '0.8125rem',
-                                    fontWeight: 600,
-                                    gap: '0.5rem',
-                                    padding: '0.625rem 1rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <i className="fas fa-clock"></i>
-                                Open
-                                {openIssues.length > 0 && (
-                                    <span
-                                        style={{
-                                            background:
-                                                activeTab === 'open' ? 'rgba(255,255,255,0.2)' : 'var(--border-medium)',
-                                            borderRadius: '6px',
-                                            color: activeTab === 'open' ? 'white' : 'var(--text-secondary)',
-                                            fontSize: '0.6875rem',
-                                            fontWeight: 700,
-                                            padding: '2px 6px'
-                                        }}
-                                    >
-                                        {openIssues.length}
-                                    </span>
-                                )}
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('resolved')}
-                                style={{
-                                    alignItems: 'center',
-                                    background: activeTab === 'resolved' ? 'var(--text-primary)' : 'var(--bg-hover)',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    color: activeTab === 'resolved' ? 'var(--bg-primary)' : 'var(--text-secondary)',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    fontSize: '0.8125rem',
-                                    fontWeight: 600,
-                                    gap: '0.5rem',
-                                    padding: '0.625rem 1rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <i className="fas fa-check-circle"></i>
-                                Resolved
-                                {resolvedIssues.length > 0 && (
-                                    <span
-                                        style={{
-                                            background:
-                                                activeTab === 'resolved'
-                                                    ? 'rgba(255,255,255,0.2)'
-                                                    : 'var(--border-medium)',
-                                            borderRadius: '6px',
-                                            color: activeTab === 'resolved' ? 'white' : 'var(--text-secondary)',
-                                            fontSize: '0.6875rem',
-                                            fontWeight: 700,
-                                            padding: '2px 6px'
-                                        }}
-                                    >
-                                        {resolvedIssues.length}
-                                    </span>
-                                )}
-                            </button>
+                        <div className="flex gap-1.5 mt-2.5">
+                            <TabBtn id="open" label="Open" count={openIssues.length} icon="fa-clock" />
+                            <TabBtn
+                                id="resolved"
+                                label="Resolved"
+                                count={resolvedIssues.length}
+                                icon="fa-check-circle"
+                            />
                         </div>
                     </div>
-                    <div className="issue-modal-body" style={{ flex: 1, overflowY: 'auto', padding: '1.25rem' }}>
+
+                    <div className="flex-1 overflow-y-auto px-4 py-3">
                         <ErrorMessage message={error} onDismiss={() => setError(null)} />
+
                         {activeTab === 'open' && (
-                            <form onSubmit={handleAddIssue} style={{ marginBottom: '1.25rem' }}>
+                            <form onSubmit={handleAddIssue} className="mb-3">
                                 <div
-                                    className="issue-modal-form-inner"
+                                    className="rounded p-2.5"
                                     style={{
-                                        background: 'var(--bg-primary)',
-                                        borderRadius: '14px',
-                                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                                        padding: '1rem'
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-light)'
                                     }}
                                 >
                                     <textarea
@@ -1056,74 +670,30 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                                         placeholder="What's the issue?"
                                         disabled={isSubmitting}
                                         rows="2"
+                                        className="w-full rounded outline-none p-2 resize-none text-[12px]"
                                         style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '2px solid transparent',
-                                            borderRadius: '10px',
-                                            color: 'var(--text-primary)',
-                                            fontFamily: 'inherit',
-                                            fontSize: '0.9375rem',
-                                            outline: 'none',
-                                            padding: '0.875rem',
-                                            resize: 'none',
-                                            transition: 'all 0.2s',
-                                            width: '100%'
-                                        }}
-                                        onFocus={(e) => {
-                                            e.currentTarget.style.borderColor = '#dc2626'
-                                            e.currentTarget.style.background = 'var(--bg-primary)'
-                                        }}
-                                        onBlur={(e) => {
-                                            e.currentTarget.style.borderColor = 'transparent'
-                                            e.currentTarget.style.background = 'var(--bg-secondary)'
+                                            background: 'var(--bg-primary)',
+                                            border: '1px solid var(--border-light)',
+                                            color: 'var(--text-primary)'
                                         }}
                                     />
-                                    <div
-                                        className="issue-severity-row"
-                                        style={{
-                                            alignItems: 'center',
-                                            display: 'flex',
-                                            gap: '0.75rem',
-                                            justifyContent: 'space-between',
-                                            marginTop: '0.75rem'
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                alignItems: 'center',
-                                                display: 'flex',
-                                                flexWrap: 'wrap',
-                                                gap: '0.375rem'
-                                            }}
-                                        >
+                                    <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
                                             {['Low', 'Medium', 'High'].map((sev) => {
-                                                const config = getSeverityConfig(sev)
+                                                const config = SEVERITY_PALETTE[sev]
                                                 const isActive = severity === sev
                                                 return (
                                                     <button
                                                         key={sev}
                                                         type="button"
-                                                        className="issue-severity-btn"
                                                         onClick={() => setSeverity(sev)}
+                                                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
                                                         style={{
-                                                            alignItems: 'center',
                                                             background: isActive ? config.bg : 'var(--bg-tertiary)',
-                                                            border: 'none',
-                                                            borderRadius: '8px',
-                                                            color: isActive ? config.color : 'var(--text-secondary)',
-                                                            cursor: 'pointer',
-                                                            display: 'flex',
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: 600,
-                                                            gap: '0.25rem',
-                                                            padding: '0.5rem 0.75rem',
-                                                            transition: 'all 0.15s'
+                                                            color: isActive ? config.fg : 'var(--text-secondary)'
                                                         }}
                                                     >
-                                                        <i
-                                                            className={`fas ${config.icon}`}
-                                                            style={{ fontSize: '0.625rem' }}
-                                                        ></i>
+                                                        <i className={`fas ${config.icon} text-[9px]`} />
                                                         {sev}
                                                     </button>
                                                 )
@@ -1132,292 +702,169 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                                         <button
                                             type="submit"
                                             disabled={isSubmitting || !newIssue.trim()}
+                                            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
                                             style={{
-                                                alignItems: 'center',
                                                 background:
-                                                    isSubmitting || !newIssue.trim()
-                                                        ? 'var(--border-medium)'
-                                                        : 'linear-gradient(135deg, var(--accent), #0f172a)',
-                                                border: 'none',
-                                                borderRadius: '10px',
-                                                boxShadow:
-                                                    isSubmitting || !newIssue.trim()
-                                                        ? 'none'
-                                                        : '0 4px 12px rgba(30, 58, 95, 0.3)',
-                                                color: 'white',
-                                                cursor: isSubmitting || !newIssue.trim() ? 'not-allowed' : 'pointer',
-                                                display: 'flex',
-                                                fontSize: '0.8125rem',
-                                                fontWeight: 600,
-                                                gap: '0.375rem',
-                                                padding: '0.625rem 1.25rem',
-                                                transition: 'all 0.2s'
+                                                    isSubmitting || !newIssue.trim() ? 'var(--bg-tertiary)' : accent,
+                                                color:
+                                                    isSubmitting || !newIssue.trim() ? 'var(--text-tertiary)' : '#fff',
+                                                cursor: isSubmitting || !newIssue.trim() ? 'not-allowed' : 'pointer'
                                             }}
                                         >
-                                            <i className="fas fa-paper-plane" style={{ fontSize: '0.75rem' }}></i>
-                                            {isSubmitting ? 'Submitting...' : 'Submit'}
+                                            <i className="fas fa-paper-plane text-[10px]" />
+                                            {isSubmitting ? 'Submitting' : 'Submit'}
                                         </button>
                                     </div>
                                 </div>
                             </form>
                         )}
+
                         {isLoading ? (
-                            <div
-                                style={{
-                                    alignItems: 'center',
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    padding: '3rem'
-                                }}
-                            >
+                            <div className="flex items-center justify-center py-8">
                                 <LoadingScreen message="Loading issues..." inline={true} />
                             </div>
                         ) : displayIssues.length === 0 ? (
                             <div
-                                style={{
-                                    alignItems: 'center',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    padding: '3rem 1rem',
-                                    textAlign: 'center'
-                                }}
+                                className="flex flex-col items-center py-8 px-4 text-center"
+                                style={{ color: 'var(--text-tertiary)' }}
                             >
-                                <div
-                                    style={{
-                                        alignItems: 'center',
-                                        background: activeTab === 'open' ? '#dbeafe' : '#dcfce7',
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        height: '64px',
-                                        justifyContent: 'center',
-                                        marginBottom: '1rem',
-                                        width: '64px'
-                                    }}
-                                >
-                                    <i
-                                        className={`fas ${activeTab === 'open' ? 'fa-clipboard-check' : 'fa-trophy'}`}
-                                        style={{
-                                            color: activeTab === 'open' ? 'var(--accent)' : '#22c55e',
-                                            fontSize: '1.5rem'
-                                        }}
-                                    ></i>
-                                </div>
-                                <p
-                                    style={{
-                                        color: 'var(--text-secondary)',
-                                        fontSize: '0.9375rem',
-                                        fontWeight: 500,
-                                        margin: 0
-                                    }}
-                                >
+                                <i
+                                    className={`fas ${activeTab === 'open' ? 'fa-clipboard-check' : 'fa-trophy'} text-2xl mb-2`}
+                                />
+                                <p className="text-[12px] m-0 font-semibold" style={{ color: 'var(--text-secondary)' }}>
                                     {activeTab === 'open' ? 'No open issues' : 'No resolved issues yet'}
                                 </p>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                            <div
+                                className="rounded overflow-hidden"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    border: '1px solid var(--border-light)'
+                                }}
+                            >
                                 {displayIssues.map((issue) => {
-                                    const sevConfig = getSeverityConfig(issue.severity)
+                                    const sevConfig = SEVERITY_PALETTE[issue.severity] || SEVERITY_PALETTE.Medium
                                     const isResolved = !!issue.time_completed
                                     const creatorName = getCreatorName(issue)
-                                    const avatarGradient = getAvatarGradient(creatorName)
                                     return (
                                         <div
                                             key={issue.id}
-                                            className={isResolved ? 'issue-card-resolved' : 'issue-card-hover'}
+                                            className="flex items-start gap-2.5 px-3 py-2.5"
                                             style={{
-                                                background: 'var(--bg-primary)',
-                                                borderRadius: '12px',
-                                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                                                opacity: isResolved ? 0.75 : 1,
-                                                padding: '1rem',
-                                                transition: 'all 0.2s ease'
+                                                borderBottom: '1px solid var(--border-light)',
+                                                opacity: isResolved ? 0.7 : 1
                                             }}
                                         >
-                                            <div style={{ alignItems: 'flex-start', display: 'flex', gap: '0.75rem' }}>
-                                                <div
-                                                    style={{
-                                                        alignItems: 'center',
-                                                        background: avatarGradient,
-                                                        border: '2px solid rgba(255, 255, 255, 0.2)',
-                                                        borderRadius: '50%',
-                                                        boxShadow: '0 2px 8px rgba(30, 58, 95, 0.25)',
-                                                        color: 'white',
-                                                        display: 'flex',
-                                                        flexShrink: 0,
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 700,
-                                                        height: '36px',
-                                                        justifyContent: 'center',
-                                                        width: '36px'
-                                                    }}
+                                            <div
+                                                className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold"
+                                                style={{
+                                                    background: 'var(--bg-tertiary)',
+                                                    color: 'var(--text-secondary)'
+                                                }}
+                                            >
+                                                {getNameInitials(creatorName)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                                    <span
+                                                        className="text-[12px] font-semibold"
+                                                        style={{ color: 'var(--text-primary)' }}
+                                                    >
+                                                        {creatorName}
+                                                    </span>
+                                                    <span
+                                                        className={PILL_BASE}
+                                                        style={{ background: sevConfig.bg, color: sevConfig.fg }}
+                                                    >
+                                                        <i className={`fas ${sevConfig.icon} text-[8px]`} />
+                                                        {issue.severity}
+                                                    </span>
+                                                    <span
+                                                        className="text-[10.5px] font-mono tabular-nums"
+                                                        style={{ color: 'var(--text-tertiary)' }}
+                                                    >
+                                                        {formatDate(issue.time_created)}
+                                                    </span>
+                                                </div>
+                                                <p
+                                                    className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap break-words"
+                                                    style={{ color: 'var(--text-secondary)' }}
                                                 >
-                                                    {getInitials(creatorName)}
-                                                </div>
-                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    {issue.issue}
+                                                </p>
+                                                {isResolved && (
                                                     <div
-                                                        style={{
-                                                            alignItems: 'center',
-                                                            display: 'flex',
-                                                            gap: '0.5rem',
-                                                            marginBottom: '0.375rem'
-                                                        }}
+                                                        className="flex items-center gap-1 mt-1 text-[10.5px] font-semibold"
+                                                        style={{ color: '#166534' }}
                                                     >
-                                                        <span
-                                                            style={{
-                                                                color: 'var(--text-primary)',
-                                                                fontSize: '0.875rem',
-                                                                fontWeight: 600
-                                                            }}
-                                                        >
-                                                            {creatorName}
-                                                        </span>
-                                                        <span
-                                                            style={{
-                                                                alignItems: 'center',
-                                                                background: sevConfig.bg,
-                                                                borderRadius: '6px',
-                                                                color: 'white',
-                                                                display: 'inline-flex',
-                                                                fontSize: '0.625rem',
-                                                                fontWeight: 600,
-                                                                gap: '0.25rem',
-                                                                padding: '0.125rem 0.375rem'
-                                                            }}
-                                                        >
-                                                            <i
-                                                                className={`fas ${sevConfig.icon}`}
-                                                                style={{ fontSize: '0.5rem' }}
-                                                            ></i>
-                                                            {issue.severity}
-                                                        </span>
-                                                        <span
-                                                            style={{
-                                                                color: 'var(--text-secondary)',
-                                                                fontSize: '0.75rem'
-                                                            }}
-                                                        >
-                                                            {formatDate(issue.time_created)}
-                                                        </span>
+                                                        <i className="fas fa-check text-[9px]" />
+                                                        Resolved {formatDate(issue.time_completed)}
                                                     </div>
-                                                    <p
-                                                        style={{
-                                                            color: 'var(--text-secondary)',
-                                                            fontSize: '0.9375rem',
-                                                            lineHeight: 1.5,
-                                                            margin: 0,
-                                                            whiteSpace: 'pre-wrap',
-                                                            wordBreak: 'break-word'
-                                                        }}
-                                                    >
-                                                        {issue.issue}
-                                                    </p>
-                                                    {isResolved && (
-                                                        <div
-                                                            style={{
-                                                                alignItems: 'center',
-                                                                color: '#22c55e',
-                                                                display: 'flex',
-                                                                fontSize: '0.75rem',
-                                                                gap: '0.25rem',
-                                                                marginTop: '0.5rem'
-                                                            }}
-                                                        >
-                                                            <i className="fas fa-check"></i>
-                                                            Resolved {formatDate(issue.time_completed)}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div style={{ display: 'flex', flexShrink: 0, gap: '0.375rem' }}>
-                                                    {!isResolved && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => handleCompleteIssue(issue.id)}
-                                                                title="Mark resolved"
-                                                                style={{
-                                                                    alignItems: 'center',
-                                                                    background: 'var(--bg-hover)',
-                                                                    border: 'none',
-                                                                    borderRadius: '8px',
-                                                                    color: '#22c55e',
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    fontSize: '0.8125rem',
-                                                                    height: '32px',
-                                                                    justifyContent: 'center',
-                                                                    transition: 'all 0.15s',
-                                                                    width: '32px'
-                                                                }}
-                                                                onMouseEnter={(e) =>
-                                                                    (e.currentTarget.style.background =
-                                                                        'var(--border-medium)')
-                                                                }
-                                                                onMouseLeave={(e) =>
-                                                                    (e.currentTarget.style.background =
-                                                                        'var(--bg-hover)')
-                                                                }
-                                                            >
-                                                                <i className="fas fa-check"></i>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setMessageIssue(issue)}
-                                                                title="Send message about this issue"
-                                                                style={{
-                                                                    alignItems: 'center',
-                                                                    background: 'var(--bg-hover)',
-                                                                    border: 'none',
-                                                                    borderRadius: '8px',
-                                                                    color: 'var(--accent, #3b82f6)',
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    fontSize: '0.75rem',
-                                                                    height: '32px',
-                                                                    justifyContent: 'center',
-                                                                    transition: 'all 0.15s',
-                                                                    width: '32px'
-                                                                }}
-                                                                onMouseEnter={(e) =>
-                                                                    (e.currentTarget.style.background =
-                                                                        'var(--border-medium)')
-                                                                }
-                                                                onMouseLeave={(e) =>
-                                                                    (e.currentTarget.style.background =
-                                                                        'var(--bg-hover)')
-                                                                }
-                                                            >
-                                                                <i className="fas fa-paper-plane"></i>
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    {canDelete && (
+                                                )}
+                                            </div>
+                                            <div className="flex shrink-0 gap-1">
+                                                {!isResolved && (
+                                                    <>
                                                         <button
-                                                            onClick={() => handleDeleteIssue(issue.id)}
-                                                            title="Delete"
+                                                            onClick={() => handleCompleteIssue(issue.id)}
+                                                            title="Mark resolved"
+                                                            className="w-6 h-6 flex items-center justify-center rounded transition-colors"
                                                             style={{
-                                                                alignItems: 'center',
-                                                                background: 'var(--bg-hover)',
-                                                                border: 'none',
-                                                                borderRadius: '8px',
-                                                                color: '#ef4444',
-                                                                cursor: 'pointer',
-                                                                display: 'flex',
-                                                                fontSize: '0.75rem',
-                                                                height: '32px',
-                                                                justifyContent: 'center',
-                                                                transition: 'all 0.15s',
-                                                                width: '32px'
+                                                                background: 'transparent',
+                                                                color: '#22c55e'
                                                             }}
                                                             onMouseEnter={(e) =>
                                                                 (e.currentTarget.style.background =
-                                                                    'var(--border-medium)')
+                                                                    'var(--bg-tertiary)')
                                                             }
                                                             onMouseLeave={(e) =>
-                                                                (e.currentTarget.style.background = 'var(--bg-hover)')
+                                                                (e.currentTarget.style.background = 'transparent')
                                                             }
                                                         >
-                                                            <i className="fas fa-trash"></i>
+                                                            <i className="fas fa-check text-[10px]" />
                                                         </button>
-                                                    )}
-                                                </div>
+                                                        <button
+                                                            onClick={() => setMessageIssue(issue)}
+                                                            title="Send message"
+                                                            className="w-6 h-6 flex items-center justify-center rounded transition-colors"
+                                                            style={{
+                                                                background: 'transparent',
+                                                                color: accent
+                                                            }}
+                                                            onMouseEnter={(e) =>
+                                                                (e.currentTarget.style.background =
+                                                                    'var(--bg-tertiary)')
+                                                            }
+                                                            onMouseLeave={(e) =>
+                                                                (e.currentTarget.style.background = 'transparent')
+                                                            }
+                                                        >
+                                                            <i className="fas fa-paper-plane text-[10px]" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {canDelete && (
+                                                    <button
+                                                        onClick={() => handleDeleteIssue(issue.id)}
+                                                        title="Delete"
+                                                        className="w-6 h-6 flex items-center justify-center rounded transition-colors"
+                                                        style={{
+                                                            background: 'transparent',
+                                                            color: 'var(--text-tertiary)'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = 'var(--bg-tertiary)'
+                                                            e.currentTarget.style.color = '#dc2626'
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'transparent'
+                                                            e.currentTarget.style.color = 'var(--text-tertiary)'
+                                                        }}
+                                                    >
+                                                        <i className="fas fa-trash text-[10px]" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     )
@@ -1440,4 +887,5 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
         document.body
     )
 }
+
 export default IssueModalSection

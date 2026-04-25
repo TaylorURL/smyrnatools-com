@@ -192,53 +192,89 @@ function HistoryViewSection({ item, type, onClose }) {
                 </div>
             )
         }
+        const StatCell = ({ value, label }) => (
+            <div className="px-3 py-2.5 flex flex-col gap-0.5" style={{ borderRight: '1px solid var(--border-light)' }}>
+                <span
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
+                    {label}
+                </span>
+                <span
+                    className="text-[18px] font-semibold leading-tight font-mono tabular-nums"
+                    style={{ color: 'var(--text-primary)' }}
+                >
+                    {value}
+                </span>
+            </div>
+        )
         return (
-            <div className="space-y-4 animate-[fadeSlideIn_0.3s_ease-out]">
-                <div className="bg-slate-50 border border-border-light rounded-xl p-5">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                            <i className="fas fa-robot text-lg text-accent" />
+            <div className="flex flex-col gap-3">
+                <div
+                    className="rounded p-3"
+                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                >
+                    <div className="flex items-center gap-2 mb-2">
+                        <div
+                            className="w-7 h-7 rounded flex items-center justify-center"
+                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                        >
+                            <i className="fas fa-robot text-[12px]" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-base m-0 text-slate-800">Analysis</h3>
-                            <p className="text-xs text-slate-400 m-0">Based on {history.length} history entries</p>
+                            <div
+                                className="text-[10px] font-semibold uppercase tracking-wider"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
+                                Analysis · {history.length} entries
+                            </div>
                         </div>
                     </div>
-                    <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">
+                    <div
+                        className="text-[12px] leading-relaxed whitespace-pre-wrap"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
                         {aiDisplayText}
                         {!isTypingComplete && (
-                            <span className="inline-block w-0.5 h-4 bg-accent/50 ml-0.5 animate-pulse align-text-bottom" />
+                            <span
+                                className="inline-block w-0.5 h-3 ml-0.5 animate-pulse align-text-bottom"
+                                style={{ background: 'var(--text-tertiary)' }}
+                            />
                         )}
                     </div>
                 </div>
                 {isTypingComplete && (
-                    <div className="grid grid-cols-2 gap-3 animate-[fadeSlideIn_0.3s_ease-out]">
-                        <div className="bg-white border border-border-light rounded-lg p-3 text-center">
-                            <div className="text-2xl font-bold text-accent">{history.length}</div>
-                            <div className="text-xs text-slate-500">Total Changes</div>
-                        </div>
-                        <div className="bg-white border border-border-light rounded-lg p-3 text-center">
-                            <div className="text-2xl font-bold text-accent">{statusData.length}</div>
-                            <div className="text-xs text-slate-500">Status Changes</div>
-                        </div>
+                    <div
+                        className="grid rounded overflow-hidden"
+                        style={{
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-light)',
+                            gridTemplateColumns: ASSET_TYPES_WITH_OPERATORS.includes(type)
+                                ? 'repeat(4, minmax(0, 1fr))'
+                                : 'repeat(3, minmax(0, 1fr))'
+                        }}
+                    >
+                        <StatCell value={history.length} label="Total Changes" />
+                        <StatCell value={statusData.length} label="Status Changes" />
                         {ASSET_TYPES_WITH_OPERATORS.includes(type) && (
-                            <div className="bg-white border border-border-light rounded-lg p-3 text-center">
-                                <div className="text-2xl font-bold text-accent">{operatorData.length}</div>
-                                <div className="text-xs text-slate-500">Operator Changes</div>
-                            </div>
+                            <StatCell value={operatorData.length} label="Operator Changes" />
                         )}
-                        <div className="bg-white border border-border-light rounded-lg p-3 text-center">
-                            <div className="text-2xl font-bold text-accent">{issues.length}</div>
-                            <div className="text-xs text-slate-500">Total Issues</div>
-                        </div>
+                        <StatCell value={issues.length} label="Total Issues" />
                     </div>
                 )}
                 {isTypingComplete && (
                     <button
                         onClick={handleRegenerateAISummary}
-                        className="w-full py-2.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 animate-[fadeSlideIn_0.3s_ease-out]"
+                        className="w-full py-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider inline-flex items-center justify-center gap-1.5 transition-colors"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-primary)'
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-secondary)')}
                     >
-                        <i className="fas fa-sync-alt text-xs" />
+                        <i className="fas fa-sync-alt text-[10px]" />
                         Regenerate Analysis
                     </button>
                 )}
@@ -1301,26 +1337,57 @@ function HistoryViewSection({ item, type, onClose }) {
     ]
     if (typeof document === 'undefined' || !document.body) return null
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-4">
-            <div className="bg-white rounded shadow-2xl max-w-[900px] w-full max-h-[85vh] flex flex-col border border-border-light">
-                <div className="bg-slate-50 flex justify-between items-center px-6 py-5 border-b border-border-light rounded-t-2xl">
-                    <div className="flex items-center gap-3">
-                        <i className="fas fa-history text-xl text-accent" />
-                        <div>
-                            <h2 className="text-lg font-bold text-slate-800 m-0">{itemName}</h2>
-                            <span className="text-xs text-slate-500 font-medium uppercase tracking-wide">
+        <div
+            className="fixed inset-0 flex items-center justify-center z-[2000] p-4"
+            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+        >
+            <div
+                className="flex flex-col max-w-[900px] w-full max-h-[85vh] rounded overflow-hidden"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+            >
+                <div
+                    className="flex justify-between items-center px-4 py-3"
+                    style={{ borderBottom: '1px solid var(--border-light)' }}
+                >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                            className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                        >
+                            <i className="fas fa-history text-[12px]" />
+                        </div>
+                        <div className="min-w-0">
+                            <div
+                                className="text-[10px] font-semibold uppercase tracking-wider"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
                                 Change History
-                            </span>
+                            </div>
+                            <h2
+                                className="text-[14px] font-semibold m-0 truncate"
+                                style={{ color: 'var(--text-primary)' }}
+                            >
+                                {itemName}
+                            </h2>
                         </div>
                     </div>
                     <button
-                        className="bg-transparent border-none text-xl text-slate-500 cursor-pointer p-2 flex items-center justify-center rounded-md hover:bg-gray-200 hover:text-slate-800 w-8 h-8"
+                        className="w-7 h-7 flex items-center justify-center rounded transition-colors"
+                        style={{ background: 'transparent', color: 'var(--text-secondary)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                         onClick={onClose}
                     >
-                        <i className="fas fa-times" />
+                        <i className="fas fa-times text-[12px]" />
                     </button>
                 </div>
-                <div className="flex gap-2 px-6 py-4 overflow-x-auto border-b border-border-light bg-slate-50 flex-shrink-0">
+                <div
+                    className="flex gap-1.5 px-4 py-2 overflow-x-auto shrink-0"
+                    style={{
+                        background: 'var(--bg-secondary)',
+                        borderBottom: '1px solid var(--border-light)'
+                    }}
+                >
                     {tabs
                         .filter((t) => t.show)
                         .map((tab) => (
@@ -1332,12 +1399,29 @@ function HistoryViewSection({ item, type, onClose }) {
                             />
                         ))}
                 </div>
-                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 bg-white min-h-0">
+                <div
+                    ref={scrollContainerRef}
+                    className="flex-1 overflow-y-auto px-4 py-3 min-h-0"
+                    style={{ background: 'var(--bg-primary)' }}
+                >
                     {renderContent()}
                 </div>
-                <div className="px-6 py-4 border-t border-border-light flex justify-end bg-slate-50 rounded-b-2xl">
+                <div
+                    className="px-4 py-2.5 flex justify-end"
+                    style={{
+                        background: 'var(--bg-secondary)',
+                        borderTop: '1px solid var(--border-light)'
+                    }}
+                >
                     <button
-                        className="px-6 py-3 border border-border-light rounded-lg bg-white text-gray-700 text-sm font-semibold cursor-pointer hover:bg-slate-100 hover:border-slate-300"
+                        className="rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider transition-colors"
+                        style={{
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-primary)'
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-primary)')}
                         onClick={onClose}
                     >
                         Close

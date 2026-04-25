@@ -1,15 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { TrafficService } from '../../../services/TrafficService'
 
-/** Compose a single-line "address, city" string from an order, tolerant of nulls. */
 const composeAddress = (order) =>
     [order?.address, order?.city]
         .map((s) => (s == null ? '' : String(s).trim()))
         .filter(Boolean)
         .join(', ')
 
-/** Format a minute count as a short human label — "45 min", "1h 20m", "2h". */
 const formatMinutesToHm = (mins) => {
     if (!Number.isFinite(mins) || mins <= 0) return null
     const h = Math.floor(mins / 60)
@@ -19,11 +17,7 @@ const formatMinutesToHm = (mins) => {
     return `${h}h ${m}m`
 }
 
-/**
- * Origin/destination label used inside the map modal's route summary strip.
- * Shows the icon + label on top and a primary/secondary description below.
- */
-function RoutePoint({ color, icon, label, primary, sub, warn }) {
+function RoutePoint({ children, color, icon, label, primary, sub, warn }) {
     return (
         <div
             className="rounded-lg px-3 py-2 flex items-start gap-2.5 min-w-0"
@@ -57,19 +51,16 @@ function RoutePoint({ color, icon, label, primary, sub, warn }) {
                         {sub}
                     </div>
                 )}
+                {children}
             </div>
         </div>
     )
 }
 
 /**
- * Full-screen map modal for a single dispatch order. Embeds a Google Maps
- * iframe with a plant → job → plant route (falls back to a single-point map
- * when the plant address is missing), plus a live-traffic summary bar
- * powered by the traffic-service edge function.
- *
- * Shared between PlanView's schedule tab and the dashboard schedule preview
- * so both surfaces open the exact same modal.
+ * Full-screen map modal for a single dispatch order. Defaults to the order's
+ * assigned plant as the route origin, but lets the dispatcher switch to any
+ * other plant via a dropdown to compare drive times.
  */
 export default function JobMapModal({
     accentColor,
@@ -78,14 +69,56 @@ export default function JobMapModal({
     plantAddress,
     plantCode,
     plantName,
+    plants = [],
     travelMinutes
 }) {
     const jobAddress = composeAddress(order)
     const hasJob = !!jobAddress
-    const hasPlant = !!plantAddress
+    const assignedPlantCode = plantCode || order?.plantCode || ''
+
+    const plantOptions = useMemo(() => {
+        const seen = new Map()
+        const push = (code, name, address) => {
+            if (!code) return
+            const key = String(code)
+            if (seen.has(key)) {
+                const existing = seen.get(key)
+                if (!existing.address && address) existing.address = address
+                if (!existing.name && name) existing.name = name
+                return
+            }
+            seen.set(key, { address: address || '', code: key, name: name || '' })
+        }
+        if (assignedPlantCode) push(assignedPlantCode, plantName, plantAddress)
+        plants.forEach((p) => push(p?.code, p?.name, p?.address))
+        return Array.from(seen.values())
+            .filter((p) => p.address)
+            .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }))
+    }, [assignedPlantCode, plantAddress, plantName, plants])
+
+    const [selectedCode, setSelectedCode] = useState(assignedPlantCode)
+    useEffect(() => {
+        setSelectedCode(assignedPlantCode)
+    }, [assignedPlantCode])
+
+    const selected = useMemo(() => {
+        const fromOptions = plantOptions.find((p) => p.code === selectedCode)
+        if (fromOptions) return fromOptions
+        if (selectedCode === assignedPlantCode) {
+            return { address: plantAddress || '', code: assignedPlantCode, name: plantName || '' }
+        }
+        return { address: '', code: selectedCode, name: '' }
+    }, [assignedPlantCode, plantAddress, plantName, plantOptions, selectedCode])
+
+    const isAssignedPlant = selected.code === assignedPlantCode
+    const originAddress = selected.address
+    const originCode = selected.code
+    const originName = selected.name
+    const hasPlant = !!originAddress
     const canRoute = hasJob && hasPlant
+
     const jobQuery = encodeURIComponent(jobAddress || order?.customer || '')
-    const plantQuery = hasPlant ? encodeURIComponent(plantAddress) : null
+    const plantQuery = hasPlant ? encodeURIComponent(originAddress) : null
     const mapSrc = canRoute
         ? `https://www.google.com/maps?saddr=${plantQuery}&daddr=${jobQuery}+to:${plantQuery}&output=embed`
         : `https://www.google.com/maps?q=${jobQuery}&t=&z=14&ie=UTF8&iwloc=&output=embed`
@@ -106,32 +139,29 @@ export default function JobMapModal({
         }
     }, [onClose])
 
-    const dispatchMinutes = Number.isFinite(travelMinutes) ? travelMinutes : null
+    const dispatchMinutes = isAssignedPlant && Number.isFinite(travelMinutes) ? travelMinutes : null
 
-    const [live, setLive] = useState({ status: 'idle', data: null })
+    const [live, setLive] = useState({ data: null, status: 'idle' })
     useEffect(() => {
         if (!canRoute) {
-            setLive({ status: 'idle', data: null })
+            setLive({ data: null, status: 'idle' })
             return undefined
         }
         let cancelled = false
-        setLive({ status: 'loading', data: null })
-        TrafficService.fetchDistance(plantAddress, jobAddress).then((result) => {
+        setLive({ data: null, status: 'loading' })
+        TrafficService.fetchDistance(originAddress, jobAddress).then((result) => {
             if (cancelled) return
-            if (!result) {
-                setLive({ status: 'error', data: null })
-                return
-            }
+            if (!result) return setLive({ data: null, status: 'error' })
             if (result.error) {
-                setLive({ status: result.error === 'not_configured' ? 'not_configured' : 'error', data: null })
+                setLive({ data: null, status: result.error === 'not_configured' ? 'not_configured' : 'error' })
                 return
             }
-            setLive({ status: 'ok', data: result })
+            setLive({ data: result, status: 'ok' })
         })
         return () => {
             cancelled = true
         }
-    }, [canRoute, plantAddress, jobAddress])
+    }, [canRoute, originAddress, jobAddress])
 
     const liveMinutes =
         live.status === 'ok' && Number.isFinite(live.data?.durationInTrafficSeconds)
@@ -150,13 +180,13 @@ export default function JobMapModal({
             ? 'Loading live traffic…'
             : liveMinutes != null
               ? 'Google live · with traffic'
-              : live.status === 'not_configured'
-                ? 'Dispatch Estimate (Traffic not Included)'
-                : live.status === 'error'
-                  ? 'Dispatch Estimate (Traffic not Included)'
-                  : dispatchMinutes != null
+              : live.status === 'not_configured' || live.status === 'error'
+                ? isAssignedPlant && dispatchMinutes != null
                     ? 'Dispatch Estimate (Traffic not Included)'
-                    : 'No travel time available'
+                    : 'Traffic unavailable'
+                : dispatchMinutes != null
+                  ? 'Dispatch Estimate (Traffic not Included)'
+                  : 'No travel time available'
     const trafficDelta = liveMinutes != null && liveFreeFlowMinutes != null ? liveMinutes - liveFreeFlowMinutes : null
     const dispatchVsLive = liveMinutes != null && dispatchMinutes != null ? liveMinutes - dispatchMinutes : null
 
@@ -202,15 +232,15 @@ export default function JobMapModal({
                         >
                             {jobAddress || 'Address not provided'}
                         </div>
-                        {(order?.orderNum || plantCode) && (
+                        {(order?.orderNum || assignedPlantCode) && (
                             <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                                {plantCode && (
+                                {assignedPlantCode && (
                                     <span>
-                                        Plant {plantCode}
+                                        Assigned Plant {assignedPlantCode}
                                         {plantName ? ` · ${plantName}` : ''}
                                     </span>
                                 )}
-                                {plantCode && order?.orderNum && <span> · </span>}
+                                {assignedPlantCode && order?.orderNum && <span> · </span>}
                                 {order?.orderNum && <span>Order #{order.orderNum}</span>}
                             </div>
                         )}
@@ -244,11 +274,44 @@ export default function JobMapModal({
                         <RoutePoint
                             color={accentColor}
                             icon="fa-industry"
-                            label={hasPlant ? `Plant ${plantCode || ''}` : 'Plant address missing'}
-                            primary={hasPlant ? plantAddress : 'Add an address in Plan Settings → Plant Addresses'}
-                            sub={!hasPlant ? 'Required to draw the route' : plantName || ''}
+                            label={
+                                hasPlant
+                                    ? `Plant ${originCode}${isAssignedPlant ? ' · Assigned' : ' · Comparing'}`
+                                    : 'Plant address missing'
+                            }
+                            primary={hasPlant ? originAddress : 'Add an address in Plan Settings → Plant Addresses'}
+                            sub={!hasPlant ? 'Required to draw the route' : originName || ''}
                             warn={!hasPlant}
-                        />
+                        >
+                            {plantOptions.length > 1 && (
+                                <div className="mt-2">
+                                    <label
+                                        className="block text-[9.5px] font-semibold uppercase tracking-wider mb-1"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    >
+                                        Origin Plant
+                                    </label>
+                                    <select
+                                        value={selectedCode}
+                                        onChange={(e) => setSelectedCode(e.target.value)}
+                                        className="w-full rounded outline-none px-2 py-1 text-[11.5px] font-semibold cursor-pointer"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)',
+                                            color: 'var(--text-primary)'
+                                        }}
+                                    >
+                                        {plantOptions.map((p) => (
+                                            <option key={p.code} value={p.code}>
+                                                {p.code === assignedPlantCode ? '★ ' : ''}
+                                                {p.code}
+                                                {p.name ? ` — ${p.name}` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </RoutePoint>
                         <div
                             className="rounded-lg px-3 py-2 flex flex-col justify-center text-center"
                             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
@@ -314,7 +377,7 @@ export default function JobMapModal({
                 <div className="relative" style={{ background: 'var(--bg-secondary)', minHeight: 360 }}>
                     {hasJob ? (
                         <iframe
-                            title={canRoute ? `Route to ${jobAddress}` : `Map of ${jobAddress}`}
+                            title={canRoute ? `Route from ${originCode} to ${jobAddress}` : `Map of ${jobAddress}`}
                             src={mapSrc}
                             className="w-full"
                             style={{ border: 0, height: '60vh', minHeight: 360 }}
