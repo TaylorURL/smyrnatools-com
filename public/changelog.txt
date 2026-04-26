@@ -1,6 +1,16 @@
 # Changelog
 
 
+## [38.5.53] - 2026-04-26
+
+- Moved TruckCoverageHoverCard into a React portal so the popup escapes the table's stacking context created by row-stagger animations
+- Added kicker reserve row to the truck coverage hover card showing how many trucks are held back to absorb late yardage adds
+- Added kicker reserve calculation to PlanUtility that holds 1 truck per 4 jobs (or 2 when a block contains a big pour) for a ~2-3 hour window to absorb late adds
+- Wired kickerHeld and kickerBigPourActive props through from PlanScheduleView to TruckCoverageHoverCard
+- Extended computeTruckCoverage in PlanUtility to accept and apply kicker deductions when calculating the available pool at pour start
+- Added buildKickerReserves export to PlanUtility that scans order blocks and reserves trucks in time-bucketed windows
+- Passed kicker reserves map into the schedule view's coverage computation loop
+
 ## [38.5.52] - 2026-04-26
 
 - Added operator clock-in simulation to PlanUtility that calculates when each operator needs to arrive based on pre-trip, loading, slump test, and travel time

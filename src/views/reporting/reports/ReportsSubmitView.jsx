@@ -333,12 +333,49 @@ function ReportsSubmitView({
     useEffect(() => {
         if (report.name === 'plant_manager') fetchHoursReceived(form.plant || user?.plant_code, report.weekIso)
     }, [report.name, report.weekIso, user?.plant_code, form.plant, fetchHoursReceived])
+    /* Plan-tab style for the form-fields card. CSS custom properties so the
+     * card adapts to dark mode, compact 12px inputs, and the `SECTION_LABEL`
+     * pattern used by the redesigned report sections. */
+    const FORM_SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+    const FORM_FIELD_BASE_CLASS =
+        'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border disabled:opacity-90'
+    const FORM_FIELD_STYLE = {
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-light)',
+        color: 'var(--text-primary)'
+    }
     const renderPlantProductionForm = () => (
-        <>
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-4">
-                <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-gray-700">
-                        Plant<span className="text-red-500 ml-1">*</span>
+        <div className="flex flex-col gap-2.5">
+            <div className="flex items-center gap-2">
+                <div
+                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                >
+                    <i className="fas fa-stopwatch text-[11px]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                        Production
+                    </div>
+                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                        Operator Timing Entry
+                    </div>
+                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                        Enter punch + load timing for each active operator. Carousel below cycles between operators.
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                <div
+                    className="flex flex-col gap-1.5 rounded p-2.5"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                >
+                    <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
+                        Plant
+                        <span className="ml-0.5" style={{ color: '#dc2626' }}>
+                            *
+                        </span>
                     </label>
                     <select
                         value={form.plant ?? ''}
@@ -348,9 +385,10 @@ function ReportsSubmitView({
                         }}
                         required
                         disabled={readOnly}
-                        className="appearance-none px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-gray-100 disabled:text-gray-500 cursor-pointer pr-10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-[right_12px_center] bg-no-repeat"
+                        className={`${FORM_FIELD_BASE_CLASS} appearance-none cursor-pointer pr-8`}
+                        style={FORM_FIELD_STYLE}
                     >
-                        <option value="">Select Plant...</option>
+                        <option value="">Select Plant…</option>
                         {plants.map((p) => (
                             <option key={p.plant_code} value={p.plant_code}>
                                 {p.plant_name}
@@ -358,151 +396,165 @@ function ReportsSubmitView({
                         ))}
                     </select>
                 </div>
-                <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-gray-700">
-                        Report Date<span className="text-red-500 ml-1">*</span>
+                <div
+                    className="flex flex-col gap-1.5 rounded p-2.5"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                >
+                    <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
+                        Report Date
+                        <span className="ml-0.5" style={{ color: '#dc2626' }}>
+                            *
+                        </span>
                     </label>
                     <input
                         type="date"
                         value={form.report_date ?? ''}
                         required
                         disabled
-                        className="px-4 py-3 border border-border-light rounded-lg text-sm bg-gray-100 text-gray-500"
+                        className={FORM_FIELD_BASE_CLASS}
+                        style={FORM_FIELD_STYLE}
                     />
-                    <div className="text-slate-500 text-xs mt-1">
-                        Next Report {ReportUtility.formatDate(nextForcedReportDate)}
+                    <div className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                        Next report {ReportUtility.formatDate(nextForcedReportDate)}
                     </div>
                 </div>
             </div>
-            <div className="flex flex-col gap-2 col-span-full">
-                <label className="text-sm font-semibold text-gray-700">Operators</label>
-                <div>
-                    {form.plant && !form.rows?.length && !excludedOperators.length && (
-                        <div className="text-slate-500 text-sm p-4 bg-slate-50 rounded-lg text-center">
-                            No active operators for this plant.
-                        </div>
-                    )}
-                    {!form.plant && (
-                        <div className="text-slate-500 text-sm p-4 bg-slate-50 rounded-lg text-center">
-                            Please wait, loading plant assignment...
-                        </div>
-                    )}
-                    {form.rows?.length > 0 && (
-                        <div className="mb-4">
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                {form.rows.map((_, idx) => (
-                                    <div
+
+            <div className="flex flex-col gap-1.5">
+                <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                    Operators
+                </label>
+
+                {!form.plant && (
+                    <div
+                        className="flex items-center gap-2 rounded p-2.5 text-[12px]"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px dashed var(--border-medium)',
+                            color: 'var(--text-tertiary)'
+                        }}
+                    >
+                        <i className="fas fa-circle-notch fa-spin text-[11px]" />
+                        Loading plant assignment…
+                    </div>
+                )}
+                {form.plant && !form.rows?.length && !excludedOperators.length && (
+                    <div
+                        className="flex items-center gap-2 rounded p-2.5 text-[12px]"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px dashed var(--border-medium)',
+                            color: 'var(--text-tertiary)'
+                        }}
+                    >
+                        <i className="fas fa-info-circle text-[11px]" />
+                        No active operators for this plant.
+                    </div>
+                )}
+
+                {form.rows?.length > 0 && (
+                    <>
+                        <div className="flex flex-wrap gap-1">
+                            {form.rows.map((_, idx) => {
+                                const active = idx === carouselIndex
+                                return (
+                                    <button
                                         key={idx}
+                                        type="button"
                                         onClick={() => setCarouselIndex(idx)}
-                                        className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-semibold cursor-pointer transition-all border-2 ${idx === carouselIndex ? 'text-white' : 'bg-slate-100 text-slate-500 border-transparent hover:bg-slate-200'}`}
-                                        style={
-                                            idx === carouselIndex
-                                                ? { background: accentColor, borderColor: accentColor }
-                                                : {}
-                                        }
+                                        className="inline-flex items-center justify-center rounded text-[11.5px] font-bold cursor-pointer border-none tabular-nums"
+                                        style={{
+                                            background: active ? accentColor : 'var(--bg-secondary)',
+                                            border: `1px solid ${active ? accentColor : 'var(--border-light)'}`,
+                                            color: active ? '#fff' : 'var(--text-secondary)',
+                                            height: 26,
+                                            minWidth: 26,
+                                            padding: '0 8px'
+                                        }}
                                     >
                                         {idx + 1}
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="bg-slate-50 rounded-xl border border-border-light p-5">
-                                {form.rows[carouselIndex] && (
-                                    <div className="flex flex-col gap-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                                    Name
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={
-                                                        operatorOptions.find(
-                                                            (opt) => opt.value === form.rows[carouselIndex]?.name
-                                                        )?.label ?? ''
-                                                    }
-                                                    disabled
-                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col gap-1 w-28">
-                                                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                                    Truck #
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={
-                                                        ReportUtility.getTruckNumberForOperator(
-                                                            form.rows[carouselIndex],
-                                                            mixers
-                                                        ) ?? ''
-                                                    }
-                                                    disabled
-                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                                    Start Time
-                                                </label>
-                                                <input
-                                                    type="time"
-                                                    value={form.rows[carouselIndex]?.start_time ?? ''}
-                                                    onChange={(e) =>
-                                                        handleChange(e, 'rows', carouselIndex, 'start_time')
-                                                    }
-                                                    disabled={!!readOnly}
-                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                                    1st Load
-                                                </label>
-                                                <input
-                                                    type="time"
-                                                    value={form.rows[carouselIndex]?.first_load ?? ''}
-                                                    onChange={(e) =>
-                                                        handleChange(e, 'rows', carouselIndex, 'first_load')
-                                                    }
-                                                    disabled={!!readOnly}
-                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                                    EOD In Yard
-                                                </label>
-                                                <input
-                                                    type="time"
-                                                    value={form.rows[carouselIndex]?.eod_in_yard ?? ''}
-                                                    onChange={(e) =>
-                                                        handleChange(e, 'rows', carouselIndex, 'eod_in_yard')
-                                                    }
-                                                    disabled={!!readOnly}
-                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                                    Punch Out
-                                                </label>
-                                                <input
-                                                    type="time"
-                                                    value={form.rows[carouselIndex]?.punch_out ?? ''}
-                                                    onChange={(e) =>
-                                                        handleChange(e, 'rows', carouselIndex, 'punch_out')
-                                                    }
-                                                    disabled={!!readOnly}
-                                                    className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
-                                                />
-                                            </div>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                        <div
+                            className="rounded p-3"
+                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                        >
+                            {form.rows[carouselIndex] && (
+                                <div className="flex flex-col gap-2">
+                                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-2">
+                                        <div className="flex flex-col gap-1">
+                                            <label
+                                                className={FORM_SECTION_LABEL_CLASS}
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
+                                                Name
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={
+                                                    operatorOptions.find(
+                                                        (opt) => opt.value === form.rows[carouselIndex]?.name
+                                                    )?.label ?? ''
+                                                }
+                                                disabled
+                                                className={FORM_FIELD_BASE_CLASS}
+                                                style={FORM_FIELD_STYLE}
+                                            />
                                         </div>
                                         <div className="flex flex-col gap-1">
-                                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                            <label
+                                                className={FORM_SECTION_LABEL_CLASS}
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
+                                                Truck #
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={
+                                                    ReportUtility.getTruckNumberForOperator(
+                                                        form.rows[carouselIndex],
+                                                        mixers
+                                                    ) ?? ''
+                                                }
+                                                disabled
+                                                className={`${FORM_FIELD_BASE_CLASS} tabular-nums`}
+                                                style={FORM_FIELD_STYLE}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        {[
+                                            { field: 'start_time', label: 'Start Time' },
+                                            { field: 'first_load', label: '1st Load' },
+                                            { field: 'eod_in_yard', label: 'EOD In Yard' },
+                                            { field: 'punch_out', label: 'Punch Out' }
+                                        ].map(({ field, label }) => (
+                                            <div key={field} className="flex flex-col gap-1">
+                                                <label
+                                                    className={FORM_SECTION_LABEL_CLASS}
+                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                >
+                                                    {label}
+                                                </label>
+                                                <input
+                                                    type="time"
+                                                    value={form.rows[carouselIndex]?.[field] ?? ''}
+                                                    onChange={(e) => handleChange(e, 'rows', carouselIndex, field)}
+                                                    disabled={!!readOnly}
+                                                    className={`${FORM_FIELD_BASE_CLASS} tabular-nums`}
+                                                    style={FORM_FIELD_STYLE}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-2">
+                                        <div className="flex flex-col gap-1">
+                                            <label
+                                                className={FORM_SECTION_LABEL_CLASS}
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
                                                 Total Loads
                                             </label>
                                             <input
@@ -510,11 +562,15 @@ function ReportsSubmitView({
                                                 value={form.rows[carouselIndex]?.loads ?? ''}
                                                 onChange={(e) => handleChange(e, 'rows', carouselIndex, 'loads')}
                                                 disabled={readOnly}
-                                                className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                className={`${FORM_FIELD_BASE_CLASS} tabular-nums`}
+                                                style={FORM_FIELD_STYLE}
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1">
-                                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                            <label
+                                                className={FORM_SECTION_LABEL_CLASS}
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
                                                 Comments
                                             </label>
                                             <input
@@ -522,97 +578,143 @@ function ReportsSubmitView({
                                                 value={form.rows[carouselIndex]?.comments ?? ''}
                                                 onChange={(e) => handleChange(e, 'rows', carouselIndex, 'comments')}
                                                 disabled={readOnly}
-                                                className="px-3 py-2 border border-border-light rounded-lg text-sm text-slate-800 bg-white disabled:bg-slate-100 disabled:text-slate-500 w-full"
+                                                className={FORM_FIELD_BASE_CLASS}
+                                                style={FORM_FIELD_STYLE}
                                             />
                                         </div>
                                     </div>
-                                )}
-                                <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-border-light flex-wrap">
-                                    <button
-                                        type="button"
-                                        onClick={() => removeOperatorRow(carouselIndex)}
-                                        className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors"
-                                    >
-                                        Exclude Operator
-                                    </button>
+                                </div>
+                            )}
+                            <div
+                                className="flex items-center justify-between gap-2 mt-3 pt-2.5 flex-wrap"
+                                style={{ borderTop: '1px solid var(--border-light)' }}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => removeOperatorRow(carouselIndex)}
+                                    className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none"
+                                    style={{
+                                        background: 'rgba(220, 38, 38, 0.1)',
+                                        border: '1px solid rgba(220, 38, 38, 0.3)',
+                                        color: '#b91c1c'
+                                    }}
+                                >
+                                    <i className="fas fa-user-minus text-[10px]" />
+                                    Exclude
+                                </button>
+                                <div className="flex items-center gap-1.5">
                                     <button
                                         type="button"
                                         onClick={() => setCarouselIndex((i) => Math.max(i - 1, 0))}
                                         disabled={carouselIndex === 0}
-                                        className="px-4 py-2 text-white rounded-lg text-sm font-semibold disabled:bg-slate-400 disabled:cursor-not-allowed"
+                                        className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
                                         style={{ background: accentColor }}
                                     >
-                                        &#8592; Prev
+                                        <i className="fas fa-arrow-left text-[10px]" />
+                                        Prev
                                     </button>
-                                    <span className="text-sm text-slate-500 font-medium">
-                                        Operator {carouselIndex + 1} of {form.rows.length}
+                                    <span
+                                        className="text-[11.5px] tabular-nums"
+                                        style={{ color: 'var(--text-secondary)' }}
+                                    >
+                                        Operator <b style={{ color: 'var(--text-primary)' }}>{carouselIndex + 1}</b> of{' '}
+                                        <b style={{ color: 'var(--text-primary)' }}>{form.rows.length}</b>
                                     </span>
                                     <button
                                         type="button"
                                         onClick={() => setCarouselIndex((i) => Math.min(i + 1, form.rows.length - 1))}
                                         disabled={carouselIndex === form.rows.length - 1}
-                                        className="px-4 py-2 text-white rounded-lg text-sm font-semibold disabled:bg-slate-400 disabled:cursor-not-allowed"
+                                        className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
                                         style={{ background: accentColor }}
                                     >
-                                        Next &#8594;
+                                        Next
+                                        <i className="fas fa-arrow-right text-[10px]" />
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    )}
-                    {excludedOperators.length > 0 && (
-                        <div className="my-4">
-                            <div className="text-sm font-semibold text-gray-700 mb-2">Excluded Operators</div>
-                            <div className="flex flex-wrap gap-2">
-                                {excludedOperators.map((opId) => {
-                                    const op = operatorOptions.find((opt) => opt.value === opId)
-                                    return (
-                                        <button
-                                            key={opId}
-                                            type="button"
-                                            onClick={() => addOperatorRow(opId, mixers)}
-                                            className="px-3 py-2 bg-sky-100 text-sky-700 rounded-md text-sm font-medium hover:bg-sky-200 transition-colors"
-                                        >
-                                            {op?.label || opId} (Re-include)
-                                        </button>
-                                    )
-                                })}
-                            </div>
+                    </>
+                )}
+
+                {excludedOperators.length > 0 && (
+                    <div className="flex flex-col gap-1.5 mt-1">
+                        <div className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
+                            Excluded Operators · click to re-include
                         </div>
-                    )}
-                </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {excludedOperators.map((opId) => {
+                                const op = operatorOptions.find((opt) => opt.value === opId)
+                                return (
+                                    <button
+                                        key={opId}
+                                        type="button"
+                                        onClick={() => addOperatorRow(opId, mixers)}
+                                        className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11.5px] font-semibold cursor-pointer border-none"
+                                        style={{
+                                            background: 'rgba(14, 165, 233, 0.12)',
+                                            border: '1px solid rgba(14, 165, 233, 0.35)',
+                                            color: '#0369a1'
+                                        }}
+                                    >
+                                        <i className="fas fa-user-plus text-[10px]" />
+                                        {op?.label || opId}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
-        </>
+        </div>
     )
     const renderPlantManagerForm = () => (
-        <div className="bg-white rounded-xl border border-border-light p-6 mb-6 col-span-full">
-            <div className="mb-5">
-                <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
-                    <i className="fas fa-clipboard-list"></i>Weekly Production Data
-                </h3>
-                <p className="text-sm text-slate-500 mt-2 mb-0">
-                    Enter the key production metrics for this reporting period
-                </p>
+        <div className="flex flex-col gap-2.5">
+            <div className="flex items-center gap-2">
+                <div
+                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                >
+                    <i className="fas fa-clipboard-list text-[11px]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                        Production
+                    </div>
+                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                        Weekly Production Data
+                    </div>
+                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                        Key production metrics for this reporting period.
+                    </div>
+                </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                 {report.fields
                     .filter((f) => f.name !== 'issues' && f.type !== 'table')
                     .map((field) => (
-                        <div key={field.name} className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
+                        <div
+                            key={field.name}
+                            className="flex flex-col gap-1.5 rounded p-2.5"
+                            style={{
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-light)'
+                            }}
+                        >
+                            <label className="flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
                                 <i
-                                    className={`fas ${getFieldIcon(field.name)} text-sm`}
+                                    className={`fas ${getFieldIcon(field.name)} text-[10px]`}
                                     style={{ color: accentColor }}
-                                ></i>
-                                <label className="text-sm font-semibold text-gray-700">
+                                />
+                                <span className={FORM_SECTION_LABEL_CLASS}>
                                     {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                                </label>
-                            </div>
-                            {renderFieldInput(
-                                field,
-                                'px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-white w-full disabled:bg-slate-50 disabled:text-slate-500'
-                            )}
+                                    {field.required && (
+                                        <span className="ml-0.5" style={{ color: '#dc2626' }}>
+                                            *
+                                        </span>
+                                    )}
+                                </span>
+                            </label>
+                            {renderFieldInput(field, FORM_FIELD_BASE_CLASS)}
                         </div>
                     ))}
             </div>
@@ -620,21 +722,20 @@ function ReportsSubmitView({
     )
     const renderFieldInput = (field, className = '') => {
         const value = form[field.name] ?? ''
-        const baseClass = className || 'px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-white'
+        const baseClass = className || FORM_FIELD_BASE_CLASS
         const props = {
             className: baseClass,
             disabled: readOnly,
             onChange: (e) => handleChange(e, field.name),
             required: field.required,
+            style: FORM_FIELD_STYLE,
             value
         }
-        if (field.type === 'textarea') return <textarea {...props} className={`${baseClass} min-h-[100px] resize-y`} />
+        if (field.type === 'textarea')
+            return <textarea {...props} className={`${baseClass} resize-y min-h-[88px]`} rows={4} />
         if (field.type === 'select')
             return (
-                <select
-                    {...props}
-                    className={`${baseClass} appearance-none cursor-pointer pr-10 disabled:bg-gray-100 disabled:text-gray-500`}
-                >
+                <select {...props} className={`${baseClass} appearance-none cursor-pointer pr-8`}>
                     <option value="">Select...</option>
                     {field.options?.map((opt) => (
                         <option key={opt} value={opt}>
@@ -646,14 +747,25 @@ function ReportsSubmitView({
         return <input type={field.type} {...props} />
     }
     const renderDefaultForm = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {report.fields
                 .filter((f) => f.name !== 'issues' && f.type !== 'table')
                 .map((field) => (
-                    <div key={field.name} className="flex flex-col gap-2">
-                        <label className="text-sm font-semibold text-gray-700">
+                    <div
+                        key={field.name}
+                        className="flex flex-col gap-1.5 rounded p-2.5"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-light)'
+                        }}
+                    >
+                        <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                             {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                            {field.required && (
+                                <span className="ml-0.5" style={{ color: '#dc2626' }}>
+                                    *
+                                </span>
+                            )}
                         </label>
                         {renderFieldInput(field)}
                     </div>
@@ -684,9 +796,12 @@ function ReportsSubmitView({
                 onBack={handleBackClick}
                 onExport={handleExport}
             />
-            <form className="max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6" onSubmit={handleSubmit}>
+            <form className="w-full px-3 py-4 sm:px-4 sm:py-6 md:px-6 flex flex-col gap-2.5" onSubmit={handleSubmit}>
                 {!EXCLUDED_REPORT_TYPES.includes(report.name) && (
-                    <div className="bg-white border border-border-light rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+                    <div
+                        className="rounded p-3"
+                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    >
                         {renderFormSection()}
                     </div>
                 )}
@@ -710,7 +825,8 @@ function ReportsSubmitView({
                                 'general_manager',
                                 'aggregate_production',
                                 'plant_manager',
-                                'ready_mix_instructor'
+                                'ready_mix_instructor',
+                                'district_manager'
                             ].includes(report.name)
                                 ? report.weekIso
                                 : undefined

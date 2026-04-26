@@ -1,48 +1,102 @@
 import React from 'react'
 
+/* ── Plan-tab design tokens ───────────────────────────────────────────────
+ *  Same vocabulary used by every redesigned report. */
+const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+const CARD_STYLE = { background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }
+
 const WEEKDAYS = [
-    { icon: 'fa-calendar-day', key: 'monday', label: 'Monday' },
-    { icon: 'fa-calendar-day', key: 'tuesday', label: 'Tuesday' },
-    { icon: 'fa-calendar-day', key: 'wednesday', label: 'Wednesday' },
-    { icon: 'fa-calendar-day', key: 'thursday', label: 'Thursday' },
-    { icon: 'fa-calendar-day', key: 'friday', label: 'Friday' },
-    { icon: 'fa-calendar-week', key: 'saturday', label: 'Saturday' }
+    { key: 'monday', label: 'Monday' },
+    { key: 'tuesday', label: 'Tuesday' },
+    { key: 'wednesday', label: 'Wednesday' },
+    { key: 'thursday', label: 'Thursday' },
+    { key: 'friday', label: 'Friday' },
+    { key: 'saturday', label: 'Saturday' }
 ]
+
+/** Compact card header — same primitive used by every other redesigned
+ *  report. */
+function CardHeader({ icon, label, sub, title }) {
+    return (
+        <div className="flex items-center gap-2 mb-2">
+            <div
+                className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+            >
+                <i className={`fas ${icon} text-[11px]`} />
+            </div>
+            <div className="min-w-0 flex-1">
+                {label && (
+                    <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                        {label}
+                    </div>
+                )}
+                <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                    {title}
+                </div>
+                {sub && (
+                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                        {sub}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
 
 function DailyRecapSection({ form, handleChange, readOnly }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
-            <div className="mb-5">
-                <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
-                    <i className="fas fa-clipboard-list"></i>
-                    Daily Activity Recaps
-                </h3>
-                <p className="text-sm text-slate-500 mt-2 mb-0">
-                    Document key activities, accomplishments, and notes for each day of the week
-                </p>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
-                {WEEKDAYS.map((day) => (
-                    <div key={day.key} className="rounded-lg border border-gray-200 bg-slate-50 p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                            <i className={`fas ${day.icon} text-sm text-accent`}></i>
-                            <span className="font-semibold text-slate-800">{day.label}</span>
-                            <span className="text-red-500">*</span>
+        <div className="rounded p-3 mt-2.5" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-clipboard-list"
+                label="Recap"
+                title="Daily Activity Recaps"
+                sub="QC activities, sample notes, mix-design decisions, and accomplishments per day."
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {WEEKDAYS.map((day) => {
+                    const value = form[day.key] ?? ''
+                    return (
+                        <div
+                            key={day.key}
+                            className="rounded p-2.5 flex flex-col gap-1.5"
+                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                    <i
+                                        className="fas fa-calendar-day text-[10px]"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    />
+                                    <span
+                                        className="text-[11.5px] font-semibold"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        {day.label}
+                                    </span>
+                                    {!readOnly && <span style={{ color: '#dc2626' }}>*</span>}
+                                </div>
+                                <span className="text-[10px] tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
+                                    {value.length}
+                                </span>
+                            </div>
+                            <textarea
+                                value={value}
+                                onChange={(e) => handleChange(e, day.key)}
+                                placeholder={readOnly ? '—' : `Notes for ${day.label.toLowerCase()}…`}
+                                required={!readOnly}
+                                disabled={readOnly}
+                                rows={5}
+                                className="w-full rounded px-2 py-1.5 text-[12px] outline-none resize-y min-h-[88px] disabled:opacity-90"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    border: '1px solid var(--border-light)',
+                                    color: 'var(--text-primary)'
+                                }}
+                            />
                         </div>
-                        <textarea
-                            className="w-full rounded-lg border border-gray-200 bg-white p-3 text-[0.9375rem] text-slate-800 resize-y min-h-[100px] box-border disabled:bg-slate-50 disabled:text-slate-500"
-                            value={form[day.key] ?? ''}
-                            onChange={(e) => handleChange(e, day.key)}
-                            placeholder={`Enter ${day.label.toLowerCase()} activities, meetings, issues, accomplishments...`}
-                            required
-                            disabled={readOnly}
-                            rows={6}
-                        />
-                        <div className="text-xs text-slate-400 text-right mt-1">
-                            {(form[day.key] ?? '').length} characters
-                        </div>
-                    </div>
-                ))}
+                    )
+                })}
             </div>
         </div>
     )

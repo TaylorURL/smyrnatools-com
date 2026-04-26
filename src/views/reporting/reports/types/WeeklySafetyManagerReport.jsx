@@ -1,90 +1,153 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
 import { ReportUtility } from '../../../../utils/ReportUtility'
-const SAFETY_INPUT =
-    'w-full rounded-lg border border-border-light bg-white px-4 py-3 text-[0.9375rem] text-slate-800 box-border disabled:bg-bg-secondary disabled:text-slate-500'
-const SAFETY_TEXTAREA = `${SAFETY_INPUT} min-h-[120px] resize-y`
+
+/* ── Plan-tab design tokens ───────────────────────────────────────────────
+ *  Same vocabulary as the District / Plant / Efficiency / Aggregate report
+ *  rewrites — CSS custom properties, compact 10–13px typography, hairline
+ *  borders, 4px corner radius. */
+const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+const CARD_STYLE = { background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }
+const FIELD_STYLE = {
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-light)',
+    color: 'var(--text-primary)'
+}
+const FIELD_INPUT_CLASS = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border disabled:opacity-90'
+
 const TAG_OPTIONS = ['Accident', 'Injury', 'Non-DOT', 'DOT', 'Compliance', 'Environmental', 'Reprimand', 'Safety']
 const TAG_COLORS = {
-    Accident: { bg: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', icon: 'fas fa-car-crash' },
-    Compliance: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', icon: 'fas fa-clipboard-check' },
-    DOT: { bg: 'rgba(234, 179, 8, 0.15)', color: '#eab308', icon: 'fas fa-truck' },
-    Environmental: { bg: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', icon: 'fas fa-leaf' },
-    Injury: { bg: 'rgba(220, 38, 38, 0.15)', color: '#dc2626', icon: 'fas fa-user-injured' },
-    'Non-DOT': { bg: 'rgba(249, 115, 22, 0.15)', color: '#f97316', icon: 'fas fa-file-alt' },
-    Reprimand: { bg: 'rgba(168, 85, 247, 0.15)', color: '#a855f7', icon: 'fas fa-exclamation-triangle' },
-    Safety: { bg: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9', icon: 'fas fa-shield-alt' }
+    Accident: { bg: 'rgba(239, 68, 68, 0.15)', color: '#dc2626', icon: 'fas fa-car-crash' },
+    Compliance: { bg: 'rgba(59, 130, 246, 0.15)', color: '#2563eb', icon: 'fas fa-clipboard-check' },
+    DOT: { bg: 'rgba(234, 179, 8, 0.15)', color: '#a16207', icon: 'fas fa-truck' },
+    Environmental: { bg: 'rgba(34, 197, 94, 0.15)', color: '#15803d', icon: 'fas fa-leaf' },
+    Injury: { bg: 'rgba(220, 38, 38, 0.15)', color: '#b91c1c', icon: 'fas fa-user-injured' },
+    'Non-DOT': { bg: 'rgba(249, 115, 22, 0.15)', color: '#c2410c', icon: 'fas fa-file-alt' },
+    Reprimand: { bg: 'rgba(168, 85, 247, 0.15)', color: '#7c3aed', icon: 'fas fa-exclamation-triangle' },
+    Safety: { bg: 'rgba(14, 165, 233, 0.15)', color: '#0369a1', icon: 'fas fa-shield-alt' }
 }
-function TagPicker({ value, options, disabled, placeholder, onChange }) {
+
+/** Compact card header — icon chip + label/title — same primitive used by
+ *  every other redesigned report. */
+function CardHeader({ icon, iconBg, iconColor, label, sub, title, right }) {
+    return (
+        <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2 min-w-0">
+                <div
+                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                    style={{
+                        background: iconBg || 'var(--bg-tertiary)',
+                        color: iconColor || 'var(--text-secondary)'
+                    }}
+                >
+                    <i className={`fas ${icon} text-[11px]`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                    {label && (
+                        <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            {label}
+                        </div>
+                    )}
+                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                        {title}
+                    </div>
+                    {sub && (
+                        <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                            {sub}
+                        </div>
+                    )}
+                </div>
+            </div>
+            {right && <div className="shrink-0">{right}</div>}
+        </div>
+    )
+}
+
+/* ── TagPicker (modal) ───────────────────────────────────────────────────── */
+
+function TagPicker({ disabled, onChange, options, placeholder, value }) {
     const [open, setOpen] = useState(false)
     const [query, setQuery] = useState('')
-    const btnRef = useRef(null)
     const lower = query.toLowerCase()
     const filtered = options.filter((o) => o.toLowerCase().includes(lower))
-    function toggle(val) {
+    const toggle = (val) => {
         if (disabled) return
         const has = value.includes(val)
-        const next = has ? value.filter((v) => v !== val) : [...value, val]
-        onChange(next)
+        onChange(has ? value.filter((v) => v !== val) : [...value, val])
     }
-    function selectAll() {
-        if (disabled) return
-        onChange(options)
-    }
-    function clearAll() {
-        if (disabled) return
-        onChange([])
-    }
+    const selectAll = () => !disabled && onChange(options)
+    const clearAll = () => !disabled && onChange([])
+
     const modalContent = open ? (
         <div
             className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4"
             onClick={() => setOpen(false)}
         >
             <div
-                className="flex w-full max-w-[400px] max-h-[80vh] flex-col overflow-hidden rounded bg-[var(--bg-primary)] shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
+                className="flex w-full max-w-[400px] max-h-[80vh] flex-col overflow-hidden rounded shadow-2xl"
+                style={CARD_STYLE}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between border-b border-[var(--border-light)] bg-[var(--bg-secondary)] px-5 py-4">
-                    <h3 className="m-0 text-lg font-semibold text-[var(--text-primary)]">Select Categories</h3>
+                <div
+                    className="flex items-center justify-between px-3 py-2.5"
+                    style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
+                >
+                    <div>
+                        <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            Categories
+                        </div>
+                        <div className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                            Select Issue Categories
+                        </div>
+                    </div>
                     <button
                         type="button"
                         onClick={() => setOpen(false)}
-                        className="border-none bg-transparent p-2 text-base text-[var(--text-secondary)] cursor-pointer"
+                        className="rounded border-none cursor-pointer"
+                        style={{
+                            background: 'var(--bg-tertiary)',
+                            color: 'var(--text-secondary)',
+                            height: 24,
+                            width: 24
+                        }}
                     >
-                        <i className="fas fa-times"></i>
+                        <i className="fas fa-times text-[10px]" />
                     </button>
                 </div>
-                <div className="flex gap-2 border-b border-[var(--border-light)] p-3">
+                <div className="flex gap-1.5 p-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
                     <button
                         type="button"
                         onClick={selectAll}
-                        className="flex items-center gap-1.5 rounded-md border border-[var(--border-light)] bg-[var(--bg-tertiary)] px-3 py-2 text-[0.8125rem] font-medium text-[var(--text-secondary)] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none"
+                        style={FIELD_STYLE}
                     >
-                        <i className="fas fa-check-double"></i> Select All
+                        <i className="fas fa-check-double text-[10px]" /> Select All
                     </button>
                     <button
                         type="button"
                         onClick={clearAll}
-                        className="flex items-center gap-1.5 rounded-md border border-[var(--border-light)] bg-[var(--bg-tertiary)] px-3 py-2 text-[0.8125rem] font-medium text-[var(--text-secondary)] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none"
+                        style={FIELD_STYLE}
                     >
-                        <i className="fas fa-times"></i> Clear All
+                        <i className="fas fa-times text-[10px]" /> Clear
                     </button>
                 </div>
-                <div className="border-b border-[var(--border-light)] p-3">
-                    <div className="flex items-center gap-2.5 rounded-lg border border-[var(--border-light)] bg-[var(--bg-secondary)] px-3 py-2.5">
-                        <i className="fas fa-search text-sm text-[var(--text-secondary)]"></i>
+                <div className="p-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                    <div className="flex items-center gap-2 rounded px-2 py-1.5" style={FIELD_STYLE}>
+                        <i className="fas fa-search text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
                         <input
                             type="text"
-                            placeholder="Search tags..."
+                            placeholder="Search tags…"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            className="flex-1 border-none bg-transparent text-sm text-[var(--text-primary)] outline-none"
+                            className="flex-1 border-none bg-transparent text-[12.5px] outline-none"
+                            style={{ color: 'var(--text-primary)' }}
                         />
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-2">
+                <div className="flex-1 overflow-y-auto p-1.5">
                     {filtered.map((opt) => {
                         const tagStyle = TAG_COLORS[opt] || {
                             bg: 'var(--bg-tertiary)',
@@ -96,69 +159,236 @@ function TagPicker({ value, options, disabled, placeholder, onChange }) {
                             <div
                                 key={opt}
                                 onClick={() => toggle(opt)}
-                                className={`flex items-center gap-3 rounded-lg cursor-pointer mb-1 px-3.5 py-3 ${isSelected ? 'bg-[var(--bg-secondary)]' : 'bg-transparent'}`}
+                                className="flex items-center gap-2 rounded cursor-pointer mb-0.5 px-2 py-1.5"
+                                style={{
+                                    background: isSelected ? 'var(--bg-secondary)' : 'transparent'
+                                }}
                             >
                                 <div
-                                    className={`flex items-center justify-center rounded-md text-[0.6875rem] h-[22px] w-[22px] text-white ${isSelected ? 'bg-[var(--accent)] border-none' : 'bg-[var(--bg-primary)] border-2 border-[var(--border-light)]'}`}
+                                    className="flex items-center justify-center rounded text-[9px] text-white"
+                                    style={{
+                                        background: isSelected ? 'var(--accent, #1e3a5f)' : 'var(--bg-tertiary)',
+                                        border: isSelected
+                                            ? `1px solid var(--accent, #1e3a5f)`
+                                            : '1px solid var(--border-light)',
+                                        height: 18,
+                                        width: 18
+                                    }}
                                 >
-                                    {isSelected && <i className="fas fa-check"></i>}
+                                    {isSelected && <i className="fas fa-check" />}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <i className={tagStyle.icon} style={{ color: tagStyle.color, fontSize: 14 }}></i>
-                                    <span
-                                        className={`text-[0.9375rem] text-[var(--text-primary)] ${isSelected ? 'font-semibold' : 'font-normal'}`}
-                                    >
-                                        {opt}
-                                    </span>
-                                </div>
+                                <i className={tagStyle.icon} style={{ color: tagStyle.color, fontSize: 11 }} />
+                                <span
+                                    className="text-[12px]"
+                                    style={{
+                                        color: 'var(--text-primary)',
+                                        fontWeight: isSelected ? 600 : 400
+                                    }}
+                                >
+                                    {opt}
+                                </span>
                             </div>
                         )
                     })}
                     {filtered.length === 0 && (
-                        <div className="p-8 text-center text-[var(--text-secondary)]">
-                            <i className="fas fa-search block text-2xl mb-2"></i>
+                        <div className="p-6 text-center text-[12px]" style={{ color: 'var(--text-tertiary)' }}>
+                            <i className="fas fa-search block text-[16px] mb-1" />
                             <span>No matching tags</span>
                         </div>
                     )}
                 </div>
-                <div className="border-t border-[var(--border-light)] bg-[var(--bg-secondary)] p-4">
+                <div
+                    className="p-2"
+                    style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
+                >
                     <button
                         type="button"
                         onClick={() => setOpen(false)}
-                        className="w-full rounded-lg border-none bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white cursor-pointer"
+                        className="w-full rounded text-[12px] font-bold uppercase tracking-wider text-white py-2 cursor-pointer border-none"
+                        style={{ background: 'var(--accent, #1e3a5f)' }}
                     >
-                        Done ({value.length} selected)
+                        Done · {value.length} selected
                     </button>
                 </div>
             </div>
         </div>
     ) : null
+
     return (
         <div className="relative w-full">
             <button
                 type="button"
-                className="flex items-center justify-between w-full rounded-lg border border-border-light bg-white px-4 py-3 text-[0.9375rem] text-slate-800 text-left cursor-pointer disabled:bg-bg-secondary disabled:text-slate-500 disabled:cursor-not-allowed"
-                ref={btnRef}
                 disabled={disabled}
                 aria-expanded={open}
                 onClick={() => setOpen(true)}
+                className={`${FIELD_INPUT_CLASS} flex items-center justify-between text-left cursor-pointer disabled:cursor-not-allowed`}
+                style={FIELD_STYLE}
             >
-                <span className="flex items-center">
-                    <i className="fas fa-tags mr-2 opacity-60"></i>
+                <span className="flex items-center gap-1.5">
+                    <i className="fas fa-tags text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
                     {value.length
                         ? `${value.length} tag${value.length > 1 ? 's' : ''} selected`
                         : placeholder || 'Select tags'}
                 </span>
-                <i className="fas fa-chevron-down text-xs"></i>
+                <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
             </button>
             {typeof document !== 'undefined' && ReactDOM.createPortal(modalContent, document.body)}
         </div>
     )
 }
-/** Submit-mode plugin for the Safety Manager report — manages safety issues with plant/tag/severity tagging and photo uploads. */
-export function SafetyManagerSubmitPlugin({ form, setForm, plants, readOnly }) {
+
+/* ── Issue card primitives ───────────────────────────────────────────────── */
+
+function IssueChip({ children, color = 'var(--text-secondary)', icon, tint = 'var(--bg-tertiary)' }) {
+    return (
+        <span
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
+            style={{ background: tint, color }}
+        >
+            {icon && <i className={`${icon} text-[9px]`} />}
+            {children}
+        </span>
+    )
+}
+
+function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
+    return (
+        <div
+            className="flex items-center justify-between gap-2 px-2.5 py-2 flex-wrap"
+            style={{
+                background: 'var(--bg-tertiary)',
+                borderBottom: '1px solid var(--border-light)'
+            }}
+        >
+            <div className="flex items-center gap-2 flex-wrap">
+                <div
+                    className="flex items-center justify-center rounded text-[10.5px] font-bold tabular-nums text-white"
+                    style={{
+                        background: 'var(--accent, #1e3a5f)',
+                        height: 22,
+                        width: 22
+                    }}
+                >
+                    {idx + 1}
+                </div>
+                {issue.plant && (
+                    <IssueChip color="#1e40af" icon="fas fa-industry" tint="rgba(59, 130, 246, 0.12)">
+                        {issue.plant === 'All' ? 'All Plants' : `Plant ${issue.plant}`}
+                    </IssueChip>
+                )}
+                {issue.date && (
+                    <IssueChip color="#15803d" icon="fas fa-calendar" tint="rgba(22, 163, 74, 0.12)">
+                        {new Date(issue.date + 'T00:00:00').toLocaleDateString('en-US', {
+                            day: 'numeric',
+                            month: 'short',
+                            weekday: readOnly ? 'short' : undefined
+                        })}
+                    </IssueChip>
+                )}
+                {issue.affectsEfficiency && (
+                    <IssueChip color="#b91c1c" icon="fas fa-chart-line" tint="rgba(220, 38, 38, 0.12)">
+                        Affects Efficiency
+                    </IssueChip>
+                )}
+            </div>
+            {!readOnly && onRemove && (
+                <button
+                    type="button"
+                    onClick={onRemove}
+                    title="Remove issue"
+                    className="flex items-center justify-center rounded border-none cursor-pointer"
+                    style={{
+                        background: 'rgba(220, 38, 38, 0.12)',
+                        color: '#b91c1c',
+                        height: 24,
+                        width: 24
+                    }}
+                >
+                    <i className="fas fa-trash-alt text-[10px]" />
+                </button>
+            )}
+        </div>
+    )
+}
+
+function TagsDisplay({ onRemoveTag, readOnly, tags }) {
+    if (!tags?.length) return null
+    return (
+        <div className="flex flex-wrap gap-1">
+            {tags.map((t) => {
+                const tagStyle = TAG_COLORS[t] || {
+                    bg: 'var(--bg-tertiary)',
+                    color: 'var(--text-secondary)',
+                    icon: 'fas fa-tag'
+                }
+                return (
+                    <span
+                        key={t}
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold"
+                        style={{ background: tagStyle.bg, color: tagStyle.color }}
+                    >
+                        <i className={`${tagStyle.icon} text-[9px]`} />
+                        {t}
+                        {!readOnly && onRemoveTag && (
+                            <button
+                                type="button"
+                                className="ml-0.5 border-none bg-transparent p-0 cursor-pointer opacity-70 hover:opacity-100"
+                                onClick={() => onRemoveTag(t)}
+                                style={{ color: tagStyle.color }}
+                            >
+                                <i className="fas fa-times text-[9px]" />
+                            </button>
+                        )}
+                    </span>
+                )
+            })}
+        </div>
+    )
+}
+
+function FieldLabel({ children, icon, required }) {
+    return (
+        <label className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5`} style={{ color: 'var(--text-tertiary)' }}>
+            {icon && <i className={`fas ${icon} text-[10px]`} />}
+            {children}
+            {required && <span style={{ color: '#dc2626' }}>*</span>}
+        </label>
+    )
+}
+
+function SafetyEmptyState({ success }) {
+    return (
+        <div
+            className="flex flex-col items-center justify-center gap-1.5 py-8 px-4 rounded"
+            style={{
+                background: 'var(--bg-secondary)',
+                border: '1px dashed var(--border-medium)'
+            }}
+        >
+            <i
+                className={`fas ${success ? 'fa-circle-check' : 'fa-shield-alt'} text-[22px]`}
+                style={{ color: success ? '#16a34a' : 'var(--text-tertiary)' }}
+            />
+            <div className="text-[12.5px] font-semibold" style={{ color: success ? '#15803d' : 'var(--text-primary)' }}>
+                {success ? 'All Clear' : 'No Issues Reported'}
+            </div>
+            <div className="text-[11.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                {success
+                    ? 'No safety issues were reported during this reporting period.'
+                    : 'Click Add Issue to document any safety incidents.'}
+            </div>
+        </div>
+    )
+}
+
+/* ── Submit-mode plugin ─────────────────────────────────────────────────── */
+
+export function SafetyManagerSubmitPlugin({ form, plants, readOnly, setForm }) {
     const [showPlantModal, setShowPlantModal] = useState(false)
     const [selectedIssueIdForPlant, setSelectedIssueIdForPlant] = useState(null)
+
+    /* Migrate legacy string `issues` value into the array shape and seed an
+     * empty starter row when the form has no issues yet. */
     useEffect(() => {
         if (typeof form.issues === 'string') {
             const today = ReportUtility.getTodayISODate()
@@ -206,6 +436,7 @@ export function SafetyManagerSubmitPlugin({ form, setForm, plants, readOnly }) {
             }))
         }
     }, [form.issues, setForm])
+    /* Backfill missing fields for issues created under older shapes. */
     useEffect(() => {
         if (!Array.isArray(form.issues)) return
         let needsUpdate = false
@@ -227,272 +458,247 @@ export function SafetyManagerSubmitPlugin({ form, setForm, plants, readOnly }) {
         })
         if (needsUpdate) setForm((f) => ({ ...f, issues: migrated }))
     }, [form.issues, setForm])
+
     const issues = Array.isArray(form.issues) ? form.issues : []
-    function updateIssue(id, patch) {
-        const updated = issues.map((i) => {
-            if (i.id === id) {
-                const newIssue = { ...i, ...patch }
+
+    const updateIssue = (id, patch) => {
+        setForm((f) => ({
+            ...f,
+            issues: issues.map((i) => {
+                if (i.id !== id) return i
+                const next = { ...i, ...patch }
                 if (patch.plant !== undefined && (!patch.plant || patch.plant === 'All')) {
-                    newIssue.affectsEfficiency = false
+                    next.affectsEfficiency = false
                 }
-                return newIssue
-            }
-            return i
-        })
-        setForm((f) => ({ ...f, issues: updated }))
+                return next
+            })
+        }))
     }
-    function updateIssueTagsArray(id, nextArray) {
-        updateIssue(id, { tag: nextArray[0] || '', tags: nextArray })
-    }
-    function removeIssueTag(id, tagToRemove) {
+    const updateIssueTagsArray = (id, nextArray) => updateIssue(id, { tag: nextArray[0] || '', tags: nextArray })
+    const removeIssueTag = (id, tagToRemove) => {
         const issue = issues.find((i) => i.id === id)
         if (!issue) return
         const next = (issue.tags || []).filter((t) => t !== tagToRemove)
         updateIssue(id, { tag: next[0] || '', tags: next })
     }
-    function removeIssue(id) {
-        const updated = issues.filter((i) => i.id !== id)
-        setForm((f) => ({ ...f, issues: updated }))
-    }
-    function addIssue() {
+    const removeIssue = (id) => setForm((f) => ({ ...f, issues: issues.filter((i) => i.id !== id) }))
+    const addIssue = () => {
         const today = ReportUtility.getTodayISODate()
-        const newIssue = {
-            affectsEfficiency: false,
-            date: today,
-            description: '',
-            id: Date.now(),
-            plant: '',
-            tag: '',
-            tags: []
-        }
-        setForm((f) => ({ ...f, issues: [...(f.issues || []), newIssue] }))
+        setForm((f) => ({
+            ...f,
+            issues: [
+                ...(f.issues || []),
+                {
+                    affectsEfficiency: false,
+                    date: today,
+                    description: '',
+                    id: Date.now(),
+                    plant: '',
+                    tag: '',
+                    tags: []
+                }
+            ]
+        }))
     }
+
     return (
-        <>
-            <div className="rounded border border-border-light bg-white p-6 mb-6">
-                <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
-                    <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-red-100 text-red-600 text-base">
-                            <i className="fas fa-exclamation-circle"></i>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-800 m-0">Safety Issues & Incidents</h3>
-                            <p className="text-sm text-slate-500 mt-1 mb-0">
-                                Document any safety-related issues that occurred during this reporting period
-                            </p>
-                        </div>
-                    </div>
-                    {!readOnly && (
+        <div className="rounded p-3 mt-2.5" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-exclamation-circle"
+                iconBg="rgba(220, 38, 38, 0.12)"
+                iconColor="#b91c1c"
+                label="Safety"
+                title="Issues & Incidents"
+                sub="Document any safety-related issues that occurred during this reporting period."
+                right={
+                    !readOnly ? (
                         <button
                             type="button"
                             onClick={addIssue}
-                            className="flex items-center gap-2 rounded-lg border-none bg-accent px-4 py-2.5 text-sm font-semibold text-white cursor-pointer hover:bg-accent-hover"
+                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none"
+                            style={{ background: 'var(--accent, #1e3a5f)' }}
                         >
-                            <i className="fas fa-plus"></i>
-                            <span>Add Issue</span>
+                            <i className="fas fa-plus text-[10px]" />
+                            Add Issue
                         </button>
-                    )}
-                </div>
-                {issues.length === 0 ? (
-                    <div className="text-center py-12 px-8 text-slate-500">
-                        <div className="text-5xl text-slate-300 mb-4 block">
-                            <i className="fas fa-shield-alt"></i>
-                        </div>
-                        <h4 className="text-lg font-semibold text-slate-800 mb-2 mt-0">No Issues Reported</h4>
-                        <p className="text-sm text-slate-400 m-0">Click Add Issue to document any safety incidents</p>
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-4">
-                        {issues.map((issue, idx) => {
-                            return (
-                                <div
-                                    key={issue.id}
-                                    className="rounded border border-border-light bg-bg-secondary overflow-hidden"
-                                >
-                                    <div className="flex items-center justify-between gap-4 p-4 bg-slate-100 border-b border-border-light flex-wrap">
-                                        <div className="flex items-center justify-center h-7 w-7 rounded-full bg-accent text-white text-[0.8125rem] font-semibold">
-                                            <span>{idx + 1}</span>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2 flex-1">
-                                            {issue.plant && (
-                                                <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-800">
-                                                    <i className="fas fa-industry"></i>
-                                                    {issue.plant === 'All' ? 'All Plants' : `Plant ${issue.plant}`}
-                                                </span>
-                                            )}
-                                            {issue.date && (
-                                                <span className="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-800">
-                                                    <i className="fas fa-calendar"></i>
-                                                    {new Date(issue.date + 'T00:00:00').toLocaleDateString('en-US', {
-                                                        day: 'numeric',
-                                                        month: 'short'
-                                                    })}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {!readOnly && (
+                    ) : null
+                }
+            />
+
+            {issues.length === 0 ? (
+                <SafetyEmptyState />
+            ) : (
+                <div className="flex flex-col gap-2">
+                    {issues.map((issue, idx) => {
+                        const efficiencyDisabled = readOnly || !issue.plant || issue.plant === 'All'
+                        const tags = Array.isArray(issue.tags) ? issue.tags : []
+                        return (
+                            <div
+                                key={issue.id}
+                                className="rounded overflow-hidden"
+                                style={{
+                                    background: 'var(--bg-secondary)',
+                                    border: '1px solid var(--border-light)'
+                                }}
+                            >
+                                <IssueCardHeader
+                                    issue={issue}
+                                    idx={idx}
+                                    onRemove={() => removeIssue(issue.id)}
+                                    readOnly={readOnly}
+                                />
+                                <div className="flex flex-col gap-2.5 p-2.5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-2">
+                                        <div className="flex flex-col gap-1">
+                                            <FieldLabel icon="fa-industry" required>
+                                                Plant Location
+                                            </FieldLabel>
                                             <button
                                                 type="button"
-                                                onClick={() => removeIssue(issue.id)}
-                                                className="flex items-center justify-center rounded-md border-none bg-red-100 p-2 text-red-600 cursor-pointer hover:bg-red-200"
-                                                title="Remove Issue"
+                                                disabled={readOnly}
+                                                onClick={() => {
+                                                    setSelectedIssueIdForPlant(issue.id)
+                                                    setShowPlantModal(true)
+                                                }}
+                                                className={`${FIELD_INPUT_CLASS} flex items-center justify-between text-left cursor-pointer disabled:cursor-not-allowed`}
+                                                style={FIELD_STYLE}
                                             >
-                                                <i className="fas fa-trash-alt"></i>
+                                                <span>
+                                                    {issue.plant
+                                                        ? issue.plant === 'All'
+                                                            ? 'All Plants'
+                                                            : `Plant ${issue.plant}`
+                                                        : 'Select Plant…'}
+                                                </span>
+                                                <i
+                                                    className="fas fa-chevron-down text-[9px]"
+                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                />
                                             </button>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <FieldLabel icon="fa-calendar-alt">Date of Incident</FieldLabel>
+                                            <input
+                                                type="date"
+                                                disabled={readOnly}
+                                                value={issue.date || ''}
+                                                onChange={(e) => updateIssue(issue.id, { date: e.target.value })}
+                                                className={`${FIELD_INPUT_CLASS} tabular-nums`}
+                                                style={FIELD_STYLE}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <FieldLabel icon="fa-tags" required>
+                                            Issue Categories
+                                        </FieldLabel>
+                                        <TagPicker
+                                            value={tags}
+                                            options={TAG_OPTIONS}
+                                            disabled={readOnly}
+                                            placeholder="Select categories"
+                                            onChange={(vals) => updateIssueTagsArray(issue.id, vals)}
+                                        />
+                                        {tags.length > 0 && (
+                                            <div className="mt-1">
+                                                <TagsDisplay
+                                                    tags={tags}
+                                                    onRemoveTag={(t) => removeIssueTag(issue.id, t)}
+                                                    readOnly={readOnly}
+                                                />
+                                            </div>
                                         )}
                                     </div>
-                                    <div className="flex flex-col gap-4 p-5">
-                                        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-                                            <div className="flex flex-col gap-2">
-                                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                                    <i className="text-slate-500 text-[0.8125rem] fas fa-industry"></i>
-                                                    Plant Location<span className="text-red-500 ml-1">*</span>
-                                                </label>
-                                                <button
-                                                    type="button"
-                                                    disabled={readOnly}
-                                                    onClick={() => {
-                                                        setSelectedIssueIdForPlant(issue.id)
-                                                        setShowPlantModal(true)
-                                                    }}
-                                                    className="flex items-center justify-between w-full rounded-lg border border-border-light bg-white px-4 py-3 text-[0.9375rem] text-slate-800 text-left cursor-pointer disabled:bg-bg-secondary disabled:text-slate-500 disabled:cursor-not-allowed"
-                                                >
-                                                    <span>
-                                                        {issue.plant
-                                                            ? issue.plant === 'All'
-                                                                ? 'All Plants'
-                                                                : `Plant ${issue.plant}`
-                                                            : 'Select Plant...'}
-                                                    </span>
-                                                    <i className="fas fa-chevron-down"></i>
-                                                </button>
-                                            </div>
-                                            <div className="flex flex-col gap-2">
-                                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                                    <i className="text-slate-500 text-[0.8125rem] fas fa-calendar-alt"></i>
-                                                    Date of Incident
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    disabled={readOnly}
-                                                    value={issue.date || ''}
-                                                    onChange={(e) => updateIssue(issue.id, { date: e.target.value })}
-                                                    className={SAFETY_INPUT}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                                <i className="text-slate-500 text-[0.8125rem] fas fa-tags"></i>
-                                                Issue Categories<span className="text-red-500 ml-1">*</span>
-                                            </label>
-                                            <TagPicker
-                                                value={issue.tags || []}
-                                                options={TAG_OPTIONS}
-                                                disabled={readOnly}
-                                                placeholder="Select categories"
-                                                onChange={(vals) => updateIssueTagsArray(issue.id, vals)}
-                                            />
-                                            {issue.tags && issue.tags.length > 0 && (
-                                                <div className="flex flex-wrap gap-2 mt-2">
-                                                    {issue.tags.map((t) => {
-                                                        const tagStyle = TAG_COLORS[t] || {
-                                                            bg: 'var(--background)',
-                                                            color: 'var(--text-primary)',
-                                                            icon: 'fas fa-tag'
-                                                        }
-                                                        return (
-                                                            <span
-                                                                key={t}
-                                                                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium"
-                                                                style={{
-                                                                    background: tagStyle.bg,
-                                                                    color: tagStyle.color
-                                                                }}
-                                                            >
-                                                                <i className={tagStyle.icon}></i>
-                                                                {t}
-                                                                {!readOnly && (
-                                                                    <button
-                                                                        type="button"
-                                                                        className="ml-1 border-none bg-transparent p-0 cursor-pointer opacity-70 text-[0.6875rem] hover:opacity-100"
-                                                                        onClick={() => removeIssueTag(issue.id, t)}
-                                                                    >
-                                                                        <i className="fas fa-times"></i>
-                                                                    </button>
-                                                                )}
-                                                            </span>
-                                                        )
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                                <i className="text-slate-500 text-[0.8125rem] fas fa-align-left"></i>
-                                                Issue Description<span className="text-red-500 ml-1">*</span>
-                                            </label>
-                                            <textarea
-                                                disabled={readOnly}
-                                                value={issue.description}
-                                                onChange={(e) => updateIssue(issue.id, { description: e.target.value })}
-                                                className={SAFETY_TEXTAREA}
-                                                placeholder="Describe the incident in detail including what happened, who was involved, and any actions taken..."
-                                            />
-                                        </div>
-                                        <div className="mt-2">
-                                            <label
-                                                className={`flex items-center gap-3 cursor-pointer ${readOnly || !issue.plant || issue.plant === 'All' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    className="hidden"
-                                                    checked={issue.affectsEfficiency || false}
-                                                    disabled={readOnly || !issue.plant || issue.plant === 'All'}
-                                                    onChange={(e) =>
-                                                        updateIssue(issue.id, { affectsEfficiency: e.target.checked })
-                                                    }
-                                                />
-                                                <span
-                                                    className={`relative w-11 h-6 rounded-full transition-colors ${issue.affectsEfficiency ? 'bg-accent' : 'bg-gray-200'} ${readOnly || !issue.plant || issue.plant === 'All' ? 'opacity-50' : ''}`}
-                                                >
-                                                    <span
-                                                        className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${issue.affectsEfficiency ? 'translate-x-5' : ''}`}
-                                                    ></span>
-                                                </span>
-                                                <span className="text-sm text-gray-700">
-                                                    Should Affect Plant&apos;s Efficiency
-                                                    {(!issue.plant || issue.plant === 'All') &&
-                                                        ' (Select specific plant first)'}
-                                                </span>
-                                            </label>
-                                        </div>
+                                    <div className="flex flex-col gap-1">
+                                        <FieldLabel icon="fa-align-left" required>
+                                            Issue Description
+                                        </FieldLabel>
+                                        <textarea
+                                            disabled={readOnly}
+                                            value={issue.description}
+                                            onChange={(e) => updateIssue(issue.id, { description: e.target.value })}
+                                            rows={4}
+                                            className={`${FIELD_INPUT_CLASS} resize-y min-h-[88px]`}
+                                            style={FIELD_STYLE}
+                                            placeholder="Describe the incident in detail — what happened, who was involved, and any actions taken…"
+                                        />
                                     </div>
+                                    <label
+                                        className={`flex items-center gap-2 select-none ${
+                                            efficiencyDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                                        }`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className="hidden"
+                                            checked={!!issue.affectsEfficiency}
+                                            disabled={efficiencyDisabled}
+                                            onChange={(e) =>
+                                                updateIssue(issue.id, { affectsEfficiency: e.target.checked })
+                                            }
+                                        />
+                                        <span
+                                            className="relative rounded-full transition-colors shrink-0"
+                                            style={{
+                                                width: 30,
+                                                height: 16,
+                                                background: issue.affectsEfficiency
+                                                    ? 'var(--accent, #1e3a5f)'
+                                                    : 'var(--border-medium)'
+                                            }}
+                                        >
+                                            <span
+                                                className="absolute rounded-full bg-white transition-all"
+                                                style={{
+                                                    width: 12,
+                                                    height: 12,
+                                                    top: 2,
+                                                    left: issue.affectsEfficiency ? 16 : 2,
+                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                                }}
+                                            />
+                                        </span>
+                                        <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                                            Should affect plant&apos;s efficiency
+                                            {(!issue.plant || issue.plant === 'All') && (
+                                                <span
+                                                    className="ml-1 text-[10.5px]"
+                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                >
+                                                    (select a specific plant first)
+                                                </span>
+                                            )}
+                                        </span>
+                                    </label>
                                 </div>
-                            )
-                        })}
-                    </div>
-                )}
-                <PlantDropdownModal
-                    isOpen={showPlantModal}
-                    onClose={() => {
-                        setShowPlantModal(false)
-                        setSelectedIssueIdForPlant(null)
-                    }}
-                    plants={plants}
-                    showAllPlants={true}
-                    onSelect={(plantCode) => {
-                        if (selectedIssueIdForPlant !== null) {
-                            updateIssue(selectedIssueIdForPlant, { plant: plantCode })
-                        }
-                        setShowPlantModal(false)
-                        setSelectedIssueIdForPlant(null)
-                    }}
-                />
-            </div>
-        </>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+
+            <PlantDropdownModal
+                isOpen={showPlantModal}
+                onClose={() => {
+                    setShowPlantModal(false)
+                    setSelectedIssueIdForPlant(null)
+                }}
+                plants={plants}
+                showAllPlants={true}
+                onSelect={(plantCode) => {
+                    if (selectedIssueIdForPlant !== null) {
+                        updateIssue(selectedIssueIdForPlant, { plant: plantCode })
+                    }
+                    setShowPlantModal(false)
+                    setSelectedIssueIdForPlant(null)
+                }}
+            />
+        </div>
     )
 }
+
+/* ── Review-mode plugin ─────────────────────────────────────────────────── */
+
 function normalizeIssues(formIssues) {
     if (Array.isArray(formIssues)) return formIssues
     if (typeof formIssues === 'string' && formIssues) {
@@ -500,163 +706,85 @@ function normalizeIssues(formIssues) {
     }
     return []
 }
+
 function getIssueTags(issue) {
     return Array.isArray(issue.tags) ? issue.tags : issue.tag ? [issue.tag] : []
 }
-function IssueCardHeader({ issue, idx, onRemove, readOnly }) {
-    return (
-        <div className="flex items-center justify-between gap-4 p-4 bg-slate-100 border-b border-border-light flex-wrap">
-            <div className="flex items-center justify-center h-7 w-7 rounded-full bg-accent text-white text-[0.8125rem] font-semibold">
-                <span>{idx + 1}</span>
-            </div>
-            <div className="flex flex-wrap gap-2 flex-1">
-                {issue.plant && (
-                    <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-800">
-                        <i className="fas fa-industry"></i>
-                        {issue.plant === 'All' ? 'All Plants' : `Plant ${issue.plant}`}
-                    </span>
-                )}
-                {issue.date && (
-                    <span className="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-800">
-                        <i className="fas fa-calendar"></i>
-                        {new Date(issue.date + 'T00:00:00').toLocaleDateString('en-US', {
-                            day: 'numeric',
-                            month: 'short',
-                            weekday: readOnly ? 'short' : undefined
-                        })}
-                    </span>
-                )}
-                {readOnly && issue.affectsEfficiency && (
-                    <span
-                        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium"
-                        style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}
-                    >
-                        <i className="fas fa-chart-line"></i>Affects Efficiency
-                    </span>
-                )}
-            </div>
-            {!readOnly && onRemove && (
-                <button
-                    type="button"
-                    onClick={onRemove}
-                    className="flex items-center justify-center rounded-md border-none bg-red-100 p-2 text-red-600 cursor-pointer hover:bg-red-200"
-                    title="Remove Issue"
-                >
-                    <i className="fas fa-trash-alt"></i>
-                </button>
-            )}
-        </div>
-    )
-}
-function TagsDisplay({ tags, onRemoveTag, readOnly }) {
-    if (!tags?.length) return null
-    return (
-        <div className="flex flex-wrap gap-2 mt-2">
-            {tags.map((t) => {
-                const tagStyle = TAG_COLORS[t] || {
-                    bg: 'var(--background)',
-                    color: 'var(--text-primary)',
-                    icon: 'fas fa-tag'
-                }
-                return (
-                    <span
-                        key={t}
-                        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.8125rem] font-medium"
-                        style={{ background: tagStyle.bg, color: tagStyle.color }}
-                    >
-                        <i className={tagStyle.icon}></i>
-                        {t}
-                        {!readOnly && onRemoveTag && (
-                            <button
-                                type="button"
-                                className="ml-1 border-none bg-transparent p-0 cursor-pointer opacity-70 text-[0.6875rem] hover:opacity-100"
-                                onClick={() => onRemoveTag(t)}
-                            >
-                                <i className="fas fa-times"></i>
-                            </button>
-                        )}
-                    </span>
-                )
-            })}
-        </div>
-    )
-}
-function SafetyEmptyState({ success }) {
-    return (
-        <div className={`text-center py-12 px-8 text-slate-500 ${success ? 'bg-green-50 rounded-lg' : ''}`}>
-            <div className={`text-5xl mb-4 block ${success ? 'text-green-500' : 'text-slate-300'}`}>
-                <i className={`fas ${success ? 'fa-check-circle' : 'fa-shield-alt'}`}></i>
-            </div>
-            <h4 className={`text-lg font-semibold mb-2 mt-0 ${success ? 'text-green-800' : 'text-slate-800'}`}>
-                {success ? 'All Clear' : 'No Issues Reported'}
-            </h4>
-            <p className="text-sm text-slate-400 m-0">
-                {success
-                    ? 'No safety issues were reported during this reporting period'
-                    : 'Click Add Issue to document any safety incidents'}
-            </p>
-        </div>
-    )
-}
-/** Review-mode plugin for the Safety Manager report — read-only view of submitted safety issues with photos. */
+
 export function SafetyManagerReviewPlugin({ form }) {
     const issues = normalizeIssues(form.issues)
     if (issues.length === 0) {
         return (
-            <div className="rounded border border-border-light bg-white p-6 mb-6">
-                <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
-                    <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-emerald-100 text-emerald-600 text-base">
-                            <i className="fas fa-shield-alt"></i>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-800 m-0">Safety Issues & Incidents</h3>
-                            <p className="text-sm text-slate-500 mt-1 mb-0">
-                                No safety incidents reported for this period
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            <div className="rounded p-3 mt-2.5" style={CARD_STYLE}>
+                <CardHeader
+                    icon="fa-shield-alt"
+                    iconBg="rgba(22, 163, 74, 0.12)"
+                    iconColor="#15803d"
+                    label="Safety"
+                    title="Issues & Incidents"
+                    sub="No safety incidents reported for this period."
+                />
                 <SafetyEmptyState success />
             </div>
         )
     }
     return (
-        <div className="rounded border border-border-light bg-white p-6 mb-6">
-            <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
-                <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-red-100 text-red-600 text-base">
-                        <i className="fas fa-exclamation-circle"></i>
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-semibold text-slate-800 m-0">Safety Issues & Incidents</h3>
-                        <p className="text-sm text-slate-500 mt-1 mb-0">
-                            {issues.length} issue{issues.length > 1 ? 's' : ''} reported for this period
-                        </p>
-                    </div>
-                </div>
-                <div className="inline-flex items-center gap-2 rounded-lg bg-red-100 px-4 py-2 text-sm font-semibold text-red-600">
-                    <i className="fas fa-clipboard-list"></i>
-                    {issues.length} Incident{issues.length > 1 ? 's' : ''}
-                </div>
-            </div>
-            <div className="flex flex-col gap-4">
+        <div className="rounded p-3 mt-2.5" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-exclamation-circle"
+                iconBg="rgba(220, 38, 38, 0.12)"
+                iconColor="#b91c1c"
+                label="Safety"
+                title="Issues & Incidents"
+                sub={`${issues.length} issue${issues.length > 1 ? 's' : ''} reported for this period.`}
+                right={
+                    <span
+                        className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums"
+                        style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
+                    >
+                        <i className="fas fa-clipboard-list text-[9px]" />
+                        {issues.length} Incident{issues.length > 1 ? 's' : ''}
+                    </span>
+                }
+            />
+            <div className="flex flex-col gap-2">
                 {issues.map((issue, idx) => {
                     const tags = getIssueTags(issue)
                     return (
                         <div
                             key={issue.id || idx}
-                            className="rounded border border-border-light bg-bg-secondary overflow-hidden"
+                            className="rounded overflow-hidden"
+                            style={{
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-light)'
+                            }}
                         >
                             <IssueCardHeader issue={issue} idx={idx} readOnly />
-                            <div className="flex flex-col gap-4 p-5">
-                                <TagsDisplay tags={tags} readOnly />
-                                <div className="rounded-lg border border-border-light bg-white p-4">
-                                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                                        <i className="fas fa-file-alt"></i>Description
+                            <div className="flex flex-col gap-2 p-2.5">
+                                {tags.length > 0 && <TagsDisplay tags={tags} readOnly />}
+                                <div
+                                    className="rounded p-2.5"
+                                    style={{
+                                        background: 'var(--bg-primary)',
+                                        border: '1px solid var(--border-light)'
+                                    }}
+                                >
+                                    <div
+                                        className={`${SECTION_LABEL_CLASS} mb-1 flex items-center gap-1.5`}
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    >
+                                        <i className="fas fa-file-alt text-[10px]" />
+                                        Description
                                     </div>
-                                    <div className="text-[0.9375rem] text-slate-800 leading-relaxed">
-                                        {issue.description || 'No description provided'}
+                                    <div
+                                        className="text-[12.5px] leading-relaxed"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        {issue.description || (
+                                            <span className="italic" style={{ color: 'var(--text-tertiary)' }}>
+                                                No description provided.
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>

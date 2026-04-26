@@ -109,32 +109,62 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         }
         setExporting(false)
     }
+    /* Plan-tab compact form chrome — same tokens used by the redesigned
+     * Plant / District manager report bodies and the submit view. */
+    const REVIEW_SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+    const REVIEW_FIELD_CLASS = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border opacity-90'
+    const REVIEW_FIELD_STYLE = {
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-light)',
+        color: 'var(--text-primary)'
+    }
     const renderPlantManagerForm = () => (
-        <div className="bg-white rounded-xl border border-border-light p-6 mb-6">
-            <div className="mb-5">
-                <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
-                    <i className="fas fa-clipboard-list"></i>Weekly Production Data
-                </h3>
-                <p className="text-sm text-slate-500 mt-2 mb-0">Key production metrics for this reporting period</p>
+        <div
+            className="rounded p-3 mb-2.5"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
+            <div className="flex items-center gap-2 mb-2">
+                <div
+                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                >
+                    <i className="fas fa-clipboard-list text-[11px]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className={REVIEW_SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                        Production
+                    </div>
+                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                        Weekly Production Data
+                    </div>
+                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                        Key production metrics for this reporting period.
+                    </div>
+                </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                 {report.fields
                     .filter((f) => f.name !== 'issues' && f.type !== 'table')
                     .map((field) => (
-                        <div key={field.name} className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
+                        <div
+                            key={field.name}
+                            className="flex flex-col gap-1.5 rounded p-2.5"
+                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                        >
+                            <label className="flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
                                 <i
-                                    className={`fas ${getFieldIcon(field.name)} text-sm`}
+                                    className={`fas ${getFieldIcon(field.name)} text-[10px]`}
                                     style={{ color: accentColor }}
-                                ></i>
-                                <label className="text-sm font-semibold text-gray-700">{getFieldLabel(field)}</label>
-                            </div>
+                                />
+                                <span className={REVIEW_SECTION_LABEL_CLASS}>{getFieldLabel(field)}</span>
+                            </label>
                             <input
                                 type={field.type}
                                 value={form[field.name] ?? ''}
                                 readOnly
                                 disabled
-                                className="px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-slate-50 w-full"
+                                className={REVIEW_FIELD_CLASS}
+                                style={REVIEW_FIELD_STYLE}
                             />
                         </div>
                     ))}
@@ -142,7 +172,10 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         </div>
     )
     const renderDefaultForm = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-white rounded-xl border border-border-light p-6 mb-6">
+        <div
+            className="rounded p-3 mb-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
             {report.fields
                 .filter(
                     (f) =>
@@ -151,10 +184,18 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                         ) && f.type !== 'table'
                 )
                 .map((field) => (
-                    <div key={field.name} className="flex flex-col gap-2">
-                        <label className="text-sm font-semibold text-gray-700">
+                    <div
+                        key={field.name}
+                        className="flex flex-col gap-1.5 rounded p-2.5"
+                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                    >
+                        <label className={REVIEW_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                             {getFieldLabel(field)}
-                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                            {field.required && (
+                                <span className="ml-0.5" style={{ color: '#dc2626' }}>
+                                    *
+                                </span>
+                            )}
                         </label>
                         {field.type === 'textarea' ||
                         (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
@@ -162,14 +203,17 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 value={form[field.name] ?? ''}
                                 readOnly
                                 disabled
-                                className="px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-slate-50 min-h-[100px] resize-y"
+                                rows={4}
+                                className={`${REVIEW_FIELD_CLASS} resize-y min-h-[88px]`}
+                                style={REVIEW_FIELD_STYLE}
                             />
                         ) : field.type === 'select' ? (
                             <select
                                 value={form[field.name] ?? ''}
                                 readOnly
                                 disabled
-                                className="px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-slate-50"
+                                className={`${REVIEW_FIELD_CLASS} appearance-none cursor-not-allowed pr-8`}
+                                style={REVIEW_FIELD_STYLE}
                             >
                                 <option value="">Select...</option>
                                 {field.options?.map((opt) => (
@@ -184,7 +228,8 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                                 value={form[field.name] ?? ''}
                                 readOnly
                                 disabled
-                                className="px-4 py-3 border border-border-light rounded-lg text-sm text-slate-800 bg-slate-50"
+                                className={REVIEW_FIELD_CLASS}
+                                style={REVIEW_FIELD_STYLE}
                             />
                         )}
                     </div>
@@ -298,7 +343,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 </div>
             )}
             {!isPlantShutdown && (
-                <div className="p-6 max-w-5xl mx-auto">
+                <div className="p-6 w-full">
                     {report.name === 'plant_manager' && renderPlantManagerForm()}
                     {!PLUGIN_ONLY_REPORTS.includes(report.name) &&
                         report.name !== 'plant_manager' &&

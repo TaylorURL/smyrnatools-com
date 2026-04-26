@@ -3,56 +3,155 @@ import ReactDOM from 'react-dom'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
 import { OperatorService } from '../../../../services/OperatorService'
+
+/* ── Plan-tab design tokens ───────────────────────────────────────────────
+ *  Same vocabulary as the District / Plant / Efficiency / Aggregate /
+ *  Safety report rewrites. */
+const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+const CARD_STYLE = { background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }
+const FIELD_STYLE = {
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-light)',
+    color: 'var(--text-primary)'
+}
+const FIELD_INPUT_CLASS = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border disabled:opacity-90'
+const TH_BASE = `${SECTION_LABEL_CLASS} px-3 py-2 text-left whitespace-nowrap`
+const TH_STYLE = {
+    background: 'var(--bg-tertiary)',
+    color: 'var(--text-tertiary)',
+    borderBottom: '1px solid var(--border-light)'
+}
+const TD_BASE = 'px-3 py-1.5 text-[12px] align-middle'
+
 const POSITIONS = {
     MIXER: 'Mixer Operator',
     TRACTOR: 'Tractor Operator'
-}
-const CATEGORY_HEADER_COLORS = {
-    [POSITIONS.MIXER]: 'bg-slate-700',
-    [POSITIONS.TRACTOR]: 'bg-slate-600'
 }
 const CATEGORY_ICONS = {
     [POSITIONS.MIXER]: 'fa-truck-loading',
     [POSITIONS.TRACTOR]: 'fa-tractor'
 }
-const TH =
-    'bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-gray-200 whitespace-nowrap'
-const TD = 'px-4 py-3 text-[0.9375rem] text-slate-800 border-b border-slate-100 align-middle last:border-b-0'
-const ACTION_BTN =
-    'inline-flex items-center gap-1.5 rounded-md border border-white/30 bg-white/15 px-2.5 py-1.5 text-xs font-medium text-white cursor-pointer transition-colors hover:bg-white/25 disabled:opacity-50 disabled:cursor-not-allowed'
+
 function getPlantNameFromList(plantCode, plants) {
     const plant = plants?.find((p) => (p.plant_code || p.code) === plantCode)
     return plant?.name || plantCode || '—'
 }
+
+/* ── Primitives ──────────────────────────────────────────────────────────── */
+
+function CardHeader({ icon, label, sub, title, right }) {
+    return (
+        <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2 min-w-0">
+                <div
+                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                >
+                    <i className={`fas ${icon} text-[11px]`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                    {label && (
+                        <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            {label}
+                        </div>
+                    )}
+                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                        {title}
+                    </div>
+                    {sub && (
+                        <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                            {sub}
+                        </div>
+                    )}
+                </div>
+            </div>
+            {right && <div className="shrink-0">{right}</div>}
+        </div>
+    )
+}
+
+function ActionChip({ accent, children, disabled, icon, onClick, title }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            title={title}
+            className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-light)',
+                color: accent || 'var(--text-secondary)'
+            }}
+        >
+            {icon && <i className={`fas ${icon} text-[10px]`} />}
+            {children}
+        </button>
+    )
+}
+
 function RMIEmptyState({ icon = 'fa-user-slash', message }) {
     return (
-        <div className="text-center p-8 text-slate-500">
-            <i className={`fas ${icon} text-3xl text-slate-300 mb-3 block`}></i>
-            <p className="m-0 text-sm">{message}</p>
+        <div
+            className="flex items-center justify-center gap-2 py-5 px-3 rounded text-[11.5px]"
+            style={{
+                background: 'var(--bg-secondary)',
+                border: '1px dashed var(--border-medium)',
+                color: 'var(--text-tertiary)'
+            }}
+        >
+            <i className={`fas ${icon} text-[12px]`} />
+            <span>{message}</span>
         </div>
     )
 }
-function RMICategoryHeader({ position, label, count, actions }) {
-    const bgColor = CATEGORY_HEADER_COLORS[position] || CATEGORY_HEADER_COLORS[POSITIONS.MIXER]
+
+function CategoryCard({ position, label, count, actions, children }) {
     const icon = CATEGORY_ICONS[position] || CATEGORY_ICONS[POSITIONS.MIXER]
     return (
-        <div className={`flex items-center gap-3 p-4 text-white font-semibold ${bgColor}`}>
-            <i className={`fas ${icon}`}></i>
-            <span>{label}</span>
-            <span className="ml-auto rounded-full bg-white/20 px-2.5 py-1 text-[0.8125rem]">{count}</span>
-            {actions && <div className="flex gap-2 ml-2">{actions}</div>}
+        <div
+            className="rounded overflow-hidden flex flex-col"
+            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+        >
+            <div
+                className="flex items-center justify-between gap-2 px-2.5 py-2 flex-wrap"
+                style={{ background: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-light)' }}
+            >
+                <div className="flex items-center gap-2">
+                    <i className={`fas ${icon} text-[11px]`} style={{ color: 'var(--text-secondary)' }} />
+                    <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        {label}
+                    </span>
+                    <span
+                        className="inline-flex items-center justify-center rounded text-[10.5px] font-bold tabular-nums"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-secondary)',
+                            minWidth: 22,
+                            height: 18,
+                            padding: '0 5px'
+                        }}
+                    >
+                        {count}
+                    </span>
+                </div>
+                {actions && <div className="flex gap-1 flex-wrap">{actions}</div>}
+            </div>
+            <div className="p-2">{children}</div>
         </div>
     )
 }
-function RMIDataTable({ headers, data, renderRow, emptyMessage, emptyIcon = 'fa-check-circle' }) {
+
+function DataTable({ data, headers, renderRow, emptyIcon = 'fa-check-circle', emptyMessage }) {
     if (!data?.length) return <RMIEmptyState icon={emptyIcon} message={emptyMessage} />
     return (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-            <table className="w-full min-w-[400px] border-collapse">
+        <div className="overflow-x-auto rounded" style={CARD_STYLE}>
+            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                     <tr>
                         {headers.map((h, i) => (
-                            <th key={i} className={TH}>
+                            <th key={i} className={TH_BASE} style={TH_STYLE}>
                                 {h}
                             </th>
                         ))}
@@ -63,38 +162,65 @@ function RMIDataTable({ headers, data, renderRow, emptyMessage, emptyIcon = 'fa-
         </div>
     )
 }
-function TrainerTable({ trainers, plants, position, onRemove, readOnly }) {
-    const headers = readOnly ? ['Trainer Name', 'Plant', 'Status'] : ['Trainer Name', 'Plant', 'Status', 'Action']
+
+function TableRowActionButton({ onClick, title }) {
     return (
-        <RMIDataTable
+        <button
+            type="button"
+            onClick={onClick}
+            title={title}
+            className="flex items-center justify-center rounded border-none cursor-pointer"
+            style={{
+                background: 'rgba(220, 38, 38, 0.12)',
+                color: '#b91c1c',
+                height: 22,
+                width: 22
+            }}
+        >
+            <i className="fas fa-times text-[10px]" />
+        </button>
+    )
+}
+
+const ROW_STYLE = { borderTop: '1px solid var(--border-light)', color: 'var(--text-primary)' }
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+function TrainerTable({ trainers, plants, position, onRemove, readOnly }) {
+    const headers = readOnly ? ['Trainer', 'Plant', 'Status'] : ['Trainer', 'Plant', 'Status', '']
+    return (
+        <DataTable
             headers={headers}
             data={trainers}
-            emptyMessage={`No ${position === POSITIONS.MIXER ? 'mixer' : 'tractor'} trainers ${readOnly ? 'recorded' : '- pull live data or add manually'}`}
+            emptyMessage={`No ${position === POSITIONS.MIXER ? 'mixer' : 'tractor'} trainers ${
+                readOnly ? 'recorded' : '— pull live data or add manually'
+            }`}
             emptyIcon="fa-user-slash"
             renderRow={(trainer) => (
-                <tr key={trainer.id} className="hover:[&>td]:bg-slate-50">
-                    <td className={TD}>
-                        <div className="flex items-center gap-2 font-medium">
-                            <i className="fas fa-user-tie text-sm text-slate-500"></i>
+                <tr key={trainer.id} style={ROW_STYLE}>
+                    <td className={`${TD_BASE} font-semibold`}>
+                        <div className="flex items-center gap-1.5">
+                            <i className="fas fa-user-tie text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
                             {trainer.name}
                         </div>
                     </td>
-                    <td className={TD}>{getPlantNameFromList(trainer.plant, plants)}</td>
-                    <td className={TD}>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-600">
+                    <td className={TD_BASE} style={{ color: 'var(--text-secondary)' }}>
+                        {getPlantNameFromList(trainer.plant, plants)}
+                    </td>
+                    <td className={TD_BASE}>
+                        <span
+                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
+                            style={{ background: 'rgba(22, 163, 74, 0.12)', color: '#15803d' }}
+                        >
                             {trainer.status}
                         </span>
                     </td>
                     {!readOnly && (
-                        <td className={TD}>
-                            <button
-                                type="button"
-                                className="rounded-md border border-gray-200 bg-transparent p-2 text-slate-500 cursor-pointer hover:bg-red-100 hover:text-red-600 hover:border-red-200"
+                        <td className={`${TD_BASE} text-right`}>
+                            <TableRowActionButton
                                 onClick={() => onRemove(position, trainer.id)}
                                 title="Remove trainer"
-                            >
-                                <i className="fas fa-times"></i>
-                            </button>
+                            />
                         </td>
                     )}
                 </tr>
@@ -102,35 +228,32 @@ function TrainerTable({ trainers, plants, position, onRemove, readOnly }) {
         />
     )
 }
+
 function PendingTable({ pending, plants, position, onRemove, readOnly }) {
-    const headers = readOnly
-        ? ['Operator Name', 'Plant', 'Start Date']
-        : ['Operator Name', 'Plant', 'Start Date', 'Action']
+    const headers = readOnly ? ['Operator', 'Plant', 'Start Date'] : ['Operator', 'Plant', 'Start Date', '']
     return (
-        <RMIDataTable
+        <DataTable
             headers={headers}
             data={pending}
             emptyMessage={`No pending ${position === POSITIONS.MIXER ? 'mixer' : 'tractor'} operators`}
             renderRow={(op) => (
-                <tr key={op.id} className="hover:[&>td]:bg-slate-50">
-                    <td className={TD}>
-                        <div className="flex items-center gap-2 font-medium">
-                            <i className="fas fa-user text-sm text-slate-500"></i>
+                <tr key={op.id} style={ROW_STYLE}>
+                    <td className={`${TD_BASE} font-semibold`}>
+                        <div className="flex items-center gap-1.5">
+                            <i className="fas fa-user text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
                             {op.name}
                         </div>
                     </td>
-                    <td className={TD}>{getPlantNameFromList(op.plant, plants)}</td>
-                    <td className={TD}>{op.startDate}</td>
+                    <td className={TD_BASE} style={{ color: 'var(--text-secondary)' }}>
+                        {getPlantNameFromList(op.plant, plants)}
+                    </td>
+                    <td className={`${TD_BASE} tabular-nums`}>{op.startDate || '—'}</td>
                     {!readOnly && (
-                        <td className={TD}>
-                            <button
-                                type="button"
-                                className="rounded-md border border-gray-200 bg-transparent p-2 text-slate-500 cursor-pointer hover:bg-red-100 hover:text-red-600 hover:border-red-200"
+                        <td className={`${TD_BASE} text-right`}>
+                            <TableRowActionButton
                                 onClick={() => onRemove(position, op.id)}
                                 title="Remove pending operator"
-                            >
-                                <i className="fas fa-times"></i>
-                            </button>
+                            />
                         </td>
                     )}
                 </tr>
@@ -138,33 +261,34 @@ function PendingTable({ pending, plants, position, onRemove, readOnly }) {
         />
     )
 }
+
 function TrainingTable({ training, plants, position, onRemove, readOnly }) {
-    const headers = readOnly ? ['Operator Name', 'Plant', 'Trainer'] : ['Operator Name', 'Plant', 'Trainer', 'Action']
+    const headers = readOnly ? ['Operator', 'Plant', 'Trainer'] : ['Operator', 'Plant', 'Trainer', '']
     return (
-        <RMIDataTable
+        <DataTable
             headers={headers}
             data={training}
             emptyMessage={`No ${position === POSITIONS.MIXER ? 'mixer' : 'tractor'} operators in training`}
             renderRow={(op) => (
-                <tr key={op.id} className="hover:[&>td]:bg-slate-50">
-                    <td className={TD}>
-                        <div className="flex items-center gap-2 font-medium">
-                            <i className="fas fa-user text-sm text-slate-500"></i>
+                <tr key={op.id} style={ROW_STYLE}>
+                    <td className={`${TD_BASE} font-semibold`}>
+                        <div className="flex items-center gap-1.5">
+                            <i className="fas fa-user text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
                             {op.name}
                         </div>
                     </td>
-                    <td className={TD}>{getPlantNameFromList(op.plant, plants)}</td>
-                    <td className={TD}>{op.trainer || '—'}</td>
+                    <td className={TD_BASE} style={{ color: 'var(--text-secondary)' }}>
+                        {getPlantNameFromList(op.plant, plants)}
+                    </td>
+                    <td className={TD_BASE} style={{ color: 'var(--text-primary)' }}>
+                        {op.trainer || '—'}
+                    </td>
                     {!readOnly && (
-                        <td className={TD}>
-                            <button
-                                type="button"
-                                className="rounded-md border border-gray-200 bg-transparent p-2 text-slate-500 cursor-pointer hover:bg-red-100 hover:text-red-600 hover:border-red-200"
+                        <td className={`${TD_BASE} text-right`}>
+                            <TableRowActionButton
                                 onClick={() => onRemove(position, op.id)}
                                 title="Remove training operator"
-                            >
-                                <i className="fas fa-times"></i>
-                            </button>
+                            />
                         </td>
                     )}
                 </tr>
@@ -172,14 +296,42 @@ function TrainingTable({ training, plants, position, onRemove, readOnly }) {
         />
     )
 }
+
+function TerminatedTable({ operators, plants }) {
+    return (
+        <DataTable
+            headers={['Operator', 'Plant', 'Position']}
+            data={operators}
+            emptyMessage="No terminated operators recorded."
+            emptyIcon="fa-user-check"
+            renderRow={(op) => (
+                <tr key={op.id} style={ROW_STYLE}>
+                    <td className={`${TD_BASE} font-semibold`}>
+                        <div className="flex items-center gap-1.5">
+                            <i className="fas fa-user-slash text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                            {op.name}
+                        </div>
+                    </td>
+                    <td className={TD_BASE} style={{ color: 'var(--text-secondary)' }}>
+                        {getPlantNameFromList(op.plant, plants)}
+                    </td>
+                    <td className={TD_BASE} style={{ color: 'var(--text-primary)' }}>
+                        {op.position || '—'}
+                    </td>
+                </tr>
+            )}
+        />
+    )
+}
+
 function HiringGoalsTable({ plants, hiringGoals, onChange, readOnly }) {
     return (
-        <div>
-            <table className="w-full border-collapse">
+        <div className="overflow-x-auto rounded" style={CARD_STYLE}>
+            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                     <tr>
-                        {['Plant Name', 'Code', 'Hiring Goal'].map((h) => (
-                            <th key={h} className={TH}>
+                        {['Plant', 'Code', 'Hiring Goal'].map((h) => (
+                            <th key={h} className={TH_BASE} style={TH_STYLE}>
                                 {h}
                             </th>
                         ))}
@@ -190,31 +342,45 @@ function HiringGoalsTable({ plants, hiringGoals, onChange, readOnly }) {
                         const plantCode = plant.plant_code || plant.code
                         const plantName = plant.name || plant.plant_name || plantCode
                         return (
-                            <tr key={plantCode} className="hover:[&>td]:bg-slate-50">
-                                <td className={`${TD} font-medium`}>
-                                    <div className="flex items-center gap-2">
-                                        <i className="fas fa-industry text-slate-400"></i>
+                            <tr key={plantCode} style={ROW_STYLE}>
+                                <td className={`${TD_BASE} font-semibold`}>
+                                    <div className="flex items-center gap-1.5">
+                                        <i
+                                            className="fas fa-industry text-[10px]"
+                                            style={{ color: 'var(--text-tertiary)' }}
+                                        />
                                         <span>{plantName}</span>
                                     </div>
                                 </td>
-                                <td className={TD}>
-                                    <span className="inline-flex rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                                <td className={TD_BASE}>
+                                    <span
+                                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums"
+                                        style={{
+                                            background: 'var(--bg-tertiary)',
+                                            color: 'var(--text-secondary)',
+                                            border: '1px solid var(--border-light)'
+                                        }}
+                                    >
                                         {plantCode}
                                     </span>
                                 </td>
-                                <td className={TD}>
+                                <td className={TD_BASE}>
                                     {readOnly ? (
-                                        <div className="font-semibold text-slate-800">
+                                        <div
+                                            className="font-bold text-[13px] tabular-nums"
+                                            style={{ color: 'var(--text-primary)' }}
+                                        >
                                             {hiringGoals[plantCode] || '0'}
                                         </div>
                                     ) : (
                                         <input
                                             type="number"
                                             min="0"
-                                            className="w-20 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-center text-slate-800 disabled:bg-slate-50 disabled:text-slate-500"
                                             value={hiringGoals[plantCode] || ''}
                                             onChange={(e) => onChange(plantCode, e.target.value)}
                                             placeholder="0"
+                                            className={`${FIELD_INPUT_CLASS} text-center tabular-nums`}
+                                            style={{ ...FIELD_STYLE, width: 80 }}
                                         />
                                     )}
                                 </td>
@@ -226,27 +392,25 @@ function HiringGoalsTable({ plants, hiringGoals, onChange, readOnly }) {
         </div>
     )
 }
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+
 function TrainersSection({ mixerTrainers, tractorTrainers, plants, readOnly, onRemove, actions }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
-            <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
-                <div>
-                    <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
-                        <i className="fas fa-chalkboard-teacher text-slate-600"></i>Active Trainers by Position
-                    </h3>
-                    <p className="text-sm text-slate-500 mt-2 mb-0">
-                        Current instructors assigned to train new operators
-                    </p>
-                </div>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-6">
-                <div className="rounded-xl border border-gray-200 bg-slate-50 overflow-hidden">
-                    <RMICategoryHeader
-                        position={POSITIONS.MIXER}
-                        label="Mixer Trainers"
-                        count={mixerTrainers.length}
-                        actions={actions?.mixer}
-                    />
+        <div className="rounded p-3" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-chalkboard-teacher"
+                label="Trainers"
+                title="Active Trainers by Position"
+                sub="Current instructors assigned to train new operators."
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                <CategoryCard
+                    position={POSITIONS.MIXER}
+                    label="Mixer Trainers"
+                    count={mixerTrainers.length}
+                    actions={actions?.mixer}
+                >
                     <TrainerTable
                         trainers={mixerTrainers}
                         plants={plants}
@@ -254,14 +418,13 @@ function TrainersSection({ mixerTrainers, tractorTrainers, plants, readOnly, onR
                         onRemove={onRemove}
                         readOnly={readOnly}
                     />
-                </div>
-                <div className="rounded-xl border border-gray-200 bg-slate-50 overflow-hidden">
-                    <RMICategoryHeader
-                        position={POSITIONS.TRACTOR}
-                        label="Tractor Trainers"
-                        count={tractorTrainers.length}
-                        actions={actions?.tractor}
-                    />
+                </CategoryCard>
+                <CategoryCard
+                    position={POSITIONS.TRACTOR}
+                    label="Tractor Trainers"
+                    count={tractorTrainers.length}
+                    actions={actions?.tractor}
+                >
                     <TrainerTable
                         trainers={tractorTrainers}
                         plants={plants}
@@ -269,32 +432,28 @@ function TrainersSection({ mixerTrainers, tractorTrainers, plants, readOnly, onR
                         onRemove={onRemove}
                         readOnly={readOnly}
                     />
-                </div>
+                </CategoryCard>
             </div>
         </div>
     )
 }
+
 function PendingSection({ mixerPending, tractorPending, plants, readOnly, onRemove, actions }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
-            <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
-                <div>
-                    <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
-                        <i className="fas fa-user-clock text-slate-600"></i>Pending Start Operators
-                    </h3>
-                    <p className="text-sm text-slate-500 mt-2 mb-0">
-                        New operators awaiting start date with assigned trainers
-                    </p>
-                </div>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-6">
-                <div className="rounded-xl border border-gray-200 bg-slate-50 overflow-hidden mb-4">
-                    <RMICategoryHeader
-                        position={POSITIONS.MIXER}
-                        label="Mixer Operators"
-                        count={mixerPending.length}
-                        actions={actions?.mixer}
-                    />
+        <div className="rounded p-3" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-user-clock"
+                label="Pending"
+                title="Pending Start Operators"
+                sub="New operators awaiting start date with assigned trainers."
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                <CategoryCard
+                    position={POSITIONS.MIXER}
+                    label="Mixer Operators"
+                    count={mixerPending.length}
+                    actions={actions?.mixer}
+                >
                     <PendingTable
                         pending={mixerPending}
                         plants={plants}
@@ -302,14 +461,13 @@ function PendingSection({ mixerPending, tractorPending, plants, readOnly, onRemo
                         onRemove={onRemove}
                         readOnly={readOnly}
                     />
-                </div>
-                <div className="rounded-xl border border-gray-200 bg-slate-50 overflow-hidden mb-4">
-                    <RMICategoryHeader
-                        position={POSITIONS.TRACTOR}
-                        label="Tractor Operators"
-                        count={tractorPending.length}
-                        actions={actions?.tractor}
-                    />
+                </CategoryCard>
+                <CategoryCard
+                    position={POSITIONS.TRACTOR}
+                    label="Tractor Operators"
+                    count={tractorPending.length}
+                    actions={actions?.tractor}
+                >
                     <PendingTable
                         pending={tractorPending}
                         plants={plants}
@@ -317,32 +475,28 @@ function PendingSection({ mixerPending, tractorPending, plants, readOnly, onRemo
                         onRemove={onRemove}
                         readOnly={readOnly}
                     />
-                </div>
+                </CategoryCard>
             </div>
         </div>
     )
 }
+
 function TrainingSection({ mixerTraining, tractorTraining, plants, readOnly, onRemove, actions }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
-            <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
-                <div>
-                    <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
-                        <i className="fas fa-graduation-cap text-slate-600"></i>Training Operators
-                    </h3>
-                    <p className="text-sm text-slate-500 mt-2 mb-0">
-                        Operators currently in training with assigned trainers
-                    </p>
-                </div>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-6">
-                <div className="rounded-xl border border-gray-200 bg-slate-50 overflow-hidden mb-4">
-                    <RMICategoryHeader
-                        position={POSITIONS.MIXER}
-                        label="Mixer Operators"
-                        count={mixerTraining.length}
-                        actions={actions?.mixer}
-                    />
+        <div className="rounded p-3" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-graduation-cap"
+                label="Training"
+                title="Operators in Training"
+                sub="Operators currently in training with assigned trainers."
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                <CategoryCard
+                    position={POSITIONS.MIXER}
+                    label="Mixer Operators"
+                    count={mixerTraining.length}
+                    actions={actions?.mixer}
+                >
                     <TrainingTable
                         training={mixerTraining}
                         plants={plants}
@@ -350,14 +504,13 @@ function TrainingSection({ mixerTraining, tractorTraining, plants, readOnly, onR
                         onRemove={onRemove}
                         readOnly={readOnly}
                     />
-                </div>
-                <div className="rounded-xl border border-gray-200 bg-slate-50 overflow-hidden mb-4">
-                    <RMICategoryHeader
-                        position={POSITIONS.TRACTOR}
-                        label="Tractor Operators"
-                        count={tractorTraining.length}
-                        actions={actions?.tractor}
-                    />
+                </CategoryCard>
+                <CategoryCard
+                    position={POSITIONS.TRACTOR}
+                    label="Tractor Operators"
+                    count={tractorTraining.length}
+                    actions={actions?.tractor}
+                >
                     <TrainingTable
                         training={tractorTraining}
                         plants={plants}
@@ -365,64 +518,151 @@ function TrainingSection({ mixerTraining, tractorTraining, plants, readOnly, onR
                         onRemove={onRemove}
                         readOnly={readOnly}
                     />
-                </div>
+                </CategoryCard>
             </div>
         </div>
     )
 }
-function TerminatedTable({ operators, plants }) {
-    return (
-        <RMIDataTable
-            headers={['Operator Name', 'Plant', 'Position']}
-            data={operators}
-            emptyMessage="No terminated operators recorded"
-            emptyIcon="fa-user-check"
-            renderRow={(op) => (
-                <tr key={op.id} className="hover:[&>td]:bg-slate-50">
-                    <td className={TD}>
-                        <div className="flex items-center gap-2 font-medium">
-                            <i className="fas fa-user-slash text-sm text-slate-500"></i>
-                            {op.name}
-                        </div>
-                    </td>
-                    <td className={TD}>{getPlantNameFromList(op.plant, plants)}</td>
-                    <td className={TD}>{op.position || '—'}</td>
-                </tr>
-            )}
-        />
-    )
-}
+
 function TerminatedSection({ terminatedOperators, plants }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
-            <div className="mb-5">
-                <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
-                    <i className="fas fa-user-slash text-slate-600"></i>Terminated Operators
-                </h3>
-                <p className="text-sm text-slate-500 mt-2 mb-0">
-                    Operators moved to Terminated status during this report week
-                </p>
-            </div>
+        <div className="rounded p-3" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-user-slash"
+                label="Terminated"
+                title="Terminated Operators"
+                sub="Operators moved to Terminated status during this report week."
+            />
             <TerminatedTable operators={terminatedOperators} plants={plants} />
         </div>
     )
 }
+
 function HiringGoalsSection({ plants, hiringGoals, onChange, readOnly }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
-            <div className="flex items-start justify-between mb-5 flex-wrap gap-4">
-                <h3 className="flex items-center gap-3 text-lg font-semibold text-slate-800 m-0">
-                    <i className="fas fa-bullseye text-slate-600"></i>Weekly Hiring Goals
-                </h3>
-                <p className="text-sm text-slate-500 mt-2 mb-0">
-                    {readOnly ? 'Hiring targets for each plant location' : 'Set hiring targets for each plant location'}
-                </p>
-            </div>
+        <div className="rounded p-3" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-bullseye"
+                label="Goals"
+                title="Weekly Hiring Goals"
+                sub={
+                    readOnly ? 'Hiring targets for each plant location.' : 'Set hiring targets for each plant location.'
+                }
+            />
             <HiringGoalsTable plants={plants} hiringGoals={hiringGoals} onChange={onChange} readOnly={readOnly} />
         </div>
     )
 }
-/** Submit-mode plugin for the Ready Mix Instructor report — manages trainer/trainee rosters by category (Mixer/Tractor) with operator selection. */
+
+/* ── Modal primitive ─────────────────────────────────────────────────────── */
+
+function FormModal({ icon, isOpen, onClose, onSubmit, sub, submitDisabled, submitLabel, title, children }) {
+    if (!isOpen || typeof document === 'undefined') return null
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+            <div
+                className="w-full max-w-[480px] max-h-[90vh] overflow-y-auto rounded shadow-2xl"
+                style={CARD_STYLE}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div
+                    className="flex items-center justify-between px-3 py-2.5"
+                    style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
+                >
+                    <div className="flex items-center gap-2 min-w-0">
+                        <div
+                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                        >
+                            <i className={`fas ${icon} text-[11px]`} />
+                        </div>
+                        <div className="min-w-0">
+                            <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                                Action
+                            </div>
+                            <div
+                                className="text-[12.5px] font-semibold leading-tight"
+                                style={{ color: 'var(--text-primary)' }}
+                            >
+                                {title}
+                            </div>
+                            {sub && (
+                                <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                                    {sub}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded border-none cursor-pointer"
+                        style={{
+                            background: 'var(--bg-tertiary)',
+                            color: 'var(--text-secondary)',
+                            height: 24,
+                            width: 24
+                        }}
+                    >
+                        <i className="fas fa-times text-[10px]" />
+                    </button>
+                </div>
+                <div className="p-3 flex flex-col gap-2">{children}</div>
+                <div
+                    className="flex justify-end gap-1.5 px-3 py-2.5"
+                    style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
+                >
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none"
+                        style={{
+                            background: 'var(--bg-tertiary)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-secondary)'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onSubmit}
+                        disabled={submitDisabled}
+                        className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ background: 'var(--accent, #1e3a5f)' }}
+                    >
+                        <i className="fas fa-plus text-[10px]" />
+                        {submitLabel}
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    )
+}
+
+function ModalField({ children, icon, label, required }) {
+    return (
+        <div className="flex flex-col gap-1">
+            <label
+                className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5`}
+                style={{ color: 'var(--text-tertiary)' }}
+            >
+                {icon && <i className={`fas ${icon} text-[10px]`} />}
+                {label}
+                {required && (
+                    <span className="ml-0.5" style={{ color: '#dc2626' }}>
+                        *
+                    </span>
+                )}
+            </label>
+            {children}
+        </div>
+    )
+}
+
+/* ── Submit-mode plugin ─────────────────────────────────────────────────── */
+
 export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants, weekIso }) {
     const [liveOperators, setLiveOperators] = useState([])
     const [isLoading, setIsLoading] = useState(false)
@@ -446,10 +686,6 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
     const mixerTraining = React.useMemo(() => snapshotData.mixer_training || [], [snapshotData])
     const tractorTraining = React.useMemo(() => snapshotData.tractor_training || [], [snapshotData])
     const hiringGoals = form?.hiring_goals || {}
-    // Auto-compute operators whose status changed TO 'Terminated' during the report week.
-    // weekIso is the Monday of the report week (e.g. "2026-04-06"). We apply the same +1 day
-    // UTC→local offset used elsewhere in this codebase (see getWeekDatesFromIso).
-    // Returns normalized {id, name, plant, position} objects so TerminatedTable keys work correctly.
     const terminatedThisWeek = React.useMemo(() => {
         if (!liveOperators.length || !weekIso) return []
         const weekStart = new Date(weekIso)
@@ -722,9 +958,6 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
     useEffect(() => {
         loadLiveData()
     }, [plants, loadLiveData])
-    // Persist the auto-computed terminated list into snapshot_data so the review view
-    // shows a point-in-time snapshot rather than recomputing from live data.
-    // Guard: skip the write when the snapshot already matches to avoid triggering auto-save unnecessarily.
     useEffect(() => {
         if (readOnly || !terminatedThisWeek.length) return
         const existing = snapshotData.terminated_operators
@@ -735,32 +968,29 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
         if (!unchanged) updateSnapshotData('terminated_operators', terminatedThisWeek)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [terminatedThisWeek, readOnly])
+
     const createActionButtons = (pullFn, addFn, clearFn, isAccurate, dataLength) => (
         <>
-            <button
-                type="button"
-                className={ACTION_BTN}
+            <ActionChip
+                icon="fa-sync-alt"
                 onClick={pullFn}
                 disabled={isLoading || readOnly || isAccurate}
                 title={isAccurate ? 'Data is up to date' : 'Pull live data'}
             >
-                <i className="fas fa-sync-alt"></i>
-                <span>Pull</span>
-            </button>
-            <button type="button" className={ACTION_BTN} onClick={addFn} disabled={readOnly} title="Add">
-                <i className="fas fa-plus"></i>
-                <span>Add</span>
-            </button>
-            <button
-                type="button"
-                className={ACTION_BTN}
+                Pull
+            </ActionChip>
+            <ActionChip icon="fa-plus" accent="#0369a1" onClick={addFn} disabled={readOnly} title="Add">
+                Add
+            </ActionChip>
+            <ActionChip
+                icon="fa-trash-alt"
+                accent="#b91c1c"
                 onClick={clearFn}
                 disabled={readOnly || dataLength === 0}
                 title="Clear all"
             >
-                <i className="fas fa-trash-alt"></i>
-                <span>Clear</span>
-            </button>
+                Clear
+            </ActionChip>
         </>
     )
     const trainerActions = {
@@ -829,289 +1059,179 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
             tractorTraining.length
         )
     }
+
     return (
-        <>
-            <div>
-                <TrainersSection
-                    mixerTrainers={mixerTrainers}
-                    tractorTrainers={tractorTrainers}
-                    plants={plants}
-                    readOnly={readOnly}
-                    onRemove={removeTrainer}
-                    actions={trainerActions}
-                />
-                <PendingSection
-                    mixerPending={mixerPending}
-                    tractorPending={tractorPending}
-                    plants={plants}
-                    readOnly={readOnly}
-                    onRemove={removePending}
-                    actions={pendingActions}
-                />
-                <TrainingSection
-                    mixerTraining={mixerTraining}
-                    tractorTraining={tractorTraining}
-                    plants={plants}
-                    readOnly={readOnly}
-                    onRemove={removeTraining}
-                    actions={trainingActions}
-                />
-                <TerminatedSection terminatedOperators={terminatedThisWeek} plants={plants} readOnly={readOnly} />
-                <HiringGoalsSection
-                    plants={plants}
-                    hiringGoals={hiringGoals}
-                    onChange={handleHiringGoalChange}
-                    readOnly={readOnly}
-                />
-                {showAddTrainerModal &&
-                    ReactDOM.createPortal(
-                        <div
-                            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4"
-                            onClick={() => setShowAddTrainerModal(false)}
-                        >
-                            <div
-                                className="w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <i className="fas fa-user-plus text-slate-600"></i>
-                                        <div>
-                                            <h2 className="text-lg font-semibold text-slate-800 m-0">Add Trainer</h2>
-                                            <span className="text-sm text-slate-500">
-                                                Select an existing trainer from your region
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className="border-none bg-transparent text-xl text-slate-500 cursor-pointer p-2 hover:text-slate-800"
-                                        onClick={() => setShowAddTrainerModal(false)}
-                                    >
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div className="flex flex-col gap-4">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Position *
-                                        </label>
-                                        <select
-                                            value={newTrainer.position}
-                                            onChange={(e) =>
-                                                setNewTrainer({
-                                                    ...newTrainer,
-                                                    position: e.target.value,
-                                                    trainerId: ''
-                                                })
-                                            }
-                                            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800"
-                                        >
-                                            <option value={POSITIONS.MIXER}>Mixer Operator</option>
-                                            <option value={POSITIONS.TRACTOR}>Tractor Operator</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Select Trainer *
-                                        </label>
-                                        <select
-                                            value={newTrainer.trainerId}
-                                            onChange={(e) =>
-                                                setNewTrainer({ ...newTrainer, trainerId: e.target.value })
-                                            }
-                                            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800"
-                                        >
-                                            <option value="">Choose a trainer...</option>
-                                            {getAvailableTrainers(newTrainer.position).map((trainer) => (
-                                                <option key={trainer.employeeId} value={trainer.employeeId}>
-                                                    {trainer.name} - {getPlantName(trainer.plantCode)}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {getAvailableTrainers(newTrainer.position).length === 0 && (
-                                            <span className="text-xs text-slate-400 mt-1">
-                                                No trainers available for this position
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Assign to Plant *
-                                        </label>
-                                        <button
-                                            type="button"
-                                            className="flex items-center justify-between w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800 text-left cursor-pointer"
-                                            onClick={() => {
-                                                setPlantModalTarget('trainer')
-                                                setShowPlantModal(true)
-                                            }}
-                                        >
-                                            <span className="flex items-center gap-2">
-                                                <i className="fas fa-industry text-slate-500"></i>
-                                                {newTrainer.plant ? getPlantName(newTrainer.plant) : 'Select Plant...'}
-                                            </span>
-                                            <i className="fas fa-chevron-down text-xs text-slate-500"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
-                                    <button
-                                        type="button"
-                                        className="rounded-lg border-none bg-slate-100 px-6 py-3 text-[0.9375rem] font-semibold text-slate-600 cursor-pointer hover:bg-slate-200"
-                                        onClick={() => setShowAddTrainerModal(false)}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="rounded-lg border-none bg-slate-700 px-6 py-3 text-[0.9375rem] font-semibold text-white cursor-pointer hover:bg-slate-800"
-                                        onClick={addTrainer}
-                                    >
-                                        <i className="fas fa-plus mr-1.5"></i>Add Trainer
-                                    </button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
+        <div className="flex flex-col gap-2.5 mt-2.5">
+            <TrainersSection
+                mixerTrainers={mixerTrainers}
+                tractorTrainers={tractorTrainers}
+                plants={plants}
+                readOnly={readOnly}
+                onRemove={removeTrainer}
+                actions={trainerActions}
+            />
+            <PendingSection
+                mixerPending={mixerPending}
+                tractorPending={tractorPending}
+                plants={plants}
+                readOnly={readOnly}
+                onRemove={removePending}
+                actions={pendingActions}
+            />
+            <TrainingSection
+                mixerTraining={mixerTraining}
+                tractorTraining={tractorTraining}
+                plants={plants}
+                readOnly={readOnly}
+                onRemove={removeTraining}
+                actions={trainingActions}
+            />
+            <TerminatedSection terminatedOperators={terminatedThisWeek} plants={plants} readOnly={readOnly} />
+            <HiringGoalsSection
+                plants={plants}
+                hiringGoals={hiringGoals}
+                onChange={handleHiringGoalChange}
+                readOnly={readOnly}
+            />
+
+            <FormModal
+                icon="fa-user-plus"
+                isOpen={showAddTrainerModal}
+                onClose={() => setShowAddTrainerModal(false)}
+                onSubmit={addTrainer}
+                submitLabel="Add Trainer"
+                title="Add Trainer"
+                sub="Select an existing trainer from your region."
+            >
+                <ModalField icon="fa-briefcase" label="Position" required>
+                    <select
+                        value={newTrainer.position}
+                        onChange={(e) => setNewTrainer({ ...newTrainer, position: e.target.value, trainerId: '' })}
+                        className={`${FIELD_INPUT_CLASS} appearance-none cursor-pointer pr-8`}
+                        style={FIELD_STYLE}
+                    >
+                        <option value={POSITIONS.MIXER}>Mixer Operator</option>
+                        <option value={POSITIONS.TRACTOR}>Tractor Operator</option>
+                    </select>
+                </ModalField>
+                <ModalField icon="fa-user-tie" label="Select Trainer" required>
+                    <select
+                        value={newTrainer.trainerId}
+                        onChange={(e) => setNewTrainer({ ...newTrainer, trainerId: e.target.value })}
+                        className={`${FIELD_INPUT_CLASS} appearance-none cursor-pointer pr-8`}
+                        style={FIELD_STYLE}
+                    >
+                        <option value="">Choose a trainer…</option>
+                        {getAvailableTrainers(newTrainer.position).map((trainer) => (
+                            <option key={trainer.employeeId} value={trainer.employeeId}>
+                                {trainer.name} · {getPlantName(trainer.plantCode)}
+                            </option>
+                        ))}
+                    </select>
+                    {getAvailableTrainers(newTrainer.position).length === 0 && (
+                        <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                            No trainers available for this position.
+                        </span>
                     )}
-                {showAddPendingModal &&
-                    ReactDOM.createPortal(
-                        <div
-                            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4"
-                            onClick={() => setShowAddPendingModal(false)}
-                        >
-                            <div
-                                className="w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <i className="fas fa-user-clock text-slate-600"></i>
-                                        <div>
-                                            <h2 className="text-lg font-semibold text-slate-800 m-0">
-                                                Add Pending Start Operator
-                                            </h2>
-                                            <span className="text-sm text-slate-500">
-                                                Add a new operator awaiting start date
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className="border-none bg-transparent text-xl text-slate-500 cursor-pointer p-2 hover:text-slate-800"
-                                        onClick={() => setShowAddPendingModal(false)}
-                                    >
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div className="flex flex-col gap-4">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Position *
-                                        </label>
-                                        <select
-                                            value={newPending.position}
-                                            onChange={(e) => setNewPending({ ...newPending, position: e.target.value })}
-                                            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800"
-                                        >
-                                            <option value={POSITIONS.MIXER}>Mixer Operator</option>
-                                            <option value={POSITIONS.TRACTOR}>Tractor Operator</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Operator Name *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={newPending.name}
-                                            onChange={(e) => setNewPending({ ...newPending, name: e.target.value })}
-                                            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800"
-                                            placeholder="Enter operator name"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Assign to Plant *
-                                        </label>
-                                        <button
-                                            type="button"
-                                            className="flex items-center justify-between w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800 text-left cursor-pointer"
-                                            onClick={() => {
-                                                setPlantModalTarget('pending')
-                                                setShowPlantModal(true)
-                                            }}
-                                        >
-                                            <span className="flex items-center gap-2">
-                                                <i className="fas fa-industry text-slate-500"></i>
-                                                {newPending.plant ? getPlantName(newPending.plant) : 'Select Plant...'}
-                                            </span>
-                                            <i className="fas fa-chevron-down text-xs text-slate-500"></i>
-                                        </button>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Start Date *
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={newPending.startDate}
-                                            onChange={(e) =>
-                                                setNewPending({ ...newPending, startDate: e.target.value })
-                                            }
-                                            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Assigned Trainer
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={newPending.trainer}
-                                            onChange={(e) => setNewPending({ ...newPending, trainer: e.target.value })}
-                                            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[0.9375rem] text-slate-800"
-                                            placeholder="Enter trainer name (optional)"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
-                                    <button
-                                        type="button"
-                                        className="rounded-lg border-none bg-slate-100 px-6 py-3 text-[0.9375rem] font-semibold text-slate-600 cursor-pointer hover:bg-slate-200"
-                                        onClick={() => setShowAddPendingModal(false)}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="rounded-lg border-none bg-slate-700 px-6 py-3 text-[0.9375rem] font-semibold text-white cursor-pointer hover:bg-slate-800"
-                                        onClick={addPending}
-                                    >
-                                        <i className="fas fa-plus mr-1.5"></i>Add Operator
-                                    </button>
-                                </div>
-                            </div>
-                        </div>,
-                        document.body
-                    )}
-                <PlantDropdownModal
-                    isOpen={showPlantModal}
-                    onClose={() => setShowPlantModal(false)}
-                    plants={plants?.map((p) => ({ plantCode: p.plant_code || p.code, plantName: p.name })) || []}
-                    onSelect={(plantCode) => {
-                        if (plantModalTarget === 'trainer') setNewTrainer({ ...newTrainer, plant: plantCode })
-                        else if (plantModalTarget === 'pending') setNewPending({ ...newPending, plant: plantCode })
-                        setShowPlantModal(false)
-                    }}
-                    searchPlaceholder="Search plants..."
-                />
-            </div>
-        </>
+                </ModalField>
+                <ModalField icon="fa-industry" label="Assign to Plant" required>
+                    <button
+                        type="button"
+                        className={`${FIELD_INPUT_CLASS} flex items-center justify-between text-left cursor-pointer`}
+                        style={FIELD_STYLE}
+                        onClick={() => {
+                            setPlantModalTarget('trainer')
+                            setShowPlantModal(true)
+                        }}
+                    >
+                        <span>{newTrainer.plant ? getPlantName(newTrainer.plant) : 'Select plant…'}</span>
+                        <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
+                    </button>
+                </ModalField>
+            </FormModal>
+
+            <FormModal
+                icon="fa-user-clock"
+                isOpen={showAddPendingModal}
+                onClose={() => setShowAddPendingModal(false)}
+                onSubmit={addPending}
+                submitLabel="Add Operator"
+                title="Add Pending Start Operator"
+                sub="Add a new operator awaiting start date."
+            >
+                <ModalField icon="fa-briefcase" label="Position" required>
+                    <select
+                        value={newPending.position}
+                        onChange={(e) => setNewPending({ ...newPending, position: e.target.value })}
+                        className={`${FIELD_INPUT_CLASS} appearance-none cursor-pointer pr-8`}
+                        style={FIELD_STYLE}
+                    >
+                        <option value={POSITIONS.MIXER}>Mixer Operator</option>
+                        <option value={POSITIONS.TRACTOR}>Tractor Operator</option>
+                    </select>
+                </ModalField>
+                <ModalField icon="fa-user" label="Operator Name" required>
+                    <input
+                        type="text"
+                        value={newPending.name}
+                        onChange={(e) => setNewPending({ ...newPending, name: e.target.value })}
+                        className={FIELD_INPUT_CLASS}
+                        style={FIELD_STYLE}
+                        placeholder="Enter operator name"
+                    />
+                </ModalField>
+                <ModalField icon="fa-industry" label="Assign to Plant" required>
+                    <button
+                        type="button"
+                        className={`${FIELD_INPUT_CLASS} flex items-center justify-between text-left cursor-pointer`}
+                        style={FIELD_STYLE}
+                        onClick={() => {
+                            setPlantModalTarget('pending')
+                            setShowPlantModal(true)
+                        }}
+                    >
+                        <span>{newPending.plant ? getPlantName(newPending.plant) : 'Select plant…'}</span>
+                        <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
+                    </button>
+                </ModalField>
+                <ModalField icon="fa-calendar-alt" label="Start Date" required>
+                    <input
+                        type="date"
+                        value={newPending.startDate}
+                        onChange={(e) => setNewPending({ ...newPending, startDate: e.target.value })}
+                        className={`${FIELD_INPUT_CLASS} tabular-nums`}
+                        style={FIELD_STYLE}
+                    />
+                </ModalField>
+                <ModalField icon="fa-chalkboard-teacher" label="Assigned Trainer">
+                    <input
+                        type="text"
+                        value={newPending.trainer}
+                        onChange={(e) => setNewPending({ ...newPending, trainer: e.target.value })}
+                        className={FIELD_INPUT_CLASS}
+                        style={FIELD_STYLE}
+                        placeholder="Enter trainer name (optional)"
+                    />
+                </ModalField>
+            </FormModal>
+
+            <PlantDropdownModal
+                isOpen={showPlantModal}
+                onClose={() => setShowPlantModal(false)}
+                plants={plants?.map((p) => ({ plantCode: p.plant_code || p.code, plantName: p.name })) || []}
+                onSelect={(plantCode) => {
+                    if (plantModalTarget === 'trainer') setNewTrainer({ ...newTrainer, plant: plantCode })
+                    else if (plantModalTarget === 'pending') setNewPending({ ...newPending, plant: plantCode })
+                    setShowPlantModal(false)
+                }}
+                searchPlaceholder="Search plants..."
+            />
+        </div>
     )
 }
-/** Review-mode plugin for the Ready Mix Instructor report — read-only view of trainer/trainee assignments by category. */
+
+/* ── Review-mode plugin ─────────────────────────────────────────────────── */
+
 export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso }) {
     const snapshotData = form?.snapshot_data || {}
     const mixerTrainers = snapshotData.mixer_trainers || []
@@ -1121,8 +1241,6 @@ export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso }) {
     const mixerTraining = snapshotData.mixer_training || []
     const tractorTraining = snapshotData.tractor_training || []
     const hiringGoals = form?.hiring_goals || {}
-    // Reports submitted before this feature was added won't have terminated_operators in the snapshot.
-    // Fall back to computing from live operator data for those older reports.
     const snapshotHasTerminated = Array.isArray(snapshotData.terminated_operators)
     const [liveTerminated, setLiveTerminated] = useState([])
     useEffect(() => {
@@ -1146,14 +1264,14 @@ export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso }) {
                         .map((op) => ({ id: op.employeeId, name: op.name, plant: op.plantCode, position: op.position }))
                 )
             } catch {
-                // Non-critical — leave list empty if live fetch fails
+                /* Non-critical — leave list empty if live fetch fails. */
             }
         }
         computeFromLive()
     }, [snapshotHasTerminated, weekIso, plants])
     const terminatedOperators = snapshotHasTerminated ? snapshotData.terminated_operators : liveTerminated
     return (
-        <div>
+        <div className="flex flex-col gap-2.5 mt-2.5">
             <TrainersSection mixerTrainers={mixerTrainers} tractorTrainers={tractorTrainers} plants={plants} readOnly />
             <PendingSection mixerPending={mixerPending} tractorPending={tractorPending} plants={plants} readOnly />
             <TrainingSection mixerTraining={mixerTraining} tractorTraining={tractorTraining} plants={plants} readOnly />

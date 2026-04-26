@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [38.5.54] - 2026-04-26
+
+- Redesigned all weekly report forms (submit + review) to use compact, plan-tab-style form chrome with CSS custom properties for dark mode support
+- Replaced hardcoded Tailwind color classes with theme-aware CSS variables (--bg-primary, --text-secondary, --border-light, etc.) across all report types
+- Refactored ReportsSubmitView operator carousel to use compact numbered pill buttons instead of large circular indicators
+- Added section header pattern with icon badges and description text to plant production form and review view
+- Converted operator timing entry layout to a tighter card-based grid with smaller font sizes and reduced spacing
+- Redesigned the issues/concerns textarea sections across all weekly report types (District Manager, Efficiency, Plant Manager, Quality Control, Ready Mix Instructor, Safety Manager) with compact labeled card styling
+- Added structured section headers with icon + label + title + description pattern to WeeklyDistrictManagerReport and WeeklyPlantManagerReport
+- Refactored WeeklyReadyMixInstructorReport and WeeklySafetyManagerReport to use theme-aware compact form fields with consistent sizing tokens
+- Updated WeeklyAggregateProductionReport fields section with compact card layout and theme variables
+- Replaced white/slate hardcoded backgrounds with var(--bg-secondary) and var(--bg-primary) throughout all report components
+- Widened the review view container from max-w-5xl to full width
+- Standardized form field classes (FORM_FIELD_BASE_CLASS, FORM_SECTION_LABEL_CLASS) as shared tokens within submit and review views
+
 ## [38.5.53] - 2026-04-26
 
 - Moved TruckCoverageHoverCard into a React portal so the popup escapes the table's stacking context created by row-stagger animations
