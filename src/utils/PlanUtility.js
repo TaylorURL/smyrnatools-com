@@ -374,6 +374,17 @@ export const getTruckShortfall = (order, overrides) => {
  * `computeSendHomeRows` wrap this so each caller can pick the slice it needs
  * without duplicating the event-building logic.
  */
+/** Kicker reserve config — every Nth job at a plant holds a truck back from
+ *  the pool to absorb late yardage additions ("kickers"). When any job in
+ *  the block is a big pour, the reserve doubles since kickers there can
+ *  swallow several extra trucks at once. Reserves release after a 2–3 hour
+ *  window scaled to how spread out the block's jobs are. */
+export const KICKER_RESERVE_BLOCK_SIZE = 4
+export const KICKER_RESERVE_BASE_TRUCKS = 1
+export const KICKER_RESERVE_BIG_POUR_TRUCKS = 2
+export const KICKER_RESERVE_MIN_DURATION_MIN = 120
+export const KICKER_RESERVE_MAX_DURATION_MIN = 180
+
 const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides = null, helpTransfers = []) => {
     const events = []
     const byOrder = {}
@@ -461,6 +472,86 @@ const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides
             truckCount
         }
     }
+    // ── Kicker reserves ────────────────────────────────────────────────
+    // Group each plant's chronological orders into blocks of
+    // `KICKER_RESERVE_BLOCK_SIZE`. For every full block, hold back 1 truck
+    // (2 if any order in the block triggers the big-pour rule) for a
+    // 2–3 hour window scaled to the block's time span. Modeled as
+    // dispatch/return events so the pool drains and refills the same way
+    // help transfers do — but tagged `kicker: true` so per-order inbound
+    // credit ignores them (the trucks aren't physically returning).
+    const ordersByPlantSorted = {}
+    for (const order of orders || []) {
+        if (isExcludedOrder(order)) continue
+        if (!order?.plantCode) continue
+        const startMin = timeToMinutes(order?.startTime)
+        if (startMin == null) continue
+        if (!ordersByPlantSorted[order.plantCode]) ordersByPlantSorted[order.plantCode] = []
+        ordersByPlantSorted[order.plantCode].push({ order, startMin })
+    }
+    const kickerReservesByPlant = {}
+    Object.entries(ordersByPlantSorted).forEach(([plantCode, list]) => {
+        list.sort((a, b) => a.startMin - b.startMin)
+        const reserves = []
+        for (let i = 0; i + KICKER_RESERVE_BLOCK_SIZE - 1 < list.length; i += KICKER_RESERVE_BLOCK_SIZE) {
+            const block = list.slice(i, i + KICKER_RESERVE_BLOCK_SIZE)
+            const hasBigPour = block.some(({ order }) => isBigPourOrder(order))
+            const reserveCount = hasBigPour ? KICKER_RESERVE_BIG_POUR_TRUCKS : KICKER_RESERVE_BASE_TRUCKS
+            const firstStart = block[0].startMin
+            const lastStart = block[block.length - 1].startMin
+            const span = Math.max(0, lastStart - firstStart)
+            // Reserve duration tracks how spread out the block is — tightly
+            // packed jobs release sooner, dispersed blocks hold longer —
+            // clamped to 2–3 hours so we always anticipate the next chunk
+            // of kickers without deadlocking the pool.
+            const reserveDur = Math.max(
+                KICKER_RESERVE_MIN_DURATION_MIN,
+                Math.min(KICKER_RESERVE_MAX_DURATION_MIN, span + 60)
+            )
+            // Activate the reserve at the LAST job of the block, not the
+            // first — that way the pool drains gradually as the day fills
+            // up instead of dropping a stack of trucks at the morning rush
+            // when 12 jobs all start at 06:00.
+            const holdStart = lastStart
+            const holdEnd = holdStart + reserveDur
+            events.push({
+                count: reserveCount,
+                kicker: true,
+                orderKey: null,
+                plantCode,
+                time: holdStart,
+                type: 'dispatch'
+            })
+            events.push({
+                count: reserveCount,
+                kicker: true,
+                orderKey: null,
+                plantCode,
+                time: holdEnd,
+                type: 'return'
+            })
+            reserves.push({ count: reserveCount, hasBigPour, holdEnd, holdStart })
+        }
+        if (reserves.length > 0) kickerReservesByPlant[plantCode] = reserves
+    })
+    // For each order, sum the kicker reserves active AT its dispatch minute
+    // — that's the count the hover surfaces ("N truck(s) held back for
+    // anticipated kickers"). Done by point sample rather than overlap so
+    // the number lines up exactly with what `poolAtDispatch` reflects.
+    Object.entries(byOrder).forEach(([, entry]) => {
+        const reserves = kickerReservesByPlant[entry.plantCode] || []
+        let held = 0
+        let bigPour = false
+        for (const r of reserves) {
+            if (r.holdStart <= entry.dispatchMinutes && r.holdEnd > entry.dispatchMinutes) {
+                held += r.count
+                if (r.hasBigPour) bigPour = true
+            }
+        }
+        entry.kickerHeldAtDispatch = held
+        entry.kickerBigPourActive = bigPour
+    })
+
     // Credit each order only with TRUE inbound help — inter-plant transfers
     // arriving at this plant during its pour window. Help-transfer events
     // carry `orderKey === null`; order-cycle returns carry a real orderKey
@@ -475,6 +566,10 @@ const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides
             if (event.plantCode !== entry.plantCode) continue
             if (event.type !== 'return') continue
             if (event.orderKey !== null) continue
+            // Kicker reserve "returns" aren't real trucks landing — they're
+            // just the bookkeeping release of a held-back truck — so they
+            // can't credit another order's coverage.
+            if (event.kicker) continue
             if (event.time <= entry.dispatchMinutes || event.time > entry.lastReturnMinutes) continue
             inboundDuringPour += event.count
         }
@@ -625,9 +720,11 @@ export const computeClockInRows = (orders, baseByPlant, getTravelOverrides) => {
                 // The original `slot` staggers operators back from startMin by
                 // the pour spacing — keep that relative cadence so trucks
                 // still load in sequence — then shift everything earlier by
-                // the prep + travel cushion.
+                // the prep + travel cushion. Round to the nearest 5 minute
+                // mark so the schedule reads 06:45 / 06:50, never 06:46.
                 const slot = startMin - (toClockIn - 1 - i) * spacing
-                const t = Math.max(0, slot - clockInOffset)
+                const raw = Math.max(0, slot - clockInOffset)
+                const t = Math.round(raw / 5) * 5
                 rows.push({
                     count: 1,
                     forOrder: order,

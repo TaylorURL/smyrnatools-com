@@ -1,6 +1,23 @@
 # Changelog
 
 
+## [38.5.52] - 2026-04-26
+
+- Added operator clock-in simulation to PlanUtility that calculates when each operator needs to arrive based on pre-trip, loading, slump test, and travel time
+- Added "Compact Schedule" section to the plan dashboard showing pull-up recommendations — later orders that could shift into earlier surplus windows, sorted latest-first for outreach priority
+- Restructured PlanScheduleView into a sidebar + main content layout with a collapsible side menu on desktop and animated inline card on mobile
+- Added table/cards view mode toggle to the schedule toolbar
+- Added clock-in rows to the schedule table so operator arrival times appear inline between orders
+- Added staggered row entrance animations to schedule table rows
+- Added Sunday/Saturday awareness banners showing plant closure or half-crew status
+- Skipped Sundays in realtime mode, initial date resolution, and the Tomorrow button so the plan never lands on a closed-plant day
+- Passed getTravelTime to PlanScheduleView for clock-in calculations
+- Fixed review tab skeleton flicker in ReportsView — only shows the full-page skeleton on first load, keeps existing content visible during subsequent reloads
+- Fixed review permission pill pop-in/out by deriving visibility from the latest permission data instead of gating on the loading flag
+- Renamed "Hours/Mileage" label to "Mileage" on the equipment detail form since hours now has its own dedicated field
+- Simplified parseHours in mixer, tractor, and equipment edge functions to return null instead of falling back to the current value when input is empty or invalid
+- Renamed hours migration file to use timestamped format and removed verification queries
+
 ## [38.5.51] - 2026-04-25
 
 - Replaced rolling 7-day yardage KPI with a Mon–Sat week total that aligns to the actual business week

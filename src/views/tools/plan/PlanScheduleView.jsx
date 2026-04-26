@@ -1325,6 +1325,13 @@ function ScheduleTable({
                                 row.firstTime === row.lastTime
                                     ? formatMinutesClock(row.firstTime)
                                     : `${formatMinutesClock(row.firstTime)}–${formatMinutesClock(row.lastTime)}`
+                            // Average gap between consecutive clock-ins,
+                            // rounded to the nearest 5 min so the dispatcher
+                            // gets a clean cadence (e.g. "every 15 min").
+                            const stagger5 =
+                                row.count > 1 && row.lastTime > row.firstTime
+                                    ? Math.max(5, Math.round((row.lastTime - row.firstTime) / (row.count - 1) / 5) * 5)
+                                    : null
                             return (
                                 <SyntheticRow
                                     animationDelayMs={rowDelay}
@@ -1352,7 +1359,7 @@ function ScheduleTable({
                                     }
                                     secondary={
                                         row.count > 1
-                                            ? `Staggered ${staggerLabel} — early enough to pre-trip, load, slump, drive, and arrive ~5 min before pour.`
+                                            ? `Staggered ${staggerLabel}${stagger5 ? ` · about every ${stagger5} min` : ''} — early enough to pre-trip, load, slump, drive, and arrive ~5 min before pour.`
                                             : `Clocks in early enough to pre-trip, load, slump, drive, and arrive ~5 min before pour.`
                                     }
                                     time={row.time}
@@ -1780,6 +1787,8 @@ function ScheduleTable({
                                                     differsFromDispatch={differsFromDispatch}
                                                     dispatchTrucks={dispatchTrucks}
                                                     helpInWindow={helpInWindow}
+                                                    kickerBigPourActive={!!poolEntry?.kickerBigPourActive}
+                                                    kickerHeld={poolEntry?.kickerHeldAtDispatch || 0}
                                                     liveTravel={!!overrides}
                                                     onMouseEnter={() => openHover(rowKey)}
                                                     onMouseLeave={queueCloseHover}
