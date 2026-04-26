@@ -345,8 +345,13 @@ export function useReportsData() {
         const interval = setInterval(() => setRefreshKey((prev) => prev + 1), 5 * 60 * 1000)
         return () => clearInterval(interval)
     }, [])
+    /** Derive the Review-pill visibility from the *latest known* permission
+     *  data, NOT from the loading flag. The permissions effect keeps the
+     *  previous `hasReviewPermission` map intact while it re-fetches, so
+     *  evaluating against it during a refresh keeps the pill visible
+     *  instead of letting it pop in and out as `isLoadingPermissions`
+     *  toggles. */
     const hasAnyReviewPermission = useMemo(() => {
-        if (isLoadingPermissions) return false
         const allowedReviewTypes =
             regionType === 'office'
                 ? hasReviewPermission['general_manager']
@@ -356,7 +361,7 @@ export function useReportsData() {
                       .filter((rt) => hasReviewPermission[rt.name] && rt.name !== 'general_manager')
                       .map((rt) => rt.name)
         return allowedReviewTypes.length > 0
-    }, [hasReviewPermission, regionType, isLoadingPermissions])
+    }, [hasReviewPermission, regionType])
     const weeksToShow = useMemo(() => {
         const now = new Date()
         return ReportUtility.getLastNWeekIsos(ReportUtility.getTotalWeeksSince(REPORTS_START_DATE, now), now)
@@ -505,12 +510,18 @@ export function useReportsData() {
         },
         [userProfiles]
     )
+    /** True once at least one review week has been fetched. Lets the view
+     *  keep the existing list rendered during subsequent reloads (week
+     *  switches, manual refresh) instead of swapping in the full-page
+     *  skeleton, which reads as the tab "going away and coming back". */
+    const hasLoadedReviewOnce = reviewLoadedWeeks.size > 0
     return {
         addLostLoadReport,
         deleteLostLoadReport,
         getUserName,
         hasAnyReviewPermission,
         hasAssigned,
+        hasLoadedReviewOnce,
         hasLostLoadsDeletePermission,
         hasLostLoadsPermission,
         hasOneOffReviewPermission,

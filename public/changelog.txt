@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [38.5.51] - 2026-04-25
+
+- Replaced rolling 7-day yardage KPI with a Mon–Sat week total that aligns to the actual business week
+- Changed yardage day-over-day comparison to use the previous business day instead of raw yesterday, skipping Sundays and other closed days
+- Extended adjacent plan prefetch window from ±3/−6 to −6..+5 so every weekday view has the dates it needs for week KPIs
+- Removed the "Clear Production" button and its clearPlantProduction action from the plan toolbar
+- Updated YardageDeltaBadge to accept a dynamic comparison label instead of hardcoded "yesterday"
+- Updated Week stat hint from "rolling 7 days" to "this week (Mon–Sat)"
+
 ## [38.5.50] - 2026-04-25
 
 - Added hours column to mixers, tractors, and equipment with full CRUD support across models, configs, add/detail views, edge functions, and a new database migration

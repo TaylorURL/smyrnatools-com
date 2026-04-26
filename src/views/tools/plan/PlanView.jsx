@@ -64,7 +64,7 @@ function PlanView() {
     // Mobile users get the Schedule view only — Planner and Plan tabs depend on
     // wide layouts (zoomable canvas, sticky scrollspy) that don't fit a phone.
     const setViewMode = (mode) => {
-        if (mode === 'realtime') setPlanDate(getTodayDate())
+        if (mode === 'realtime') setPlanDate(skipSundayDate(getTodayDate(), 1))
         setViewModeRaw(mode)
     }
     const effectiveViewMode = isMobile ? 'schedule' : viewMode
@@ -74,8 +74,10 @@ function PlanView() {
     useEffect(() => {
         if (effectiveViewMode !== 'realtime') return undefined
         const snap = () => {
-            const today = getTodayDate()
-            setPlanDate((prev) => (prev === today ? prev : today))
+            // Sundays are non-operating days — snap to Monday instead so the
+            // realtime tab never lands on a closed plant view.
+            const target = skipSundayDate(getTodayDate(), 1)
+            setPlanDate((prev) => (prev === target ? prev : target))
         }
         snap()
         const interval = setInterval(snap, 60_000)
@@ -262,7 +264,7 @@ function PlanView() {
             .then((latest) => {
                 if (cancelled || hasInitializedDateRef.current) return
                 hasInitializedDateRef.current = true
-                if (latest) setPlanDate(latest)
+                if (latest) setPlanDate(skipSundayDate(latest, 1))
             })
             .catch(() => {
                 hasInitializedDateRef.current = true
@@ -467,19 +469,28 @@ function PlanView() {
                                 <i className="fas fa-chevron-right text-xs" />
                             </button>
                         </div>
-                        <button
-                            onClick={() => setPlanDate(skipSundayDate(getTomorrowDate(), 1))}
-                            className="border-none rounded-lg cursor-pointer text-xs font-semibold px-2.5 py-1.5"
-                            style={{
-                                background:
-                                    planDate === getTomorrowDate()
-                                        ? `${accentColor}${isDark ? '30' : '15'}`
-                                        : 'var(--bg-tertiary)',
-                                color: planDate === getTomorrowDate() ? accentColor : 'var(--text-secondary)'
-                            }}
-                        >
-                            Tomorrow
-                        </button>
+                        {(() => {
+                            // Compare against the same Sunday-skipped target the
+                            // click handler sets so the button correctly shows
+                            // as active when planDate matches "tomorrow (or
+                            // Monday if tomorrow is a Sunday)".
+                            const tomorrowTarget = skipSundayDate(getTomorrowDate(), 1)
+                            const isTomorrow = planDate === tomorrowTarget
+                            return (
+                                <button
+                                    onClick={() => setPlanDate(tomorrowTarget)}
+                                    className="border-none rounded-lg cursor-pointer text-xs font-semibold px-2.5 py-1.5"
+                                    style={{
+                                        background: isTomorrow
+                                            ? `${accentColor}${isDark ? '30' : '15'}`
+                                            : 'var(--bg-tertiary)',
+                                        color: isTomorrow ? accentColor : 'var(--text-secondary)'
+                                    }}
+                                >
+                                    Tomorrow
+                                </button>
+                            )
+                        })()}
                     </>
                 )}
                 <div className="flex-1 min-w-[8px]" />
@@ -676,6 +687,7 @@ function PlanView() {
                                 accentColor={accentColor}
                                 adjacentProduction={adjacentProduction}
                                 assignments={assignments}
+                                getTravelTime={getTravelTime}
                                 isMobile={isMobile}
                                 onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
                                 planDate={planDate}

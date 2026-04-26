@@ -5,7 +5,9 @@ import TruckCoverageHoverCard from '../../../app/components/schedule/TruckCovera
 import { TrafficService } from '../../../services/TrafficService'
 import {
     BIG_POUR_MIN_TRUCKS,
+    BUFFER_MINUTES,
     buildAssignmentDriverTimes,
+    computeClockInRows,
     computePlantPoolTimeline,
     computePlantPoolTimelines,
     computePullUpRows,
@@ -26,9 +28,24 @@ import {
     isClosedDay,
     isExcludedOrder,
     plantBadgeColor,
+    PRE_TRIP_MINUTES,
     timeToMinutes,
     trucksToHitBigPourGoal
 } from '../../../utils/PlanUtility'
+
+/* Row stagger — mirrors `ListViewModeSection.getRowDelay`. Early rows
+ * cascade slowly; later rows arrive almost simultaneously so the table
+ * feels lively without dragging on long lists. */
+const ROW_BASE_DELAY_MS = 80
+const ROW_MIN_DELAY_MS = 6
+const ROW_DECAY_FACTOR = 0.88
+const getScheduleRowDelay = (index) => {
+    let total = 0
+    for (let i = 0; i < index; i++) {
+        total += Math.max(ROW_MIN_DELAY_MS, ROW_BASE_DELAY_MS * Math.pow(ROW_DECAY_FACTOR, i))
+    }
+    return Math.round(total)
+}
 
 const formatMinutesClock = (mins) => {
     if (!Number.isFinite(mins)) return ''
@@ -659,10 +676,24 @@ const compareOrders = (a, b, sortKey) => {
  * Layout:
  *   [accent time col] [plant badge col] [pill + primary + secondary + chips]
  */
-function SyntheticRow({ accentColor, chips, icon, pillIcon, pillLabel, plantCell, primary, secondary, time, tint }) {
+function SyntheticRow({
+    accentColor,
+    animationDelayMs = 0,
+    chips,
+    icon,
+    pillIcon,
+    pillLabel,
+    plantCell,
+    primary,
+    secondary,
+    time,
+    tint
+}) {
     return (
         <tr
+            className="animate-slide-in-row"
             style={{
+                animationDelay: `${animationDelayMs}ms`,
                 background: tint,
                 borderLeft: `3px solid ${accentColor}`,
                 borderTop: '1px solid var(--border-light)'
@@ -708,6 +739,7 @@ function SyntheticRow({ accentColor, chips, icon, pillIcon, pillLabel, plantCell
 
 function ScheduleTable({
     accentColor,
+    clockInRows = [],
     filteredPlantCode = null,
     getCloserPlantForOrder,
     getTravelOverrides,
@@ -772,6 +804,35 @@ function ScheduleTable({
         () => (extrasActive ? pullUpRows.filter((row) => visiblePlantCodes.has(row.plantCode)) : []),
         [pullUpRows, visiblePlantCodes, extrasActive]
     )
+    /** Clock-in events grouped by (plant, dispatch order) so a job needing
+     *  three operators reads as a single row ("3 operators clock in for #461,
+     *  staggered 07:50 → 08:00") rather than three near-duplicate rows. */
+    const filteredClockInRows = useMemo(() => {
+        if (!extrasActive) return []
+        const grouped = new Map()
+        clockInRows.forEach((row) => {
+            if (!visiblePlantCodes.has(row.plantCode)) return
+            const orderKey = row.forOrderId || row.forOrder?.orderId || row.forOrder?.orderNum || null
+            const groupKey = `${row.plantCode}::${orderKey ?? 'unknown'}`
+            const existing = grouped.get(groupKey)
+            if (existing) {
+                existing.count += row.count
+                existing.firstTime = Math.min(existing.firstTime, row.time)
+                existing.lastTime = Math.max(existing.lastTime, row.time)
+            } else {
+                grouped.set(groupKey, {
+                    count: row.count,
+                    firstTime: row.time,
+                    forOrder: row.forOrder,
+                    forOrderId: row.forOrderId,
+                    groupKey,
+                    lastTime: row.time,
+                    plantCode: row.plantCode
+                })
+            }
+        })
+        return Array.from(grouped.values())
+    }, [clockInRows, visiblePlantCodes, extrasActive])
 
     /* ── Truck-coverage hover modal state ─────────────────────────────────
        Tracks which order's modal is open. `openHover(key)` shows the modal
@@ -862,6 +923,8 @@ function ScheduleTable({
         }
         for (const row of filteredHelpRows) {
             rows.push({
+                clockInRangeEnd: row.clockInRangeEnd ?? null,
+                clockInRangeStart: row.clockInRangeStart ?? null,
                 count: row.count,
                 direction: row.direction,
                 forOrder: row.forOrder || null,
@@ -943,6 +1006,19 @@ function ScheduleTable({
                 yardage: row.yardage
             })
         })
+        filteredClockInRows.forEach((row) => {
+            rows.push({
+                clockInKey: row.groupKey,
+                count: row.count,
+                firstTime: row.firstTime,
+                forOrder: row.forOrder,
+                forOrderId: row.forOrderId,
+                kind: 'clockIn',
+                lastTime: row.lastTime,
+                plantCode: row.plantCode,
+                time: row.firstTime
+            })
+        })
         // Chronological sort runs whenever any synthetic row is in play —
         // they only make sense at their actual minute between orders. With
         // NO synthetic rows (pure order list), we preserve the Sort by
@@ -953,11 +1029,20 @@ function ScheduleTable({
                 const at = Number.isFinite(a.time) ? a.time : Infinity
                 const bt = Number.isFinite(b.time) ? b.time : Infinity
                 if (at !== bt) return at - bt
-                // At the same minute: returns first (pool up), then help,
-                // then send-home / trade-off, then slot suggestions, then
-                // real orders.
-                const order = { help: 1, order: 5, pullUp: 3, return: 0, sendHome: 2, slot: 4, tradeoff: 2 }
-                return (order[a.kind] ?? 6) - (order[b.kind] ?? 6)
+                // At the same minute: returns and clock-ins first (pool up),
+                // then help, then send-home / trade-off, then slot suggestions,
+                // then real orders.
+                const order = {
+                    clockIn: 0,
+                    help: 2,
+                    order: 6,
+                    pullUp: 4,
+                    return: 0,
+                    sendHome: 3,
+                    slot: 5,
+                    tradeoff: 3
+                }
+                return (order[a.kind] ?? 7) - (order[b.kind] ?? 7)
             })
         }
         return rows
@@ -969,6 +1054,7 @@ function ScheduleTable({
         filteredSendHomeRows,
         filteredSuggestedSlotRows,
         filteredPullUpRows,
+        filteredClockInRows,
         extrasActive
     ])
 
@@ -1025,6 +1111,7 @@ function ScheduleTable({
                 </thead>
                 <tbody>
                     {tableRows.map((row, idx) => {
+                        const rowDelay = getScheduleRowDelay(idx)
                         if (row.kind === 'return') {
                             const plantName = plantNameByCode?.[row.plantCode] || ''
                             const orderTag = row.order.orderNum
@@ -1043,6 +1130,7 @@ function ScheduleTable({
                                     : null
                             return (
                                 <SyntheticRow
+                                    animationDelayMs={rowDelay}
                                     key={`return-${keyForOrder(row.order)}-${row.returnIndex ?? 0}`}
                                     accentColor="#16a34a"
                                     icon="fa-arrow-rotate-left"
@@ -1081,6 +1169,7 @@ function ScheduleTable({
                             const freeCount = Number.isFinite(row.surplus) ? row.surplus : row.count
                             return (
                                 <SyntheticRow
+                                    animationDelayMs={rowDelay}
                                     key={`tradeoff-${row.tradeoffKey}`}
                                     accentColor="#d97706"
                                     chips={
@@ -1137,6 +1226,7 @@ function ScheduleTable({
                             const hours = Math.round((row.durationMin / 60) * 10) / 10
                             return (
                                 <SyntheticRow
+                                    animationDelayMs={rowDelay}
                                     key={`slot-${row.slotKey}`}
                                     accentColor="#0ea5e9"
                                     icon="fa-calendar-plus"
@@ -1176,6 +1266,7 @@ function ScheduleTable({
                                 deltaH > 0 ? `${deltaH}h${deltaM > 0 ? ` ${deltaM}m` : ''}` : `${deltaM}m`
                             return (
                                 <SyntheticRow
+                                    animationDelayMs={rowDelay}
                                     key={`pull-up-${row.pullUpKey}`}
                                     accentColor="#0d9488"
                                     icon="fa-arrow-left-long"
@@ -1222,10 +1313,58 @@ function ScheduleTable({
                                 />
                             )
                         }
+                        if (row.kind === 'clockIn') {
+                            const plantName = plantNameByCode?.[row.plantCode] || ''
+                            const orderTag = row.forOrder?.orderNum
+                                ? `#${row.forOrder.orderNum}`
+                                : row.forOrder?.startTime
+                                  ? String(row.forOrder.startTime).slice(0, 5)
+                                  : null
+                            const customerTag = row.forOrder?.customer ? clean(row.forOrder.customer) : null
+                            const staggerLabel =
+                                row.firstTime === row.lastTime
+                                    ? formatMinutesClock(row.firstTime)
+                                    : `${formatMinutesClock(row.firstTime)}–${formatMinutesClock(row.lastTime)}`
+                            return (
+                                <SyntheticRow
+                                    animationDelayMs={rowDelay}
+                                    key={`clock-in-${row.clockInKey}`}
+                                    accentColor="#16a34a"
+                                    icon="fa-user-clock"
+                                    pillIcon="fa-right-to-bracket"
+                                    pillLabel="Clock in"
+                                    plantCell={
+                                        <PlantBadge code={row.plantCode} fallback={accentColor} name={plantName} />
+                                    }
+                                    primary={
+                                        <>
+                                            <b>{row.count}</b> operator{row.count === 1 ? '' : 's'} clock in at{' '}
+                                            <b>{row.plantCode}</b>
+                                            {orderTag ? (
+                                                <>
+                                                    {' '}
+                                                    for <b>{orderTag}</b>
+                                                    {customerTag ? ` · ${customerTag}` : ''}
+                                                </>
+                                            ) : null}
+                                            .
+                                        </>
+                                    }
+                                    secondary={
+                                        row.count > 1
+                                            ? `Staggered ${staggerLabel} — early enough to pre-trip, load, slump, drive, and arrive ~5 min before pour.`
+                                            : `Clocks in early enough to pre-trip, load, slump, drive, and arrive ~5 min before pour.`
+                                    }
+                                    time={row.time}
+                                    tint="rgba(22, 163, 74, 0.07)"
+                                />
+                            )
+                        }
                         if (row.kind === 'sendHome') {
                             const plantName = plantNameByCode?.[row.plantCode] || ''
                             return (
                                 <SyntheticRow
+                                    animationDelayMs={rowDelay}
                                     key={`send-home-${row.sendHomeKey}`}
                                     accentColor="#64748b"
                                     icon="fa-house-user"
@@ -1288,6 +1427,7 @@ function ScheduleTable({
                             const returnsHome = homePlant === row.fromPlant
                             return (
                                 <SyntheticRow
+                                    animationDelayMs={rowDelay}
                                     key={`help-${row.helpKey}`}
                                     accentColor={accent}
                                     icon={isOutbound ? 'fa-paper-plane' : 'fa-rotate-left'}
@@ -1334,6 +1474,19 @@ function ScheduleTable({
                                                         {row.fromPlant}).
                                                     </>
                                                 )}
+                                                {Number.isFinite(row.clockInRangeStart) && (
+                                                    <>
+                                                        {' · '}
+                                                        <b>{row.count}</b> operator{row.count === 1 ? '' : 's'} clock in
+                                                        at <b>{row.fromPlant}</b>{' '}
+                                                        <b>
+                                                            {row.clockInRangeStart === row.clockInRangeEnd
+                                                                ? formatMinutesClock(row.clockInRangeStart)
+                                                                : `${formatMinutesClock(row.clockInRangeStart)}–${formatMinutesClock(row.clockInRangeEnd)}`}
+                                                        </b>{' '}
+                                                        (pre-trip + drive to <b>{row.toPlant}</b>).
+                                                    </>
+                                                )}
                                             </>
                                         ) : (
                                             `${homePlant}'s pool goes up by ${row.count}.`
@@ -1357,7 +1510,9 @@ function ScheduleTable({
                         return (
                             <tr
                                 key={`${o.plantCode}-${o.orderId || idx}`}
+                                className="animate-slide-in-row"
                                 style={{
+                                    animationDelay: `${rowDelay}ms`,
                                     borderTop: '1px solid var(--border-light)',
                                     background: isCancelled
                                         ? 'rgba(220, 38, 38, 0.05)'
@@ -1714,6 +1869,7 @@ function PlanScheduleView({
     accentColor,
     adjacentProduction = {},
     assignments = [],
+    getTravelTime,
     isMobile = false,
     onSwitchToPlanner,
     planDate,
@@ -1981,7 +2137,11 @@ function PlanScheduleView({
      *  shortfall the dispatcher has marked from the Planner plant overview.
      *  Planner help is applied as time-based events (below) so the pool
      *  still goes up/down at the actual transfer times. */
-    const initialPoolByCode = useMemo(() => {
+    /** Effective base operator count per plant — accounts for day-of-week
+     *  multiplier and any missing-operator markers. Used as both the cap on
+     *  clock-ins and the historical "starts at full" pool for plants that
+     *  don't have any orders to model clock-in timing against. */
+    const baseByPlant = useMemo(() => {
         const out = {}
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
@@ -1990,6 +2150,63 @@ function PlanScheduleView({
         })
         return out
     }, [stats, plantProduction, planDate])
+
+    /** Operator clock-in events per plant. Operators don't sit in the pool
+     *  at midnight — they clock in just-in-time for the orders that need
+     *  them, staggered by each order's truck-spacing. The simulator treats
+     *  these as positive-delta inbound transfers, and the schedule renders
+     *  them as `clockIn` rows when extras are enabled. */
+    const clockInRows = useMemo(
+        () => computeClockInRows(allOrders, baseByPlant, getTravelOverrides),
+        [allOrders, baseByPlant, getTravelOverrides]
+    )
+
+    /** Operator clock-in roster for the currently filtered plant — sorted
+     *  earliest first, then padded out to the plant's raw base count with
+     *  "off" rows so removed/unneeded operators stay visible to the
+     *  dispatcher. Empty when no plant is selected. */
+    const operatorRosterText = useMemo(() => {
+        if (plantFilter === 'all') return ''
+        // Round each clock-in to the nearest 5-minute mark — dispatchers
+        // expect 06:00 / 07:50, never 07:48. Rounding happens BEFORE the
+        // sort so two operators that round to the same slot keep a stable
+        // ascending order in the output.
+        const sortedTimes = clockInRows
+            .filter((r) => r.plantCode === plantFilter)
+            .map((r) => (Number.isFinite(r.time) ? Math.round(r.time / 5) * 5 : r.time))
+            .sort((a, b) => a - b)
+        const rawBase = poolSourceByCode?.[plantFilter]?.rawBase ?? sortedTimes.length
+        const slotCount = Math.max(rawBase, sortedTimes.length)
+        if (slotCount === 0) return ''
+        return Array.from({ length: slotCount }, (_, i) => {
+            const time = sortedTimes[i]
+            return `Operator ${i + 1}: ${Number.isFinite(time) ? formatMinutesClock(time) : 'off'}`
+        }).join('\n')
+    }, [clockInRows, plantFilter, poolSourceByCode])
+
+    const [operatorRosterCopied, setOperatorRosterCopied] = useState(false)
+    const copyOperatorRoster = useCallback(async () => {
+        if (!operatorRosterText) return
+        try {
+            await navigator.clipboard.writeText(operatorRosterText)
+            setOperatorRosterCopied(true)
+            setTimeout(() => setOperatorRosterCopied(false), 1500)
+        } catch {
+            // Clipboard write can fail in insecure contexts — silently no-op.
+        }
+    }, [operatorRosterText])
+
+    /** Plants whose pool ramps up via clock-ins start the simulation at 0;
+     *  plants with no orders today keep their effective base so suggested
+     *  slots and send-home math still work for idle yards. */
+    const initialPoolByCode = useMemo(() => {
+        const plantsWithClockIns = new Set(clockInRows.map((r) => r.plantCode))
+        const out = {}
+        Object.entries(baseByPlant).forEach(([code, base]) => {
+            out[code] = plantsWithClockIns.has(code) ? 0 : base
+        })
+        return out
+    }, [baseByPlant, clockInRows])
 
     /**
      * Time-based help transfers derived from Planner assignments.
@@ -2009,14 +2226,32 @@ function PlanScheduleView({
     const helpRows = useMemo(() => {
         const HELP_BUCKET_MIN = 30
         const grouped = new Map()
-        const bump = (key, seed, time) => {
+        // For outbound rows we also track the earliest / latest CLOCK-IN time
+        // (= arrival − travel − pre-trip − buffer) so the schedule can tell
+        // dispatch when those operators have to be at the originating plant.
+        const bump = (key, seed, time, clockInTime = null) => {
             const existing = grouped.get(key)
             if (existing) {
                 existing.count += 1
                 existing.rangeEnd = Math.max(existing.rangeEnd, time)
                 existing.rangeStart = Math.min(existing.rangeStart, time)
+                if (Number.isFinite(clockInTime)) {
+                    existing.clockInRangeStart = Number.isFinite(existing.clockInRangeStart)
+                        ? Math.min(existing.clockInRangeStart, clockInTime)
+                        : clockInTime
+                    existing.clockInRangeEnd = Number.isFinite(existing.clockInRangeEnd)
+                        ? Math.max(existing.clockInRangeEnd, clockInTime)
+                        : clockInTime
+                }
             } else {
-                grouped.set(key, { ...seed, count: 1, rangeEnd: time, rangeStart: time })
+                grouped.set(key, {
+                    ...seed,
+                    clockInRangeEnd: Number.isFinite(clockInTime) ? clockInTime : null,
+                    clockInRangeStart: Number.isFinite(clockInTime) ? clockInTime : null,
+                    count: 1,
+                    rangeEnd: time,
+                    rangeStart: time
+                })
             }
         }
         ;(assignments || []).forEach((a, idx) => {
@@ -2030,10 +2265,18 @@ function PlanScheduleView({
                 const destOrders = plantProduction?.[a.toPlant]?.orders || []
                 forOrder = destOrders.find((o) => (o.orderId || o.orderNum) === a.forOrderId) || null
             }
+            // Travel pre-trip + buffer cushion the operator needs at fromPlant
+            // before leaving. Same formula `calcClockIn` uses for assignment
+            // help in the copyable plan brief — keeps the two sources aligned.
+            const travelMin = typeof getTravelTime === 'function' ? getTravelTime(a.fromPlant, a.toPlant) : null
+            const clockInOffsetMin = Number.isFinite(travelMin) ? travelMin + PRE_TRIP_MINUTES + BUFFER_MINUTES : null
             const driverTimes = buildAssignmentDriverTimes(a)
             driverTimes.forEach((dt) => {
                 if (Number.isFinite(dt.arriveMin)) {
                     const bucket = Math.floor(dt.arriveMin / HELP_BUCKET_MIN) * HELP_BUCKET_MIN
+                    const clockInMin = Number.isFinite(clockInOffsetMin)
+                        ? Math.max(0, dt.arriveMin - clockInOffsetMin)
+                        : null
                     bump(
                         `out-${idx}-${bucket}`,
                         {
@@ -2046,7 +2289,8 @@ function PlanScheduleView({
                             time: bucket,
                             toPlant: a.toPlant
                         },
-                        dt.arriveMin
+                        dt.arriveMin,
+                        clockInMin
                     )
                 }
                 if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
@@ -2069,7 +2313,7 @@ function PlanScheduleView({
             })
         })
         return Array.from(grouped.values())
-    }, [assignments, plantProduction])
+    }, [assignments, plantProduction, getTravelTime])
 
     /** Help transfers in the format expected by `computePlantPoolTimeline`.
      *  Each driver's arrival subtracts from `fromPlant` and adds to `toPlant`;
@@ -2087,8 +2331,15 @@ function PlanScheduleView({
                 out.push({ delta: row.count, plantCode: home, time: row.time })
             }
         })
+        // Clock-ins ramp the pool up over the day. The simulator handles them
+        // as positive-delta inbound events identical in shape to inter-plant
+        // help arrivals — just sourced from the operator showing up rather
+        // than another plant.
+        clockInRows.forEach((row) => {
+            out.push({ delta: row.count, plantCode: row.plantCode, time: row.time })
+        })
         return out
-    }, [helpRows])
+    }, [helpRows, clockInRows])
 
     /** Simulate the day — get poolAtDispatch + return times per order. */
     const poolTimeline = useMemo(
@@ -2325,468 +2576,673 @@ function PlanScheduleView({
         (productFilter !== 'all' ? 1 : 0) +
         ((parseFloat(minYards) || 0) > 0 ? 1 : 0)
 
-    return (
-        <div className="flex-1 overflow-y-auto">
-            <div className="w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-5 flex flex-col gap-3 sm:gap-4">
-                {(plantsClosed || isSaturday) && (
+    const plantNotSelected = plantFilter === 'all'
+    const activePlantBadgeColor = plantNotSelected ? null : plantBadgeColor(plantFilter, accentColor)
+    const activePlantName = plantNotSelected ? '' : plantNameByCode?.[plantFilter] || ''
+    const operatorRosterReady = !plantNotSelected && !!operatorRosterText
+    const extrasToggleEnabled = !plantNotSelected
+    /** Sticky left rail (desktop) / inline card (mobile) hosting per-plant
+     *  quick actions: copy the operator roster + toggle the synthetic
+     *  schedule rows. Both controls require a single-plant filter to be
+     *  meaningful, so they read as disabled with a hint when no plant is
+     *  picked rather than vanishing. */
+    const sideMenuContent = (
+        <div className="flex flex-col">
+            {/* Header — when a plant is active, surface its code + name as a
+                colored chip so the rail clearly shows what scope the actions
+                apply to. When idle, it reads as a quieter "no plant" state. */}
+            <div
+                className="flex items-center gap-2 px-3 py-2.5 rounded-t-xl"
+                style={{
+                    background: plantNotSelected
+                        ? 'var(--bg-tertiary)'
+                        : `linear-gradient(135deg, ${activePlantBadgeColor}, ${activePlantBadgeColor}dd)`,
+                    color: plantNotSelected ? 'var(--text-secondary)' : '#fff'
+                }}
+            >
+                <i
+                    className={`fas ${plantNotSelected ? 'fa-circle-dot' : 'fa-bullseye'} text-[10px]`}
+                    style={{ opacity: 0.9 }}
+                />
+                <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.08em] opacity-80">Scope</div>
+                    <div className="text-[12.5px] font-bold leading-tight truncate">
+                        {plantNotSelected
+                            ? 'No plant selected'
+                            : activePlantName
+                              ? `${plantFilter} · ${activePlantName}`
+                              : plantFilter}
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-3 px-3 py-3 rounded-b-xl" style={{ borderTop: 'none' }}>
+                {/* Copy operator times — primary action. Uses accentColor when
+                    ready so it pops; turns green on confirmation. */}
+                <div className="flex flex-col gap-1">
                     <div
-                        className="rounded-lg px-4 py-3 flex items-start gap-3"
-                        style={{
-                            background: plantsClosed ? 'rgba(220, 38, 38, 0.08)' : 'rgba(217, 119, 6, 0.08)',
-                            border: `1px solid ${plantsClosed ? 'rgba(220, 38, 38, 0.35)' : 'rgba(217, 119, 6, 0.35)'}`
-                        }}
+                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"
+                        style={{ color: 'var(--text-tertiary)' }}
                     >
-                        <i
-                            className={`fas ${plantsClosed ? 'fa-ban' : 'fa-calendar-day'} mt-0.5`}
-                            style={{ color: plantsClosed ? '#dc2626' : '#d97706', fontSize: 14 }}
-                        />
-                        <div className="flex-1 min-w-0">
-                            <div
-                                className="text-[13px] font-bold"
-                                style={{ color: plantsClosed ? '#991b1b' : '#92400e' }}
-                            >
-                                {plantsClosed ? 'Sunday — plants closed' : 'Saturday — half crew'}
-                            </div>
-                            <div className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                                {plantsClosed
-                                    ? 'All plants are assumed closed today. Truck-coverage math treats every plant pool as 0.'
-                                    : 'Saturday crews run at half staffing. Every plant’s active mixer count is halved (rounded down) for the coverage math.'}
-                            </div>
-                        </div>
+                        <i className="fas fa-clock text-[9px]" />
+                        Roster
                     </div>
-                )}
-                {/* Title row */}
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <div className="flex-1 min-w-0">
-                        <div
-                            className="text-[18px] sm:text-[22px] font-bold leading-tight"
-                            style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                        >
-                            Schedule
-                        </div>
-                        <div className="text-[11.5px] sm:text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                            {isMobile
-                                ? `${filtered.length} of ${allOrders.length} orders`
-                                : "Pulled from the Daily Order Listing import. Filter, sort, and scan every plant's orders on one page."}
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {!isMobile && (
-                            <div
-                                className="flex items-center rounded-lg p-0.5"
-                                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                            >
-                                {VIEW_MODES.map((m) => (
-                                    <button
-                                        key={m}
-                                        type="button"
-                                        onClick={() => setViewMode(m)}
-                                        className="px-3 py-1.5 rounded-md text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
-                                        style={{
-                                            background: viewMode === m ? accentColor : 'transparent',
-                                            color: viewMode === m ? '#fff' : 'var(--text-secondary)'
-                                        }}
-                                    >
-                                        <i className={`fas ${m === 'table' ? 'fa-table' : 'fa-grip'} text-[10px]`} />
-                                        {m === 'table' ? 'Table' : 'Cards'}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                        {isMobile && hasAnyOrders && (
-                            <button
-                                type="button"
-                                onClick={() => setFiltersOpen((v) => !v)}
-                                className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
-                                style={{
-                                    background:
-                                        filtersOpen || activeFilterCount > 0 ? accentColor : 'var(--bg-secondary)',
-                                    color: filtersOpen || activeFilterCount > 0 ? '#fff' : 'var(--text-secondary)'
-                                }}
-                            >
-                                <i className={`fas fa-filter text-[10px]`} />
-                                Filters
-                                {activeFilterCount > 0 && (
-                                    <span
-                                        className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
-                                        style={{
-                                            background: 'rgba(255,255,255,0.3)',
-                                            color: '#fff',
-                                            minWidth: 18,
-                                            height: 18,
-                                            padding: '0 5px'
-                                        }}
-                                    >
-                                        {activeFilterCount}
-                                    </span>
-                                )}
-                            </button>
-                        )}
-                        {onSwitchToPlanner && (
-                            <button
-                                type="button"
-                                onClick={onSwitchToPlanner}
-                                className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
-                                style={{ background: accentColor, color: '#fff' }}
-                            >
-                                <i className="fas fa-project-diagram text-[10px]" /> Planner
-                            </button>
-                        )}
+                    <button
+                        type="button"
+                        onClick={copyOperatorRoster}
+                        disabled={!operatorRosterReady}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[12px] font-bold border-none cursor-pointer transition-colors disabled:cursor-not-allowed"
+                        style={{
+                            background: operatorRosterCopied
+                                ? '#16a34a'
+                                : operatorRosterReady
+                                  ? accentColor
+                                  : 'var(--bg-secondary)',
+                            border: `1px solid ${
+                                operatorRosterCopied
+                                    ? '#16a34a'
+                                    : operatorRosterReady
+                                      ? accentColor
+                                      : 'var(--border-light)'
+                            }`,
+                            color: operatorRosterCopied || operatorRosterReady ? '#fff' : 'var(--text-tertiary)',
+                            opacity: operatorRosterReady || operatorRosterCopied ? 1 : 0.7
+                        }}
+                        title={
+                            plantNotSelected
+                                ? 'Pick a single plant first.'
+                                : `Copy operator clock-in times for ${plantFilter}. Operators removed via planner side menu or not needed today are listed as off.`
+                        }
+                    >
+                        <i className={`fas fa-${operatorRosterCopied ? 'check' : 'copy'} text-[11px]`} />
+                        <span>{operatorRosterCopied ? 'Copied' : 'Copy operator times'}</span>
+                    </button>
+                    <div className="text-[10.5px] leading-snug" style={{ color: 'var(--text-tertiary)' }}>
+                        Clock-in time per operator. Off-shift slots included so the list always matches the plant&apos;s
+                        roster.
                     </div>
                 </div>
 
-                {!hasAnyOrders ? (
+                {/* Divider */}
+                <div style={{ height: 1, background: 'var(--border-light)' }} />
+
+                {/* Show extra rows — toggle styled as a compact pill switch. */}
+                <div className="flex flex-col gap-1">
                     <div
-                        className="rounded-xl p-10 text-center"
-                        style={{ background: 'var(--bg-primary)', border: '1px dashed var(--border-medium)' }}
+                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"
+                        style={{ color: 'var(--text-tertiary)' }}
                     >
-                        <i
-                            className="fas fa-calendar-xmark text-3xl mb-3 opacity-60"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        />
-                        <div
-                            className="text-[15px] font-bold mb-1"
-                            style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                        >
-                            No schedule yet
-                        </div>
-                        <div className="text-[12.5px] max-w-[480px] mx-auto" style={{ color: 'var(--text-secondary)' }}>
-                            Import the Daily Order Listing HTML to populate every plant&apos;s orders. Customer, start
-                            time, product, yardage, and truck count will all land here.
-                        </div>
+                        <i className="fas fa-layer-group text-[9px]" />
+                        Schedule rows
                     </div>
-                ) : (
-                    <>
-                        {/* Stat strip — single condensed bar of inline metrics
-                            separated by hairline dividers. Reads like a
-                            newspaper masthead instead of a card grid: small
-                            label, big number, optional inline badge / hint. */}
-                        <div
-                            className="rounded-xl flex flex-wrap"
+                    <button
+                        type="button"
+                        onClick={() => extrasToggleEnabled && setShowExtraRows((v) => !v)}
+                        disabled={!extrasToggleEnabled}
+                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left border-none cursor-pointer disabled:cursor-not-allowed"
+                        style={{
+                            background:
+                                extrasToggleEnabled && showExtraRows ? `${accentColor}15` : 'var(--bg-secondary)',
+                            border: `1px solid ${
+                                extrasToggleEnabled && showExtraRows ? accentColor : 'var(--border-light)'
+                            }`,
+                            opacity: extrasToggleEnabled ? 1 : 0.6
+                        }}
+                        title={
+                            plantNotSelected
+                                ? 'Pick a single plant to enable.'
+                                : 'Returns, help moves, send-home, open slot suggestions, and pull-up recommendations.'
+                        }
+                    >
+                        <span
+                            className="inline-block rounded-full transition-colors shrink-0 relative"
                             style={{
-                                background: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)',
-                                boxShadow: 'var(--shadow-sm)'
+                                width: 26,
+                                height: 14,
+                                background: extrasToggleEnabled && showExtraRows ? accentColor : 'var(--border-medium)'
                             }}
                         >
-                            <Stat
-                                first
-                                hint={
-                                    hasActiveFilters && filtered.length !== allOrders.length
-                                        ? `of ${allOrders.length.toLocaleString()}`
-                                        : 'on the day'
-                                }
-                                label="Orders"
-                                value={filtered.length.toLocaleString()}
-                            />
-                            <Stat
-                                hint={`${uniqueCustomers.toLocaleString()} customer${uniqueCustomers === 1 ? '' : 's'}`}
-                                label="Plants"
-                                value={uniquePlants.toLocaleString()}
-                            />
-                            <Stat
-                                badge={
-                                    yardageDeltaPct != null ? (
-                                        <YardageDeltaBadge
-                                            comparisonLabel={previousBusinessDayLabel}
-                                            comparisonYardage={previousBusinessDayYardage}
-                                            pct={yardageDeltaPct}
-                                        />
-                                    ) : null
-                                }
-                                hint={
-                                    yardageDeltaPct != null
-                                        ? `vs ${previousBusinessDayYardage.toLocaleString()} yd ${previousBusinessDayLabel}`
-                                        : 'cancelled excluded'
-                                }
-                                label="Yardage"
-                                unit="yd"
-                                value={totalYards.toLocaleString()}
-                            />
-                            <Stat
-                                hint="this week (Mon–Sat)"
-                                label="Week"
-                                unit="yd"
-                                value={weekYardage.toLocaleString()}
-                            />
-                            <Stat hint="truck loads" label="Loads" value={totalTrucks.toLocaleString()} />
-                            <Stat
-                                hint={earliestTime && latestTime ? 'first → last start' : undefined}
-                                label="Window"
-                                value={earliestTime && latestTime ? `${earliestTime}–${latestTime}` : '—'}
-                            />
-                        </div>
-
-                        {/* Filter bar — collapsible on mobile */}
-                        {filtersOpen && (
-                            <div
-                                className="rounded-xl p-3 grid gap-3"
+                            <span
+                                className="absolute rounded-full bg-white transition-all"
                                 style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)',
-                                    boxShadow: 'var(--shadow-sm)',
-                                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))'
+                                    width: 10,
+                                    height: 10,
+                                    top: 2,
+                                    left: extrasToggleEnabled && showExtraRows ? 14 : 2,
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
                                 }}
-                            >
-                                <FilterField label="Search">
-                                    <div
-                                        className="flex items-center gap-2 rounded-md px-2.5 py-1.5"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
-                                    >
-                                        <i
-                                            className="fas fa-magnifying-glass text-[11px]"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        />
-                                        <input
-                                            type="text"
-                                            value={query}
-                                            onChange={(e) => setQuery(e.target.value)}
-                                            placeholder="Customer, address, PO…"
-                                            className="bg-transparent outline-none border-none text-[12.5px] w-full"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        />
-                                        {query && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setQuery('')}
-                                                className="border-none bg-transparent cursor-pointer"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            >
-                                                <i className="fas fa-times text-[10px]" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </FilterField>
+                            />
+                        </span>
+                        <span className="flex-1 min-w-0">
+                            <span className="block text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                Show extra rows
+                            </span>
+                            <span className="block text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                                Returns, help, send-home, suggestions
+                            </span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
 
-                                <FilterField label="Plant">
-                                    <select
-                                        value={plantFilter}
-                                        onChange={(e) => setPlantFilter(e.target.value)}
-                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-primary)'
-                                        }}
-                                    >
-                                        <option value="all">All plants · {plantOptions.length}</option>
-                                        {plantOptions.map((code) => (
-                                            <option key={code} value={code}>
-                                                {code}
-                                                {plantNameByCode?.[code] ? ` · ${plantNameByCode[code]}` : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </FilterField>
-
-                                <FilterField label="Status">
-                                    <select
-                                        value={statusFilter}
-                                        onChange={(e) => setStatusFilter(e.target.value)}
-                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-primary)'
-                                        }}
-                                    >
-                                        <option value="all">All · {statusCounts.all}</option>
-                                        <option value="scheduled">Scheduled · {statusCounts.scheduled}</option>
-                                        <option value="sameDay">Same-day · {statusCounts.sameDay}</option>
-                                        <option value="cancelled">Cancelled · {statusCounts.cancelled}</option>
-                                        <option value="test">Test · {statusCounts.test}</option>
-                                    </select>
-                                </FilterField>
-
-                                <FilterField label="Product">
-                                    <select
-                                        value={productFilter}
-                                        onChange={(e) => setProductFilter(e.target.value)}
-                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-primary)'
-                                        }}
-                                    >
-                                        <option value="all">All products · {productOptions.length}</option>
-                                        {productOptions.map((p) => (
-                                            <option key={p} value={p}>
-                                                {p}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </FilterField>
-
-                                <FilterField label="Min yardage">
-                                    <input
-                                        type="number"
-                                        value={minYards}
-                                        onChange={(e) => setMinYards(e.target.value)}
-                                        placeholder="Any"
-                                        min={0}
-                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] font-mono"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-primary)'
-                                        }}
-                                    />
-                                </FilterField>
-
-                                <FilterField label="Sort by">
-                                    <select
-                                        value={sortKey}
-                                        onChange={(e) => setSortKey(e.target.value)}
-                                        className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-primary)'
-                                        }}
-                                    >
-                                        {SORT_OPTIONS.map((o) => (
-                                            <option key={o.key} value={o.key}>
-                                                {o.label}
-                                                {o.desc ? ' (high → low)' : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {plantFilter !== 'all' && (
-                                        <label
-                                            className="mt-1.5 flex items-center gap-2 text-[11.5px] cursor-pointer select-none"
-                                            style={{ color: 'var(--text-secondary)' }}
-                                            title="Toggle the return / help / send-home / open-slot rows that appear between order rows when a plant is selected."
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={showExtraRows}
-                                                onChange={(e) => setShowExtraRows(e.target.checked)}
-                                                className="cursor-pointer"
-                                                style={{ accentColor }}
-                                            />
-                                            <span>
-                                                Show extra rows{' '}
-                                                <span style={{ color: 'var(--text-tertiary)' }}>
-                                                    · returns, help, suggestions
-                                                </span>
-                                            </span>
-                                        </label>
-                                    )}
-                                </FilterField>
+    return (
+        <div className="flex-1 overflow-y-auto">
+            <div className="flex w-full">
+                {/* Side rail only matters once a plant is filtered. The outer
+                    wrapper animates `width` from 0 → 256 while the inner
+                    content keeps a fixed 256px size and gets clipped during
+                    transit — animates more reliably than transitioning
+                    width/padding on the same element. */}
+                <aside
+                    aria-hidden={plantNotSelected}
+                    className="hidden lg:block sticky top-0 self-start overflow-hidden"
+                    style={{
+                        // Flex items default to `min-width: auto`, which would
+                        // let the inner 240px content force the aside open
+                        // even when width is 0. Pin it explicitly so the
+                        // collapsed state really is 0.
+                        minWidth: 0,
+                        flexShrink: 0,
+                        height: 'fit-content',
+                        width: plantNotSelected ? 0 : 256,
+                        transition: 'width 260ms cubic-bezier(0.22, 1, 0.36, 1)'
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 240,
+                            padding: '20px 8px 20px 16px',
+                            opacity: plantNotSelected ? 0 : 1,
+                            transform: plantNotSelected ? 'translateX(-12px)' : 'translateX(0)',
+                            transition: 'opacity 200ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1)'
+                        }}
+                    >
+                        <div
+                            className="rounded-xl overflow-hidden shadow-sm"
+                            style={{
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-light)'
+                            }}
+                        >
+                            {sideMenuContent}
+                        </div>
+                    </div>
+                </aside>
+                <div className="flex-1 min-w-0 px-3 sm:px-4 lg:pl-2 lg:pr-6 py-4 sm:py-5 flex flex-col gap-3 sm:gap-4">
+                    {/* Mobile inline card — same content, animated via
+                        max-height + opacity since vertical collapse is the
+                        natural fit on narrow screens. */}
+                    <div
+                        aria-hidden={plantNotSelected}
+                        className="lg:hidden overflow-hidden"
+                        style={{
+                            maxHeight: plantNotSelected ? 0 : 600,
+                            opacity: plantNotSelected ? 0 : 1,
+                            transition: 'max-height 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease'
+                        }}
+                    >
+                        <div
+                            className="rounded-xl overflow-hidden shadow-sm"
+                            style={{
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-light)'
+                            }}
+                        >
+                            {sideMenuContent}
+                        </div>
+                    </div>
+                    {(plantsClosed || isSaturday) && (
+                        <div
+                            className="rounded-lg px-4 py-3 flex items-start gap-3"
+                            style={{
+                                background: plantsClosed ? 'rgba(220, 38, 38, 0.08)' : 'rgba(217, 119, 6, 0.08)',
+                                border: `1px solid ${plantsClosed ? 'rgba(220, 38, 38, 0.35)' : 'rgba(217, 119, 6, 0.35)'}`
+                            }}
+                        >
+                            <i
+                                className={`fas ${plantsClosed ? 'fa-ban' : 'fa-calendar-day'} mt-0.5`}
+                                style={{ color: plantsClosed ? '#dc2626' : '#d97706', fontSize: 14 }}
+                            />
+                            <div className="flex-1 min-w-0">
+                                <div
+                                    className="text-[13px] font-bold"
+                                    style={{ color: plantsClosed ? '#991b1b' : '#92400e' }}
+                                >
+                                    {plantsClosed ? 'Sunday — plants closed' : 'Saturday — half crew'}
+                                </div>
+                                <div className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                                    {plantsClosed
+                                        ? 'All plants are assumed closed today. Truck-coverage math treats every plant pool as 0.'
+                                        : 'Saturday crews run at half staffing. Every plant’s active mixer count is halved (rounded down) for the coverage math.'}
+                                </div>
                             </div>
-                        )}
-
-                        {hasActiveFilters && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                                    {filtered.length} of {allOrders.length} orders match your filters.
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={clearAllFilters}
-                                    className="px-2.5 py-1 rounded-md text-[11.5px] font-semibold border-none cursor-pointer"
+                        </div>
+                    )}
+                    {/* Title row */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div className="flex-1 min-w-0">
+                            <div
+                                className="text-[18px] sm:text-[22px] font-bold leading-tight"
+                                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                            >
+                                Schedule
+                            </div>
+                            <div className="text-[11.5px] sm:text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                                {isMobile
+                                    ? `${filtered.length} of ${allOrders.length} orders`
+                                    : "Pulled from the Daily Order Listing import. Filter, sort, and scan every plant's orders on one page."}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {!isMobile && (
+                                <div
+                                    className="flex items-center rounded-lg p-0.5"
                                     style={{
                                         background: 'var(--bg-secondary)',
-                                        color: 'var(--text-secondary)',
                                         border: '1px solid var(--border-light)'
                                     }}
                                 >
-                                    <i className="fas fa-rotate-left mr-1" /> Reset filters
+                                    {VIEW_MODES.map((m) => (
+                                        <button
+                                            key={m}
+                                            type="button"
+                                            onClick={() => setViewMode(m)}
+                                            className="px-3 py-1.5 rounded-md text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                            style={{
+                                                background: viewMode === m ? accentColor : 'transparent',
+                                                color: viewMode === m ? '#fff' : 'var(--text-secondary)'
+                                            }}
+                                        >
+                                            <i
+                                                className={`fas ${m === 'table' ? 'fa-table' : 'fa-grip'} text-[10px]`}
+                                            />
+                                            {m === 'table' ? 'Table' : 'Cards'}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {isMobile && hasAnyOrders && (
+                                <button
+                                    type="button"
+                                    onClick={() => setFiltersOpen((v) => !v)}
+                                    className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                    style={{
+                                        background:
+                                            filtersOpen || activeFilterCount > 0 ? accentColor : 'var(--bg-secondary)',
+                                        color: filtersOpen || activeFilterCount > 0 ? '#fff' : 'var(--text-secondary)'
+                                    }}
+                                >
+                                    <i className={`fas fa-filter text-[10px]`} />
+                                    Filters
+                                    {activeFilterCount > 0 && (
+                                        <span
+                                            className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
+                                            style={{
+                                                background: 'rgba(255,255,255,0.3)',
+                                                color: '#fff',
+                                                minWidth: 18,
+                                                height: 18,
+                                                padding: '0 5px'
+                                            }}
+                                        >
+                                            {activeFilterCount}
+                                        </span>
+                                    )}
                                 </button>
-                            </div>
-                        )}
+                            )}
+                            {onSwitchToPlanner && (
+                                <button
+                                    type="button"
+                                    onClick={onSwitchToPlanner}
+                                    className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                    style={{ background: accentColor, color: '#fff' }}
+                                >
+                                    <i className="fas fa-project-diagram text-[10px]" /> Planner
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
-                        {filtered.length === 0 ? (
+                    {!hasAnyOrders ? (
+                        <div
+                            className="rounded-xl p-10 text-center"
+                            style={{ background: 'var(--bg-primary)', border: '1px dashed var(--border-medium)' }}
+                        >
+                            <i
+                                className="fas fa-calendar-xmark text-3xl mb-3 opacity-60"
+                                style={{ color: 'var(--text-tertiary)' }}
+                            />
                             <div
-                                className="rounded-xl p-10 text-center italic"
+                                className="text-[15px] font-bold mb-1"
+                                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                            >
+                                No schedule yet
+                            </div>
+                            <div
+                                className="text-[12.5px] max-w-[480px] mx-auto"
+                                style={{ color: 'var(--text-secondary)' }}
+                            >
+                                Import the Daily Order Listing HTML to populate every plant&apos;s orders. Customer,
+                                start time, product, yardage, and truck count will all land here.
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Stat strip — single condensed bar of inline metrics
+                            separated by hairline dividers. Reads like a
+                            newspaper masthead instead of a card grid: small
+                            label, big number, optional inline badge / hint. */}
+                            <div
+                                className="rounded-xl flex flex-wrap"
                                 style={{
                                     background: 'var(--bg-primary)',
-                                    border: '1px dashed var(--border-medium)',
-                                    color: 'var(--text-tertiary)'
+                                    border: '1px solid var(--border-light)',
+                                    boxShadow: 'var(--shadow-sm)'
                                 }}
                             >
-                                No orders match the current filters.
+                                <Stat
+                                    first
+                                    hint={
+                                        hasActiveFilters && filtered.length !== allOrders.length
+                                            ? `of ${allOrders.length.toLocaleString()}`
+                                            : 'on the day'
+                                    }
+                                    label="Orders"
+                                    value={filtered.length.toLocaleString()}
+                                />
+                                <Stat
+                                    hint={`${uniqueCustomers.toLocaleString()} customer${uniqueCustomers === 1 ? '' : 's'}`}
+                                    label="Plants"
+                                    value={uniquePlants.toLocaleString()}
+                                />
+                                <Stat
+                                    badge={
+                                        yardageDeltaPct != null ? (
+                                            <YardageDeltaBadge
+                                                comparisonLabel={previousBusinessDayLabel}
+                                                comparisonYardage={previousBusinessDayYardage}
+                                                pct={yardageDeltaPct}
+                                            />
+                                        ) : null
+                                    }
+                                    hint={
+                                        yardageDeltaPct != null
+                                            ? `vs ${previousBusinessDayYardage.toLocaleString()} yd ${previousBusinessDayLabel}`
+                                            : 'cancelled excluded'
+                                    }
+                                    label="Yardage"
+                                    unit="yd"
+                                    value={totalYards.toLocaleString()}
+                                />
+                                <Stat
+                                    hint="this week (Mon–Sat)"
+                                    label="Week"
+                                    unit="yd"
+                                    value={weekYardage.toLocaleString()}
+                                />
+                                <Stat hint="truck loads" label="Loads" value={totalTrucks.toLocaleString()} />
+                                <Stat
+                                    hint={earliestTime && latestTime ? 'first → last start' : undefined}
+                                    label="Window"
+                                    value={earliestTime && latestTime ? `${earliestTime}–${latestTime}` : '—'}
+                                />
                             </div>
-                        ) : viewMode === 'table' && !isMobile ? (
-                            <ScheduleTable
-                                accentColor={accentColor}
-                                getCloserPlantForOrder={getCloserPlantForOrder}
-                                getTravelOverrides={getTravelOverrides}
-                                helpRows={helpRows}
-                                filteredPlantCode={plantFilter !== 'all' ? plantFilter : null}
-                                isPlantFiltered={plantFilter !== 'all'}
-                                showExtraRows={showExtraRows}
-                                keyForOrder={keyForOrder}
-                                onOpenLocation={setMapOrder}
-                                orders={filtered}
-                                plantCityByCode={plantCityByCode}
-                                plantNameByCode={plantNameByCode}
-                                poolSourceByCode={poolSourceByCode}
-                                poolTimeline={poolTimeline}
-                                poolTimelinesByPlant={poolTimelinesByPlant}
-                                pullUpRows={pullUpRows}
-                                sendHomeRows={sendHomeRows}
-                                suggestedSlotRows={suggestedSlotRows}
-                            />
-                        ) : (
-                            <div className="flex flex-col gap-4">
-                                {groupedByPlant.map(({ code, orders }) => (
-                                    <div key={code} className="flex flex-col gap-2">
-                                        <div className="flex items-center gap-2 px-1 text-[13px]">
-                                            <button
-                                                type="button"
-                                                onClick={() => setPlantFilter((prev) => (prev === code ? 'all' : code))}
-                                                className="border-none bg-transparent p-0 cursor-pointer"
-                                                title={
-                                                    plantFilter === code
-                                                        ? 'Tap to clear plant filter'
-                                                        : `Filter to plant ${code}`
-                                                }
-                                            >
-                                                <PlantBadge
-                                                    code={code}
-                                                    fallback={accentColor}
-                                                    name={plantNameByCode?.[code]}
-                                                />
-                                            </button>
-                                            <span style={{ color: 'var(--text-tertiary)' }}>
-                                                {orders.length} order{orders.length === 1 ? '' : 's'} ·{' '}
-                                                {sumField(orders, 'yardage').toLocaleString()} yd
-                                            </span>
+
+                            {/* Filter bar — collapsible on mobile */}
+                            {filtersOpen && (
+                                <div
+                                    className="rounded-xl p-3 grid gap-3"
+                                    style={{
+                                        background: 'var(--bg-primary)',
+                                        border: '1px solid var(--border-light)',
+                                        boxShadow: 'var(--shadow-sm)',
+                                        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))'
+                                    }}
+                                >
+                                    <FilterField label="Search">
+                                        <div
+                                            className="flex items-center gap-2 rounded-md px-2.5 py-1.5"
+                                            style={{
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border-light)'
+                                            }}
+                                        >
+                                            <i
+                                                className="fas fa-magnifying-glass text-[11px]"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            />
+                                            <input
+                                                type="text"
+                                                value={query}
+                                                onChange={(e) => setQuery(e.target.value)}
+                                                placeholder="Customer, address, PO…"
+                                                className="bg-transparent outline-none border-none text-[12.5px] w-full"
+                                                style={{ color: 'var(--text-primary)' }}
+                                            />
+                                            {query && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setQuery('')}
+                                                    className="border-none bg-transparent cursor-pointer"
+                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                >
+                                                    <i className="fas fa-times text-[10px]" />
+                                                </button>
+                                            )}
                                         </div>
-                                        <div className="grid gap-2 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-                                            {orders.map((o, idx) => (
-                                                <OrderCard
-                                                    key={`${code}-${o.orderId || idx}`}
-                                                    accentColor={accentColor}
-                                                    closerPlant={getCloserPlantForOrder(o)}
-                                                    onOpenLocation={setMapOrder}
-                                                    onPickPlant={(c) =>
-                                                        setPlantFilter((prev) => (prev === c ? 'all' : c))
-                                                    }
-                                                    onPickProduct={(p) =>
-                                                        setProductFilter((prev) => (prev === p ? 'all' : p))
-                                                    }
-                                                    onPickStatus={(s) =>
-                                                        setStatusFilter((prev) => (prev === s ? 'all' : s))
-                                                    }
-                                                    order={o}
-                                                    plantCode={code}
-                                                    plantName={plantNameByCode?.[code]}
-                                                    travelOverrides={getTravelOverrides(o)}
-                                                />
+                                    </FilterField>
+
+                                    <FilterField label="Plant">
+                                        <select
+                                            value={plantFilter}
+                                            onChange={(e) => setPlantFilter(e.target.value)}
+                                            className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
+                                            style={{
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border-light)',
+                                                color: 'var(--text-primary)'
+                                            }}
+                                        >
+                                            <option value="all">All plants · {plantOptions.length}</option>
+                                            {plantOptions.map((code) => (
+                                                <option key={code} value={code}>
+                                                    {code}
+                                                    {plantNameByCode?.[code] ? ` · ${plantNameByCode[code]}` : ''}
+                                                </option>
                                             ))}
+                                        </select>
+                                    </FilterField>
+
+                                    <FilterField label="Status">
+                                        <select
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
+                                            style={{
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border-light)',
+                                                color: 'var(--text-primary)'
+                                            }}
+                                        >
+                                            <option value="all">All · {statusCounts.all}</option>
+                                            <option value="scheduled">Scheduled · {statusCounts.scheduled}</option>
+                                            <option value="sameDay">Same-day · {statusCounts.sameDay}</option>
+                                            <option value="cancelled">Cancelled · {statusCounts.cancelled}</option>
+                                            <option value="test">Test · {statusCounts.test}</option>
+                                        </select>
+                                    </FilterField>
+
+                                    <FilterField label="Product">
+                                        <select
+                                            value={productFilter}
+                                            onChange={(e) => setProductFilter(e.target.value)}
+                                            className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
+                                            style={{
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border-light)',
+                                                color: 'var(--text-primary)'
+                                            }}
+                                        >
+                                            <option value="all">All products · {productOptions.length}</option>
+                                            {productOptions.map((p) => (
+                                                <option key={p} value={p}>
+                                                    {p}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </FilterField>
+
+                                    <FilterField label="Min yardage">
+                                        <input
+                                            type="number"
+                                            value={minYards}
+                                            onChange={(e) => setMinYards(e.target.value)}
+                                            placeholder="Any"
+                                            min={0}
+                                            className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] font-mono"
+                                            style={{
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border-light)',
+                                                color: 'var(--text-primary)'
+                                            }}
+                                        />
+                                    </FilterField>
+
+                                    <FilterField label="Sort by">
+                                        <select
+                                            value={sortKey}
+                                            onChange={(e) => setSortKey(e.target.value)}
+                                            className="w-full px-2.5 py-1.5 rounded-md text-[12.5px] cursor-pointer"
+                                            style={{
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border-light)',
+                                                color: 'var(--text-primary)'
+                                            }}
+                                        >
+                                            {SORT_OPTIONS.map((o) => (
+                                                <option key={o.key} value={o.key}>
+                                                    {o.label}
+                                                    {o.desc ? ' (high → low)' : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </FilterField>
+                                </div>
+                            )}
+
+                            {hasActiveFilters && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                                        {filtered.length} of {allOrders.length} orders match your filters.
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={clearAllFilters}
+                                        className="px-2.5 py-1 rounded-md text-[11.5px] font-semibold border-none cursor-pointer"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            color: 'var(--text-secondary)',
+                                            border: '1px solid var(--border-light)'
+                                        }}
+                                    >
+                                        <i className="fas fa-rotate-left mr-1" /> Reset filters
+                                    </button>
+                                </div>
+                            )}
+
+                            {filtered.length === 0 ? (
+                                <div
+                                    className="rounded-xl p-10 text-center italic"
+                                    style={{
+                                        background: 'var(--bg-primary)',
+                                        border: '1px dashed var(--border-medium)',
+                                        color: 'var(--text-tertiary)'
+                                    }}
+                                >
+                                    No orders match the current filters.
+                                </div>
+                            ) : viewMode === 'table' && !isMobile ? (
+                                <ScheduleTable
+                                    accentColor={accentColor}
+                                    clockInRows={clockInRows}
+                                    getCloserPlantForOrder={getCloserPlantForOrder}
+                                    getTravelOverrides={getTravelOverrides}
+                                    helpRows={helpRows}
+                                    filteredPlantCode={plantFilter !== 'all' ? plantFilter : null}
+                                    isPlantFiltered={plantFilter !== 'all'}
+                                    showExtraRows={showExtraRows}
+                                    keyForOrder={keyForOrder}
+                                    onOpenLocation={setMapOrder}
+                                    orders={filtered}
+                                    plantCityByCode={plantCityByCode}
+                                    plantNameByCode={plantNameByCode}
+                                    poolSourceByCode={poolSourceByCode}
+                                    poolTimeline={poolTimeline}
+                                    poolTimelinesByPlant={poolTimelinesByPlant}
+                                    pullUpRows={pullUpRows}
+                                    sendHomeRows={sendHomeRows}
+                                    suggestedSlotRows={suggestedSlotRows}
+                                />
+                            ) : (
+                                <div className="flex flex-col gap-4">
+                                    {groupedByPlant.map(({ code, orders }) => (
+                                        <div key={code} className="flex flex-col gap-2">
+                                            <div className="flex items-center gap-2 px-1 text-[13px]">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setPlantFilter((prev) => (prev === code ? 'all' : code))
+                                                    }
+                                                    className="border-none bg-transparent p-0 cursor-pointer"
+                                                    title={
+                                                        plantFilter === code
+                                                            ? 'Tap to clear plant filter'
+                                                            : `Filter to plant ${code}`
+                                                    }
+                                                >
+                                                    <PlantBadge
+                                                        code={code}
+                                                        fallback={accentColor}
+                                                        name={plantNameByCode?.[code]}
+                                                    />
+                                                </button>
+                                                <span style={{ color: 'var(--text-tertiary)' }}>
+                                                    {orders.length} order{orders.length === 1 ? '' : 's'} ·{' '}
+                                                    {sumField(orders, 'yardage').toLocaleString()} yd
+                                                </span>
+                                            </div>
+                                            <div className="grid gap-2 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                                                {orders.map((o, idx) => (
+                                                    <OrderCard
+                                                        key={`${code}-${o.orderId || idx}`}
+                                                        accentColor={accentColor}
+                                                        closerPlant={getCloserPlantForOrder(o)}
+                                                        onOpenLocation={setMapOrder}
+                                                        onPickPlant={(c) =>
+                                                            setPlantFilter((prev) => (prev === c ? 'all' : c))
+                                                        }
+                                                        onPickProduct={(p) =>
+                                                            setProductFilter((prev) => (prev === p ? 'all' : p))
+                                                        }
+                                                        onPickStatus={(s) =>
+                                                            setStatusFilter((prev) => (prev === s ? 'all' : s))
+                                                        }
+                                                        order={o}
+                                                        plantCode={code}
+                                                        plantName={plantNameByCode?.[code]}
+                                                        travelOverrides={getTravelOverrides(o)}
+                                                    />
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </>
-                )}
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
             {mapOrder && (
                 <JobMapModal

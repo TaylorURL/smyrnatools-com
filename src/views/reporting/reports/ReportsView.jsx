@@ -88,6 +88,7 @@ function ReportsView() {
         getUserName,
         hasAnyReviewPermission,
         hasAssigned,
+        hasLoadedReviewOnce,
         hasLostLoadsDeletePermission,
         hasLostLoadsPermission,
         hasOneOffReviewPermission,
@@ -1127,7 +1128,11 @@ function ReportsView() {
     )
 
     const showAllSkeleton = tab === 'all' && isMyReportsLoading
-    const showReviewSkeleton = tab === 'review' && (isReviewLoading || isLoadingMissing)
+    /** Only swap the review tab body for a skeleton on the FIRST load — once
+     *  any week has been fetched, subsequent reloads (week switches, refresh,
+     *  permission re-checks) keep the existing list visible so the tab
+     *  doesn't appear to disappear and reappear. */
+    const showReviewSkeleton = tab === 'review' && (isReviewLoading || isLoadingMissing) && !hasLoadedReviewOnce
     const showBootSkeleton = tab === null
 
     return (

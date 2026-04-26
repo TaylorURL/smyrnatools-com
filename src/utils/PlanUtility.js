@@ -2,6 +2,14 @@
 
 export const PRE_TRIP_MINUTES = 15
 export const BUFFER_MINUTES = 5
+/** Minutes a truck spends loading concrete at the plant. */
+export const LOAD_MINUTES = 10
+/** Minutes for the slump / QC test before the truck leaves the plant. */
+export const SLUMP_MINUTES = 5
+/** Minutes the truck should arrive at the job AHEAD of the order's start
+ *  time so the operator isn't pulling up at the same moment concrete is
+ *  expected on the ground. */
+export const EARLY_ARRIVAL_MINUTES = 5
 export const AUTOSAVE_DELAY_MS = 1000
 export const DEFAULT_STAGGER_MINUTES = 5
 export const OVERTIME_THRESHOLD_HOURS = 12
@@ -543,6 +551,106 @@ const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides
  */
 export const computePlantPoolTimeline = (orders, initialPoolByCode, getTravelOverrides, helpTransfers) =>
     simulatePoolTimeline(orders, initialPoolByCode, getTravelOverrides, helpTransfers).byOrder
+
+/**
+ * Build a chronological list of operator clock-in events per plant. Operators
+ * aren't sitting in the pool at midnight — they clock in just-in-time for the
+ * orders that need them. Each event represents one operator clocking in.
+ *
+ * Algorithm (per plant):
+ *   1. Walk orders in start-time order.
+ *   2. For each order, simulate the pool from prior dispatches/returns to find
+ *      how many trucks are physically at the plant just before it dispatches.
+ *   3. If the order needs more trucks than are at-plant, schedule additional
+ *      clock-ins (capped at the plant's effective base) ending at start-time
+ *      and staggered backward by the order's spacing — so the last operator
+ *      clocks in right at dispatch and earlier ones arrive in time to load.
+ *
+ * Returns rows shaped `{ plantCode, time, count, forOrder, forOrderId }` —
+ * one row per operator. Convert to positive-delta help-transfer events for
+ * the simulator so the pool builds up as the day unfolds instead of starting
+ * at full strength.
+ */
+export const computeClockInRows = (orders, baseByPlant, getTravelOverrides) => {
+    const rows = []
+    const byPlant = {}
+    ;(orders || []).forEach((o) => {
+        if (isExcludedOrder(o)) return
+        if (timeToMinutes(o?.startTime) == null) return
+        if (!o?.plantCode) return
+        if (!byPlant[o.plantCode]) byPlant[o.plantCode] = []
+        byPlant[o.plantCode].push(o)
+    })
+    Object.entries(byPlant).forEach(([code, plantOrders]) => {
+        const base = baseByPlant?.[code] ?? 0
+        if (base <= 0) return
+        plantOrders.sort((a, b) => (timeToMinutes(a.startTime) ?? 0) - (timeToMinutes(b.startTime) ?? 0))
+        const events = []
+        let clockedIn = 0
+        for (const order of plantOrders) {
+            const startMin = timeToMinutes(order.startTime)
+            const overrides = typeof getTravelOverrides === 'function' ? getTravelOverrides(order) || {} : {}
+            const truckCount = getCalculatedTruckCount(order, overrides)
+            if (!truckCount) continue
+            const spacing = parseDurationMinutes(order?.rate) ?? 5
+            const toJobMin = Number.isFinite(overrides?.toJobMin)
+                ? overrides.toJobMin
+                : (parseDurationMinutes(order?.toJobTime) ?? 20)
+            const toPlantMin = Number.isFinite(overrides?.toPlantMin)
+                ? overrides.toPlantMin
+                : (parseDurationMinutes(order?.toPlantTime) ?? toJobMin)
+            const cycleMin = toJobMin + TRUCK_ON_SITE_MINUTES + toPlantMin
+            const loadSize = parseFloat(order?.loadSize) || 0
+            const yardage = parseFloat(order?.yardage) || 0
+            const tripsTotal = loadSize > 0 && yardage > 0 ? Math.max(1, Math.ceil(yardage / loadSize)) : truckCount
+            // Simulate pool state right before this dispatch — sum prior
+            // returns (add) and prior dispatches (subtract) at times <=
+            // startMin. Same-minute dispatches haven't been "consumed" yet
+            // because we process orders in iteration order.
+            let pool = clockedIn
+            for (const ev of events) {
+                if (ev.time > startMin) continue
+                pool += ev.type === 'return' ? ev.count : -ev.count
+            }
+            const shortfall = Math.max(0, truckCount - pool)
+            const toClockIn = Math.min(shortfall, base - clockedIn)
+            // Real prep time before a truck leaves the plant: 15 min pre-trip
+            // + 10 min loading + 5 min slump test. Plus the truck has to drive
+            // toJobMin to the site and arrive ~5 min before the order's start
+            // time. So each operator's clock-in must land that far AHEAD of
+            // when their truck is supposed to be on the job.
+            const arrivalPrepMin = PRE_TRIP_MINUTES + LOAD_MINUTES + SLUMP_MINUTES + EARLY_ARRIVAL_MINUTES
+            const clockInOffset = toJobMin + arrivalPrepMin
+            for (let i = 0; i < toClockIn; i++) {
+                // The original `slot` staggers operators back from startMin by
+                // the pour spacing — keep that relative cadence so trucks
+                // still load in sequence — then shift everything earlier by
+                // the prep + travel cushion.
+                const slot = startMin - (toClockIn - 1 - i) * spacing
+                const t = Math.max(0, slot - clockInOffset)
+                rows.push({
+                    count: 1,
+                    forOrder: order,
+                    forOrderId: order.orderId || order.orderNum || null,
+                    plantCode: code,
+                    time: t
+                })
+            }
+            clockedIn += toClockIn
+            // Record this dispatch + its truck-by-truck return events so the
+            // next iteration sees the correct pool state.
+            events.push({ count: truckCount, time: startMin, type: 'dispatch' })
+            for (let i = 0; i < truckCount; i++) {
+                const j = tripsTotal - 1 - i
+                if (j < 0) continue
+                const lastTripIdx = Math.floor(j / truckCount) * truckCount + i
+                const returnTime = startMin + lastTripIdx * spacing + cycleMin
+                events.push({ count: 1, time: returnTime, type: 'return' })
+            }
+        }
+    })
+    return rows
+}
 
 /**
  * Per-plant pool timelines — each plant gets an ordered list of

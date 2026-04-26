@@ -818,7 +818,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                             </div>
                         </div>
                         <div className="form-group">
-                            <label>Hours/Mileage</label>
+                            <label>Mileage</label>
                             <input
                                 type="number"
                                 value={hoursMileage}

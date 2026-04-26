@@ -13,10 +13,10 @@ const ID_KEY = "equipment_id";
 const ORDER_BY = "identifying_number";
 const DIFF_FIELDS = ["identifying_number", "assigned_plant", "equipment_type", "status", "last_service_date", "hours_mileage", "cleanliness_rating", "condition_rating", "equipment_make", "equipment_model", "year_made", "hours"];
 
-function parseHours(raw: any, fallback: any = null): number | null {
-    if (raw === null || raw === undefined || raw === "") return fallback;
+function parseHours(raw: any): number | null {
+    if (raw === null || raw === undefined || raw === "") return null;
     const n = typeof raw === "number" ? raw : Number(raw);
-    return Number.isFinite(n) && n >= 0 ? n : fallback;
+    return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 function getUserFriendlyError(error: string): string {
@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
                     make: "make" in equipment ? equipment.make : current.make,
                     model: "model" in equipment ? equipment.model : current.model,
                     year: "year" in equipment ? Number(equipment.year) : current.year,
-                    hours: "hours" in equipment ? parseHours(equipment.hours, current.hours) : current.hours,
+                    hours: "hours" in equipment ? parseHours(equipment.hours) : current.hours,
                     updated_last: typeof equipment?.updatedLast === "string" ? equipment.updatedLast : current.updated_last
                 };
                 const diffs = computeDiffs(current, apiData, DIFF_FIELDS, ID_KEY, id, userId);

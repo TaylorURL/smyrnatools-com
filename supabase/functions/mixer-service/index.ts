@@ -14,10 +14,10 @@ const ID_KEY = "mixer_id";
 const ORDER_BY = "truck_number";
 const DIFF_FIELDS = ["truck_number", "assigned_plant", "assigned_operator", "last_service_date", "last_chip_date", "cleanliness_rating", "vin", "make", "model", "year", "status", "shop_status", "hours"];
 
-function parseHours(raw: any, fallback: any = null): number | null {
-    if (raw === null || raw === undefined || raw === "") return fallback;
+function parseHours(raw: any): number | null {
+    if (raw === null || raw === undefined || raw === "") return null;
     const n = typeof raw === "number" ? raw : Number(raw);
-    return Number.isFinite(n) && n >= 0 ? n : fallback;
+    return Number.isFinite(n) && n >= 0 ? n : null;
 }
 const INACTIVE_STATUSES = ["In Shop", "Retired", "Spare"];
 
@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
                     year: "year" in mixer ? (normalizeYear(mixer.year) ?? current.year) : current.year,
                     status,
                     shop_status: "shopStatus" in mixer ? mixer.shopStatus : ("shop_status" in mixer ? mixer.shop_status : current.shop_status),
-                    hours: "hours" in mixer ? parseHours(mixer.hours, current.hours) : current.hours,
+                    hours: "hours" in mixer ? parseHours(mixer.hours) : current.hours,
                     updated_last: typeof mixer?.updatedLast === "string" ? mixer.updatedLast : current.updated_last
                 };
                 const diffs = computeDiffs(current, apiData, DIFF_FIELDS, ID_KEY, id, userId);

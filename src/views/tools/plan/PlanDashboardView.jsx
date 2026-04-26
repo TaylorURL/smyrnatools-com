@@ -4,6 +4,7 @@ import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/component
 import {
     buildAssignmentDriverTimes,
     computePlantPoolTimeline,
+    computePullUpRows,
     getEffectiveBase,
     timeToMinutes
 } from '../../../utils/PlanUtility'
@@ -19,6 +20,22 @@ const subtractMinutesFromTime = (time, minutes) => {
     const h = Math.floor(target / 60)
     const m = target % 60
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+const formatMinutesClock = (mins) => {
+    if (!Number.isFinite(mins)) return '—'
+    const wrapped = ((mins % (24 * 60)) + 24 * 60) % (24 * 60)
+    const h = Math.floor(wrapped / 60)
+    const m = Math.round(wrapped % 60)
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+const formatPullUpDelta = (mins) => {
+    if (!Number.isFinite(mins)) return ''
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`
+    return `${m}m`
 }
 
 /**
@@ -434,6 +451,7 @@ const NAV_SECTIONS = [
     { icon: 'fa-sticky-note', id: 'notes', label: 'Notes' },
     { icon: 'fa-project-diagram', id: 'flow-preview', label: 'Flow' },
     { icon: 'fa-circle-exclamation', id: 'extra-diligence', label: 'Extra Diligence' },
+    { icon: 'fa-clock-rotate-left', id: 'compaction', label: 'Compact Schedule' },
     { icon: 'fa-triangle-exclamation', id: 'insights', label: 'Plan Insights' },
     { icon: 'fa-cubes', id: 'yardage', label: 'Yardage by Plant' }
 ]
@@ -441,6 +459,7 @@ const NAV_SECTIONS = [
 function SideNav({
     accent,
     activeId,
+    compactionCount = 0,
     hasInsights,
     hasYourScope,
     onJump,
@@ -455,8 +474,11 @@ function SideNav({
                 {sections.map((section) => {
                     if (section.requiresYourScope && !hasYourScope) return null
                     if (section.id === 'insights' && !hasInsights) return null
+                    if (section.id === 'compaction' && compactionCount === 0) return null
                     const isActive = activeId === section.id
-                    const badge = section.id === 'extra-diligence' ? (specialCount || 0) + (qcCount || 0) : null
+                    let badge = null
+                    if (section.id === 'extra-diligence') badge = (specialCount || 0) + (qcCount || 0)
+                    else if (section.id === 'compaction') badge = compactionCount
                     const label = section.id === 'my-plant' ? yourSectionLabel || section.label : section.label
                     return (
                         <button
@@ -667,6 +689,45 @@ function PlanDashboardView({
         return { covered: totalJobs - needHelp, deficit, needHelp, net: surplus - deficit, surplus, totalJobs }
     }, [plantProduction, stats, assignments, planDate])
 
+    /** Pull-up recommendations for the schedule — later orders that could be
+     *  moved into earlier surplus windows so the dispatch day compacts
+     *  instead of trucks idling. Mirrors the same simulation inputs as
+     *  jobCoverage so the dashboard view of compaction matches what the
+     *  Schedule tab surfaces inline. */
+    const pullUpRecommendations = useMemo(() => {
+        const flatOrders = []
+        Object.entries(plantProduction || {}).forEach(([code, data]) => {
+            if (code === PLAN_META_KEY || !Array.isArray(data?.orders)) return
+            data.orders.forEach((order) => flatOrders.push({ ...order, plantCode: code }))
+        })
+        if (flatOrders.length === 0) return []
+        const initialPoolByCode = {}
+        ;(stats || []).forEach((s) => {
+            if (!s?.code) return
+            const base = Number.isFinite(s.base) ? s.base : 0
+            initialPoolByCode[s.code] = getEffectiveBase(base, s.code, plantProduction, planDate)
+        })
+        const helpTransfers = []
+        ;(assignments || []).forEach((a) => {
+            if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
+            const home = a.returnPlant || a.fromPlant
+            buildAssignmentDriverTimes(a).forEach((dt) => {
+                if (!Number.isFinite(dt.arriveMin)) return
+                helpTransfers.push({ delta: -1, plantCode: a.fromPlant, time: dt.arriveMin })
+                helpTransfers.push({ delta: 1, plantCode: a.toPlant, time: dt.arriveMin })
+                if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
+                    helpTransfers.push({ delta: -1, plantCode: a.toPlant, time: dt.leaveMin })
+                    helpTransfers.push({ delta: 1, plantCode: home, time: dt.leaveMin })
+                }
+            })
+        })
+        const rows = computePullUpRows(flatOrders, initialPoolByCode, null, helpTransfers)
+        // Latest scheduled customer first so the dashboard list mirrors the
+        // recommended outreach sequence (call the last customer first, then
+        // work backward through the day).
+        return rows.sort((a, b) => b.originalStartMin - a.originalStartMin)
+    }, [plantProduction, stats, assignments, planDate])
+
     // Broader fleet-wide numbers to set today's plan in context.
     const totalOperatorsFleet = useMemo(
         () => Object.values(mixerCountsByPlant || {}).reduce((sum, count) => sum + (count || 0), 0),
@@ -865,6 +926,7 @@ function PlanDashboardView({
                 <SideNav
                     accent={accentColor}
                     activeId={activeSection}
+                    compactionCount={pullUpRecommendations.length}
                     hasInsights={hasInsights}
                     hasYourScope={hasYourScope}
                     onJump={jumpTo}
@@ -1180,6 +1242,56 @@ function PlanDashboardView({
                             titleLabel="Title (e.g. QC cylinders on Mix 4500 · Plant 214)"
                         />
                     </section>
+
+                    {pullUpRecommendations.length > 0 && (
+                        <Card id="compaction" title={`Compact schedule · ${pullUpRecommendations.length}`}>
+                            <div className="text-[12px] mb-2.5" style={{ color: 'var(--text-secondary)' }}>
+                                Earlier surplus windows that could host later jobs. Pulling these up keeps trucks
+                                productive instead of idling between pours. When working the phones, start with the
+                                latest-scheduled customers first — listed top-down below.
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                {pullUpRecommendations.map((row, i) => {
+                                    const customer = (row.order?.customer || '').trim()
+                                    const orderTag = row.order?.orderNum ? `#${row.order.orderNum}` : 'order'
+                                    return (
+                                        <div
+                                            key={`${row.plantCode}-${row.suggestedStartMin}-${i}`}
+                                            className="flex items-baseline gap-2 text-[12.5px] py-1"
+                                            style={{ borderLeft: '2px solid #0d9488', paddingLeft: 10 }}
+                                        >
+                                            <span
+                                                className="font-mono text-[11.5px] font-semibold"
+                                                style={{ color: '#0d9488', minWidth: 36 }}
+                                            >
+                                                {row.plantCode}
+                                            </span>
+                                            <span style={{ color: 'var(--text-primary)' }}>
+                                                <b>{orderTag}</b>
+                                                {customer ? (
+                                                    <>
+                                                        {' '}
+                                                        · <b>{customer}</b>
+                                                    </>
+                                                ) : null}{' '}
+                                                <span style={{ color: 'var(--text-secondary)' }}>
+                                                    {formatMinutesClock(row.originalStartMin)} →{' '}
+                                                    <b style={{ color: 'var(--text-primary)' }}>
+                                                        {formatMinutesClock(row.suggestedStartMin)}
+                                                    </b>{' '}
+                                                    ({formatPullUpDelta(row.pullUpDeltaMin)} earlier · notify by{' '}
+                                                    <b style={{ color: 'var(--text-primary)' }}>
+                                                        {formatMinutesClock(row.notifyByMin)}
+                                                    </b>
+                                                    )
+                                                </span>
+                                            </span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </Card>
+                    )}
 
                     {hasInsights && (
                         <Card

@@ -13,10 +13,10 @@ const ID_KEY = "tractor_id";
 const ORDER_BY = "truck_number";
 const DIFF_FIELDS = ["truck_number", "assigned_plant", "assigned_operator", "last_service_date", "cleanliness_rating", "has_blower", "vin", "make", "model", "year", "freight", "status", "hours"];
 
-function parseHours(raw: any, fallback: any = null): number | null {
-    if (raw === null || raw === undefined || raw === "") return fallback;
+function parseHours(raw: any): number | null {
+    if (raw === null || raw === undefined || raw === "") return null;
     const n = typeof raw === "number" ? raw : Number(raw);
-    return Number.isFinite(n) && n >= 0 ? n : fallback;
+    return Number.isFinite(n) && n >= 0 ? n : null;
 }
 const INACTIVE_STATUSES = ["In Shop", "Retired", "Spare"];
 
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
                     year: "year" in tractor ? (normalizeYear(tractor.year) ?? current.year) : current.year,
                     freight: "freight" in tractor ? (typeof tractor.freight === "string" ? tractor.freight : String(tractor.freight)) : current.freight,
                     status,
-                    hours: "hours" in tractor ? parseHours(tractor.hours, current.hours) : current.hours,
+                    hours: "hours" in tractor ? parseHours(tractor.hours) : current.hours,
                     updated_last: typeof tractor?.updatedLast === "string" ? tractor.updatedLast : current.updated_last
                 };
                 const diffs = computeDiffs(current, apiData, DIFF_FIELDS, ID_KEY, id, userId);
