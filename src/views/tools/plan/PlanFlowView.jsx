@@ -9,6 +9,7 @@ import {
     getEffectiveBase,
     getMissingOperators,
     getOrderPourDurationMinutes,
+    isExcludedOrder,
     MAX_YPH,
     minutesToTime,
     poolAtTime,
@@ -331,13 +332,20 @@ function PlanFlowView({
     }, [stats, plantProduction])
 
     /** Flattened order list with `plantCode` attached — fed to both the
-     *  byOrder pool summary and the per-plant timeline. */
+     *  byOrder pool summary and the per-plant timeline. Cancelled (17:00)
+     *  and dispatcher test (18:00) sentinel rows are filtered here so the
+     *  point-in-time "active orders" view doesn't falsely count them as
+     *  pouring at the sentinel hour. The pool simulator filters them too,
+     *  so dropping them at the source keeps both pipelines honest. */
     const flatOrders = useMemo(() => {
         const out = []
         ;(stats || []).forEach((s) => {
             const prod = plantProduction[s.code] || {}
             const orders = Array.isArray(prod.orders) ? prod.orders : []
-            orders.forEach((o) => out.push({ ...o, plantCode: s.code }))
+            orders.forEach((o) => {
+                if (isExcludedOrder(o)) return
+                out.push({ ...o, plantCode: s.code })
+            })
         })
         return out
     }, [stats, plantProduction])

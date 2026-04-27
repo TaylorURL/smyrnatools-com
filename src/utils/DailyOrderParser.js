@@ -321,12 +321,16 @@ export function parseDailyOrderHtml(htmlString, plants = []) {
             if (maxVal > 0) totalYardage = String(maxVal)
         }
 
-        // The HTML's "Plant Total" includes cancelled orders (start time
-        // 17:00 sentinel). When per-order data is available we recompute the
-        // total from live orders only so YPH, dashboard yardage, and region
-        // overbook checks all reflect what's actually being delivered.
+        // The HTML's "Plant Total" includes cancelled orders (17:00 sentinel)
+        // and dispatcher test orders (18:00 sentinel). When per-order data is
+        // available we recompute the total from REAL production rows only so
+        // YPH, dashboard yardage, and region overbook checks all reflect what's
+        // actually being delivered.
         const liveOrderYardage = orders
-            .filter((o) => String(o.startTime || '').padStart(5, '0') !== '17:00')
+            .filter((o) => {
+                const t = String(o.startTime || '').padStart(5, '0')
+                return t !== '17:00' && t !== '18:00'
+            })
             .reduce((sum, o) => sum + (parseFloat(o.yardage) || 0), 0)
         const effectiveYardage =
             liveOrderYardage > 0 || orders.length > 0 ? liveOrderYardage : parseFloat(totalYardage) || 0

@@ -2532,13 +2532,18 @@ function PlanScheduleView({
         const n = getCalculatedTruckCount(o, getTravelOverrides ? getTravelOverrides(o) : undefined)
         return sum + (Number.isFinite(n) ? n : 0)
     }, 0)
-    const uniquePlants = new Set(filtered.map((o) => o.plantCode)).size
-    const uniqueCustomers = new Set(filtered.map((o) => (clean(o.customer) || '').toLowerCase()).filter(Boolean)).size
-    const earliest = filtered
+    /* Headline KPIs always reflect REAL production — cancelled (17:00) and
+     * test (18:00) sentinel rows are dropped before counting plants /
+     * customers / orders / start-window so a wave of cancellations doesn't
+     * silently inflate the day's numbers. The table itself still renders
+     * them for transparency. */
+    const uniquePlants = new Set(liveOrders.map((o) => o.plantCode)).size
+    const uniqueCustomers = new Set(liveOrders.map((o) => (clean(o.customer) || '').toLowerCase()).filter(Boolean)).size
+    const earliest = liveOrders
         .map((o) => timeToMinutes(o.startTime))
         .filter((t) => t != null)
         .sort((a, b) => a - b)[0]
-    const latest = filtered
+    const latest = liveOrders
         .map((o) => timeToMinutes(o.startTime))
         .filter((t) => t != null)
         .sort((a, b) => b - a)[0]
@@ -2953,10 +2958,10 @@ function PlanScheduleView({
                                     hint={
                                         hasActiveFilters && filtered.length !== allOrders.length
                                             ? `of ${allOrders.length.toLocaleString()}`
-                                            : 'on the day'
+                                            : 'on the day · cancelled excluded'
                                     }
                                     label="Orders"
-                                    value={filtered.length.toLocaleString()}
+                                    value={liveOrders.length.toLocaleString()}
                                 />
                                 <Stat
                                     hint={`${uniqueCustomers.toLocaleString()} customer${uniqueCustomers === 1 ? '' : 's'}`}
