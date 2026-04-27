@@ -124,7 +124,8 @@ export function useReviewData({ report, initialData, user, completedByUser }) {
             if (
                 (report.name === 'plant_manager' ||
                     report.name === 'district_manager' ||
-                    report.name === 'plant_production') &&
+                    report.name === 'plant_production' ||
+                    report.name === 'ready_mix_instructor') &&
                 completedByUser &&
                 completedByUser.id
             ) {

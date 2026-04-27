@@ -854,21 +854,15 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
             ),
         [regionPlantCodes]
     )
-    /** Plants list strictly narrowed to the user's region. Used by the Hiring
-     *  Goals table — `useSubmitData` falls back to the full all-plants list
-     *  when target-user region resolution fails, so we MUST filter against
-     *  `resolvedRegionCodes` (the authoritative set) and not against
-     *  `regionPlantCodes` (which itself falls back to `plants` codes when
-     *  resolution fails — that fallback would defeat the filter). When the
-     *  resolved set isn't available yet we render nothing rather than leak
-     *  cross-region plants into the table. */
+    /** Plants list narrowed to the user's region for the Hiring Goals table.
+     *  Strict mode when `resolvedRegionCodes` is available; permissive
+     *  fallback to the `plants` prop when resolution is in flight or has
+     *  failed (better than showing an empty table). The one-time sanitize
+     *  effect still strips legacy cross-region rows on save once resolution
+     *  completes. */
     const regionalPlants = React.useMemo(() => {
         if (!resolvedRegionCodes || resolvedRegionCodes.size === 0) {
-            // Pre-resolution: show only what we know is in scope. If `plants`
-            // is already the regional list (happy path) it's identical to
-            // resolvedRegionCodes; if it's the all-plants fallback we'd
-            // rather show nothing for a moment than a wrong list.
-            return []
+            return plants || []
         }
         const byCode = new Map()
         ;(plants || []).forEach((p) => {
@@ -1448,7 +1442,7 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
 
 /* ── Review-mode plugin ─────────────────────────────────────────────────── */
 
-export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso }) {
+export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso, reportUserId, assignedPlant }) {
     const snapshotData = form?.snapshot_data || {}
     const mixerTrainers = snapshotData.mixer_trainers || []
     const tractorTrainers = snapshotData.tractor_trainers || []
@@ -1457,26 +1451,75 @@ export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso }) {
     const mixerTraining = snapshotData.mixer_training || []
     const tractorTraining = snapshotData.tractor_training || []
     const hiringGoals = form?.hiring_goals || {}
-    const regionPlantCodes = React.useMemo(
-        () =>
-            new Set(
-                (plants || [])
-                    .map((p) => p?.plant_code || p?.code)
+    /** Resolve the report owner's region directly. The `plants` prop here can
+     *  be the broad all-plants list (degraded fallback in the parent), so we
+     *  CANNOT derive the region scope from it — that would let cross-region
+     *  hiring-goal entries (saved when the bug existed) leak into the table. */
+    const [resolvedRegionCodes, setResolvedRegionCodes] = useState(null)
+    useEffect(() => {
+        let cancelled = false
+        async function resolve() {
+            try {
+                let plantCode = (assignedPlant || '').trim()
+                if (!plantCode && reportUserId) {
+                    const profilePlant = await UserService.getUserPlant(reportUserId)
+                    plantCode =
+                        typeof profilePlant === 'string'
+                            ? profilePlant
+                            : profilePlant?.plant_code || profilePlant?.plantCode || ''
+                }
+                if (!plantCode) return
+                const regions = await PlantService.fetchRegionsByPlantCode(plantCode)
+                const regionCodes = (Array.isArray(regions) ? regions : [])
+                    .map((r) => r?.regionCode || r?.region_code)
                     .filter(Boolean)
-                    .map((c) => String(c).trim().toUpperCase())
-            ),
-        [plants]
-    )
-    const regionalPlants = React.useMemo(() => {
-        if (regionPlantCodes.size === 0) return plants || []
-        return (plants || []).filter((p) =>
-            regionPlantCodes.has(
-                String(p?.plant_code || p?.code || '')
-                    .trim()
-                    .toUpperCase()
-            )
+                if (regionCodes.length === 0) return
+                const lists = await Promise.all(regionCodes.map((rc) => PlantService.fetchRegionPlants(rc)))
+                const set = new Set()
+                lists.forEach((list) =>
+                    (list || []).forEach((rp) => {
+                        const c = rp?.plantCode || rp?.plant_code
+                        if (c) set.add(String(c).trim().toUpperCase())
+                    })
+                )
+                if (!cancelled) setResolvedRegionCodes(set)
+            } catch {
+                /* Region resolution is best-effort — leave the goals table empty. */
+            }
+        }
+        resolve()
+        return () => {
+            cancelled = true
+        }
+    }, [reportUserId, assignedPlant])
+    /** Region-scoped plant codes used for live-data filtering. Falls back to
+     *  the `plants` prop only when nothing has resolved (preserves prior
+     *  behaviour for the terminated-from-live lookup). */
+    const regionPlantCodes = React.useMemo(() => {
+        if (resolvedRegionCodes && resolvedRegionCodes.size > 0) return resolvedRegionCodes
+        return new Set(
+            (plants || [])
+                .map((p) => p?.plant_code || p?.code)
+                .filter(Boolean)
+                .map((c) => String(c).trim().toUpperCase())
         )
-    }, [plants, regionPlantCodes])
+    }, [plants, resolvedRegionCodes])
+    /** Hiring-goals plant list — narrowed to the resolved region when known,
+     *  otherwise falls back to the `plants` prop so the table isn't empty
+     *  while resolution is in flight. */
+    const regionalPlants = React.useMemo(() => {
+        if (!resolvedRegionCodes || resolvedRegionCodes.size === 0) return plants || []
+        const byCode = new Map()
+        ;(plants || []).forEach((p) => {
+            const c = String(p?.plant_code || p?.code || '')
+                .trim()
+                .toUpperCase()
+            if (c) byCode.set(c, p)
+        })
+        return Array.from(resolvedRegionCodes)
+            .map((code) => byCode.get(code) || { plant_code: code, plant_name: code })
+            .sort((a, b) => (a.plant_code || '').localeCompare(b.plant_code || ''))
+    }, [plants, resolvedRegionCodes])
     const snapshotHasTerminated = Array.isArray(snapshotData.terminated_operators)
     const [liveTerminated, setLiveTerminated] = useState([])
     useEffect(() => {

@@ -1,6 +1,16 @@
 # Changelog
 
 
+## [40.0.1] - 2026-04-27
+
+- Redesigned VersionPopup from a colored toast to a compact, theme-aware badge using Plan-tab design tokens, semantic button element, and proper disabled state
+- Added region-scoped filtering to the Weekly Ready Mix Instructor Report — resolves the report owner's region via PlantService/UserService and restricts all operator lists, hiring goals, and terminated-this-week rows to plants within that region
+- Added one-time legacy snapshot sanitization that strips out-of-region rows and hiring goal entries when a report is opened in edit mode
+- Added "Days in Training" column to the training tables, computed from the operator's statusChangedAt relative to the end of the report week
+- Added formatPendingStartDate helper to render pending-start dates as readable short dates instead of raw ISO strings
+- Updated PlanScheduleView headline KPIs to use liveOrders instead of filtered, excluding cancelled and test sentinel orders from day-level stats
+- Updated the Orders stat card hint to read "on the day · cancelled excluded"
+
 ## [40.0.0] - 2026-04-27
 
 - Extended the cancelled order filter in DailyOrderParser to also exclude dispatcher test orders (18:00 sentinel), so yardage totals, YPH, and overbook checks only reflect real production

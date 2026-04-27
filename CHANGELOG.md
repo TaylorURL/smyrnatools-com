@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [40.0.2] - 2026-04-27
+
+- Added region-scoped filtering to the Ready Mix Instructor review plugin, resolving the report owner's region via PlantService/UserService instead of deriving scope from the (potentially unfiltered) plants prop
+- Changed the submit plugin's regionalPlants fallback to return the full plants list instead of an empty array when region resolution is pending or fails, preventing a blank Hiring Goals table
+- Simplified submit plugin comments around the regionalPlants and resolvedRegionCodes logic
+- Included ready_mix_instructor in the useReviewData report-name check so the completed-by user is resolved for review mode
+
 ## [40.0.1] - 2026-04-27
 
 - Redesigned VersionPopup from a colored toast to a compact, theme-aware badge using Plan-tab design tokens, semantic button element, and proper disabled state
