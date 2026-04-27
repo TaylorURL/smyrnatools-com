@@ -495,6 +495,50 @@ export class MaintenanceService {
         const { data: urlData } = Database.storage.from(STORAGE_BUCKET).getPublicUrl(fileName)
         return urlData?.publicUrl || fileName
     }
+    /** Uploads a scanned/completed maintenance form PDF to storage and returns
+     *  its public URL. Used by the PDF-based workflow where maintenance staff
+     *  print → fill → scan → upload. */
+    static async uploadScannedPdf(file, formId) {
+        const user = await requireAuthenticatedUser()
+        if (!file) throw new Error('No PDF file provided.')
+        const fileExt = (file.name?.split('.').pop() || 'pdf').toLowerCase()
+        const fileName = `${STORAGE_PREFIX}/scans/${formId}/${user.id}_${Date.now()}.${fileExt}`
+        const { error } = await Database.storage.from(STORAGE_BUCKET).upload(fileName, file, {
+            cacheControl: IMAGE_CACHE_CONTROL,
+            contentType: 'application/pdf',
+            upsert: false
+        })
+        if (error) throw new Error('Failed to upload scan: ' + error.message)
+        const { data: urlData } = Database.storage.from(STORAGE_BUCKET).getPublicUrl(fileName)
+        return urlData?.publicUrl || fileName
+    }
+    /** Submits a completed scanned form. Stores the PDF URL on the submission
+     *  in place of field-by-field responses; reviewers embed the PDF inline. */
+    static async submitScannedForm({ formId, dueDate, plantCode = null, scannedPdfUrl, notes = '' }) {
+        const user = await requireAuthenticatedUser()
+        if (!scannedPdfUrl) throw new Error('Upload the completed scan before submitting.')
+        const result = await postMaint('submit-form', {
+            dueDate,
+            formId,
+            notes,
+            plantCode,
+            responses: [],
+            scannedPdfUrl,
+            userId: user.id
+        })
+        return result.data
+    }
+    /** Resolves a stored PDF path/URL into a public URL the browser can embed. */
+    static getScannedPdfUrl(pdfPath) {
+        if (!pdfPath || typeof pdfPath !== 'string') return null
+        const trimmed = pdfPath.trim()
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
+        let path = extractStoragePath(trimmed)
+        if (!path.startsWith(`${STORAGE_PREFIX}/`) && !path.includes('/')) return null
+        if (!path.startsWith(`${STORAGE_PREFIX}/`)) path = `${STORAGE_PREFIX}/${path}`
+        const { data } = Database.storage.from(STORAGE_BUCKET).getPublicUrl(path)
+        return data?.publicUrl || null
+    }
     /** Resolves an image path to its public URL, handling both relative and absolute paths. */
     static getImageUrl(imagePath) {
         if (!imagePath || typeof imagePath !== 'string') return null

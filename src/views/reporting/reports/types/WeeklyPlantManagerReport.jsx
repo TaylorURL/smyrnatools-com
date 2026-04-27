@@ -1479,26 +1479,30 @@ export function PlantManagerSubmitPlugin({
         setForm({ ...form, operators_sent_to_help: entries })
     }
     return (
-        <div className="flex flex-col gap-2.5">
-            <OperatorsSentToHelp
-                entries={form?.operators_sent_to_help || []}
-                onUpdate={handleOperatorsUpdate}
-                weekIso={weekIso}
-                readOnly={false}
-                user={user}
-                plantCode={plantCode}
-                regionalPlants={propPlants}
-            />
-            <MetricsSection
-                yph={propYph ?? yph}
-                yphGrade={propYphGrade ?? yphGrade}
-                yphLabel={propYphLabel ?? yphLabel}
-            />
-            <WeeklyTrendsSection
-                currentWeekIso={weekIso}
-                plantCode={plantCode || userPlantCode || ''}
-                user={{ ...user, plant_code: userPlantCode }}
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-2.5 items-start">
+            <div className="flex flex-col gap-2.5 min-w-0">
+                <OperatorsSentToHelp
+                    entries={form?.operators_sent_to_help || []}
+                    onUpdate={handleOperatorsUpdate}
+                    weekIso={weekIso}
+                    readOnly={false}
+                    user={user}
+                    plantCode={plantCode}
+                    regionalPlants={propPlants}
+                />
+                <WeeklyTrendsSection
+                    currentWeekIso={weekIso}
+                    plantCode={plantCode || userPlantCode || ''}
+                    user={{ ...user, plant_code: userPlantCode }}
+                />
+            </div>
+            <div className="lg:sticky lg:top-3 self-start min-w-0">
+                <MetricsSection
+                    yph={propYph ?? yph}
+                    yphGrade={propYphGrade ?? yphGrade}
+                    yphLabel={propYphLabel ?? yphLabel}
+                />
+            </div>
         </div>
     )
 }
@@ -1517,22 +1521,26 @@ export function PlantManagerReviewPlugin({
     const plantCode = assignedPlant || user?.plant_code || form?.plant || ''
     const timelinePlantCode = form?.plant || assignedPlant || user?.plant_code || ''
     return (
-        <div className="flex flex-col gap-2.5">
-            <OperatorsSentToHelp
-                entries={form?.operators_sent_to_help || []}
-                onUpdate={() => {}}
-                weekIso={weekIso}
-                readOnly={true}
-                user={user}
-                plantCode={plantCode}
-                regionalPlants={propPlants}
-            />
-            <MetricsSection yph={yph} yphGrade={yphGrade} yphLabel={yphLabel} />
-            <WeeklyTrendsSection
-                currentWeekIso={weekIso}
-                plantCode={timelinePlantCode || user?.plant_code || ''}
-                user={user}
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-2.5 items-start">
+            <div className="flex flex-col gap-2.5 min-w-0">
+                <OperatorsSentToHelp
+                    entries={form?.operators_sent_to_help || []}
+                    onUpdate={() => {}}
+                    weekIso={weekIso}
+                    readOnly={true}
+                    user={user}
+                    plantCode={plantCode}
+                    regionalPlants={propPlants}
+                />
+                <WeeklyTrendsSection
+                    currentWeekIso={weekIso}
+                    plantCode={timelinePlantCode || user?.plant_code || ''}
+                    user={user}
+                />
+            </div>
+            <div className="lg:sticky lg:top-3 self-start min-w-0">
+                <MetricsSection yph={yph} yphGrade={yphGrade} yphLabel={yphLabel} />
+            </div>
         </div>
     )
 }

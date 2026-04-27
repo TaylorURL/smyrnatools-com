@@ -33,6 +33,8 @@ import { Database } from '../../../services/DatabaseService'
 import { ReportService } from '../../../services/ReportService'
 import { UserService } from '../../../services/UserService'
 import { ReportUtility } from '../../../utils/ReportUtility'
+import QualityIssueModal from '../quality/QualityIssueModal'
+import QualityIssuesView from '../quality/QualityIssuesView'
 import ReportsReviewView from './ReportsReviewView'
 import ReportsSubmitView from './ReportsSubmitView'
 
@@ -140,6 +142,7 @@ function ReportsView() {
     const [showLostLoadModal, setShowLostLoadModal] = useState(false)
     const [showQCStrengthModal, setShowQCStrengthModal] = useState(false)
     const [showLabReportModal, setShowLabReportModal] = useState(false)
+    const [showQualityIssueModal, setShowQualityIssueModal] = useState(false)
     const [editingLostLoad, setEditingLostLoad] = useState(null)
     const [editingQcReport, setEditingQcReport] = useState(null)
     const [editingLabReport, setEditingLabReport] = useState(null)
@@ -208,20 +211,14 @@ function ReportsView() {
     const prev2WeekIso = useMemo(() => weekIsoOffset(thisWeekIso, -2), [thisWeekIso])
     const nextWeekIso = useMemo(() => weekIsoOffset(thisWeekIso, 1), [thisWeekIso])
 
-    const cutoffForWeek = useCallback((weekIso) => {
-        const { saturday } = ReportUtility.getWeekDatesFromIso(weekIso)
-        if (!saturday) return null
-        const cutoff = new Date(saturday)
-        cutoff.setHours(23, 59, 59, 999)
-        return cutoff
-    }, [])
+    const cutoffForWeek = useCallback((weekIso) => ReportUtility.getLateCutoff(weekIso), [])
 
     const daysLeftThisWeek = useMemo(() => {
         const cutoff = cutoffForWeek(thisWeekIso)
         if (!cutoff) return 0
         const diff = cutoff.getTime() - Date.now()
         if (diff <= 0) return 0
-        return Math.min(7, Math.max(0, Math.ceil(diff / 86400000)))
+        return Math.min(8, Math.max(0, Math.ceil(diff / 86400000)))
     }, [cutoffForWeek, thisWeekIso])
 
     const todayDayIndex = useMemo(() => {
@@ -233,8 +230,11 @@ function ReportsView() {
     }, [thisWeekIso])
 
     const overdueSourceItems = useMemo(() => {
+        const now = Date.now()
         const pool = []
         ;[prevWeekIso, prev2WeekIso].forEach((iso) => {
+            const cutoff = ReportUtility.getLateCutoff(iso)
+            if (!cutoff || cutoff.getTime() >= now) return
             const items = myReportsByWeek?.[iso]
             if (Array.isArray(items)) {
                 items.forEach((it) => {
@@ -246,6 +246,7 @@ function ReportsView() {
     }, [myReportsByWeek, prevWeekIso, prev2WeekIso])
 
     const weekRibbonData = useMemo(() => {
+        const now = Date.now()
         const countUnfinished = (iso) => (myReportsByWeek?.[iso] || []).filter((i) => !i.completed).length
         const weeksSinceStart = Math.max(4, ReportUtility.getTotalWeeksSince(REPORTS_START_DATE))
         const pastIsos = ReportUtility.getLastNWeekIsos(weeksSinceStart, new Date())
@@ -270,13 +271,16 @@ function ReportsView() {
                 })
                 return
             }
+            const cutoff = ReportUtility.getLateCutoff(iso)
+            const cutoffPassed = !cutoff || cutoff.getTime() < now
             const missing = countUnfinished(iso)
+            const isLate = cutoffPassed && missing > 0
             rows.push({
-                hint: missing > 0 ? `${missing} overdue` : 'Closed',
+                hint: isLate ? `${missing} overdue` : !cutoffPassed ? 'Grace period' : 'Closed',
                 iso,
                 label: labelForOffset(idx),
                 range: formatRange(iso),
-                status: missing > 0 ? 'late' : 'closed'
+                status: isLate ? 'late' : 'closed'
             })
         })
         return rows
@@ -285,13 +289,12 @@ function ReportsView() {
     const selectedWeekIso = activeWeekIso || thisWeekIso
 
     const fuseForSelectedWeek = useMemo(() => {
-        const { monday, saturday } = ReportUtility.getWeekDatesFromIso(selectedWeekIso)
-        if (!monday || !saturday) {
+        const { monday } = ReportUtility.getWeekDatesFromIso(selectedWeekIso)
+        const cutoff = ReportUtility.getLateCutoff(selectedWeekIso)
+        if (!monday || !cutoff) {
             return { caption: 'days left', daysLeft: 0, mode: 'current', todayIndex: -1 }
         }
         const now = Date.now()
-        const cutoff = new Date(saturday)
-        cutoff.setHours(23, 59, 59, 999)
         if (now < monday.getTime()) {
             const daysUntil = Math.max(0, Math.ceil((monday.getTime() - now) / 86400000))
             return { caption: 'until opens', daysLeft: daysUntil, mode: 'future', todayIndex: -1 }
@@ -300,7 +303,7 @@ function ReportsView() {
             return { caption: 'week closed', daysLeft: 0, mode: 'past', todayIndex: -1 }
         }
         const elapsed = Math.max(0, Math.min(6, Math.floor((now - monday.getTime()) / 86400000)))
-        const daysLeft = Math.min(7, Math.max(0, Math.ceil((cutoff.getTime() - now) / 86400000)))
+        const daysLeft = Math.min(8, Math.max(0, Math.ceil((cutoff.getTime() - now) / 86400000)))
         return { caption: `day${daysLeft === 1 ? '' : 's'} left`, daysLeft, mode: 'current', todayIndex: elapsed }
     }, [selectedWeekIso])
 
@@ -973,6 +976,21 @@ function ReportsView() {
         setQcDateTo(currentMonthEndIso)
     }
 
+    /** Compact summary metrics shown above the My Reports week ribbon — mirrors
+     *  the PlanView region-totals strip so the two surfaces feel related.
+     *  Declared above any early returns so the hook order stays stable. */
+    const myReportsSummary = useMemo(() => {
+        const items = myReportsByWeek?.[selectedWeekIso] || []
+        const submitted = items.filter((i) => i.completed).length
+        const pending = items.length - submitted
+        return {
+            assigned: items.length,
+            overdueCarryover: overdueSourceItems.length,
+            pending,
+            submitted
+        }
+    }, [myReportsByWeek, selectedWeekIso, overdueSourceItems])
+
     if (showForm) {
         const report = reportTypeMap[showForm.name]
             ? { ...reportTypeMap[showForm.name], weekIso: showForm.weekIso }
@@ -1021,6 +1039,9 @@ function ReportsView() {
         ...(hasAnyReviewPermission ? [{ icon: 'fa-clipboard-check', key: 'review', label: 'Review' }] : []),
         ...(hasOneOffReviewPermission?.qc_strength || hasQCStrengthPermission
             ? [{ icon: 'fa-flask', key: 'quality', label: 'Quality Reports' }]
+            : []),
+        ...(hasOneOffReviewPermission?.qc_strength || hasQCStrengthPermission
+            ? [{ icon: 'fa-clipboard-list', key: 'quality_issues', label: 'Quality Issues' }]
             : []),
         ...(hasLostLoadsPermission ? [{ icon: 'fa-truck', key: 'lost_loads', label: 'Loss Reports' }] : [])
     ]
@@ -1216,6 +1237,20 @@ function ReportsView() {
                 {showReviewSkeleton && renderV2Skeleton('list')}
                 {!showBootSkeleton && !showAllSkeleton && tab === 'all' && (
                     <div className="flex flex-col gap-4">
+                        <MyReportsSummaryBar
+                            accent={accent}
+                            cutoffLabel={ReportUtility.getLateCutoffLabel()}
+                            daysLeft={fuseForSelectedWeek.daysLeft}
+                            isFuture={fuseForSelectedWeek.mode === 'future'}
+                            isPast={fuseForSelectedWeek.mode === 'past'}
+                            overdueCarryover={myReportsSummary.overdueCarryover}
+                            pending={myReportsSummary.pending}
+                            submitted={myReportsSummary.submitted}
+                            weekLabel={
+                                isSelectedWeekFuture ? 'Next week' : isSelectedWeekThis ? 'This week' : 'Archived week'
+                            }
+                            weekRange={selectedWeekRange}
+                        />
                         <WeekRibbon
                             weeks={weekRibbonData}
                             activeIso={selectedWeekIso}
@@ -1223,7 +1258,7 @@ function ReportsView() {
                         />
                         <DeadlineFuse
                             daysLeft={fuseForSelectedWeek.daysLeft}
-                            cutoffLabel="Sat · 11:59 PM"
+                            cutoffLabel={ReportUtility.getLateCutoffLabel()}
                             todayIndex={fuseForSelectedWeek.todayIndex}
                             mode={fuseForSelectedWeek.mode}
                             caption={fuseForSelectedWeek.caption}
@@ -1243,8 +1278,11 @@ function ReportsView() {
                         <div className={`rv-split ${railCollapsed ? 'rv-split-collapsed' : ''}`}>
                             <div className="rv-left flex flex-col gap-3 min-w-0">
                                 <div
-                                    className="text-xs font-bold uppercase tracking-[.06em] text-slate-500"
-                                    style={{ fontFamily: 'var(--font-heading)' }}
+                                    className="text-[10px] font-bold uppercase tracking-[.08em]"
+                                    style={{
+                                        color: 'var(--text-secondary)',
+                                        fontFamily: 'var(--font-heading)'
+                                    }}
                                 >
                                     {isSelectedWeekFuture
                                         ? `Next Week · ${selectedWeekRange}`
@@ -1253,7 +1291,14 @@ function ReportsView() {
                                           : `${selectedWeekRange} · Archive`}
                                 </div>
                                 {isSelectedWeekFuture ? (
-                                    <div className="bg-white rounded-xl border border-border-light py-12 px-4 text-center text-slate-400 text-sm">
+                                    <div
+                                        className="rounded-xl border py-12 px-4 text-center text-sm"
+                                        style={{
+                                            background: 'var(--bg-primary)',
+                                            borderColor: 'var(--border-light)',
+                                            color: 'var(--text-secondary)'
+                                        }}
+                                    >
                                         Next week opens Monday — nothing to file yet.
                                     </div>
                                 ) : myItemsForSelectedWeek.length === 0 ? (
@@ -1302,7 +1347,7 @@ function ReportsView() {
                         />
                         <DeadlineFuse
                             daysLeft={fuseForSelectedWeek.daysLeft}
-                            cutoffLabel="Sat · 11:59 PM"
+                            cutoffLabel={ReportUtility.getLateCutoffLabel()}
                             todayIndex={fuseForSelectedWeek.todayIndex}
                             mode={fuseForSelectedWeek.mode}
                             caption={fuseForSelectedWeek.caption}
@@ -1463,6 +1508,15 @@ function ReportsView() {
                                         style={{ background: '#e11d48' }}
                                     >
                                         <i className="fas fa-vial text-[10px]" /> Submit Lab Report
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowQualityIssueModal(true)}
+                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
+                                        style={{ background: '#dc2626' }}
+                                        title="Log a new quality dispute / follow-up. Tracked in the Quality Issues tab."
+                                    >
+                                        <i className="fas fa-clipboard-list text-[10px]" /> New Quality Issue
                                     </button>
                                 </div>
                             )}
@@ -1730,6 +1784,10 @@ function ReportsView() {
                         </div>
                     </div>
                 )}
+
+                {tab === 'quality_issues' && (
+                    <QualityIssuesView plants={regionalPlants} regionCode={preferences?.selectedRegion?.code || ''} />
+                )}
             </div>
 
             {isPlantModalOpen && (
@@ -1808,6 +1866,20 @@ function ReportsView() {
                     initialReport={editingLabReport}
                 />
             )}
+            {showQualityIssueModal && (
+                <QualityIssueModal
+                    issue={null}
+                    onClose={() => setShowQualityIssueModal(false)}
+                    onSaved={() => {
+                        setShowQualityIssueModal(false)
+                        // Jump to the Quality Issues tab so the user sees the
+                        // newly created issue in the live list.
+                        selectTab('quality_issues')
+                    }}
+                    plants={regionalPlants}
+                    regionCode={preferences?.selectedRegion?.code || ''}
+                />
+            )}
             {selectedQCReport && (
                 <QCStrengthDetailModal
                     report={selectedQCReport}
@@ -1822,4 +1894,145 @@ function ReportsView() {
         </div>
     )
 }
+/* ── My Reports summary bar ─────────────────────────────────────────────── */
+
+/** A single stat cell — mirrors PlanView's RegionTotalCell layout (icon box +
+ *  uppercase label + mono value) so the two surfaces share a visual rhythm. */
+function SummaryCell({ accent, color, hint, icon, label, value, valueColor, warning }) {
+    const accentTint = `${accent}14`
+    return (
+        <div
+            className="rounded-lg px-3 py-1.5 flex items-center gap-2.5 shrink-0"
+            style={{
+                background: warning ? `${color || '#dc2626'}12` : 'var(--bg-primary)',
+                border: `1px solid ${warning ? `${color || '#dc2626'}66` : 'var(--border-light)'}`
+            }}
+        >
+            <div
+                className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                style={{
+                    background: warning ? color || '#dc2626' : accentTint,
+                    color: warning ? '#fff' : accent
+                }}
+            >
+                <i className={`fas ${icon} text-[11px]`} />
+            </div>
+            <div className="flex flex-col leading-tight">
+                <span
+                    className="text-[9px] font-bold uppercase tracking-wider"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
+                    {label}
+                </span>
+                <span
+                    className="text-[14px] font-bold font-mono tabular-nums"
+                    style={{
+                        color: valueColor || 'var(--text-primary)',
+                        fontFamily: 'var(--font-heading)'
+                    }}
+                >
+                    {value}
+                </span>
+                {hint && (
+                    <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+                        {hint}
+                    </span>
+                )}
+            </div>
+        </div>
+    )
+}
+
+function MyReportsSummaryBar({
+    accent,
+    cutoffLabel,
+    daysLeft,
+    isFuture,
+    isPast,
+    overdueCarryover,
+    pending,
+    submitted,
+    weekLabel,
+    weekRange
+}) {
+    const totalAssigned = submitted + pending
+    const completionPct = totalAssigned > 0 ? Math.round((submitted / totalAssigned) * 100) : null
+    const allDone = totalAssigned > 0 && pending === 0
+    const urgent = !isFuture && !isPast && daysLeft <= 1 && pending > 0
+    const daysValue = isPast ? 'Closed' : isFuture ? `${daysLeft}d` : `${daysLeft}d`
+    const daysHint = isPast ? 'cutoff passed' : isFuture ? 'until opens' : `to ${cutoffLabel}`
+    return (
+        <div
+            className="shrink-0 flex items-center gap-2 overflow-x-auto px-3 py-2 rounded-xl border"
+            style={{
+                background: urgent ? 'linear-gradient(90deg, #fee2e240, #fef3c740)' : 'var(--bg-primary)',
+                borderColor: urgent ? '#fbbf24' : 'var(--border-light)'
+            }}
+        >
+            <span
+                className="text-[9px] font-semibold uppercase tracking-wider shrink-0 mr-1"
+                style={{ color: 'var(--text-secondary)' }}
+            >
+                {weekLabel}
+                {weekRange ? ` · ${weekRange}` : ''}
+            </span>
+
+            <SummaryCell
+                accent={accent}
+                icon="fa-circle-check"
+                label="Submitted"
+                value={totalAssigned > 0 ? `${submitted}/${totalAssigned}` : '—'}
+                valueColor={allDone ? '#16a34a' : undefined}
+                hint={completionPct != null ? `${completionPct}% complete` : undefined}
+            />
+
+            <SummaryCell
+                accent={accent}
+                color="#dc2626"
+                icon="fa-hourglass-half"
+                label="Pending"
+                value={pending > 0 ? String(pending) : '—'}
+                valueColor={pending > 0 && urgent ? '#dc2626' : undefined}
+                hint={pending > 0 ? 'still due' : totalAssigned > 0 ? 'all in' : undefined}
+                warning={urgent}
+            />
+
+            <SummaryCell
+                accent={accent}
+                color="#d97706"
+                icon="fa-clock"
+                label="Window"
+                value={daysValue}
+                valueColor={urgent ? '#dc2626' : undefined}
+                hint={daysHint}
+                warning={urgent}
+            />
+
+            {overdueCarryover > 0 && (
+                <SummaryCell
+                    accent={accent}
+                    color="#dc2626"
+                    icon="fa-triangle-exclamation"
+                    label="Overdue"
+                    value={String(overdueCarryover)}
+                    hint="prior weeks"
+                    warning
+                />
+            )}
+
+            <div className="flex-1" />
+
+            {allDone && !isPast && (
+                <div
+                    className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold"
+                    style={{ background: '#16a34a14', color: '#16a34a' }}
+                >
+                    <i className="fas fa-check-circle text-[12px]" />
+                    All caught up
+                </div>
+            )}
+        </div>
+    )
+}
+
 export default ReportsView

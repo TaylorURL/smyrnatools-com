@@ -9,13 +9,16 @@ const GRADIENT_URGENT = 'linear-gradient(90deg, #f59e0b 0%, #f97316 55%, #dc2626
 const GRADIENT_PAST = 'linear-gradient(90deg, #94a3b8 0%, #64748b 100%)'
 const GRADIENT_FUTURE = 'linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%)'
 
-function DeadlineFuse({ daysLeft, cutoffLabel = 'Sat · 11:59 PM', todayIndex, caption, mode = 'current' }) {
+function DeadlineFuse({ daysLeft, cutoffLabel = 'Mon · 7:00 AM CST', todayIndex, caption, mode = 'current' }) {
     const { preferences } = usePreferences()
     const accent = preferences.accentColor || '#1e3a5f'
-    const safeDaysLeft = Math.max(0, Math.min(7, Number.isFinite(daysLeft) ? daysLeft : 0))
+    // Cutoff is now Monday 7am CST (the Monday after the report week), so the
+    // visible window spans 8 days at the start of the week instead of 7.
+    const MAX_DAYS = 8
+    const safeDaysLeft = Math.max(0, Math.min(MAX_DAYS, Number.isFinite(daysLeft) ? daysLeft : 0))
     const isPast = mode === 'past'
     const isFuture = mode === 'future'
-    const pct = isPast ? 100 : isFuture ? 0 : Math.max(4, Math.min(100, ((7 - safeDaysLeft) / 7) * 100))
+    const pct = isPast ? 100 : isFuture ? 0 : Math.max(4, Math.min(100, ((MAX_DAYS - safeDaysLeft) / MAX_DAYS) * 100))
     const resolvedTodayIndex = Number.isInteger(todayIndex) ? todayIndex : -1
     const urgent = mode === 'current' && safeDaysLeft <= 2
     const numberColor = isPast

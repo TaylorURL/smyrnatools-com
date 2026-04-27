@@ -79,18 +79,30 @@ function TrackCard({ item, history = [], onStart, onContinue, onView, plantLabel
         subLabel ||
         (completed
             ? `${plantLabel ? plantLabel + ' · ' : ''}Submitted`
-            : `${plantLabel ? plantLabel + ' · ' : ''}due Sat 11:59 PM`)
+            : `${plantLabel ? plantLabel + ' · ' : ''}due Mon 7:00 AM CST`)
+    const isViewMode = status === 'submitted'
     return (
-        <article className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-px hover:shadow-md">
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100">
+        <article
+            className="rounded-xl overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-px hover:shadow-md border"
+            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+        >
+            <div
+                className="flex items-center gap-3 px-4 py-3.5 border-b"
+                style={{ borderColor: 'var(--border-light)' }}
+            >
                 <div className={`w-9 h-9 rounded-lg ${iconBg} text-white flex items-center justify-center shrink-0`}>
                     <i className={`fas ${icon} text-[13px]`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[14px] truncate" style={{ fontFamily: 'var(--font-heading)' }}>
+                    <div
+                        className="font-semibold text-[14px] truncate"
+                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                    >
                         {title}
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-0.5 truncate">{contextLine}</div>
+                    <div className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
+                        {contextLine}
+                    </div>
                 </div>
                 <span
                     className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${statusCfg.badge}`}
@@ -100,7 +112,10 @@ function TrackCard({ item, history = [], onStart, onContinue, onView, plantLabel
             </div>
             {history.length > 0 && (
                 <div className="flex items-center gap-1 px-4 py-2.5">
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[.05em] mr-1.5">
+                    <span
+                        className="text-[10px] font-semibold uppercase tracking-[.05em] mr-1.5"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
                         {history.length}wk
                     </span>
                     {history.map((seg, idx) => (
@@ -115,7 +130,7 @@ function TrackCard({ item, history = [], onStart, onContinue, onView, plantLabel
                         className="flex-1 h-2 rounded-sm"
                         style={{
                             background: statusCfg.tone,
-                            boxShadow: `0 0 0 1.5px ${statusCfg.tone} inset, 0 0 0 1px #fff`
+                            boxShadow: `0 0 0 1.5px ${statusCfg.tone} inset, 0 0 0 1px var(--bg-primary)`
                         }}
                         title="this week"
                     />
@@ -126,14 +141,20 @@ function TrackCard({ item, history = [], onStart, onContinue, onView, plantLabel
                 <button
                     type="button"
                     onClick={handleAction}
-                    className={`inline-flex items-center gap-1.5 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-opacity hover:opacity-90 ${
-                        status === 'submitted' ? 'bg-white border border-gray-200 text-slate-700' : ''
-                    }`}
-                    style={status === 'submitted' ? undefined : { background: buttonBg }}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg transition-opacity hover:opacity-90 border-none cursor-pointer"
+                    style={
+                        isViewMode
+                            ? {
+                                  background: 'var(--bg-tertiary)',
+                                  color: 'var(--text-primary)',
+                                  border: '1px solid var(--border-light)'
+                              }
+                            : { background: buttonBg, color: '#fff' }
+                    }
                 >
-                    {status === 'submitted' && <i className="far fa-eye text-[10px]" />}
+                    {isViewMode && <i className="far fa-eye text-[10px]" />}
                     {buttonLabel}
-                    {status !== 'submitted' && <i className="fas fa-arrow-right text-[10px]" />}
+                    {!isViewMode && <i className="fas fa-arrow-right text-[10px]" />}
                 </button>
             </div>
         </article>

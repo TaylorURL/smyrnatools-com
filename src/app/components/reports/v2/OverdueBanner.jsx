@@ -15,15 +15,22 @@ function OverdueBanner({ count, title, dueLabel, onSubmit }) {
         <div
             className="flex items-center gap-3.5 rounded-xl px-4 py-3 border"
             style={{
-                background: 'linear-gradient(90deg, #fee2e2, #ffe4e6)',
+                background: 'linear-gradient(90deg, #fee2e240, #fef3c740)',
                 borderColor: '#fca5a5'
             }}
         >
-            <i className="fas fa-exclamation-triangle text-red-600 text-lg shrink-0" />
+            <div
+                className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
+                style={{ background: '#dc2626', color: '#fff' }}
+            >
+                <i className="fas fa-triangle-exclamation text-[13px]" />
+            </div>
             <div className="flex-1 min-w-0">
-                <div className="font-bold text-[13px] text-red-800">{headline}</div>
+                <div className="font-bold text-[13px]" style={{ color: '#991b1b' }}>
+                    {headline}
+                </div>
                 {title && (
-                    <div className="text-xs text-red-800/85 mt-0.5 truncate">
+                    <div className="text-xs mt-0.5 truncate" style={{ color: '#b91c1c' }}>
                         {title}
                         {dueLabel ? ` · was due ${dueLabel}` : ''}
                     </div>
@@ -33,7 +40,8 @@ function OverdueBanner({ count, title, dueLabel, onSubmit }) {
                 <button
                     type="button"
                     onClick={onSubmit}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-2 rounded-lg shrink-0 inline-flex items-center gap-1.5"
+                    className="font-bold text-xs px-3.5 py-2 rounded-lg shrink-0 inline-flex items-center gap-1.5 border-none cursor-pointer hover:opacity-90"
+                    style={{ background: '#dc2626', color: '#fff' }}
                 >
                     <i className="fas fa-paper-plane text-[10px]" /> Submit now
                 </button>

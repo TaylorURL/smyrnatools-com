@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
             // ── Submission mutations ───────────────────────────────
             case "submit-form": {
                 const body = await parseBody(req);
-                const {formId, dueDate, responses, plantCode, userId} = body;
+                const {formId, dueDate, responses, plantCode, userId, scannedPdfUrl, notes} = body;
                 if (!formId || !dueDate || !userId) return errorResponse("Form ID, due date, and user ID are required", headers, 400);
                 // Clean up existing draft
                 const {data: existingDraft} = await supabase.from(SUBMISSIONS_TABLE)
@@ -129,12 +129,23 @@ Deno.serve(async (req) => {
                     await supabase.from(SUBMISSIONS_TABLE).delete().eq("id", existingDraft.id);
                 }
                 const timestamp = nowISO();
+                const submissionRow: Record<string, any> = {
+                    created_at: timestamp,
+                    due_date: dueDate,
+                    form_id: formId,
+                    plant_code: plantCode || null,
+                    status: "submitted",
+                    submitted_at: timestamp,
+                    submitted_by: userId,
+                    updated_at: timestamp
+                };
+                // Optional scanned-PDF workflow: store the URL on the submission
+                // and stash any submitter notes in the existing review_notes
+                // column prefixed with "Submitter:" so reviewers can see them.
+                if (typeof scannedPdfUrl === "string" && scannedPdfUrl) submissionRow.scanned_pdf_url = scannedPdfUrl;
+                if (typeof notes === "string" && notes.trim()) submissionRow.submitter_notes = notes.trim();
                 const {data: submission, error: subError} = await supabase.from(SUBMISSIONS_TABLE)
-                    .insert({
-                        created_at: timestamp, due_date: dueDate, form_id: formId,
-                        plant_code: plantCode || null, status: "submitted",
-                        submitted_at: timestamp, submitted_by: userId, updated_at: timestamp
-                    }).select().single();
+                    .insert(submissionRow).select().single();
                 if (subError) return errorResponse("Failed to create submission", headers, 400);
                 if (responses?.length) {
                     const {error: respError} = await supabase.from(RESPONSES_TABLE).insert(buildResponseRows(responses, submission.id));

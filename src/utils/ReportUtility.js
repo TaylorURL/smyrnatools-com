@@ -66,7 +66,7 @@ const ReportUtility = {
     },
     computeMyReportStatus({ completed, hasSavedData, weekIso, today }) {
         const now = today instanceof Date ? today : new Date()
-        const { saturday } = this.getWeekDatesFromIso(weekIso)
+        const cutoff = this.getLateCutoff(weekIso)
         let statusText = ''
         let statusClass = ''
         let buttonLabel = ''
@@ -78,7 +78,7 @@ const ReportUtility = {
             statusText = 'Draft'
             statusClass = 'warning'
             buttonLabel = 'Edit'
-        } else if (saturday && saturday >= now) {
+        } else if (cutoff && cutoff >= now) {
             statusText = 'Active'
             statusClass = 'info'
             buttonLabel = 'Submit'
@@ -88,6 +88,46 @@ const ReportUtility = {
             buttonLabel = 'Submit'
         }
         return { buttonLabel, statusClass, statusText }
+    },
+    /**
+     * Reports for a given week are due by 7:00 AM Central on the FOLLOWING Monday.
+     * Returns the cutoff as a UTC Date so callers can compare with `Date.now()`.
+     * `null` if `weekIso` doesn't resolve to a Monday.
+     *
+     * Why: business policy — late status begins at Mon 07:00 CST, not Saturday EOD.
+     * How to apply: use this anywhere the app decides "is this overdue?" or renders
+     * a deadline countdown / cutoff label.
+     */
+    getLateCutoff(weekIso) {
+        const { monday } = this.getWeekDatesFromIso(weekIso)
+        if (!monday) return null
+        const nextMonday = new Date(monday)
+        nextMonday.setDate(monday.getDate() + 7)
+        const y = nextMonday.getFullYear()
+        const m = nextMonday.getMonth()
+        const d = nextMonday.getDate()
+        // Probe a midday UTC moment to determine whether Central is on DST that day,
+        // then assemble the cutoff at 07:00 wall-clock Central.
+        const probeUtc = new Date(Date.UTC(y, m, d, 12, 0, 0))
+        const offsetMinutes = ReportUtility._centralOffsetMinutes(probeUtc)
+        return new Date(Date.UTC(y, m, d, 7 - offsetMinutes / 60, 0, 0))
+    },
+    /** Display label for the weekly cutoff — surfaced in the UI alongside countdowns. */
+    getLateCutoffLabel() {
+        return 'Mon · 7:00 AM CST'
+    },
+    /**
+     * Returns the Central Time UTC offset (in minutes) that applies for `date`.
+     * Uses US DST rules (2nd Sun of March → 1st Sun of November), avoiding any
+     * IANA-database dependency. CDT = -300, CST = -360.
+     */
+    _centralOffsetMinutes(date) {
+        const year = date.getUTCFullYear()
+        const march1 = new Date(Date.UTC(year, 2, 1))
+        const dstStart = new Date(Date.UTC(year, 2, 1 + ((7 - march1.getUTCDay()) % 7) + 7, 8))
+        const nov1 = new Date(Date.UTC(year, 10, 1))
+        const dstEnd = new Date(Date.UTC(year, 10, 1 + ((7 - nov1.getUTCDay()) % 7), 7))
+        return date >= dstStart && date < dstEnd ? -300 : -360
     },
     formatDate(dateInput, locale) {
         if (!dateInput) return ''

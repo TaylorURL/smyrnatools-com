@@ -41,18 +41,30 @@ const titleFor = (report) => {
  */
 function MyOneOffRail({ reports = [], title = 'Your submissions', onEdit, emptyLabel = 'Nothing submitted yet' }) {
     return (
-        <aside className="bg-white border border-gray-200 rounded-xl p-4">
+        <aside
+            className="rounded-xl p-4 border"
+            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+        >
             <div className="flex items-center gap-2 mb-3">
-                <i className="fas fa-user-pen text-[13px] text-slate-500" />
-                <span className="font-bold text-[14px]" style={{ fontFamily: 'var(--font-heading)' }}>
+                <i className="fas fa-user-pen text-[13px]" style={{ color: 'var(--text-secondary)' }} />
+                <span
+                    className="font-bold text-[14px]"
+                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                >
                     {title}
                 </span>
-                <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                <span
+                    className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                >
                     {reports.length}
                 </span>
             </div>
             {reports.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                <div
+                    className="flex flex-col items-center justify-center py-8"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
                     <i className="fas fa-inbox text-2xl mb-2" />
                     <div className="text-[12px]">{emptyLabel}</div>
                 </div>
@@ -68,7 +80,8 @@ function MyOneOffRail({ reports = [], title = 'Your submissions', onEdit, emptyL
                         return (
                             <div
                                 key={`rail-mine-${report.id}`}
-                                className="flex items-start gap-2.5 py-2.5 border-b border-slate-100 last:border-b-0"
+                                className="flex items-start gap-2.5 py-2.5 border-b last:border-b-0"
+                                style={{ borderColor: 'var(--border-light)' }}
                             >
                                 <div
                                     className={`w-7 h-7 rounded-md ${tint.bg} ${tint.fg} flex items-center justify-center shrink-0 mt-0.5`}
@@ -76,8 +89,13 @@ function MyOneOffRail({ reports = [], title = 'Your submissions', onEdit, emptyL
                                     <i className={`fas ${tint.icon} text-[11px]`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <div className="text-[12px] font-semibold truncate">{titleFor(report)}</div>
-                                    <div className="text-[10.5px] text-slate-500 truncate">
+                                    <div
+                                        className="text-[12px] font-semibold truncate"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        {titleFor(report)}
+                                    </div>
+                                    <div className="text-[10.5px] truncate" style={{ color: 'var(--text-secondary)' }}>
                                         {LABELS[report.name] || report.name}
                                         {when && <> · {when}</>}
                                         {report.reviewed && (
@@ -91,7 +109,12 @@ function MyOneOffRail({ reports = [], title = 'Your submissions', onEdit, emptyL
                                 <button
                                     type="button"
                                     onClick={() => onEdit?.(report)}
-                                    className="px-2.5 py-1 text-[10.5px] font-semibold rounded-md border border-gray-200 bg-white text-slate-700 hover:bg-slate-50 shrink-0 mt-0.5 inline-flex items-center gap-1"
+                                    className="px-2.5 py-1 text-[10.5px] font-semibold rounded-md border shrink-0 mt-0.5 inline-flex items-center gap-1 cursor-pointer hover:opacity-90"
+                                    style={{
+                                        background: 'var(--bg-primary)',
+                                        borderColor: 'var(--border-light)',
+                                        color: 'var(--text-primary)'
+                                    }}
                                 >
                                     <i className="fas fa-pen text-[9px]" /> Edit
                                 </button>

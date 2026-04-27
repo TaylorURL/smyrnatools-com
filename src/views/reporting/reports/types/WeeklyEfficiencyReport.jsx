@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
+import { exportEfficiencyReport } from '../../../../app/components/modules/export/reports/EfficiencyExport'
 import { ReportService } from '../../../../services/ReportService'
 import { ReportUtility } from '../../../../utils/ReportUtility'
 
@@ -114,7 +115,7 @@ function WarningsBar({ messages }) {
     )
 }
 
-function Toolbar({ filterText, setFilterText, sortKey, sortDir, setSort, onExpandAll, onCollapseAll }) {
+function Toolbar({ filterText, setFilterText, sortKey, sortDir, setSort }) {
     const toggleSort = (key) => setSort(key, sortKey === key && sortDir === 'asc' ? 'desc' : 'asc')
     const sortButtons = [
         { key: 'operator', label: 'Name' },
@@ -147,14 +148,6 @@ function Toolbar({ filterText, setFilterText, sortKey, sortDir, setSort, onExpan
                 className="min-w-[200px] flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none"
                 style={FIELD_STYLE}
             />
-            <ToolbarBtn onClick={onExpandAll} title="Expand all rows">
-                <i className="fas fa-chevron-down text-[10px]" />
-                Expand
-            </ToolbarBtn>
-            <ToolbarBtn onClick={onCollapseAll} title="Collapse all rows">
-                <i className="fas fa-chevron-up text-[10px]" />
-                Collapse
-            </ToolbarBtn>
             {sortButtons.map(({ key, label }) => {
                 const active = sortKey === key
                 return (
@@ -168,47 +161,7 @@ function Toolbar({ filterText, setFilterText, sortKey, sortDir, setSort, onExpan
     )
 }
 
-function ValidationAlert({ show }) {
-    if (!show) return null
-    return (
-        <div
-            className="mt-2 rounded p-2.5 text-[11.5px]"
-            style={{
-                background: 'rgba(217, 119, 6, 0.08)',
-                border: '1px solid rgba(217, 119, 6, 0.35)',
-                color: '#92400e'
-            }}
-        >
-            <div className="mb-1.5 flex items-center gap-1.5 font-semibold">
-                <i className="fas fa-robot text-[11px]" style={{ color: '#b45309' }} />
-                <span>AI Validation Required</span>
-            </div>
-            <div className="mb-1.5">
-                Your explanation must provide a <strong>specific reason</strong> for the timing issues. Generic or vague
-                answers will be rejected.
-            </div>
-            <div
-                className="rounded px-2 py-1.5 text-[11px]"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
-                <div className="mb-1" style={{ color: '#15803d' }}>
-                    <i className="fas fa-check mr-1 text-[10px]" />
-                    <strong>Good:</strong>{' '}
-                    {
-                        '"Sent to plant 402 for afternoon deliveries" or "Truck breakdown — waited for mechanic" or "Training new driver on route"'
-                    }
-                </div>
-                <div style={{ color: '#b91c1c' }}>
-                    <i className="fas fa-times mr-1 text-[10px]" />
-                    <strong>Bad:</strong> {'"N/A" or "mixer" or "truck issues" or unrelated explanations'}
-                </div>
-            </div>
-        </div>
-    )
-}
-
-function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText, expandAllSeq, collapseAllSeq }) {
-    const [expanded, setExpanded] = useState(new Set())
+function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
     const minutes = (timeStr) => ReportUtility.parseTimeToMinutes(timeStr)
     const processed = useMemo(() => {
         const lower = (filterText || '').toLowerCase().trim()
@@ -245,26 +198,33 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText, expa
                 return 0
             })
     }, [rows, operatorOptions, sortKey, sortDir, filterText])
-    useEffect(() => {
-        if (expandAllSeq) setExpanded(new Set(processed.map((p) => p.key)))
-    }, [expandAllSeq, processed])
-    useEffect(() => {
-        if (collapseAllSeq) setExpanded(new Set())
-    }, [collapseAllSeq])
-    const toggleExpand = (key) =>
-        setExpanded((prev) => {
-            const next = new Set(prev)
-            next.has(key) ? next.delete(key) : next.add(key)
-            return next
-        })
-    const headers = ['Operator', 'Truck #', 'Punch In → 1st Load', 'Washout → Punch Out', 'L/H', '']
+    const headers = [
+        'Operator',
+        'Truck #',
+        'Start',
+        '1st Load',
+        'EOD In Yard',
+        'Punch Out',
+        'Loads',
+        'Hours',
+        'Punch In → 1st',
+        'Washout → Punch',
+        'L/H',
+        'Comments'
+    ]
+    const rightAlignFromIndex = 6
+    const commentsColIndex = headers.length - 1
     return (
         <div className="overflow-x-auto rounded" style={CARD_STYLE}>
-            <table className="w-full min-w-[700px]" style={{ borderCollapse: 'collapse' }}>
+            <table className="w-full min-w-[1400px]" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                     <tr>
                         {headers.map((h, i) => (
-                            <th key={i} className={`${TH_BASE} ${i >= 4 ? 'text-right' : ''}`} style={TH_STYLE}>
+                            <th
+                                key={i}
+                                className={`${TH_BASE} ${i >= rightAlignFromIndex && i !== commentsColIndex ? 'text-right' : ''}`}
+                                style={TH_STYLE}
+                            >
                                 {h}
                             </th>
                         ))}
@@ -278,179 +238,104 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText, expa
                         const longHours = hours !== null && hours > 14
                         const needsComment = warnStart || warnEnd || lowLoads || longHours
                         const hasComment = r.comments?.trim()
-                        const isOpen = expanded.has(key)
+                        const missingRequiredComment = needsComment && !hasComment
                         const rowStyle = { ...TD_STYLE, borderTop: '1px solid var(--border-light)' }
+                        const mutedStyle = { ...rowStyle, color: 'var(--text-secondary)' }
                         return (
-                            <React.Fragment key={key}>
-                                <tr>
-                                    <td
-                                        className={`${TD_BASE} font-semibold`}
-                                        style={rowStyle}
-                                        title={ReportService.getOperatorName(r, operatorOptions)}
-                                    >
-                                        {ReportService.getOperatorName(r, operatorOptions) || 'No Name'}
-                                    </td>
-                                    <td
-                                        className={`${TD_BASE} tabular-nums`}
-                                        style={{ ...rowStyle, color: 'var(--text-secondary)' }}
-                                    >
-                                        {r.truck_number || '—'}
-                                    </td>
-                                    <td
-                                        className={`${TD_BASE} tabular-nums`}
-                                        style={{
-                                            ...rowStyle,
-                                            color: warnStart ? '#b45309' : 'var(--text-primary)',
-                                            fontWeight: warnStart ? 600 : 400
-                                        }}
-                                    >
-                                        {dStart !== null ? `${dStart} min` : '—'}
-                                    </td>
-                                    <td
-                                        className={`${TD_BASE} tabular-nums`}
-                                        style={{
-                                            ...rowStyle,
-                                            color: warnEnd ? '#b45309' : 'var(--text-primary)',
-                                            fontWeight: warnEnd ? 600 : 400
-                                        }}
-                                    >
-                                        {dEnd !== null ? `${dEnd} min` : '—'}
-                                    </td>
-                                    <td className={`${TD_BASE} text-right font-mono tabular-nums`} style={rowStyle}>
-                                        {lph !== null ? Number(lph).toFixed(2) : '—'}
-                                    </td>
-                                    <td className={`${TD_BASE} text-right`} style={rowStyle}>
-                                        <button
-                                            type="button"
-                                            aria-expanded={isOpen}
-                                            onClick={() => toggleExpand(key)}
-                                            title={isOpen ? 'Hide details' : 'Show details'}
-                                            className="rounded px-1.5 py-1 text-[12px] cursor-pointer border-none"
-                                            style={{
-                                                background: 'var(--bg-secondary)',
-                                                border: '1px solid var(--border-light)',
-                                                color: 'var(--text-secondary)'
-                                            }}
+                            <tr key={key}>
+                                <td
+                                    className={`${TD_BASE} font-semibold`}
+                                    style={rowStyle}
+                                    title={ReportService.getOperatorName(r, operatorOptions)}
+                                >
+                                    {ReportService.getOperatorName(r, operatorOptions) || 'No Name'}
+                                </td>
+                                <td className={`${TD_BASE} tabular-nums`} style={mutedStyle}>
+                                    {r.truck_number || '—'}
+                                </td>
+                                <td className={`${TD_BASE} tabular-nums`} style={mutedStyle}>
+                                    {r.start_time || '—'}
+                                </td>
+                                <td className={`${TD_BASE} tabular-nums`} style={mutedStyle}>
+                                    {r.first_load || '—'}
+                                </td>
+                                <td className={`${TD_BASE} tabular-nums`} style={mutedStyle}>
+                                    {r.eod_in_yard || '—'}
+                                </td>
+                                <td className={`${TD_BASE} tabular-nums`} style={mutedStyle}>
+                                    {r.punch_out || '—'}
+                                </td>
+                                <td
+                                    className={`${TD_BASE} text-right tabular-nums font-semibold`}
+                                    style={{
+                                        ...rowStyle,
+                                        color: lowLoads ? '#dc2626' : 'var(--text-primary)'
+                                    }}
+                                >
+                                    {r.loads || '—'}
+                                </td>
+                                <td
+                                    className={`${TD_BASE} text-right tabular-nums font-semibold`}
+                                    style={{
+                                        ...rowStyle,
+                                        color:
+                                            hours !== null && hours > 20
+                                                ? '#dc2626'
+                                                : longHours
+                                                  ? '#b45309'
+                                                  : 'var(--text-primary)'
+                                    }}
+                                >
+                                    {hours !== null ? hours.toFixed(2) : '—'}
+                                </td>
+                                <td
+                                    className={`${TD_BASE} text-right tabular-nums`}
+                                    style={{
+                                        ...rowStyle,
+                                        color: warnStart ? '#b45309' : 'var(--text-primary)',
+                                        fontWeight: warnStart ? 600 : 400
+                                    }}
+                                >
+                                    {dStart !== null ? `${dStart} min` : '—'}
+                                </td>
+                                <td
+                                    className={`${TD_BASE} text-right tabular-nums`}
+                                    style={{
+                                        ...rowStyle,
+                                        color: warnEnd ? '#b45309' : 'var(--text-primary)',
+                                        fontWeight: warnEnd ? 600 : 400
+                                    }}
+                                >
+                                    {dEnd !== null ? `${dEnd} min` : '—'}
+                                </td>
+                                <td className={`${TD_BASE} text-right font-mono tabular-nums`} style={rowStyle}>
+                                    {lph !== null ? Number(lph).toFixed(2) : '—'}
+                                </td>
+                                <td
+                                    className={`${TD_BASE} align-top`}
+                                    style={{
+                                        ...rowStyle,
+                                        minWidth: 260,
+                                        maxWidth: 360,
+                                        color: missingRequiredComment ? '#dc2626' : 'var(--text-secondary)'
+                                    }}
+                                >
+                                    {hasComment ? (
+                                        <div
+                                            className="text-[12px] italic whitespace-pre-wrap break-words"
+                                            style={{ color: 'var(--text-primary)' }}
                                         >
-                                            <i className={`fas fa-chevron-${isOpen ? 'down' : 'right'} text-[9px]`} />
-                                        </button>
-                                    </td>
-                                </tr>
-                                {isOpen && (
-                                    <tr>
-                                        <td
-                                            colSpan={6}
-                                            className="!p-0"
-                                            style={{
-                                                background: 'var(--bg-secondary)',
-                                                borderTop: '1px solid var(--border-light)'
-                                            }}
-                                        >
-                                            <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2.5 px-3 py-2.5">
-                                                {[
-                                                    { label: 'Start', value: r.start_time },
-                                                    { label: '1st Load', value: r.first_load },
-                                                    { label: 'EOD In Yard', value: r.eod_in_yard },
-                                                    { label: 'Punch Out', value: r.punch_out }
-                                                ].map(({ label, value }) => (
-                                                    <div
-                                                        key={label}
-                                                        className="rounded p-2"
-                                                        style={{
-                                                            background: 'var(--bg-primary)',
-                                                            border: '1px solid var(--border-light)'
-                                                        }}
-                                                    >
-                                                        <div
-                                                            className={`${SECTION_LABEL_CLASS} mb-0.5`}
-                                                            style={{ color: 'var(--text-tertiary)' }}
-                                                        >
-                                                            {label}
-                                                        </div>
-                                                        <div
-                                                            className="text-[12.5px] tabular-nums"
-                                                            style={{ color: 'var(--text-primary)' }}
-                                                        >
-                                                            {value || '—'}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                <div
-                                                    className="rounded p-2"
-                                                    style={{
-                                                        background: 'var(--bg-primary)',
-                                                        border: '1px solid var(--border-light)'
-                                                    }}
-                                                >
-                                                    <div
-                                                        className={`${SECTION_LABEL_CLASS} mb-0.5`}
-                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                    >
-                                                        Total Loads
-                                                    </div>
-                                                    <div
-                                                        className="text-[12.5px] font-bold tabular-nums"
-                                                        style={{ color: lowLoads ? '#dc2626' : 'var(--text-primary)' }}
-                                                    >
-                                                        {r.loads || '—'}
-                                                    </div>
-                                                </div>
-                                                <div
-                                                    className="rounded p-2"
-                                                    style={{
-                                                        background: 'var(--bg-primary)',
-                                                        border: '1px solid var(--border-light)'
-                                                    }}
-                                                >
-                                                    <div
-                                                        className={`${SECTION_LABEL_CLASS} mb-0.5`}
-                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                    >
-                                                        Total Hours
-                                                    </div>
-                                                    <div
-                                                        className="text-[12.5px] font-bold tabular-nums"
-                                                        style={{
-                                                            color:
-                                                                hours !== null && hours > 20
-                                                                    ? '#dc2626'
-                                                                    : 'var(--text-primary)'
-                                                        }}
-                                                    >
-                                                        {hours !== null ? hours.toFixed(2) : '—'}
-                                                    </div>
-                                                </div>
-                                                <div
-                                                    className="rounded p-2 col-span-full"
-                                                    style={{
-                                                        background: 'var(--bg-primary)',
-                                                        border: '1px solid var(--border-light)'
-                                                    }}
-                                                >
-                                                    <div
-                                                        className={`${SECTION_LABEL_CLASS} mb-0.5 flex items-center gap-1.5`}
-                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                    >
-                                                        Comments
-                                                        {needsComment && (
-                                                            <span className="font-bold" style={{ color: '#dc2626' }}>
-                                                                * Required — explain timing/performance issues
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div
-                                                        className="text-[12px] italic"
-                                                        style={{ color: 'var(--text-secondary)' }}
-                                                    >
-                                                        {r.comments || '—'}
-                                                    </div>
-                                                    <ValidationAlert show={needsComment && !hasComment} />
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </React.Fragment>
+                                            {r.comments}
+                                        </div>
+                                    ) : missingRequiredComment ? (
+                                        <span className="font-semibold">
+                                            * Required — explain timing/performance issues
+                                        </span>
+                                    ) : (
+                                        <span>—</span>
+                                    )}
+                                </td>
+                            </tr>
                         )
                     })}
                 </tbody>
@@ -459,18 +344,52 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText, expa
     )
 }
 
-function EfficiencyPluginBody({ form, operatorOptions }) {
+function EfficiencyPluginBody({ form, operatorOptions, sidebarStats = false, plants, weekIso, assignedPlant }) {
     const [filterText, setFilterText] = useState('')
     const [sortKey, setSortKey] = useState('')
     const [sortDir, setSortDir] = useState('asc')
-    const [expandAllSeq, setExpandAllSeq] = useState(0)
-    const [collapseAllSeq, setCollapseAllSeq] = useState(0)
+    const [isExporting, setIsExporting] = useState(false)
     const rows = getRows(form)
     const insights = ReportService.getPlantProductionInsights(rows)
     const setSort = (k, d) => {
         setSortKey(k)
         setSortDir(d)
     }
+    const plantCode = form?.plant || assignedPlant || ''
+    const handleExport = async () => {
+        if (isExporting) return
+        setIsExporting(true)
+        try {
+            await exportEfficiencyReport({
+                form,
+                operatorOptions,
+                plantCode,
+                plants,
+                weekIso
+            })
+        } catch (error) {
+            console.error('Failed to export efficiency report:', error)
+        } finally {
+            setIsExporting(false)
+        }
+    }
+    const exportButton = (
+        <button
+            type="button"
+            onClick={handleExport}
+            disabled={isExporting || !rows.length}
+            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none disabled:cursor-not-allowed disabled:opacity-60"
+            style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-light)',
+                color: 'var(--text-primary)'
+            }}
+            title="Download this report as an Excel spreadsheet"
+        >
+            <i className={`fas ${isExporting ? 'fa-spinner fa-spin' : 'fa-file-excel'} text-[11px]`} />
+            {isExporting ? 'Exporting…' : 'Export Excel'}
+        </button>
+    )
     if (!rows.length) {
         return (
             <div className="rounded p-3 mt-2.5" style={CARD_STYLE}>
@@ -487,58 +406,98 @@ function EfficiencyPluginBody({ form, operatorOptions }) {
         label,
         value: format(insights[key])
     }))
+    const detailCard = (
+        <div className="rounded p-3" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-stopwatch"
+                label="Efficiency"
+                title="Operator Production Detail"
+                sub="Per-operator timing windows, load counts, L/H, and required comments — all columns visible inline."
+                right={exportButton}
+            />
+            <WarningsBar messages={insights.avgWarnings} />
+            <Toolbar
+                filterText={filterText}
+                setFilterText={setFilterText}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                setSort={setSort}
+            />
+            <DetailTable
+                rows={rows}
+                operatorOptions={operatorOptions}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                filterText={filterText}
+            />
+        </div>
+    )
+    // Stats render as a single-column stack when used as a sidebar so each
+    // tile reads cleanly at the narrow width; otherwise a wide grid spans
+    // the full row underneath the detail table.
+    const statsGridClass = sidebarStats
+        ? 'grid grid-cols-1 gap-2'
+        : 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2'
+    const statsCard = (
+        <div className="rounded p-3" style={CARD_STYLE}>
+            <CardHeader
+                icon="fa-chart-bar"
+                label="Totals"
+                title="Weekly Production Stats"
+                sub={
+                    sidebarStats
+                        ? 'Aggregated across every operator row.'
+                        : 'Aggregated across every operator row above.'
+                }
+            />
+            <div className={statsGridClass}>
+                {statsItems.map((item, i) => (
+                    <StatTile key={i} label={item.label} value={item.value} />
+                ))}
+            </div>
+        </div>
+    )
+    if (sidebarStats) {
+        return (
+            <div className="flex flex-col lg:flex-row gap-2.5 mt-2.5 items-start">
+                <div className="flex-1 min-w-0 w-full">{detailCard}</div>
+                <aside className="w-full lg:w-72 lg:shrink-0 lg:sticky lg:top-2.5">{statsCard}</aside>
+            </div>
+        )
+    }
     return (
         <div className="flex flex-col gap-2.5 mt-2.5">
-            <div className="rounded p-3" style={CARD_STYLE}>
-                <CardHeader
-                    icon="fa-stopwatch"
-                    label="Efficiency"
-                    title="Operator Production Detail"
-                    sub="Per-operator timing windows, load counts, and L/H. Expand a row for full punch detail and required comments."
-                />
-                <WarningsBar messages={insights.avgWarnings} />
-                <Toolbar
-                    filterText={filterText}
-                    setFilterText={setFilterText}
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                    setSort={setSort}
-                    onExpandAll={() => setExpandAllSeq((s) => s + 1)}
-                    onCollapseAll={() => setCollapseAllSeq((s) => s + 1)}
-                />
-                <DetailTable
-                    rows={rows}
-                    operatorOptions={operatorOptions}
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                    filterText={filterText}
-                    expandAllSeq={expandAllSeq}
-                    collapseAllSeq={collapseAllSeq}
-                />
-            </div>
-            <div className="rounded p-3" style={CARD_STYLE}>
-                <CardHeader
-                    icon="fa-chart-bar"
-                    label="Totals"
-                    title="Weekly Production Stats"
-                    sub="Aggregated across every operator row above."
-                />
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
-                    {statsItems.map((item, i) => (
-                        <StatTile key={i} label={item.label} value={item.value} />
-                    ))}
-                </div>
-            </div>
+            {detailCard}
+            {statsCard}
         </div>
     )
 }
 
 /** Submit-mode wrapper for the Plant Production (Efficiency) report plugin. */
-export function EfficiencySubmitPlugin({ form, operatorOptions }) {
-    return <EfficiencyPluginBody form={form} operatorOptions={operatorOptions} />
+export function EfficiencySubmitPlugin({ form, operatorOptions, plants, weekIso, assignedPlant }) {
+    return (
+        <EfficiencyPluginBody
+            form={form}
+            operatorOptions={operatorOptions}
+            plants={plants}
+            weekIso={weekIso}
+            assignedPlant={assignedPlant}
+        />
+    )
 }
 
-/** Review-mode wrapper for the Plant Production (Efficiency) report plugin (read-only). */
-export function EfficiencyReviewPlugin({ form, operatorOptions }) {
-    return <EfficiencyPluginBody form={form} operatorOptions={operatorOptions} />
+/** Review-mode wrapper. Pulls the Weekly Production Stats out of the bottom
+ *  and pins them to the right as a sticky sidebar so reviewers always see
+ *  the aggregate totals while scrolling through individual operator rows. */
+export function EfficiencyReviewPlugin({ form, operatorOptions, plants, weekIso, assignedPlant }) {
+    return (
+        <EfficiencyPluginBody
+            form={form}
+            operatorOptions={operatorOptions}
+            plants={plants}
+            weekIso={weekIso}
+            assignedPlant={assignedPlant}
+            sidebarStats
+        />
+    )
 }

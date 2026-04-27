@@ -423,8 +423,8 @@ class ReportServiceImpl {
         if (cached) return cached
         const candidateWeeks = ReportUtility.getLastNWeekIsos(52, today)
         const weekIsos = candidateWeeks.filter((iso) => {
-            const { saturday } = ReportUtility.getWeekDatesFromIso(iso)
-            return saturday && saturday < today
+            const cutoff = ReportUtility.getLateCutoff(iso)
+            return cutoff && cutoff < today
         })
         if (weekIsos.length === 0) {
             CacheUtility.set(cacheKey, [], TTL_SHORT)

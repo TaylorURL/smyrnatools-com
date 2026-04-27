@@ -82,11 +82,14 @@ const RoleCard = ({
     accentColor,
     onRemovePermission,
     onAddPermission,
+    onPastePermissions,
     onEditWeight,
     savingPerms
 }) => {
     const [addingPerm, setAddingPerm] = useState(false)
     const [newPerm, setNewPerm] = useState('')
+    const [copied, setCopied] = useState(false)
+    const [pasteStatus, setPasteStatus] = useState(null)
     const permissions = Array.isArray(role.permissions) ? [...role.permissions].sort() : []
     const namespaces = [...new Set(permissions.map(getNamespace))].sort()
     const isElevated = (role.weight || 0) > 75
@@ -97,6 +100,52 @@ const RoleCard = ({
         onAddPermission(role.id, trimmed)
         setNewPerm('')
         setAddingPerm(false)
+    }
+
+    const handlePastePermissions = async () => {
+        try {
+            const text = await navigator.clipboard.readText()
+            const incoming = text
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .filter(Boolean)
+            if (incoming.length === 0) {
+                setPasteStatus({ type: 'error', text: 'Clipboard is empty' })
+                setTimeout(() => setPasteStatus(null), 2000)
+                return
+            }
+            const existing = new Set(permissions)
+            const toAdd = incoming.filter((p) => !existing.has(p))
+            if (toAdd.length === 0) {
+                setPasteStatus({ type: 'info', text: 'Already has all' })
+                setTimeout(() => setPasteStatus(null), 2000)
+                return
+            }
+            await onPastePermissions(role.id, [...permissions, ...toAdd])
+            setPasteStatus({ type: 'success', text: `Added ${toAdd.length}` })
+            setTimeout(() => setPasteStatus(null), 2000)
+        } catch {
+            setPasteStatus({ type: 'error', text: 'Paste failed' })
+            setTimeout(() => setPasteStatus(null), 2000)
+        }
+    }
+
+    const handleCopyPermissions = async () => {
+        if (permissions.length === 0) return
+        try {
+            await navigator.clipboard.writeText(permissions.join('\n'))
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1500)
+        } catch {
+            const textarea = document.createElement('textarea')
+            textarea.value = permissions.join('\n')
+            document.body.appendChild(textarea)
+            textarea.select()
+            document.execCommand('copy')
+            document.body.removeChild(textarea)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1500)
+        }
     }
 
     return (
@@ -138,31 +187,73 @@ const RoleCard = ({
             {isExpanded && (
                 <div className="border-t border-border-light">
                     {/* Actions bar */}
-                    {hasITAccess && (
-                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50 border-b border-border-light">
+                    <div className="flex items-center gap-2 px-5 py-3 bg-slate-50 border-b border-border-light">
+                        {hasITAccess && (
+                            <>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setAddingPerm(true)
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border-none cursor-pointer transition-colors"
+                                    style={{ background: `${accentColor}15`, color: accentColor }}
+                                >
+                                    <i className="fas fa-plus text-[9px]" />
+                                    Add Permission
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onEditWeight(role)
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors"
+                                >
+                                    <i className="fas fa-balance-scale text-[9px]" />
+                                    Edit Weight
+                                </button>
+                            </>
+                        )}
+                        <div className="flex items-center gap-2 ml-auto">
+                            {pasteStatus && (
+                                <span
+                                    className={`text-[11px] font-semibold ${
+                                        pasteStatus.type === 'success'
+                                            ? 'text-emerald-600'
+                                            : pasteStatus.type === 'error'
+                                              ? 'text-red-600'
+                                              : 'text-slate-500'
+                                    }`}
+                                >
+                                    {pasteStatus.text}
+                                </span>
+                            )}
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation()
-                                    setAddingPerm(true)
+                                    handleCopyPermissions()
                                 }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border-none cursor-pointer transition-colors"
-                                style={{ background: `${accentColor}15`, color: accentColor }}
+                                disabled={permissions.length === 0}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="Copy all permission nodes — one per line"
                             >
-                                <i className="fas fa-plus text-[9px]" />
-                                Add Permission
+                                <i className={`fas ${copied ? 'fa-check' : 'fa-copy'} text-[9px]`} />
+                                {copied ? 'Copied' : 'Copy'}
                             </button>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    onEditWeight(role)
-                                }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors"
-                            >
-                                <i className="fas fa-balance-scale text-[9px]" />
-                                Edit Weight
-                            </button>
+                            {hasITAccess && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handlePastePermissions()
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors"
+                                    title="Paste permissions from clipboard — merges with existing"
+                                >
+                                    <i className="fas fa-paste text-[9px]" />
+                                    Paste
+                                </button>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     {/* Add permission inline */}
                     {addingPerm && (
@@ -507,6 +598,19 @@ function RolesView() {
         [hasITAccess, roles, updateRolePermissions, setError]
     )
 
+    const handlePastePermissions = useCallback(
+        async (roleId, mergedPermissions) => {
+            if (!hasITAccess) return
+            try {
+                await updateRolePermissions(roleId, mergedPermissions.join('\n'))
+            } catch (err) {
+                setError(`Failed to paste permissions: ${err.message}`)
+                throw err
+            }
+        },
+        [hasITAccess, updateRolePermissions, setError]
+    )
+
     const handleCreateRole = useCallback(
         async (name, weight) => {
             try {
@@ -622,6 +726,7 @@ function RolesView() {
                             accentColor={accentColor}
                             onRemovePermission={handleRemovePermission}
                             onAddPermission={handleAddPermission}
+                            onPastePermissions={handlePastePermissions}
                             onEditWeight={setEditingWeightRole}
                             savingPerms={savingPerms}
                         />

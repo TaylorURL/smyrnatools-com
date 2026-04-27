@@ -60,15 +60,23 @@ function QuickRail({
     const visible = ONE_OFFS.filter((o) => availability[o.key])
     if (visible.length === 0 && recentItems.length === 0) return null
     return (
-        <aside className="bg-white border border-gray-200 rounded-xl p-4">
+        <aside
+            className="rounded-xl p-4 border"
+            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+        >
             {visible.length > 0 && (
                 <>
                     <div className="flex items-center gap-2 mb-3">
                         <i className="fas fa-bolt text-[13px]" style={{ color: accent }} />
-                        <span className="font-bold text-[14px]" style={{ fontFamily: 'var(--font-heading)' }}>
+                        <span
+                            className="font-bold text-[14px]"
+                            style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                        >
                             One-off reports
                         </span>
-                        <span className="ml-auto text-[11px] text-slate-400">Submit anytime</span>
+                        <span className="ml-auto text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                            Submit anytime
+                        </span>
                     </div>
                     <div className="flex flex-col gap-2">
                         {visible.map((o) => (
@@ -76,7 +84,8 @@ function QuickRail({
                                 key={o.key}
                                 type="button"
                                 onClick={() => handlers[o.key]?.()}
-                                className="flex items-center gap-2.5 px-3 py-2.5 bg-slate-50 hover:bg-slate-100 border border-transparent hover:border-slate-200 rounded-lg text-left w-full transition-colors"
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left w-full transition-colors border-none cursor-pointer hover:opacity-90"
+                                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                             >
                                 <div
                                     className={`w-7 h-7 rounded-md ${o.iconBg} text-white flex items-center justify-center shrink-0`}
@@ -84,8 +93,15 @@ function QuickRail({
                                     <i className={`fas ${o.icon} text-[11px]`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-[12.5px] truncate">{o.title}</div>
-                                    <div className="text-[10.5px] text-slate-500 truncate">{o.sub}</div>
+                                    <div
+                                        className="font-semibold text-[12.5px] truncate"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        {o.title}
+                                    </div>
+                                    <div className="text-[10.5px] truncate" style={{ color: 'var(--text-secondary)' }}>
+                                        {o.sub}
+                                    </div>
                                 </div>
                                 <i className="fas fa-plus text-[11px]" style={{ color: accent }} />
                             </button>
@@ -94,18 +110,23 @@ function QuickRail({
                 </>
             )}
             {recentItems.length > 0 && (
-                <div className="mt-3.5 px-3 py-2.5 bg-slate-50 rounded-lg">
-                    <div className="text-[11px] font-semibold text-slate-500 mb-1.5">Recent</div>
+                <div className="mt-3.5 px-3 py-2.5 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="text-[11px] font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                        Recent
+                    </div>
                     {recentItems.slice(0, 3).map((r, idx) => {
                         const cfg = RECENT_ICON[r.kind] || { color: 'text-slate-500', icon: 'fa-file-alt' }
                         return (
                             <div
                                 key={r.id || idx}
-                                className="flex items-center gap-2 py-1.5 border-t border-slate-200 first:border-t-0 text-[11.5px]"
+                                className="flex items-center gap-2 py-1.5 border-t first:border-t-0 text-[11.5px]"
+                                style={{ borderColor: 'var(--border-light)', color: 'var(--text-primary)' }}
                             >
                                 <i className={`fas ${cfg.icon} ${cfg.color} w-3.5 text-[11px]`} />
                                 <span className="flex-1 truncate">{r.title}</span>
-                                <span className="text-[10px] text-slate-400 shrink-0">{r.when}</span>
+                                <span className="text-[10px] shrink-0" style={{ color: 'var(--text-secondary)' }}>
+                                    {r.when}
+                                </span>
                             </div>
                         )
                     })}

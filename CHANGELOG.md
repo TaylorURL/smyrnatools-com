@@ -1,6 +1,25 @@
 # Changelog
 
 
+## [38.5.55] - 2026-04-27
+
+- Added new Quality Issues module with full CRUD view, modal form, edge function, and database migration
+- Added jspdf dependency and MaintenancePdfFormUtility for generating maintenance form PDFs
+- Added scanned_pdf_url column to maintenance_forms table via new migration
+- Added MaintenanceService methods for uploading scanned PDFs and updating the scanned PDF URL
+- Added Excel export for Weekly Plant Efficiency reports with stat tiles, KPI strip, operator detail table, and per-row status flagging
+- Refactored WeeklyEfficiencyReport to use a collapsible sidebar layout with stat cards, operator table, and inline warnings
+- Added QualityIssueService with full CRUD operations routed through the new quality-issues-service edge function
+- Updated report deadline fuse cutoff from Saturday 11:59 PM to Monday 7:00 AM CST with an 8-day window
+- Converted report v2 rail components (MyOneOffRail, QuickRail, OverdueBanner, TrackCard, DeadlineFuse) from hardcoded Tailwind colors to CSS custom properties for dark mode support
+- Refactored StatCard to use theme-aware CSS variables instead of hardcoded white/slate backgrounds
+- Expanded RolesView with a new quality_issues permission toggle in the roles grid
+- Refactored MaintenanceFormView with PDF scan upload UI, improved layout, and restructured form sections
+- Updated ReportsView with Quality Issues navigation, expanded report type handling, and new quick-action cards
+- Added WeeklyPlantManagerReport review mode support for the new efficiency export action
+- Updated ReportService to include quality_issues in report type resolution
+- Added parseTimeToMinutes and getPlantProductionInsights helpers to ReportUtility
+
 ## [38.5.54] - 2026-04-26
 
 - Redesigned all weekly report forms (submit + review) to use compact, plan-tab-style form chrome with CSS custom properties for dark mode support

@@ -1,584 +1,659 @@
-import React from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import LoadingScreen from '../../../app/components/common/LoadingScreen'
-import MaintenanceFormReview from '../../../app/components/common/MaintenanceFormReview'
-import MaintenanceFormViewOnly from '../../../app/components/common/MaintenanceFormViewOnly'
-import ImageAttachment from '../../../app/components/ui/ImageAttachment'
-import ImagePreviewModal from '../../../app/components/ui/ImagePreviewModal'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
-import { useMaintenanceForm } from '../../../app/hooks/useMaintenanceForm'
-import { formatMaintenanceDateShort, getFieldTypeIcon } from '../../../utils/MaintenanceUtility'
+import MaintenanceService from '../../../services/MaintenanceService'
+import { UserService } from '../../../services/UserService'
+import { downloadMaintenanceFormPdf } from '../../../utils/MaintenancePdfFormUtility'
+import { formatMaintenanceDateShort } from '../../../utils/MaintenanceUtility'
 
+/* ── Plan-tab design tokens (matches the redesigned reports). ────────────── */
 const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+const CARD_STYLE = { background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }
 const FIELD_STYLE = {
     background: 'var(--bg-secondary)',
     border: '1px solid var(--border-light)',
     color: 'var(--text-primary)'
 }
+const FIELD_INPUT_CLASS = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border disabled:opacity-90'
 
-const inputClassBase = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none transition-colors'
-
-function fieldStyleFor(hasError) {
-    return {
-        ...FIELD_STYLE,
-        borderColor: hasError ? '#dc2626' : 'var(--border-light)'
-    }
-}
-
-/** Reusable single-line text input for short-answer and fallback field types. */
-function FormInput({ field, value, disabled, hasError, onChange, placeholder = 'Type your answer…' }) {
+function CardHeader({ accent, icon, label, sub, title, right }) {
     return (
-        <input
-            type="text"
-            className={inputClassBase}
-            style={fieldStyleFor(hasError)}
-            value={value}
-            onChange={(e) => onChange(field.id, e.target.value)}
-            placeholder={placeholder}
-            disabled={disabled}
-            autoFocus
-        />
-    )
-}
-
-function FormTextarea({ field, value, disabled, hasError, onChange, placeholder = 'Type your answer…', rows = 5 }) {
-    return (
-        <textarea
-            className={`${inputClassBase} min-h-[120px] resize-y`}
-            style={fieldStyleFor(hasError)}
-            value={value}
-            onChange={(e) => onChange(field.id, e.target.value)}
-            placeholder={placeholder}
-            rows={rows}
-            disabled={disabled}
-            autoFocus
-        />
-    )
-}
-
-/** Renders a checklist with per-item check state, optional image attachments. */
-function ChecklistField({
-    field,
-    checklistStates,
-    checklistComments,
-    fieldImages,
-    uploadingImage,
-    errors,
-    disabled,
-    accentColor,
-    onCheckChange,
-    onCommentChange,
-    imageActions
-}) {
-    const checkItems = field.options?.items || []
-    const comments = checklistComments[field.id] || {}
-    return (
-        <div className="flex flex-col gap-2.5">
-            {checkItems.map((checkItem, idx) => {
-                const isChecked = checklistStates[field.id]?.[checkItem] || false
-                const imageKey = `${field.id}_${checkItem.trim()}`
-                const imageData = fieldImages[imageKey]
-                const isUploadingThis = uploadingImage === imageKey
-                const imageError = errors[`${field.id}_${checkItem.trim()}_image`]
-                const showImageSection =
-                    (isChecked && field.image_required) || imageData?.previewUrl || imageData?.uploadedUrl
-                return (
-                    <div key={idx} className="flex flex-col gap-1.5">
-                        <label
-                            className={`flex items-start gap-2.5 rounded px-3 py-2 transition-colors ${
-                                disabled ? 'cursor-default' : 'cursor-pointer hover:brightness-95'
-                            }`}
-                            style={{
-                                background: isChecked ? `${accentColor}14` : 'var(--bg-secondary)',
-                                border: `1px solid ${isChecked ? accentColor : 'var(--border-light)'}`
-                            }}
-                        >
-                            <input
-                                type="checkbox"
-                                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer"
-                                checked={isChecked}
-                                onChange={(e) => onCheckChange(field.id, checkItem, e.target.checked)}
-                                disabled={disabled}
-                            />
-                            <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                {checkItem}
-                            </span>
-                        </label>
-                        {!isChecked && field.is_required && (
-                            <input
-                                type="text"
-                                className={inputClassBase}
-                                style={FIELD_STYLE}
-                                value={comments[checkItem] || ''}
-                                onChange={(e) => onCommentChange(field.id, checkItem, e.target.value)}
-                                placeholder="Why is this incomplete?"
-                                disabled={disabled}
-                            />
-                        )}
-                        {showImageSection && (
-                            <ImageAttachment
-                                fieldId={field.id}
-                                checklistItem={checkItem}
-                                imageData={imageData}
-                                isUploading={isUploadingThis}
-                                disabled={disabled}
-                                error={imageError}
-                                onCamera={imageActions.triggerCameraCapture}
-                                onUpload={imageActions.triggerImageUpload}
-                                onRemove={imageActions.handleRemoveImage}
-                                onPreview={imageActions.openImagePreview}
-                            />
-                        )}
-                    </div>
-                )
-            })}
-        </div>
-    )
-}
-
-/** Dispatches to the correct input component based on the field's type. */
-function FieldRenderer({ field, form, imageHook, errors, disabled, accentColor }) {
-    const {
-        responses,
-        handleResponseChange,
-        checklistStates,
-        checklistComments,
-        handleChecklistChange,
-        handleChecklistComment
-    } = form
-    const hasError = !!errors[field.id]
-    const value = responses[field.id] || ''
-    switch (field.field_type) {
-        case 'short_answer':
-            return (
-                <FormInput
-                    field={field}
-                    value={value}
-                    disabled={disabled}
-                    hasError={hasError}
-                    onChange={handleResponseChange}
-                />
-            )
-        case 'long_answer':
-            return (
-                <FormTextarea
-                    field={field}
-                    value={value}
-                    disabled={disabled}
-                    hasError={hasError}
-                    onChange={handleResponseChange}
-                />
-            )
-        case 'checklist':
-            return (
-                <ChecklistField
-                    field={field}
-                    checklistStates={checklistStates}
-                    checklistComments={checklistComments}
-                    fieldImages={imageHook.fieldImages}
-                    uploadingImage={imageHook.uploadingImage}
-                    errors={errors}
-                    disabled={disabled}
-                    accentColor={accentColor}
-                    onCheckChange={handleChecklistChange}
-                    onCommentChange={handleChecklistComment}
-                    imageActions={imageHook}
-                />
-            )
-        case 'notes':
-            return (
-                <FormTextarea
-                    field={field}
-                    value={value}
-                    disabled={disabled}
-                    hasError={hasError}
-                    onChange={handleResponseChange}
-                    placeholder="Add any notes…"
-                    rows={4}
-                />
-            )
-        default:
-            return (
-                <FormInput
-                    field={field}
-                    value={value}
-                    disabled={disabled}
-                    hasError={hasError}
-                    onChange={handleResponseChange}
-                />
-            )
-    }
-}
-
-function FieldImageSection({ field, imageHook, errors, disabled }) {
-    if (field.field_type === 'checklist') return null
-    return (
-        <div className="mt-3">
-            <label
-                className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--text-secondary)' }}
-            >
-                <i className="fas fa-camera text-[10px]" /> Photo Attachment
-                {field.image_required && <span style={{ color: '#dc2626' }}>*</span>}
-            </label>
-            <ImageAttachment
-                fieldId={field.id}
-                imageData={imageHook.fieldImages[field.id]}
-                isUploading={imageHook.uploadingImage === field.id}
-                disabled={disabled}
-                error={errors[`${field.id}_image`]}
-                onCamera={imageHook.triggerCameraCapture}
-                onUpload={imageHook.triggerImageUpload}
-                onRemove={imageHook.handleRemoveImage}
-                onPreview={imageHook.openImagePreview}
-            />
-        </div>
-    )
-}
-
-/** Sticky wizard header with progress bar, step counter, and prev/next/submit. */
-function StepperHeader({
-    accentColor,
-    formTitle,
-    dueDate,
-    currentStep,
-    totalSteps,
-    isFirstStep,
-    isLastStep,
-    submitting,
-    isEditing,
-    onBack,
-    onPrevious,
-    onNext,
-    onSubmit
-}) {
-    const pct = ((currentStep + 1) / totalSteps) * 100
-    return (
-        <div
-            className="sticky top-0 z-50 flex flex-col gap-2 px-3 py-2 sm:px-4"
-            style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-        >
-            <div className="flex items-center gap-2.5">
-                <button
-                    type="button"
-                    onClick={onBack}
-                    className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                    aria-label="Close"
-                >
-                    <i className="fas fa-times text-[11px]" />
-                </button>
+        <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2 min-w-0">
                 <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: accentColor }}
-                >
-                    <i className="fas fa-clipboard-list text-[11px]" />
-                </div>
-                <div className="flex flex-col flex-1 min-w-0">
-                    <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                        Maintenance Form
-                    </span>
-                    <span className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                        {formTitle}
-                    </span>
-                </div>
-                <div className="flex flex-col gap-1 shrink-0 w-20 sm:w-[150px]">
-                    <div
-                        className="h-1.5 w-full overflow-hidden rounded-full"
-                        style={{ background: 'var(--bg-tertiary)' }}
-                    >
-                        <div
-                            className="h-full transition-[width] duration-300"
-                            style={{ background: accentColor, width: `${pct}%` }}
-                        />
-                    </div>
-                    <span
-                        className="text-center text-[9.5px] font-semibold uppercase tracking-wider font-mono tabular-nums"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
-                        {currentStep + 1} / {totalSteps} · Due {dueDate}
-                    </span>
-                </div>
-            </div>
-            <div className="flex gap-1.5">
-                <button
-                    type="button"
-                    onClick={onPrevious}
-                    disabled={isFirstStep}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-95"
+                    className="flex h-7 w-7 items-center justify-center rounded shrink-0"
                     style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-secondary)'
+                        background: accent ? `${accent}1a` : 'var(--bg-tertiary)',
+                        color: accent || 'var(--text-secondary)'
                     }}
                 >
-                    <i className="fas fa-arrow-left text-[10px]" />
-                    Prev
-                </button>
-                {isLastStep ? (
+                    <i className={`fas ${icon} text-[11.5px]`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                    {label && (
+                        <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                            {label}
+                        </div>
+                    )}
+                    <div className="text-[13px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                        {title}
+                    </div>
+                    {sub && (
+                        <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                            {sub}
+                        </div>
+                    )}
+                </div>
+            </div>
+            {right && <div className="shrink-0">{right}</div>}
+        </div>
+    )
+}
+
+function PageHeader({ accentColor, dueDate, onBack, plantCode, status, statusColor, title, label }) {
+    return (
+        <div
+            className="sticky top-0 z-40 flex items-center gap-2.5 px-3 sm:px-4 py-2"
+            style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
+        >
+            <button
+                type="button"
+                onClick={onBack}
+                aria-label="Back"
+                className="flex h-7 w-7 items-center justify-center rounded border-none cursor-pointer"
+                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+            >
+                <i className="fas fa-arrow-left text-[11px]" />
+            </button>
+            <div
+                className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+            >
+                <i className="fas fa-file-pdf text-[11px]" />
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                    {label}
+                </div>
+                <div className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                    {title || 'Maintenance Form'}
+                </div>
+                <div className="text-[10.5px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                    {[plantCode && `Plant ${plantCode}`, dueDate && `Due ${dueDate}`].filter(Boolean).join('  ·  ')}
+                </div>
+            </div>
+            {status && (
+                <span
+                    className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
+                    style={{
+                        background: `${statusColor}1f`,
+                        color: statusColor,
+                        border: `1px solid ${statusColor}55`
+                    }}
+                >
+                    {status}
+                </span>
+            )}
+        </div>
+    )
+}
+
+function LoadingShell({ accentColor, label, onBack, title }) {
+    return (
+        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+            <PageHeader accentColor={accentColor} label={label} onBack={onBack} title={title} />
+            <div
+                className="flex-1 flex items-center justify-center gap-2 text-[12.5px]"
+                style={{ color: 'var(--text-tertiary)' }}
+            >
+                <i className="fas fa-circle-notch fa-spin text-[12px]" />
+                Loading…
+            </div>
+        </div>
+    )
+}
+
+function StatusForSubmission(submission) {
+    const status = (submission?.status || '').toLowerCase()
+    if (status === 'approved') return { color: '#16a34a', label: 'Approved' }
+    if (status === 'rejected') return { color: '#dc2626', label: 'Rejected' }
+    if (status === 'submitted') return { color: '#0ea5e9', label: 'Pending Review' }
+    if (status === 'draft') return { color: '#d97706', label: 'Draft' }
+    return { color: 'var(--text-tertiary)', label: status || 'Unknown' }
+}
+
+/* ── PDF preview ─────────────────────────────────────────────────────────── */
+
+function PdfEmbed({ url }) {
+    if (!url) {
+        return (
+            <div
+                className="rounded p-6 text-center text-[12px]"
+                style={{
+                    background: 'var(--bg-secondary)',
+                    border: '1px dashed var(--border-medium)',
+                    color: 'var(--text-tertiary)'
+                }}
+            >
+                <i className="fas fa-file-pdf text-[18px] block mb-1" />
+                No scanned PDF was attached to this submission.
+            </div>
+        )
+    }
+    return (
+        <div className="rounded overflow-hidden" style={{ border: '1px solid var(--border-light)' }}>
+            <iframe
+                title="Submitted maintenance form"
+                src={url}
+                className="w-full"
+                style={{ background: 'var(--bg-secondary)', height: '70vh', minHeight: 480, border: 'none' }}
+            />
+            <div
+                className="flex items-center justify-between px-3 py-2 text-[11px]"
+                style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
+            >
+                <span style={{ color: 'var(--text-tertiary)' }}>Embedded scan — open in a new tab for full view</span>
+                <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-semibold"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
+                    Open <i className="fas fa-external-link-alt text-[10px]" />
+                </a>
+            </div>
+        </div>
+    )
+}
+
+/* ── Submit mode ─────────────────────────────────────────────────────────── */
+
+function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, plantCode }) {
+    const [pdfFile, setPdfFile] = useState(null)
+    const [submitterNotes, setSubmitterNotes] = useState('')
+    const [uploading, setUploading] = useState(false)
+    const [submitting, setSubmitting] = useState(false)
+    const [error, setError] = useState('')
+    const [success, setSuccess] = useState(false)
+    const [downloadedAt, setDownloadedAt] = useState(null)
+    const fileInputRef = useRef(null)
+
+    const handleDownload = useCallback(() => {
+        try {
+            downloadMaintenanceFormPdf(formObj, {
+                dueDate: dueDate || '',
+                frequency: formObj?.frequency || '',
+                plantCode: plantCode || ''
+            })
+            setDownloadedAt(new Date())
+        } catch (err) {
+            setError(err?.message || 'Failed to generate PDF.')
+        }
+    }, [formObj, dueDate, plantCode])
+
+    const handleFile = useCallback((file) => {
+        if (!file) return
+        const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')
+        if (!isPdf) {
+            setError('Only PDF scans are supported. Convert images to PDF before uploading.')
+            return
+        }
+        setError('')
+        setPdfFile(file)
+    }, [])
+
+    const onDrop = useCallback(
+        (e) => {
+            e.preventDefault()
+            const file = e.dataTransfer?.files?.[0]
+            if (file) handleFile(file)
+        },
+        [handleFile]
+    )
+
+    const handleSubmit = useCallback(async () => {
+        if (!pdfFile) {
+            setError('Upload the completed scan before submitting.')
+            return
+        }
+        setSubmitting(true)
+        setError('')
+        try {
+            setUploading(true)
+            const url = await MaintenanceService.uploadScannedPdf(pdfFile, formObj.id)
+            setUploading(false)
+            const submission = await MaintenanceService.submitScannedForm({
+                dueDate: dueDate || item?.due_date,
+                formId: formObj.id,
+                notes: submitterNotes,
+                plantCode: plantCode || item?.plant_code || null,
+                scannedPdfUrl: url
+            })
+            setSuccess(true)
+            if (onSubmitted) onSubmitted(submission)
+        } catch (err) {
+            setError(err?.message || 'Failed to submit scanned form.')
+        } finally {
+            setUploading(false)
+            setSubmitting(false)
+        }
+    }, [pdfFile, formObj, dueDate, item, plantCode, submitterNotes, onSubmitted])
+
+    return (
+        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+            <PageHeader
+                accentColor={accentColor}
+                dueDate={formatMaintenanceDateShort(dueDate || item?.due_date)}
+                label="Maintenance form"
+                onBack={onBack}
+                plantCode={plantCode || item?.plant_code}
+                title={formObj?.title}
+            />
+
+            <div className="mx-auto w-full max-w-3xl px-3 sm:px-4 py-3 flex flex-col gap-2.5">
+                {/* Step 1 — Download */}
+                <div className="rounded p-3" style={CARD_STYLE}>
+                    <CardHeader
+                        accent={accentColor}
+                        icon="fa-file-arrow-down"
+                        label="Step 1"
+                        title="Download blank form"
+                        sub="Print the PDF, hand-fill every required field, then scan the completed sheet."
+                        right={
+                            downloadedAt && (
+                                <span className="text-[10.5px]" style={{ color: '#16a34a' }}>
+                                    <i className="fas fa-check mr-1 text-[9px]" />
+                                    Downloaded
+                                </span>
+                            )
+                        }
+                    />
                     <button
                         type="button"
-                        onClick={onSubmit}
-                        disabled={submitting}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-2.5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{ background: '#16a34a' }}
-                    >
-                        {submitting ? (
-                            <i className="fas fa-spinner fa-spin text-[10px]" />
-                        ) : (
-                            <>
-                                <span>{isEditing ? 'Update' : 'Submit'}</span>
-                                <i className="fas fa-check text-[10px]" />
-                            </>
-                        )}
-                    </button>
-                ) : (
-                    <button
-                        type="button"
-                        onClick={onNext}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-2.5 py-1.5"
+                        onClick={handleDownload}
+                        className="inline-flex items-center gap-2 rounded px-3 py-2 text-[12.5px] font-bold uppercase tracking-wider text-white border-none cursor-pointer"
                         style={{ background: accentColor }}
                     >
-                        Next
-                        <i className="fas fa-arrow-right text-[10px]" />
+                        <i className="fas fa-file-pdf text-[12px]" />
+                        Download blank PDF
                     </button>
+                </div>
+
+                {/* Step 2 — Upload scan */}
+                <div className="rounded p-3" style={CARD_STYLE}>
+                    <CardHeader
+                        accent={accentColor}
+                        icon="fa-file-arrow-up"
+                        label="Step 2"
+                        title="Upload completed scan"
+                        sub="Drop a single PDF below or click to browse. The scan must be a PDF — convert images first if needed."
+                    />
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={onDrop}
+                        className="w-full rounded p-5 text-center cursor-pointer transition-colors"
+                        style={{
+                            background: pdfFile ? `${accentColor}10` : 'var(--bg-secondary)',
+                            border: `1px dashed ${pdfFile ? accentColor : 'var(--border-medium)'}`,
+                            color: pdfFile ? 'var(--text-primary)' : 'var(--text-secondary)'
+                        }}
+                    >
+                        {pdfFile ? (
+                            <div className="flex flex-col items-center gap-1">
+                                <i className="fas fa-file-circle-check text-[22px]" style={{ color: accentColor }} />
+                                <div className="text-[12.5px] font-semibold">{pdfFile.name}</div>
+                                <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                    {(pdfFile.size / 1024).toFixed(0)} KB · click to replace
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-1">
+                                <i className="fas fa-cloud-arrow-up text-[22px]" />
+                                <div className="text-[12.5px] font-semibold">Click to browse or drag a PDF here</div>
+                                <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                    PDF only · single file
+                                </div>
+                            </div>
+                        )}
+                    </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="application/pdf"
+                        onChange={(e) => handleFile(e.target.files?.[0])}
+                        className="hidden"
+                    />
+                </div>
+
+                {/* Step 3 — Notes + submit */}
+                <div className="rounded p-3" style={CARD_STYLE}>
+                    <CardHeader
+                        accent={accentColor}
+                        icon="fa-pen-to-square"
+                        label="Step 3"
+                        title="Notes & submit"
+                        sub="Optional context for the reviewer (issues found, parts ordered, follow-up needed)."
+                    />
+                    <textarea
+                        value={submitterNotes}
+                        onChange={(e) => setSubmitterNotes(e.target.value)}
+                        placeholder="Anything the reviewer should know about this submission…"
+                        rows={4}
+                        className={`${FIELD_INPUT_CLASS} resize-y min-h-[88px]`}
+                        style={FIELD_STYLE}
+                    />
+                    {error && (
+                        <div
+                            className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
+                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
+                        >
+                            <i className="fas fa-exclamation-circle text-[11px]" />
+                            {error}
+                        </div>
+                    )}
+                    {success && (
+                        <div
+                            className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
+                            style={{
+                                background: 'rgba(22, 163, 74, 0.12)',
+                                border: '1px solid rgba(22, 163, 74, 0.45)',
+                                color: '#15803d'
+                            }}
+                        >
+                            <i className="fas fa-check-circle text-[11px]" />
+                            Submitted for review.
+                        </div>
+                    )}
+                    <button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={submitting || !pdfFile}
+                        className="mt-2 inline-flex items-center gap-2 rounded px-3 py-2 text-[12.5px] font-bold uppercase tracking-wider text-white border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ background: accentColor }}
+                    >
+                        <i className={`fas ${submitting ? 'fa-circle-notch fa-spin' : 'fa-paper-plane'} text-[12px]`} />
+                        {uploading ? 'Uploading…' : submitting ? 'Submitting…' : 'Submit for review'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+/* ── Review mode ─────────────────────────────────────────────────────────── */
+
+function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submission }) {
+    const status = StatusForSubmission(submission)
+    const pdfUrl = useMemo(
+        () => MaintenanceService.getScannedPdfUrl(submission?.scanned_pdf_url),
+        [submission?.scanned_pdf_url]
+    )
+    const [reviewNotes, setReviewNotes] = useState('')
+    const [submitterName, setSubmitterName] = useState('')
+    const [submitting, setSubmitting] = useState(false)
+    const [error, setError] = useState('')
+
+    useEffect(() => {
+        let cancelled = false
+        if (submission?.submitted_by) {
+            UserService.getUserDisplayName(submission.submitted_by)
+                .then((n) => !cancelled && setSubmitterName(n || 'Unknown'))
+                .catch(() => !cancelled && setSubmitterName('Unknown'))
+        }
+        return () => {
+            cancelled = true
+        }
+    }, [submission?.submitted_by])
+
+    const handleReview = useCallback(
+        async (decision) => {
+            setSubmitting(true)
+            setError('')
+            try {
+                await MaintenanceService.reviewSubmission(submission.id, decision, reviewNotes)
+                if (onSubmitted) onSubmitted({ ...submission, status: decision })
+            } catch (err) {
+                setError(err?.message || 'Failed to submit review.')
+                setSubmitting(false)
+            }
+        },
+        [submission, reviewNotes, onSubmitted]
+    )
+
+    return (
+        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+            <PageHeader
+                accentColor={accentColor}
+                dueDate={formatMaintenanceDateShort(submission?.due_date || item?.due_date)}
+                label="Form review"
+                onBack={onBack}
+                plantCode={submission?.plant_code || item?.plant_code}
+                status={status.label}
+                statusColor={status.color}
+                title={formObj?.title}
+            />
+
+            <div className="mx-auto w-full max-w-4xl px-3 sm:px-4 py-3 flex flex-col gap-2.5">
+                <div className="rounded p-3" style={CARD_STYLE}>
+                    <CardHeader
+                        accent={accentColor}
+                        icon="fa-user-pen"
+                        label="Submission"
+                        title={`Scanned form · ${submitterName || 'Unknown'}`}
+                        sub={`Submitted ${formatMaintenanceDateShort(submission?.submitted_at)} for due date ${formatMaintenanceDateShort(submission?.due_date)}.`}
+                    />
+                    <PdfEmbed url={pdfUrl} />
+                    {submission?.submitter_notes && (
+                        <div
+                            className="mt-2 rounded p-2.5 text-[12px]"
+                            style={{
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-light)',
+                                color: 'var(--text-primary)'
+                            }}
+                        >
+                            <div className={`${SECTION_LABEL_CLASS} mb-1`} style={{ color: 'var(--text-tertiary)' }}>
+                                Submitter notes
+                            </div>
+                            {submission.submitter_notes}
+                        </div>
+                    )}
+                </div>
+
+                <div className="rounded p-3" style={CARD_STYLE}>
+                    <CardHeader accent={accentColor} icon="fa-clipboard-check" label="Decision" title="Review" />
+                    <textarea
+                        value={reviewNotes}
+                        onChange={(e) => setReviewNotes(e.target.value)}
+                        placeholder="Reviewer notes (optional)…"
+                        rows={3}
+                        className={`${FIELD_INPUT_CLASS} resize-y min-h-[80px]`}
+                        style={FIELD_STYLE}
+                    />
+                    {error && (
+                        <div
+                            className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
+                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
+                        >
+                            <i className="fas fa-exclamation-circle text-[11px]" />
+                            {error}
+                        </div>
+                    )}
+                    <div className="mt-2 flex gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => handleReview('approved')}
+                            disabled={submitting}
+                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-3 py-1.5 border-none cursor-pointer disabled:opacity-50"
+                            style={{ background: '#16a34a' }}
+                        >
+                            <i className="fas fa-check text-[10px]" />
+                            Approve
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleReview('rejected')}
+                            disabled={submitting}
+                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-3 py-1.5 border-none cursor-pointer disabled:opacity-50"
+                            style={{ background: '#dc2626' }}
+                        >
+                            <i className="fas fa-times text-[10px]" />
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+/* ── View-only mode ──────────────────────────────────────────────────────── */
+
+function ViewOnlyMode({ accentColor, formObj, item, onBack, submission }) {
+    const status = StatusForSubmission(submission)
+    const pdfUrl = useMemo(
+        () => MaintenanceService.getScannedPdfUrl(submission?.scanned_pdf_url),
+        [submission?.scanned_pdf_url]
+    )
+    return (
+        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+            <PageHeader
+                accentColor={accentColor}
+                dueDate={formatMaintenanceDateShort(submission?.due_date || item?.due_date)}
+                label="Submission"
+                onBack={onBack}
+                plantCode={submission?.plant_code || item?.plant_code}
+                status={status.label}
+                statusColor={status.color}
+                title={formObj?.title}
+            />
+            <div className="mx-auto w-full max-w-4xl px-3 sm:px-4 py-3 flex flex-col gap-2.5">
+                <div className="rounded p-3" style={CARD_STYLE}>
+                    <CardHeader
+                        accent={accentColor}
+                        icon="fa-file-pdf"
+                        label="Scanned form"
+                        title={formObj?.title || 'Maintenance form'}
+                        sub={`Submitted ${formatMaintenanceDateShort(submission?.submitted_at)}${
+                            submission?.reviewed_at
+                                ? ` · Reviewed ${formatMaintenanceDateShort(submission.reviewed_at)}`
+                                : ''
+                        }`}
+                    />
+                    <PdfEmbed url={pdfUrl} />
+                </div>
+                {submission?.submitter_notes && (
+                    <div className="rounded p-3" style={CARD_STYLE}>
+                        <CardHeader
+                            accent={accentColor}
+                            icon="fa-pen-to-square"
+                            label="Notes"
+                            title="Submitter notes"
+                        />
+                        <div className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                            {submission.submitter_notes}
+                        </div>
+                    </div>
+                )}
+                {submission?.review_notes && (
+                    <div className="rounded p-3" style={CARD_STYLE}>
+                        <CardHeader
+                            accent={accentColor}
+                            icon="fa-clipboard-check"
+                            label="Review"
+                            title="Reviewer notes"
+                        />
+                        <div className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                            {submission.review_notes}
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
     )
 }
 
-function FieldCard({ accentColor, field }) {
-    const fieldTypeName = field.field_type.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())
-    return (
-        <div className="mb-3 flex items-center gap-2.5">
-            <div
-                className="flex h-8 w-8 items-center justify-center rounded shrink-0"
-                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
-            >
-                <i className={`fas ${getFieldTypeIcon(field.field_type)} text-[14px]`} />
-            </div>
-            <div className="flex-1 min-w-0">
-                <h2
-                    className="flex items-center gap-1.5 text-[15px] font-semibold m-0"
-                    style={{ color: 'var(--text-primary)' }}
-                >
-                    <span className="truncate">{field.label}</span>
-                    {field.is_required && <span style={{ color: '#dc2626' }}>*</span>}
-                </h2>
-                <span
-                    className="mt-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
-                    style={{ background: `${accentColor}14`, color: accentColor }}
-                >
-                    <i className={`fas ${getFieldTypeIcon(field.field_type)} text-[9px]`} />
-                    {fieldTypeName}
-                </span>
-            </div>
-        </div>
-    )
-}
+/* ── Router ──────────────────────────────────────────────────────────────── */
 
-function MinimalHeader({ accentColor, formTitle, onBack }) {
-    return (
-        <div
-            className="sticky top-0 z-50 flex items-center gap-2.5 px-3 py-2 sm:px-4"
-            style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-        >
-            <button
-                type="button"
-                onClick={onBack}
-                className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer"
-                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                aria-label="Close"
-            >
-                <i className="fas fa-times text-[11px]" />
-            </button>
-            <div
-                className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
-            >
-                <i className="fas fa-clipboard-list text-[11px]" />
-            </div>
-            <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                {formTitle || 'Loading…'}
-            </span>
-        </div>
-    )
-}
-
-function LoadingState({ accentColor, formTitle, onBack }) {
-    return (
-        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
-            <MinimalHeader accentColor={accentColor} formTitle={formTitle} onBack={onBack} />
-            <div className="flex flex-1 items-center justify-center p-6">
-                <LoadingScreen inline message="Loading form…" />
-            </div>
-        </div>
-    )
-}
-
-function EmptyFieldsState({ accentColor, formTitle, onBack }) {
-    return (
-        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
-            <MinimalHeader accentColor={accentColor} formTitle={formTitle || 'Form'} onBack={onBack} />
-            <div
-                className="flex flex-1 flex-col items-center justify-center gap-1.5 p-6"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
-                <i className="fas fa-exclamation-circle text-2xl" />
-                <h3 className="text-[13px] font-semibold m-0" style={{ color: 'var(--text-primary)' }}>
-                    No Fields
-                </h3>
-                <p className="text-[11px] m-0">This form has no fields configured.</p>
-            </div>
-        </div>
-    )
-}
-
-/**
- * Stepper-based form filler for maintenance tasks. One field per step with
- * optional image attachments, then submits responses. Also delegates to
- * review and read-only components when applicable.
- */
 export default function MaintenanceFormView({ item, onBack, onSubmitted }) {
     const accentColor = useAccentColor()
-    const form = useMaintenanceForm({ item, onSubmitted })
-    const { imageHook } = form
-    const isDisabled = form.isReview || (form.isViewOnly && !form.isEditing)
-    if (form.isReview) {
-        if (form.loading)
-            return <LoadingState accentColor={accentColor} formTitle={form.formObj?.title} onBack={onBack} />
+    const [loading, setLoading] = useState(true)
+    const [formObj, setFormObj] = useState(null)
+    const [submission, setSubmission] = useState(null)
+
+    const isReview = !!item?.isReview
+    const isViewOnly = !!item?.isViewOnly
+    const submissionId = item?.submission_id || (isReview || isViewOnly ? item?.id : null)
+
+    useEffect(() => {
+        let cancelled = false
+        async function load() {
+            setLoading(true)
+            try {
+                let sub = null
+                let formId = item?.form_id || item?.maintenance_forms?.id || item?.form?.id || null
+                if (submissionId) {
+                    sub = await MaintenanceService.fetchSubmissionById(submissionId).catch(() => null)
+                    if (sub) formId = formId || sub.form_id || sub.maintenance_forms?.id
+                }
+                let form = sub?.maintenance_forms || item?.maintenance_forms || item?.form || null
+                if (!form && formId) {
+                    form = await MaintenanceService.fetchFormById(formId).catch(() => null)
+                }
+                if (!cancelled) {
+                    setSubmission(sub)
+                    setFormObj(form)
+                }
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        }
+        load()
+        return () => {
+            cancelled = true
+        }
+    }, [item, submissionId])
+
+    if (loading) {
+        const label = isReview ? 'Form review' : isViewOnly ? 'Submission' : 'Maintenance form'
+        return <LoadingShell accentColor={accentColor} label={label} onBack={onBack} title={formObj?.title} />
+    }
+
+    if (isReview) {
         return (
-            <MaintenanceFormReview
-                checklistComments={form.checklistComments}
-                checklistStates={form.checklistStates}
-                errors={form.errors}
-                fieldImages={imageHook.fieldImages}
-                fields={form.fields}
-                formObj={form.formObj}
-                imagePreview={imageHook.imagePreview}
+            <ReviewMode
+                accentColor={accentColor}
+                formObj={formObj}
                 item={item}
                 onBack={onBack}
-                onClosePreview={imageHook.closeImagePreview}
-                onOpenPreview={imageHook.openImagePreview}
-                onReview={form.handleReview}
-                responses={form.responses}
-                reviewNotes={form.reviewNotes}
-                setReviewNotes={form.setReviewNotes}
-                submitterName={form.submitterName}
-                submitting={form.submitting}
+                onSubmitted={onSubmitted}
+                submission={submission}
             />
         )
     }
-    if (form.isViewOnly && !form.isEditing) {
+    if (isViewOnly) {
         return (
-            <MaintenanceFormViewOnly
-                checklistStates={form.checklistStates}
-                fieldImages={imageHook.fieldImages}
-                fields={form.fields}
-                formObj={form.formObj}
-                imagePreview={imageHook.imagePreview}
+            <ViewOnlyMode
+                accentColor={accentColor}
+                formObj={formObj}
                 item={item}
                 onBack={onBack}
-                onClosePreview={imageHook.closeImagePreview}
-                onOpenPreview={imageHook.openImagePreview}
-                responses={form.responses}
-                reviewNotes={form.reviewNotes}
+                submission={submission}
             />
         )
-    }
-    if (form.loading || (!form.formObj && !item)) {
-        return <LoadingState accentColor={accentColor} formTitle={form.formObj?.title} onBack={onBack} />
-    }
-    if (form.fields.length === 0) {
-        return <EmptyFieldsState accentColor={accentColor} formTitle={form.formObj?.title} onBack={onBack} />
     }
     return (
-        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
-            <StepperHeader
-                accentColor={accentColor}
-                formTitle={form.formObj?.title}
-                dueDate={formatMaintenanceDateShort(item?.due_date)}
-                currentStep={form.currentStep}
-                totalSteps={form.totalSteps}
-                isFirstStep={form.isFirstStep}
-                isLastStep={form.isLastStep}
-                submitting={form.submitting}
-                isEditing={form.isEditing}
-                onBack={onBack}
-                onPrevious={form.handlePrevious}
-                onNext={form.handleNext}
-                onSubmit={form.handleSubmit}
-            />
-            {form.currentField && (
-                <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-3 py-3 sm:px-4 sm:py-4">
-                    <div
-                        className="rounded p-3 sm:p-4"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <FieldCard accentColor={accentColor} field={form.currentField} />
-                        {form.currentField.description && (
-                            <p className="mb-3 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                {form.currentField.description}
-                            </p>
-                        )}
-                        <FieldRenderer
-                            field={form.currentField}
-                            form={form}
-                            imageHook={imageHook}
-                            errors={form.errors}
-                            disabled={isDisabled}
-                            accentColor={accentColor}
-                        />
-                        {form.errors[form.currentField.id] && (
-                            <div
-                                className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                                style={{
-                                    background: '#fee2e2',
-                                    border: '1px solid #fca5a5',
-                                    color: '#b91c1c'
-                                }}
-                            >
-                                <i className="fas fa-exclamation-circle text-[11px]" />
-                                {form.errors[form.currentField.id]}
-                            </div>
-                        )}
-                        {form.currentField.image_required && (
-                            <FieldImageSection
-                                field={form.currentField}
-                                imageHook={imageHook}
-                                errors={form.errors}
-                                disabled={isDisabled}
-                            />
-                        )}
-                    </div>
-                    {form.errors.submit && (
-                        <div
-                            className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
-                        >
-                            <i className="fas fa-exclamation-triangle text-[11px]" />
-                            {form.errors.submit}
-                        </div>
-                    )}
-                </div>
-            )}
-            <input
-                ref={imageHook.fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={imageHook.onFileInputChange}
-                className="hidden"
-            />
-            <input
-                ref={imageHook.cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={imageHook.onFileInputChange}
-                className="hidden"
-            />
-            <ImagePreviewModal imageUrl={imageHook.imagePreview} onClose={imageHook.closeImagePreview} />
-        </div>
+        <SubmitMode
+            accentColor={accentColor}
+            dueDate={item?.due_date}
+            formObj={formObj}
+            item={item}
+            onBack={onBack}
+            onSubmitted={onSubmitted}
+            plantCode={item?.plant_code}
+        />
     )
 }
