@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [38.5.56] - 2026-04-27
+
+- Redesigned HistoryViewSection to use theme-aware CSS custom properties instead of hardcoded Tailwind colors for full dark mode support
+- Restyled the AI summary loading, error, and empty states with compact layout and theme variables
+- Replaced the asset status distribution bar and legend with a slimmer, theme-aware design using CSS custom properties
+- Converted maintenance issue timeline cards to use theme variables with refined spacing, smaller typography, and pill-style severity/resolved badges
+- Refactored maintenance stat cards to use the shared StatCard and StatCardGrid components instead of inline markup
+- Redesigned HistoryEmptyState as a dashed-border card with an icon prop, matching the Plan-tab empty-state style
+- Restyled TabButton as a compact uppercase pill with theme-aware background, border, and text colors
+- Updated TimelineItem to use CSS custom properties for theme support with refined dot, connector, and card styling
+- Updated PlanScheduleView, PlanSettingsModal, and PlanView with minor layout and styling adjustments
+
 ## [38.5.55] - 2026-04-27
 
 - Added new Quality Issues module with full CRUD view, modal form, edge function, and database migration

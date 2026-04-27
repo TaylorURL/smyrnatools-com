@@ -655,8 +655,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                         className="w-2.5 h-2.5 rounded-full z-[1]"
                                         style={{
                                             background: severityColor,
-                                            boxShadow:
-                                                '0 0 0 2px var(--bg-primary), 0 0 0 3px var(--border-light)'
+                                            boxShadow: '0 0 0 2px var(--bg-primary), 0 0 0 3px var(--border-light)'
                                         }}
                                     />
                                     {index < combinedTimeline.length - 1 && (
@@ -673,9 +672,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                             ? 'rgba(22, 163, 74, 0.06)'
                                             : 'var(--bg-secondary)',
                                         border: `1px solid ${
-                                            entry.isCompleted
-                                                ? 'rgba(22, 163, 74, 0.35)'
-                                                : 'var(--border-light)'
+                                            entry.isCompleted ? 'rgba(22, 163, 74, 0.35)' : 'var(--border-light)'
                                         }`
                                     }}
                                 >
@@ -864,113 +861,75 @@ function HistoryViewSection({ item, type, onClose }) {
             .sort((a, b) => b.count - a.count)
         const timeline = HistoryUtility.buildConsolidatedTimeline(positionData, 'position', (e) => e.position)
         return (
-            <div className="flex flex-col gap-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                            Current Position
-                        </div>
-                        <div className="text-sm font-bold text-slate-800 truncate">{currentPosition}</div>
-                    </div>
-                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                            Total Changes
-                        </div>
-                        <div className="text-2xl font-bold text-slate-800">{totalChanges}</div>
-                    </div>
-                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                            Unique Positions
-                        </div>
-                        <div className="text-2xl font-bold text-slate-800">{Object.keys(positionCounts).length}</div>
-                    </div>
-                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                            Most Frequent
-                        </div>
-                        <div className="text-sm font-bold text-slate-800 truncate">
-                            {HistoryUtility.findMostFrequent(positionCounts)}
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                        <i className="fas fa-clock text-blue-500" /> Position Timeline
-                    </h3>
-                    <div className="relative pl-6">
-                        {timeline
-                            .slice()
-                            .reverse()
-                            .map((entry, index) => (
-                                <div key={index} className="relative pb-4 last:pb-0">
-                                    <div
-                                        className="absolute left-0 top-0 flex flex-col items-center"
-                                        style={{ transform: 'translateX(-50%)' }}
-                                    >
-                                        <div
-                                            className={`w-3 h-3 rounded-full border-2 ${entry.isCurrent ? 'bg-green-500 border-green-500' : 'bg-white border-blue-500'}`}
-                                        />
-                                        {index < timeline.length - 1 && (
-                                            <div className="w-0.5 bg-gray-200 flex-1 min-h-[40px]" />
-                                        )}
-                                    </div>
-                                    <div
-                                        className={`ml-4 p-3 rounded-lg border ${entry.isCurrent ? 'bg-green-50 border-green-200' : 'bg-white border-border-light'}`}
-                                    >
-                                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                                            <span className="font-semibold text-slate-800">{entry.position}</span>
-                                            {entry.isCurrent && (
-                                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                                                    Current
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                                            <span>
-                                                <i className="fas fa-calendar-alt mr-1" />
-                                                {DateUtility.formatDate(entry.startDate)}
-                                                {entry.endDate
-                                                    ? ` - ${DateUtility.formatDate(entry.endDate)}`
-                                                    : ' - Present'}
-                                            </span>
-                                            <span>
-                                                <i className="fas fa-hourglass-half mr-1" />(
-                                                {HistoryUtility.formatDuration(entry.duration)})
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                    </div>
-                </div>
-                <div>
-                    <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                        <i className="fas fa-chart-bar text-blue-500" /> Position Distribution
-                    </h3>
-                    <div className="flex flex-col gap-2">
-                        {chartData.map((data, index) => (
-                            <div
+            <div className="flex flex-col gap-3">
+                <StatCardGrid>
+                    <StatCard label="Current Position" value={currentPosition} />
+                    <StatCard label="Total Changes" value={totalChanges} />
+                    <StatCard label="Unique Positions" value={Object.keys(positionCounts).length} />
+                    <StatCard label="Most Frequent" value={HistoryUtility.findMostFrequent(positionCounts)} />
+                </StatCardGrid>
+                <TimelineSectionTitle title="Position Timeline" />
+                <div className="flex flex-col gap-0">
+                    {timeline
+                        .slice()
+                        .reverse()
+                        .map((entry, index) => (
+                            <TimelineItem
                                 key={index}
-                                className={`p-3 rounded-lg border ${index === 0 ? 'bg-blue-50 border-blue-200' : 'bg-white border-border-light'}`}
+                                dotColor={entry.isCurrent ? '#16a34a' : 'var(--accent, #1e3a5f)'}
+                                isLast={index >= timeline.length - 1}
                             >
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium text-slate-800">{data.position}</span>
-                                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                                        <span>
-                                            {data.count} {data.count === 1 ? 'time' : 'times'}
-                                        </span>
-                                        <span className="font-semibold text-slate-700">{data.percentage}%</span>
-                                    </div>
-                                </div>
-                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full ${index === 0 ? 'bg-blue-500' : 'bg-slate-400'}`}
-                                        style={{ width: `${data.percentage}%` }}
+                                <TimelineHeader label={entry.position} isCurrent={entry.isCurrent} />
+                                <TimelineMeta>
+                                    <TimelineDate
+                                        date={`${DateUtility.formatDate(entry.startDate)}${
+                                            entry.endDate ? ` - ${DateUtility.formatDate(entry.endDate)}` : ' - Present'
+                                        }`}
                                     />
-                                </div>
-                            </div>
+                                    <TimelineDuration text={HistoryUtility.formatDuration(entry.duration)} />
+                                </TimelineMeta>
+                            </TimelineItem>
                         ))}
-                    </div>
+                </div>
+                <TimelineSectionTitle title="Position Distribution" />
+                <div className="flex flex-col gap-1.5">
+                    {chartData.map((data, index) => (
+                        <div
+                            key={index}
+                            className="rounded p-2"
+                            style={{
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-light)'
+                            }}
+                        >
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                    {data.position}
+                                </span>
+                                <span
+                                    className="text-[11px] font-mono tabular-nums"
+                                    style={{ color: 'var(--text-tertiary)' }}
+                                >
+                                    {data.count} {data.count === 1 ? 'time' : 'times'} ·{' '}
+                                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                                        {data.percentage}%
+                                    </span>
+                                </span>
+                            </div>
+                            <div
+                                className="h-1.5 rounded-full overflow-hidden"
+                                style={{ background: 'var(--bg-tertiary)' }}
+                            >
+                                <div
+                                    className="h-full rounded-full"
+                                    style={{
+                                        background: index === 0 ? 'var(--accent, #1e3a5f)' : 'var(--border-medium)',
+                                        width: `${data.percentage}%`
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
         )
@@ -1147,88 +1106,38 @@ function HistoryViewSection({ item, type, onClose }) {
         }
         const consolidatedTimeline = buildAssignmentTimeline()
         return (
-            <div className="flex flex-col gap-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                            Current Mixer
-                        </div>
-                        <div className="text-lg font-bold text-slate-800">
-                            {currentMixer ? `#${currentMixer}` : 'Not Assigned'}
-                        </div>
-                    </div>
-                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                            Current Tractor
-                        </div>
-                        <div className="text-lg font-bold text-slate-800">
-                            {currentTractor ? `#${currentTractor}` : 'Not Assigned'}
-                        </div>
-                    </div>
-                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                            Total Assignments
-                        </div>
-                        <div className="text-2xl font-bold text-slate-800">{totalAssignments}</div>
-                    </div>
-                    <div className="bg-white border border-border-light rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
-                            Assignment Changes
-                        </div>
-                        <div className="text-2xl font-bold text-slate-800">{assignmentsData.length}</div>
-                    </div>
-                </div>
-                <div>
-                    <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                        <i className="fas fa-clock text-blue-500" /> Assignment Timeline
-                    </h3>
-                    <div className="relative pl-6">
-                        {consolidatedTimeline.map((entry, index) => (
-                            <div key={index} className="relative pb-4 last:pb-0">
-                                <div
-                                    className="absolute left-0 top-0 flex flex-col items-center"
-                                    style={{ transform: 'translateX(-50%)' }}
-                                >
-                                    <div
-                                        className={`w-3 h-3 rounded-full border-2 ${entry.isCurrent ? 'bg-green-500 border-green-500' : 'bg-white border-blue-500'}`}
-                                    />
-                                    {index < consolidatedTimeline.length - 1 && (
-                                        <div className="w-0.5 bg-gray-200 flex-1 min-h-[40px]" />
-                                    )}
-                                </div>
-                                <div
-                                    className={`ml-4 p-3 rounded-lg border ${entry.isCurrent ? 'bg-green-50 border-green-200' : 'bg-white border-border-light'}`}
-                                >
-                                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                                        <span className="font-semibold text-slate-800">
-                                            {entry.assignmentType} #{entry.vehicleNumber}
-                                        </span>
-                                        {entry.isCurrent && (
-                                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                                                Current
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                                        <span>
-                                            <i className="fas fa-calendar-alt mr-1" />
-                                            {DateUtility.formatDate(entry.startDate)}
-                                            {entry.endDate
-                                                ? ` - ${DateUtility.formatDate(entry.endDate)}`
-                                                : ' - Present'}
-                                        </span>
-                                        <span>
-                                            <i className="fas fa-hourglass-half mr-1" />(
-                                            {HistoryUtility.formatDuration(entry.duration)})
-                                        </span>
-                                    </div>
-                                    <div className="mt-2">
-                                        <UserLabel userId={entry.changedBy} showIcon />
-                                    </div>
-                                </div>
+            <div className="flex flex-col gap-3">
+                <StatCardGrid>
+                    <StatCard label="Current Mixer" value={currentMixer ? `#${currentMixer}` : 'Not Assigned'} />
+                    <StatCard label="Current Tractor" value={currentTractor ? `#${currentTractor}` : 'Not Assigned'} />
+                    <StatCard label="Total Assignments" value={totalAssignments} />
+                    <StatCard label="Assignment Changes" value={assignmentsData.length} />
+                </StatCardGrid>
+                <TimelineSectionTitle title="Assignment Timeline" />
+                <div className="flex flex-col gap-0">
+                    {consolidatedTimeline.map((entry, index) => (
+                        <TimelineItem
+                            key={index}
+                            dotColor={entry.isCurrent ? '#16a34a' : 'var(--accent, #1e3a5f)'}
+                            isLast={index >= consolidatedTimeline.length - 1}
+                        >
+                            <TimelineHeader
+                                label={`${entry.assignmentType} #${entry.vehicleNumber}`}
+                                isCurrent={entry.isCurrent}
+                            />
+                            <TimelineMeta>
+                                <TimelineDate
+                                    date={`${DateUtility.formatDate(entry.startDate)}${
+                                        entry.endDate ? ` - ${DateUtility.formatDate(entry.endDate)}` : ' - Present'
+                                    }`}
+                                />
+                                <TimelineDuration text={HistoryUtility.formatDuration(entry.duration)} />
+                            </TimelineMeta>
+                            <div className="mt-1">
+                                <UserLabel userId={entry.changedBy} showIcon />
                             </div>
-                        ))}
-                    </div>
+                        </TimelineItem>
+                    ))}
                 </div>
             </div>
         )
@@ -1282,42 +1191,64 @@ function HistoryViewSection({ item, type, onClose }) {
                                     return (
                                         <div
                                             key={entry.id ?? index}
-                                            className="bg-white border border-border-light rounded-lg p-3.5 hover:border-slate-400 hover:shadow-md transition-all"
+                                            className="rounded p-2.5"
+                                            style={{
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--border-light)'
+                                            }}
                                         >
-                                            <div className="flex justify-between items-center mb-2.5">
-                                                <div className="text-sm font-bold text-slate-800 capitalize">
+                                            <div className="flex justify-between items-center mb-1.5">
+                                                <div
+                                                    className="text-[12.5px] font-semibold capitalize"
+                                                    style={{ color: 'var(--text-primary)' }}
+                                                >
                                                     {HistoryUtility.formatFieldName(fieldName, type)}
                                                 </div>
-                                                <div className="text-xs text-slate-500 font-medium">
+                                                <div
+                                                    className="text-[11px] tabular-nums"
+                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                >
                                                     {HistoryUtility.formatHistoryTimestamp(
                                                         entry.changedAt ?? entry.changed_at
                                                     )}
                                                 </div>
                                             </div>
                                             {isCreatedEntry ? (
-                                                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                                    <div className="text-sm text-green-600 font-semibold">
+                                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                    <span
+                                                        className="text-[12px] font-semibold"
+                                                        style={{ color: '#15803d' }}
+                                                    >
                                                         {formatValue(fieldName, entry.newValue ?? entry.new_value)}
-                                                    </div>
+                                                    </span>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                                    <div className="text-[13px] text-slate-500">
-                                                        <span className="text-[11px] uppercase font-bold tracking-wide opacity-70">
-                                                            From:
-                                                        </span>{' '}
+                                                <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
+                                                    <span
+                                                        className="text-[12px]"
+                                                        style={{ color: 'var(--text-tertiary)' }}
+                                                    >
+                                                        <span className="text-[9.5px] font-bold uppercase tracking-wider mr-1">
+                                                            From
+                                                        </span>
                                                         {formatValue(fieldName, entry.oldValue ?? entry.old_value)}
-                                                    </div>
-                                                    <div className="text-accent text-sm">{'\u2192'}</div>
-                                                    <div className="text-[13px] text-slate-800 font-semibold">
-                                                        <span className="text-[11px] uppercase font-bold tracking-wide opacity-70">
-                                                            To:
-                                                        </span>{' '}
+                                                    </span>
+                                                    <i
+                                                        className="fas fa-arrow-right text-[10px]"
+                                                        style={{ color: 'var(--accent, #1e3a5f)' }}
+                                                    />
+                                                    <span
+                                                        className="text-[12px] font-semibold"
+                                                        style={{ color: 'var(--text-primary)' }}
+                                                    >
+                                                        <span className="text-[9.5px] font-bold uppercase tracking-wider mr-1">
+                                                            To
+                                                        </span>
                                                         {formatValue(fieldName, entry.newValue ?? entry.new_value)}
-                                                    </div>
+                                                    </span>
                                                 </div>
                                             )}
-                                            <div className="text-xs text-slate-500">
+                                            <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
                                                 <UserLabel userId={entry.changedBy ?? entry.changed_by} showIcon />
                                             </div>
                                         </div>
@@ -1328,7 +1259,7 @@ function HistoryViewSection({ item, type, onClose }) {
                         <div
                             className="min-w-0 transition-all duration-500 ease-in-out"
                             style={{
-                                borderColor: '#e5e7eb',
+                                borderColor: 'var(--border-light)',
                                 borderLeftWidth: analysisVisible ? '1px' : '0px',
                                 flex: analysisVisible ? '2' : '0',
                                 opacity: analysisVisible ? 1 : 0,

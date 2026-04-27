@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [38.5.57] - 2026-04-27
+
+- Refactored the operator position timeline and assignment timeline views to use the shared StatCardGrid/StatCard, TimelineItem, TimelineHeader, TimelineMeta, TimelineDate, and TimelineDuration components, replacing inline duplicated markup
+- Updated position distribution bars to use CSS custom properties (--bg-secondary, --bg-tertiary, --accent, --border-light, --text-primary, --text-tertiary) for full dark mode support
+- Converted field history change cards to use theme CSS variables for backgrounds, borders, and text colors throughout
+- Replaced the unicode arrow with a FontAwesome arrow-right icon in field change entries; updated "From/To" labels to smaller uppercase tracking style
+- Collapsed multiline boxShadow and border ternary expressions to single lines for readability
+- Updated the analysis panel border color to use var(--border-light) instead of a hardcoded hex value
+
 ## [38.5.56] - 2026-04-27
 
 - Redesigned HistoryViewSection to use theme-aware CSS custom properties instead of hardcoded Tailwind colors for full dark mode support
