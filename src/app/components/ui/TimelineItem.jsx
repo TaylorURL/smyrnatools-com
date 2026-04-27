@@ -1,26 +1,41 @@
 import React from 'react'
-/** Timeline entry with a colored dot, connecting line, and a bordered content card. */
+
+/** Timeline entry — colored dot rail + Plan-tab card body. */
 export default function TimelineItem({ dotColor, dotClassName, isLast, children }) {
     return (
-        <div className="flex gap-3 py-2">
+        <div className="flex gap-2.5 py-1.5">
             <div className="flex flex-col items-center w-5 flex-shrink-0">
                 <div
-                    className={`w-3 h-3 rounded-full border-2 border-white shadow-[0_0_0_2px_#e5e7eb] z-[1] ${dotClassName ?? ''}`}
-                    style={dotColor ? { background: dotColor } : undefined}
+                    className={`w-2.5 h-2.5 rounded-full z-[1] ${dotClassName ?? ''}`}
+                    style={{
+                        background: dotColor || 'var(--accent, #1e3a5f)',
+                        boxShadow: '0 0 0 2px var(--bg-primary), 0 0 0 3px var(--border-light)'
+                    }}
                 />
-                {!isLast && <div className="w-0.5 flex-1 bg-gray-200 -mt-0.5" />}
+                {!isLast && <div className="w-px flex-1 -mt-0.5" style={{ background: 'var(--border-light)' }} />}
             </div>
-            <div className="flex-1 bg-white border border-gray-200 rounded-lg p-3">{children}</div>
+            <div
+                className="flex-1 rounded p-2.5"
+                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+            >
+                {children}
+            </div>
         </div>
     )
 }
-/** Timeline entry header with label, optional "Current" badge, and custom badge slot. */
+
+/** Timeline entry header — label + optional "Current" badge + custom badge. */
 export function TimelineHeader({ label, isCurrent, badge }) {
     return (
-        <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-sm font-semibold text-slate-800">{label}</span>
+        <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                {label}
+            </span>
             {isCurrent && (
-                <span className="text-[10px] font-bold text-white bg-green-600 px-1.5 py-0.5 rounded uppercase">
+                <span
+                    className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                    style={{ background: '#16a34a', color: '#fff' }}
+                >
                     Current
                 </span>
             )}
@@ -28,22 +43,37 @@ export function TimelineHeader({ label, isCurrent, badge }) {
         </div>
     )
 }
+
 /** Flex row container for timeline metadata items. */
 export function TimelineMeta({ children }) {
-    return <div className="flex items-center gap-3 flex-wrap">{children}</div>
+    return <div className="flex items-center gap-2.5 flex-wrap">{children}</div>
 }
+
 /** Muted date label for timeline entries. */
 export function TimelineDate({ date }) {
-    return <span className="text-xs text-slate-500">{date}</span>
+    return (
+        <span className="text-[11px] tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
+            {date}
+        </span>
+    )
 }
+
 /** Accent-colored duration label for timeline entries. */
 export function TimelineDuration({ text }) {
-    return <span className="text-xs text-accent font-semibold">{text}</span>
+    return (
+        <span className="text-[11px] font-semibold" style={{ color: 'var(--accent, #1e3a5f)' }}>
+            {text}
+        </span>
+    )
 }
-/** Uppercase section divider heading within a timeline. */
+
+/** Section heading inside a timeline tab. */
 export function TimelineSectionTitle({ title }) {
     return (
-        <h3 className="m-0 mb-2.5 text-xs font-bold text-slate-800 uppercase tracking-wide pb-1.5 border-b border-gray-200">
+        <h3
+            className="m-0 mb-1 text-[9.5px] font-bold uppercase tracking-wider"
+            style={{ color: 'var(--text-secondary)' }}
+        >
             {title}
         </h3>
     )

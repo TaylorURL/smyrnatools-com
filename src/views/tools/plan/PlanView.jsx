@@ -601,12 +601,15 @@ function PlanView() {
                                 <div
                                     className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border-b shrink-0"
                                     style={{
-                                        background: '#fef3c7',
-                                        borderColor: '#fcd34d',
-                                        color: '#92400e'
+                                        background: 'rgba(245, 158, 11, 0.12)',
+                                        borderColor: 'rgba(245, 158, 11, 0.4)',
+                                        color: 'var(--text-primary)'
                                     }}
                                 >
-                                    <i className="fas fa-triangle-exclamation text-[11px]" />
+                                    <i
+                                        className="fas fa-triangle-exclamation text-[11px]"
+                                        style={{ color: '#d97706' }}
+                                    />
                                     <span>
                                         Schedule hasn&apos;t been updated since{' '}
                                         {scheduleFileUpdatedAt.toLocaleString([], {

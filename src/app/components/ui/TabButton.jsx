@@ -1,14 +1,17 @@
 import React from 'react'
-/** Rounded tab button with active/inactive styling, used in history and filter panels. */
+/** Plan-tab pill button — same chrome as the report toolbar tabs and the
+ *  Plan filter chips. */
 export default function TabButton({ label, isActive, onClick }) {
     return (
         <button
-            className={`px-4 py-2.5 border-none text-sm font-semibold cursor-pointer whitespace-nowrap rounded-md flex-shrink-0 transition-all ${
-                isActive
-                    ? 'bg-white text-accent shadow-sm'
-                    : 'bg-transparent text-slate-500 hover:bg-gray-200 hover:text-slate-800'
-            }`}
+            type="button"
             onClick={onClick}
+            className="px-2.5 py-1 rounded text-[11.5px] font-bold uppercase tracking-wider cursor-pointer whitespace-nowrap shrink-0 border-none transition-colors"
+            style={{
+                background: isActive ? 'var(--bg-primary)' : 'transparent',
+                border: `1px solid ${isActive ? 'var(--border-light)' : 'transparent'}`,
+                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)'
+            }}
         >
             {label}
         </button>

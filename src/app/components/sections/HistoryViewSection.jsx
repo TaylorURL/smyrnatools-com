@@ -157,26 +157,34 @@ function HistoryViewSection({ item, type, onClose }) {
     const renderAISummary = () => {
         if (aiSummaryLoading) {
             return (
-                <div className="flex flex-col items-center justify-center py-16 px-6">
-                    <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-4">
-                        <i className="fas fa-robot text-accent text-xl animate-pulse" />
-                    </div>
-                    <p className="text-sm text-slate-600 font-medium">Analyzing history...</p>
-                    <p className="text-xs text-slate-400 mt-1">This may take a moment</p>
+                <div
+                    className="flex flex-col items-center justify-center gap-1.5 py-10 px-4"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    <i className="fas fa-robot text-[20px] animate-pulse" style={{ color: 'var(--text-secondary)' }} />
+                    <p className="m-0 text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        Analyzing history…
+                    </p>
+                    <p className="m-0 text-[11px]">This may take a moment.</p>
                 </div>
             )
         }
         if (aiSummaryError) {
             return (
-                <div className="flex flex-col items-center justify-center py-16 px-6">
-                    <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                        <i className="fas fa-exclamation-triangle text-red-500 text-xl" />
-                    </div>
-                    <p className="text-sm text-slate-600 font-medium">Failed to generate analysis</p>
+                <div
+                    className="flex flex-col items-center justify-center gap-1.5 py-10 px-4"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    <i className="fas fa-exclamation-triangle text-[20px]" style={{ color: '#dc2626' }} />
+                    <p className="m-0 text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        Failed to generate analysis.
+                    </p>
                     <button
                         onClick={handleRegenerateAISummary}
-                        className="mt-3 px-4 py-2 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-hover transition-colors"
+                        className="mt-1 inline-flex items-center gap-1.5 rounded text-[10.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none"
+                        style={{ background: 'var(--accent, #1e3a5f)' }}
                     >
+                        <i className="fas fa-sync-alt text-[10px]" />
                         Try Again
                     </button>
                 </div>
@@ -184,11 +192,12 @@ function HistoryViewSection({ item, type, onClose }) {
         }
         if (!aiSummary) {
             return (
-                <div className="flex flex-col items-center justify-center py-16 px-6">
-                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                        <i className="fas fa-robot text-slate-400 text-xl" />
-                    </div>
-                    <p className="text-sm text-slate-500">No analysis available</p>
+                <div
+                    className="flex flex-col items-center justify-center gap-1.5 py-10 px-4"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    <i className="fas fa-robot text-[20px]" />
+                    <p className="m-0 text-[12px]">No analysis available.</p>
                 </div>
             )
         }
@@ -452,42 +461,52 @@ function HistoryViewSection({ item, type, onClose }) {
         }
         return (
             <div className="flex flex-col gap-2.5">
-                <div className="bg-white border border-border-light rounded-xl p-4 mb-4">
-                    <h3 className="text-sm font-bold text-slate-800 m-0 mb-4">Asset Status Distribution</h3>
-                    <div className="mb-4">
-                        <div className="flex h-6 rounded-xl overflow-hidden bg-slate-100">
-                            {statusPercentages.map(
-                                (sp, idx) =>
-                                    parseFloat(sp.percentage) > 0 && (
-                                        <div
-                                            key={idx}
-                                            className="flex items-center justify-center text-white text-xs font-semibold min-w-[30px] transition-all"
-                                            style={{
-                                                background: HistoryUtility.getStatusColor(sp.status),
-                                                width: `${sp.percentage}%`
-                                            }}
-                                            title={`${sp.status}: ${sp.percentage}%`}
-                                        >
-                                            {parseFloat(sp.percentage) > 10 && <span>{sp.percentage}%</span>}
-                                        </div>
-                                    )
-                            )}
-                        </div>
+                <div
+                    className="rounded p-3"
+                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                >
+                    <div
+                        className="text-[9.5px] font-bold uppercase tracking-wider mb-2"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        Asset Status Distribution
                     </div>
-                    <div className="flex flex-wrap gap-4">
+                    <div
+                        className="flex h-2 rounded-full overflow-hidden mb-2"
+                        style={{ background: 'var(--bg-tertiary)' }}
+                    >
+                        {statusPercentages.map(
+                            (sp, idx) =>
+                                parseFloat(sp.percentage) > 0 && (
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            background: HistoryUtility.getStatusColor(sp.status),
+                                            width: `${sp.percentage}%`
+                                        }}
+                                        title={`${sp.status}: ${sp.percentage}%`}
+                                    />
+                                )
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-[11px]">
                         {statusPercentages.map((sp, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                                <div
-                                    className="w-3 h-3 rounded"
-                                    style={{ background: HistoryUtility.getStatusColor(sp.status) }}
+                            <span key={idx} className="inline-flex items-center gap-1.5">
+                                <span
+                                    className="inline-block rounded-sm shrink-0"
+                                    style={{
+                                        background: HistoryUtility.getStatusColor(sp.status),
+                                        height: 8,
+                                        width: 8
+                                    }}
                                 />
-                                <div className="flex flex-col">
-                                    <div className="text-xs font-semibold text-slate-800">{sp.status}</div>
-                                    <div className="text-[11px] text-slate-500">
-                                        {sp.days} days ({sp.percentage}%)
-                                    </div>
-                                </div>
-                            </div>
+                                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                    {sp.status}
+                                </span>
+                                <span className="font-mono tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
+                                    {sp.days}d · {sp.percentage}%
+                                </span>
+                            </span>
                         ))}
                     </div>
                 </div>
@@ -583,35 +602,19 @@ function HistoryViewSection({ item, type, onClose }) {
             }))
         ].sort((a, b) => new Date(b.date) - new Date(a.date))
         return (
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap gap-4 pb-4 border-b border-border-light">
+            <div className="flex flex-col gap-2.5">
+                <StatCardGrid>
                     {lastService && (
-                        <div className="flex items-center gap-2">
-                            <i className="fas fa-wrench text-accent" />
-                            <div>
-                                <div className="text-xs text-slate-500">Last Service</div>
-                                <div className="text-sm font-semibold text-slate-800">
-                                    {DateUtility.formatDate(lastService.serviceDate)} ({daysSinceLastService} days ago)
-                                </div>
-                            </div>
-                        </div>
+                        <StatCard
+                            label="Last Service"
+                            value={DateUtility.formatDate(lastService.serviceDate)}
+                            sublabel={`${daysSinceLastService} days ago`}
+                        />
                     )}
-                    <div className="flex items-center gap-2">
-                        <i className="fas fa-exclamation-circle text-amber-500" />
-                        <div>
-                            <div className="text-xs text-slate-500">Open Issues</div>
-                            <div className="text-sm font-semibold text-slate-800">{openIssues.length}</div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <i className="fas fa-check-circle text-green-600" />
-                        <div>
-                            <div className="text-xs text-slate-500">Resolved</div>
-                            <div className="text-sm font-semibold text-slate-800">{resolvedIssues.length}</div>
-                        </div>
-                    </div>
-                </div>
-                <h3 className="m-0 text-xs font-bold text-slate-800 uppercase tracking-wide">Timeline</h3>
+                    <StatCard label="Open Issues" value={openIssues.length} />
+                    <StatCard label="Resolved" value={resolvedIssues.length} />
+                </StatCardGrid>
+                <TimelineSectionTitle title="Timeline" />
                 <ErrorMessage message={error} onDismiss={() => setError(null)} />
                 <div className="flex flex-col gap-0">
                     {combinedTimeline.map((entry, index) => {
@@ -639,70 +642,121 @@ function HistoryViewSection({ item, type, onClose }) {
                         const severityColor = entry.isCompleted
                             ? RESOLVED_ISSUE_COLOR
                             : (SEVERITY_COLORS[issue.severity] ?? '#3b82f6')
+                        const sevPalette =
+                            issue.severity === 'High'
+                                ? { bg: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }
+                                : issue.severity === 'Medium'
+                                  ? { bg: 'rgba(217, 119, 6, 0.12)', color: '#b45309' }
+                                  : { bg: 'rgba(14, 165, 233, 0.12)', color: '#0369a1' }
                         return (
-                            <div key={`issue-${issue.id}`} className="flex gap-3 py-2">
+                            <div key={`issue-${issue.id}`} className="flex gap-2.5 py-1.5">
                                 <div className="flex flex-col items-center w-5 flex-shrink-0">
                                     <div
-                                        className="w-3 h-3 rounded-full border-2 border-white shadow-[0_0_0_2px_#e5e7eb] z-[1]"
-                                        style={{ background: severityColor }}
+                                        className="w-2.5 h-2.5 rounded-full z-[1]"
+                                        style={{
+                                            background: severityColor,
+                                            boxShadow:
+                                                '0 0 0 2px var(--bg-primary), 0 0 0 3px var(--border-light)'
+                                        }}
                                     />
                                     {index < combinedTimeline.length - 1 && (
-                                        <div className="w-0.5 flex-1 bg-gray-200 -mt-0.5" />
+                                        <div
+                                            className="w-px flex-1 -mt-0.5"
+                                            style={{ background: 'var(--border-light)' }}
+                                        />
                                     )}
                                 </div>
                                 <div
-                                    className={`flex-1 bg-white border rounded-lg p-3 ${entry.isCompleted ? 'border-green-200' : 'border-border-light'}`}
+                                    className="flex-1 rounded p-2.5"
+                                    style={{
+                                        background: entry.isCompleted
+                                            ? 'rgba(22, 163, 74, 0.06)'
+                                            : 'var(--bg-secondary)',
+                                        border: `1px solid ${
+                                            entry.isCompleted
+                                                ? 'rgba(22, 163, 74, 0.35)'
+                                                : 'var(--border-light)'
+                                        }`
+                                    }}
                                 >
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex justify-between items-start gap-2">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                                                 <i
                                                     className={
                                                         entry.isCompleted
-                                                            ? 'fas fa-check-circle text-green-600'
-                                                            : 'fas fa-exclamation-circle text-amber-500'
+                                                            ? 'fas fa-check-circle text-[11px]'
+                                                            : 'fas fa-exclamation-circle text-[11px]'
                                                     }
+                                                    style={{
+                                                        color: entry.isCompleted ? '#16a34a' : '#d97706'
+                                                    }}
                                                 />
                                                 <span
-                                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
-                                                        issue.severity === 'High'
-                                                            ? 'bg-red-100 text-red-800'
-                                                            : issue.severity === 'Medium'
-                                                              ? 'bg-amber-100 text-amber-800'
-                                                              : 'bg-blue-100 text-blue-800'
-                                                    }`}
+                                                    className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                                                    style={{
+                                                        background: sevPalette.bg,
+                                                        color: sevPalette.color
+                                                    }}
                                                 >
                                                     {issue.severity}
                                                 </span>
                                                 {entry.isCompleted && (
-                                                    <span className="text-[10px] font-bold bg-green-100 text-green-800 px-1.5 py-0.5 rounded uppercase">
-                                                        RESOLVED
+                                                    <span
+                                                        className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                                                        style={{
+                                                            background: 'rgba(22, 163, 74, 0.15)',
+                                                            color: '#15803d'
+                                                        }}
+                                                    >
+                                                        Resolved
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-sm text-slate-700">{issue.issue}</div>
+                                            <div
+                                                className="text-[12.5px] leading-snug"
+                                                style={{ color: 'var(--text-primary)' }}
+                                            >
+                                                {issue.issue}
+                                            </div>
                                         </div>
                                         <button
                                             onClick={() => onDeleteIssue(issue.id)}
                                             title="Delete issue"
-                                            className="text-slate-400 hover:text-red-600 p-1"
+                                            className="rounded border-none cursor-pointer flex items-center justify-center"
+                                            style={{
+                                                background: 'rgba(220, 38, 38, 0.12)',
+                                                color: '#b91c1c',
+                                                height: 22,
+                                                width: 22
+                                            }}
                                         >
-                                            <i className="fas fa-trash text-xs" />
+                                            <i className="fas fa-trash text-[10px]" />
                                         </button>
                                     </div>
-                                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-light flex-wrap gap-2">
-                                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                                    <div
+                                        className="flex items-center justify-between mt-1.5 pt-1.5 flex-wrap gap-2"
+                                        style={{ borderTop: '1px solid var(--border-light)' }}
+                                    >
+                                        <div
+                                            className="flex items-center gap-2.5 text-[11px]"
+                                            style={{ color: 'var(--text-tertiary)' }}
+                                        >
                                             <span>
-                                                <i className="fas fa-user mr-1" /> {getCreatorName(issue)}
+                                                <i className="fas fa-user mr-1 text-[9px]" />
+                                                {getCreatorName(issue)}
                                             </span>
-                                            <span>
-                                                <i className="fas fa-calendar-plus mr-1" />{' '}
+                                            <span className="tabular-nums">
+                                                <i className="fas fa-calendar-plus mr-1 text-[9px]" />
                                                 {HistoryUtility.formatHistoryDate(issue.time_created)}
                                             </span>
                                         </div>
                                         {entry.isCompleted && entry.completedDate && (
-                                            <span className="text-xs text-green-600">
-                                                <i className="fas fa-check mr-1" /> Completed:{' '}
+                                            <span
+                                                className="text-[11px] font-semibold tabular-nums"
+                                                style={{ color: '#15803d' }}
+                                            >
+                                                <i className="fas fa-check mr-1 text-[9px]" />
                                                 {HistoryUtility.formatHistoryDate(issue.time_completed)}
                                             </span>
                                         )}
@@ -710,9 +764,14 @@ function HistoryViewSection({ item, type, onClose }) {
                                             <button
                                                 onClick={() => onCompleteIssue(issue.id)}
                                                 title="Mark as resolved"
-                                                className="text-xs text-green-600 hover:text-green-800 font-semibold"
+                                                className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider rounded px-2 py-0.5 cursor-pointer border-none"
+                                                style={{
+                                                    background: 'rgba(22, 163, 74, 0.12)',
+                                                    color: '#15803d'
+                                                }}
                                             >
-                                                <i className="fas fa-check mr-1" /> Mark as Resolved
+                                                <i className="fas fa-check text-[9px]" />
+                                                Mark Resolved
                                             </button>
                                         )}
                                     </div>

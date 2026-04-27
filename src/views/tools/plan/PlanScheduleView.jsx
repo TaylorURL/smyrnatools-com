@@ -2815,10 +2815,7 @@ function PlanScheduleView({
                                 style={{ color: plantsClosed ? '#dc2626' : '#d97706', fontSize: 14 }}
                             />
                             <div className="flex-1 min-w-0">
-                                <div
-                                    className="text-[13px] font-bold"
-                                    style={{ color: plantsClosed ? '#991b1b' : '#92400e' }}
-                                >
+                                <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>
                                     {plantsClosed ? 'Sunday — plants closed' : 'Saturday — half crew'}
                                 </div>
                                 <div className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>

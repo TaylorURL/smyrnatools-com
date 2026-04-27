@@ -292,8 +292,15 @@ function AddressesPanel({
                 Used by the Schedule tab to draw plant → job → plant routes when an order address is clicked.
             </p>
             {error && (
-                <div className="text-[11.5px] px-3 py-2 rounded-md" style={{ background: '#fee2e2', color: '#b91c1c' }}>
-                    <i className="fas fa-triangle-exclamation mr-1" /> {error}
+                <div
+                    className="text-[11.5px] px-3 py-2 rounded-md border"
+                    style={{
+                        background: 'rgba(220, 38, 38, 0.12)',
+                        borderColor: 'rgba(220, 38, 38, 0.4)',
+                        color: 'var(--text-primary)'
+                    }}
+                >
+                    <i className="fas fa-triangle-exclamation mr-1" style={{ color: '#dc2626' }} /> {error}
                 </div>
             )}
             {(plants || []).length === 0 ? (
