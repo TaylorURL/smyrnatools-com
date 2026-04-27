@@ -160,6 +160,14 @@ const isLikelyBadAddress = (raw) => {
 const PLAN_META_KEY = '_meta'
 const VIEW_MODES = ['table', 'cards']
 
+/* Distinct color palette per pour-size suggestion so reviewers can spot
+ * Small / Medium / Large windows at a glance in the Schedule tab. */
+const SLOT_SIZE_PALETTE = {
+    large: { accent: '#7c3aed', icon: 'fa-truck-arrow-right', tint: 'rgba(124, 58, 237, 0.07)' },
+    medium: { accent: '#0ea5e9', icon: 'fa-calendar-plus', tint: 'rgba(14, 165, 233, 0.06)' },
+    small: { accent: '#10b981', icon: 'fa-circle-plus', tint: 'rgba(16, 185, 129, 0.06)' }
+}
+
 // Plant badge colors live in PlanUtility so every view (Schedule, Demand,
 // Planner markers, …) draws the same plant the same color.
 
@@ -985,6 +993,7 @@ function ScheduleTable({
                 label: row.label,
                 minTrucks: row.minTrucks,
                 plantCode: row.plantCode,
+                sizeKey: row.key,
                 slotKey: `${row.key}-${row.plantCode}-${row.time}`,
                 time: row.time,
                 truckRange: row.truckRange
@@ -1224,13 +1233,14 @@ function ScheduleTable({
                         if (row.kind === 'slot') {
                             const plantName = plantNameByCode?.[row.plantCode] || ''
                             const hours = Math.round((row.durationMin / 60) * 10) / 10
+                            const slotPalette = SLOT_SIZE_PALETTE[row.sizeKey] || SLOT_SIZE_PALETTE.medium
                             return (
                                 <SyntheticRow
                                     animationDelayMs={rowDelay}
                                     key={`slot-${row.slotKey}`}
-                                    accentColor="#0ea5e9"
-                                    icon="fa-calendar-plus"
-                                    pillIcon="fa-calendar-plus"
+                                    accentColor={slotPalette.accent}
+                                    icon={slotPalette.icon}
+                                    pillIcon={slotPalette.icon}
                                     pillLabel={row.label}
                                     plantCell={
                                         <PlantBadge code={row.plantCode} fallback={accentColor} name={plantName} />
@@ -1248,7 +1258,7 @@ function ScheduleTable({
                                         </>
                                     }
                                     time={row.time}
-                                    tint="rgba(14, 165, 233, 0.06)"
+                                    tint={slotPalette.tint}
                                 />
                             )
                         }

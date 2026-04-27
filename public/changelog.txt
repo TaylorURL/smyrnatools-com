@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [40.0.0] - 2026-04-27
+
+- Extended the cancelled order filter in DailyOrderParser to also exclude dispatcher test orders (18:00 sentinel), so yardage totals, YPH, and overbook checks only reflect real production
+- Added `isExcludedOrder` filtering to PlanFlowView's flat order list so cancelled and test sentinel rows no longer appear as active orders in the point-in-time pool view
+- Updated PlanScheduleView headline KPIs (plants, customers, earliest/latest start, order count) to use `liveOrders` instead of `filtered`, preventing cancelled and test rows from inflating day-level numbers
+- Updated the Orders stat card hint to read "on the day · cancelled excluded" to make the exclusion visible to users
+
 ## [38.5.57] - 2026-04-27
 
 - Refactored the operator position timeline and assignment timeline views to use the shared StatCardGrid/StatCard, TimelineItem, TimelineHeader, TimelineMeta, TimelineDate, and TimelineDuration components, replacing inline duplicated markup

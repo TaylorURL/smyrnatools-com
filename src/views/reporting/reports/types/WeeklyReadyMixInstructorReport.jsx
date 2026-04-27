@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
 import { OperatorService } from '../../../../services/OperatorService'
+import { PlantService } from '../../../../services/PlantService'
+import { UserService } from '../../../../services/UserService'
 
 /* ── Plan-tab design tokens ───────────────────────────────────────────────
  *  Same vocabulary as the District / Plant / Efficiency / Aggregate /
@@ -35,6 +37,26 @@ const CATEGORY_ICONS = {
 function getPlantNameFromList(plantCode, plants) {
     const plant = plants?.find((p) => (p.plant_code || p.code) === plantCode)
     return plant?.name || plantCode || '—'
+}
+
+/** Render a Pending-Start date — pulled either from the live operator
+ *  feed (`2026-04-28T00:00:00+00:00`) or from a manually entered date input
+ *  (`2026-04-28`). Both should display as a short readable date. */
+function formatPendingStartDate(value) {
+    if (!value) return '—'
+    const raw = String(value).trim()
+    if (!raw) return '—'
+    // Plain `YYYY-MM-DD` from <input type="date"> — parse as local to avoid UTC drift.
+    const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw)
+    if (ymd) {
+        const d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]))
+        if (!Number.isNaN(d.getTime())) {
+            return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+        }
+    }
+    const parsed = new Date(raw)
+    if (Number.isNaN(parsed.getTime())) return raw
+    return parsed.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 /* ── Primitives ──────────────────────────────────────────────────────────── */
@@ -247,7 +269,9 @@ function PendingTable({ pending, plants, position, onRemove, readOnly }) {
                     <td className={TD_BASE} style={{ color: 'var(--text-secondary)' }}>
                         {getPlantNameFromList(op.plant, plants)}
                     </td>
-                    <td className={`${TD_BASE} tabular-nums`}>{op.startDate || '—'}</td>
+                    <td className={`${TD_BASE} tabular-nums whitespace-nowrap`}>
+                        {formatPendingStartDate(op.startDate)}
+                    </td>
                     {!readOnly && (
                         <td className={`${TD_BASE} text-right`}>
                             <TableRowActionButton
@@ -262,37 +286,68 @@ function PendingTable({ pending, plants, position, onRemove, readOnly }) {
     )
 }
 
-function TrainingTable({ training, plants, position, onRemove, readOnly }) {
-    const headers = readOnly ? ['Operator', 'Plant', 'Trainer'] : ['Operator', 'Plant', 'Trainer', '']
+/** End-of-report-week reference date for "days in training" math. Falls back to
+ *  now if weekIso is missing so the column is still informative when used outside
+ *  the standard weekly snapshot flow. */
+function getTrainingReferenceDate(weekIso) {
+    if (!weekIso) return new Date()
+    const monday = new Date(weekIso)
+    if (Number.isNaN(monday.getTime())) return new Date()
+    const saturday = new Date(monday)
+    saturday.setDate(monday.getDate() + 5)
+    saturday.setHours(23, 59, 59, 999)
+    return saturday
+}
+
+function computeDaysInTraining(trainingSince, referenceDate) {
+    if (!trainingSince) return null
+    const start = new Date(trainingSince)
+    if (Number.isNaN(start.getTime())) return null
+    const diffMs = referenceDate.getTime() - start.getTime()
+    if (diffMs < 0) return 0
+    return Math.floor(diffMs / 86400000)
+}
+
+function TrainingTable({ training, plants, position, onRemove, readOnly, weekIso }) {
+    const headers = readOnly
+        ? ['Operator', 'Plant', 'Trainer', 'Days in Training']
+        : ['Operator', 'Plant', 'Trainer', 'Days in Training', '']
+    const referenceDate = React.useMemo(() => getTrainingReferenceDate(weekIso), [weekIso])
     return (
         <DataTable
             headers={headers}
             data={training}
             emptyMessage={`No ${position === POSITIONS.MIXER ? 'mixer' : 'tractor'} operators in training`}
-            renderRow={(op) => (
-                <tr key={op.id} style={ROW_STYLE}>
-                    <td className={`${TD_BASE} font-semibold`}>
-                        <div className="flex items-center gap-1.5">
-                            <i className="fas fa-user text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
-                            {op.name}
-                        </div>
-                    </td>
-                    <td className={TD_BASE} style={{ color: 'var(--text-secondary)' }}>
-                        {getPlantNameFromList(op.plant, plants)}
-                    </td>
-                    <td className={TD_BASE} style={{ color: 'var(--text-primary)' }}>
-                        {op.trainer || '—'}
-                    </td>
-                    {!readOnly && (
-                        <td className={`${TD_BASE} text-right`}>
-                            <TableRowActionButton
-                                onClick={() => onRemove(position, op.id)}
-                                title="Remove training operator"
-                            />
+            renderRow={(op) => {
+                const days = computeDaysInTraining(op.trainingSince, referenceDate)
+                return (
+                    <tr key={op.id} style={ROW_STYLE}>
+                        <td className={`${TD_BASE} font-semibold`}>
+                            <div className="flex items-center gap-1.5">
+                                <i className="fas fa-user text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                                {op.name}
+                            </div>
                         </td>
-                    )}
-                </tr>
-            )}
+                        <td className={TD_BASE} style={{ color: 'var(--text-secondary)' }}>
+                            {getPlantNameFromList(op.plant, plants)}
+                        </td>
+                        <td className={TD_BASE} style={{ color: 'var(--text-primary)' }}>
+                            {op.trainer || '—'}
+                        </td>
+                        <td className={`${TD_BASE} tabular-nums`} style={{ color: 'var(--text-primary)' }}>
+                            {days == null ? '—' : `${days} day${days === 1 ? '' : 's'}`}
+                        </td>
+                        {!readOnly && (
+                            <td className={`${TD_BASE} text-right`}>
+                                <TableRowActionButton
+                                    onClick={() => onRemove(position, op.id)}
+                                    title="Remove training operator"
+                                />
+                            </td>
+                        )}
+                    </tr>
+                )
+            }}
         />
     )
 }
@@ -481,7 +536,7 @@ function PendingSection({ mixerPending, tractorPending, plants, readOnly, onRemo
     )
 }
 
-function TrainingSection({ mixerTraining, tractorTraining, plants, readOnly, onRemove, actions }) {
+function TrainingSection({ mixerTraining, tractorTraining, plants, readOnly, onRemove, actions, weekIso }) {
     return (
         <div className="rounded p-3" style={CARD_STYLE}>
             <CardHeader
@@ -503,6 +558,7 @@ function TrainingSection({ mixerTraining, tractorTraining, plants, readOnly, onR
                         position={POSITIONS.MIXER}
                         onRemove={onRemove}
                         readOnly={readOnly}
+                        weekIso={weekIso}
                     />
                 </CategoryCard>
                 <CategoryCard
@@ -517,6 +573,7 @@ function TrainingSection({ mixerTraining, tractorTraining, plants, readOnly, onR
                         position={POSITIONS.TRACTOR}
                         onRemove={onRemove}
                         readOnly={readOnly}
+                        weekIso={weekIso}
                     />
                 </CategoryCard>
             </div>
@@ -663,7 +720,7 @@ function ModalField({ children, icon, label, required }) {
 
 /* ── Submit-mode plugin ─────────────────────────────────────────────────── */
 
-export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants, weekIso }) {
+export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants, weekIso, userId, userPlantCode }) {
     const [liveOperators, setLiveOperators] = useState([])
     const [isLoading, setIsLoading] = useState(false)
     const [showAddTrainerModal, setShowAddTrainerModal] = useState(false)
@@ -686,6 +743,144 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
     const mixerTraining = React.useMemo(() => snapshotData.mixer_training || [], [snapshotData])
     const tractorTraining = React.useMemo(() => snapshotData.tractor_training || [], [snapshotData])
     const hiringGoals = form?.hiring_goals || {}
+    /** Authoritative region plant codes resolved from the report owner's profile
+     *  → region membership. CRITICAL: in manager-edit mode the report owner is
+     *  NOT the signed-in user, so we resolve from the explicit `userId` prop
+     *  (the targetUserId routed through ReportsSubmitView) and only fall back
+     *  to the current user when no target is provided. */
+    const [resolvedRegionCodes, setResolvedRegionCodes] = useState(null)
+    useEffect(() => {
+        let cancelled = false
+        async function resolve() {
+            try {
+                // Prefer the plant code already resolved by useSubmitData — it
+                // matches the report owner without re-running the user→plant
+                // lookup that may already have failed (and triggered the
+                // all-plants fallback we're trying to undo).
+                let plantCode = (userPlantCode || '').trim()
+                if (!plantCode) {
+                    let ownerId = userId
+                    if (!ownerId) {
+                        const user = await UserService.getCurrentUser()
+                        ownerId = user?.id
+                    }
+                    if (!ownerId) return
+                    const profilePlant = await UserService.getUserPlant(ownerId)
+                    plantCode =
+                        typeof profilePlant === 'string'
+                            ? profilePlant
+                            : profilePlant?.plant_code || profilePlant?.plantCode || ''
+                }
+                if (!plantCode) return
+                const regions = await PlantService.fetchRegionsByPlantCode(plantCode)
+                const regionCodes = (Array.isArray(regions) ? regions : [])
+                    .map((r) => r?.regionCode || r?.region_code)
+                    .filter(Boolean)
+                if (regionCodes.length === 0) return
+                const lists = await Promise.all(regionCodes.map((rc) => PlantService.fetchRegionPlants(rc)))
+                const set = new Set()
+                lists.forEach((list) =>
+                    (list || []).forEach((rp) => {
+                        const c = rp?.plantCode || rp?.plant_code
+                        if (c) set.add(String(c).trim().toUpperCase())
+                    })
+                )
+                if (!cancelled) setResolvedRegionCodes(set)
+            } catch {
+                /* Region resolution is best-effort — fall back to the plants prop. */
+            }
+        }
+        resolve()
+        return () => {
+            cancelled = true
+        }
+    }, [userId, userPlantCode])
+    /** One-time cleanup for legacy snapshots: when the resolved region first
+     *  becomes known, strip any rows / hiring-goal entries that belong to plants
+     *  outside that region. The user just needs to save once and the cleaned
+     *  shape persists. Skipped in read-only / review contexts so we don't
+     *  silently mutate forms the user can't save. */
+    const sanitizedRef = React.useRef(false)
+    useEffect(() => {
+        if (readOnly) return
+        if (sanitizedRef.current) return
+        if (!resolvedRegionCodes || resolvedRegionCodes.size === 0) return
+        const inRegion = (code) =>
+            resolvedRegionCodes.has(
+                String(code || '')
+                    .trim()
+                    .toUpperCase()
+            )
+        sanitizedRef.current = true
+        setForm((prev) => {
+            if (!prev) return prev
+            const snapshot = prev.snapshot_data || {}
+            const filterRows = (rows) => (Array.isArray(rows) ? rows.filter((r) => inRegion(r?.plant)) : rows)
+            const nextSnapshot = {
+                ...snapshot,
+                mixer_trainers: filterRows(snapshot.mixer_trainers),
+                tractor_trainers: filterRows(snapshot.tractor_trainers),
+                mixer_pending: filterRows(snapshot.mixer_pending),
+                tractor_pending: filterRows(snapshot.tractor_pending),
+                mixer_training: filterRows(snapshot.mixer_training),
+                tractor_training: filterRows(snapshot.tractor_training),
+                terminated_operators: filterRows(snapshot.terminated_operators)
+            }
+            const nextGoals = {}
+            Object.entries(prev.hiring_goals || {}).forEach(([code, goal]) => {
+                if (inRegion(code)) nextGoals[code] = goal
+            })
+            return { ...prev, snapshot_data: nextSnapshot, hiring_goals: nextGoals }
+        })
+    }, [resolvedRegionCodes, readOnly, setForm])
+    /** Region plant codes used for every operator filter in this plugin. Prefers
+     *  the directly-resolved set; falls back to whatever's in `plants` so we
+     *  don't block the user when resolution is still in flight or fails. */
+    const regionPlantCodes = React.useMemo(() => {
+        if (resolvedRegionCodes && resolvedRegionCodes.size > 0) return resolvedRegionCodes
+        const set = new Set()
+        ;(plants || []).forEach((p) => {
+            const code = p?.plant_code || p?.code
+            if (code) set.add(String(code).trim().toUpperCase())
+        })
+        return set
+    }, [plants, resolvedRegionCodes])
+    const isInRegion = React.useCallback(
+        (op) =>
+            regionPlantCodes.has(
+                String(op?.plantCode || '')
+                    .trim()
+                    .toUpperCase()
+            ),
+        [regionPlantCodes]
+    )
+    /** Plants list strictly narrowed to the user's region. Used by the Hiring
+     *  Goals table — `useSubmitData` falls back to the full all-plants list
+     *  when target-user region resolution fails, so we MUST filter against
+     *  `resolvedRegionCodes` (the authoritative set) and not against
+     *  `regionPlantCodes` (which itself falls back to `plants` codes when
+     *  resolution fails — that fallback would defeat the filter). When the
+     *  resolved set isn't available yet we render nothing rather than leak
+     *  cross-region plants into the table. */
+    const regionalPlants = React.useMemo(() => {
+        if (!resolvedRegionCodes || resolvedRegionCodes.size === 0) {
+            // Pre-resolution: show only what we know is in scope. If `plants`
+            // is already the regional list (happy path) it's identical to
+            // resolvedRegionCodes; if it's the all-plants fallback we'd
+            // rather show nothing for a moment than a wrong list.
+            return []
+        }
+        const byCode = new Map()
+        ;(plants || []).forEach((p) => {
+            const c = String(p?.plant_code || p?.code || '')
+                .trim()
+                .toUpperCase()
+            if (c) byCode.set(c, p)
+        })
+        return Array.from(resolvedRegionCodes)
+            .map((code) => byCode.get(code) || { plant_code: code, plant_name: code })
+            .sort((a, b) => (a.plant_code || '').localeCompare(b.plant_code || ''))
+    }, [plants, resolvedRegionCodes])
     const terminatedThisWeek = React.useMemo(() => {
         if (!liveOperators.length || !weekIso) return []
         const weekStart = new Date(weekIso)
@@ -695,12 +890,13 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
         weekEnd.setDate(weekEnd.getDate() + 7)
         return liveOperators
             .filter((op) => {
+                if (!isInRegion(op)) return false
                 if (op.status !== 'Terminated' || !op.statusChangedAt) return false
                 const changedAt = new Date(op.statusChangedAt)
                 return changedAt >= weekStart && changedAt < weekEnd
             })
             .map((op) => ({ id: op.employeeId, name: op.name, plant: op.plantCode, position: op.position }))
-    }, [liveOperators, weekIso])
+    }, [liveOperators, weekIso, isInRegion])
     const isMixerTrainersAccurate = React.useMemo(() => {
         if (!liveOperators.length || mixerTrainers.length === 0) return false
         const liveTrainers = liveOperators.filter(
@@ -765,9 +961,14 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
         async function loadLiveData() {
             setIsLoading(true)
             try {
-                const plantCodes = plants ? new Set(plants.map((p) => p.plant_code || p.code).filter(Boolean)) : null
-                const ops = await OperatorService.fetchOperators(plantCodes)
-                setLiveOperators(ops || [])
+                const scope = regionPlantCodes.size > 0 ? regionPlantCodes : null
+                const ops = await OperatorService.fetchOperators(scope)
+                // Defensive — fetchOperators filters when given a scope, but
+                // enforce again here so a future change in OperatorService
+                // can't quietly widen the scope. Skip the post-filter when
+                // we have no resolved region (otherwise everything would be
+                // dropped — preserving the pre-region-resolution behaviour).
+                setLiveOperators(scope ? (ops || []).filter(isInRegion) : ops || [])
             } catch (error) {
                 console.error('Failed to load operators:', error)
                 alert('Failed to load live data')
@@ -775,7 +976,7 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
                 setIsLoading(false)
             }
         },
-        [plants]
+        [regionPlantCodes, isInRegion]
     )
     function updateSnapshotData(key, value) {
         setForm((prev) => ({ ...prev, snapshot_data: { ...prev.snapshot_data, [key]: value } }))
@@ -786,7 +987,7 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
             return
         }
         const trainers = liveOperators.filter(
-            (op) => op.isTrainer && op.status !== 'Terminated' && op.position === 'Mixer Operator'
+            (op) => isInRegion(op) && op.isTrainer && op.status !== 'Terminated' && op.position === 'Mixer Operator'
         )
         updateSnapshotData(
             'mixer_trainers',
@@ -799,7 +1000,7 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
             return
         }
         const trainers = liveOperators.filter(
-            (op) => op.isTrainer && op.status !== 'Terminated' && op.position === 'Tractor Operator'
+            (op) => isInRegion(op) && op.isTrainer && op.status !== 'Terminated' && op.position === 'Tractor Operator'
         )
         updateSnapshotData(
             'tractor_trainers',
@@ -812,7 +1013,11 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
             return
         }
         const pending = liveOperators.filter(
-            (op) => op.status === 'Pending Start' && op.pendingStartDate?.trim() && op.position === 'Mixer Operator'
+            (op) =>
+                isInRegion(op) &&
+                op.status === 'Pending Start' &&
+                op.pendingStartDate?.trim() &&
+                op.position === 'Mixer Operator'
         )
         updateSnapshotData(
             'mixer_pending',
@@ -831,7 +1036,11 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
             return
         }
         const pending = liveOperators.filter(
-            (op) => op.status === 'Pending Start' && op.pendingStartDate?.trim() && op.position === 'Tractor Operator'
+            (op) =>
+                isInRegion(op) &&
+                op.status === 'Pending Start' &&
+                op.pendingStartDate?.trim() &&
+                op.position === 'Tractor Operator'
         )
         updateSnapshotData(
             'tractor_pending',
@@ -849,7 +1058,9 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
             alert('Please load live data first')
             return
         }
-        const training = liveOperators.filter((op) => op.status === 'Training' && op.position === 'Mixer Operator')
+        const training = liveOperators.filter(
+            (op) => isInRegion(op) && op.status === 'Training' && op.position === 'Mixer Operator'
+        )
         updateSnapshotData(
             'mixer_training',
             training.map((op) => {
@@ -858,7 +1069,8 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
                     id: op.employeeId,
                     name: op.name,
                     plant: op.plantCode,
-                    trainer: trainer?.name || op.assignedTrainer || '—'
+                    trainer: trainer?.name || op.assignedTrainer || '—',
+                    trainingSince: op.statusChangedAt || null
                 }
             })
         )
@@ -868,7 +1080,9 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
             alert('Please load live data first')
             return
         }
-        const training = liveOperators.filter((op) => op.status === 'Training' && op.position === 'Tractor Operator')
+        const training = liveOperators.filter(
+            (op) => isInRegion(op) && op.status === 'Training' && op.position === 'Tractor Operator'
+        )
         updateSnapshotData(
             'tractor_training',
             training.map((op) => {
@@ -877,7 +1091,8 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
                     id: op.employeeId,
                     name: op.name,
                     plant: op.plantCode,
-                    trainer: trainer?.name || op.assignedTrainer || '—'
+                    trainer: trainer?.name || op.assignedTrainer || '—',
+                    trainingSince: op.statusChangedAt || null
                 }
             })
         )
@@ -1085,10 +1300,11 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
                 readOnly={readOnly}
                 onRemove={removeTraining}
                 actions={trainingActions}
+                weekIso={weekIso}
             />
             <TerminatedSection terminatedOperators={terminatedThisWeek} plants={plants} readOnly={readOnly} />
             <HiringGoalsSection
-                plants={plants}
+                plants={regionalPlants}
                 hiringGoals={hiringGoals}
                 onChange={handleHiringGoalChange}
                 readOnly={readOnly}
@@ -1241,14 +1457,34 @@ export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso }) {
     const mixerTraining = snapshotData.mixer_training || []
     const tractorTraining = snapshotData.tractor_training || []
     const hiringGoals = form?.hiring_goals || {}
+    const regionPlantCodes = React.useMemo(
+        () =>
+            new Set(
+                (plants || [])
+                    .map((p) => p?.plant_code || p?.code)
+                    .filter(Boolean)
+                    .map((c) => String(c).trim().toUpperCase())
+            ),
+        [plants]
+    )
+    const regionalPlants = React.useMemo(() => {
+        if (regionPlantCodes.size === 0) return plants || []
+        return (plants || []).filter((p) =>
+            regionPlantCodes.has(
+                String(p?.plant_code || p?.code || '')
+                    .trim()
+                    .toUpperCase()
+            )
+        )
+    }, [plants, regionPlantCodes])
     const snapshotHasTerminated = Array.isArray(snapshotData.terminated_operators)
     const [liveTerminated, setLiveTerminated] = useState([])
     useEffect(() => {
         if (snapshotHasTerminated || !weekIso) return
         async function computeFromLive() {
             try {
-                const plantCodes = plants ? new Set(plants.map((p) => p.plant_code || p.code).filter(Boolean)) : null
-                const ops = await OperatorService.fetchOperators(plantCodes)
+                if (regionPlantCodes.size === 0) return
+                const ops = await OperatorService.fetchOperators(regionPlantCodes)
                 const weekStart = new Date(weekIso)
                 weekStart.setDate(weekStart.getDate() + 1)
                 weekStart.setHours(0, 0, 0, 0)
@@ -1257,6 +1493,14 @@ export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso }) {
                 setLiveTerminated(
                     (ops || [])
                         .filter((op) => {
+                            if (
+                                !regionPlantCodes.has(
+                                    String(op?.plantCode || '')
+                                        .trim()
+                                        .toUpperCase()
+                                )
+                            )
+                                return false
                             if (op.status !== 'Terminated' || !op.statusChangedAt) return false
                             const changedAt = new Date(op.statusChangedAt)
                             return changedAt >= weekStart && changedAt < weekEnd
@@ -1268,15 +1512,21 @@ export function ReadyMixInstructorReviewPlugin({ form, plants, weekIso }) {
             }
         }
         computeFromLive()
-    }, [snapshotHasTerminated, weekIso, plants])
+    }, [snapshotHasTerminated, weekIso, regionPlantCodes])
     const terminatedOperators = snapshotHasTerminated ? snapshotData.terminated_operators : liveTerminated
     return (
         <div className="flex flex-col gap-2.5 mt-2.5">
             <TrainersSection mixerTrainers={mixerTrainers} tractorTrainers={tractorTrainers} plants={plants} readOnly />
             <PendingSection mixerPending={mixerPending} tractorPending={tractorPending} plants={plants} readOnly />
-            <TrainingSection mixerTraining={mixerTraining} tractorTraining={tractorTraining} plants={plants} readOnly />
+            <TrainingSection
+                mixerTraining={mixerTraining}
+                tractorTraining={tractorTraining}
+                plants={plants}
+                readOnly
+                weekIso={weekIso}
+            />
             <TerminatedSection terminatedOperators={terminatedOperators} plants={plants} />
-            <HiringGoalsSection plants={plants} hiringGoals={hiringGoals} readOnly />
+            <HiringGoalsSection plants={regionalPlants} hiringGoals={hiringGoals} readOnly />
         </div>
     )
 }
