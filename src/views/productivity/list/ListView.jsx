@@ -473,7 +473,6 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
     const _selectBgImage = `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`
     return (
         <div className="global-dashboard-container dashboard-container global-flush-top flush-top list-view bg-slate-100 min-h-full relative w-full">
-            <style>{`@keyframes filterFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
             <TopSection
                 isLoading={isLoading}
                 title={title}
@@ -580,7 +579,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                 </button>
                                 {statusDropdownOpen && (
                                     <div
-                                        className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-[filterFadeIn_0.15s_ease-out]"
+                                        className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-filter-fade"
                                         style={{
                                             background: 'var(--bg-primary)',
                                             border: '1px solid var(--border-light)'
@@ -663,7 +662,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                 </button>
                                 {roleDropdownOpen && (
                                     <div
-                                        className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-[filterFadeIn_0.15s_ease-out]"
+                                        className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-filter-fade"
                                         style={{
                                             background: 'var(--bg-primary)',
                                             border: '1px solid var(--border-light)'
@@ -727,8 +726,9 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                 }
             />
             <div className="relative">
-                <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } } .list-content-area { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }`}</style>
-                <div className={`content-area list-content-area ${isMobile ? 'p-4 pb-8' : 'px-8 pt-6 pb-8'}`}>
+                <div
+                    className={`content-area overscroll-contain [-webkit-overflow-scrolling:touch] ${isMobile ? 'p-4 pb-8' : 'px-8 pt-6 pb-8'}`}
+                >
                     {isLoading ? (
                         <TaskListSkeleton />
                     ) : filteredItems.length === 0 ? (
@@ -868,11 +868,17 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                                 className={`flex items-center gap-1.5 ${isMobile ? 'text-[0.625rem]' : 'text-xs'}`}
                                                             >
                                                                 <span className="text-text-tertiary bg-slate-100 rounded px-1.5 py-0.5 line-through">
-                                                                    {entry.old_value || 'none'}
+                                                                    {ListService.formatActivityValue(
+                                                                        entry.field_name,
+                                                                        entry.old_value
+                                                                    )}
                                                                 </span>
                                                                 <i className="fas fa-arrow-right text-text-tertiary text-[8px]" />
                                                                 <span className="text-text-secondary bg-slate-100 rounded px-1.5 py-0.5 font-medium">
-                                                                    {entry.new_value || 'none'}
+                                                                    {ListService.formatActivityValue(
+                                                                        entry.field_name,
+                                                                        entry.new_value
+                                                                    )}
                                                                 </span>
                                                             </div>
                                                         )}
@@ -1108,7 +1114,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                             </button>
                             {bulkStatusOpen && (
                                 <div
-                                    className="absolute bottom-full left-0 mb-2 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-[filterFadeIn_0.15s_ease-out]"
+                                    className="absolute bottom-full left-0 mb-2 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-filter-fade"
                                     style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                                 >
                                     <div className="p-1.5">
@@ -1162,7 +1168,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                             </button>
                             {bulkPriorityOpen && (
                                 <div
-                                    className="absolute bottom-full left-0 mb-2 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-[filterFadeIn_0.15s_ease-out]"
+                                    className="absolute bottom-full left-0 mb-2 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-filter-fade"
                                     style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                                 >
                                     <div className="p-1.5">

@@ -70,39 +70,6 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Mon · 7:00 AM CST', todayIndex
                 transition: 'border-color 0.4s ease'
             }}
         >
-            <style>{`
-                @keyframes fuse-shimmer {
-                    0% { transform: translateX(-100%); }
-                    100% { transform: translateX(250%); }
-                }
-                @keyframes fuse-pulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.55; }
-                }
-                .fuse-fill {
-                    height: 100%;
-                    border-radius: 9999px;
-                    transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-                                background 0.45s ease;
-                    position: relative;
-                    overflow: hidden;
-                }
-                .fuse-fill.pulse { animation: fuse-pulse 1.6s ease-in-out infinite; }
-                .fuse-shimmer {
-                    position: absolute;
-                    top: 0; bottom: 0;
-                    width: 40%;
-                    background: linear-gradient(
-                        90deg,
-                        rgba(255,255,255,0) 0%,
-                        rgba(255,255,255,0.55) 50%,
-                        rgba(255,255,255,0) 100%
-                    );
-                    animation: fuse-shimmer 2.2s ease-in-out infinite;
-                    pointer-events: none;
-                }
-                .fuse-number { transition: color 0.4s ease; }
-            `}</style>
             <div className="w-full sm:w-auto">
                 <div
                     className="text-[10px] font-semibold uppercase tracking-wider"
@@ -120,10 +87,12 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Mon · 7:00 AM CST', todayIndex
             <div className="flex-1 relative w-full pt-5">
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
                     <div
-                        className={`fuse-fill${showPulse ? ' pulse' : ''}`}
+                        className={`relative h-full overflow-hidden rounded-full transition-[width,background] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]${showPulse ? ' animate-fuse-pulse' : ''}`}
                         style={{ background: gradient, width: `${pct}%` }}
                     >
-                        {showShimmer && <span className="fuse-shimmer" />}
+                        {showShimmer && (
+                            <span className="pointer-events-none absolute inset-y-0 w-2/5 animate-fuse-shimmer bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.55)_50%,rgba(255,255,255,0)_100%)]" />
+                        )}
                     </div>
                 </div>
                 <div className="absolute top-0 left-0 right-0 flex justify-between text-[9.5px] font-semibold uppercase tracking-wider">
@@ -148,7 +117,7 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Mon · 7:00 AM CST', todayIndex
             </div>
             <div className="flex items-baseline gap-2 sm:block text-left sm:text-right w-full sm:w-auto">
                 <div
-                    className="fuse-number font-semibold text-[22px] leading-none font-mono tabular-nums"
+                    className="font-mono text-[22px] font-semibold leading-none tabular-nums transition-colors duration-[400ms]"
                     style={{ color: numberColor }}
                 >
                     {renderedDays}

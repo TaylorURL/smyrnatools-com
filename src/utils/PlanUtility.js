@@ -210,7 +210,7 @@ export const buildAssignmentDriverTimes = (assignment) => {
 }
 
 /** Parse an `HH:MM` (or `H:MM`) duration from the dispatch report into minutes. */
-const parseDurationMinutes = (value) => {
+export const parseDurationMinutes = (value) => {
     const v = String(value || '').trim()
     const m = v.match(/^(\d{1,2}):(\d{2})$/)
     if (!m) return null

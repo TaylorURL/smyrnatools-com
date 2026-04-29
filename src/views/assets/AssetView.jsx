@@ -849,7 +849,7 @@ function AssetView({
                         sortDirection={filters.sortDirection}
                         userPlantCode={userPlantCode}
                     />
-                    <div className="global-content-container content-container">{content}</div>
+                    <div className="w-full max-w-full overflow-x-hidden">{content}</div>
 
                     <AssetModals
                         ref={modalsRef}

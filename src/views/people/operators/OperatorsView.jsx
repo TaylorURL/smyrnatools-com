@@ -593,7 +593,7 @@ function OperatorsView({
                             sortKey={sortKey}
                             sortDirection={sortDirection}
                         />
-                        <div className="global-content-container content-container">
+                        <div className="w-full max-w-full overflow-x-hidden">
                             {isLoading ? (
                                 <AssetListSkeleton viewMode={viewMode} />
                             ) : filteredOperators.length === 0 ? (

@@ -110,6 +110,20 @@ Deno.serve(async (req) => {
                 if (error && error.code !== "PGRST116") return errorResponse("Operation failed", headers, 400);
                 return jsonResponse({data: data ?? null}, headers);
             }
+            case "fetch-plans-range": {
+                const auth = await requireAuthenticated(supabase, req, headers); if (auth instanceof Response) return auth;
+                const body = await parseBody(req);
+                const {startDate, endDate} = body;
+                if (!startDate || !endDate) return errorResponse("startDate and endDate are required", headers, 400);
+                const {data, error} = await supabase
+                    .from(PLANS_TABLE)
+                    .select("plan_date, assignments, plant_production, notes, updated_at")
+                    .gte("plan_date", startDate)
+                    .lte("plan_date", endDate)
+                    .order("plan_date", {ascending: true});
+                if (error) return errorResponse("Operation failed", headers, 400);
+                return jsonResponse({data: data ?? []}, headers);
+            }
             case "fetch-latest-plan-date": {
                 const auth = await requireAuthenticated(supabase, req, headers); if (auth instanceof Response) return auth;
                 // Return the plan-date with real content whose calendar date

@@ -293,7 +293,7 @@ function ManagersView({ title = 'Managers', onSelectManager }) {
                             sortKey={sortKey}
                             sortDirection={sortDirection}
                         />
-                        <div className="global-content-container content-container">
+                        <div className="w-full max-w-full overflow-x-hidden">
                             {isLoading ? (
                                 <AssetListSkeleton viewMode={viewMode} columnCount={5} />
                             ) : filteredManagers.length === 0 ? (

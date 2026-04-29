@@ -209,13 +209,6 @@ function TutorialPopup({ tutorialId, onDismiss }) {
         <>
             {isReady && (
                 <>
-                    {/* Pulse keyframe uses runtime accentColor -- must stay as injected style */}
-                    <style>{`
-                        @keyframes tutorial-pulse {
-                            0%, 100% { box-shadow: 0 0 0 0 ${accentColor}66; }
-                            50% { box-shadow: 0 0 0 8px ${accentColor}00; }
-                        }
-                    `}</style>
                     <svg className="pointer-events-none fixed inset-0 z-[9997] h-full w-full">
                         <defs>
                             <mask id="tutorial-mask">
@@ -243,9 +236,9 @@ function TutorialPopup({ tutorialId, onDismiss }) {
                     </svg>
                     {targetRect && (
                         <div
-                            className="pointer-events-none fixed z-[9998] box-border rounded-xl"
+                            className="pointer-events-none fixed z-[9998] box-border rounded-xl animate-tutorial-pulse"
                             style={{
-                                animation: 'tutorial-pulse 2s ease-in-out infinite',
+                                '--tutorial-accent': accentColor,
                                 border: `3px solid ${accentColor}`,
                                 height: targetRect.height + 16,
                                 left: targetRect.left - 8,

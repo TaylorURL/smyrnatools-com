@@ -77,6 +77,18 @@ const weekIsoOffset = (baseIso, weeksOffset) => {
 }
 
 /**
+ * Two-column split layout for the My Reports / Review tabs. The rail
+ * collapses with an animated width interpolation when `data-collapsed="true"`
+ * is set on the parent (lg+ only). Below lg the rail stacks beneath the main
+ * column. Defined here as constants so the four render sites stay in sync.
+ */
+const RV_SPLIT_PARENT = 'group flex flex-col items-stretch gap-4 lg:flex-row lg:items-start'
+const RV_SPLIT_LEFT = 'flex flex-col gap-3 min-w-0 flex-1'
+const RV_SPLIT_RAIL_SLOT =
+    'min-w-0 overflow-hidden lg:w-[320px] lg:opacity-100 lg:translate-x-0 lg:[transform-origin:right_top] lg:[transition:width_900ms_cubic-bezier(0.65,0,0.35,1),margin-left_900ms_cubic-bezier(0.65,0,0.35,1),opacity_650ms_cubic-bezier(0.4,0,0.2,1),transform_900ms_cubic-bezier(0.65,0,0.35,1)] lg:[will-change:width,opacity,transform] group-data-[collapsed=true]:lg:w-0 group-data-[collapsed=true]:lg:-ml-4 group-data-[collapsed=true]:lg:opacity-0 group-data-[collapsed=true]:lg:translate-x-7'
+const RV_RAIL_FIXED = 'w-full lg:w-[320px]'
+
+/**
  * Top-level reports hub. Presents a week-timeline layout for "My Reports",
  * a merged Review & Missing queue for reviewers, and standalone tabs for
  * Quality and Loss reports. Drill-down into the submit / review forms is
@@ -1158,57 +1170,6 @@ function ReportsView() {
 
     return (
         <div className="bg-slate-50 min-h-screen w-full pb-16">
-            <style>{`
-                /* Flex-based split so the rail width can truly interpolate
-                   instead of snapping (grid-template-columns doesn't animate
-                   consistently across browsers). */
-                .rv-split {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1rem;
-                    align-items: stretch;
-                }
-                .rv-split > .rv-left { flex: 1 1 auto; min-width: 0; }
-                .rv-split > .rv-rail-slot {
-                    min-width: 0;
-                    overflow: hidden;
-                }
-                @media (min-width: 1024px) {
-                    .rv-split {
-                        flex-direction: row;
-                        align-items: flex-start;
-                    }
-                    .rv-split > .rv-rail-slot {
-                        width: 320px;
-                        margin-left: 0;
-                        opacity: 1;
-                        transform: translateX(0);
-                        transition:
-                            width 900ms cubic-bezier(0.65, 0, 0.35, 1),
-                            margin-left 900ms cubic-bezier(0.65, 0, 0.35, 1),
-                            opacity 650ms cubic-bezier(0.4, 0, 0.2, 1),
-                            transform 900ms cubic-bezier(0.65, 0, 0.35, 1);
-                        transform-origin: right top;
-                        will-change: width, opacity, transform;
-                    }
-                    .rv-split.rv-split-collapsed > .rv-rail-slot {
-                        width: 0;
-                        /* Pull left by the gap so the main column truly spans
-                           edge-to-edge when the rail is gone. */
-                        margin-left: -1rem;
-                        opacity: 0;
-                        transform: translateX(28px);
-                    }
-                }
-                /* On mobile/tablet the rail stacks below the main column and
-                   should fill the viewport. Pin to 320px only at lg+ where the
-                   rail sits beside the content and collapsing must clip cleanly
-                   (so scrollHeight stays stable and the trigger doesn't oscillate). */
-                .rv-rail-fixed { width: 100%; }
-                @media (min-width: 1024px) {
-                    .rv-rail-fixed { width: 320px; }
-                }
-            `}</style>
             {loadError && (
                 <div className="flex items-center gap-2 m-3 sm:m-4 p-3 sm:p-4 bg-red-100 text-red-700 rounded-lg text-sm font-medium">
                     <i className="fas fa-exclamation-circle" />
@@ -1275,8 +1236,8 @@ function ReportsView() {
                                 onSubmit={handleSubmitOldestOverdue}
                             />
                         )}
-                        <div className={`rv-split ${railCollapsed ? 'rv-split-collapsed' : ''}`}>
-                            <div className="rv-left flex flex-col gap-3 min-w-0">
+                        <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
+                            <div className={RV_SPLIT_LEFT}>
                                 <div
                                     className="text-[10px] font-bold uppercase tracking-[.08em]"
                                     style={{
@@ -1322,8 +1283,8 @@ function ReportsView() {
                                     </div>
                                 )}
                             </div>
-                            <div ref={railRef} className="rv-rail-slot">
-                                <div className="rv-rail-fixed">
+                            <div ref={railRef} className={RV_SPLIT_RAIL_SLOT}>
+                                <div className={RV_RAIL_FIXED}>
                                     <QuickRail
                                         hasQCStrengthPermission={hasQCStrengthPermission}
                                         hasLostLoadsPermission={hasLostLoadsPermission}
@@ -1379,8 +1340,8 @@ function ReportsView() {
                                 />
                             </div>
                         </MobileFilterShell>
-                        <div className={`rv-split ${railCollapsed ? 'rv-split-collapsed' : ''}`}>
-                            <div className="rv-left flex flex-col gap-3 min-w-0">
+                        <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
+                            <div className={RV_SPLIT_LEFT}>
                                 <div
                                     className="text-xs font-bold uppercase tracking-[.06em] text-slate-500"
                                     style={{ fontFamily: 'var(--font-heading)' }}
@@ -1396,8 +1357,8 @@ function ReportsView() {
                                     onNudge={handleNudge}
                                 />
                             </div>
-                            <div ref={railRef} className="rv-rail-slot">
-                                <div className="rv-rail-fixed">
+                            <div ref={railRef} className={RV_SPLIT_RAIL_SLOT}>
+                                <div className={RV_RAIL_FIXED}>
                                     <MissingPanel
                                         missing={visibleMissingReports}
                                         getUserName={getUserName}
@@ -1411,8 +1372,8 @@ function ReportsView() {
                 )}
 
                 {tab === 'lost_loads' && (
-                    <div className={`rv-split ${railCollapsed ? 'rv-split-collapsed' : ''}`}>
-                        <div className="rv-left flex flex-col gap-3 min-w-0">
+                    <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
+                        <div className={RV_SPLIT_LEFT}>
                             {hasLostLoadsPermission && (
                                 <div className="flex flex-wrap gap-2">
                                     <button
@@ -1475,8 +1436,8 @@ function ReportsView() {
                                 onRowClick={setSelectedLostLoad}
                             />
                         </div>
-                        <div ref={railRef} className="rv-rail-slot">
-                            <div className="rv-rail-fixed">
+                        <div ref={railRef} className={RV_SPLIT_RAIL_SLOT}>
+                            <div className={RV_RAIL_FIXED}>
                                 <MyOneOffRail
                                     reports={myLostLoadReports}
                                     title="Your Lost Loads"
@@ -1489,8 +1450,8 @@ function ReportsView() {
                 )}
 
                 {tab === 'quality' && (
-                    <div className={`rv-split ${railCollapsed ? 'rv-split-collapsed' : ''}`}>
-                        <div className="rv-left flex flex-col gap-3 min-w-0">
+                    <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
+                        <div className={RV_SPLIT_LEFT}>
                             {hasQCStrengthPermission && (
                                 <div className="flex flex-wrap gap-2">
                                     <button
@@ -1772,8 +1733,8 @@ function ReportsView() {
                                 </div>
                             )}
                         </div>
-                        <div ref={railRef} className="rv-rail-slot">
-                            <div className="rv-rail-fixed">
+                        <div ref={railRef} className={RV_SPLIT_RAIL_SLOT}>
+                            <div className={RV_RAIL_FIXED}>
                                 <MyOneOffRail
                                     reports={myQualityReports}
                                     title="Your Quality Reports"

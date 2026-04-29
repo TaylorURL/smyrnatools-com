@@ -421,6 +421,27 @@ class ListServiceImpl {
         }
     }
     /**
+     * Formats an activity-feed `old_value` / `new_value` for display. Most
+     * tracked fields are plain strings, but `deadline` is stored as an ISO
+     * timestamp and rendered raw without this formatter.
+     */
+    formatActivityValue(fieldName, value) {
+        if (value == null || value === '') return 'none'
+        if (fieldName === 'deadline') {
+            const d = new Date(value)
+            if (Number.isNaN(d.getTime())) return String(value)
+            const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
+            return d.toLocaleDateString('en-US', {
+                day: 'numeric',
+                hour: hasTime ? 'numeric' : undefined,
+                minute: hasTime ? '2-digit' : undefined,
+                month: 'short',
+                year: 'numeric'
+            })
+        }
+        return String(value)
+    }
+    /**
      * Formats a timestamp into a human-readable relative string (e.g. "2 hours ago", "Yesterday").
      * Falls back to absolute date for anything older than 7 days.
      * @param {string} timestamp - ISO timestamp string.

@@ -66,6 +66,42 @@ class PlanServiceImpl {
         if (!res.ok) return null
         return json?.data ?? null
     }
+    /**
+     * Fetches every saved plan whose `plan_date` falls within `[startDate, endDate]`
+     * (inclusive). Returns an array of raw plan rows in ascending date order.
+     * Used by the Statistics tab to compute trend / comparison metrics across
+     * arbitrary day-, week-, or month-sized windows.
+     *
+     * Tries the bulk `fetch-plans-range` endpoint first; falls back to parallel
+     * per-day `fetch-plan` calls if the bulk endpoint is unavailable (e.g. not
+     * yet deployed). Either way the caller gets the same shape.
+     */
+    async fetchPlansInRange(startDate, endDate) {
+        if (!startDate || !endDate) return []
+        try {
+            const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/fetch-plans-range`, {
+                endDate,
+                startDate
+            })
+            if (res?.ok && Array.isArray(json?.data)) return json.data
+        } catch {
+            /* fall through to per-day fetches below */
+        }
+        const dates = []
+        const cursor = new Date(`${startDate}T00:00:00`)
+        const end = new Date(`${endDate}T00:00:00`)
+        while (cursor <= end) {
+            const y = cursor.getFullYear()
+            const m = String(cursor.getMonth() + 1).padStart(2, '0')
+            const d = String(cursor.getDate()).padStart(2, '0')
+            dates.push(`${y}-${m}-${d}`)
+            cursor.setDate(cursor.getDate() + 1)
+        }
+        const results = await Promise.allSettled(dates.map((d) => this.fetchPlan(d)))
+        return results
+            .map((r, i) => (r.status === 'fulfilled' && r.value ? { ...r.value, plan_date: dates[i] } : null))
+            .filter(Boolean)
+    }
     /** Returns the ISO date of the most recently saved plan, or null when no plans exist yet. */
     async fetchLatestPlanDate() {
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/fetch-latest-plan-date`)

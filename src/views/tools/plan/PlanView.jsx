@@ -42,6 +42,7 @@ import PlanFlowView from './PlanFlowView'
 import PlanRealtimeView from './PlanRealtimeView'
 import PlanScheduleView from './PlanScheduleView'
 import PlanSettingsModal from './PlanSettingsModal'
+import PlanStatisticsView from './PlanStatisticsView'
 
 /**
  * PlanView — plant-centric dispatch planner.
@@ -552,6 +553,7 @@ function PlanView() {
                             { mode: 'schedule', icon: 'fa-calendar-days', label: 'Schedule' },
                             { mode: 'flow', icon: 'fa-project-diagram', label: 'Planner' },
                             { mode: 'demand', icon: 'fa-chart-column', label: 'Demand' },
+                            { mode: 'statistics', icon: 'fa-chart-line', label: 'Statistics' },
                             { mode: 'realtime', icon: 'fa-circle-dot', label: 'Realtime' }
                         ].map(({ mode, icon, label }) => (
                             <button
@@ -571,7 +573,7 @@ function PlanView() {
                 )}
             </div>
             <div
-                className="global-content-container content-container"
+                className="w-full max-w-full overflow-x-hidden"
                 style={{ overflow: 'hidden', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
             >
                 {isLoading ? (
@@ -725,6 +727,16 @@ function PlanView() {
                                 plants={plantsWithDistricts}
                                 stats={stats}
                                 userPlantCode={userPlantCode}
+                            />
+                        )}
+
+                        {effectiveViewMode === 'statistics' && (
+                            <PlanStatisticsView
+                                accentColor={accentColor}
+                                planDate={planDate}
+                                plantNameByCode={plantNameByCode}
+                                liveProduction={plantProduction}
+                                mixerCountsByPlant={mixerCountsByPlant}
                             />
                         )}
                     </div>
@@ -884,11 +896,11 @@ function RegionTotalsBar({ accentColor, shiftSpanHours, totals }) {
 
             {isOverbooked ? (
                 <div
-                    className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold plan-overbook-pill"
+                    className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold motion-safe:animate-plan-overbook-glow"
                     style={{ background: '#dc2626', color: '#fff' }}
                     title={reasons.join(' · ')}
                 >
-                    <i className="fas fa-triangle-exclamation text-[12px] plan-overbook-icon" />
+                    <i className="fas fa-triangle-exclamation text-[12px] inline-block origin-center motion-safe:animate-plan-overbook-wobble" />
                     OVERBOOKED
                     <span className="opacity-90 font-normal hidden md:inline">· {reasons.join(' · ')}</span>
                 </div>

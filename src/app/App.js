@@ -1,6 +1,3 @@
-import './App.css'
-import './index.css'
-
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
@@ -310,19 +307,24 @@ function AppContent() {
                 return <PlanView title="My Plan" />
             default:
                 return (
-                    <div className="coming-soon">
-                        <h2>{selectedView.view} view is coming soon!</h2>
-                        <p>This feature is under development.</p>
+                    <div className="relative mx-auto my-8 flex h-[70vh] w-full max-w-[600px] flex-col items-center justify-center overflow-x-hidden rounded-xl bg-bg-primary p-8 text-center shadow-md">
+                        <h2 className="mb-4 text-[28px] text-text-primary">{selectedView.view} view is coming soon!</h2>
+                        <p className="mb-6 text-base text-text-secondary">This feature is under development.</p>
                     </div>
                 )
         }
     }
     if (terminatedMode) return <TerminatedOverlay />
     if (!sessionChecked) return null
-    if (!userId) return <div className="App">{renderCurrentView()}</div>
+    if (!userId)
+        return (
+            <div className="relative z-[1] flex h-screen w-full flex-col overflow-hidden bg-transparent font-sans">
+                {renderCurrentView()}
+            </div>
+        )
     if (!rolesLoaded) return null
     return (
-        <div className="App">
+        <div className="relative z-[1] flex h-screen w-full flex-col overflow-hidden bg-transparent font-sans">
             <MessagesProvider userId={userId}>
                 <Navigation
                     selectedView={selectedView.view}

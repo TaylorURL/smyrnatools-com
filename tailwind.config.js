@@ -39,6 +39,8 @@ module.exports = {
             animation: {
                 'fade-in': 'fadeIn 0.3s ease',
                 'fade-in-fast': 'fadeIn 0.2s ease-out',
+                'fade-out': 'fadeOut 0.3s ease',
+                'fade-slide-in': 'fadeSlideIn 0.2s ease-out',
                 'slide-up': 'slideUp 0.3s ease',
                 'pulse-slow': 'pulse 2s ease-in-out infinite',
                 'msg-in': 'msgIn 0.3s ease-out',
@@ -53,11 +55,75 @@ module.exports = {
                 'progress-slide': 'progressSlide 1.5s ease-in-out infinite',
                 'confirm-slide-in': 'confirmSlideIn 0.2s ease-out',
                 'shimmer': 'shimmer 1.5s infinite',
+                'plan-overbook-glow': 'planOverbookGlow 2.4s ease-in-out infinite',
+                'plan-overbook-wobble': 'planOverbookWobble 2.4s ease-in-out infinite',
+                'filter-fade': 'filterFadeIn 0.15s ease-out',
+                'fuse-shimmer': 'fuseShimmer 2.2s ease-in-out infinite',
+                'fuse-pulse': 'fusePulse 1.6s ease-in-out infinite',
+                'tutorial-pulse': 'tutorialPulse 2s ease-in-out infinite',
+                'dv-spin': 'dvSpin 0.7s linear infinite',
+                'dv-fade-in': 'dvFadeIn 0.3s ease-out',
+                'dv-slide-up': 'dvSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                'dv-scale-in': 'dvScaleIn 0.2s ease-out',
             },
             keyframes: {
                 fadeIn: {
                     '0%': {opacity: '0'},
                     '100%': {opacity: '1'},
+                },
+                fadeOut: {
+                    '0%': {opacity: '1'},
+                    '100%': {opacity: '0'},
+                },
+                fadeSlideIn: {
+                    '0%': {opacity: '0', transform: 'translateY(-8px)'},
+                    '100%': {opacity: '1', transform: 'translateY(0)'},
+                },
+                pulse: {
+                    '0%, 80%, 100%': {transform: 'scale(0.6)', opacity: '0.4'},
+                    '40%': {transform: 'scale(1)', opacity: '1'},
+                },
+                planOverbookGlow: {
+                    '0%, 100%': {boxShadow: '0 0 0 0 rgba(220, 38, 38, 0.55)'},
+                    '50%': {boxShadow: '0 0 0 6px rgba(220, 38, 38, 0)'},
+                },
+                planOverbookWobble: {
+                    '0%, 100%': {transform: 'rotate(0deg)'},
+                    '25%': {transform: 'rotate(-7deg)'},
+                    '75%': {transform: 'rotate(7deg)'},
+                },
+                filterFadeIn: {
+                    '0%': {opacity: '0', transform: 'translateY(-4px)'},
+                    '100%': {opacity: '1', transform: 'translateY(0)'},
+                },
+                fuseShimmer: {
+                    '0%': {transform: 'translateX(-100%)'},
+                    '100%': {transform: 'translateX(250%)'},
+                },
+                fusePulse: {
+                    '0%, 100%': {opacity: '1'},
+                    '50%': {opacity: '0.55'},
+                },
+                /* Reads --tutorial-accent set inline by the consumer so the
+                   pulse colour can match the user's accent at runtime. */
+                tutorialPulse: {
+                    '0%, 100%': {boxShadow: '0 0 0 0 color-mix(in srgb, var(--tutorial-accent, #1e3a5f) 40%, transparent)'},
+                    '50%': {boxShadow: '0 0 0 8px transparent'},
+                },
+                dvSpin: {
+                    to: {transform: 'rotate(360deg)'},
+                },
+                dvFadeIn: {
+                    from: {opacity: '0', transform: 'translateY(8px)'},
+                    to: {opacity: '1', transform: 'translateY(0)'},
+                },
+                dvSlideUp: {
+                    from: {transform: 'translateY(100%)'},
+                    to: {transform: 'translateY(0)'},
+                },
+                dvScaleIn: {
+                    from: {opacity: '0', transform: 'translateY(-50%) scaleY(0)'},
+                    to: {opacity: '1', transform: 'translateY(-50%) scaleY(1)'},
                 },
                 slideUp: {
                     '0%': {opacity: '0', transform: 'translateY(20px)'},
