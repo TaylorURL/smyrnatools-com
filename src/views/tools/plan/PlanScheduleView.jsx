@@ -2640,149 +2640,116 @@ function PlanScheduleView({
     const activePlantName = plantNotSelected ? '' : plantNameByCode?.[plantFilter] || ''
     const operatorRosterReady = !plantNotSelected && !!operatorRosterText
     const extrasToggleEnabled = !plantNotSelected
-    /** Sticky left rail (desktop) / inline card (mobile) hosting per-plant
-     *  quick actions: copy the operator roster + toggle the synthetic
-     *  schedule rows. Both controls require a single-plant filter to be
-     *  meaningful, so they read as disabled with a hint when no plant is
-     *  picked rather than vanishing. */
+    /** Compact icon rail (desktop) / inline pill cluster (mobile) hosting
+     *  per-plant quick actions: a colored plant-scope chip, copy the
+     *  operator roster, and toggle the synthetic schedule rows. Always
+     *  minimized — labels live in tooltips and short legends so the rail
+     *  takes minimal horizontal/vertical space and never crowds the
+     *  schedule. */
     const sideMenuContent = (
-        <div className="flex flex-col">
-            {/* Header — when a plant is active, surface its code + name as a
-                colored chip so the rail clearly shows what scope the actions
-                apply to. When idle, it reads as a quieter "no plant" state. */}
+        <div className="flex flex-col items-center gap-1.5 px-1 py-1.5">
+            {/* Plant scope — solid colored badge showing the active plant
+                code, or a quiet hollow chip when no plant is filtered. */}
             <div
-                className="flex items-center gap-2 px-3 py-2.5 rounded-t-xl"
+                className="rounded-md flex items-center justify-center font-bold tabular-nums"
                 style={{
-                    background: plantNotSelected
-                        ? 'var(--bg-tertiary)'
-                        : `linear-gradient(135deg, ${activePlantBadgeColor}, ${activePlantBadgeColor}dd)`,
-                    color: plantNotSelected ? 'var(--text-secondary)' : '#fff'
+                    width: 28,
+                    height: 28,
+                    fontSize: 10,
+                    background: plantNotSelected ? 'var(--bg-tertiary)' : activePlantBadgeColor,
+                    color: plantNotSelected ? 'var(--text-tertiary)' : '#fff',
+                    border: `1px solid ${plantNotSelected ? 'var(--border-light)' : activePlantBadgeColor}`
                 }}
+                title={
+                    plantNotSelected
+                        ? 'No plant selected'
+                        : activePlantName
+                          ? `${plantFilter} · ${activePlantName}`
+                          : plantFilter
+                }
             >
-                <i
-                    className={`fas ${plantNotSelected ? 'fa-circle-dot' : 'fa-bullseye'} text-[10px]`}
-                    style={{ opacity: 0.9 }}
-                />
-                <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.08em] opacity-80">Scope</div>
-                    <div className="text-[12.5px] font-bold leading-tight truncate">
-                        {plantNotSelected
-                            ? 'No plant selected'
-                            : activePlantName
-                              ? `${plantFilter} · ${activePlantName}`
-                              : plantFilter}
-                    </div>
-                </div>
+                {plantNotSelected ? <i className="fas fa-circle-dot" style={{ fontSize: 9 }} /> : plantFilter}
             </div>
 
-            <div className="flex flex-col gap-3 px-3 py-3 rounded-b-xl" style={{ borderTop: 'none' }}>
-                {/* Copy operator times — primary action. Uses accentColor when
-                    ready so it pops; turns green on confirmation. */}
-                <div className="flex flex-col gap-1">
-                    <div
-                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
-                        <i className="fas fa-clock text-[9px]" />
-                        Roster
-                    </div>
-                    <button
-                        type="button"
-                        onClick={copyOperatorRoster}
-                        disabled={!operatorRosterReady}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[12px] font-bold border-none cursor-pointer transition-colors disabled:cursor-not-allowed"
-                        style={{
-                            background: operatorRosterCopied
-                                ? '#16a34a'
-                                : operatorRosterReady
-                                  ? accentColor
-                                  : 'var(--bg-secondary)',
-                            border: `1px solid ${
-                                operatorRosterCopied
-                                    ? '#16a34a'
-                                    : operatorRosterReady
-                                      ? accentColor
-                                      : 'var(--border-light)'
-                            }`,
-                            color: operatorRosterCopied || operatorRosterReady ? '#fff' : 'var(--text-tertiary)',
-                            opacity: operatorRosterReady || operatorRosterCopied ? 1 : 0.7
-                        }}
-                        title={
-                            plantNotSelected
-                                ? 'Pick a single plant first.'
-                                : `Copy operator clock-in times for ${plantFilter}. Operators removed via planner side menu or not needed today are listed as off.`
-                        }
-                    >
-                        <i className={`fas fa-${operatorRosterCopied ? 'check' : 'copy'} text-[11px]`} />
-                        <span>{operatorRosterCopied ? 'Copied' : 'Copy operator times'}</span>
-                    </button>
-                    <div className="text-[10.5px] leading-snug" style={{ color: 'var(--text-tertiary)' }}>
-                        Clock-in time per operator. Off-shift slots included so the list always matches the plant&apos;s
-                        roster.
-                    </div>
-                </div>
+            {/* Hairline separator to visually group the scope chip apart from
+                the action buttons below. */}
+            <div style={{ width: 18, height: 1, background: 'var(--border-light)' }} />
 
-                {/* Divider */}
-                <div style={{ height: 1, background: 'var(--border-light)' }} />
+            {/* Copy operator clock-in times. */}
+            <button
+                type="button"
+                onClick={copyOperatorRoster}
+                disabled={!operatorRosterReady}
+                className="rounded-md flex items-center justify-center border-none cursor-pointer transition-colors disabled:cursor-not-allowed"
+                style={{
+                    width: 28,
+                    height: 28,
+                    background: operatorRosterCopied
+                        ? '#16a34a'
+                        : operatorRosterReady
+                          ? accentColor
+                          : 'var(--bg-secondary)',
+                    border: `1px solid ${
+                        operatorRosterCopied ? '#16a34a' : operatorRosterReady ? accentColor : 'var(--border-light)'
+                    }`,
+                    color: operatorRosterCopied || operatorRosterReady ? '#fff' : 'var(--text-tertiary)',
+                    opacity: operatorRosterReady || operatorRosterCopied ? 1 : 0.7
+                }}
+                title={
+                    plantNotSelected
+                        ? 'Pick a single plant first.'
+                        : operatorRosterCopied
+                          ? 'Copied operator clock-in times'
+                          : `Copy operator clock-in times for ${plantFilter}. Off-shift operators included.`
+                }
+                aria-label="Copy operator clock-in times"
+            >
+                <i className={`fas fa-${operatorRosterCopied ? 'check' : 'copy'}`} style={{ fontSize: 10 }} />
+            </button>
 
-                {/* Show extra rows — toggle styled as a compact pill switch. */}
-                <div className="flex flex-col gap-1">
-                    <div
-                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
-                        <i className="fas fa-layer-group text-[9px]" />
-                        Schedule rows
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => extrasToggleEnabled && setShowExtraRows((v) => !v)}
-                        disabled={!extrasToggleEnabled}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left border-none cursor-pointer disabled:cursor-not-allowed"
+            {/* Toggle the synthetic schedule rows (returns, help, send-home,
+                suggestions). Active state highlights with accent. */}
+            <button
+                type="button"
+                onClick={() => extrasToggleEnabled && setShowExtraRows((v) => !v)}
+                disabled={!extrasToggleEnabled}
+                className="rounded-md flex items-center justify-center border-none cursor-pointer disabled:cursor-not-allowed relative"
+                style={{
+                    width: 28,
+                    height: 28,
+                    background: extrasToggleEnabled && showExtraRows ? `${accentColor}20` : 'var(--bg-secondary)',
+                    border: `1px solid ${extrasToggleEnabled && showExtraRows ? accentColor : 'var(--border-light)'}`,
+                    color:
+                        extrasToggleEnabled && showExtraRows
+                            ? accentColor
+                            : extrasToggleEnabled
+                              ? 'var(--text-secondary)'
+                              : 'var(--text-tertiary)',
+                    opacity: extrasToggleEnabled ? 1 : 0.6
+                }}
+                title={
+                    plantNotSelected
+                        ? 'Pick a single plant to enable.'
+                        : `${showExtraRows ? 'Hide' : 'Show'} extra rows — returns, help moves, send-home, slot suggestions, pull-ups.`
+                }
+                aria-label="Toggle extra schedule rows"
+                aria-pressed={extrasToggleEnabled && showExtraRows}
+            >
+                <i className="fas fa-layer-group" style={{ fontSize: 10 }} />
+                {extrasToggleEnabled && showExtraRows && (
+                    <span
+                        className="absolute rounded-full"
                         style={{
-                            background:
-                                extrasToggleEnabled && showExtraRows ? `${accentColor}15` : 'var(--bg-secondary)',
-                            border: `1px solid ${
-                                extrasToggleEnabled && showExtraRows ? accentColor : 'var(--border-light)'
-                            }`,
-                            opacity: extrasToggleEnabled ? 1 : 0.6
+                            width: 5,
+                            height: 5,
+                            background: accentColor,
+                            bottom: 3,
+                            right: 3,
+                            boxShadow: '0 0 0 1.5px var(--bg-primary)'
                         }}
-                        title={
-                            plantNotSelected
-                                ? 'Pick a single plant to enable.'
-                                : 'Returns, help moves, send-home, open slot suggestions, and pull-up recommendations.'
-                        }
-                    >
-                        <span
-                            className="inline-block rounded-full transition-colors shrink-0 relative"
-                            style={{
-                                width: 26,
-                                height: 14,
-                                background: extrasToggleEnabled && showExtraRows ? accentColor : 'var(--border-medium)'
-                            }}
-                        >
-                            <span
-                                className="absolute rounded-full bg-white transition-all"
-                                style={{
-                                    width: 10,
-                                    height: 10,
-                                    top: 2,
-                                    left: extrasToggleEnabled && showExtraRows ? 14 : 2,
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                                }}
-                            />
-                        </span>
-                        <span className="flex-1 min-w-0">
-                            <span className="block text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                Show extra rows
-                            </span>
-                            <span className="block text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                                Returns, help, send-home, suggestions
-                            </span>
-                        </span>
-                    </button>
-                </div>
-            </div>
+                    />
+                )}
+            </button>
         </div>
     )
 
@@ -2799,22 +2766,22 @@ function PlanScheduleView({
                     className="hidden lg:block sticky top-0 self-start overflow-hidden"
                     style={{
                         // Flex items default to `min-width: auto`, which would
-                        // let the inner 240px content force the aside open
-                        // even when width is 0. Pin it explicitly so the
-                        // collapsed state really is 0.
+                        // let the inner content force the aside open even
+                        // when width is 0. Pin it explicitly so the collapsed
+                        // state really is 0.
                         minWidth: 0,
                         flexShrink: 0,
                         height: 'fit-content',
-                        width: plantNotSelected ? 0 : 256,
+                        width: plantNotSelected ? 0 : 56,
                         transition: 'width 260ms cubic-bezier(0.22, 1, 0.36, 1)'
                     }}
                 >
                     <div
                         style={{
-                            width: 240,
-                            padding: '20px 8px 20px 16px',
+                            width: 48,
+                            padding: '14px 4px 14px 10px',
                             opacity: plantNotSelected ? 0 : 1,
-                            transform: plantNotSelected ? 'translateX(-12px)' : 'translateX(0)',
+                            transform: plantNotSelected ? 'translateX(-8px)' : 'translateX(0)',
                             transition: 'opacity 200ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1)'
                         }}
                     >
@@ -2837,19 +2804,24 @@ function PlanScheduleView({
                         aria-hidden={plantNotSelected}
                         className="lg:hidden overflow-hidden"
                         style={{
-                            maxHeight: plantNotSelected ? 0 : 600,
+                            maxHeight: plantNotSelected ? 0 : 120,
                             opacity: plantNotSelected ? 0 : 1,
                             transition: 'max-height 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease'
                         }}
                     >
                         <div
-                            className="rounded-xl overflow-hidden shadow-sm"
+                            className="rounded-xl overflow-hidden shadow-sm inline-block"
                             style={{
                                 background: 'var(--bg-primary)',
                                 border: '1px solid var(--border-light)'
                             }}
                         >
-                            {sideMenuContent}
+                            {/* Mobile rotates the rail to a horizontal cluster
+                                so the icons sit on a single row above the
+                                schedule rather than stacking. */}
+                            <div className="flex flex-row items-center gap-2 px-2 py-1.5">
+                                {sideMenuContent.props.children}
+                            </div>
                         </div>
                     </div>
                     {(plantsClosed || isSaturday) && (

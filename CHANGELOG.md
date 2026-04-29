@@ -1,6 +1,17 @@
 # Changelog
 
 
+## [40.0.5] - 2026-04-29
+
+- Upgraded Dispatch Sync bridge to v2.6.0 with per-report rolling windows — DailyOrder pulls today + 7 days, DetailOrderAnalysis pulls only today — eliminating unnecessary future-date fetches for detail reports
+- Added concurrent worker pool (6 workers) to Dispatch Sync, replacing sequential task execution so polling waits no longer block other tasks
+- Integrated DetailOrderAnalysis ticket data into PlanRealtimeView to show actual loaded yardage vs scheduled yardage per order
+- Added verified order state transitions — orders marked as pouring with zero tickets show as "not started", and orders with loaded >= total yardage transition to "done" regardless of schedule time
+- Added "Running behind" panel showing orders whose actual loaded yardage trails the schedule's expected pace, with behind-time calculated in minutes for dispatcher readability
+- Added "Scheduled — not pouring yet" panel highlighting orders past their start time with zero truck tickets loaded
+- Updated KPI calculations to use real ticket data for today's yardage done/remaining instead of time-based heuristics
+- Refactored PlanScheduleView with structural improvements and reorganized rendering logic
+
 ## [40.0.4] - 2026-04-29
 
 - Added Smyrna Dispatch Sync bridge userscript that syncs DailyOrder and DetailOrderAnalysis reports from the dispatch server to Supabase storage every 5 minutes, with rolling 7-day window and current-year backfill

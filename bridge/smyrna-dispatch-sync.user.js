@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Smyrna Dispatch Sync
 // @namespace    smyrna-tools
-// @version      2.4.2
+// @version      2.6.0
 // @description  Syncs today + next 7 days of DailyOrder and per-plant DetailOrderAnalysis reports to Supabase storage every 5 minutes, and backfills any missing files for the current year
 // @match        http://srm-c03.aujs.local:8181/*
 // @grant        GM_xmlhttpRequest
@@ -21,7 +21,11 @@
         'REDACTED-ROTATED-CREDENTIAL'
     const BUCKET = 'dispatch-reports'
     const INTERVAL_MS = 5 * 60 * 1000
-    const DAYS_AHEAD = 7 // today + 7 future days = 8 files total
+    // Concurrent workers in the task pool. The dispatch server runs locally
+    // on the same workstation as this script, so it tolerates a handful of
+    // simultaneous report generations comfortably. Tune down if the server
+    // ever starts dropping requests.
+    const WORKER_CONCURRENCY = 6
 
     const API_BASE = 'http://srm-c03.aujs.local:8484'
     const FORM_ID = '1001000'
@@ -39,6 +43,10 @@
             reportId: 'DailyOrder',
             storagePrefix: '',
             perPlant: false,
+            // DailyOrder is the schedule itself, so we re-pull the full
+            // rolling window (today + the next 7 days) every cycle to catch
+            // edits dispatchers make to upcoming days.
+            daysAhead: 7,
             buildBody(date) {
                 return {
                     object: 'customReportRequest',
@@ -67,6 +75,12 @@
             reportId: 'DetailOrderAnalysis',
             storagePrefix: 'detail/',
             perPlant: true,
+            // DetailOrderAnalysis only changes as trucks load through the
+            // current day. Future dates have no tickets yet, and past dates
+            // are immutable once dispatch closes them out — so the rolling
+            // window is just today; older missing files are picked up by
+            // backfill (one-shot per file).
+            daysAhead: 0,
             buildBody(date, plantId) {
                 return {
                     object: 'customReportRequest',
@@ -350,10 +364,13 @@
         return `${y}-${m}-${day}`
     }
 
-    function getDateRange() {
+    // Rolling window of dates a report should re-pull every cycle. Today is
+    // always included; `daysAhead` extends the window into the future.
+    function getRollingDatesForReport(report) {
         const dates = []
         const today = new Date()
-        for (let i = 0; i <= DAYS_AHEAD; i++) {
+        const daysAhead = Number.isFinite(report.daysAhead) ? report.daysAhead : 0
+        for (let i = 0; i <= daysAhead; i++) {
             const d = new Date(today)
             d.setDate(today.getDate() + i)
             dates.push(isoDate(d))
@@ -417,9 +434,10 @@
     }
 
     // Builds backfill tasks for every (report, date[, plant]) combination
-    // missing from storage for the current year through today, excluding
-    // anything already covered by the rolling window.
-    async function buildBackfillTasks(rollingDateSet) {
+    // missing from storage for the current year through today. Each report's
+    // own rolling window is excluded so we don't double-process today/future
+    // dates the rolling pass already covers.
+    async function buildBackfillTasks(rollingByReport) {
         const tasks = []
         const yearDates = getCurrentYearDatesThroughToday()
         for (const report of REPORTS) {
@@ -430,8 +448,9 @@
                 log(`Backfill list failed for ${report.name}, skipping: ${err.message}`)
                 continue
             }
+            const rollingSet = rollingByReport.get(report) || new Set()
             for (const date of yearDates) {
-                if (rollingDateSet.has(date)) continue
+                if (rollingSet.has(date)) continue
                 for (const task of buildTasksForDate(report, date)) {
                     if (!existing.has(task.storagePath)) tasks.push(task)
                 }
@@ -452,15 +471,16 @@
         }
         syncing = true
 
-        const rollingDates = getDateRange()
-        const rollingSet = new Set(rollingDates)
-
-        // Rolling window first (time-sensitive), then backfill historical gaps.
+        // Each report has its own rolling window — DailyOrder pulls today + 7
+        // future days every cycle, DetailOrderAnalysis pulls only today.
+        const rollingByReport = new Map()
         const rollingTasks = []
         for (const report of REPORTS) {
+            const rollingDates = getRollingDatesForReport(report)
+            rollingByReport.set(report, new Set(rollingDates))
             for (const date of rollingDates) rollingTasks.push(...buildTasksForDate(report, date))
         }
-        const backfillTasks = await buildBackfillTasks(rollingSet)
+        const backfillTasks = await buildBackfillTasks(rollingByReport)
         if (backfillTasks.length > 0) {
             log(`Backfill: ${backfillTasks.length} missing file(s) for current year`)
         }
@@ -469,18 +489,28 @@
         const results = { ok: 0, fail: 0, total: tasks.length }
         updateBadge('syncing', `0/${results.total}`)
 
-        for (const task of tasks) {
-            try {
-                await syncTask(task)
-                results.ok++
-            } catch (err) {
-                log(`  FAILED ${task.label}:`, err.message)
-                results.fail++
+        // Worker-pool execution. Each worker pulls the next task from a
+        // shared cursor and runs syncTask end-to-end. The dispatch server
+        // tolerates several concurrent report generations, and crucially
+        // the polling wait inside one task no longer blocks the next.
+        let cursor = 0
+        const runWorker = async () => {
+            while (true) {
+                const idx = cursor++
+                if (idx >= tasks.length) return
+                const task = tasks[idx]
+                try {
+                    await syncTask(task)
+                    results.ok++
+                } catch (err) {
+                    log(`  FAILED ${task.label}:`, err.message)
+                    results.fail++
+                }
+                updateBadge('syncing', `${results.ok + results.fail}/${results.total}`)
             }
-            updateBadge('syncing', `${results.ok + results.fail}/${results.total}`)
-            // Small breather between tasks so we don't hammer the server
-            await sleep(500)
         }
+        const workerCount = Math.min(WORKER_CONCURRENCY, tasks.length)
+        await Promise.all(Array.from({ length: workerCount }, runWorker))
 
         if (results.fail === 0) {
             lastSync = new Date()
@@ -545,7 +575,7 @@
     // ============================================================
     // KICKOFF
     // ============================================================
-    log('Smyrna Dispatch Sync v2.4.2 loaded - DailyOrder + DetailOrderAnalysis, today + 7 days, plus current-year backfill')
+    log(`Smyrna Dispatch Sync v2.6.0 loaded - ${WORKER_CONCURRENCY} parallel workers, DailyOrder (today + 7) + DetailOrderAnalysis (today only), plus current-year backfill`)
     setTimeout(() => {
         updateBadge('waiting')
         setTimeout(runSync, 10000) // first run after 10s (gives UI time to make a call so we capture token)
