@@ -7,6 +7,7 @@ import { ReportService } from '../../../../services/ReportService'
 import { ReportUtility } from '../../../../utils/ReportUtility'
 import { RPT_INPUT, RPT_TEXTAREA, TD_STYLE, TH_STYLE, useReportForWeek } from './shared'
 import { ReadyMixInstructorReviewPlugin } from './WeeklyReadyMixInstructorReport'
+
 const VARIANCE_CLASSES = {
     negative: 'text-red-600 bg-red-100',
     neutral: 'text-slate-500 bg-slate-100',

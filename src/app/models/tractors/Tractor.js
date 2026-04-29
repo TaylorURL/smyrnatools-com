@@ -1,5 +1,6 @@
 import { DateUtility } from '../../../utils/DateUtility'
 import VerifiedUtility from '../../../utils/VerifiedUtility'
+
 /**
  * Tractor domain model. Maps snake_case API data to camelCase properties,
  * provides serialization (toApiFormat), status/operator mutations,

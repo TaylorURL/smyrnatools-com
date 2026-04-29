@@ -9,22 +9,19 @@
 --   * any role whose name contains "General Manager"
 
 UPDATE users_roles
-SET
-    permissions = ARRAY(
-        SELECT DISTINCT perm
+SET permissions = ARRAY(
+    SELECT DISTINCT perm
         FROM unnest(COALESCE(permissions, ARRAY[]::text[]) || ARRAY['plan.yourtab']) AS perm
     ),
-    updated_at = NOW()
-WHERE
-    name ILIKE '%plant manager%'
+    updated_at  = NOW()
+WHERE name ILIKE '%plant manager%'
     OR name ILIKE '%district manager%'
     OR name ILIKE '%general manager%';
 
 -- Quick verification: list affected roles and confirm the permission is present.
-SELECT id, name, 'plan.yourtab' = ANY(permissions) AS has_plan_yourtab
+SELECT id, name, 'plan.yourtab' = ANY (permissions) AS has_plan_yourtab
 FROM users_roles
-WHERE
-    name ILIKE '%plant manager%'
+WHERE name ILIKE '%plant manager%'
     OR name ILIKE '%district manager%'
     OR name ILIKE '%general manager%'
 ORDER BY weight DESC NULLS LAST, name;

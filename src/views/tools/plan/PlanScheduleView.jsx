@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import JobMapModal from '../../../app/components/schedule/JobMapModal'
+import OrderTicketsModal from '../../../app/components/schedule/OrderTicketsModal'
 import TruckCoverageHoverCard from '../../../app/components/schedule/TruckCoverageHoverCard'
 import { useDetailOrders } from '../../../app/hooks/useDetailOrders'
 import { TrafficService } from '../../../services/TrafficService'
@@ -685,6 +687,142 @@ const compareOrders = (a, b, sortKey) => {
  * Layout:
  *   [accent time col] [plant badge col] [pill + primary + secondary + chips]
  */
+/**
+ * "Loaded / total" cell on the schedule table. Portals its hover card to
+ * <body> at the cell's fixed screen coords so the popover can't be clipped
+ * by the table's scroll container, and so the breakdown stays readable
+ * even on rows near the right edge or bottom of the viewport.
+ */
+function LoadedCell({ detail, homePlantCode, total }) {
+    const tdRef = useRef(null)
+    const [anchorRect, setAnchorRect] = useState(null)
+    const loaded = detail?.loadedYardage || 0
+    const breakdownRows = useMemo(() => {
+        if (!detail?.byPlant) return []
+        return Object.entries(detail.byPlant)
+            .filter(([, v]) => (v?.loadedYardage || 0) > 0 || (v?.ticketCount || 0) > 0)
+            .sort((a, b) => b[1].loadedYardage - a[1].loadedYardage)
+    }, [detail])
+
+    if (!total && !loaded) {
+        return (
+            <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
+                —
+            </td>
+        )
+    }
+
+    const loadedDisplay = Number.isInteger(loaded) ? loaded : loaded.toFixed(2)
+    const isComplete = total > 0 && loaded >= total
+
+    const handleEnter = () => {
+        const rect = tdRef.current?.getBoundingClientRect()
+        if (rect) setAnchorRect(rect)
+    }
+    const handleLeave = () => setAnchorRect(null)
+
+    // Position the popover below-right of the cell, but flip to above if it
+    // would run off the bottom of the viewport. Right-aligns to the cell so
+    // long breakdowns extend to the left, not off-screen.
+    const popover = anchorRect
+        ? (() => {
+              const popoverWidth = 240
+              const popoverHeightEstimate = 32 + breakdownRows.length * 22 + 16
+              const left = Math.max(8, Math.min(window.innerWidth - popoverWidth - 8, anchorRect.right - popoverWidth))
+              const fitsBelow = anchorRect.bottom + popoverHeightEstimate + 8 < window.innerHeight
+              const top = fitsBelow ? anchorRect.bottom + 4 : anchorRect.top - popoverHeightEstimate - 4
+              return createPortal(
+                  <div
+                      className="rounded-md p-2.5 text-left whitespace-nowrap pointer-events-none"
+                      style={{
+                          background: 'var(--bg-primary)',
+                          border: '1px solid var(--border-light)',
+                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
+                          left,
+                          minWidth: popoverWidth,
+                          position: 'fixed',
+                          top,
+                          zIndex: 9999
+                      }}
+                  >
+                      <div
+                          className="text-[11px] font-bold uppercase tracking-wider mb-1.5"
+                          style={{ color: 'var(--text-secondary)' }}
+                      >
+                          Loaded {loadedDisplay} of {total} yd
+                      </div>
+                      {breakdownRows.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                              {breakdownRows.map(([plantId, v]) => (
+                                  <div key={plantId} className="flex items-center justify-between gap-3 text-[12.5px]">
+                                      <span
+                                          className="font-mono font-semibold"
+                                          style={{ color: 'var(--text-primary)' }}
+                                      >
+                                          {plantId}
+                                          {plantId === homePlantCode && (
+                                              <span
+                                                  className="ml-1.5 text-[9.5px] font-bold uppercase tracking-wider"
+                                                  style={{ color: 'var(--text-tertiary)' }}
+                                              >
+                                                  home
+                                              </span>
+                                          )}
+                                      </span>
+                                      <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
+                                          {v.loadedYardage} yd
+                                          <span className="ml-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                                              · {v.ticketCount} tkt
+                                          </span>
+                                      </span>
+                                  </div>
+                              ))}
+                          </div>
+                      ) : loaded > 0 ? (
+                          <div className="text-[12.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                              Plant breakdown unavailable — refresh the page if this persists.
+                          </div>
+                      ) : (
+                          <div className="text-[12.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                              No tickets loaded yet.
+                          </div>
+                      )}
+                  </div>,
+                  document.body
+              )
+          })()
+        : null
+
+    return (
+        <td
+            ref={tdRef}
+            className="px-3 py-2 font-mono whitespace-nowrap"
+            style={{ color: isComplete ? '#16a34a' : 'var(--text-primary)' }}
+            onMouseEnter={handleEnter}
+            onMouseLeave={handleLeave}
+        >
+            {/* 3-column inline grid keeps the slash and the digits on either
+                side of it at the same x-position across every row, so the
+                column reads as a clean stack rather than a ragged one. */}
+            <span
+                className="inline-grid items-baseline justify-end"
+                style={{
+                    columnGap: 3,
+                    fontVariantNumeric: 'tabular-nums',
+                    gridTemplateColumns: 'minmax(2.25em, auto) auto minmax(2.25em, auto)'
+                }}
+            >
+                <span className="font-bold" style={{ textAlign: 'right' }}>
+                    {loadedDisplay}
+                </span>
+                <span style={{ color: 'var(--text-tertiary)' }}>/</span>
+                <span style={{ color: 'var(--text-tertiary)', textAlign: 'left' }}>{total || '—'}</span>
+            </span>
+            {popover}
+        </td>
+    )
+}
+
 function SyntheticRow({
     accentColor,
     animationDelayMs = 0,
@@ -768,6 +906,34 @@ function ScheduleTable({
     showExtraRows = true,
     suggestedSlotRows = []
 }) {
+    // Right-click context menu on order rows + the "View tickets" modal it
+    // launches. Lives at this level (not inside the row map) because the menu
+    // needs to render once at fixed screen coords and dismiss on outside
+    // click — easier to manage as a single piece of state.
+    const [rowMenu, setRowMenu] = useState(null)
+    const [ticketsOrder, setTicketsOrder] = useState(null)
+    useEffect(() => {
+        if (!rowMenu) return undefined
+        const dismiss = () => setRowMenu(null)
+        window.addEventListener('click', dismiss)
+        window.addEventListener('scroll', dismiss, true)
+        window.addEventListener('resize', dismiss)
+        const onKey = (e) => {
+            if (e.key === 'Escape') dismiss()
+        }
+        window.addEventListener('keydown', onKey)
+        return () => {
+            window.removeEventListener('click', dismiss)
+            window.removeEventListener('scroll', dismiss, true)
+            window.removeEventListener('resize', dismiss)
+            window.removeEventListener('keydown', onKey)
+        }
+    }, [rowMenu])
+    const openRowMenu = useCallback((event, order) => {
+        event.preventDefault()
+        setRowMenu({ order, x: event.clientX, y: event.clientY })
+    }, [])
+
     // Synthetic rows require a plant filter AND the toggle to be on — both
     // gates collapse into one effective flag for the rest of the component.
     const extrasActive = isPlantFiltered && showExtraRows
@@ -1531,6 +1697,7 @@ function ScheduleTable({
                             <tr
                                 key={`${o.plantCode}-${o.orderId || idx}`}
                                 className="animate-slide-in-row"
+                                onContextMenu={(e) => openRowMenu(e, o)}
                                 style={{
                                     animationDelay: `${rowDelay}ms`,
                                     borderTop: '1px solid var(--border-light)',
@@ -1676,35 +1843,12 @@ function ScheduleTable({
                                 >
                                     {yardage > 0 ? yardage : '—'}
                                 </td>
-                                {(() => {
-                                    const detail = o.orderId ? detailByOrderId[o.orderId] : null
-                                    const loaded = detail?.loadedYardage || 0
-                                    const total = yardage
-                                    if (!total && !loaded) {
-                                        return (
-                                            <td
-                                                className="px-3 py-2 font-mono text-right whitespace-nowrap"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            >
-                                                —
-                                            </td>
-                                        )
-                                    }
-                                    const loadedDisplay = Number.isInteger(loaded) ? loaded : loaded.toFixed(2)
-                                    const isComplete = total > 0 && loaded >= total
-                                    return (
-                                        <td
-                                            className="px-3 py-2 font-mono text-right whitespace-nowrap"
-                                            style={{
-                                                color: isComplete ? '#16a34a' : 'var(--text-primary)'
-                                            }}
-                                            title={`${loadedDisplay} yards loaded of ${total} ordered`}
-                                        >
-                                            <span className="font-bold">{loadedDisplay}</span>
-                                            <span style={{ color: 'var(--text-tertiary)' }}> / {total || '—'}</span>
-                                        </td>
-                                    )
-                                })()}
+                                <LoadedCell
+                                    detail={o.orderId ? detailByOrderId[o.orderId] : null}
+                                    homePlantCode={o.plantCode}
+                                    total={yardage}
+                                />
+
                                 <td
                                     className="px-3 py-2 font-mono text-right whitespace-nowrap"
                                     style={{ color: 'var(--text-secondary)' }}
@@ -1904,6 +2048,51 @@ function ScheduleTable({
                     })}
                 </tbody>
             </table>
+            {rowMenu &&
+                createPortal(
+                    <div
+                        // The menu lives inside a portal at fixed coords so it
+                        // can't be clipped by the schedule's scroll container,
+                        // and clicking outside the menu (the global click
+                        // listener registered above) dismisses it. stopPropagation
+                        // on the menu itself keeps clicks INSIDE from dismissing.
+                        onClick={(e) => e.stopPropagation()}
+                        onContextMenu={(e) => e.preventDefault()}
+                        className="rounded-md py-1 min-w-[180px]"
+                        style={{
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-light)',
+                            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
+                            left: Math.min(rowMenu.x, window.innerWidth - 200),
+                            position: 'fixed',
+                            top: Math.min(rowMenu.y, window.innerHeight - 80),
+                            zIndex: 9999
+                        }}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setTicketsOrder(rowMenu.order)
+                                setRowMenu(null)
+                            }}
+                            className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)]"
+                            style={{ color: 'var(--text-primary)' }}
+                        >
+                            <i className="fas fa-ticket text-[12px]" style={{ color: 'var(--text-tertiary)' }} />
+                            View tickets
+                        </button>
+                    </div>,
+                    document.body
+                )}
+            {ticketsOrder && (
+                <OrderTicketsModal
+                    accentColor={accentColor}
+                    detail={ticketsOrder.orderId ? detailByOrderId[ticketsOrder.orderId] : null}
+                    onClose={() => setTicketsOrder(null)}
+                    order={ticketsOrder}
+                    plantNameByCode={plantNameByCode}
+                />
+            )}
         </div>
     )
 }

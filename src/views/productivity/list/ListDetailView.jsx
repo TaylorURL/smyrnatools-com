@@ -8,6 +8,7 @@ import { ListService } from '../../../services/ListService'
 import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
 import GrammarUtility from '../../../utils/GrammarUtility'
+
 /**
  * Detail/edit view for a single task list item. Supports editing description,
  * plant, deadline, status, role, and comments with AI-powered description

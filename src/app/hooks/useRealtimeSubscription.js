@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 
 import { Database } from '../../services/DatabaseService'
+
 const activeChannels = new Map()
 /**
  * database realtime subscription hook with debounced change processing.

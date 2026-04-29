@@ -19,6 +19,7 @@ import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { useLeaderboardMetrics, usePlantNotifications } from '../../../app/hooks/usePlantNotifications'
 import { useStatusHistory } from '../../../app/hooks/useStatusHistory'
 import { PlantService } from '../../../services/PlantService'
+
 /**
  * Primary dashboard view with a sidebar + main content layout.
  * The sidebar houses alerts, people pipeline, AI insights, and plant rankings.

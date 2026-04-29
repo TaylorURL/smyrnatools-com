@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { usePreferences } from '../../../app/context/PreferencesContext'
+
 /**
  * Portal-rendered modal for selecting an operator to assign to a mixer.
  * Filters operators to the mixer's assigned plant, highlights already-assigned

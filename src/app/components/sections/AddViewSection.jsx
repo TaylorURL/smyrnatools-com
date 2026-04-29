@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
 import ErrorMessage from '../common/ErrorMessage'
+
 /**
  * Portal-rendered modal wrapper for add/create forms.
  * Checks user permissions (assets.add / list.add) before rendering the form.

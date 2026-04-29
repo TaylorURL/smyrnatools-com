@@ -1,6 +1,7 @@
 import APIUtility from '../utils/APIUtility'
 import { Database } from './DatabaseService'
 import { UserService } from './UserService'
+
 const DOC_FUNCTION = '/document-service'
 const postDoc = (endpoint, body) => APIUtility.post(`${DOC_FUNCTION}/${endpoint}`, body)
 const TABLE = 'documents'

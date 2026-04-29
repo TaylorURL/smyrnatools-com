@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
-import Modal from '../../../app/components/common/Modal'
-import { ModalBody } from '../../../app/components/common/Modal'
+import Modal, { ModalBody } from '../../../app/components/common/Modal'
 import TopSection from '../../../app/components/sections/TopSection'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { useDocumentsData } from '../../../app/hooks/useDocumentsData'

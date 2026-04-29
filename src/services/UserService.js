@@ -2,6 +2,7 @@ import APIUtility from '../utils/APIUtility'
 import { requireEntityId, resolveEntityId } from '../utils/BaseAssetUtility'
 import { Database } from './DatabaseService'
 import { PlantService } from './PlantService'
+
 const USER_FUNCTION = '/user-service'
 const DM_FUNCTION = '/district-manager-service'
 const PROFILES_TABLE = 'users_profiles'

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 import APIUtility from '../utils/APIUtility'
+
 const databaseUrl = process.env.REACT_APP_SUPABASE_URL
 const databaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY
 /** Shared database client instance configured with realtime support. */

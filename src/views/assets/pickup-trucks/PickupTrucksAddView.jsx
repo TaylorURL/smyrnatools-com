@@ -5,6 +5,7 @@ import AddViewSection from '../../../app/components/sections/AddViewSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { PickupTruckService } from '../../../services/PickupTruckService'
 import { PlantService } from '../../../services/PlantService'
+
 /**
  * Slide-in form for creating a new pickup truck record. Supports VIN
  * (with I/O/Q letter stripping), make, model, year, assigned person,

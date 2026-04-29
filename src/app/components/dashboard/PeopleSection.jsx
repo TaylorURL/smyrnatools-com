@@ -2,6 +2,7 @@ import React from 'react'
 
 import { CollapsibleTable } from '../ui/CollapsibleTable'
 import { DashboardCard, MetricCard, SectionTitle, StatusPill } from '../ui/DashboardCards'
+
 /**
  * Dashboard section for operator workforce metrics and collapsible detail tables.
  * Shows total/active/assigned operator counts, plus expandable tables for

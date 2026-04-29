@@ -10,6 +10,7 @@ import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
 import { databaseKey, databaseUrl } from './services/DatabaseService'
 import ErrorReporterUtility, { ErrorBoundary } from './utils/ErrorReporterUtility'
+
 ErrorReporterUtility.init({ project: 'smyrnatools.com', apiKey: databaseKey, baseUrl: databaseUrl })
 document.head.appendChild(
     Object.assign(document.createElement('meta'), {

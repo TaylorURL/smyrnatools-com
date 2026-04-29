@@ -3,6 +3,7 @@ import Region from '../app/models/regions/Region'
 import APIUtility from '../utils/APIUtility'
 import CacheUtility from '../utils/CacheUtility'
 import { UserService } from './UserService'
+
 const SERVICE_PREFIX = 'plant-service'
 /**
  * Unified plant and region service with in-memory caches for both entities.

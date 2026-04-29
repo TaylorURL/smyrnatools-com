@@ -7,6 +7,7 @@ import { UserService } from '../../services/UserService'
 import { ReportUtility } from '../../utils/ReportUtility'
 import { usePreferences } from '../context/PreferencesContext'
 import { oneOffReportTypeMap, oneOffReportTypes, reportTypeMap, reportTypes } from '../types/ReportTypes'
+
 const REPORTS_START_DATE = new Date('2025-07-20')
 /**
  * Loads all reports data: user's own reports, review permissions, assigned report types,

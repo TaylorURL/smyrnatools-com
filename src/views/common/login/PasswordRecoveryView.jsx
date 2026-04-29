@@ -3,6 +3,7 @@ import { useState } from 'react'
 import VideoBackground from '../../../app/components/common/VideoBackground'
 import SrmLogo from '../../../assets/images/srm-logo.svg'
 import APIUtility from '../../../utils/APIUtility'
+
 /**
  * Password recovery form. Sends the user's email to the backend which
  * generates and emails a new password if the account exists. Uses a

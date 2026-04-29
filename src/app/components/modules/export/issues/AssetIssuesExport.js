@@ -7,6 +7,7 @@ import {
     COLORS
 } from '../../../../../utils/ExportUtility'
 import { createSheet, exportWorkbook, finalizeSheet, initExport } from '../ExportModule'
+
 /** Severity level to Excel color mapping. */
 const SEVERITY_COLORS = {
     High: COLORS.danger,

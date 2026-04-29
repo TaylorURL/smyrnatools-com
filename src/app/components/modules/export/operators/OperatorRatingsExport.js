@@ -6,6 +6,7 @@ import {
     COLORS
 } from '../../../../../utils/ExportUtility'
 import { createSheet, exportWorkbook, finalizeSheet, initExport } from '../ExportModule'
+
 /** Human-readable labels indexed by 1-5 rating value. */
 const RATING_LABELS = ['', 'Poor', 'Below Average', 'Average', 'Good', 'Excellent']
 /** Formats a phone number string as (XXX) XXX-XXXX. */

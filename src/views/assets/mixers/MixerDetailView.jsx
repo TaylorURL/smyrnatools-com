@@ -18,6 +18,7 @@ import MixerCommentModal from './MixerCommentModal'
 import MixerHistoryView from './MixerHistoryView'
 import MixerIssueModal from './MixerIssueModal'
 import OperatorSelectModal from './OperatorSelectModal'
+
 /**
  * Full detail/edit view for a single mixer record. Handles loading, saving,
  * verification (with missing-field modal), deletion, operator assignment/

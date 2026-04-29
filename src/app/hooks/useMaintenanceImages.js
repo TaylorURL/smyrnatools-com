@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 
 import { MaintenanceService } from '../../services/MaintenanceService'
 import { IMAGE_VALIDATION_MESSAGES, MAX_IMAGE_SIZE_BYTES, VALID_IMAGE_TYPES } from '../constants/maintenanceConstants'
+
 /** Resolves the composite storage key for a checklist item's image. */
 function resolveImageKey(fieldId, checklistItem) {
     return checklistItem ? `${fieldId}_${checklistItem}` : fieldId

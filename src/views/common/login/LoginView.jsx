@@ -7,6 +7,7 @@ import { useVersion } from '../../../app/hooks/useVersion'
 import SrmLogo from '../../../assets/images/srm-logo.svg'
 import { Database } from '../../../services/DatabaseService'
 import ValidationUtility from '../../../utils/ValidationUtility'
+
 const ChangelogView = lazy(() => import('./ChangelogView'))
 const PasswordRecoveryView = lazy(() => import('./PasswordRecoveryView'))
 const VideoBackground = lazy(() => import('../../../app/components/common/VideoBackground'))

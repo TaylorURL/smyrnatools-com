@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 
 import { UserService } from '../../services/UserService'
+
 async function assertITAccess() {
     const user = await UserService.getCurrentUser()
     if (!user?.id) throw new Error('Not authenticated')

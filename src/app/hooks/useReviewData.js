@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ReportService } from '../../services/ReportService'
 import { UserService } from '../../services/UserService'
 import { ReportUtility } from '../../utils/ReportUtility'
+
 /**
  * Loads data for the report review view: form state, maintenance items, operator options,
  * owner name, submission metadata, and manager-edit permissions.

@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { getImageDisplayUrl } from '../../hooks/useMaintenanceImages'
+
 /** Spinner indicator shown while an image is being uploaded. */
 function UploadingSpinner() {
     return (

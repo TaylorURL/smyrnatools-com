@@ -8,6 +8,7 @@ import DashboardUtility from '../../utils/DashboardUtility'
 import LeaderboardsUtility from '../../utils/LeaderboardsUtility'
 import VerifiedUtility from '../../utils/VerifiedUtility'
 import { INITIAL_PLANT_NOTIFICATIONS } from '../constants/dashboardConstants'
+
 const filterByPlantSet = (operators, plantSet, plantField, trainerField = null) =>
     operators.filter(
         (o) =>

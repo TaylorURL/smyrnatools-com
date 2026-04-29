@@ -1,6 +1,7 @@
 import React, { memo, useEffect, useState } from 'react'
 
 import { Database } from '../../../services/DatabaseService'
+
 /** Color mapping for each known asset status value. */
 const STATUS_COLORS = {
     Active: '#16a34a',

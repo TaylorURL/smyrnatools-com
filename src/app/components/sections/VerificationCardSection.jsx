@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Database } from '../../../services/DatabaseService'
 import { usePreferences } from '../../context/PreferencesContext'
+
 /**
  * Verification status card shown in asset detail views.
  * Displays verification checklist items, verify/unverify button,

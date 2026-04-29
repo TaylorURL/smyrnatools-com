@@ -14,10 +14,26 @@
  * @param {string} [options.logoUrl] - Logo image URL.
  */
 function htmlEscape(str) {
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
 }
 
-export function buildReportSubmittedEmail({ submitterName, reportTitle, weekLabel, plantCode, regionName, reportFields, frontendUrl, theme, logoUrl, debugInfo }) {
+export function buildReportSubmittedEmail({
+    submitterName,
+    reportTitle,
+    weekLabel,
+    plantCode,
+    regionName,
+    reportFields,
+    frontendUrl,
+    theme,
+    logoUrl,
+    debugInfo
+}) {
     const t = {
         white: theme?.white || '#ffffff',
         bgDark: theme?.bgDark || '#1a202c',
@@ -36,7 +52,7 @@ export function buildReportSubmittedEmail({ submitterName, reportTitle, weekLabe
     const week = weekLabel ? ` for ${weekLabel}` : ''
     const plant = plantCode ? ` (Plant ${plantCode})` : ''
     const region = regionName || 'your region'
-    const fields = Array.isArray(reportFields) ? reportFields.filter(f => f.label && f.value) : []
+    const fields = Array.isArray(reportFields) ? reportFields.filter((f) => f.label && f.value) : []
 
     const eName = htmlEscape(name)
     const eReportTitle = htmlEscape(reportTitle)
@@ -45,14 +61,18 @@ export function buildReportSubmittedEmail({ submitterName, reportTitle, weekLabe
     const eRegion = htmlEscape(region)
     const eWeekLabel = weekLabel ? htmlEscape(weekLabel) : ''
 
-    const detailRows = fields.map(f => `
+    const detailRows = fields
+        .map(
+            (f) => `
                     <tr>
                       <td style="padding:6px 0;font-size:14px;color:${t.textMuted};width:130px;vertical-align:top;">${htmlEscape(f.label)}</td>
                       <td style="padding:6px 0;font-size:14px;color:${t.text};font-weight:600;">${htmlEscape(f.value)}</td>
-                    </tr>`).join('')
+                    </tr>`
+        )
+        .join('')
 
     const subject = `${reportTitle} Submitted — ${name}${plant}`
-    const text = `${name}${plant} has submitted their ${reportTitle}${week} in the ${region} region.${fields.length ? '\n\nDetails:\n' + fields.map(f => `${f.label}: ${f.value}`).join('\n') : ''}\n\nView reports at ${appUrl}`
+    const text = `${name}${plant} has submitted their ${reportTitle}${week} in the ${region} region.${fields.length ? '\n\nDetails:\n' + fields.map((f) => `${f.label}: ${f.value}`).join('\n') : ''}\n\nView reports at ${appUrl}`
     const html = `
 <!DOCTYPE html>
 <html>
@@ -90,10 +110,14 @@ export function buildReportSubmittedEmail({ submitterName, reportTitle, weekLabe
                       <td style="padding:6px 0;font-size:14px;color:${t.textMuted};width:130px;">Submitted by</td>
                       <td style="padding:6px 0;font-size:14px;color:${t.text};font-weight:600;">${eName}${ePlant}</td>
                     </tr>
-                    ${eWeekLabel ? `<tr>
+                    ${
+                        eWeekLabel
+                            ? `<tr>
                       <td style="padding:6px 0;font-size:14px;color:${t.textMuted};width:130px;">Week</td>
                       <td style="padding:6px 0;font-size:14px;color:${t.text};font-weight:600;">${eWeekLabel}</td>
-                    </tr>` : ''}
+                    </tr>`
+                            : ''
+                    }
                     <tr>
                       <td style="padding:6px 0;font-size:14px;color:${t.textMuted};width:130px;">Region</td>
                       <td style="padding:6px 0;font-size:14px;color:${t.text};font-weight:600;">${eRegion}</td>
@@ -103,7 +127,9 @@ export function buildReportSubmittedEmail({ submitterName, reportTitle, weekLabe
               </tr>
             </table>
 
-            ${fields.length ? `
+            ${
+                fields.length
+                    ? `
             <h2 style="font-size:18px;color:${t.text};margin:0 0 12px;font-weight:600;">Report Details</h2>
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:${t.bgLight};border:1px solid ${t.border};border-radius:8px;margin:0 0 24px;">
               <tr>
@@ -114,14 +140,18 @@ export function buildReportSubmittedEmail({ submitterName, reportTitle, weekLabe
                 </td>
               </tr>
             </table>
-            ` : ''}
+            `
+                    : ''
+            }
 
             <div style="text-align:center;margin:0 0 8px;">
               <a href="${appUrl}" style="display:inline-block;padding:14px 28px;background-color:${t.brand};color:${t.onBrand};text-decoration:none;font-size:15px;font-weight:600;border-radius:8px;">View Reports</a>
             </div>
           </td>
         </tr>
-        ${debugInfo ? `
+        ${
+            debugInfo
+                ? `
         <tr>
           <td style="padding:0 32px 24px;">
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#fefce8;border:2px solid #ca8a04;border-radius:8px;">
@@ -136,7 +166,9 @@ export function buildReportSubmittedEmail({ submitterName, reportTitle, weekLabe
               </tr>
             </table>
           </td>
-        </tr>` : ''}
+        </tr>`
+                : ''
+        }
         <tr>
           <td style="background-color:${t.bgLight};padding:24px 32px;text-align:center;">
             <p style="color:${t.textMuted};font-size:13px;line-height:1.6;margin:0;">

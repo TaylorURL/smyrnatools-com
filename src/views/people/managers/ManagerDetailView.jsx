@@ -8,6 +8,7 @@ import { Database } from '../../../services/DatabaseService'
 import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
 import APIUtility from '../../../utils/APIUtility'
+
 /**
  * Detail/edit view for a single manager. Provides name, email, plant,
  * and role editing with inline password reset. Enforces role-weight-based

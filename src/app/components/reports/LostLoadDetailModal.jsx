@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { usePreferences } from '../../../app/context/PreferencesContext'
+
 const formatDate = (dateStr) => {
     if (!dateStr) return '—'
     const d = new Date(dateStr)

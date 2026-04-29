@@ -14,9 +14,9 @@ module.exports = function override(config, env) {
         querystring: false
     }
 
-    config.module.rules.forEach(rule => {
+    config.module.rules.forEach((rule) => {
         if (rule.oneOf) {
-            rule.oneOf.forEach(oneOfRule => {
+            rule.oneOf.forEach((oneOfRule) => {
                 if (oneOfRule.test && oneOfRule.test.toString().includes('mp4|webm|ogg')) {
                     if (oneOfRule.options && oneOfRule.options.name) {
                         oneOfRule.options.name = 'static/media/[name].[ext]'

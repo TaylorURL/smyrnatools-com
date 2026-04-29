@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { UserService } from '../../../services/UserService'
 import UserUtility from '../../../utils/UserUtility'
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /** Size-variant Tailwind class mappings for the label and initials badge. */
 const SIZE_CONFIG = {
     large: { fontSize: 'text-base', initialsFontSize: 'text-[13px]', initialsSize: 'h-8 w-8' },

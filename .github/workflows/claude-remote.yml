@@ -2,7 +2,7 @@ name: Claude Remote Edit
 
 on:
   issues:
-    types: [opened]
+    types: [ opened ]
 
 jobs:
   claude-edit:

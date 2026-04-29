@@ -10,6 +10,7 @@ import { useIsMobile } from '../../hooks/useIsMobile'
 import { useMagneticHover } from '../../hooks/useMagneticHover'
 import NotificationsModal from './NotificationsModal'
 import OnlineUsersModal from './OnlineUsersModal'
+
 /** Menu items visible only for Office-type regions. */
 const OFFICE_VISIBLE_ITEMS = ['Reports', 'Dashboard', 'Managers', 'Plants', 'Regions']
 /** Items hidden for Aggregate-type regions. */

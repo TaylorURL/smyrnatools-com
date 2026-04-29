@@ -1,5 +1,6 @@
 import { Database } from './DatabaseService'
 import { UserService } from './UserService'
+
 const MESSAGES_VIEW = 'messages_decrypted'
 /**
  * Resolves the canonical users table ID from whatever ID is in session storage.

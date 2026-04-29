@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /**
  * Styled confirmation dialog rendered as a portal overlay.
  * Replaces native window.confirm() with a themed modal.

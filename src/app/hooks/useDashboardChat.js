@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 
 import { AIService } from '../../services/AIService'
+
 const STORAGE_KEY = 'dashboard-chat-usage'
 const DAILY_LIMIT = 10
 function getTodayKey() {

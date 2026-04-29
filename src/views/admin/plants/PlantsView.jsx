@@ -5,6 +5,7 @@ import TopSection from '../../../app/components/sections/TopSection'
 import { PlantService } from '../../../services/PlantService'
 import PlantsAddView from './PlantsAddView'
 import PlantsDetailView from './PlantsDetailView'
+
 /** Maps region types to human-readable plant type labels. */
 const REGION_TYPE_TO_PLANT_TYPE = {
     Aggregate: 'Aggregate Location',

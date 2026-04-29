@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /**
  * Full-screen portal overlay shown when the app loses network connectivity.
  * Provides a retry button with a spinning indicator during reconnection attempts.

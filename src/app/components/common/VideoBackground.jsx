@@ -5,6 +5,7 @@ import vid2 from '../../../assets/videos/2.mp4'
 import vid3 from '../../../assets/videos/3.mp4'
 import vid4 from '../../../assets/videos/4.mp4'
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /** Pool of background videos randomly selected on mount. */
 const BACKGROUND_VIDEOS = [vid1, vid2, vid3, vid4]
 /**

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+
 const MAGNETIC_RADIUS_PX = 80
 const MAX_DISPLACEMENT_PX = 8
 const LERP_SPEED = 0.08

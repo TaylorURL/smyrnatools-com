@@ -13,6 +13,7 @@ import TractorSelectModal from './TractorSelectModal'
 import TrailerCommentModal from './TrailerCommentModal'
 import TrailerHistoryView from './TrailerHistoryView'
 import TrailerIssueModal from './TrailerIssueModal'
+
 /**
  * Full detail/edit view for a single trailer. Handles tractor assignment/
  * unassignment, region-scoped plant transfer, deletion, trailer type,

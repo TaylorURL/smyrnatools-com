@@ -2,6 +2,7 @@ import React from 'react'
 
 import SrmLogo from '../../../assets/images/srm-logo.svg'
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /**
  * Branded loading indicator with animated progress bar and SRM logo.
  * Supports full-page overlay, inline, and default container modes.

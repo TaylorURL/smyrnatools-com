@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { UserPreferencesService } from '../../services/UserPreferencesService'
+
 /** Fetches the current app version string on mount. */
 export function useVersion() {
     const [version, setVersion] = useState('')

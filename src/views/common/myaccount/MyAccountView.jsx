@@ -1,7 +1,6 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react'
 
 import VersionPopup from '../../../app/components/common/VersionPopup'
-const ChangelogView = lazy(() => import('../login/ChangelogView'))
 import { useAuth } from '../../../app/context/AuthContext'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useTutorial } from '../../../app/context/TutorialContext'
@@ -11,9 +10,11 @@ import { getBrowserName, getDeviceType, getOSName } from '../../../app/utils/Bro
 import { Database } from '../../../services/DatabaseService'
 import { UserService } from '../../../services/UserService'
 import APIUtility from '../../../utils/APIUtility'
-const AUTH_FUNCTION = '/auth-service'
 import { CacheUtility } from '../../../utils/CacheUtility'
 import DashboardUtility from '../../../utils/DashboardUtility'
+
+const ChangelogView = lazy(() => import('../login/ChangelogView'))
+const AUTH_FUNCTION = '/auth-service'
 
 const MAX_BRIGHTNESS_HEX = '#D6D6D6'
 const MAX_BRIGHTNESS_VALUE = 214

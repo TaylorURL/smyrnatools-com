@@ -4,6 +4,7 @@ import { PlantService } from '../../services/PlantService'
 import AssetStatsUtility from '../../utils/AssetStatsUtility'
 import VerifiedUtility from '../../utils/VerifiedUtility'
 import { INITIAL_STATS } from '../constants/dashboardConstants'
+
 const CALC_PERCENT = (numerator, denominator) => (denominator ? Math.round((numerator / denominator) * 100) : 0)
 const createBaseTotals = () => ({
     active: 0,

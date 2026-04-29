@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /**
  * Fixed bottom-right toast notifying the user that a newer version is available.
  * @param {Object} props

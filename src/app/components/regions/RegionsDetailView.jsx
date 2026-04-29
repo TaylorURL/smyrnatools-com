@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { PlantService } from '../../../services/PlantService'
 import DetailViewSection from '../sections/DetailViewSection'
+
 /**
  * Detail/edit view for a single region.
  * Allows editing the region name, type, and associated plants via a searchable plant picker.

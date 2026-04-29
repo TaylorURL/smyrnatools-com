@@ -18,6 +18,7 @@ import OperatorSelectModal from '../mixers/OperatorSelectModal'
 import TractorCommentModal from './TractorCommentModal'
 import TractorHistoryView from './TractorHistoryView'
 import TractorIssueModal from './TractorIssueModal'
+
 /**
  * Full detail/edit view for a single tractor. Handles operator assignment/
  * unassignment, region-scoped plant transfer, verification (with missing-field

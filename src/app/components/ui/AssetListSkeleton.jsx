@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { useIsMobile } from '../../hooks/useIsMobile'
+
 const DEFAULT_GRID_COUNT = 8
 const DEFAULT_LIST_COUNT = 10
 const SKELETON_ROW_WIDTHS = ['60%', '40%', '50%', '70%', '45%']

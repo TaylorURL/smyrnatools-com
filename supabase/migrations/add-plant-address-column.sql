@@ -9,7 +9,7 @@ ALTER TABLE plants
 -- Optional case-insensitive index — handy if a future geocoding cache keys
 -- off the lowercased address. Safe to skip.
 CREATE INDEX IF NOT EXISTS plants_plant_address_lower_idx
-    ON plants ((lower(plant_address)))
+    ON plants ((lower (plant_address)))
     WHERE plant_address IS NOT NULL;
 
 -- Verification query

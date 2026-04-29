@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import APIUtility from '../../utils/APIUtility'
 import { SESSION_STORAGE_KEYS } from '../constants/auth'
 import { getBrowserMetadata } from '../utils/BrowserDetection'
+
 const AUTH_FUNCTION = '/auth-service'
 const SESSION_EXPIRY_DAYS = 2
 /**

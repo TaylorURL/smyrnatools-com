@@ -8,9 +8,6 @@ import {
     TARGET_YPH,
     timeToMinutes
 } from '../../../utils/PlanUtility'
-
-const NEEDS_HELP_COLOR = '#dc2626'
-const LEAVE_OFF_COLOR = '#d97706'
 import {
     buildEdges,
     computeBidirectionalEdgeKeys,
@@ -20,6 +17,9 @@ import {
     radiusForOps,
     yphColorFor
 } from './planFlowLayout'
+
+const NEEDS_HELP_COLOR = '#dc2626'
+const LEAVE_OFF_COLOR = '#d97706'
 
 /**
  * Small read-only preview of the PlanFlowView — same layout / same visual

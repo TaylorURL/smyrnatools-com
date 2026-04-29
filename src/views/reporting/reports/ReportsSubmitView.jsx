@@ -18,6 +18,7 @@ import { PlantManagerSubmitPlugin } from './types/WeeklyPlantManagerReport'
 import { QualityControlManagerSubmitPlugin } from './types/WeeklyQualityControlManagerReport'
 import { ReadyMixInstructorSubmitPlugin } from './types/WeeklyReadyMixInstructorReport'
 import { SafetyManagerSubmitPlugin } from './types/WeeklySafetyManagerReport'
+
 /** Maps report type keys to their submit-mode plugin components. */
 const PLUGINS = {
     aggregate_production: AggregateProductionSubmitPlugin,

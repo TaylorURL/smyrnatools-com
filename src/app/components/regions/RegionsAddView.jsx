@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 
 import { PlantService } from '../../../services/PlantService'
 import AddViewSection from '../sections/AddViewSection'
+
 /**
  * Modal form for creating a new region with code, name, and type fields.
  * Validates required fields and handles duplicate key errors gracefully.

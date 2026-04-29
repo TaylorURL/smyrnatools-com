@@ -10,6 +10,7 @@ import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { useLeaderboardData } from '../../../app/hooks/useLeaderboardData'
 import LeaderboardsUtility from '../../../utils/LeaderboardsUtility'
+
 const CURRENT_YEAR = new Date().getFullYear()
 const SKELETON_COUNT = 5
 /** Subtle grid overlay for the header background, tinted to the user's accent color. */

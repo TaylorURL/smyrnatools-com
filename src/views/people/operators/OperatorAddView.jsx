@@ -8,6 +8,7 @@ import { OperatorService } from '../../../services/OperatorService'
 import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
 import ValidationUtility from '../../../utils/ValidationUtility'
+
 /**
  * Slide-in form for creating a new operator record. Supports name, phone,
  * plant assignment (region-scoped), status (with permission-gated Training/

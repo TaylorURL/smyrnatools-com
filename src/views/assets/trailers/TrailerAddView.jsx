@@ -5,6 +5,7 @@ import AddViewSection from '../../../app/components/sections/AddViewSection'
 import Trailer from '../../../app/models/trailers/Trailer'
 import { TrailerService } from '../../../services/TrailerService'
 import DateUtility from '../../../utils/DateUtility'
+
 /**
  * Slide-in form for creating a new trailer record. Requires trailer number
  * and plant assignment. Supports trailer type selection (Cement/Aggregate/Flat Bed)

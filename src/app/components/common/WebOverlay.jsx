@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /**
  * Full-screen overlay that embeds external content in a sandboxed iframe.
  * Includes a branded header bar with a close button and the current URL.

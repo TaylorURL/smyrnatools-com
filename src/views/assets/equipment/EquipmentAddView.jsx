@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react'
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import AddViewSection from '../../../app/components/sections/AddViewSection'
 import { EquipmentService } from '../../../services/EquipmentService'
+
 /**
  * Slide-in form for creating a new heavy equipment record.
  * Requires identifying number, assigned plant, and equipment type.

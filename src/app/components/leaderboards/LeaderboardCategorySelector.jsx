@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { CATEGORY_GROUPS, LEADERBOARD_CATEGORIES } from '../../constants/leaderboardConstants'
+
 /**
  * Individual category tab button with light/dark variant styling.
  * @param {Object} props

@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAccentColor } from '../../hooks/useAccentColor'
 import VideoBackground from './VideoBackground'
+
 /** Maps lock reasons to user-facing title/message pairs. */
 const REASON_CONFIG = {
     'invalid-session': {

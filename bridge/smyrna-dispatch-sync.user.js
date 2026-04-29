@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Smyrna Dispatch Sync
 // @namespace    smyrna-tools
-// @version      2.6.0
+// @version      2.7.0
 // @description  Syncs today + next 7 days of DailyOrder and per-plant DetailOrderAnalysis reports to Supabase storage every 5 minutes, and backfills any missing files for the current year
 // @match        http://srm-c03.aujs.local:8181/*
 // @grant        GM_xmlhttpRequest
@@ -10,7 +10,7 @@
 // @run-at       document-start
 // ==/UserScript==
 
-(function () {
+;(function () {
     'use strict'
 
     // ============================================================
@@ -32,7 +32,10 @@
 
     // Plants we care about. DailyOrder takes a comma-joined list in one call;
     // DetailOrderAnalysis only accepts a single plant per request, so we fan out.
-    const PLANT_IDS = ['401', '402', '403', '405', '406', '407', '408', '410', '453', '455', '461', '468']
+    // Baytown uses both 403 and 404 (one physical location, two dispatch codes);
+    // Conroe uses both 408 and 409 the same way. Trucks freely load from either
+    // sibling, so we MUST fetch both halves to get a complete ticket picture.
+    const PLANT_IDS = ['401', '402', '403', '404', '405', '406', '407', '408', '409', '410', '453', '455', '461', '468']
 
     // Report definitions. Each report knows how to build its POST body, where
     // the rendered HTML lands on the dispatch server, and how to name the file
@@ -416,8 +419,24 @@
         ]
     }
 
+    // Minimum size for a "real" report. A schedule with even one plant comes
+    // out well over 5 KB once the FastReport boilerplate is included; anything
+    // smaller is almost certainly a stub or error placeholder.
+    const MIN_HTML_BYTES = 5000
+
+    // FastReport HTML always ends with `</html>` (lowercase). If we GET the
+    // file mid-write the closing tag is missing — uploading that partial
+    // payload is what causes the schedule-cut-off issue we sometimes see.
+    function isHtmlComplete(html) {
+        if (!html) return false
+        // Trim trailing whitespace/newlines and look for the closing tag.
+        const tail = html.slice(-256).toLowerCase().trim()
+        return tail.endsWith('</html>')
+    }
+
     // Runs one task end-to-end: POST the report request, poll until the
-    // rendered HTML is on the dispatch server, then upload it to Supabase.
+    // rendered HTML is on the dispatch server, verify the payload is complete,
+    // then upload it to Supabase.
     async function syncTask(task) {
         const { report, date, plantId, storagePath, label } = task
         const body = report.perPlant ? report.buildBody(date, plantId) : report.buildBody(date)
@@ -426,8 +445,26 @@
         const reqId = genRes && genRes.data && genRes.data[0] && genRes.data[0].ReportRequestId
         if (!reqId) throw new Error(`No ReportRequestId in response for ${label}`)
 
-        const html = await waitForReportHtml(`/static/reports/${report.reportId}_${reqId}.html`, 30000)
-        if (!html || html.length < 500) throw new Error(`HTML suspiciously small for ${label}: ${html && html.length}`)
+        // Fetch + retry the GET if the HTML comes back truncated. The dispatch
+        // server occasionally serves the file before FastReport has flushed
+        // every page; a short wait is enough for the rest to land.
+        const reportPath = `/static/reports/${report.reportId}_${reqId}.html`
+        let html = await waitForReportHtml(reportPath, 30000)
+        for (let attempt = 0; attempt < 4 && !isHtmlComplete(html); attempt++) {
+            await sleep(750)
+            try {
+                html = await apiGetHtml(reportPath)
+            } catch {
+                // ignore — the next loop iteration will throw if still incomplete
+            }
+        }
+
+        if (!html || html.length < MIN_HTML_BYTES) {
+            throw new Error(`HTML too small for ${label}: ${html && html.length} bytes (min ${MIN_HTML_BYTES})`)
+        }
+        if (!isHtmlComplete(html)) {
+            throw new Error(`HTML truncated for ${label}: ${html.length} bytes, missing </html> close`)
+        }
 
         await uploadToSupabase(html, storagePath)
         log(`  uploaded ${storagePath} (${html.length} bytes)`)
@@ -575,7 +612,9 @@
     // ============================================================
     // KICKOFF
     // ============================================================
-    log(`Smyrna Dispatch Sync v2.6.0 loaded - ${WORKER_CONCURRENCY} parallel workers, DailyOrder (today + 7) + DetailOrderAnalysis (today only), plus current-year backfill`)
+    log(
+        `Smyrna Dispatch Sync v2.7.0 loaded - ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, completeness check + retry on truncated reports, current-year backfill`
+    )
     setTimeout(() => {
         updateBadge('waiting')
         setTimeout(runSync, 10000) // first run after 10s (gives UI time to make a call so we capture token)

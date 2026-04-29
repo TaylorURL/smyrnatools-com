@@ -2,6 +2,7 @@ import { Database } from '../services/DatabaseService'
 import { PlantService } from '../services/PlantService'
 import { UserService } from '../services/UserService'
 import APIUtility from './APIUtility'
+
 /** Resolves an entity object or raw ID string to its `id` property. */
 const resolveEntityId = (entityOrId) => (typeof entityOrId === 'object' && entityOrId?.id ? entityOrId.id : entityOrId)
 /** Resolves an entity to its ID, throwing if falsy. */

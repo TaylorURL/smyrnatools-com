@@ -13,6 +13,7 @@ import ValidationUtility from '../utils/ValidationUtility'
 import { Database } from './DatabaseService'
 import { MixerService } from './MixerService'
 import { TractorService } from './TractorService'
+
 const SERVICE_PREFIX = '/operator-service'
 /**
  * Operator CRUD, history, comments, and assignment management service.

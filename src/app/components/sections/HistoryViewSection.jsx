@@ -29,6 +29,7 @@ import TimelineItem, {
     TimelineMeta,
     TimelineSectionTitle
 } from '../ui/TimelineItem'
+
 /**
  * Full-screen history view for an asset showing AI summary, status timeline,
  * operator history, service/maintenance records, issues, and cleanliness ratings.

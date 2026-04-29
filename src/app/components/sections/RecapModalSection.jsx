@@ -6,6 +6,7 @@ import { OperatorService } from '../../../services/OperatorService'
 import { UserService } from '../../../services/UserService'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
+
 /**
  * Floating recap button and modal showing recent mixer and operator history changes.
  * Displays net change metrics (runnable, down, operators, transfers) and an expandable

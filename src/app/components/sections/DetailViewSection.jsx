@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
 import { usePreferences } from '../../context/PreferencesContext'
+
 const DetailViewContext = createContext({
     activeSection: '',
     registerSection: () => {},

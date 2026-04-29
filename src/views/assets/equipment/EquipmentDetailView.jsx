@@ -15,6 +15,7 @@ import DateUtility from '../../../utils/DateUtility'
 import EquipmentCommentModal from './EquipmentCommentModal'
 import EquipmentHistoryView from './EquipmentHistoryView'
 import EquipmentIssueModal from './EquipmentIssueModal'
+
 /**
  * Full detail/edit view for a single equipment record. Handles loading,
  * saving, verification, deletion, region transfer, and unsaved-change

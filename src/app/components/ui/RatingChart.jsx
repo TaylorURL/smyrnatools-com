@@ -4,6 +4,7 @@ import { DateUtility } from '../../../utils/DateUtility'
 import { CHART_HEIGHT, CHART_PADDING, CHART_WIDTH, MAX_STAR_RATING } from '../../constants/historyConstants'
 import HistoryEmptyState from './HistoryEmptyState'
 import StatCard from './StatCard'
+
 const USABLE_WIDTH = CHART_WIDTH - CHART_PADDING * 2
 const RATING_VALUES = [5, 4, 3, 2, 1]
 /**

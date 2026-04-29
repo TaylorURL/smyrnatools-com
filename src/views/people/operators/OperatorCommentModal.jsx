@@ -2,6 +2,7 @@ import React from 'react'
 
 import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import { OperatorService } from '../../../services/OperatorService'
+
 /** Thin wrapper connecting the shared CommentModalSection to OperatorService. */
 function OperatorCommentModal({ operatorId, operatorName, onClose }) {
     return (

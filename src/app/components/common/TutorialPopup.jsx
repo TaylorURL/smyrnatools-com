@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom'
 
 import { useTutorial } from '../../context/TutorialContext'
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /**
  * Registry of all available tutorial definitions.
  * Each key maps to positioning, target selector, and content for the popup.

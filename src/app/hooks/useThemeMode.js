@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react'
 
 import { DEFAULT_THEME_MODE } from '../constants/themeConstants'
 import { usePreferences } from '../context/PreferencesContext'
+
 /**
  * Applies the user's theme mode (light/dark) by toggling the `dark` class on <html>.
  * Adds a brief transition class for smooth color animation during switches.

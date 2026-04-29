@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { SESSION_STORAGE_KEYS } from '../constants/auth'
+
 /**
  * Manages authentication session lifecycle on app mount.
  * Listens for sign-in/sign-out events dispatched by AuthContext

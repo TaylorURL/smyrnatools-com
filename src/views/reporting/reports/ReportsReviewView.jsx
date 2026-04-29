@@ -11,6 +11,7 @@ import { PlantManagerReviewPlugin } from './types/WeeklyPlantManagerReport'
 import { QualityControlManagerReviewPlugin } from './types/WeeklyQualityControlManagerReport'
 import { ReadyMixInstructorReviewPlugin } from './types/WeeklyReadyMixInstructorReport'
 import { SafetyManagerReviewPlugin } from './types/WeeklySafetyManagerReport'
+
 /** Maps report type keys to their review-mode plugin components. */
 const PLUGINS = {
     district_manager: DistrictManagerReviewPlugin,

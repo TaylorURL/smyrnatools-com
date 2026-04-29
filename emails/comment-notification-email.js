@@ -12,7 +12,16 @@
  * @param {Object} [options.theme] - Theme color overrides.
  * @param {string} [options.logoUrl] - Logo image URL.
  */
-export function buildCommentNotificationEmail({ commenterName, commentText, assetType, assetNumber, plantCode, frontendUrl, theme, logoUrl }) {
+export function buildCommentNotificationEmail({
+    commenterName,
+    commentText,
+    assetType,
+    assetNumber,
+    plantCode,
+    frontendUrl,
+    theme,
+    logoUrl
+}) {
     const t = {
         white: theme?.white || '#ffffff',
         bgLight: theme?.bgLight || '#f7fafc',
@@ -29,7 +38,8 @@ export function buildCommentNotificationEmail({ commenterName, commentText, asse
     const name = commenterName || 'A team member'
     const asset = `${assetType || 'Asset'} ${assetNumber || ''}`
     const plant = plantCode ? `Plant ${plantCode}` : ''
-    const truncatedComment = (commentText || '').length > 500 ? commentText.substring(0, 500) + '...' : (commentText || '')
+    const truncatedComment =
+        (commentText || '').length > 500 ? commentText.substring(0, 500) + '...' : commentText || ''
 
     const subject = `New Comment on ${asset}${plant ? ` — ${plant}` : ''}`
     const text = `${name} commented on ${asset}${plant ? ` at ${plant}` : ''}:\n\n"${truncatedComment}"\n\nView in Smyrna Tools: ${appUrl}`
@@ -66,10 +76,14 @@ export function buildCommentNotificationEmail({ commenterName, commentText, asse
                       <td style="padding:6px 0;font-size:14px;color:${t.textMuted};width:100px;">Asset</td>
                       <td style="padding:6px 0;font-size:14px;color:${t.text};font-weight:600;">${asset}</td>
                     </tr>
-                    ${plant ? `<tr>
+                    ${
+                        plant
+                            ? `<tr>
                       <td style="padding:6px 0;font-size:14px;color:${t.textMuted};width:100px;">Plant</td>
                       <td style="padding:6px 0;font-size:14px;color:${t.text};font-weight:600;">${plant}</td>
-                    </tr>` : ''}
+                    </tr>`
+                            : ''
+                    }
                     <tr>
                       <td style="padding:6px 0;font-size:14px;color:${t.textMuted};width:100px;">By</td>
                       <td style="padding:6px 0;font-size:14px;color:${t.text};font-weight:600;">${name}</td>

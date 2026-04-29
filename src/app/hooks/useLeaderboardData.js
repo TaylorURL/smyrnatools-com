@@ -9,6 +9,7 @@ import { TractorService } from '../../services/TractorService'
 import { TrailerService } from '../../services/TrailerService'
 import LeaderboardsUtility from '../../utils/LeaderboardsUtility'
 import { DEFAULT_FLEET_DATA } from '../constants/leaderboardConstants'
+
 function getCurrentWeekStart() {
     const now = new Date()
     const weekStart = new Date(now)

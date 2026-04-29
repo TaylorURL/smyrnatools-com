@@ -1,6 +1,7 @@
 import React from 'react'
 
 import Modal, { ModalBody, ModalSummary, ModalSummaryItem } from '../common/Modal'
+
 /**
  * Single help transaction row showing direction (sent/received), plant,
  * date, operator count, and hours.

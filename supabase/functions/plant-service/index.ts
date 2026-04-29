@@ -1,183 +1,246 @@
 // @ts-ignore
-import {createClient} from "npm:@supabase/supabase-js@2.45.4";
-// @ts-ignore
-import {getCorsHeaders, handleOptions, jsonResponse, errorResponse} from "../_shared/cors.ts";
+import { createClient } from 'npm:@supabase/supabase-js@2.45.4' // @ts-ignore
+import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
 
-const PLANTS_TABLE = "plants";
-const PROFILES_TABLE = "users_profiles";
-const REGION_PLANTS_TABLES = ["region_plants", "regions_plants"] as const;
+const PLANTS_TABLE = 'plants'
+const PROFILES_TABLE = 'users_profiles'
+const REGION_PLANTS_TABLES = ['region_plants', 'regions_plants'] as const
 
 async function parseBody(req: Request): Promise<any> {
-    try { return await req.json(); } catch { return {}; }
+    try {
+        return await req.json()
+    } catch {
+        return {}
+    }
 }
 
 function trimString(val: unknown): string {
-    return typeof val === "string" ? val.trim() : "";
+    return typeof val === 'string' ? val.trim() : ''
 }
 
 function nowISO(): string {
-    return new Date().toISOString();
+    return new Date().toISOString()
 }
 
-const SESSIONS_TABLE = "users_sessions";
-const SESSION_EXPIRY_DAYS = 7;
+const SESSIONS_TABLE = 'users_sessions'
+const SESSION_EXPIRY_DAYS = 7
 
 function getAdminClient(): any {
     return createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    )
 }
 
-async function requireAuthenticated(_supabase: any, req: Request, headers: any, body?: any): Promise<string | Response> {
-    let userId = body?.__sessionUserId || req.headers.get("x-user-id") || null;
-    let sessionId = body?.__sessionId || req.headers.get("x-session-id") || null;
-    if (!userId || !sessionId) { try { const b = await req.clone().json(); userId = userId || b?.__sessionUserId; sessionId = sessionId || b?.__sessionId; } catch {} }
-    if (!userId || !sessionId) return errorResponse("Unauthorized", headers, 401);
-    const admin = getAdminClient();
-    const {data, error} = await admin.from(SESSIONS_TABLE).select("id, last_active").eq("id", sessionId).eq("user_id", userId).maybeSingle();
-    if (error || !data) return errorResponse("Unauthorized", headers, 401);
-    if (data.last_active) {
-        const lastActive = new Date(data.last_active);
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() - SESSION_EXPIRY_DAYS);
-        if (lastActive < expiryDate) return errorResponse("Session expired", headers, 401);
+async function requireAuthenticated(
+    _supabase: any,
+    req: Request,
+    headers: any,
+    body?: any
+): Promise<string | Response> {
+    let userId = body?.__sessionUserId || req.headers.get('x-user-id') || null
+    let sessionId = body?.__sessionId || req.headers.get('x-session-id') || null
+    if (!userId || !sessionId) {
+        try {
+            const b = await req.clone().json()
+            userId = userId || b?.__sessionUserId
+            sessionId = sessionId || b?.__sessionId
+        } catch {}
     }
-    admin.from(SESSIONS_TABLE).update({last_active: new Date().toISOString()}).eq("id", sessionId).then(() => {}).catch(() => {});
-    return userId;
+    if (!userId || !sessionId) return errorResponse('Unauthorized', headers, 401)
+    const admin = getAdminClient()
+    const { data, error } = await admin
+        .from(SESSIONS_TABLE)
+        .select('id, last_active')
+        .eq('id', sessionId)
+        .eq('user_id', userId)
+        .maybeSingle()
+    if (error || !data) return errorResponse('Unauthorized', headers, 401)
+    if (data.last_active) {
+        const lastActive = new Date(data.last_active)
+        const expiryDate = new Date()
+        expiryDate.setDate(expiryDate.getDate() - SESSION_EXPIRY_DAYS)
+        if (lastActive < expiryDate) return errorResponse('Session expired', headers, 401)
+    }
+    admin
+        .from(SESSIONS_TABLE)
+        .update({ last_active: new Date().toISOString() })
+        .eq('id', sessionId)
+        .then(() => {})
+        .catch(() => {})
+    return userId
 }
 
-const ELEVATED_WEIGHT_THRESHOLD = 75;
+const ELEVATED_WEIGHT_THRESHOLD = 75
 
 async function requireElevatedCaller(supabase: any, req: Request, headers: any): Promise<Response | null> {
-    const auth = await requireAuthenticated(supabase, req, headers);
-    if (auth instanceof Response) return auth;
-    const admin = getAdminClient();
-    const {data} = await admin.from("users_permissions").select("role_id, users_roles(weight)").eq("user_id", auth);
-    const isElevated = data?.some((p: any) => (p.users_roles?.weight ?? 0) > ELEVATED_WEIGHT_THRESHOLD);
-    if (!isElevated) return errorResponse("Forbidden: insufficient privileges", headers, 403);
-    return null;
+    const auth = await requireAuthenticated(supabase, req, headers)
+    if (auth instanceof Response) return auth
+    const admin = getAdminClient()
+    const { data } = await admin.from('users_permissions').select('role_id, users_roles(weight)').eq('user_id', auth)
+    const isElevated = data?.some((p: any) => (p.users_roles?.weight ?? 0) > ELEVATED_WEIGHT_THRESHOLD)
+    if (!isElevated) return errorResponse('Forbidden: insufficient privileges', headers, 403)
+    return null
 }
 
 async function fetchRegionIds(supabase: any, plantCode: string): Promise<number[]> {
     for (const table of REGION_PLANTS_TABLES) {
-        const {data, error} = await supabase.from(table).select("region_id").eq("plant_code", plantCode);
-        if (error) continue;
-        const ids = (data ?? []).map((rp: { region_id: number }) => rp.region_id);
-        if (ids.length) return ids;
+        const { data, error } = await supabase.from(table).select('region_id').eq('plant_code', plantCode)
+        if (error) continue
+        const ids = (data ?? []).map((rp: { region_id: number }) => rp.region_id)
+        if (ids.length) return ids
     }
-    return [];
+    return []
 }
 
 Deno.serve(async (req) => {
-    const origin = req.headers.get("origin");
-    if (req.method === "OPTIONS") return handleOptions(origin);
-    const headers = getCorsHeaders(origin);
+    const origin = req.headers.get('origin')
+    if (req.method === 'OPTIONS') return handleOptions(origin)
+    const headers = getCorsHeaders(origin)
     try {
-        const url = new URL(req.url);
-        const endpoint = url.pathname.split("/").pop();
-        const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
-            global: {headers: {Authorization: req.headers.get("Authorization") || ""}}
-        });
+        const url = new URL(req.url)
+        const endpoint = url.pathname.split('/').pop()
+        const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
+            global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
+        })
 
         switch (endpoint) {
-            case "fetch-all": {
-                const auth = await requireAuthenticated(supabase, req, headers); if (auth instanceof Response) return auth;
-                const {data, error} = await supabase.from(PLANTS_TABLE).select("*").order("plant_code");
-                if (error) return errorResponse("Operation failed", headers, 400);
-                return jsonResponse({data: data ?? []}, headers);
+            case 'fetch-all': {
+                const auth = await requireAuthenticated(supabase, req, headers)
+                if (auth instanceof Response) return auth
+                const { data, error } = await supabase.from(PLANTS_TABLE).select('*').order('plant_code')
+                if (error) return errorResponse('Operation failed', headers, 400)
+                return jsonResponse({ data: data ?? [] }, headers)
             }
-            case "fetch-by-code": {
-                const auth = await requireAuthenticated(supabase, req, headers); if (auth instanceof Response) return auth;
-                const body = await parseBody(req);
-                const plantCode = body?.plantCode;
-                if (!plantCode) return errorResponse("Plant code is required", headers, 400);
-                const {data, error} = await supabase.from(PLANTS_TABLE).select("*").eq("plant_code", plantCode).maybeSingle();
-                if (error) return errorResponse("Operation failed", headers, 400);
-                return jsonResponse({data: data ?? null}, headers);
+            case 'fetch-by-code': {
+                const auth = await requireAuthenticated(supabase, req, headers)
+                if (auth instanceof Response) return auth
+                const body = await parseBody(req)
+                const plantCode = body?.plantCode
+                if (!plantCode) return errorResponse('Plant code is required', headers, 400)
+                const { data, error } = await supabase
+                    .from(PLANTS_TABLE)
+                    .select('*')
+                    .eq('plant_code', plantCode)
+                    .maybeSingle()
+                if (error) return errorResponse('Operation failed', headers, 400)
+                return jsonResponse({ data: data ?? null }, headers)
             }
-            case "create": {
-                const auth = await requireElevatedCaller(supabase, req, headers); if (auth instanceof Response) return auth;
-                const body = await parseBody(req);
-                const plantCode = trimString(body?.plantCode);
-                const plantName = trimString(body?.plantName);
-                const plantAddress = body?.plantAddress != null ? trimString(body.plantAddress) || null : null;
-                if (!plantCode || !plantName) return errorResponse("Plant code and name are required", headers, 400);
-                const now = nowISO();
-                const {error} = await supabase.from(PLANTS_TABLE).insert({plant_code: plantCode, plant_name: plantName, plant_address: plantAddress, created_at: now, updated_at: now});
-                if (error) return errorResponse("Operation failed", headers, 400);
-                return jsonResponse({success: true}, headers);
+            case 'create': {
+                const auth = await requireElevatedCaller(supabase, req, headers)
+                if (auth instanceof Response) return auth
+                const body = await parseBody(req)
+                const plantCode = trimString(body?.plantCode)
+                const plantName = trimString(body?.plantName)
+                const plantAddress = body?.plantAddress != null ? trimString(body.plantAddress) || null : null
+                if (!plantCode || !plantName) return errorResponse('Plant code and name are required', headers, 400)
+                const now = nowISO()
+                const { error } = await supabase
+                    .from(PLANTS_TABLE)
+                    .insert({
+                        plant_code: plantCode,
+                        plant_name: plantName,
+                        plant_address: plantAddress,
+                        created_at: now,
+                        updated_at: now
+                    })
+                if (error) return errorResponse('Operation failed', headers, 400)
+                return jsonResponse({ success: true }, headers)
             }
-            case "update": {
-                const auth = await requireElevatedCaller(supabase, req, headers); if (auth instanceof Response) return auth;
-                const body = await parseBody(req);
-                const plantCode = trimString(body?.plantCode);
-                const plantName = trimString(body?.plantName);
-                if (!plantCode || !plantName) return errorResponse("Plant code and name are required", headers, 400);
-                const updateFields: Record<string, unknown> = {plant_name: plantName, updated_at: nowISO()};
+            case 'update': {
+                const auth = await requireElevatedCaller(supabase, req, headers)
+                if (auth instanceof Response) return auth
+                const body = await parseBody(req)
+                const plantCode = trimString(body?.plantCode)
+                const plantName = trimString(body?.plantName)
+                if (!plantCode || !plantName) return errorResponse('Plant code and name are required', headers, 400)
+                const updateFields: Record<string, unknown> = { plant_name: plantName, updated_at: nowISO() }
                 if (body?.plantAddress !== undefined) {
-                    const address = trimString(body.plantAddress);
-                    updateFields.plant_address = address.length > 0 ? address : null;
+                    const address = trimString(body.plantAddress)
+                    updateFields.plant_address = address.length > 0 ? address : null
                 }
-                const {error} = await supabase.from(PLANTS_TABLE).update(updateFields).eq("plant_code", plantCode);
-                if (error) return errorResponse("Operation failed", headers, 400);
-                return jsonResponse({success: true}, headers);
+                const { error } = await supabase.from(PLANTS_TABLE).update(updateFields).eq('plant_code', plantCode)
+                if (error) return errorResponse('Operation failed', headers, 400)
+                return jsonResponse({ success: true }, headers)
             }
-            case "update-address": {
-                const auth = await requireAuthenticated(supabase, req, headers); if (auth instanceof Response) return auth;
-                const body = await parseBody(req);
-                const plantCode = trimString(body?.plantCode);
-                if (!plantCode) return errorResponse("Plant code is required", headers, 400);
-                const address = body?.plantAddress != null ? trimString(body.plantAddress) : "";
-                const {error} = await supabase.from(PLANTS_TABLE).update({plant_address: address.length > 0 ? address : null, updated_at: nowISO()}).eq("plant_code", plantCode);
-                if (error) return errorResponse("Operation failed", headers, 400);
-                return jsonResponse({success: true}, headers);
+            case 'update-address': {
+                const auth = await requireAuthenticated(supabase, req, headers)
+                if (auth instanceof Response) return auth
+                const body = await parseBody(req)
+                const plantCode = trimString(body?.plantCode)
+                if (!plantCode) return errorResponse('Plant code is required', headers, 400)
+                const address = body?.plantAddress != null ? trimString(body.plantAddress) : ''
+                const { error } = await supabase
+                    .from(PLANTS_TABLE)
+                    .update({ plant_address: address.length > 0 ? address : null, updated_at: nowISO() })
+                    .eq('plant_code', plantCode)
+                if (error) return errorResponse('Operation failed', headers, 400)
+                return jsonResponse({ success: true }, headers)
             }
-            case "delete": {
-                const auth = await requireElevatedCaller(supabase, req, headers); if (auth instanceof Response) return auth;
-                const body = await parseBody(req);
-                const plantCode = body?.plantCode;
-                if (!plantCode) return errorResponse("Plant code is required", headers, 400);
-                const now = nowISO();
-                const [{error: profilesError}, {error}] = await Promise.all([
-                    supabase.from(PROFILES_TABLE).update({plant_code: "", updated_at: now}).eq("plant_code", plantCode),
-                    supabase.from(PLANTS_TABLE).delete().eq("plant_code", plantCode)
-                ]);
-                if (profilesError || error) return errorResponse("Operation failed", headers, 400);
+            case 'delete': {
+                const auth = await requireElevatedCaller(supabase, req, headers)
+                if (auth instanceof Response) return auth
+                const body = await parseBody(req)
+                const plantCode = body?.plantCode
+                if (!plantCode) return errorResponse('Plant code is required', headers, 400)
+                const now = nowISO()
+                const [{ error: profilesError }, { error }] = await Promise.all([
+                    supabase
+                        .from(PROFILES_TABLE)
+                        .update({ plant_code: '', updated_at: now })
+                        .eq('plant_code', plantCode),
+                    supabase.from(PLANTS_TABLE).delete().eq('plant_code', plantCode)
+                ])
+                if (profilesError || error) return errorResponse('Operation failed', headers, 400)
                 // Remove the deleted plant code from any additional_assigned_plants arrays
-                const {data: profilesWithAdditional} = await supabase
+                const { data: profilesWithAdditional } = await supabase
                     .from(PROFILES_TABLE)
-                    .select("id, additional_assigned_plants")
-                    .contains("additional_assigned_plants", [plantCode]);
+                    .select('id, additional_assigned_plants')
+                    .contains('additional_assigned_plants', [plantCode])
                 if (profilesWithAdditional?.length) {
-                    await Promise.all(profilesWithAdditional.map((profile: any) => {
-                        const filtered = (profile.additional_assigned_plants ?? []).filter((code: string) => code !== plantCode);
-                        return supabase.from(PROFILES_TABLE).update({
-                            additional_assigned_plants: filtered.length ? filtered : null,
-                            updated_at: now
-                        }).eq("id", profile.id);
-                    }));
+                    await Promise.all(
+                        profilesWithAdditional.map((profile: any) => {
+                            const filtered = (profile.additional_assigned_plants ?? []).filter(
+                                (code: string) => code !== plantCode
+                            )
+                            return supabase
+                                .from(PROFILES_TABLE)
+                                .update({
+                                    additional_assigned_plants: filtered.length ? filtered : null,
+                                    updated_at: now
+                                })
+                                .eq('id', profile.id)
+                        })
+                    )
                 }
-                return jsonResponse({success: true}, headers);
+                return jsonResponse({ success: true }, headers)
             }
-            case "get-with-regions": {
-                const auth = await requireAuthenticated(supabase, req, headers); if (auth instanceof Response) return auth;
-                const body = await parseBody(req);
-                const plantCode = body?.plantCode;
-                if (!plantCode) return errorResponse("Plant code is required", headers, 400);
-                const {data: plant, error: plantError} = await supabase.from(PLANTS_TABLE).select("*").eq("plant_code", plantCode).maybeSingle();
-                if (plantError) return errorResponse("Operation failed", headers, 400);
-                if (!plant) return jsonResponse({plant: null, regions: []}, headers);
-                const regionIds = await fetchRegionIds(supabase, plantCode);
-                if (!regionIds.length) return jsonResponse({plant, regions: []}, headers);
-                const {data: regions, error: regionsError} = await supabase.from("regions").select("*").in("id", regionIds);
-                if (regionsError) return errorResponse("Operation failed", headers, 400);
-                return jsonResponse({plant, regions: regions ?? []}, headers);
+            case 'get-with-regions': {
+                const auth = await requireAuthenticated(supabase, req, headers)
+                if (auth instanceof Response) return auth
+                const body = await parseBody(req)
+                const plantCode = body?.plantCode
+                if (!plantCode) return errorResponse('Plant code is required', headers, 400)
+                const { data: plant, error: plantError } = await supabase
+                    .from(PLANTS_TABLE)
+                    .select('*')
+                    .eq('plant_code', plantCode)
+                    .maybeSingle()
+                if (plantError) return errorResponse('Operation failed', headers, 400)
+                if (!plant) return jsonResponse({ plant: null, regions: [] }, headers)
+                const regionIds = await fetchRegionIds(supabase, plantCode)
+                if (!regionIds.length) return jsonResponse({ plant, regions: [] }, headers)
+                const { data: regions, error: regionsError } = await supabase
+                    .from('regions')
+                    .select('*')
+                    .in('id', regionIds)
+                if (regionsError) return errorResponse('Operation failed', headers, 400)
+                return jsonResponse({ plant, regions: regions ?? [] }, headers)
             }
             default:
-                return errorResponse("Invalid endpoint", headers, 404, {path: url.pathname});
+                return errorResponse('Invalid endpoint', headers, 404, { path: url.pathname })
         }
     } catch (error) {
-        return errorResponse("Internal server error", headers, 500);
+        return errorResponse('Internal server error', headers, 500)
     }
-});
+})

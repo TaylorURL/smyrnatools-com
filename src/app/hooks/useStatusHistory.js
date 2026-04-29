@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Database } from '../../services/DatabaseService'
 import { PlantService } from '../../services/PlantService'
 import DashboardUtility from '../../utils/DashboardUtility'
+
 const HISTORY_TABLES = [
     { idField: 'mixer_id', key: 'mixers', table: 'mixers_history' },
     { idField: 'tractor_id', key: 'tractors', table: 'tractors_history' },

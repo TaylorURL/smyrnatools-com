@@ -5,6 +5,7 @@ import { PlantService } from '../../services/PlantService'
 import { UserPreferencesService } from '../../services/UserPreferencesService'
 import { UserService } from '../../services/UserService'
 import APIUtility from '../../utils/APIUtility'
+
 const PREFS_FUNCTION = '/user-preferences-service'
 /**
  * User preferences context managing per-entity filter states, region selection,

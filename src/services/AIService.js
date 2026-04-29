@@ -1,5 +1,6 @@
 import { getRoleContext, getToneModifier, PLANT_SUMMARY_BASE, PROMPTS } from '../app/ai'
 import APIUtility from '../utils/APIUtility'
+
 const DEFAULT_MODEL = 'grok-4'
 const FAST_MODEL = 'grok-3-mini-fast'
 const MAX_SUGGESTIONS = 5

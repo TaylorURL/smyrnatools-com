@@ -9,6 +9,7 @@ import { UserService } from '../../../services/UserService'
 import PickupTruckCommentModal from './PickupTruckCommentModal'
 import PickupTruckHistoryView from './PickupTruckHistoryView'
 import PickupTruckIssueModal from './PickupTruckIssueModal'
+
 /**
  * Full detail/edit view for a single pickup truck. Supports editing VIN,
  * make, model, year, assigned person, mileage, comments, plant (region-scoped),

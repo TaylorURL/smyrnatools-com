@@ -5,6 +5,7 @@ import { ReportUtility } from '../utils/ReportUtility'
 import { Database } from './DatabaseService'
 import { PlantService } from './PlantService'
 import { UserService } from './UserService'
+
 const REPORT_FUNCTION = '/report-service'
 const postReport = (endpoint, body) => APIUtility.post(`${REPORT_FUNCTION}/${endpoint}`, body)
 const TTL_SHORT = 5 * 60 * 1000

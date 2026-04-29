@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { UserPreferencesService } from '../../../services/UserPreferencesService'
 import { UserService } from '../../../services/UserService'
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /** Step-by-step PWA install instructions for iOS Safari. */
 const IOS_STEPS = [
     {

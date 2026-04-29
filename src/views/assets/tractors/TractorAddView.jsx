@@ -7,6 +7,7 @@ import { Tractor } from '../../../app/models/tractors/Tractor'
 import { PlantService } from '../../../services/PlantService'
 import { TractorService } from '../../../services/TractorService'
 import DateUtility from '../../../utils/DateUtility'
+
 /**
  * Slide-in form for creating a new tractor record. Requires truck number,
  * region-scoped plant assignment, and freight type (Cement/Aggregate/Flat Bed).

@@ -18,6 +18,7 @@ import OperatorAddView from './OperatorAddView'
 import OperatorCard from './OperatorCard'
 import OperatorCommentModal from './OperatorCommentModal'
 import OperatorDetailView from './OperatorDetailView'
+
 /**
  * Main list/grid view for the operator roster. Handles data fetching,
  * database realtime subscriptions for live INSERT/UPDATE/DELETE,

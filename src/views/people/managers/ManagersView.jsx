@@ -9,6 +9,7 @@ import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
 import ManagerCard from './ManagerCard'
 import ManagerDetailView from './ManagerDetailView'
+
 /**
  * List/grid view for all managers (users with profiles and roles).
  * Supports region-scoped plant filtering, role filtering, name/email

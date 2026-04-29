@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
+
 /**
  * Portal-rendered modal for selecting a tractor to assign to a trailer.
  * Filters by the trailer's assigned plant, highlights already-assigned

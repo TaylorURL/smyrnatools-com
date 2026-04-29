@@ -12,6 +12,7 @@ import {
     HISTORY_TABLE_MAP,
     ISSUE_SERVICE_MAP
 } from '../constants/historyConstants'
+
 const filterEquivalentEntries = (entries) => {
     try {
         return entries.filter(

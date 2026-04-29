@@ -5,6 +5,7 @@ import RegionsAddView from '../../../app/components/regions/RegionsAddView'
 import RegionsDetailView from '../../../app/components/regions/RegionsDetailView'
 import TopSection from '../../../app/components/sections/TopSection'
 import { PlantService } from '../../../services/PlantService'
+
 /**
  * List view for all regions. Supports search by name/code/type, type filter
  * (Concrete/Aggregate/Office), and drill-down into RegionsDetailView for

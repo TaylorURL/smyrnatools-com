@@ -9,8 +9,8 @@
  * different developer environments without requiring a specific install method.
  */
 
-const {spawnSync} = require('child_process')
-const {join} = require('path')
+const { spawnSync } = require('child_process')
+const { join } = require('path')
 const fs = require('fs')
 
 /**
@@ -32,9 +32,9 @@ function exists(p) {
  * @returns {string|null} Absolute path if found, `null` otherwise.
  */
 function which(bin) {
-    const r = spawnSync('which', [bin], {encoding: 'utf8'});
+    const r = spawnSync('which', [bin], { encoding: 'utf8' })
     if (r.status === 0) {
-        const p = r.stdout.trim();
+        const p = r.stdout.trim()
         if (p) return p
     }
     return null
@@ -45,7 +45,7 @@ function which(bin) {
  * @returns {string|null} Global bin directory, or `null` if resolution fails.
  */
 function npmGlobalBin() {
-    const r = spawnSync('npm', ['bin', '-g'], {encoding: 'utf8'});
+    const r = spawnSync('npm', ['bin', '-g'], { encoding: 'utf8' })
     if (r.status === 0) {
         return r.stdout.trim()
     }
@@ -62,18 +62,15 @@ function npmGlobalBin() {
  */
 function findSupabase() {
     if (process.env.SUPABASE_BIN && exists(process.env.SUPABASE_BIN)) return process.env.SUPABASE_BIN
-    const candidates = [
-        '/opt/homebrew/bin/supabase',
-        '/usr/local/bin/supabase'
-    ]
+    const candidates = ['/opt/homebrew/bin/supabase', '/usr/local/bin/supabase']
     for (const c of candidates) {
         if (exists(c)) return c
     }
-    const w = which('supabase');
+    const w = which('supabase')
     if (w) return w
-    const g = npmGlobalBin();
+    const g = npmGlobalBin()
     if (g) {
-        const p = join(g, 'supabase');
+        const p = join(g, 'supabase')
         if (exists(p)) return p
     }
     return null
@@ -86,7 +83,7 @@ function findSupabase() {
  * @returns {import('child_process').SpawnSyncReturns<Buffer>}
  */
 function run(bin, args) {
-    return spawnSync(bin, args, {stdio: 'inherit', env: process.env})
+    return spawnSync(bin, args, { stdio: 'inherit', env: process.env })
 }
 
 /**
@@ -95,7 +92,7 @@ function run(bin, args) {
  * @returns {import('child_process').SpawnSyncReturns<Buffer>}
  */
 function tryNpx(args) {
-    return spawnSync('npx', ['-y', 'supabase', ...args], {stdio: 'inherit', env: process.env})
+    return spawnSync('npx', ['-y', 'supabase', ...args], { stdio: 'inherit', env: process.env })
 }
 
 // --- Entry point: resolve CLI binary and forward all arguments ---
@@ -111,7 +108,8 @@ if (bin) {
     // Fall back to npx when no local/global installation is found
     const r = tryNpx(args)
     if (typeof r.status === 'number') process.exit(r.status)
-    console.error('Supabase CLI not found. Install with Homebrew or npm: brew install supabase/tap/supabase or npm i -g supabase')
+    console.error(
+        'Supabase CLI not found. Install with Homebrew or npm: brew install supabase/tap/supabase or npm i -g supabase'
+    )
     process.exit(1)
 }
-

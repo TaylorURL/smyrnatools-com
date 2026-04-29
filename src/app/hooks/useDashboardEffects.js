@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { INITIAL_STATS } from '../constants/dashboardConstants'
+
 /**
  * Animates dashboard stat counters from zero to their final values on first render
  * and on region changes. Uses requestAnimationFrame for smooth 60fps transitions.

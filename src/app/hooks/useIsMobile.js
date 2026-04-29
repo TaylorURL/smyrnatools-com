@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+
 const MOBILE_BREAKPOINT = 768
 /** Tracks viewport width against MOBILE_BREAKPOINT (768px) via resize listener. */
 export function useIsMobile() {

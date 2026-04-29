@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
+
 /**
  * Portal modal for selecting one or more plants from a searchable list.
  * Supports single-select (auto-closes on pick) and multi-select (checkbox) modes.

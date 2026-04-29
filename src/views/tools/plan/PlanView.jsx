@@ -20,6 +20,13 @@ import {
     TARGET_YPH,
     timeToMinutes
 } from '../../../utils/PlanUtility'
+import PlanDashboardView from './PlanDashboardView'
+import PlanDemandView from './PlanDemandView'
+import PlanFlowView from './PlanFlowView'
+import PlanRealtimeView from './PlanRealtimeView'
+import PlanScheduleView from './PlanScheduleView'
+import PlanSettingsModal from './PlanSettingsModal'
+import PlanStatisticsView from './PlanStatisticsView'
 
 const SCHEDULE_STALE_THRESHOLD_MS = 30 * 60 * 1000
 
@@ -36,13 +43,6 @@ const skipSundayDate = (dateStr, direction = 1) => {
 
 /** Same direction as getOffsetDate, but lands on the next non-Sunday. */
 const offsetDateSkipSunday = (dateStr, offset) => skipSundayDate(getOffsetDate(dateStr, offset), offset)
-import PlanDashboardView from './PlanDashboardView'
-import PlanDemandView from './PlanDemandView'
-import PlanFlowView from './PlanFlowView'
-import PlanRealtimeView from './PlanRealtimeView'
-import PlanScheduleView from './PlanScheduleView'
-import PlanSettingsModal from './PlanSettingsModal'
-import PlanStatisticsView from './PlanStatisticsView'
 
 /**
  * PlanView — plant-centric dispatch planner.
