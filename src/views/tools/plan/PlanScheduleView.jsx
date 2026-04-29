@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import JobMapModal from '../../../app/components/schedule/JobMapModal'
 import TruckCoverageHoverCard from '../../../app/components/schedule/TruckCoverageHoverCard'
+import { useDetailOrders } from '../../../app/hooks/useDetailOrders'
 import { TrafficService } from '../../../services/TrafficService'
 import {
     BIG_POUR_MIN_TRUCKS,
@@ -719,7 +720,7 @@ function SyntheticRow({
             <td className="px-3 py-2 whitespace-nowrap align-top" style={{ width: 1 }}>
                 {plantCell}
             </td>
-            <td className="px-3 py-2 align-top" colSpan={11}>
+            <td className="px-3 py-2 align-top" colSpan={12}>
                 <div className="flex items-start gap-2.5 text-[12px] flex-wrap">
                     <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
@@ -748,6 +749,7 @@ function SyntheticRow({
 function ScheduleTable({
     accentColor,
     clockInRows = [],
+    detailByOrderId = {},
     filteredPlantCode = null,
     getCloserPlantForOrder,
     getTravelOverrides,
@@ -1093,6 +1095,7 @@ function ScheduleTable({
                             'Location',
                             'Product',
                             'Yards',
+                            'Loaded',
                             'Load',
                             'Trucks',
                             'Travel',
@@ -1673,6 +1676,35 @@ function ScheduleTable({
                                 >
                                     {yardage > 0 ? yardage : '—'}
                                 </td>
+                                {(() => {
+                                    const detail = o.orderId ? detailByOrderId[o.orderId] : null
+                                    const loaded = detail?.loadedYardage || 0
+                                    const total = yardage
+                                    if (!total && !loaded) {
+                                        return (
+                                            <td
+                                                className="px-3 py-2 font-mono text-right whitespace-nowrap"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
+                                                —
+                                            </td>
+                                        )
+                                    }
+                                    const loadedDisplay = Number.isInteger(loaded) ? loaded : loaded.toFixed(2)
+                                    const isComplete = total > 0 && loaded >= total
+                                    return (
+                                        <td
+                                            className="px-3 py-2 font-mono text-right whitespace-nowrap"
+                                            style={{
+                                                color: isComplete ? '#16a34a' : 'var(--text-primary)'
+                                            }}
+                                            title={`${loadedDisplay} yards loaded of ${total} ordered`}
+                                        >
+                                            <span className="font-bold">{loadedDisplay}</span>
+                                            <span style={{ color: 'var(--text-tertiary)' }}> / {total || '—'}</span>
+                                        </td>
+                                    )
+                                })()}
                                 <td
                                     className="px-3 py-2 font-mono text-right whitespace-nowrap"
                                     style={{ color: 'var(--text-secondary)' }}
@@ -1900,6 +1932,9 @@ function PlanScheduleView({
     const poolDayMultiplier = getPoolDayMultiplier(planDate)
     const plantsClosed = isClosedDay(planDate)
     const isSaturday = poolDayMultiplier === 0.5
+    /** Per-order ticket data from DetailOrderAnalysis reports. Keyed by
+     *  orderId; values are merged across all plant files for the date. */
+    const detailByOrderId = useDetailOrders(planDate)
     /** Fallback city lookup: when an order's city is blank, we use the plant's
      *  city so the map/geocoder still lands near the right area. */
     const plantCityByCode = useMemo(() => {
@@ -3188,6 +3223,7 @@ function PlanScheduleView({
                                 <ScheduleTable
                                     accentColor={accentColor}
                                     clockInRows={clockInRows}
+                                    detailByOrderId={detailByOrderId}
                                     getCloserPlantForOrder={getCloserPlantForOrder}
                                     getTravelOverrides={getTravelOverrides}
                                     helpRows={helpRows}

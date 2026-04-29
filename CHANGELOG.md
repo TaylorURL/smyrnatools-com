@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [40.0.4] - 2026-04-29
+
+- Added Smyrna Dispatch Sync bridge userscript that syncs DailyOrder and DetailOrderAnalysis reports from the dispatch server to Supabase storage every 5 minutes, with rolling 7-day window and current-year backfill
+- Added DetailOrderBucketService to fetch and merge per-plant DetailOrderAnalysis HTML files from the dispatch-reports storage bucket
+- Added DetailOrderParser utility to extract ticket counts and loaded yardage from DetailOrderAnalysis HTML reports
+- Added useDetailOrders hook for polling DetailOrderAnalysis ticket data on a fixed interval, returning a map keyed by orderId
+- Updated PlanScheduleView to integrate detail order ticket data alongside existing daily order info
+- Refactored PlanStatisticsView with structural improvements and reorganized rendering logic
+
 ## [40.0.3] - 2026-04-29
 
 - Added PlanStatisticsView — a full analytics dashboard for the Plan tab with trend charts, period comparisons, plant breakdowns, and operator metrics powered by Recharts

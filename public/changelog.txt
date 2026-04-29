@@ -1,6 +1,29 @@
 # Changelog
 
 
+## [40.0.3] - 2026-04-29
+
+- Added PlanStatisticsView — a full analytics dashboard for the Plan tab with trend charts, period comparisons, plant breakdowns, and operator metrics powered by Recharts
+- Added "Statistics" tab to PlanView alongside existing Schedule, Planner, Demand, and Realtime tabs
+- Added fetch-plans-range endpoint to the plan-service edge function for bulk-fetching plans across a date range
+- Added fetchPlansInRange method to PlanService with fallback to parallel per-day fetches when the bulk endpoint is unavailable
+- Exported parseDurationMinutes from PlanUtility so PlanStatisticsView can parse dispatch durations
+- Added formatActivityValue to ListService for human-readable activity feed values, formatting deadline fields as localized dates instead of raw ISO timestamps
+- Updated ListView activity feed to use formatActivityValue for old/new value display
+- Deleted App.css entirely — migrated all its styles (App shell, coming-soon, btn, content-area, my-account overrides) to Tailwind utilities inline in App.js
+- Removed all inline style blocks from CardSection, AddViewSection, DetailViewSection, DeadlineFuse, TutorialPopup, ReportsView, and ListView — replaced with Tailwind classes or @layer component definitions in index.css
+- Consolidated and restructured index.css: deduplicated root/body/html resets, organized into @layer base and @layer components, added dark-mode select chevron, added status-* and text-tertiary CSS variables, and removed duplicate --text-secondary declaration
+- Migrated add-view-form styles from an inline style block in AddViewSection to @layer components in index.css using @apply directives
+- Migrated DetailViewSection legacy styles (detail-card, form-control, operator-select, primary/danger/cancel buttons, etc.) to @layer components in index.css
+- Added metric-card, allocation-pill, and status-badge component classes to index.css
+- Moved all keyframe animations (spin, pulse, fadeSlideIn, fadeOut, plan-overbook-glow/wobble, fuse-shimmer/pulse, tutorial-pulse, filter-fade, dv-spin/fade-in/slide-up/scale-in) from inline style blocks into tailwind.config.js as proper Tailwind animation utilities
+- Replaced TutorialPopup's injected style keyframe with a --tutorial-accent CSS variable and the new animate-tutorial-pulse Tailwind utility
+- Converted DeadlineFuse fuse-fill/fuse-shimmer/fuse-number CSS classes to inline Tailwind utilities
+- Replaced content-container / global-content-container class usage in AssetView, ManagersView, OperatorsView, and PlanView with equivalent Tailwind utilities
+- Converted ReportsView split-layout CSS (.rv-split, .rv-rail-slot, .rv-rail-fixed) to Tailwind class constants using group-data attributes for the collapse animation
+- Replaced plan-overbook-pill/plan-overbook-icon CSS classes with motion-safe Tailwind animate utilities
+- Replaced inline filterFadeIn keyframe in ListView with the new animate-filter-fade Tailwind utility
+
 ## [40.0.2] - 2026-04-27
 
 - Added region-scoped filtering to the Ready Mix Instructor review plugin, resolving the report owner's region via PlantService/UserService instead of deriving scope from the (potentially unfiltered) plants prop

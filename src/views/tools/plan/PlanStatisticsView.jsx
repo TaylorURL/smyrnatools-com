@@ -235,6 +235,24 @@ const computeScheduleMetrics = (row) => {
     let latestEnd = null
     let activePlants = 0
 
+    /** Loads (truck deliveries) for an order = yardage / loadSize — NOT
+     *  `truckCount`, which is the trucks-in-rotation count and is often
+     *  smaller than the delivery count (one truck does multiple trips).
+     *  When loadSize is missing from the parsed dispatch HTML, fall back to
+     *  the fleet maximum (10 yd³) so the yards/load average can never
+     *  exceed physical truck capacity. */
+    const FLEET_MAX_LOAD_SIZE = 10
+    const loadsForOrder = (o) => {
+        const yards = parseFloat(o?.yardage) || 0
+        if (yards <= 0) return 0
+        const rawLoadSize = parseFloat(o?.loadSize)
+        const loadSize =
+            Number.isFinite(rawLoadSize) && rawLoadSize > 0
+                ? Math.min(rawLoadSize, FLEET_MAX_LOAD_SIZE)
+                : FLEET_MAX_LOAD_SIZE
+        return yards / loadSize
+    }
+
     Object.keys(production).forEach((plantCode) => {
         if (plantCode === PLAN_META_KEY) return
         const block = production[plantCode] || {}
@@ -242,7 +260,7 @@ const computeScheduleMetrics = (row) => {
         const liveOrders = orders.filter((o) => !isExcludedOrder(o))
         const orderYardage = liveOrders.reduce((sum, o) => sum + (parseFloat(o.yardage) || 0), 0)
         const yardage = orderYardage > 0 || liveOrders.length > 0 ? orderYardage : parseFloat(block.totalYardage) || 0
-        const loads = liveOrders.reduce((sum, o) => sum + (parseFloat(o.truckCount) || 0), 0)
+        const loads = liveOrders.reduce((sum, o) => sum + loadsForOrder(o), 0)
         const startMin = timeToMinutes(block.firstJobTime)
         const endMin = timeToMinutes(block.lastJobTime)
         if (yardage > 0 || loads > 0 || liveOrders.length > 0) activePlants += 1
@@ -261,7 +279,7 @@ const computeScheduleMetrics = (row) => {
 
         liveOrders.forEach((o) => {
             const orderYards = parseFloat(o.yardage) || 0
-            const orderLoads = parseFloat(o.truckCount) || 0
+            const orderLoads = loadsForOrder(o)
             const customer = (o.customer || 'Unknown').trim() || 'Unknown'
             if (!perCustomer[customer]) perCustomer[customer] = { customer, loads: 0, orders: 0, yardage: 0 }
             perCustomer[customer].yardage += orderYards
@@ -1638,13 +1656,12 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                 )}
 
                 {!loading && currentDays.length > 0 && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {/* Hero: when does the day stack up? Hourly demand
-                            curve answers "when do we need the trucks". */}
+                    <div className="flex flex-col gap-4">
+                        {/* Hero: when does the day stack up? Full-width to
+                            give the hourly demand curve room to breathe. */}
                         <Panel
                             title="Demand by hour"
                             innerClassName="p-3"
-                            className="lg:col-span-2"
                             right={
                                 currentSummary.peakHour && currentSummary.peakHour.loads > 0 ? (
                                     <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
@@ -1657,225 +1674,231 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                             <HourlyDistributionChart accent={accentColor} hourBuckets={currentSummary.hourBuckets} />
                         </Panel>
 
-                        {/* Plant scorecard table — the operational view of
-                            who's busy, who's slack, and who's overbooked. */}
-                        <Panel
-                            title="Plant scorecards"
-                            innerClassName="p-0"
-                            className="lg:col-span-2"
-                            right={
-                                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                    {currentSummary.activePlantSet.size} active ·{' '}
-                                    {currentSummary.topPlantShare
-                                        ? `top: ${currentSummary.topPlantShare.code} (${(currentSummary.topPlantShare.share * 100).toFixed(0)}%)`
-                                        : '—'}
-                                </span>
-                            }
-                        >
-                            <PlantScorecardTable
-                                accent={accentColor}
-                                isSingleDay={isSingleDay}
-                                mixerCountsByPlant={mixerCountsByPlant}
-                                plantNameByCode={plantNameByCode}
-                                rows={Object.values(currentSummary.perPlant)}
-                                singleDayShiftSpan={isSingleDay ? currentDays[0]?.shiftSpanHours : null}
-                                totalYardage={currentSummary.totalYardage}
-                            />
-                        </Panel>
-
-                        {/* Operational risk lists — concrete things the
-                            ops manager should pre-coordinate. */}
-                        <Panel
-                            title="Big pours to coordinate"
-                            innerClassName="p-0"
-                            right={
-                                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                    {currentSummary.bigPours.length} total · &gt;{BIG_POUR_YARDAGE_THRESHOLD} yd³ · &lt;
-                                    {BIG_POUR_SPACING_THRESHOLD_MIN}m spacing
-                                </span>
-                            }
-                        >
-                            <BigPoursTable
-                                accent={accentColor}
-                                plantNameByCode={plantNameByCode}
-                                pours={currentSummary.bigPours}
-                            />
-                        </Panel>
-                        <Panel
-                            title="Customer concentration"
-                            innerClassName="p-3"
-                            right={
-                                currentSummary.topCustomerShare ? (
-                                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                        Top: {(currentSummary.topCustomerShare.share * 100).toFixed(0)}% from{' '}
-                                        {currentSummary.topCustomerShare.customer}
-                                    </span>
-                                ) : null
-                            }
-                        >
-                            <RankedList
-                                accent={accentColor}
-                                emptyLabel="No customer data in this range."
-                                items={topCustomers}
-                                labelKey="customer"
-                                secondaryFmt={(item) => `${item.orders} ord`}
-                            />
-                        </Panel>
-
-                        {/* Secondary: pattern / trend context. */}
-                        <Panel
-                            title="Daily yardage trend"
-                            innerClassName="p-3"
-                            right={
-                                trendComparison && (
-                                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                        Dotted = {comparison === 'lastYear' ? 'last year' : 'previous period'}
-                                    </span>
-                                )
-                            }
-                        >
-                            <TrendChart accent={accentColor} data={trendData} comparisonData={trendComparison} />
-                        </Panel>
-                        <Panel title="Average by weekday" innerClassName="p-3">
-                            <DayOfWeekChart accent={accentColor} plans={currentDays} />
-                        </Panel>
-                        <Panel title="Top product mixes" innerClassName="p-3">
-                            <RankedList
-                                accent={accentColor}
-                                emptyLabel="No product data in this range."
-                                items={topProducts}
-                                labelKey="product"
-                                secondaryFmt={(item) => `${fmtInt(item.loads)} loads`}
-                            />
-                        </Panel>
-                        {previousSummary && (
-                            <Panel title="Period comparison" innerClassName="p-0">
-                                <div
-                                    className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-3 py-2 text-[10px] font-bold uppercase tracking-wider"
-                                    style={{ color: 'var(--text-tertiary)' }}
+                        {/* 2-column body: operational tables/trends on the
+                            left (main column), supporting risk lists and
+                            mix breakdowns on the right (sidebar column).
+                            3:2 ratio gives the wider panels enough room for
+                            tables without crowding the sidebar lists. */}
+                        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 items-start">
+                            <div className="flex flex-col gap-4 min-w-0">
+                                <Panel
+                                    title="Plant scorecards"
+                                    innerClassName="p-0"
+                                    right={
+                                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                            {currentSummary.activePlantSet.size} active ·{' '}
+                                            {currentSummary.topPlantShare
+                                                ? `top: ${currentSummary.topPlantShare.code} (${(currentSummary.topPlantShare.share * 100).toFixed(0)}%)`
+                                                : '—'}
+                                        </span>
+                                    }
                                 >
-                                    <span>Metric</span>
-                                    <span>Current</span>
-                                    <span>{previousSummary ? 'Previous' : '—'}</span>
-                                    <span className="text-right" style={{ minWidth: 60 }}>
-                                        Δ
-                                    </span>
-                                </div>
-                                <ComparisonRow
-                                    label="Total yardage"
-                                    current={{
-                                        formatted: fmtInt(currentSummary.totalYardage),
-                                        value: currentSummary.totalYardage
-                                    }}
-                                    previous={
-                                        previousSummary
-                                            ? {
-                                                  formatted: fmtInt(previousSummary.totalYardage),
-                                                  value: previousSummary.totalYardage
-                                              }
-                                            : null
+                                    <PlantScorecardTable
+                                        accent={accentColor}
+                                        isSingleDay={isSingleDay}
+                                        mixerCountsByPlant={mixerCountsByPlant}
+                                        plantNameByCode={plantNameByCode}
+                                        rows={Object.values(currentSummary.perPlant)}
+                                        singleDayShiftSpan={isSingleDay ? currentDays[0]?.shiftSpanHours : null}
+                                        totalYardage={currentSummary.totalYardage}
+                                    />
+                                </Panel>
+                                <Panel
+                                    title="Daily yardage trend"
+                                    innerClassName="p-3"
+                                    right={
+                                        trendComparison && (
+                                            <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                                Dotted = {comparison === 'lastYear' ? 'last year' : 'previous period'}
+                                            </span>
+                                        )
                                     }
-                                />
-                                <ComparisonRow
-                                    label="Loads scheduled"
-                                    current={{
-                                        formatted: fmtInt(currentSummary.totalLoads),
-                                        value: currentSummary.totalLoads
-                                    }}
-                                    previous={
-                                        previousSummary
-                                            ? {
-                                                  formatted: fmtInt(previousSummary.totalLoads),
-                                                  value: previousSummary.totalLoads
-                                              }
-                                            : null
+                                >
+                                    <TrendChart
+                                        accent={accentColor}
+                                        data={trendData}
+                                        comparisonData={trendComparison}
+                                    />
+                                </Panel>
+                                <Panel title="Average by weekday" innerClassName="p-3">
+                                    <DayOfWeekChart accent={accentColor} plans={currentDays} />
+                                </Panel>
+                            </div>
+                            <div className="flex flex-col gap-4 min-w-0">
+                                <Panel
+                                    title="Big pours to coordinate"
+                                    innerClassName="p-0"
+                                    right={
+                                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                            {currentSummary.bigPours.length} · &gt;{BIG_POUR_YARDAGE_THRESHOLD} yd³ ·
+                                            &lt;{BIG_POUR_SPACING_THRESHOLD_MIN}m
+                                        </span>
                                     }
-                                />
-                                <ComparisonRow
-                                    label="Orders"
-                                    current={{
-                                        formatted: fmtInt(currentSummary.totalOrders),
-                                        value: currentSummary.totalOrders
-                                    }}
-                                    previous={
-                                        previousSummary
-                                            ? {
-                                                  formatted: fmtInt(previousSummary.totalOrders),
-                                                  value: previousSummary.totalOrders
-                                              }
-                                            : null
+                                >
+                                    <BigPoursTable
+                                        accent={accentColor}
+                                        plantNameByCode={plantNameByCode}
+                                        pours={currentSummary.bigPours}
+                                    />
+                                </Panel>
+                                <Panel
+                                    title="Customer concentration"
+                                    innerClassName="p-3"
+                                    right={
+                                        currentSummary.topCustomerShare ? (
+                                            <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                                Top {(currentSummary.topCustomerShare.share * 100).toFixed(0)}%
+                                            </span>
+                                        ) : null
                                     }
-                                />
-                                <ComparisonRow
-                                    label="Yardage per load"
-                                    current={{
-                                        formatted:
-                                            currentSummary.yardagePerLoad != null
-                                                ? fmtFloat(currentSummary.yardagePerLoad)
-                                                : '—',
-                                        value: currentSummary.yardagePerLoad
-                                    }}
-                                    previous={
-                                        previousSummary && previousSummary.yardagePerLoad != null
-                                            ? {
-                                                  formatted: fmtFloat(previousSummary.yardagePerLoad),
-                                                  value: previousSummary.yardagePerLoad
-                                              }
-                                            : null
-                                    }
-                                />
-                                <ComparisonRow
-                                    label="Avg yardage / active day"
-                                    current={{
-                                        formatted: fmtInt(currentSummary.avgYardagePerActiveDay),
-                                        value: currentSummary.avgYardagePerActiveDay
-                                    }}
-                                    previous={
-                                        previousSummary
-                                            ? {
-                                                  formatted: fmtInt(previousSummary.avgYardagePerActiveDay),
-                                                  value: previousSummary.avgYardagePerActiveDay
-                                              }
-                                            : null
-                                    }
-                                />
-                                <ComparisonRow
-                                    label="Avg shift span (h)"
-                                    current={{
-                                        formatted:
-                                            currentSummary.avgShiftSpanHours != null
-                                                ? fmtFloat(currentSummary.avgShiftSpanHours)
-                                                : '—',
-                                        value: currentSummary.avgShiftSpanHours
-                                    }}
-                                    previous={
-                                        previousSummary && previousSummary.avgShiftSpanHours != null
-                                            ? {
-                                                  formatted: fmtFloat(previousSummary.avgShiftSpanHours),
-                                                  value: previousSummary.avgShiftSpanHours
-                                              }
-                                            : null
-                                    }
-                                />
-                                <ComparisonRow
-                                    label="Active production days"
-                                    current={{
-                                        formatted: `${currentSummary.daysWithProduction}/${currentSummary.dayCount}`,
-                                        value: currentSummary.daysWithProduction
-                                    }}
-                                    previous={
-                                        previousSummary
-                                            ? {
-                                                  formatted: `${previousSummary.daysWithProduction}/${previousSummary.dayCount}`,
-                                                  value: previousSummary.daysWithProduction
-                                              }
-                                            : null
-                                    }
-                                />
-                            </Panel>
-                        )}
+                                >
+                                    <RankedList
+                                        accent={accentColor}
+                                        emptyLabel="No customer data in this range."
+                                        items={topCustomers}
+                                        labelKey="customer"
+                                        secondaryFmt={(item) => `${item.orders} ord`}
+                                    />
+                                </Panel>
+                                <Panel title="Top product mixes" innerClassName="p-3">
+                                    <RankedList
+                                        accent={accentColor}
+                                        emptyLabel="No product data in this range."
+                                        items={topProducts}
+                                        labelKey="product"
+                                        secondaryFmt={(item) => `${fmtInt(item.loads)} loads`}
+                                    />
+                                </Panel>
+                                {previousSummary && (
+                                    <Panel title="Period comparison" innerClassName="p-0">
+                                        <div
+                                            className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-3 py-2 text-[10px] font-bold uppercase tracking-wider"
+                                            style={{ color: 'var(--text-tertiary)' }}
+                                        >
+                                            <span>Metric</span>
+                                            <span>Current</span>
+                                            <span>{previousSummary ? 'Previous' : '—'}</span>
+                                            <span className="text-right" style={{ minWidth: 60 }}>
+                                                Δ
+                                            </span>
+                                        </div>
+                                        <ComparisonRow
+                                            label="Total yardage"
+                                            current={{
+                                                formatted: fmtInt(currentSummary.totalYardage),
+                                                value: currentSummary.totalYardage
+                                            }}
+                                            previous={
+                                                previousSummary
+                                                    ? {
+                                                          formatted: fmtInt(previousSummary.totalYardage),
+                                                          value: previousSummary.totalYardage
+                                                      }
+                                                    : null
+                                            }
+                                        />
+                                        <ComparisonRow
+                                            label="Loads scheduled"
+                                            current={{
+                                                formatted: fmtInt(currentSummary.totalLoads),
+                                                value: currentSummary.totalLoads
+                                            }}
+                                            previous={
+                                                previousSummary
+                                                    ? {
+                                                          formatted: fmtInt(previousSummary.totalLoads),
+                                                          value: previousSummary.totalLoads
+                                                      }
+                                                    : null
+                                            }
+                                        />
+                                        <ComparisonRow
+                                            label="Orders"
+                                            current={{
+                                                formatted: fmtInt(currentSummary.totalOrders),
+                                                value: currentSummary.totalOrders
+                                            }}
+                                            previous={
+                                                previousSummary
+                                                    ? {
+                                                          formatted: fmtInt(previousSummary.totalOrders),
+                                                          value: previousSummary.totalOrders
+                                                      }
+                                                    : null
+                                            }
+                                        />
+                                        <ComparisonRow
+                                            label="Yardage per load"
+                                            current={{
+                                                formatted:
+                                                    currentSummary.yardagePerLoad != null
+                                                        ? fmtFloat(currentSummary.yardagePerLoad)
+                                                        : '—',
+                                                value: currentSummary.yardagePerLoad
+                                            }}
+                                            previous={
+                                                previousSummary && previousSummary.yardagePerLoad != null
+                                                    ? {
+                                                          formatted: fmtFloat(previousSummary.yardagePerLoad),
+                                                          value: previousSummary.yardagePerLoad
+                                                      }
+                                                    : null
+                                            }
+                                        />
+                                        <ComparisonRow
+                                            label="Avg yardage / active day"
+                                            current={{
+                                                formatted: fmtInt(currentSummary.avgYardagePerActiveDay),
+                                                value: currentSummary.avgYardagePerActiveDay
+                                            }}
+                                            previous={
+                                                previousSummary
+                                                    ? {
+                                                          formatted: fmtInt(previousSummary.avgYardagePerActiveDay),
+                                                          value: previousSummary.avgYardagePerActiveDay
+                                                      }
+                                                    : null
+                                            }
+                                        />
+                                        <ComparisonRow
+                                            label="Avg shift span (h)"
+                                            current={{
+                                                formatted:
+                                                    currentSummary.avgShiftSpanHours != null
+                                                        ? fmtFloat(currentSummary.avgShiftSpanHours)
+                                                        : '—',
+                                                value: currentSummary.avgShiftSpanHours
+                                            }}
+                                            previous={
+                                                previousSummary && previousSummary.avgShiftSpanHours != null
+                                                    ? {
+                                                          formatted: fmtFloat(previousSummary.avgShiftSpanHours),
+                                                          value: previousSummary.avgShiftSpanHours
+                                                      }
+                                                    : null
+                                            }
+                                        />
+                                        <ComparisonRow
+                                            label="Active production days"
+                                            current={{
+                                                formatted: `${currentSummary.daysWithProduction}/${currentSummary.dayCount}`,
+                                                value: currentSummary.daysWithProduction
+                                            }}
+                                            previous={
+                                                previousSummary
+                                                    ? {
+                                                          formatted: `${previousSummary.daysWithProduction}/${previousSummary.dayCount}`,
+                                                          value: previousSummary.daysWithProduction
+                                                      }
+                                                    : null
+                                            }
+                                        />
+                                    </Panel>
+                                )}
+                            </div>
+                        </div>
                         {insights.length > 5 && (
-                            <Panel title="Additional observations" className="lg:col-span-2">
+                            <Panel title="Additional observations">
                                 <div className="flex flex-col gap-2">
                                     {insights.slice(5).map((insight, idx) => {
                                         const tone = TONE_STYLES[insight.tone] || TONE_STYLES.neutral
