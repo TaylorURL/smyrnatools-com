@@ -1,33 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Database } from '../../services/DatabaseService'
-import { ScheduleBucketService } from '../../services/ScheduleBucketService'
-import { parseDailyOrderHtml } from '../../utils/DailyOrderParser'
+import { DispatchDataService } from '../../services/DispatchDataService'
 
-const SYNC_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
-const REALTIME_DEBOUNCE_MS = 1500
-const BUCKET_NAME = 'dispatch-reports'
+const SYNC_INTERVAL_MS = 5 * 60 * 1000
+const REALTIME_DEBOUNCE_MS = 750
 
 /**
- * Keeps `plantProduction` in lockstep with the daily schedule bucket.
+ * Keeps `plantProduction` in lockstep with the `dispatch_data` table — the
+ * canonical source for parsed dispatch report data. The bucket's HTML
+ * files are still uploaded by the bridge userscript, but they get parsed
+ * server-side by the `dispatch-import` edge function and written to
+ * `dispatch_data`. This hook reads from there only.
  *
- * The Tampermonkey script on the dispatch workstation uploads today + 7 days
- * of schedule HTMLs to Supabase storage every 5 minutes. This hook:
- *   1. Pulls the file for the currently-viewed plan date on mount / date change.
+ *   1. Pulls schedule rows for `planDate` on mount / date change.
  *   2. Re-pulls every 5 minutes as a safety net.
- *   3. Subscribes to realtime `storage.objects` events on the bucket, so a
- *      fresh upload triggers an immediate re-sync (debounced).
+ *   3. Subscribes to realtime postgres_changes on `dispatch_data` so any
+ *      upsert (from the importer running) triggers a debounced refresh.
  *   4. Exposes `refresh()` for manual user-driven refreshes.
  *
  * The `_meta` blob (special/QC jobs, formatted notes) is preserved across
  * every sync so user-authored plan metadata isn't wiped.
  */
+// eslint-disable-next-line no-unused-vars
 export function useScheduleSync({ planDate, plants, setPlantProduction, enabled = true }) {
     const [lastSyncedAt, setLastSyncedAt] = useState(null)
     const [fileUpdatedAt, setFileUpdatedAt] = useState(null)
     const [isSyncing, setIsSyncing] = useState(false)
-    const plantsRef = useRef(plants)
-    plantsRef.current = plants
     const setPlantProductionRef = useRef(setPlantProduction)
     setPlantProductionRef.current = setPlantProduction
     const planDateRef = useRef(planDate)
@@ -40,15 +39,13 @@ export function useScheduleSync({ planDate, plants, setPlantProduction, enabled 
         if (!date) return false
         setIsSyncing(true)
         try {
-            const [html, updatedAt] = await Promise.all([
-                ScheduleBucketService.fetchScheduleByDate(date),
-                ScheduleBucketService.fetchScheduleUpdatedAt(date)
+            const [production, updatedAt] = await Promise.all([
+                DispatchDataService.fetchSchedule(date),
+                DispatchDataService.fetchLastUpdatedAt(date)
             ])
             if (cancelledRef.current) return false
             if (updatedAt) setFileUpdatedAt(updatedAt)
-            if (!html) return false
-            const production = parseDailyOrderHtml(html, plantsRef.current)
-            if (cancelledRef.current || !production || Object.keys(production).length === 0) return false
+            if (!production || Object.keys(production).length === 0) return false
             setPlantProductionRef.current((prev) => {
                 const next = { ...production }
                 if (prev && prev._meta) next._meta = prev._meta
@@ -65,7 +62,6 @@ export function useScheduleSync({ planDate, plants, setPlantProduction, enabled 
         }
     }, [])
 
-    // Initial fetch + 5-min safety-net polling.
     useEffect(() => {
         if (!enabled || !planDate) return undefined
         cancelledRef.current = false
@@ -77,35 +73,22 @@ export function useScheduleSync({ planDate, plants, setPlantProduction, enabled 
         }
     }, [planDate, enabled, sync])
 
-    // Realtime: fire an immediate (debounced) sync whenever a new file lands
-    // in the dispatch bucket. Bucket files are named `YYYY-MM-DD.html`, so we
-    // only act when the event matches the date currently being viewed.
+    // Realtime: any change on a dispatch_data row for the current planDate
+    // triggers a debounced re-sync. We refetch the whole map rather than
+    // patching incrementally — DispatchDataService aggregates per plant
+    // and the cost of one re-read is small compared to keeping the merge
+    // logic in two places.
     useEffect(() => {
         if (!enabled) return undefined
-        const channelName = `dispatch-bucket-${BUCKET_NAME}-${Date.now()}`
-        const handleStorageChange = (payload) => {
-            const objectName = payload?.new?.name || payload?.old?.name || ''
-            if (!objectName) return
-            const expected = `${planDateRef.current}.html`
-            // Tolerate folder prefixes (`region/2026-04-23.html`) by checking
-            // the suffix rather than the whole path.
-            if (!objectName.endsWith(expected)) return
+        const channelName = `dispatch-data-schedule-${Date.now()}`
+        const onChange = (payload) => {
+            const row = payload?.new || payload?.old
+            if (row?.order_date !== planDateRef.current) return
             if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
-            realtimeDebounceRef.current = setTimeout(() => {
-                sync()
-            }, REALTIME_DEBOUNCE_MS)
+            realtimeDebounceRef.current = setTimeout(() => sync(), REALTIME_DEBOUNCE_MS)
         }
         const channel = Database.channel(channelName)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    filter: `bucket_id=eq.${BUCKET_NAME}`,
-                    schema: 'storage',
-                    table: 'objects'
-                },
-                handleStorageChange
-            )
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'dispatch_data' }, onChange)
             .subscribe()
         return () => {
             if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)

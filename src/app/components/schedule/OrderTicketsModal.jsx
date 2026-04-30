@@ -251,8 +251,17 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                                     color: 'var(--text-primary)',
                                                     fontVariantNumeric: 'tabular-nums'
                                                 }}
+                                                title={
+                                                    t.sourceReport === 'DetailDriver'
+                                                        ? 'Yards not in DetailDriver report — cross-plant load'
+                                                        : undefined
+                                                }
                                             >
-                                                {Number.isInteger(t.quantity) ? t.quantity : t.quantity.toFixed(2)}
+                                                {t.sourceReport === 'DetailDriver' && !t.quantity
+                                                    ? '—'
+                                                    : Number.isInteger(t.quantity)
+                                                      ? t.quantity
+                                                      : t.quantity.toFixed(2)}
                                             </td>
                                         </tr>
                                     )

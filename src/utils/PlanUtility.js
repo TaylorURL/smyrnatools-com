@@ -66,6 +66,10 @@ export const BIG_POUR_MIN_TRUCKS = 12
  *  travel-to-job and travel-back so `cycleMin` reflects the real round-trip
  *  length, not just windshield time. */
 export const TRUCK_ON_SITE_MINUTES = 30
+/** Max yards a single concrete truck can physically haul. Used as both a
+ *  per-order load-size cap and the upper bound on every yards-per-load
+ *  metric — anything above this is a data inconsistency, not a real number. */
+export const FLEET_MAX_LOAD_SIZE = 10
 
 /**
  * Weekend availability rules:
@@ -1155,6 +1159,25 @@ export const getOffsetDate = (dateStr, offset) => {
     return d.toISOString().split('T')[0]
 }
 
+/**
+ * Returns `dateStr` unchanged if it isn't a Sunday; otherwise advances by
+ * `direction` (+1 forward, −1 backward) until it lands on a non-Sunday.
+ * Used so the Plan date selector skips Sundays entirely — plants are
+ * closed on Sunday so a plan for that date has no meaning.
+ */
+export const skipSundayDate = (dateStr, direction = 1) => {
+    if (!dateStr) return dateStr
+    const step = direction < 0 ? -1 : 1
+    const d = new Date(dateStr + 'T00:00:00')
+    while (d.getDay() === 0) d.setDate(d.getDate() + step)
+    return d.toISOString().split('T')[0]
+}
+
+/** Same direction as `getOffsetDate`, but lands on the next non-Sunday.
+ *  Used by the prev/next-day buttons so a single arrow press never
+ *  strands the user on a closed-plant day. */
+export const offsetDateSkipSunday = (dateStr, offset) => skipSundayDate(getOffsetDate(dateStr, offset), offset)
+
 export const formatTime = (hours, minutes) => `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 export const parseTime = (timeString) => timeString?.split(':').map(Number) ?? [0, 0]
 
@@ -1208,6 +1231,17 @@ export const timeToMinutes = (timeStr) => {
 export const minutesToTime = (totalMin) => {
     const h = Math.floor(totalMin / 60) % 24
     const m = totalMin % 60
+    return formatTime(h, m)
+}
+
+/** Format a minute-of-day count as `HH:MM`, wrapping around midnight so
+ *  negative or > 1440 inputs still produce a sane time-of-day. Used by the
+ *  schedule's synthetic rows and the truck-coverage hover card. */
+export const formatMinutesClock = (mins) => {
+    if (!Number.isFinite(mins)) return ''
+    const wrapped = ((mins % (24 * 60)) + 24 * 60) % (24 * 60)
+    const h = Math.floor(wrapped / 60)
+    const m = Math.round(wrapped % 60)
     return formatTime(h, m)
 }
 

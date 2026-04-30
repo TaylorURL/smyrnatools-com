@@ -9,10 +9,14 @@
 
 /** A plant header is a single-entry `<code> - <name>` row anchored to end of line.
  *  The `[^,]+$` clause (enforced separately) rejects the TOC row that comma-
- *  separates every plant. The name part MUST contain at least one letter — this
- *  rejects bogus matches like `26307-11535` or `26015-042126` (purely numeric
- *  customer reference lines that would otherwise look like plant headers). */
-const PLANT_HEADER_RE = /^(\d{3,6})\s*-\s*(.*[A-Za-z].*)$/
+ *  separates every plant. The optional `[A-Z]` after the digits captures sibling
+ *  plants like `14008B` (Conroe B). The name part is validated separately to
+ *  require enough letters to look like a real plant name — without that, a row
+ *  like `88921-B` (a stray reference number elsewhere in the report) matches
+ *  the shape and the partial-name fallback then mis-routes its orders to
+ *  whichever DB plant name happens to start with "B". */
+const PLANT_HEADER_RE = /^(\d{3,6}[A-Z]?)\s*-\s*(.*[A-Za-z].*)$/
+const PLANT_NAME_MIN_LETTERS = 3
 
 /** Loose name key used to match HTML plant names (e.g. "LONGHORN HOUSTON")
  *  against DB plant names (e.g. "Longhorn") when the numeric codes differ. */
@@ -93,11 +97,12 @@ export function parseDailyOrderHtml(htmlString, plants = []) {
         const m = text.match(PLANT_HEADER_RE)
         if (!m) return false
         if (text.includes(',')) return false
-        // The name portion must contain at least one letter. A plant name is
-        // always text like "LONGHORN HOUSTON", never all-digits. Rows like
-        // "4823 - 113579361" (customer number + order/job number) happen to
-        // match the ‹code› - ‹text› header shape but aren't plants.
-        if (!/[A-Za-z]/.test(m[2])) return false
+        // The name portion must look like a real plant name. A single letter
+        // (`88921-B`) or all-digits (`4823 - 113579361`) is not enough — those
+        // are reference codes elsewhere in the report that happen to share
+        // the header shape, and accepting them mis-routes adjacent orders.
+        const nameLetters = (m[2].match(/[A-Za-z]/g) || []).length
+        if (nameLetters < PLANT_NAME_MIN_LETTERS) return false
         return true
     })
 
@@ -137,6 +142,31 @@ export function parseDailyOrderHtml(htmlString, plants = []) {
         return [...new Set(out)]
     }
 
+    /** Hard overrides for known dispatch HTML codes. Two purposes:
+     *  1. Fold sibling plants (Baytown 14003/14004, Conroe 14008/14008B)
+     *     into their canonical DB plant — the schedule treats each physical
+     *     location as one plant, so all orders land under the same code
+     *     regardless of which dispatch sub-code they're booked at.
+     *  2. Win unconditionally over the derive/name heuristics. The
+     *     `knownCodes.has(...)` gate is intentionally removed so a missing
+     *     plants-table row can't cause a name collision (e.g. plant_name
+     *     "Conroe" matching multiple DB plants) to silently send Conroe
+     *     orders to the wrong plant — a real bug that put Conroe orders
+     *     under 403 (Baytown) before this override.
+     */
+    // Sibling pairs are KEPT DISTINCT (14004 → 404, 14008B → 409) so
+    // ticket-level attribution reflects the actual loading plant. The
+    // earlier "fold to one Baytown / one Conroe" was the wrong fix for the
+    // Conroe-orders-showing-under-403 bug — that bug had a separate cause
+    // (a bogus `88921-B` row registering as a plant header) which is fixed
+    // upstream by the regex tightening + name-length filter.
+    const DISPATCH_CODE_OVERRIDES = {
+        14003: '403',
+        14004: '404',
+        14008: '408',
+        '14008B': '409'
+    }
+
     /**
      * Resolves an HTML plant code to a DB plant_code.
      * Returns null if no match can be found — callers should skip these
@@ -145,13 +175,23 @@ export function parseDailyOrderHtml(htmlString, plants = []) {
      * report, e.g. customer numbers, line items, etc).
      */
     const resolveDbCode = (htmlCode, htmlName) => {
+        const override = DISPATCH_CODE_OVERRIDES[String(htmlCode || '').toUpperCase()]
+        if (override) return override
         for (const candidate of deriveCodeCandidates(htmlCode)) {
             if (knownCodes.has(candidate)) return candidate
         }
         const nameKey = plantNameKey(htmlName)
         if (!nameKey) return null
         if (plantsByNameKey.has(nameKey)) return plantsByNameKey.get(nameKey)
+        // Partial-match fallback — but only when both names are long enough
+        // to make the partial match meaningful. Without this guard a stray
+        // single-letter name (e.g. "B") matches "BAYTOWN A" because the
+        // longer name starts with "b", silently re-attributing every order
+        // in that bogus header's range.
+        const MIN_PARTIAL_KEY = 4
+        if (nameKey.length < MIN_PARTIAL_KEY) return null
         for (const [key, dbCode] of plantsByNameKey) {
+            if (key.length < MIN_PARTIAL_KEY) continue
             if (nameKey.startsWith(key) || key.startsWith(nameKey)) return dbCode
             if (nameKey.includes(key) || key.includes(nameKey)) return dbCode
         }

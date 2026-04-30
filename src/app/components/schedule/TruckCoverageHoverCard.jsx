@@ -1,14 +1,7 @@
 import React from 'react'
 import { createPortal } from 'react-dom'
 
-/** Clock formatter for minute counts — "HH:MM", wrapping across midnight. */
-const formatMinutesClock = (mins) => {
-    if (!Number.isFinite(mins)) return ''
-    const wrapped = ((mins % (24 * 60)) + 24 * 60) % (24 * 60)
-    const h = Math.floor(wrapped / 60)
-    const m = Math.round(wrapped % 60)
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-}
+import { formatMinutesClock } from '../../../utils/PlanUtility'
 
 /** Single icon + label + value row inside the coverage hover card. */
 function HoverRow({ children, icon, iconColor, label, value }) {

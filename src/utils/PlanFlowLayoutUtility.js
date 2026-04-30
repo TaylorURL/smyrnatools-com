@@ -1,4 +1,4 @@
-import { MAX_YPH, TARGET_YPH } from '../../../utils/PlanUtility'
+import { MAX_YPH, TARGET_YPH } from './PlanUtility'
 
 export const NODE_RADIUS_MIN = 48
 export const NODE_RADIUS_MAX = 110

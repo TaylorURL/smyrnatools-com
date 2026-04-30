@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { ScheduleBucketService } from '../../services/ScheduleBucketService'
-import { parseDailyOrderHtml } from '../../utils/DailyOrderParser'
+import { DispatchDataService } from '../../services/DispatchDataService'
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000
 const LOCAL_DATE_STR = () => {
@@ -36,13 +35,7 @@ export function useDashboardSchedule({ plants, enabled = true }) {
         const date = LOCAL_DATE_STR()
         setIsSyncing(true)
         try {
-            const html = await ScheduleBucketService.fetchScheduleByDate(date)
-            if (cancelledRef.current) return
-            if (!html) {
-                setHasSchedule(false)
-                return
-            }
-            const parsed = parseDailyOrderHtml(html, plantsRef.current)
+            const parsed = await DispatchDataService.fetchSchedule(date)
             if (cancelledRef.current) return
             setProduction(parsed || {})
             setHasSchedule(Object.keys(parsed || {}).length > 0)

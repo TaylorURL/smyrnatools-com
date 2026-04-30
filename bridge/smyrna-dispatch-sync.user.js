@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Smyrna Dispatch Sync
 // @namespace    smyrna-tools
-// @version      2.7.0
-// @description  Syncs today + next 7 days of DailyOrder and per-plant DetailOrderAnalysis reports to Supabase storage every 5 minutes, and backfills any missing files for the current year
+// @version      2.9.0
+// @description  Syncs today + next 7 days of DailyOrder, per-plant DetailOrderAnalysis, and per-plant DetailDriver reports to Supabase storage every 5 minutes, and backfills any missing files for the current year
 // @match        http://srm-c03.aujs.local:8181/*
 // @grant        GM_xmlhttpRequest
 // @connect      srm-c03.aujs.local
@@ -25,7 +25,7 @@
     // on the same workstation as this script, so it tolerates a handful of
     // simultaneous report generations comfortably. Tune down if the server
     // ever starts dropping requests.
-    const WORKER_CONCURRENCY = 6
+    const WORKER_CONCURRENCY = 10
 
     const API_BASE = 'http://srm-c03.aujs.local:8484'
     const FORM_ID = '1001000'
@@ -78,6 +78,8 @@
             reportId: 'DetailOrderAnalysis',
             storagePrefix: 'detail/',
             perPlant: true,
+            // No historic backfill — live truck loads only.
+            backfillEnabled: false,
             // DetailOrderAnalysis only changes as trucks load through the
             // current day. Future dates have no tickets yet, and past dates
             // are immutable once dispatch closes them out — so the rolling
@@ -104,6 +106,43 @@
             },
             storagePath(date, plantId) {
                 return `detail/${date}_${plantId}.html`
+            }
+        },
+        {
+            name: 'DetailDriver',
+            reportId: 'DetailDriver',
+            storagePrefix: 'driver/',
+            perPlant: true,
+            // Fills in cross-plant ticket data: every truck loaded BY a
+            // driver based at this plant, regardless of the order's home
+            // plant — exactly the slice DetailOrderAnalysis misses.
+            daysAhead: 0,
+            buildBody(date, plantId) {
+                // The dispatch UI sends DetailDriver with no plant param —
+                // it relies on the seat's session-level plant context. We
+                // include `intPlantId` speculatively; the report engine
+                // either honors it (per-plant data, what we want) or
+                // ignores it (we get whatever plant the seat is on; bridge
+                // operator picks one plant in the dispatch UI). Either way
+                // the request shape is acceptable.
+                return {
+                    object: 'customReportRequest',
+                    reportId: 'DetailDriver',
+                    reportType: 'HTML',
+                    reportAction: 0,
+                    requestType: 'REPORT',
+                    parameters: [
+                        { id: 'SystemTypeId', value: '1' },
+                        { id: 'DateFrom', value: date },
+                        { id: 'DriverId', value: 'NULL' },
+                        { id: 'FobOption', value: '0' },
+                        { id: 'intPlantId', value: plantId }
+                    ],
+                    filename: 'DetailDriver.HTML'
+                }
+            },
+            storagePath(date, plantId) {
+                return `driver/${date}_${plantId}.html`
             }
         }
     ]
@@ -476,8 +515,15 @@
     // dates the rolling pass already covers.
     async function buildBackfillTasks(rollingByReport) {
         const tasks = []
-        const yearDates = getCurrentYearDatesThroughToday()
+        // Backfill iterates newest → oldest so the most-recently-missing
+        // files get filled first. A long stale gap (months back) doesn't
+        // delay the dates a dispatcher actually cares about right now.
+        const yearDates = getCurrentYearDatesThroughToday().slice().reverse()
         for (const report of REPORTS) {
+            // Reports can opt out of historic backfill via
+            // `backfillEnabled: false` (e.g. DetailOrderAnalysis, where
+            // past-date data isn't useful for live dispatch).
+            if (report.backfillEnabled === false) continue
             let existing
             try {
                 existing = await listBucketFiles(report.storagePrefix)
@@ -613,7 +659,7 @@
     // KICKOFF
     // ============================================================
     log(
-        `Smyrna Dispatch Sync v2.7.0 loaded - ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, completeness check + retry on truncated reports, current-year backfill`
+        `Smyrna Dispatch Sync v2.9.0 loaded - ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, completeness check + retry on truncated reports, current-year backfill`
     )
     setTimeout(() => {
         updateBadge('waiting')

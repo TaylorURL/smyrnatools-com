@@ -1,130 +1,49 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
+import {
+    PlanRealtimeActivePoursTable,
+    PlanRealtimeCapacityTable,
+    PlanRealtimeNotStartedTable,
+    PlanRealtimeRunningBehindTable,
+    PlanRealtimeUpcomingStream
+} from '../../../app/components/plan/PlanRealtimeTables'
 import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
 import PlantFilterButton from '../../../app/components/ui/PlantFilterButton'
 import { useDetailOrders } from '../../../app/hooks/useDetailOrders'
+import { useLiveClock } from '../../../app/hooks/useLiveClock'
 import {
-    buildAssignmentDriverTimes,
-    computePlantPoolTimeline,
-    computePlantPoolTimelines,
-    computeSendHomeRows,
-    getCalculatedTruckCount,
-    getEffectiveBase,
-    getTodayDate,
-    isExcludedOrder,
-    plantBadgeColor,
-    poolAtTime,
-    timeToMinutes,
-    TRUCK_ON_SITE_MINUTES
-} from '../../../utils/PlanUtility'
+    buildOrderSnapshots,
+    buildPlantSnapshots,
+    buildRealtimeKpis,
+    buildRealtimePoolModel,
+    buildRunningBehindRows,
+    buildUpcomingEventFeed,
+    buildUpcomingHelpRows,
+    REALTIME_SORT_OPTIONS,
+    TIME_WINDOW_MIN
+} from '../../../utils/PlanRealtimeUtility'
+import {
+    formatMinutesClock,
+    formatPlantFilterDisplay,
+    formatRelativeMinutes,
+    resolvePlantFilterCodes
+} from '../../../utils/PlanRuntimeUtility'
 
-const PLAN_META_KEY = '_meta'
-
-const formatClock = (mins) => {
-    if (!Number.isFinite(mins)) return '—'
-    const wrapped = ((mins % (24 * 60)) + 24 * 60) % (24 * 60)
-    const h = Math.floor(wrapped / 60)
-    const m = Math.round(wrapped % 60)
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-}
-
-const formatRelative = (diffMin) => {
-    if (!Number.isFinite(diffMin)) return ''
-    if (Math.abs(diffMin) < 1) return 'now'
-    const abs = Math.abs(diffMin)
-    if (abs < 60) return diffMin > 0 ? `+${Math.round(abs)}m` : `-${Math.round(abs)}m`
-    const hours = Math.floor(abs / 60)
-    const mins = Math.round(abs % 60)
-    const suffix = mins > 0 ? `${hours}h${mins}m` : `${hours}h`
-    return diffMin > 0 ? `+${suffix}` : `-${suffix}`
-}
-
-const clean = (value) => (value == null ? '' : String(value).trim())
-
-const estimatePourMinutes = (order) => {
-    const rate = timeToMinutes(order?.rate)
-    const loadSize = parseFloat(order?.loadSize) || 0
-    const yardage = parseFloat(order?.yardage) || 0
-    if (!rate || loadSize <= 0 || yardage <= 0) return 60
-    const trips = Math.max(1, Math.ceil(yardage / loadSize))
-    return (trips - 1) * rate + TRUCK_ON_SITE_MINUTES
-}
-
-const useLiveClock = () => {
-    const [tick, setTick] = useState(() => Date.now())
-    useEffect(() => {
-        const id = setInterval(() => setTick(Date.now()), 30000)
-        return () => clearInterval(id)
-    }, [])
-    return useMemo(() => {
-        const now = new Date(tick)
-        return {
-            nowDate: now,
-            nowLabel: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-            nowMin: now.getHours() * 60 + now.getMinutes(),
-            todayStr: getTodayDate()
-        }
-    }, [tick])
-}
-
-const flattenOrders = (plantProduction) => {
-    const out = []
-    Object.entries(plantProduction || {}).forEach(([code, prod]) => {
-        if (code === PLAN_META_KEY) return
-        const list = Array.isArray(prod?.orders) ? prod.orders : []
-        list.forEach((o) => {
-            if (isExcludedOrder(o)) return
-            out.push({ ...o, plantCode: code })
-        })
-    })
-    return out
-}
-
-/** Plant pill — same visual treatment as the schedule tab's PlantBadge. */
-function PlantPill({ code, name, accentColor }) {
-    const bg = plantBadgeColor(code, accentColor)
-    const fg = bg && bg.toLowerCase() === '#eab308' ? '#3f2d00' : '#fff'
-    return (
-        <span
-            className="inline-flex items-center gap-1.5 rounded-full pl-1 pr-2 py-0.5 font-semibold whitespace-nowrap"
-            style={{ background: bg, color: fg }}
-        >
-            <span
-                className="inline-flex items-center justify-center rounded-full font-bold"
-                style={{
-                    background: 'rgba(255,255,255,0.22)',
-                    color: fg,
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 10.5,
-                    height: 18,
-                    minWidth: 34
-                }}
-            >
-                {code}
-            </span>
-            {name && <span className="text-[11.5px]">{name}</span>}
-        </span>
-    )
-}
-
-const SORT_OPTIONS = [
-    { key: 'priority', label: 'Most active first' },
-    { key: 'plant', label: 'Plant code' },
-    { key: 'pool', label: 'Trucks free (low → high)' },
-    { key: 'next', label: 'Soonest next pour' }
-]
-
-const TIME_WINDOW_MIN = 90
+/** Stat color for the live "Status" pill — green only when the user is
+ *  looking at today, neutral otherwise. */
+const TODAY_GREEN = '#16a34a'
+const NOT_TODAY_GRAY = '#94a3b8'
 
 /**
  * Realtime dispatch view. Uses the shared `Panel` / `Stat` / `StatGroup`
- * primitives (the flat, table-friendly aesthetic) for the headline numbers
- * and the tabular sections. Anchors to "now" — PlanView snaps the plan date
- * to today whenever this tab is selected.
+ * primitives for the headline numbers and the tabular sections. Anchors
+ * to "now" — PlanView snaps the plan date to today whenever this tab is
+ * selected.
  *
- * `defaultPlantCode` — when set (user has the `plan.defaultplant` permission
- * AND has a home plant), the view opens pre-filtered to that plant.
+ * `defaultPlantCode` — when set (user has the `plan.defaultplant`
+ * permission AND has a home plant), the view opens pre-filtered to that
+ * plant.
  */
 function PlanRealtimeView({
     accentColor,
@@ -138,166 +57,47 @@ function PlanRealtimeView({
     userPlantCode = ''
 }) {
     const [isPlantModalOpen, setIsPlantModalOpen] = useState(false)
+    const [plantFilter, setPlantFilter] = useState(() => defaultPlantCode || 'all')
+    const [sortKey, setSortKey] = useState('priority')
+
     const clock = useLiveClock()
     const isToday = planDate === clock.todayStr
     const nowMin = clock.nowMin
-    const flatOrders = useMemo(() => flattenOrders(plantProduction), [plantProduction])
-    /** Per-order ticket data — joined onto each order by `orderId` to compute
-     *  how many yards have actually been loaded vs how many the schedule says
-     *  should be on the ground by now. */
-    const detailByOrderId = useDetailOrders(planDate)
-
-    const [plantFilter, setPlantFilter] = useState(() => defaultPlantCode || 'all')
-    const [sortKey, setSortKey] = useState('priority')
     const filterActive = plantFilter !== 'all' && plantFilter !== 'All' && plantFilter !== ''
+
+    const detailByOrderId = useDetailOrders(planDate, plantProduction)
+
+    /** Pool simulation snapshot — derived once per plan/assignment change
+     *  and shared by every downstream table. */
+    const { flatOrders, initialPoolByCode, poolTimeline, poolTimelinesByPlant, sendHomeRows } = useMemo(
+        () => buildRealtimePoolModel({ assignments, planDate, plantProduction, stats }),
+        [plantProduction, stats, planDate, assignments]
+    )
 
     const plantOptions = useMemo(() => {
         const codes = new Set()
-        ;(stats || []).forEach((s) => s?.code && codes.add(s.code))
-        flatOrders.forEach((o) => o.plantCode && codes.add(o.plantCode))
-        ;(assignments || []).forEach((a) => {
-            if (a?.fromPlant) codes.add(a.fromPlant)
-            if (a?.toPlant) codes.add(a.toPlant)
-            if (a?.returnPlant) codes.add(a.returnPlant)
+        ;(stats || []).forEach((stat) => stat?.code && codes.add(stat.code))
+        flatOrders.forEach((order) => order.plantCode && codes.add(order.plantCode))
+        ;(assignments || []).forEach((assignment) => {
+            if (assignment?.fromPlant) codes.add(assignment.fromPlant)
+            if (assignment?.toPlant) codes.add(assignment.toPlant)
+            if (assignment?.returnPlant) codes.add(assignment.returnPlant)
         })
         return Array.from(codes).sort()
     }, [stats, flatOrders, assignments])
 
-    // Resolve the active filter into a concrete Set of plant codes so
-    // single-plant, district, and "My Plants" selections all share one
-    // membership check downstream.
-    const activeFilterCodes = useMemo(() => {
-        if (!filterActive) return null
-        if (plantFilter === 'MY_PLANTS') return userPlantCode ? new Set([userPlantCode]) : new Set()
-        if (plantFilter.startsWith('DISTRICT:')) {
-            const districtName = plantFilter.slice(9)
-            const codes = new Set()
-            ;(plants || []).forEach((p) => {
-                const code = p.plantCode || p.plant_code
-                if (!code) return
-                const dists = p.districts || []
-                if (dists.some((d) => (typeof d === 'string' ? d : d?.name) === districtName)) codes.add(code)
-            })
-            return codes
-        }
-        return new Set([plantFilter])
-    }, [filterActive, plantFilter, plants, userPlantCode])
-
-    const touchesFilter = (codes) => !filterActive || codes.some((c) => activeFilterCodes?.has(c))
-    const passesPlant = (o) => !filterActive || activeFilterCodes?.has(o.plantCode)
-
-    const initialPoolByCode = useMemo(() => {
-        const out = {}
-        ;(stats || []).forEach((s) => {
-            if (!s?.code) return
-            const base = Number.isFinite(s.base) ? s.base : 0
-            out[s.code] = getEffectiveBase(base, s.code, plantProduction, planDate)
-        })
-        return out
-    }, [stats, plantProduction, planDate])
-
-    const helpTransfers = useMemo(() => {
-        const out = []
-        ;(assignments || []).forEach((a) => {
-            if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
-            const home = a.returnPlant || a.fromPlant
-            buildAssignmentDriverTimes(a).forEach((dt) => {
-                if (!Number.isFinite(dt.arriveMin)) return
-                out.push({ delta: -1, plantCode: a.fromPlant, time: dt.arriveMin })
-                out.push({ delta: 1, plantCode: a.toPlant, time: dt.arriveMin })
-                if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
-                    out.push({ delta: -1, plantCode: a.toPlant, time: dt.leaveMin })
-                    out.push({ delta: 1, plantCode: home, time: dt.leaveMin })
-                }
-            })
-        })
-        return out
-    }, [assignments])
-
-    const poolTimeline = useMemo(
-        () => computePlantPoolTimeline(flatOrders, initialPoolByCode, null, helpTransfers),
-        [flatOrders, initialPoolByCode, helpTransfers]
-    )
-    const poolTimelinesByPlant = useMemo(
-        () => computePlantPoolTimelines(flatOrders, initialPoolByCode, null, helpTransfers),
-        [flatOrders, initialPoolByCode, helpTransfers]
-    )
-    const sendHomeRows = useMemo(
-        () => computeSendHomeRows(flatOrders, initialPoolByCode, null, helpTransfers),
-        [flatOrders, initialPoolByCode, helpTransfers]
+    const activeFilterCodes = useMemo(
+        () => resolvePlantFilterCodes({ plantFilter, plants, userPlantCode }),
+        [plantFilter, plants, userPlantCode]
     )
 
-    /**
-     * Per-order snapshot. State and progress are cross-referenced with
-     * DetailOrderAnalysis ticket data when we have it (i.e. when looking at
-     * today), so "pouring" really means a truck has loaded for that order —
-     * not just that the scheduled start time has passed.
-     *
-     * State transitions on top of the time-based default:
-     *   - scheduled-pouring + zero tickets → `not-started`
-     *   - scheduled-pouring + loaded ≥ total → `done`
-     *   - scheduled-upcoming + tickets exist → `pouring` (started early)
-     *   - scheduled-done + tickets exist + loaded < total → kept as `done`
-     *     (the dispatch system has moved past the order — flipping it back
-     *     to pouring would be noisy)
-     */
-    const orderSnapshots = useMemo(() => {
-        return flatOrders
-            .map((o) => {
-                const startMin = timeToMinutes(o?.startTime)
-                if (!Number.isFinite(startMin)) return null
-                const key = o.orderId || `${o.plantCode ?? 'unknown'}-${startMin}-${o.orderNum ?? ''}`
-                const entry = poolTimeline?.[key]
-                const endMin = Number.isFinite(entry?.lastReturnMinutes)
-                    ? entry.lastReturnMinutes
-                    : startMin + estimatePourMinutes(o)
-                const duration = Math.max(1, endMin - startMin)
-                const yardage = parseFloat(o.yardage) || 0
+    const touchesFilter = (codes) => !filterActive || codes.some((code) => activeFilterCodes?.has(code))
+    const passesPlant = (order) => !filterActive || activeFilterCodes?.has(order.plantCode)
 
-                const detail = isToday && o.orderId ? detailByOrderId[o.orderId] : null
-                const loaded = detail?.loadedYardage || 0
-                const ticketCount = detail?.ticketCount || 0
-                const verified = !!detail
-
-                let state = 'upcoming'
-                if (nowMin < startMin) state = 'upcoming'
-                else if (nowMin >= endMin) state = 'done'
-                else state = 'pouring'
-
-                if (verified) {
-                    if (state === 'pouring' && ticketCount === 0) state = 'not-started'
-                    else if (state === 'pouring' && yardage > 0 && loaded >= yardage) state = 'done'
-                    else if (state === 'upcoming' && ticketCount > 0) state = 'pouring'
-                }
-
-                let progress = 0
-                if (state === 'done') progress = 100
-                else if (state === 'pouring') {
-                    progress =
-                        verified && yardage > 0
-                            ? Math.min(100, (loaded / yardage) * 100)
-                            : Math.min(100, Math.max(0, ((nowMin - startMin) / duration) * 100))
-                }
-
-                return {
-                    customer: clean(o.customer),
-                    endMin,
-                    loaded,
-                    order: o,
-                    orderKey: key,
-                    orderNum: clean(o.orderNum),
-                    plantCode: o.plantCode,
-                    progress,
-                    startMin,
-                    state,
-                    ticketCount,
-                    truckCount: entry?.truckCount || getCalculatedTruckCount(o) || 0,
-                    verified,
-                    yardage
-                }
-            })
-            .filter(Boolean)
-    }, [flatOrders, poolTimeline, nowMin, detailByOrderId, isToday])
+    const orderSnapshots = useMemo(
+        () => buildOrderSnapshots({ detailByOrderId, flatOrders, isToday, nowMin, poolTimeline }),
+        [flatOrders, poolTimeline, nowMin, detailByOrderId, isToday]
+    )
 
     const activeOrders = useMemo(
         () => orderSnapshots.filter((o) => o.state === 'pouring' && passesPlant(o)).sort((a, b) => a.endMin - b.endMin),
@@ -314,9 +114,6 @@ function PlanRealtimeView({
         [orderSnapshots, nowMin, plantFilter, filterActive]
     )
 
-    /** Orders the schedule says should be pouring right now, but for which
-     *  no truck has loaded a ticket yet. The dispatcher needs to know — these
-     *  are pours that are scheduled but stalled at the gate. */
     const notStartedOrders = useMemo(
         () =>
             orderSnapshots
@@ -326,234 +123,73 @@ function PlanRealtimeView({
         [orderSnapshots, plantFilter, filterActive]
     )
 
-    const upcomingHelp = useMemo(() => {
-        const rows = []
-        ;(assignments || []).forEach((a, idx) => {
-            if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
-            const home = a.returnPlant || a.fromPlant
-            if (!touchesFilter([a.fromPlant, a.toPlant, home])) return
-            buildAssignmentDriverTimes(a).forEach((dt) => {
-                if (!Number.isFinite(dt.arriveMin)) return
-                if (dt.arriveMin > nowMin && dt.arriveMin - nowMin <= TIME_WINDOW_MIN) {
-                    rows.push({
-                        fromPlant: a.fromPlant,
-                        key: `up-${idx}-${dt.driverIndex}`,
-                        time: dt.arriveMin,
-                        toPlant: a.toPlant
-                    })
-                }
-            })
-        })
-        return rows.sort((a, b) => a.time - b.time)
+    const upcomingHelp = useMemo(
+        () => buildUpcomingHelpRows({ assignments, nowMin, touchesFilter }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [assignments, nowMin, plantFilter, filterActive])
+        [assignments, nowMin, plantFilter, filterActive]
+    )
 
-    const upcomingSendHome = useMemo(() => {
-        return sendHomeRows
-            .filter((r) => r.time >= nowMin && r.time - nowMin <= TIME_WINDOW_MIN)
-            .filter((r) => !filterActive || activeFilterCodes?.has(r.plantCode))
-            .sort((a, b) => a.time - b.time)
-    }, [sendHomeRows, nowMin, filterActive, activeFilterCodes])
+    const upcomingSendHome = useMemo(
+        () =>
+            sendHomeRows
+                .filter((row) => row.time >= nowMin && row.time - nowMin <= TIME_WINDOW_MIN)
+                .filter((row) => !filterActive || activeFilterCodes?.has(row.plantCode))
+                .sort((a, b) => a.time - b.time),
+        [sendHomeRows, nowMin, filterActive, activeFilterCodes]
+    )
 
-    const plantSnapshots = useMemo(() => {
-        const out = []
-        ;(stats || []).forEach((s) => {
-            if (!s?.code) return
-            if (filterActive && !activeFilterCodes?.has(s.code)) return
-            const timeline = poolTimelinesByPlant?.[s.code] || []
-            const currentPool = poolAtTime(timeline, nowMin)
-            const base = initialPoolByCode[s.code] || 0
-            const poolingNow = orderSnapshots.filter((o) => o.state === 'pouring' && o.plantCode === s.code)
-            const dispatched = poolingNow.reduce((acc, o) => acc + (o.truckCount || 0), 0)
-            const nextOrder = orderSnapshots
-                .filter((o) => o.state === 'upcoming' && o.plantCode === s.code)
-                .sort((a, b) => a.startMin - b.startMin)[0]
-            const statusColor =
-                currentPool == null ? '#6b7280' : currentPool < 0 ? '#dc2626' : currentPool < 2 ? '#d97706' : '#16a34a'
-            if (poolingNow.length === 0 && !nextOrder && base === 0 && dispatched === 0) return
-            out.push({
-                base,
-                code: s.code,
-                dispatched,
-                name: plantNameByCode?.[s.code] || s.code,
-                nextOrder,
-                poolNow: currentPool,
-                poolingNow,
-                statusColor
-            })
-        })
-        const compareByCode = (a, b) => String(a.code).localeCompare(String(b.code))
-        return out.sort((a, b) => {
-            if (sortKey === 'plant') return compareByCode(a, b)
-            if (sortKey === 'pool') {
-                const aPool = Number.isFinite(a.poolNow) ? a.poolNow : Infinity
-                const bPool = Number.isFinite(b.poolNow) ? b.poolNow : Infinity
-                return aPool - bPool || compareByCode(a, b)
-            }
-            if (sortKey === 'next') {
-                const aNext = a.nextOrder ? a.nextOrder.startMin : Infinity
-                const bNext = b.nextOrder ? b.nextOrder.startMin : Infinity
-                return aNext - bNext || compareByCode(a, b)
-            }
-            if (a.poolingNow.length !== b.poolingNow.length) return b.poolingNow.length - a.poolingNow.length
-            const aHasNext = a.nextOrder ? 1 : 0
-            const bHasNext = b.nextOrder ? 1 : 0
-            if (aHasNext !== bHasNext) return bHasNext - aHasNext
-            return compareByCode(a, b)
-        })
-    }, [
-        stats,
-        poolTimelinesByPlant,
-        nowMin,
-        initialPoolByCode,
-        orderSnapshots,
-        plantNameByCode,
-        plantFilter,
-        filterActive,
-        sortKey
-    ])
+    const plantSnapshots = useMemo(
+        () =>
+            buildPlantSnapshots({
+                activeFilterCodes,
+                filterActive,
+                initialPoolByCode,
+                nowMin,
+                orderSnapshots,
+                plantNameByCode,
+                poolTimelinesByPlant,
+                sortKey,
+                stats
+            }),
+        [
+            stats,
+            poolTimelinesByPlant,
+            nowMin,
+            initialPoolByCode,
+            orderSnapshots,
+            plantNameByCode,
+            filterActive,
+            activeFilterCodes,
+            sortKey
+        ]
+    )
 
-    /** Orders that should have more yards loaded by now than the bridge has
-     *  recorded. Only meaningful while looking at today (the bridge only
-     *  refreshes today's detail files every cycle) and only for orders that
-     *  have actually started — upcoming and finished orders are ignored. */
-    const runningBehind = useMemo(() => {
-        if (!isToday) return []
-        const BEHIND_THRESHOLD_YARDS = 1
-        const rows = []
-        for (const snap of orderSnapshots) {
-            if (snap.state !== 'pouring') continue
-            if (!passesPlant(snap)) continue
-            const total = snap.yardage || 0
-            if (total <= 0) continue
-            const detail = snap.order.orderId ? detailByOrderId[snap.order.orderId] : null
-            const loaded = detail?.loadedYardage || 0
-            const elapsed = Math.max(0, nowMin - snap.startMin)
-            const duration = Math.max(1, snap.endMin - snap.startMin)
-            const expected = Math.min(total, (elapsed / duration) * total)
-            const behindBy = expected - loaded
-            if (behindBy < BEHIND_THRESHOLD_YARDS) continue
-            // Convert the yardage shortfall back into a time delta against the
-            // schedule's pour rate so dispatchers see "we're 18 min behind"
-            // instead of "we're short 4.2 yd" — much easier to read at a glance.
-            const yardsPerMin = total / duration
-            const behindMinutes = yardsPerMin > 0 ? Math.round(behindBy / yardsPerMin) : 0
-            if (behindMinutes < 1) continue
-            rows.push({
-                behindMinutes,
-                customer: snap.customer,
-                expected,
-                loaded,
-                orderKey: snap.orderKey,
-                orderNum: snap.orderNum,
-                plantCode: snap.plantCode,
-                startMin: snap.startMin,
-                ticketCount: detail?.ticketCount || 0,
-                total
-            })
-        }
-        return rows.sort((a, b) => b.behindMinutes - a.behindMinutes)
+    const runningBehind = useMemo(
+        () => buildRunningBehindRows({ detailByOrderId, isToday, nowMin, orderSnapshots, passesPlant }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [orderSnapshots, detailByOrderId, nowMin, isToday, plantFilter, filterActive])
+        [orderSnapshots, detailByOrderId, nowMin, isToday, plantFilter, filterActive]
+    )
 
-    const kpis = useMemo(() => {
-        const trucksOut = activeOrders.reduce((acc, o) => acc + (o.truckCount || 0), 0)
-        // For today we have ticket data — yardsDone is the actual sum of
-        // loaded yards across every order (active + done). For other dates
-        // we fall back to the time-based heuristic.
-        let yardsDone = 0
-        let yardsRemainingFromActive = 0
-        for (const snap of orderSnapshots) {
-            if (snap.state === 'done') {
-                yardsDone += snap.verified ? Math.max(snap.loaded, snap.yardage) : snap.yardage
-            } else if (snap.state === 'pouring') {
-                if (snap.verified) {
-                    yardsDone += snap.loaded
-                    yardsRemainingFromActive += Math.max(0, snap.yardage - snap.loaded)
-                } else {
-                    yardsDone += (snap.yardage || 0) * (snap.progress / 100)
-                    yardsRemainingFromActive += (snap.yardage || 0) * (1 - snap.progress / 100)
-                }
-            }
-        }
-        const yardsUpcoming = orderSnapshots
-            .filter((o) => o.state === 'upcoming' || o.state === 'not-started')
-            .reduce((acc, o) => acc + (o.yardage || 0), 0)
-        const yardsTotal = orderSnapshots.reduce((acc, o) => acc + (o.yardage || 0), 0)
-        const dayProgressPct = yardsTotal > 0 ? Math.round((yardsDone / yardsTotal) * 100) : 0
-        return {
-            activePlants: plantSnapshots.filter((p) => p.poolingNow.length > 0).length,
-            activePours: activeOrders.length,
-            dayProgressPct,
-            trucksOut,
-            yardsDone: Math.round(yardsDone),
-            yardsRemaining: Math.round(yardsRemainingFromActive + yardsUpcoming),
-            yardsTotal: Math.round(yardsTotal)
-        }
-    }, [activeOrders, orderSnapshots, plantSnapshots])
+    const kpis = useMemo(
+        () => buildRealtimeKpis({ activeOrders, orderSnapshots, plantSnapshots }),
+        [activeOrders, orderSnapshots, plantSnapshots]
+    )
 
-    const feed = useMemo(() => {
-        const events = []
-        upcomingOrders.forEach((o) => {
-            events.push({
-                color: '#0ea5e9',
-                detail: `${o.customer || 'Pour'} · ${o.yardage} yd / ${o.truckCount} trucks`,
-                id: `start-${o.orderKey}`,
-                kind: 'Start',
-                plantCode: o.plantCode,
-                time: o.startMin
-            })
-        })
-        activeOrders.forEach((o) => {
-            if (o.endMin - nowMin > TIME_WINDOW_MIN) return
-            events.push({
-                color: '#16a34a',
-                detail: `${o.customer || 'Pour'} · ${o.truckCount} trucks freeing up`,
-                id: `end-${o.orderKey}`,
-                kind: 'Wrap',
-                plantCode: o.plantCode,
-                time: o.endMin
-            })
-        })
-        upcomingHelp.forEach((h) => {
-            events.push({
-                color: '#3b82f6',
-                detail: `Help arriving from ${h.fromPlant}`,
-                id: h.key,
-                kind: 'Help',
-                plantCode: h.toPlant,
-                time: h.time
-            })
-        })
-        upcomingSendHome.forEach((s) => {
-            events.push({
-                color: '#64748b',
-                detail: `Send ${s.count} home`,
-                id: `sh-${s.plantCode}-${s.time}`,
-                kind: 'Clock-out',
-                plantCode: s.plantCode,
-                time: s.time
-            })
-        })
-        return events.sort((a, b) => a.time - b.time)
-    }, [upcomingOrders, activeOrders, upcomingHelp, upcomingSendHome, nowMin])
+    const feed = useMemo(
+        () => buildUpcomingEventFeed({ activeOrders, nowMin, upcomingHelp, upcomingOrders, upcomingSendHome }),
+        [upcomingOrders, activeOrders, upcomingHelp, upcomingSendHome, nowMin]
+    )
 
     const friendlyDate = clock.nowDate.toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'short',
         weekday: 'short'
     })
-
-    // Hand the full plant list (including district memberships) to the
-    // modal so the district groupings render. Filter behavior on the
-    // page is handled by `activeFilterCodes`.
-    const plantPickerOptions = plants || []
-    const plantFilterDisplay = (() => {
-        if (!filterActive) return `All plants (${plantOptions.length})`
-        if (plantFilter === 'MY_PLANTS') return 'My Plants'
-        if (plantFilter.startsWith('DISTRICT:')) return plantFilter.slice(9)
-        return `Plant ${plantFilter}${plantNameByCode?.[plantFilter] ? ` · ${plantNameByCode[plantFilter]}` : ''}`
-    })()
+    const plantFilterDisplay = formatPlantFilterDisplay({
+        plantFilter,
+        plantNameByCode,
+        totalPlantOptions: plantOptions.length
+    })
 
     const filterControls = (
         <div className="flex items-center gap-1.5">
@@ -574,9 +210,9 @@ function PlanRealtimeView({
                     color: 'var(--text-primary)'
                 }}
             >
-                {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.key} value={opt.key}>
-                        Sort: {opt.label}
+                {REALTIME_SORT_OPTIONS.map((option) => (
+                    <option key={option.key} value={option.key}>
+                        Sort: {option.label}
                     </option>
                 ))}
             </select>
@@ -586,7 +222,6 @@ function PlanRealtimeView({
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-[1600px] px-4 lg:px-6 py-5 flex flex-col gap-5">
-                {/* Header — title + scope, filter + sort */}
                 <div
                     className="flex items-center justify-between gap-3 flex-wrap pb-2 border-b"
                     style={{ borderColor: 'var(--border-light)' }}
@@ -601,7 +236,7 @@ function PlanRealtimeView({
                         >
                             <span
                                 className="inline-block w-2 h-2 rounded-full"
-                                style={{ background: isToday ? '#16a34a' : '#94a3b8' }}
+                                style={{ background: isToday ? TODAY_GREEN : NOT_TODAY_GRAY }}
                             />
                             <span className="font-mono font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>
                                 {clock.nowLabel}
@@ -612,7 +247,6 @@ function PlanRealtimeView({
                     {filterControls}
                 </div>
 
-                {/* Stat row — fleet-wide live numbers, Plan-tab style */}
                 <StatGroup columns={6}>
                     <Stat
                         label="Pours"
@@ -637,7 +271,7 @@ function PlanRealtimeView({
                         label="Day progress"
                         value={`${kpis.dayProgressPct}%`}
                         hint={`of ${kpis.yardsTotal.toLocaleString()} yd`}
-                        valueColor={kpis.dayProgressPct >= 80 ? '#16a34a' : undefined}
+                        valueColor={kpis.dayProgressPct >= 80 ? TODAY_GREEN : undefined}
                     />
                     <Stat
                         label="Active plants"
@@ -647,15 +281,11 @@ function PlanRealtimeView({
                     <Stat
                         label="Status"
                         value={isToday ? 'Live' : 'Off-day'}
-                        valueColor={isToday ? '#16a34a' : '#94a3b8'}
+                        valueColor={isToday ? TODAY_GREEN : NOT_TODAY_GRAY}
                         hint={isToday ? 'Anchored to now' : 'Not today'}
                     />
                 </StatGroup>
 
-                {/* Running behind — orders whose actual loaded yardage trails the
-                    schedule's expected pace. Only renders for today (the bridge
-                    refreshes detail files for the current day only) and when
-                    at least one active order is behind. */}
                 {runningBehind.length > 0 && (
                     <Panel
                         title="Running behind"
@@ -666,87 +296,15 @@ function PlanRealtimeView({
                         }
                         innerClassName=""
                     >
-                        <div className="overflow-auto">
-                            <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr>
-                                        {['Plant', 'Order', 'Customer', 'Started', 'Loaded', 'Expected', 'Behind'].map(
-                                            (h) => (
-                                                <th
-                                                    key={h}
-                                                    className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
-                                                    style={{
-                                                        background: 'var(--bg-tertiary)',
-                                                        borderBottom: '1px solid var(--border-light)',
-                                                        color: 'var(--text-secondary)'
-                                                    }}
-                                                >
-                                                    {h}
-                                                </th>
-                                            )
-                                        )}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {runningBehind.map((row) => (
-                                        <tr key={row.orderKey} style={{ borderTop: '1px solid var(--border-light)' }}>
-                                            <td className="px-3 py-2 whitespace-nowrap">
-                                                <PlantPill
-                                                    accentColor={accentColor}
-                                                    code={row.plantCode}
-                                                    name={plantNameByCode?.[row.plantCode] || ''}
-                                                />
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 whitespace-nowrap font-semibold"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
-                                                {row.orderNum ? `#${row.orderNum}` : '—'}
-                                            </td>
-                                            <td className="px-3 py-2" style={{ color: 'var(--text-primary)' }}>
-                                                {row.customer || '—'}
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
-                                                {formatClock(row.startMin)}{' '}
-                                                <span style={{ color: 'var(--text-tertiary)' }}>
-                                                    ({formatRelative(nowMin - row.startMin)} ago)
-                                                </span>
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono text-right whitespace-nowrap"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
-                                                <span className="font-bold">
-                                                    {Number.isInteger(row.loaded) ? row.loaded : row.loaded.toFixed(1)}
-                                                </span>
-                                                <span style={{ color: 'var(--text-tertiary)' }}> / {row.total}</span>
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono text-right whitespace-nowrap"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
-                                                {row.expected.toFixed(1)}
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"
-                                                style={{ color: '#dc2626' }}
-                                            >
-                                                {row.behindMinutes}m
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <PlanRealtimeRunningBehindTable
+                            accentColor={accentColor}
+                            nowMin={nowMin}
+                            plantNameByCode={plantNameByCode}
+                            rows={runningBehind}
+                        />
                     </Panel>
                 )}
 
-                {/* Scheduled but no truck has loaded yet — the schedule says these
-                    pours should be running, but the ticket data shows zero
-                    trucks have left the plant. Dispatcher attention required. */}
                 {notStartedOrders.length > 0 && (
                     <Panel
                         title="Scheduled — not pouring yet"
@@ -757,76 +315,15 @@ function PlanRealtimeView({
                         }
                         innerClassName=""
                     >
-                        <div className="overflow-auto">
-                            <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr>
-                                        {['Plant', 'Order', 'Customer', 'Scheduled start', 'Yards', 'Trucks'].map(
-                                            (h) => (
-                                                <th
-                                                    key={h}
-                                                    className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
-                                                    style={{
-                                                        background: 'var(--bg-tertiary)',
-                                                        borderBottom: '1px solid var(--border-light)',
-                                                        color: 'var(--text-secondary)'
-                                                    }}
-                                                >
-                                                    {h}
-                                                </th>
-                                            )
-                                        )}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {notStartedOrders.map((row) => (
-                                        <tr key={row.orderKey} style={{ borderTop: '1px solid var(--border-light)' }}>
-                                            <td className="px-3 py-2 whitespace-nowrap">
-                                                <PlantPill
-                                                    accentColor={accentColor}
-                                                    code={row.plantCode}
-                                                    name={plantNameByCode?.[row.plantCode] || ''}
-                                                />
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 whitespace-nowrap font-semibold"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
-                                                {row.orderNum ? `#${row.orderNum}` : '—'}
-                                            </td>
-                                            <td className="px-3 py-2" style={{ color: 'var(--text-primary)' }}>
-                                                {row.customer || '—'}
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
-                                                {formatClock(row.startMin)}{' '}
-                                                <span style={{ color: '#d97706' }}>
-                                                    ({formatRelative(nowMin - row.startMin)} ago)
-                                                </span>
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono text-right whitespace-nowrap"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
-                                                {row.yardage || '—'}
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono text-right whitespace-nowrap"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
-                                                {row.truckCount || '—'}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <PlanRealtimeNotStartedTable
+                            accentColor={accentColor}
+                            nowMin={nowMin}
+                            plantNameByCode={plantNameByCode}
+                            rows={notStartedOrders}
+                        />
                     </Panel>
                 )}
 
-                {/* Active pours — Plan-tab card with table inside */}
                 <Panel
                     title="Pouring now"
                     right={
@@ -843,24 +340,23 @@ function PlanRealtimeView({
                                 <span className="ml-2" style={{ color: 'var(--text-tertiary)' }}>
                                     Next:{' '}
                                     <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
-                                        {formatClock(upcomingOrders[0].startMin)}
+                                        {formatMinutesClock(upcomingOrders[0].startMin)}
                                     </span>{' '}
-                                    ({formatRelative(upcomingOrders[0].startMin - nowMin)}) ·{' '}
+                                    ({formatRelativeMinutes(upcomingOrders[0].startMin - nowMin)}) ·{' '}
                                     {upcomingOrders[0].plantCode} {upcomingOrders[0].customer || ''}
                                 </span>
                             )}
                         </div>
                     ) : (
-                        <ActivePoursTable
-                            orders={activeOrders}
+                        <PlanRealtimeActivePoursTable
                             accentColor={accentColor}
                             nowMin={nowMin}
+                            orders={activeOrders}
                             plantNameByCode={plantNameByCode}
                         />
                     )}
                 </Panel>
 
-                {/* Plant capacity + Stream — two columns at large width */}
                 <div className="grid gap-5 grid-cols-1 lg:grid-cols-[2fr_1fr]">
                     <Panel
                         title="Plant capacity"
@@ -876,11 +372,11 @@ function PlanRealtimeView({
                                 No active plants.
                             </div>
                         ) : (
-                            <PlantCapacityTable
-                                snapshots={plantSnapshots}
+                            <PlanRealtimeCapacityTable
                                 accentColor={accentColor}
                                 nowMin={nowMin}
                                 plantNameByCode={plantNameByCode}
+                                snapshots={plantSnapshots}
                             />
                         )}
                     </Panel>
@@ -899,9 +395,9 @@ function PlanRealtimeView({
                                 Nothing scheduled.
                             </div>
                         ) : (
-                            <UpcomingStream
-                                events={feed}
+                            <PlanRealtimeUpcomingStream
                                 accentColor={accentColor}
+                                events={feed}
                                 nowMin={nowMin}
                                 plantNameByCode={plantNameByCode}
                             />
@@ -913,7 +409,7 @@ function PlanRealtimeView({
                 <PlantDropdownModal
                     isOpen={isPlantModalOpen}
                     onClose={() => setIsPlantModalOpen(false)}
-                    plants={plantPickerOptions}
+                    plants={plants}
                     onSelect={(code) => {
                         setPlantFilter(!code || code === 'All' ? 'all' : code)
                         setIsPlantModalOpen(false)
@@ -923,233 +419,6 @@ function PlanRealtimeView({
                     userPlantCode={userPlantCode}
                 />
             )}
-        </div>
-    )
-}
-
-function ActivePoursTable({ orders, accentColor, nowMin, plantNameByCode }) {
-    return (
-        <div className="overflow-auto">
-            <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
-                <thead>
-                    <tr>
-                        {['Start', 'Plant', 'Customer', 'Yards', 'Trucks', 'Progress', 'Wraps'].map((h) => (
-                            <th
-                                key={h}
-                                className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
-                                style={{
-                                    background: 'var(--bg-tertiary)',
-                                    borderBottom: '1px solid var(--border-light)',
-                                    color: 'var(--text-secondary)'
-                                }}
-                            >
-                                {h}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {orders.map((o) => {
-                        const eta = o.endMin - nowMin
-                        const pct = Math.round(o.progress)
-                        return (
-                            <tr key={o.orderKey} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                <td
-                                    className="px-3 py-2 font-mono font-bold whitespace-nowrap"
-                                    style={{ color: accentColor }}
-                                >
-                                    {formatClock(o.startMin)}
-                                </td>
-                                <td className="px-3 py-2 whitespace-nowrap">
-                                    <PlantPill
-                                        code={o.plantCode}
-                                        name={plantNameByCode?.[o.plantCode]}
-                                        accentColor={accentColor}
-                                    />
-                                </td>
-                                <td
-                                    className="px-3 py-2 max-w-[260px] truncate font-semibold"
-                                    style={{ color: 'var(--text-primary)' }}
-                                    title={o.customer || ''}
-                                >
-                                    {o.customer || '—'}
-                                </td>
-                                <td
-                                    className="px-3 py-2 text-right font-mono font-bold whitespace-nowrap tabular-nums"
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
-                                    {o.yardage > 0 ? o.yardage : '—'}
-                                </td>
-                                <td
-                                    className="px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
-                                    {o.truckCount > 0 ? o.truckCount : '—'}
-                                </td>
-                                <td className="px-3 py-2 min-w-[140px]">
-                                    <div className="flex items-center gap-2">
-                                        <div
-                                            className="flex-1 h-1.5 overflow-hidden"
-                                            style={{ background: 'var(--bg-tertiary)', borderRadius: 2 }}
-                                        >
-                                            <div
-                                                className="h-full"
-                                                style={{
-                                                    background: pct < 33 ? '#0ea5e9' : pct < 66 ? '#d97706' : '#16a34a',
-                                                    width: `${pct}%`
-                                                }}
-                                            />
-                                        </div>
-                                        <span
-                                            className="font-mono font-bold tabular-nums w-9 text-right"
-                                            style={{ color: 'var(--text-primary)', fontSize: 11 }}
-                                        >
-                                            {pct}%
-                                        </span>
-                                    </div>
-                                </td>
-                                <td
-                                    className="px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums"
-                                    style={{ color: '#16a34a', fontWeight: 600 }}
-                                >
-                                    {formatClock(o.endMin)}{' '}
-                                    <span style={{ color: 'var(--text-tertiary)' }}>{formatRelative(eta)}</span>
-                                </td>
-                            </tr>
-                        )
-                    })}
-                </tbody>
-            </table>
-        </div>
-    )
-}
-
-function PlantCapacityTable({ snapshots, accentColor, nowMin, plantNameByCode }) {
-    return (
-        <div className="overflow-auto">
-            <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
-                <thead>
-                    <tr>
-                        {['Plant', 'Free', 'Out', 'Active', 'Next'].map((h, i) => (
-                            <th
-                                key={h}
-                                className={`px-3 py-2 ${i === 0 ? 'text-left' : 'text-right'} font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap`}
-                                style={{
-                                    background: 'var(--bg-tertiary)',
-                                    borderBottom: '1px solid var(--border-light)',
-                                    color: 'var(--text-secondary)'
-                                }}
-                            >
-                                {h}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {snapshots.map((s) => {
-                        const next = s.nextOrder
-                        const eta = next ? next.startMin - nowMin : null
-                        return (
-                            <tr key={s.code} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                <td className="px-3 py-2 whitespace-nowrap">
-                                    <span className="inline-flex items-center gap-2">
-                                        <span
-                                            className="inline-block w-2 h-2 rounded-full"
-                                            style={{ background: s.statusColor }}
-                                        />
-                                        <PlantPill
-                                            code={s.code}
-                                            name={plantNameByCode?.[s.code]}
-                                            accentColor={accentColor}
-                                        />
-                                    </span>
-                                </td>
-                                <td
-                                    className="px-3 py-2 text-right font-mono font-bold whitespace-nowrap tabular-nums"
-                                    style={{ color: s.statusColor, fontSize: 14 }}
-                                >
-                                    {s.poolNow != null ? s.poolNow : '—'}
-                                </td>
-                                <td
-                                    className="px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums"
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
-                                    {s.dispatched}
-                                </td>
-                                <td
-                                    className="px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums"
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
-                                    {s.poolingNow.length}
-                                </td>
-                                <td
-                                    className="px-3 py-2 text-right font-mono whitespace-nowrap tabular-nums"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
-                                    {next ? (
-                                        <>
-                                            {formatClock(next.startMin)}{' '}
-                                            <span style={{ color: 'var(--text-tertiary)' }}>{formatRelative(eta)}</span>
-                                        </>
-                                    ) : (
-                                        <span style={{ color: 'var(--text-tertiary)' }}>—</span>
-                                    )}
-                                </td>
-                            </tr>
-                        )
-                    })}
-                </tbody>
-            </table>
-        </div>
-    )
-}
-
-function UpcomingStream({ events, accentColor, nowMin, plantNameByCode }) {
-    return (
-        <div className="flex flex-col">
-            {events.map((event) => {
-                const eta = event.time - nowMin
-                return (
-                    <div
-                        key={event.id}
-                        className="px-3 py-2 flex items-baseline gap-3 text-[12.5px]"
-                        style={{ borderBottom: '1px solid var(--border-light)' }}
-                    >
-                        <span
-                            className="font-mono tabular-nums font-bold whitespace-nowrap"
-                            style={{ color: event.color, minWidth: 48 }}
-                        >
-                            {formatClock(event.time)}
-                        </span>
-                        <span
-                            className="font-semibold whitespace-nowrap"
-                            style={{ color: 'var(--text-primary)', minWidth: 60 }}
-                        >
-                            {event.kind}
-                        </span>
-                        {event.plantCode && (
-                            <PlantPill
-                                code={event.plantCode}
-                                name={plantNameByCode?.[event.plantCode]}
-                                accentColor={accentColor}
-                            />
-                        )}
-                        <span
-                            className="truncate flex-1"
-                            style={{ color: 'var(--text-secondary)' }}
-                            title={event.detail}
-                        >
-                            {event.detail}
-                        </span>
-                        <span
-                            className="font-mono tabular-nums whitespace-nowrap"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
-                            {formatRelative(eta)}
-                        </span>
-                    </div>
-                )
-            })}
         </div>
     )
 }
