@@ -11,6 +11,7 @@ import useCloserPlantLookup from '../../../app/hooks/useCloserPlantLookup'
 import { useDetailOrders } from '../../../app/hooks/useDetailOrders'
 import useLiveMinuteOfDay from '../../../app/hooks/useLiveMinuteOfDay'
 import useLiveTravelTimes from '../../../app/hooks/useLiveTravelTimes'
+import usePlanTravelPairs from '../../../app/hooks/usePlanTravelPairs'
 import { formatOrderAddress } from '../../../utils/AddressUtility'
 import {
     buildHelpRows,
@@ -147,19 +148,15 @@ function PlanScheduleView({
         return Array.from(codes).sort()
     }, [allOrders])
 
-    /* Live travel + closer-plant lookup share the same `liveTravelByKey` map.
-     * The closer-plant hook owns the travel-pair list because it knows which
-     * orders should be skipped (bad addresses) and which plants count as
-     * candidates. We resolve the cycle by computing pairs first with a stub
-     * lookup, then re-running the closer-plant hook with the real lookup —
-     * the pair list is stable across both passes because it doesn't depend
-     * on the live data. */
+    /* Live travel + closer-plant chain. Each hook only reads what it needs;
+     * the pair list comes first (no live data required), then the prefetch
+     * hook turns it into a `getMinutes` lookup, then the closer-plant memo
+     * compares per-job. Linear, no circular call, no stub callbacks. */
     const closerPlantInputs = useMemo(
         () => ({ allOrders, plantCityByCode, plantOptionsForMap }),
         [allOrders, plantCityByCode, plantOptionsForMap]
     )
-    const stubGetMinutes = useCallback(() => undefined, [])
-    const { travelPairs } = useCloserPlantLookup({ ...closerPlantInputs, getLiveTravelMinutes: stubGetMinutes })
+    const travelPairs = usePlanTravelPairs(closerPlantInputs)
     const { getMinutes: getLiveTravelMinutes } = useLiveTravelTimes(travelPairs)
     const { getCloserPlantForOrder } = useCloserPlantLookup({ ...closerPlantInputs, getLiveTravelMinutes })
 

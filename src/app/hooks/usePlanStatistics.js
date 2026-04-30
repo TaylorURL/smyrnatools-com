@@ -13,6 +13,29 @@ import {
 } from '../../utils/PlanStatisticsUtility'
 import { computeCustomerSatisfaction, PLAN_META_KEY } from '../../utils/PlanUtility'
 
+/** Run the shared satisfaction calc over a list of day-level metrics, merging
+ *  every loaded ticket detail map. Returns null if no day in `days` has any
+ *  ticket data yet — the page treats that as "no signal" rather than 0%. */
+const aggregateSatisfactionForDays = (days, detailByDay) => {
+    if (!days?.length) return null
+    const allOrders = []
+    const mergedDetail = {}
+    let anyDetailFetched = false
+    days.forEach((d) => {
+        const orders = d.allLiveOrders || []
+        orders.forEach((o) => allOrders.push(o))
+        const detail = detailByDay[d.planDate]
+        if (detail && Object.keys(detail).length > 0) {
+            anyDetailFetched = true
+            Object.entries(detail).forEach(([orderId, entry]) => {
+                mergedDetail[orderId] = entry
+            })
+        }
+    })
+    if (!anyDetailFetched) return null
+    return computeCustomerSatisfaction(allOrders, mergedDetail)
+}
+
 /**
  * Orchestrates every async + derived state slice for `PlanStatisticsView`.
  *
@@ -146,9 +169,10 @@ export function usePlanStatistics({ planDate, liveProduction }) {
      *  reliably — older days will return empty maps and silently drop out
      *  of the satisfaction score (as expected). */
     useEffect(() => {
-        if (currentDays.length === 0) return undefined
+        const allDays = [...currentDays, ...previousDays]
+        if (allDays.length === 0) return undefined
         let cancelled = false
-        const dates = currentDays.map((d) => d.planDate).filter((d) => !(d in detailByDay))
+        const dates = [...new Set(allDays.map((d) => d.planDate))].filter((d) => !(d in detailByDay))
         if (dates.length === 0) return undefined
         setSatisfactionLoading(true)
         Promise.all(dates.map((date) => DispatchDataService.fetchDetailByOrderId(date).catch(() => ({}))))
@@ -168,7 +192,7 @@ export function usePlanStatistics({ planDate, liveProduction }) {
         return () => {
             cancelled = true
         }
-    }, [currentDays, detailByDay])
+    }, [currentDays, previousDays, detailByDay])
 
     /** Per-day satisfaction (using the shared `computeCustomerSatisfaction`
      *  with the same inputs as the Schedule tab). Null entries mean we have
@@ -189,25 +213,81 @@ export function usePlanStatistics({ planDate, liveProduction }) {
     /** Period-aggregated satisfaction. Computed by feeding the FULL flat
      *  order list and the merged detail map into the same shared function
      *  that the Schedule tab uses — the math stays identical. */
-    const satisfactionAggregate = useMemo(() => {
-        if (!currentDays.length) return null
-        const allOrders = []
-        const mergedDetail = {}
-        let anyDetailFetched = false
+    const satisfactionAggregate = useMemo(
+        () => aggregateSatisfactionForDays(currentDays, detailByDay),
+        [currentDays, detailByDay]
+    )
+
+    /** Same aggregate over the comparison window. Null when comparison is off
+     *  or the previous range has no ticket data — drives the side-by-side
+     *  delta tile on the satisfaction page. */
+    const previousSatisfactionAggregate = useMemo(
+        () => (comparison === 'none' ? null : aggregateSatisfactionForDays(previousDays, detailByDay)),
+        [previousDays, detailByDay, comparison]
+    )
+
+    /** Per-day satisfaction trend across the current range, padded so missing
+     *  days show as gaps in the chart instead of compressing the X axis. */
+    const satisfactionTrend = useMemo(() => {
+        if (!currentDays.length) return []
+        const byDate = new Map()
         currentDays.forEach((d) => {
-            const liveOrders = d.allLiveOrders || []
-            liveOrders.forEach((o) => allOrders.push(o))
             const detail = detailByDay[d.planDate]
-            if (detail) {
-                anyDetailFetched = true
-                Object.entries(detail).forEach(([orderId, entry]) => {
-                    mergedDetail[orderId] = entry
-                })
-            }
+            const result = detail ? computeCustomerSatisfaction(d.allLiveOrders || [], detail) : null
+            byDate.set(d.planDate, {
+                badService: result ? result.badService : 0,
+                date: d.planDate,
+                goodService: result ? result.goodService : 0,
+                samples: result ? result.samples : 0,
+                score: result ? Math.round(result.score * 100) : null
+            })
         })
-        if (!anyDetailFetched) return null
-        return computeCustomerSatisfaction(allOrders, mergedDetail)
-    }, [currentDays, detailByDay])
+        const out = []
+        let cursor = range.current.start
+        while (cursor <= range.current.end) {
+            if (!isSundayIso(cursor)) {
+                out.push(byDate.get(cursor) || { badService: 0, date: cursor, goodService: 0, samples: 0, score: null })
+            }
+            const next = new Date(cursor)
+            next.setDate(next.getDate() + 1)
+            cursor = isoDate(next)
+        }
+        return out
+    }, [currentDays, detailByDay, range])
+
+    /** Per-plant satisfaction ranking over the current window. Always uses
+     *  the FULL plant scope, ignoring `selectedPlant` — the chart's job is
+     *  to compare plants against each other. */
+    const perPlantSatisfaction = useMemo(() => {
+        if (!currentRows.length) return []
+        const byPlant = new Map()
+        currentRows.forEach((row) => {
+            if (!row?.plan_date || isSundayIso(row.plan_date)) return
+            const production =
+                row?.plant_production && typeof row.plant_production === 'object' ? row.plant_production : {}
+            Object.keys(production).forEach((code) => {
+                if (code === PLAN_META_KEY) return
+                if (!byPlant.has(code)) byPlant.set(code, { days: [], yardage: 0 })
+                const dayMetrics = computeScheduleMetrics(row, code)
+                byPlant.get(code).days.push(dayMetrics)
+                byPlant.get(code).yardage += dayMetrics.totalYardage || 0
+            })
+        })
+        const out = []
+        byPlant.forEach((entry, code) => {
+            const aggregate = aggregateSatisfactionForDays(entry.days, detailByDay)
+            if (!aggregate) return
+            out.push({
+                badService: aggregate.badService,
+                code,
+                goodService: aggregate.goodService,
+                samples: aggregate.samples,
+                score: Math.round(aggregate.score * 100),
+                yardage: Math.round(entry.yardage)
+            })
+        })
+        return out.sort((a, b) => b.score - a.score)
+    }, [currentRows, detailByDay])
 
     const currentSummary = useMemo(() => aggregateMetrics(currentDays), [currentDays])
     const previousSummary = useMemo(
@@ -237,12 +317,15 @@ export function usePlanStatistics({ planDate, liveProduction }) {
         customStart,
         isSingleDay,
         loading,
+        perPlantSatisfaction,
         period,
+        previousSatisfactionAggregate,
         previousSummary,
         range,
         satisfactionAggregate,
         satisfactionByDay,
         satisfactionLoading,
+        satisfactionTrend,
         selectedPlant,
         setAnchor,
         setComparison,

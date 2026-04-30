@@ -2,6 +2,23 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.10] - 2026-04-30
+
+- Restructure Plan Statistics into multi-page layout with left-rail sidebar navigation and dedicated sub-pages for Overview, Yardage, Plants, Customers & Products, Big Pours, and Customer Satisfaction
+- Add PlanStatisticsSidebar with section definitions, desktop vertical rail, and mobile horizontal tab scroller
+- Add PlanStatisticsSatisfactionPage with primary score card, comparison tile, per-day trend line chart, and per-plant satisfaction ranking bar chart
+- Rename PlanStatisticsPanels to PlanStatisticsPages and split into focused page components (Overview, Yardage, Plants, Customers, Big Pours) with a shared PlantYardageHero
+- Remove satisfaction chart from Overview page — satisfaction now lives on its own dedicated sub-page
+- Expand usePlanStatistics hook with per-day satisfaction trend, per-plant satisfaction ranking, previous-period satisfaction aggregate, and working-day count
+- Add usePlanTravelPairs hook — extracts travel-pair generation from useCloserPlantLookup to eliminate circular dependencies between the travel and closer-plant hooks
+- Simplify useCloserPlantLookup to consume getLiveTravelMinutes as input instead of managing its own travel pairs
+- Add TrafficService availability check to useLiveTravelTimes — skips prefetch when the service has latched unavailable to prevent console noise
+- Refactor PlanScheduleView to chain usePlanTravelPairs, useLiveTravelTimes, and useCloserPlantLookup in a linear pipeline with no stub callbacks
+- Expand DispatchDataService with DetailDriver-aware ticket processing — estimate-only tickets are capped against scheduled yardage so estimated loads never exceed the order total
+- Fix dispatch_upsert_data quantity merge — replace CASE with GREATEST so any positive yardage wins regardless of which report supplied it, preventing DetailOrderAnalysis from overwriting real quantities with 0
+- Add backfill migration to recover tickets stuck at 0/null quantity using available load_size estimates for the last 14 days
+- Add CLAUDE.md rules for SQL delivery (always both inline and file) and simple-import-sort compliance
+
 ## [40.0.9] - 2026-04-30
 
 - Decompose Plan views into focused components and hooks — extract 60+ files from monolithic PlanScheduleView, PlanFlowView, PlanStatisticsView, PlanDashboardView, PlanDemandView, PlanRealtimeView, and PlanView into dedicated components and hooks

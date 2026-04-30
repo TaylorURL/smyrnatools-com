@@ -82,19 +82,34 @@ class DispatchDataServiceImpl {
      */
     async fetchDetailByOrderId(dateStr) {
         if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return {}
-        const { data, error } = await Database.from('dispatch_data')
-            .select(
-                'order_id, order_num, ticket_id, ticket_num, customer, home_plant_code, loaded_plant_code, truck_num, driver_num, driver_name, ticket_time, loaded_time, quantity, source_reports'
-            )
-            .eq('order_date', dateStr)
-            .neq('ticket_num', '')
-        if (error) {
-            console.warn('[DispatchDataService.fetchDetailByOrderId]', error)
+        const [ticketsRes, ordersRes] = await Promise.all([
+            Database.from('dispatch_data')
+                .select(
+                    'order_id, order_num, ticket_id, ticket_num, customer, home_plant_code, loaded_plant_code, truck_num, driver_num, driver_name, ticket_time, loaded_time, quantity, source_reports'
+                )
+                .eq('order_date', dateStr)
+                .neq('ticket_num', ''),
+            Database.from('dispatch_data')
+                .select('order_id, scheduled_yardage, load_size')
+                .eq('order_date', dateStr)
+                .eq('ticket_num', '')
+        ])
+        if (ticketsRes.error) {
+            console.warn('[DispatchDataService.fetchDetailByOrderId]', ticketsRes.error)
             return {}
         }
 
+        const orderMeta = new Map()
+        for (const o of ordersRes.data || []) {
+            if (!o.order_id) continue
+            orderMeta.set(o.order_id, {
+                loadSize: parseFloat(o.load_size) || 0,
+                scheduledYardage: parseFloat(o.scheduled_yardage) || 0
+            })
+        }
+
         const byOrderId = {}
-        for (const row of data || []) {
+        for (const row of ticketsRes.data || []) {
             const orderId = row.order_id
             if (!orderId) continue
             let order = byOrderId[orderId]
@@ -108,36 +123,69 @@ class DispatchDataServiceImpl {
                     tickets: []
                 }
             }
-            const qty = parseFloat(row.quantity) || 0
-            const plantId = row.loaded_plant_code || ''
             const sourceList = Array.isArray(row.source_reports) ? row.source_reports : []
+            const isEstimateOnly = sourceList.includes('DetailDriver') && !sourceList.includes('DetailOrderAnalysis')
+            const plantId = row.loaded_plant_code || ''
             order.tickets.push({
+                _confirmedQuantity: isEstimateOnly ? 0 : parseFloat(row.quantity) || 0,
+                _isEstimateOnly: isEstimateOnly,
                 customer: row.customer || '',
                 driverName: row.driver_name || '',
                 driverNum: row.driver_num || '',
                 loadedTime: row.loaded_time || '',
                 plantId,
-                quantity: qty,
+                quantity: 0,
                 sourceFilePlantId: plantId,
-                sourceReport:
-                    sourceList.includes('DetailDriver') && !sourceList.includes('DetailOrderAnalysis')
-                        ? 'DetailDriver'
-                        : sourceList[0] || '',
+                sourceReport: isEstimateOnly ? 'DetailDriver' : sourceList[0] || '',
                 ticketId: row.ticket_id || '',
                 ticketNum: row.ticket_num,
                 ticketTime: row.ticket_time || '',
                 truckNum: row.truck_num || ''
             })
-            order.ticketCount += 1
-            order.loadedYardage += qty
-            if (plantId) {
-                const entry = order.byPlant[plantId] || (order.byPlant[plantId] = { loadedYardage: 0, ticketCount: 0 })
-                entry.ticketCount += 1
-                entry.loadedYardage += qty
-            }
         }
-        for (const o of Object.values(byOrderId)) {
-            o.tickets.sort((a, b) => String(a.loadedTime || '').localeCompare(String(b.loadedTime || '')))
+
+        // Apply per-order capping for DetailDriver-only tickets so estimated
+        // yardage never pushes the order over its scheduled total. The last
+        // estimate-only ticket absorbs whatever remainder is left, matching
+        // dispatch reality where most loads are full and the final partial.
+        for (const order of Object.values(byOrderId)) {
+            order.tickets.sort((a, b) => String(a.loadedTime || '').localeCompare(String(b.loadedTime || '')))
+
+            const meta = orderMeta.get(order.orderId) || { loadSize: 0, scheduledYardage: 0 }
+            const confirmedTotal = order.tickets.reduce((sum, t) => sum + t._confirmedQuantity, 0)
+            let remaining = Math.max(0, meta.scheduledYardage - confirmedTotal)
+            const estimateTickets = order.tickets.filter((t) => t._isEstimateOnly)
+            const lastIdx = estimateTickets.length - 1
+
+            estimateTickets.forEach((t, i) => {
+                if (remaining <= 0) {
+                    t.quantity = 0
+                } else if (i === lastIdx) {
+                    t.quantity = remaining
+                    remaining = 0
+                } else if (meta.loadSize > 0 && remaining >= meta.loadSize) {
+                    t.quantity = meta.loadSize
+                    remaining -= meta.loadSize
+                } else {
+                    t.quantity = remaining
+                    remaining = 0
+                }
+            })
+
+            for (const t of order.tickets) {
+                if (!t._isEstimateOnly) t.quantity = t._confirmedQuantity
+                delete t._confirmedQuantity
+                delete t._isEstimateOnly
+
+                order.ticketCount += 1
+                order.loadedYardage += t.quantity
+                if (t.plantId) {
+                    const entry =
+                        order.byPlant[t.plantId] || (order.byPlant[t.plantId] = { loadedYardage: 0, ticketCount: 0 })
+                    entry.ticketCount += 1
+                    entry.loadedYardage += t.quantity
+                }
+            }
         }
         return byOrderId
     }
