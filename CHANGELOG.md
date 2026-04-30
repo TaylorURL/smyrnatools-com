@@ -2,6 +2,10 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.11] - 2026-04-30
+
+- Fix import sort order in PlanFlowNode and PlanFlowView to satisfy simple-import-sort lint rules
+
 ## [40.0.10] - 2026-04-30
 
 - Restructure Plan Statistics into multi-page layout with left-rail sidebar navigation and dedicated sub-pages for Overview, Yardage, Plants, Customers & Products, Big Pours, and Customer Satisfaction

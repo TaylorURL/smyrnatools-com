@@ -9,8 +9,6 @@ import { PlanFlowToolbar } from '../../../app/components/plan/PlanFlowToolbar'
 import { usePlanFlowCanvas } from '../../../app/hooks/usePlanFlowCanvas'
 import { usePlanFlowEditor } from '../../../app/hooks/usePlanFlowEditor'
 import { usePlanFlowMetrics } from '../../../app/hooks/usePlanFlowMetrics'
-import { computeEdgeJobs, computeLabelLayout } from '../../../utils/PlanFlowUtility'
-import { getMissingOperators, setMissingOperators } from '../../../utils/PlanUtility'
 import {
     buildEdges,
     computeBidirectionalEdgeKeys,
@@ -19,6 +17,8 @@ import {
     relaxLayoutForEdges,
     yphColorFor
 } from '../../../utils/PlanFlowLayoutUtility'
+import { computeEdgeJobs, computeLabelLayout } from '../../../utils/PlanFlowUtility'
+import { getMissingOperators, setMissingOperators } from '../../../utils/PlanUtility'
 
 /**
  * PlanFlowView — plants as nodes, assignments as directed edges. The side

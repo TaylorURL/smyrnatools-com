@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { getMissingOperators, minutesToTime } from '../../../utils/PlanUtility'
 import { NODE_RADIUS_MIN, yphColorFor } from '../../../utils/PlanFlowLayoutUtility'
+import { getMissingOperators, minutesToTime } from '../../../utils/PlanUtility'
 
 const NEEDS_HELP_COLOR = '#dc2626'
 const LEAVE_OFF_COLOR = '#d97706'
