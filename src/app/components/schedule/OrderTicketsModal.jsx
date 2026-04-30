@@ -137,12 +137,13 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                             <thead>
                                 <tr>
                                     {[
+                                        { align: 'left', label: 'Plant' },
+                                        { align: 'left', label: 'Order #' },
                                         { align: 'left', label: 'Ticket #' },
+                                        { align: 'left', label: 'Truck #' },
+                                        { align: 'left', label: 'Driver' },
                                         { align: 'left', label: 'Ticket time' },
                                         { align: 'left', label: 'Load time' },
-                                        { align: 'left', label: 'Truck' },
-                                        { align: 'left', label: 'Driver' },
-                                        { align: 'left', label: 'Plant' },
                                         { align: 'right', label: 'Yards' }
                                     ].map((h) => (
                                         <th
@@ -173,42 +174,6 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                             key={t.ticketId || `${plantCode}-${t.ticketNum || idx}-${idx}`}
                                             style={{ borderTop: '1px solid var(--border-light)' }}
                                         >
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
-                                                {t.ticketNum || '—'}
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{
-                                                    color: 'var(--text-primary)',
-                                                    fontVariantNumeric: 'tabular-nums'
-                                                }}
-                                            >
-                                                {t.ticketTime || '—'}
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{
-                                                    color: 'var(--text-primary)',
-                                                    fontVariantNumeric: 'tabular-nums'
-                                                }}
-                                            >
-                                                {t.loadedTime || '—'}
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
-                                                {t.truckNum || '—'}
-                                            </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
-                                                {t.driverNum || '—'}
-                                            </td>
                                             <td className="px-3 py-2 whitespace-nowrap">
                                                 <span
                                                     className="font-mono font-semibold"
@@ -237,6 +202,48 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                                         Cross-plant
                                                     </span>
                                                 )}
+                                            </td>
+                                            <td
+                                                className="px-3 py-2 font-mono whitespace-nowrap"
+                                                style={{ color: 'var(--text-primary)' }}
+                                            >
+                                                {order?.orderNum ? `#${order.orderNum}` : '—'}
+                                            </td>
+                                            <td
+                                                className="px-3 py-2 font-mono whitespace-nowrap"
+                                                style={{ color: 'var(--text-primary)' }}
+                                            >
+                                                {t.ticketNum || '—'}
+                                            </td>
+                                            <td
+                                                className="px-3 py-2 font-mono whitespace-nowrap"
+                                                style={{ color: 'var(--text-primary)' }}
+                                            >
+                                                {t.truckNum || '—'}
+                                            </td>
+                                            <td
+                                                className="px-3 py-2 font-mono whitespace-nowrap"
+                                                style={{ color: 'var(--text-secondary)' }}
+                                            >
+                                                {t.driverNum || '—'}
+                                            </td>
+                                            <td
+                                                className="px-3 py-2 font-mono whitespace-nowrap"
+                                                style={{
+                                                    color: 'var(--text-primary)',
+                                                    fontVariantNumeric: 'tabular-nums'
+                                                }}
+                                            >
+                                                {t.ticketTime || '—'}
+                                            </td>
+                                            <td
+                                                className="px-3 py-2 font-mono whitespace-nowrap"
+                                                style={{
+                                                    color: 'var(--text-primary)',
+                                                    fontVariantNumeric: 'tabular-nums'
+                                                }}
+                                            >
+                                                {t.loadedTime || '—'}
                                             </td>
                                             <td
                                                 className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"

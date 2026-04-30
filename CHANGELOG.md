@@ -2,6 +2,29 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.7] - 2026-04-30
+
+- Add AddressUtility with shared address normalization — title-casing, stray punctuation cleanup, and abbreviation preservation across schedule table, job map modal, and ticket modal
+- Add PourSizeBadge component for reusable small/medium/large pour-size indicators with colored dot and optional truck-range suffix
+- Reorder OrderTicketsModal columns to lead with Plant, Order #, Ticket #, Truck #, Driver before times and yards, and display the order number on each ticket row
+- Overhaul DetailOrderParser product detection — replace surcharge-exclusion with positive concrete-identification via numeric PSI code pattern, add additive filtering (fiber, ice, pump, etc.), and add hard non-yardage description blocklist
+- Scope DetailOrderParser position lookups per FastReport page and per DOM range to prevent cross-page and cross-ticket coordinate collisions in ticket fields
+- Tighten left-tolerance on ticket time lookups and add field-format validators (cleanTime, cleanIdentifier) so cancelled/voided tickets never bleed product codes into time/truck columns
+- Add per-order customer service badges to the schedule — Good Service, Late Start, Slow Pour, Ongoing, and Awaiting Truck — using shared pace/on-time scoring from PlanUtility
+- Add Customer Satisfaction day-score badge to the schedule toolbar with tiered color coding
+- Restrict same-day order badge (15:00 sentinel) to only display when viewing today's schedule
+- Replace per-size slot row color palette with unified neutral styling plus inline PourSizeBadge
+- Use shared AddressUtility for schedule address rendering and map modal plant addresses
+- Add Year period option to Statistics view with calendar-aligned start/end and year-over-year comparison
+- Add per-plant filter dropdown to Statistics view — scopes every chart, table, and KPI to a single plant without re-fetching
+- Add Customer Satisfaction panel to Statistics view with period-aggregate score, per-day trend line, and good/bad service counts fetched from detail-order ticket data
+- Fix floating-point display artifacts in Statistics by snapping yardage/loads totals to one decimal at both per-day and aggregate levels
+- Clamp yards-per-load ratio at fleet max (10 yd) so summary-only fallback yardage never produces impossible values
+- Filter ghost plant codes (sentinels/stale entries) from Statistics scorecard using the authoritative plant directory
+- Replace hero "Demand by hour" chart in Statistics with "Yardage by plant" bar chart as the primary visual
+- Remove auto-generated insights callout section from Statistics in favor of direct KPI and chart surfaces
+- Add getTodayDate helper to PlanUtility for anchoring realtime dashboard and service badge evaluation
+
 ## [40.0.6] - 2026-04-29
 
 - Add OrderTicketsModal for drilling into individual tickets from the schedule via a right-click context menu on order rows

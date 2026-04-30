@@ -595,35 +595,58 @@ function PlanView() {
                             </div>
                         )}
 
-                        {/* Stale-schedule warning — the dispatch workstation pushes a fresh
-                            HTML every 5 min; if we haven't seen a new upload in 30+ min the
-                            workstation/Tampermonkey is likely offline. */}
+                        {/* Stale-schedule warning. Two flavors:
+                            - Past plan date  → records are frozen; the bucket
+                              never updates a past day's HTML, so phrase the
+                              banner as historical context, not an alert.
+                            - Today / future  → the dispatch workstation
+                              pushes a fresh HTML every 5 min; if we haven't
+                              seen an upload in 30+ min, the workstation /
+                              Tampermonkey is likely offline. */}
                         {scheduleFileUpdatedAt &&
-                            Date.now() - scheduleFileUpdatedAt.getTime() > SCHEDULE_STALE_THRESHOLD_MS && (
-                                <div
-                                    className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border-b shrink-0"
-                                    style={{
-                                        background: 'rgba(245, 158, 11, 0.12)',
-                                        borderColor: 'rgba(245, 158, 11, 0.4)',
-                                        color: 'var(--text-primary)'
-                                    }}
-                                >
-                                    <i
-                                        className="fas fa-triangle-exclamation text-[11px]"
-                                        style={{ color: '#d97706' }}
-                                    />
-                                    <span>
-                                        Schedule hasn&apos;t been updated since{' '}
-                                        {scheduleFileUpdatedAt.toLocaleString([], {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: 'numeric',
-                                            minute: '2-digit'
-                                        })}{' '}
-                                        — dispatch workstation may be offline.
-                                    </span>
-                                </div>
-                            )}
+                            (() => {
+                                const todayIso = getTodayDate()
+                                const isPastDate = !!planDate && planDate < todayIso
+                                const isStale =
+                                    Date.now() - scheduleFileUpdatedAt.getTime() > SCHEDULE_STALE_THRESHOLD_MS
+                                if (!isPastDate && !isStale) return null
+                                const formattedTimestamp = scheduleFileUpdatedAt.toLocaleString([], {
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    month: 'short'
+                                })
+                                return (
+                                    <div
+                                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border-b shrink-0"
+                                        style={{
+                                            background: 'rgba(245, 158, 11, 0.12)',
+                                            borderColor: 'rgba(245, 158, 11, 0.4)',
+                                            color: 'var(--text-primary)'
+                                        }}
+                                    >
+                                        <i
+                                            className={`fas ${
+                                                isPastDate ? 'fa-clock-rotate-left' : 'fa-triangle-exclamation'
+                                            } text-[11px]`}
+                                            style={{ color: '#d97706' }}
+                                        />
+                                        <span>
+                                            {isPastDate ? (
+                                                <>
+                                                    This date is in the past — records have not been updated since{' '}
+                                                    {formattedTimestamp}.
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Schedule hasn&apos;t been updated since {formattedTimestamp} —
+                                                    dispatch workstation may be offline.
+                                                </>
+                                            )}
+                                        </span>
+                                    </div>
+                                )
+                            })()}
 
                         {/* Production-required gate removed — useScheduleSync auto-imports
                             production from the dispatch bucket every 5 minutes, so edits

@@ -2,6 +2,18 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.6] - 2026-04-29
+
+- Add OrderTicketsModal for drilling into individual tickets from the schedule via a right-click context menu on order rows
+- Expand DetailOrderParser to extract full per-ticket data: ticket number, truck, driver, ticket time, loaded time, loading plant, and quantity
+- Add cross-plant ticket support by fetching Baytown 404 and Conroe 409 alongside their sibling plants, with ticket deduplication across plant files
+- Introduce per-plant loaded yardage breakdown on the schedule's LoadedCell via a portaled hover popover showing each plant's contribution
+- Replace fixed-interval polling in useDetailOrders with Supabase realtime subscription on the dispatch-reports storage bucket, plus a cold-start retry ladder
+- Improve surcharge detection in DetailOrderParser to check product descriptions in addition to codes, preventing fuel/freight/admin lines from inflating loaded yardage
+- Harden the bridge userscript (v2.7.0) with HTML completeness validation — retries truncated reports missing the closing </html> tag and enforces a 5 KB minimum file size
+- Reorder imports in PlanView, PlanFlowPreview, MyAccountView, and DocumentsView to fix linting violations
+- Apply consistent code formatting across all edge functions, shared helpers, ESLint config, Tailwind config, and CSS
+
 - Upgraded Dispatch Sync bridge to v2.6.0 with per-report rolling windows — DailyOrder pulls today + 7 days,
   DetailOrderAnalysis pulls only today — eliminating unnecessary future-date fetches for detail reports
 - Added concurrent worker pool (6 workers) to Dispatch Sync, replacing sequential task execution so polling waits no

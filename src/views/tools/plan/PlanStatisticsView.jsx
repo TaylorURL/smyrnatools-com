@@ -14,10 +14,12 @@ import {
 } from 'recharts'
 
 import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
+import { DetailOrderBucketService } from '../../../services/DetailOrderBucketService'
 import { PlanService } from '../../../services/PlanService'
 import {
     BIG_POUR_SPACING_THRESHOLD_MIN,
     BIG_POUR_YARDAGE_THRESHOLD,
+    computeCustomerSatisfaction,
     isExcludedOrder,
     MAX_YPH,
     parseDurationMinutes,
@@ -45,6 +47,7 @@ const PERIODS = [
     { id: 'week', label: 'Week', span: 7 },
     { id: 'month', label: 'Month', span: 30 },
     { id: 'quarter', label: 'Quarter', span: 90 },
+    { id: 'year', label: 'Year', span: 365 },
     { id: 'custom', label: 'Custom', span: null }
 ]
 const COMPARISONS = [
@@ -129,6 +132,18 @@ const endOfQuarter = (date) => {
     return d
 }
 
+const startOfYear = (date) => {
+    const d = new Date(date.getFullYear(), 0, 1)
+    d.setHours(0, 0, 0, 0)
+    return d
+}
+
+const endOfYear = (date) => {
+    const d = new Date(date.getFullYear(), 11, 31)
+    d.setHours(0, 0, 0, 0)
+    return d
+}
+
 /**
  * Build the period range (current + comparison) given the selector state.
  * Periods are CALENDAR-aligned, not rolling: Week is Mon–Sat of the anchor's
@@ -156,6 +171,9 @@ const buildRange = (period, anchorIso, comparison, customStart, customEnd) => {
     } else if (period === 'quarter') {
         startD = startOfQuarter(anchor)
         endD = endOfQuarter(anchor)
+    } else if (period === 'year') {
+        startD = startOfYear(anchor)
+        endD = endOfYear(anchor)
     } else {
         startD = new Date(anchor)
         endD = new Date(anchor)
@@ -189,6 +207,11 @@ const buildRange = (period, anchorIso, comparison, customStart, customEnd) => {
             const pe = new Date(startD.getFullYear(), startD.getMonth(), 0)
             prevStart = isoDate(ps)
             prevEnd = isoDate(pe)
+        } else if (period === 'year') {
+            const ps = new Date(startD.getFullYear() - 1, 0, 1)
+            const pe = new Date(startD.getFullYear() - 1, 11, 31)
+            prevStart = isoDate(ps)
+            prevEnd = isoDate(pe)
         } else {
             // Custom — match the same span just before the start.
             prevEnd = offsetIso(start, -1)
@@ -211,13 +234,24 @@ const buildRange = (period, anchorIso, comparison, customStart, customEnd) => {
 
 /* ── Per-day schedule metrics ─────────────────────────────────────────── */
 
+/** Max yards a single concrete truck can physically haul. Used as both a
+ *  per-order load-size cap and the upper bound on every yards-per-load
+ *  metric — anything above this is a data inconsistency, not a real number. */
+const FLEET_MAX_LOAD_SIZE = 10
+
 /**
  * Reduce a single day's stored `plant_production` (the dispatch schedule
  * snapshot) into a flat metrics object the dashboard can sum / chart. This
  * is purely schedule-side data — order counts, yardage, loads, customers,
  * products, shift spans — with no dispatch-plan / help-route mixing.
+ *
+ * @param {Object} row - Plan row with `plan_date` + `plant_production`.
+ * @param {string|null} [plantFilter] - When set to a plant code, scopes
+ *  every aggregation (totals, perCustomer/perProduct, hourBuckets,
+ *  bigPours, allLiveOrders) to orders from that plant only. perPlant is
+ *  reduced to a single entry. Use null/undefined for an all-plants view.
  */
-const computeScheduleMetrics = (row) => {
+const computeScheduleMetrics = (row, plantFilter = null) => {
     const production = row?.plant_production && typeof row.plant_production === 'object' ? row.plant_production : {}
     const perPlant = {}
     const perCustomer = {}
@@ -228,6 +262,10 @@ const computeScheduleMetrics = (row) => {
     // appears in more than one plant block in the parsed schedule isn't
     // double-counted in the day's total.
     const bigPourSeen = new Set()
+    // Live orders for the day, captured here so we can later compute the
+    // shared `computeCustomerSatisfaction` score against fetched detail-
+    // order ticket data without re-walking the production blob.
+    const allLiveOrders = []
     let totalYardage = 0
     let totalLoads = 0
     let totalOrders = 0
@@ -241,7 +279,6 @@ const computeScheduleMetrics = (row) => {
      *  When loadSize is missing from the parsed dispatch HTML, fall back to
      *  the fleet maximum (10 yd³) so the yards/load average can never
      *  exceed physical truck capacity. */
-    const FLEET_MAX_LOAD_SIZE = 10
     const loadsForOrder = (o) => {
         const yards = parseFloat(o?.yardage) || 0
         if (yards <= 0) return 0
@@ -255,12 +292,23 @@ const computeScheduleMetrics = (row) => {
 
     Object.keys(production).forEach((plantCode) => {
         if (plantCode === PLAN_META_KEY) return
+        if (plantFilter && plantCode !== plantFilter) return
         const block = production[plantCode] || {}
         const orders = Array.isArray(block.orders) ? block.orders : []
         const liveOrders = orders.filter((o) => !isExcludedOrder(o))
+        liveOrders.forEach((o) => allLiveOrders.push(o))
         const orderYardage = liveOrders.reduce((sum, o) => sum + (parseFloat(o.yardage) || 0), 0)
-        const yardage = orderYardage > 0 || liveOrders.length > 0 ? orderYardage : parseFloat(block.totalYardage) || 0
-        const loads = liveOrders.reduce((sum, o) => sum + loadsForOrder(o), 0)
+        const fallbackYardage = parseFloat(block.totalYardage) || 0
+        // Fall back to the parsed-summary yardage only when there are no
+        // per-order rows to read from. We need to estimate loads for that
+        // fallback yardage too — otherwise the day-level totalYardage
+        // includes summary-only yardage while totalLoads stays at 0, and the
+        // resulting yards-per-load ratio mathematically exceeds the truck
+        // capacity (impossible for real pours).
+        const usingFallback = liveOrders.length === 0 && orderYardage <= 0 && fallbackYardage > 0
+        const yardage = usingFallback ? fallbackYardage : orderYardage
+        const orderLoads = liveOrders.reduce((sum, o) => sum + loadsForOrder(o), 0)
+        const loads = usingFallback ? fallbackYardage / FLEET_MAX_LOAD_SIZE : orderLoads
         const startMin = timeToMinutes(block.firstJobTime)
         const endMin = timeToMinutes(block.lastJobTime)
         if (yardage > 0 || loads > 0 || liveOrders.length > 0) activePlants += 1
@@ -345,8 +393,30 @@ const computeScheduleMetrics = (row) => {
         }
     })
 
+    // Snap per-day totals + bucket tallies to one decimal so summed floats
+    // (yardage / loadSize, etc.) never bubble up as 208.39999999999998 in
+    // the UI or when re-aggregated across multiple days.
+    const snapTenth = (n) => Math.round(n * 10) / 10
+    Object.values(perPlant).forEach((block) => {
+        block.yardage = snapTenth(block.yardage)
+        block.loads = snapTenth(block.loads)
+    })
+    Object.values(perCustomer).forEach((block) => {
+        block.yardage = snapTenth(block.yardage)
+        block.loads = snapTenth(block.loads)
+    })
+    Object.values(perProduct).forEach((block) => {
+        block.yardage = snapTenth(block.yardage)
+        block.loads = snapTenth(block.loads)
+    })
+    hourBuckets.forEach((b) => {
+        b.yardage = snapTenth(b.yardage)
+        b.loads = snapTenth(b.loads)
+    })
+
     return {
         activePlants,
+        allLiveOrders,
         bigPours,
         firstJobMinutes: earliestStart,
         hourBuckets,
@@ -357,9 +427,9 @@ const computeScheduleMetrics = (row) => {
         perProduct,
         planDate: row.plan_date,
         shiftSpanHours,
-        totalLoads,
+        totalLoads: snapTenth(totalLoads),
         totalOrders,
-        totalYardage,
+        totalYardage: snapTenth(totalYardage),
         yardagePerLoad: totalLoads > 0 ? Math.round((totalYardage / totalLoads) * 10) / 10 : null
     }
 }
@@ -433,11 +503,44 @@ const aggregateMetrics = (days) => {
             summary.hourBuckets[i].yardage += b.yardage
         })
     })
+    // Snap accumulated totals to a single decimal place so float-summation
+    // artifacts (e.g. 208.39999999999998) never reach the UI. Per-bucket
+    // tallies are rounded too — they feed charts and scorecard tables.
+    const snapTenth = (n) => Math.round(n * 10) / 10
+    summary.totalYardage = snapTenth(summary.totalYardage)
+    summary.totalLoads = snapTenth(summary.totalLoads)
+    summary.totalOrders = snapTenth(summary.totalOrders)
+    Object.values(summary.perPlant).forEach((block) => {
+        block.yardage = snapTenth(block.yardage)
+        block.loads = snapTenth(block.loads)
+        block.orderCount = snapTenth(block.orderCount)
+    })
+    Object.values(summary.perCustomer).forEach((block) => {
+        block.yardage = snapTenth(block.yardage)
+        block.loads = snapTenth(block.loads)
+        block.orders = snapTenth(block.orders)
+    })
+    Object.values(summary.perProduct).forEach((block) => {
+        block.yardage = snapTenth(block.yardage)
+        block.loads = snapTenth(block.loads)
+        block.orders = snapTenth(block.orders)
+    })
+    summary.hourBuckets.forEach((b) => {
+        b.loads = snapTenth(b.loads)
+        b.yardage = snapTenth(b.yardage)
+    })
     summary.avgYardagePerActiveDay =
         summary.daysWithProduction > 0 ? Math.round(summary.totalYardage / summary.daysWithProduction) : 0
     summary.avgShiftSpanHours = shiftSpanCount > 0 ? Math.round((shiftSpanSum / shiftSpanCount) * 10) / 10 : null
+    // Clamp the yards-per-load ratio at the fleet's physical truck capacity
+    // (10 yd³). Real concrete trucks can't haul more, so any computed value
+    // above that signals a yardage/loads mismatch upstream rather than a
+    // real number. The clamp is a safety net — the per-plant fallback path
+    // already keeps the inputs consistent.
     summary.yardagePerLoad =
-        summary.totalLoads > 0 ? Math.round((summary.totalYardage / summary.totalLoads) * 10) / 10 : null
+        summary.totalLoads > 0
+            ? Math.min(FLEET_MAX_LOAD_SIZE, Math.round((summary.totalYardage / summary.totalLoads) * 10) / 10)
+            : null
 
     // Peak hour across the whole window.
     let peakLoads = 0
@@ -584,8 +687,12 @@ function TrendChart({ data, accent, comparisonData }) {
                         tick={{ fontSize: 11 }}
                         interval="preserveStartEnd"
                     />
-                    <YAxis stroke="var(--text-tertiary)" tick={{ fontSize: 11 }} width={48} />
-                    <Tooltip contentStyle={CHART_TOOLTIP_STYLE} cursor={{ stroke: accent, strokeOpacity: 0.2 }} />
+                    <YAxis stroke="var(--text-tertiary)" tick={{ fontSize: 11 }} width={48} tickFormatter={fmtInt} />
+                    <Tooltip
+                        contentStyle={CHART_TOOLTIP_STYLE}
+                        cursor={{ stroke: accent, strokeOpacity: 0.2 }}
+                        formatter={(value, name) => [fmtInt(value), name]}
+                    />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Line
                         type="monotone"
@@ -646,7 +753,7 @@ function ByPlantChart({ accent, plantNameByCode, rows }) {
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={trimmed} layout="vertical" margin={{ bottom: 4, left: 8, right: 16, top: 8 }}>
                     <CartesianGrid stroke="var(--border-light)" strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" stroke="var(--text-tertiary)" tick={{ fontSize: 11 }} />
+                    <XAxis type="number" stroke="var(--text-tertiary)" tick={{ fontSize: 11 }} tickFormatter={fmtInt} />
                     <YAxis
                         type="category"
                         dataKey="code"
@@ -654,7 +761,11 @@ function ByPlantChart({ accent, plantNameByCode, rows }) {
                         tick={{ fontSize: 11 }}
                         width={64}
                     />
-                    <Tooltip contentStyle={CHART_TOOLTIP_STYLE} cursor={{ fill: `${accent}10` }} />
+                    <Tooltip
+                        contentStyle={CHART_TOOLTIP_STYLE}
+                        cursor={{ fill: `${accent}10` }}
+                        formatter={(value, name) => [fmtInt(value), name]}
+                    />
                     <Bar dataKey="yardage" name="Yardage" radius={[0, 3, 3, 0]}>
                         {trimmed.map((row, idx) => (
                             <Cell
@@ -697,7 +808,7 @@ function DayOfWeekChart({ accent, plans }) {
                 <BarChart data={data} margin={{ bottom: 4, left: 0, right: 8, top: 12 }}>
                     <CartesianGrid stroke="var(--border-light)" strokeDasharray="3 3" />
                     <XAxis dataKey="label" stroke="var(--text-tertiary)" tick={{ fontSize: 11 }} />
-                    <YAxis stroke="var(--text-tertiary)" tick={{ fontSize: 11 }} width={48} />
+                    <YAxis stroke="var(--text-tertiary)" tick={{ fontSize: 11 }} width={48} tickFormatter={fmtInt} />
                     <Tooltip
                         contentStyle={CHART_TOOLTIP_STYLE}
                         cursor={{ fill: `${accent}10` }}
@@ -707,46 +818,6 @@ function DayOfWeekChart({ accent, plans }) {
                         ]}
                     />
                     <Bar dataKey="avg" name="Avg yardage" fill={accent} radius={[3, 3, 0, 0]} />
-                </BarChart>
-            </ResponsiveContainer>
-        </div>
-    )
-}
-
-function HourlyDistributionChart({ accent, hourBuckets }) {
-    const trimmed = useMemo(() => {
-        const firstActive = hourBuckets.findIndex((b) => b.loads > 0 || b.yardage > 0)
-        const lastActive =
-            hourBuckets.length - 1 - [...hourBuckets].reverse().findIndex((b) => b.loads > 0 || b.yardage > 0)
-        if (firstActive < 0) return []
-        const start = Math.max(0, firstActive - 1)
-        const end = Math.min(23, lastActive + 1)
-        return hourBuckets.slice(start, end + 1).map((b) => ({
-            ...b,
-            label: fmtMinutesAsHHMM(b.hour * 60).replace(':00', '')
-        }))
-    }, [hourBuckets])
-    if (trimmed.length === 0) {
-        return (
-            <div className="text-[12px] py-6 text-center" style={{ color: 'var(--text-tertiary)' }}>
-                No order start times available.
-            </div>
-        )
-    }
-    return (
-        <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={trimmed} margin={{ bottom: 4, left: 0, right: 8, top: 12 }}>
-                    <CartesianGrid stroke="var(--border-light)" strokeDasharray="3 3" />
-                    <XAxis dataKey="label" stroke="var(--text-tertiary)" tick={{ fontSize: 10 }} />
-                    <YAxis stroke="var(--text-tertiary)" tick={{ fontSize: 11 }} width={48} />
-                    <Tooltip
-                        contentStyle={CHART_TOOLTIP_STYLE}
-                        cursor={{ fill: `${accent}10` }}
-                        formatter={(value, name) => [fmtInt(value), name]}
-                    />
-                    <Bar dataKey="yardage" name="Yardage" fill={accent} radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="loads" name="Loads" fill="#0ea5e9" radius={[3, 3, 0, 0]} />
                 </BarChart>
             </ResponsiveContainer>
         </div>
@@ -944,6 +1015,124 @@ function PlantScorecardTable({
 }
 
 /** Big-pour callout list — orders ≥ 120 yd³ that benefit from early coordination. */
+/** Tier-color a 0–100 score — green ≥ 90 (Schedule-tab "happy"), amber ≥ 75
+ *  ("watching"), red below ("bad service"). Mirrors the Schedule tab's
+ *  SatisfactionBadge so headlines on both surfaces feel identical. */
+const satisfactionColor = (score100) => {
+    if (score100 == null) return 'var(--text-tertiary)'
+    if (score100 >= 90) return '#15803d'
+    if (score100 >= 75) return '#b45309'
+    return '#b91c1c'
+}
+
+/**
+ * Customer satisfaction chart — wraps the SHARED `computeCustomerSatisfaction`
+ * results from `PlanUtility` so the page reads the same score the Schedule
+ * tab badge reads. Per-day score points feed a trend line; the headline shows
+ * the period-aggregate score with good/bad-service counts and a sample tally.
+ */
+function SatisfactionChart({ accent, aggregate, isLoading, satisfactionByDay, days }) {
+    const trend = useMemo(
+        () =>
+            days
+                .map((d) => {
+                    const sat = satisfactionByDay[d.planDate]
+                    if (!sat) return null
+                    return {
+                        badService: sat.badService,
+                        goodService: sat.goodService,
+                        label: fmtDate(d.planDate),
+                        samples: sat.samples,
+                        score: Math.round(sat.score * 100)
+                    }
+                })
+                .filter(Boolean),
+        [days, satisfactionByDay]
+    )
+    const score100 = aggregate ? Math.round(aggregate.score * 100) : null
+    const headlineColor = satisfactionColor(score100)
+    return (
+        <div className="flex flex-col gap-3">
+            <div className="flex items-end gap-3 px-1">
+                <div className="flex items-baseline gap-1">
+                    <span
+                        className="text-[40px] font-bold leading-none font-mono tabular-nums"
+                        style={{ color: headlineColor }}
+                    >
+                        {score100 == null ? '—' : score100}
+                    </span>
+                    <span className="text-[16px] font-semibold" style={{ color: headlineColor }}>
+                        %
+                    </span>
+                </div>
+                <div className="flex flex-col text-[11px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
+                    {aggregate ? (
+                        <>
+                            <span>
+                                {fmtInt(aggregate.goodService)} good service · {fmtInt(aggregate.badService)} bad
+                            </span>
+                            <span style={{ color: 'var(--text-tertiary)' }}>
+                                across {fmtInt(aggregate.samples)} order
+                                {aggregate.samples === 1 ? '' : 's'} with ticket data
+                            </span>
+                        </>
+                    ) : (
+                        <>
+                            <span>{isLoading ? 'Fetching ticket data…' : 'No ticket data in range'}</span>
+                            <span style={{ color: 'var(--text-tertiary)' }}>
+                                Score combines pace (60%) and on-time start (40%)
+                            </span>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {trend.length > 1 ? (
+                <div style={{ height: 140 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trend} margin={{ bottom: 0, left: 0, right: 8, top: 8 }}>
+                            <CartesianGrid stroke="var(--border-light)" strokeDasharray="3 3" />
+                            <XAxis
+                                dataKey="label"
+                                stroke="var(--text-tertiary)"
+                                tick={{ fontSize: 10 }}
+                                interval="preserveStartEnd"
+                            />
+                            <YAxis domain={[0, 100]} stroke="var(--text-tertiary)" tick={{ fontSize: 10 }} width={30} />
+                            <Tooltip
+                                contentStyle={CHART_TOOLTIP_STYLE}
+                                cursor={{ stroke: accent, strokeOpacity: 0.2 }}
+                                formatter={(value, _name, item) => [
+                                    `${value}% · ${item?.payload?.goodService} good / ${item?.payload?.badService} bad`,
+                                    'Score'
+                                ]}
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="score"
+                                stroke={accent}
+                                strokeWidth={2}
+                                dot={{ r: 2.5 }}
+                                activeDot={{ r: 4 }}
+                                isAnimationActive={false}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            ) : (
+                <div
+                    className="text-[11.5px] py-3 px-2 rounded text-center"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
+                >
+                    {isLoading
+                        ? 'Loading per-day ticket data…'
+                        : 'Trend chart needs at least two days with ticket data.'}
+                </div>
+            )}
+        </div>
+    )
+}
+
 function BigPoursTable({ accent, plantNameByCode, pours }) {
     if (pours.length === 0) {
         return (
@@ -1003,129 +1192,6 @@ function BigPoursTable({ accent, plantNameByCode, pours }) {
     )
 }
 
-/* ── Insights ─────────────────────────────────────────────────────────── */
-
-/**
- * Build a prioritized list of operational observations. Each entry is
- * action-oriented — what an ops manager should do or know — rather than a
- * generic restatement of the underlying numbers. Ordered by severity so the
- * most important callouts surface first.
- */
-const generateInsights = ({ current, previous, days, plantNameByCode, mixerCountsByPlant, isSingleDay }) => {
-    const insights = []
-
-    // 1. Concentration risk — single customer eats >35% of yardage.
-    if (current.topCustomerShare && current.topCustomerShare.share >= 0.35) {
-        const pct = (current.topCustomerShare.share * 100).toFixed(0)
-        insights.push({
-            icon: 'fa-triangle-exclamation',
-            text: `${current.topCustomerShare.customer} is ${pct}% of total yardage (${fmtInt(current.topCustomerShare.yardage)} yd³). Coordinate ahead — losing this customer would gut the schedule.`,
-            tone: 'warning'
-        })
-    }
-
-    // 2. Per-plant overload — yards/operator-hour estimate when truck counts known.
-    if (mixerCountsByPlant && isSingleDay) {
-        Object.values(current.perPlant).forEach((plant) => {
-            const trucks = mixerCountsByPlant[plant.code] || 0
-            const day = days[0]
-            const span = day?.shiftSpanHours
-            if (!trucks || !span || span <= 0 || plant.yardage <= 0) return
-            const yph = plant.yardage / (trucks * span)
-            if (yph > MAX_YPH) {
-                insights.push({
-                    icon: 'fa-truck-arrow-right',
-                    text: `${plant.code} is overbooked — ${fmtFloat(yph)} yd/op-hr (target ≤ ${MAX_YPH}). Send help routes or stagger jobs.`,
-                    tone: 'negative'
-                })
-            } else if (yph < TARGET_YPH - 0.5 && plant.loads >= 6) {
-                insights.push({
-                    icon: 'fa-truck-arrow-right',
-                    text: `${plant.code} has slack — only ${fmtFloat(yph)} yd/op-hr at ${trucks} truck${trucks === 1 ? '' : 's'}. Could send help.`,
-                    tone: 'positive'
-                })
-            }
-        })
-    }
-
-    // 3. Big pours — orders that need extra coordination.
-    if (current.bigPours.length > 0) {
-        const upcoming = current.bigPours.slice(0, 3)
-        insights.push({
-            icon: 'fa-fire',
-            text: `${current.bigPours.length} big pour${current.bigPours.length === 1 ? '' : 's'} (>${BIG_POUR_YARDAGE_THRESHOLD} yd³, <${BIG_POUR_SPACING_THRESHOLD_MIN}-min spacing) need${current.bigPours.length === 1 ? 's' : ''} early coordination — biggest: ${fmtInt(upcoming[0].yardage)} yd³ for ${upcoming[0].customer} at ${upcoming[0].plantCode}.`,
-            tone: 'warning'
-        })
-    }
-
-    // 4. Overtime risk — shift spans pushing past 12h.
-    const heavyDays = days.filter((p) => p.shiftSpanHours && p.shiftSpanHours > 12)
-    if (heavyDays.length > 0) {
-        insights.push({
-            icon: 'fa-hourglass-half',
-            text: `${heavyDays.length} day${heavyDays.length === 1 ? '' : 's'} run${heavyDays.length === 1 ? 's' : ''} a 12h+ shift span — overtime likely on ${heavyDays.map((d) => fmtDate(d.planDate)).join(', ')}.`,
-            tone: 'warning'
-        })
-    }
-
-    // 5. Peak-hour callout — lets the user know when the day stacks up.
-    if (current.peakHour && current.peakHour.loads > 0) {
-        const totalLoadsInRange = current.totalLoads
-        const peakShare = totalLoadsInRange > 0 ? (current.peakHour.loads / totalLoadsInRange) * 100 : 0
-        insights.push({
-            icon: 'fa-clock',
-            text: `Peak hour: ${fmtMinutesAsHHMM(current.peakHour.hour * 60)} — ${current.peakHour.loads} load${current.peakHour.loads === 1 ? '' : 's'} starting (${peakShare.toFixed(0)}% of the period's loads).`,
-            tone: peakShare > 25 ? 'warning' : 'neutral'
-        })
-    }
-
-    // 6. Load utilization — partial-truck drag.
-    if (current.yardagePerLoad != null) {
-        if (current.yardagePerLoad < 7) {
-            insights.push({
-                icon: 'fa-truck',
-                text: `${fmtFloat(current.yardagePerLoad)} yd³/load on average — partial trucks. Talk to dispatch about consolidating small orders.`,
-                tone: 'warning'
-            })
-        } else if (current.yardagePerLoad > 9.5) {
-            insights.push({
-                icon: 'fa-truck',
-                text: `${fmtFloat(current.yardagePerLoad)} yd³/load — running full trucks consistently. Good utilization.`,
-                tone: 'positive'
-            })
-        }
-    }
-
-    // 7. Trend signal (only when comparison is on).
-    const yphDelta = deltaPct(current.totalYardage, previous?.totalYardage)
-    if (previous && yphDelta != null && Math.abs(yphDelta) >= 5) {
-        insights.push({
-            icon: yphDelta > 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down',
-            text: `Yardage ${yphDelta > 0 ? 'up' : 'down'} ${Math.abs(yphDelta).toFixed(1)}% vs the comparison period (${fmtInt(current.totalYardage)} vs ${fmtInt(previous.totalYardage)} yd³).`,
-            tone: yphDelta > 0 ? 'positive' : 'negative'
-        })
-    }
-
-    // 8. Coverage gap — some working days have no schedule.
-    if (current.dayCount > current.daysWithProduction && current.daysWithProduction > 0) {
-        const missing = current.dayCount - current.daysWithProduction
-        insights.push({
-            icon: 'fa-calendar-xmark',
-            text: `${missing} of ${current.dayCount} working day${current.dayCount === 1 ? '' : 's'} in this range have no scheduled production.`,
-            tone: 'neutral'
-        })
-    }
-
-    return insights
-}
-
-const TONE_STYLES = {
-    negative: { background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626' },
-    neutral: { background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' },
-    positive: { background: 'rgba(22, 163, 74, 0.1)', color: '#16a34a' },
-    warning: { background: 'rgba(245, 158, 11, 0.12)', color: '#d97706' }
-}
-
 /* ── Main component ───────────────────────────────────────────────────── */
 
 /**
@@ -1143,8 +1209,20 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
     const [customStart, setCustomStart] = useState(planDate || isoDate(new Date()))
     const [customEnd, setCustomEnd] = useState(planDate || isoDate(new Date()))
     const [loading, setLoading] = useState(true)
-    const [currentDays, setCurrentDays] = useState([])
-    const [previousDays, setPreviousDays] = useState([])
+    /** Raw plan rows from the database — kept un-aggregated so the plant
+     *  filter can re-derive every metric without a re-fetch. */
+    const [currentRows, setCurrentRows] = useState([])
+    const [previousRows, setPreviousRows] = useState([])
+    /** null = all plants; otherwise a plant_code that scopes every
+     *  aggregation, chart, and table on the page. */
+    const [selectedPlant, setSelectedPlant] = useState(null)
+    const [showPlantMenu, setShowPlantMenu] = useState(false)
+    /** Per-day detail-order maps (orderId → ticket data) fetched from the
+     *  dispatch storage bucket. Feeds `computeCustomerSatisfaction` so this
+     *  page produces the EXACT same score the Schedule tab shows for the
+     *  current day. Days with no detail data are scored as null. */
+    const [detailByDay, setDetailByDay] = useState({})
+    const [satisfactionLoading, setSatisfactionLoading] = useState(false)
 
     useEffect(() => {
         if (planDate) setAnchor(planDate)
@@ -1182,41 +1260,19 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         async function load() {
             setLoading(true)
             try {
-                const [currentRows, previousRows] = await Promise.all([
+                const [fetchedCurrent, fetchedPrevious] = await Promise.all([
                     PlanService.fetchPlansInRange(range.current.start, range.current.end),
                     range.previous
                         ? PlanService.fetchPlansInRange(range.previous.start, range.previous.end)
                         : Promise.resolve([])
                 ])
                 if (cancelled) return
-                let mappedCurrent = (currentRows || [])
-                    .map(computeScheduleMetrics)
-                    .filter((d) => !isSundayIso(d.planDate))
-                // Fallback — if the range covers `planDate` but the server has no
-                // saved row for it yet, use the live production already loaded by
-                // PlanView so the page is never empty when the user is looking
-                // at a freshly-synced day that hasn't been auto-saved yet.
-                const hasPlanDateRow = mappedCurrent.some((d) => d.planDate === planDate)
-                const planDateInRange = planDate && planDate >= range.current.start && planDate <= range.current.end
-                if (!hasPlanDateRow && planDateInRange && liveProduction && !isSundayIso(planDate)) {
-                    const synthetic = computeScheduleMetrics({
-                        plan_date: planDate,
-                        plant_production: liveProduction
-                    })
-                    if (synthetic.totalYardage > 0 || synthetic.totalLoads > 0 || synthetic.totalOrders > 0) {
-                        mappedCurrent = [...mappedCurrent, synthetic].sort((a, b) =>
-                            a.planDate.localeCompare(b.planDate)
-                        )
-                    }
-                }
-                setCurrentDays(mappedCurrent)
-                setPreviousDays(
-                    (previousRows || []).map(computeScheduleMetrics).filter((d) => !isSundayIso(d.planDate))
-                )
+                setCurrentRows(fetchedCurrent || [])
+                setPreviousRows(fetchedPrevious || [])
             } catch {
                 if (cancelled) return
-                setCurrentDays([])
-                setPreviousDays([])
+                setCurrentRows([])
+                setPreviousRows([])
             } finally {
                 if (!cancelled) setLoading(false)
             }
@@ -1225,35 +1281,133 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         return () => {
             cancelled = true
         }
-    }, [range, planDate, liveProduction])
+    }, [range])
+
+    /** Derive per-day metrics from the raw rows. Re-runs cheaply when the
+     *  plant filter changes — no re-fetch needed. The live-production
+     *  fallback runs here so it picks up the same plant filter. */
+    const currentDays = useMemo(() => {
+        let mapped = (currentRows || [])
+            .map((row) => computeScheduleMetrics(row, selectedPlant))
+            .filter((d) => !isSundayIso(d.planDate))
+        const hasPlanDateRow = mapped.some((d) => d.planDate === planDate)
+        const planDateInRange = planDate && planDate >= range.current.start && planDate <= range.current.end
+        if (!hasPlanDateRow && planDateInRange && liveProduction && !isSundayIso(planDate)) {
+            const synthetic = computeScheduleMetrics(
+                { plan_date: planDate, plant_production: liveProduction },
+                selectedPlant
+            )
+            if (synthetic.totalYardage > 0 || synthetic.totalLoads > 0 || synthetic.totalOrders > 0) {
+                mapped = [...mapped, synthetic].sort((a, b) => a.planDate.localeCompare(b.planDate))
+            }
+        }
+        return mapped
+    }, [currentRows, selectedPlant, planDate, liveProduction, range])
+
+    const previousDays = useMemo(
+        () =>
+            (previousRows || [])
+                .map((row) => computeScheduleMetrics(row, selectedPlant))
+                .filter((d) => !isSundayIso(d.planDate)),
+        [previousRows, selectedPlant]
+    )
+
+    /** Distinct plant codes present in the loaded window (not the global
+     *  plant directory). Sorted alphabetically; each entry carries its
+     *  display name when one is known. The selected plant is kept in the
+     *  list even if the new range has no rows for it so the dropdown
+     *  still shows what's currently filtered. */
+    const availablePlants = useMemo(() => {
+        const codes = new Set()
+        ;(currentRows || []).forEach((row) => {
+            const production =
+                row?.plant_production && typeof row.plant_production === 'object' ? row.plant_production : {}
+            Object.keys(production).forEach((code) => {
+                if (code !== PLAN_META_KEY) codes.add(code)
+            })
+        })
+        if (selectedPlant) codes.add(selectedPlant)
+        return [...codes].sort().map((code) => ({
+            code,
+            label: plantNameByCode?.[code] ? `${code} · ${plantNameByCode[code]}` : code
+        }))
+    }, [currentRows, plantNameByCode, selectedPlant])
+
+    /** Fetch detail-order ticket data for every working day in the current
+     *  range whose schedule we already loaded. Per-day fetches run in
+     *  parallel; cached entries are skipped so changing window/comparison
+     *  doesn't redo work. The bucket only retains a few weeks of history
+     *  reliably — older days will return empty maps and silently drop out
+     *  of the satisfaction score (as expected). */
+    useEffect(() => {
+        if (currentDays.length === 0) return undefined
+        let cancelled = false
+        const dates = currentDays.map((d) => d.planDate).filter((d) => !(d in detailByDay))
+        if (dates.length === 0) return undefined
+        setSatisfactionLoading(true)
+        Promise.all(dates.map((date) => DetailOrderBucketService.fetchByDate(date).catch(() => ({}))))
+            .then((results) => {
+                if (cancelled) return
+                setDetailByDay((prev) => {
+                    const next = { ...prev }
+                    dates.forEach((date, idx) => {
+                        next[date] = results[idx] || {}
+                    })
+                    return next
+                })
+            })
+            .finally(() => {
+                if (!cancelled) setSatisfactionLoading(false)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [currentDays, detailByDay])
+
+    /** Per-day satisfaction (using the shared `computeCustomerSatisfaction`
+     *  with the same inputs as the Schedule tab). Null entries mean we have
+     *  no ticket data for that day yet. */
+    const satisfactionByDay = useMemo(() => {
+        const out = {}
+        currentDays.forEach((d) => {
+            const detail = detailByDay[d.planDate]
+            if (!detail) {
+                out[d.planDate] = null
+                return
+            }
+            out[d.planDate] = computeCustomerSatisfaction(d.allLiveOrders || [], detail)
+        })
+        return out
+    }, [currentDays, detailByDay])
+
+    /** Period-aggregated satisfaction. Computed by feeding the FULL flat
+     *  order list and the merged detail map into the same shared function
+     *  that the Schedule tab uses — the math stays identical. */
+    const satisfactionAggregate = useMemo(() => {
+        if (!currentDays.length) return null
+        const allOrders = []
+        const mergedDetail = {}
+        let anyDetailFetched = false
+        currentDays.forEach((d) => {
+            const liveOrders = d.allLiveOrders || []
+            liveOrders.forEach((o) => allOrders.push(o))
+            const detail = detailByDay[d.planDate]
+            if (detail) {
+                anyDetailFetched = true
+                Object.entries(detail).forEach(([orderId, entry]) => {
+                    mergedDetail[orderId] = entry
+                })
+            }
+        })
+        if (!anyDetailFetched) return null
+        return computeCustomerSatisfaction(allOrders, mergedDetail)
+    }, [currentDays, detailByDay])
 
     const currentSummary = useMemo(() => aggregateMetrics(currentDays), [currentDays])
     const previousSummary = useMemo(
         () => (comparison === 'none' ? null : aggregateMetrics(previousDays)),
         [previousDays, comparison]
     )
-    const insights = useMemo(
-        () =>
-            generateInsights({
-                current: currentSummary,
-                days: currentDays,
-                isSingleDay: period === 'day' || (period === 'custom' && customStart === customEnd),
-                mixerCountsByPlant,
-                plantNameByCode,
-                previous: previousSummary
-            }),
-        [
-            currentSummary,
-            previousSummary,
-            currentDays,
-            plantNameByCode,
-            mixerCountsByPlant,
-            period,
-            customStart,
-            customEnd
-        ]
-    )
-
     /** Pad missing dates with zero-rows so the trend chart shows the full window.
      *  Skips Sundays since plants are closed and we don't surface them anywhere
      *  else on the page. */
@@ -1307,6 +1461,25 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         [currentSummary]
     )
 
+    /** The schedule HTML occasionally lists ghost plant codes (956, 601, 265, …)
+     *  that are sentinels or stale entries — not real production plants. The
+     *  authoritative list of real plants is `plantNameByCode`, populated from
+     *  the `plants` table, so we only surface scorecard / chart rows for
+     *  codes that have a name registered there. */
+    const knownPlantRows = useMemo(
+        () => Object.values(currentSummary.perPlant).filter((p) => Boolean(plantNameByCode?.[p.code])),
+        [currentSummary, plantNameByCode]
+    )
+
+    const knownPlantSummary = useMemo(() => {
+        const totalYardage = knownPlantRows.reduce((sum, p) => sum + (p.yardage || 0), 0)
+        const activeCount = knownPlantRows.filter((p) => p.yardage > 0 || p.loads > 0).length
+        const top = [...knownPlantRows].sort((a, b) => b.yardage - a.yardage)[0]
+        const topShare =
+            top && totalYardage > 0 ? { code: top.code, share: top.yardage / totalYardage, yardage: top.yardage } : null
+        return { activeCount, topShare, totalYardage }
+    }, [knownPlantRows])
+
     /** Calendar-aware label for the current window — "April 2026", "Q2 2026",
      *  the Mon–Sat range for weeks, or a single date for a single day. Falls
      *  back to a date range for custom selections. */
@@ -1322,6 +1495,9 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         }
         if (period === 'quarter') {
             return `Q${Math.floor(sd.getMonth() / 3) + 1} ${sd.getFullYear()}`
+        }
+        if (period === 'year') {
+            return String(sd.getFullYear())
         }
         return fmtRange(range.current.start, range.current.end)
     }, [period, range])
@@ -1342,6 +1518,8 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                 base.setMonth(base.getMonth() + direction)
             } else if (period === 'quarter') {
                 base.setMonth(base.getMonth() + direction * 3)
+            } else if (period === 'year') {
+                base.setFullYear(base.getFullYear() + direction)
             } else {
                 base.setDate(base.getDate() + direction)
             }
@@ -1466,6 +1644,73 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                     )}
                     <div className="relative ml-auto">
                         <button
+                            onClick={() => setShowPlantMenu((s) => !s)}
+                            className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
+                            style={{
+                                backgroundColor: selectedPlant ? `${accentColor}20` : 'var(--bg-tertiary)',
+                                color: selectedPlant ? accentColor : 'var(--text-secondary)'
+                            }}
+                            title="Filter every chart and table to a single plant"
+                        >
+                            <i className="fas fa-industry text-[11px]" />
+                            <span>
+                                {selectedPlant
+                                    ? `Plant · ${plantNameByCode?.[selectedPlant] ? `${selectedPlant}` : selectedPlant}`
+                                    : 'All plants'}
+                            </span>
+                            <i className={`fas fa-chevron-${showPlantMenu ? 'up' : 'down'} text-[9px]`} />
+                        </button>
+                        {showPlantMenu && (
+                            <div
+                                className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    border: '1px solid var(--border-light)'
+                                }}
+                            >
+                                <button
+                                    onClick={() => {
+                                        setSelectedPlant(null)
+                                        setShowPlantMenu(false)
+                                    }}
+                                    className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                                    style={{
+                                        backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
+                                        color: !selectedPlant ? accentColor : 'var(--text-primary)'
+                                    }}
+                                >
+                                    <span>All plants</span>
+                                    {!selectedPlant && <i className="fas fa-check text-[10px]" />}
+                                </button>
+                                {availablePlants.length === 0 ? (
+                                    <div className="px-3 py-2 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                        No plants in this range
+                                    </div>
+                                ) : (
+                                    availablePlants.map(({ code, label }) => (
+                                        <button
+                                            key={code}
+                                            onClick={() => {
+                                                setSelectedPlant(code)
+                                                setShowPlantMenu(false)
+                                            }}
+                                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                                            style={{
+                                                backgroundColor:
+                                                    selectedPlant === code ? `${accentColor}15` : 'transparent',
+                                                color: selectedPlant === code ? accentColor : 'var(--text-primary)'
+                                            }}
+                                        >
+                                            <span className="truncate">{label}</span>
+                                            {selectedPlant === code && <i className="fas fa-check text-[10px]" />}
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    <div className="relative">
+                        <button
                             onClick={() => setShowCompareMenu((s) => !s)}
                             className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
                             style={{
@@ -1521,34 +1766,6 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                         <span>Export</span>
                     </button>
                 </div>
-
-                {/* Action callouts — what an ops manager should know first.
-                    Lead with the highest-severity items so the page reads as
-                    a punch list, not a wall of numbers. */}
-                {!loading && currentDays.length > 0 && insights.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                        {insights.slice(0, 5).map((insight, idx) => {
-                            const tone = TONE_STYLES[insight.tone] || TONE_STYLES.neutral
-                            return (
-                                <div
-                                    key={idx}
-                                    className="flex items-start gap-2.5 rounded-lg px-3 py-2.5 text-[13px]"
-                                    style={{
-                                        background: tone.background,
-                                        border: `1px solid ${tone.color}33`,
-                                        color: 'var(--text-primary)'
-                                    }}
-                                >
-                                    <i
-                                        className={`fas ${insight.icon} text-[13px] mt-0.5`}
-                                        style={{ color: tone.color }}
-                                    />
-                                    <span className="leading-snug">{insight.text}</span>
-                                </div>
-                            )
-                        })}
-                    </div>
-                )}
 
                 {/* Compact KPI strip — context, not the headline. */}
                 <StatGroup columns={6}>
@@ -1657,21 +1874,30 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
 
                 {!loading && currentDays.length > 0 && (
                     <div className="flex flex-col gap-4">
-                        {/* Hero: when does the day stack up? Full-width to
-                            give the hourly demand curve room to breathe. */}
+                        {/* Hero: yardage per plant over the active time frame.
+                            Plant breakdown is the most actionable summary the
+                            page can show — collapses to a single bar when the
+                            user has filtered to one plant. */}
                         <Panel
-                            title="Demand by hour"
+                            title={
+                                selectedPlant
+                                    ? `Yardage · ${plantNameByCode?.[selectedPlant] ? `${selectedPlant} · ${plantNameByCode[selectedPlant]}` : selectedPlant}`
+                                    : 'Yardage by plant'
+                            }
                             innerClassName="p-3"
                             right={
-                                currentSummary.peakHour && currentSummary.peakHour.loads > 0 ? (
-                                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                        Peak {fmtMinutesAsHHMM(currentSummary.peakHour.hour * 60).replace(':00', '')} ·{' '}
-                                        {currentSummary.peakHour.loads} loads
-                                    </span>
-                                ) : null
+                                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                    {currentSummary.activePlantSet.size} plant
+                                    {currentSummary.activePlantSet.size === 1 ? '' : 's'} ·{' '}
+                                    {fmtInt(currentSummary.totalYardage)} yd³ total
+                                </span>
                             }
                         >
-                            <HourlyDistributionChart accent={accentColor} hourBuckets={currentSummary.hourBuckets} />
+                            <ByPlantChart
+                                accent={accentColor}
+                                plantNameByCode={plantNameByCode}
+                                rows={knownPlantRows}
+                            />
                         </Panel>
 
                         {/* 2-column body: operational tables/trends on the
@@ -1686,9 +1912,9 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                                     innerClassName="p-0"
                                     right={
                                         <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                            {currentSummary.activePlantSet.size} active ·{' '}
-                                            {currentSummary.topPlantShare
-                                                ? `top: ${currentSummary.topPlantShare.code} (${(currentSummary.topPlantShare.share * 100).toFixed(0)}%)`
+                                            {knownPlantSummary.activeCount} active ·{' '}
+                                            {knownPlantSummary.topShare
+                                                ? `top: ${knownPlantSummary.topShare.code} (${(knownPlantSummary.topShare.share * 100).toFixed(0)}%)`
                                                 : '—'}
                                         </span>
                                     }
@@ -1698,9 +1924,9 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                                         isSingleDay={isSingleDay}
                                         mixerCountsByPlant={mixerCountsByPlant}
                                         plantNameByCode={plantNameByCode}
-                                        rows={Object.values(currentSummary.perPlant)}
+                                        rows={knownPlantRows}
                                         singleDayShiftSpan={isSingleDay ? currentDays[0]?.shiftSpanHours : null}
-                                        totalYardage={currentSummary.totalYardage}
+                                        totalYardage={knownPlantSummary.totalYardage}
                                     />
                                 </Panel>
                                 <Panel
@@ -1725,6 +1951,38 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                                 </Panel>
                             </div>
                             <div className="flex flex-col gap-4 min-w-0">
+                                <Panel
+                                    title="Customer satisfaction"
+                                    innerClassName="p-3"
+                                    right={
+                                        satisfactionAggregate ? (
+                                            <span
+                                                className="inline-flex items-center gap-1.5 text-[11px] font-semibold rounded px-2 py-0.5"
+                                                style={{
+                                                    background: `${satisfactionColor(Math.round(satisfactionAggregate.score * 100))}1f`,
+                                                    color: satisfactionColor(
+                                                        Math.round(satisfactionAggregate.score * 100)
+                                                    )
+                                                }}
+                                            >
+                                                <i className="fas fa-face-smile text-[10px]" />
+                                                {Math.round(satisfactionAggregate.score * 100)}%
+                                            </span>
+                                        ) : satisfactionLoading ? (
+                                            <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                                Loading…
+                                            </span>
+                                        ) : null
+                                    }
+                                >
+                                    <SatisfactionChart
+                                        accent={accentColor}
+                                        aggregate={satisfactionAggregate}
+                                        days={currentDays}
+                                        isLoading={satisfactionLoading}
+                                        satisfactionByDay={satisfactionByDay}
+                                    />
+                                </Panel>
                                 <Panel
                                     title="Big pours to coordinate"
                                     innerClassName="p-0"
@@ -1897,31 +2155,6 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                                 )}
                             </div>
                         </div>
-                        {insights.length > 5 && (
-                            <Panel title="Additional observations">
-                                <div className="flex flex-col gap-2">
-                                    {insights.slice(5).map((insight, idx) => {
-                                        const tone = TONE_STYLES[insight.tone] || TONE_STYLES.neutral
-                                        return (
-                                            <div
-                                                key={idx}
-                                                className="flex items-start gap-2.5 rounded px-3 py-2 text-[12.5px]"
-                                                style={{
-                                                    background: tone.background,
-                                                    color: 'var(--text-primary)'
-                                                }}
-                                            >
-                                                <i
-                                                    className={`fas ${insight.icon} text-[12px] mt-0.5`}
-                                                    style={{ color: tone.color }}
-                                                />
-                                                <span>{insight.text}</span>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </Panel>
-                        )}
                     </div>
                 )}
             </div>

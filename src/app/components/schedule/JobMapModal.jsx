@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { TrafficService } from '../../../services/TrafficService'
+import { formatFullAddress, formatOrderAddress } from '../../../utils/AddressUtility'
 
-const composeAddress = (order) =>
-    [order?.address, order?.city]
-        .map((s) => (s == null ? '' : String(s).trim()))
-        .filter(Boolean)
-        .join(', ')
+// Run order addresses through the shared normalizer so the popup matches
+// the schedule table — no more `.lady Leslie Lane …` or `RD .` artifacts.
+const composeAddress = (order) => formatOrderAddress(order, ', ')
 
 const formatMinutesToHm = (mins) => {
     if (!Number.isFinite(mins) || mins <= 0) return null
@@ -279,7 +278,11 @@ export default function JobMapModal({
                                     ? `Plant ${originCode}${isAssignedPlant ? ' · Assigned' : ' · Comparing'}`
                                     : 'Plant address missing'
                             }
-                            primary={hasPlant ? originAddress : 'Add an address in Plan Settings → Plant Addresses'}
+                            primary={
+                                hasPlant
+                                    ? formatFullAddress(originAddress)
+                                    : 'Add an address in Plan Settings → Plant Addresses'
+                            }
                             sub={!hasPlant ? 'Required to draw the route' : originName || ''}
                             warn={!hasPlant}
                         >

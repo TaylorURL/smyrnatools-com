@@ -1,16 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import PourSizeBadge from '../../../app/components/common/PourSizeBadge'
 import JobMapModal from '../../../app/components/schedule/JobMapModal'
 import OrderTicketsModal from '../../../app/components/schedule/OrderTicketsModal'
 import TruckCoverageHoverCard from '../../../app/components/schedule/TruckCoverageHoverCard'
 import { useDetailOrders } from '../../../app/hooks/useDetailOrders'
 import { TrafficService } from '../../../services/TrafficService'
+import { formatAddressSegment, formatOrderAddress } from '../../../utils/AddressUtility'
 import {
+    BAD_SERVICE_LATE_THRESHOLD_MIN,
+    BAD_SERVICE_PACE_THRESHOLD,
     BIG_POUR_MIN_TRUCKS,
     BUFFER_MINUTES,
     buildAssignmentDriverTimes,
     computeClockInRows,
+    computeCustomerSatisfaction,
     computePlantPoolTimeline,
     computePlantPoolTimelines,
     computePullUpRows,
@@ -27,9 +32,11 @@ import {
     getOrderPourRate,
     getPoolDayMultiplier,
     getRequiredTrucksForPourRate,
+    getTodayDate,
     isBigPourOrder,
     isClosedDay,
     isExcludedOrder,
+    parseDurationMinutes,
     plantBadgeColor,
     PRE_TRIP_MINUTES,
     timeToMinutes,
@@ -58,11 +65,7 @@ const formatMinutesClock = (mins) => {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-const composeAddress = (order) =>
-    [order?.address, order?.city]
-        .map((s) => (s == null ? '' : String(s).trim()))
-        .filter(Boolean)
-        .join(', ')
+const composeAddress = (order) => formatOrderAddress(order, ', ')
 
 /**
  * Pull the city segment out of a plant's full street address so we can fall
@@ -101,18 +104,24 @@ const parseHhmmToMinutes = (value) => {
 /**
  * Sentinel start times the dispatch system uses to mark special order states.
  *  - `17:00` → order was cancelled
- *  - `15:00` → same-day order
+ *  - `15:00` → same-day order (only meaningful on today's schedule)
  * Returns null for everything else.
+ *
+ * The `15:00` sentinel only flags an order as same-day when the schedule
+ * being viewed is actually today. On historical or future schedules a real
+ * 3:00 PM start can legitimately exist, so the badge is suppressed there.
  */
 const ORDER_STATUS_BY_START = {
     '15:00': { color: '#d97706', icon: 'fa-bolt', kind: 'sameDay', label: 'Same-day' },
     '17:00': { color: '#dc2626', icon: 'fa-ban', kind: 'cancelled', label: 'Cancelled' },
     '18:00': { color: '#6366f1', icon: 'fa-flask', kind: 'test', label: 'Test' }
 }
-const getOrderStatus = (startTime) => {
+const getOrderStatus = (startTime, { isToday = true } = {}) => {
     const v = String(startTime || '').trim()
     if (!v) return null
-    return ORDER_STATUS_BY_START[v.padStart(5, '0')] || null
+    const status = ORDER_STATUS_BY_START[v.padStart(5, '0')] || null
+    if (status?.kind === 'sameDay' && !isToday) return null
+    return status
 }
 
 /**
@@ -163,13 +172,11 @@ const isLikelyBadAddress = (raw) => {
 const PLAN_META_KEY = '_meta'
 const VIEW_MODES = ['table', 'cards']
 
-/* Distinct color palette per pour-size suggestion so reviewers can spot
- * Small / Medium / Large windows at a glance in the Schedule tab. */
-const SLOT_SIZE_PALETTE = {
-    large: { accent: '#7c3aed', icon: 'fa-truck-arrow-right', tint: 'rgba(124, 58, 237, 0.07)' },
-    medium: { accent: '#0ea5e9', icon: 'fa-calendar-plus', tint: 'rgba(14, 165, 233, 0.06)' },
-    small: { accent: '#10b981', icon: 'fa-circle-plus', tint: 'rgba(16, 185, 129, 0.06)' }
-}
+/* Single neutral identity for "open window" slot rows. The pour-size
+ * differentiation lives entirely inside the inline `PourSizeBadge` so the
+ * row stays calm and consistent with the other synthetic rows. */
+const SLOT_ROW_ACCENT = '#0ea5e9'
+const SLOT_ROW_TINT = 'rgba(14, 165, 233, 0.04)'
 
 // Plant badge colors live in PlanUtility so every view (Schedule, Demand,
 // Planner markers, …) draws the same plant the same color.
@@ -177,6 +184,10 @@ const SLOT_SIZE_PALETTE = {
 /* ── helpers ────────────────────────────────────────────────────────────── */
 
 const clean = (value) => (value == null ? '' : String(value).trim())
+
+// Address formatting lives in the shared AddressUtility so the schedule
+// table, the address popup (JobMapModal), and any future address-rendering
+// surface all produce identical strings.
 
 const formatHhmm = (value) => {
     const v = clean(value)
@@ -244,6 +255,183 @@ function Stat({ badge, first, hint, label, unit, value }) {
     )
 }
 
+// Customer-satisfaction scoring + the per-order pace/on-time thresholds
+// used by `evaluateOrderService` live in PlanUtility so both this view and
+// the Statistics page compute identical scores from the same inputs.
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
+
+/* Per-order service evaluator. Same pace + on-time logic as the day-level
+ * Customer Satisfaction calc, but resolved into a discrete status that drives
+ * an inline badge on each schedule row:
+ *
+ *   good     — pour completed, no flags
+ *   bad      — pour completed, late start and/or slow pace
+ *   ongoing  — has tickets, more expected (still loading)
+ *   pending  — no tickets yet but the start time has passed
+ *   null     — order hasn't started, or has no usable signal
+ *
+ * `nowMin` is the current minute-of-day; pass null for past days where
+ * "now" doesn't apply (every order is by definition completed).            */
+const evaluateOrderService = (order, detail, nowMin) => {
+    if (!order || isExcludedOrder(order)) return null
+    const tickets = Array.isArray(detail?.tickets) ? detail.tickets : []
+    const loadedTimes = tickets
+        .map((t) => timeToMinutes(t?.loadedTime))
+        .filter((mins) => Number.isFinite(mins))
+        .sort((a, b) => a - b)
+    const totalYardage = parseFloat(order.yardage) || 0
+    const loadSize = parseFloat(order.loadSize) || 0
+    const expectedTrucks =
+        loadSize > 0 && totalYardage > 0 ? Math.max(1, Math.ceil(totalYardage / loadSize)) : loadedTimes.length || null
+    const startMin = timeToMinutes(order.startTime)
+    const spacing = parseDurationMinutes(order.rate) ?? 5
+    const expectedEnd =
+        Number.isFinite(startMin) && expectedTrucks ? startMin + Math.max(0, expectedTrucks - 1) * spacing + 30 : null
+
+    if (!loadedTimes.length) {
+        // No tickets yet. Only flag "pending" once the start time is at
+        // least a few minutes past — otherwise the row is just upcoming.
+        if (Number.isFinite(nowMin) && Number.isFinite(startMin) && nowMin > startMin + 5) {
+            return { expectedTrucks: expectedTrucks ?? null, status: 'pending', ticketsLoaded: 0 }
+        }
+        return null
+    }
+
+    const firstLoad = loadedTimes[0]
+    const lastLoad = loadedTimes[loadedTimes.length - 1]
+    const startLateness = Number.isFinite(startMin) ? Math.max(0, firstLoad - startMin) : 0
+    const expectedDuration = expectedTrucks ? Math.max(0, (expectedTrucks - 1) * spacing) : 0
+    const actualDuration = Math.max(0, lastLoad - firstLoad)
+    const overTime = Math.max(0, actualDuration - expectedDuration)
+    const paceToleranceMin = Math.max(spacing, 5)
+    const paceScore = expectedDuration === 0 ? 1 : clamp01(1 - overTime / Math.max(paceToleranceMin * 2, 1))
+
+    const allTrucksLoaded = expectedTrucks ? loadedTimes.length >= expectedTrucks : false
+    // For past days, `nowMin` is null and we treat everything with tickets
+    // as completed. For today we wait for either all expected trucks to
+    // have loaded or for the planned window (+ one cycle) to elapse.
+    const windowElapsed = Number.isFinite(nowMin) && expectedEnd !== null ? nowMin > expectedEnd : true
+    const isCompleted = !Number.isFinite(nowMin) || allTrucksLoaded || windowElapsed
+
+    if (!isCompleted) {
+        return {
+            expectedTrucks: expectedTrucks ?? null,
+            isLate: startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN,
+            startLateness,
+            status: 'ongoing',
+            ticketsLoaded: loadedTimes.length
+        }
+    }
+
+    const isLate = startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN
+    const isSlow = paceScore < BAD_SERVICE_PACE_THRESHOLD
+    return {
+        expectedTrucks: expectedTrucks ?? null,
+        isLate,
+        isSlow,
+        overTime,
+        paceScore,
+        startLateness,
+        status: isLate || isSlow ? 'bad' : 'good',
+        ticketsLoaded: loadedTimes.length
+    }
+}
+
+const SERVICE_BADGE_BASE =
+    'inline-flex items-center gap-1 rounded-full text-[10.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 whitespace-nowrap'
+
+/** Inline service-quality badge for a single order row. Rendered alongside
+ *  the existing OrderStatusBadge so dispatchers see "how this pour went"
+ *  without opening the ticket modal. */
+function ServiceBadge({ service }) {
+    if (!service?.status) return null
+    if (service.status === 'good') {
+        return (
+            <span
+                className={SERVICE_BADGE_BASE}
+                style={{ background: 'rgba(22, 163, 74, 0.14)', color: '#15803d' }}
+                title="On-time start, on-pace pour"
+            >
+                <i className="fas fa-circle-check text-[9px]" />
+                Good Service
+            </span>
+        )
+    }
+    if (service.status === 'bad') {
+        const issues = []
+        if (service.isLate) issues.push(`first truck ${service.startLateness} min late`)
+        if (service.isSlow) issues.push(`pour ran ${service.overTime} min over plan`)
+        const label = service.isLate && service.isSlow ? 'Late + Slow' : service.isLate ? 'Late Start' : 'Slow Pour'
+        return (
+            <span
+                className={SERVICE_BADGE_BASE}
+                style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
+                title={issues.join(' · ') || 'Service flagged'}
+            >
+                <i className="fas fa-circle-exclamation text-[9px]" />
+                {label}
+            </span>
+        )
+    }
+    if (service.status === 'ongoing') {
+        const counts =
+            service.ticketsLoaded != null && service.expectedTrucks
+                ? `${service.ticketsLoaded}/${service.expectedTrucks}`
+                : `${service.ticketsLoaded ?? 0} loaded`
+        const isLate = service.isLate
+        const color = isLate ? '#b45309' : '#1d4ed8'
+        const bg = isLate ? 'rgba(217, 119, 6, 0.14)' : 'rgba(37, 99, 235, 0.12)'
+        return (
+            <span
+                className={SERVICE_BADGE_BASE}
+                style={{ background: bg, color }}
+                title={
+                    isLate
+                        ? `Pour in progress · started ${service.startLateness} min late · ${counts} loaded`
+                        : `Pour in progress · ${counts} loaded`
+                }
+            >
+                <i className="fas fa-truck-fast text-[9px]" />
+                Ongoing · {counts}
+            </span>
+        )
+    }
+    if (service.status === 'pending') {
+        return (
+            <span
+                className={SERVICE_BADGE_BASE}
+                style={{ background: 'rgba(217, 119, 6, 0.12)', color: '#b45309' }}
+                title="Past scheduled start with no tickets loaded yet"
+            >
+                <i className="fas fa-hourglass-half text-[9px]" />
+                Awaiting Truck
+            </span>
+        )
+    }
+    return null
+}
+
+/** Color-coded "Customer Satisfaction" pill — green ≥ 90%, amber ≥ 75%,
+ *  orange ≥ 60%, red below. Mirrors the `YardageDeltaBadge` look. */
+function SatisfactionBadge({ score }) {
+    if (!Number.isFinite(score)) return null
+    const pct = Math.round(score * 100)
+    const tier = pct >= 90 ? 'great' : pct >= 75 ? 'good' : pct >= 60 ? 'ok' : 'poor'
+    const colors = { good: '#65a30d', great: '#16a34a', ok: '#d97706', poor: '#dc2626' }
+    const labels = { good: 'Good', great: 'Excellent', ok: 'Watch', poor: 'Action needed' }
+    const color = colors[tier]
+    return (
+        <span
+            className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5"
+            style={{ background: `${color}1a`, color }}
+            title={`${labels[tier]} · weighted blend of pour pace, on-time start, and yardage completion across the day's tickets`}
+        >
+            <i className="fas fa-face-smile text-[9px]" />
+            {labels[tier]}
+        </span>
+    )
+}
+
 /** +/- percentage pill shown next to the Yardage KPI value. Green when
  *  up day-over-day, red when down, gray at zero. */
 function YardageDeltaBadge({ comparisonLabel, comparisonYardage, pct }) {
@@ -301,6 +489,7 @@ function Pill({ accent, active, children, icon, onClick }) {
 function OrderCard({
     accentColor,
     closerPlant,
+    isToday = false,
     onOpenLocation,
     onPickPlant,
     onPickProduct,
@@ -308,12 +497,13 @@ function OrderCard({
     order,
     plantCode,
     plantName,
+    service,
     travelOverrides
 }) {
     const yardage = parseFloat(order.yardage) || 0
     const loadSize = parseFloat(order.loadSize) || 0
     const start = formatHhmm(order.startTime)
-    const status = getOrderStatus(order.startTime)
+    const status = getOrderStatus(order.startTime, { isToday })
     const isCancelled = status?.kind === 'cancelled'
     const isTest = status?.kind === 'test'
     // Test + cancelled orders are not real pours — suppress truck count and
@@ -382,6 +572,7 @@ function OrderCard({
                                 <OrderStatusBadge status={status} />
                             ))}
                         <BigPourBadge order={order} travelOverrides={travelOverrides} />
+                        {!isNonProduction && <ServiceBadge service={service} />}
                     </div>
                     <div
                         className="text-[11.5px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1"
@@ -450,9 +641,7 @@ function OrderCard({
                                 style={{ color: 'var(--text-secondary)' }}
                             >
                                 <i className="fas fa-location-dot text-[10px] opacity-70" />
-                                <span className="truncate">
-                                    {[clean(order.address), clean(order.city)].filter(Boolean).join(' · ')}
-                                </span>
+                                <span className="truncate">{formatOrderAddress(order, ' · ')}</span>
                             </div>
                         ))}
                 </div>
@@ -712,7 +901,14 @@ function LoadedCell({ detail, homePlantCode, total }) {
         )
     }
 
-    const loadedDisplay = Number.isInteger(loaded) ? loaded : loaded.toFixed(2)
+    // One-decimal trim, with no trailing zero — `21.50` reads worse than
+    // `21.5` and integers should stay as plain `21` (no decimal at all).
+    const trimYards = (value) => {
+        const n = Number(value) || 0
+        if (Number.isInteger(n)) return n
+        return Math.round(n * 10) / 10
+    }
+    const loadedDisplay = trimYards(loaded)
     const isComplete = total > 0 && loaded >= total
 
     const handleEnter = () => {
@@ -770,7 +966,7 @@ function LoadedCell({ detail, homePlantCode, total }) {
                                           )}
                                       </span>
                                       <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
-                                          {v.loadedYardage} yd
+                                          {trimYards(v.loadedYardage)} yd
                                           <span className="ml-1.5" style={{ color: 'var(--text-tertiary)' }}>
                                               · {v.ticketCount} tkt
                                           </span>
@@ -893,7 +1089,9 @@ function ScheduleTable({
     getTravelOverrides,
     helpRows = [],
     isPlantFiltered = false,
+    isToday = false,
     keyForOrder,
+    nowMin = null,
     onOpenLocation,
     orders,
     plantCityByCode,
@@ -1402,23 +1600,25 @@ function ScheduleTable({
                         if (row.kind === 'slot') {
                             const plantName = plantNameByCode?.[row.plantCode] || ''
                             const hours = Math.round((row.durationMin / 60) * 10) / 10
-                            const slotPalette = SLOT_SIZE_PALETTE[row.sizeKey] || SLOT_SIZE_PALETTE.medium
                             return (
                                 <SyntheticRow
                                     animationDelayMs={rowDelay}
                                     key={`slot-${row.slotKey}`}
-                                    accentColor={slotPalette.accent}
-                                    icon={slotPalette.icon}
-                                    pillIcon={slotPalette.icon}
-                                    pillLabel={row.label}
+                                    accentColor={SLOT_ROW_ACCENT}
+                                    icon="fa-calendar-plus"
+                                    pillIcon="fa-calendar-plus"
+                                    pillLabel="Open window"
                                     plantCell={
                                         <PlantBadge code={row.plantCode} fallback={accentColor} name={plantName} />
                                     }
                                     primary={
-                                        <>
-                                            <b>{row.plantCode}</b> could take a <b>{row.truckRange}-truck</b> pour
-                                            starting here.
-                                        </>
+                                        <span className="inline-flex flex-wrap items-center gap-1.5">
+                                            <PourSizeBadge size={row.sizeKey} truckRange={row.truckRange} />
+                                            <span>
+                                                <b>{row.plantCode}</b> could take a <b>{row.truckRange}-truck</b> pour
+                                                starting here.
+                                            </span>
+                                        </span>
                                     }
                                     secondary={
                                         <>
@@ -1427,7 +1627,7 @@ function ScheduleTable({
                                         </>
                                     }
                                     time={row.time}
-                                    tint={slotPalette.tint}
+                                    tint={SLOT_ROW_TINT}
                                 />
                             )
                         }
@@ -1688,7 +1888,7 @@ function ScheduleTable({
                         const trucks = parseFloat(o.truckCount) || 0
                         const loadSize = parseFloat(o.loadSize) || 0
                         const plantName = plantNameByCode?.[o.plantCode] || ''
-                        const status = getOrderStatus(o.startTime)
+                        const status = getOrderStatus(o.startTime, { isToday })
                         const isCancelled = status?.kind === 'cancelled'
                         const isTest = status?.kind === 'test'
                         const isNonProduction = isCancelled || isTest
@@ -1732,7 +1932,7 @@ function ScheduleTable({
                                     style={{ color: 'var(--text-primary)' }}
                                     title={clean(o.customer)}
                                 >
-                                    <div className="flex items-center gap-2 min-w-0">
+                                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
                                         <span
                                             className="font-semibold truncate"
                                             style={{
@@ -1742,21 +1942,30 @@ function ScheduleTable({
                                             {clean(o.customer) || '—'}
                                         </span>
                                         {status && <OrderStatusBadge status={status} />}
+                                        {!isCancelled && !isTest && (
+                                            <ServiceBadge
+                                                service={evaluateOrderService(
+                                                    o,
+                                                    o.orderId ? detailByOrderId[o.orderId] : null,
+                                                    nowMin
+                                                )}
+                                            />
+                                        )}
                                     </div>
                                 </td>
                                 <td className="px-3 py-2 max-w-[280px]">
                                     {(() => {
-                                        const address = clean(o.address)
-                                        const city = clean(o.city)
-                                        if (!address && !city) {
+                                        const rawAddress = clean(o.address)
+                                        const rawCity = clean(o.city)
+                                        if (!rawAddress && !rawCity) {
                                             return <span style={{ color: 'var(--text-tertiary)' }}>—</span>
                                         }
-                                        if (isLikelyBadAddress(address)) {
+                                        if (isLikelyBadAddress(rawAddress)) {
                                             return (
                                                 <span
                                                     className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider whitespace-nowrap"
                                                     style={{ background: '#dc2626', color: '#fff' }}
-                                                    title={`Address looks invalid — original value: "${address}"${city ? ` · City: ${city}` : ''}`}
+                                                    title={`Address looks invalid — original value: "${rawAddress}"${rawCity ? ` · City: ${rawCity}` : ''}`}
                                                 >
                                                     <i className="fas fa-triangle-exclamation text-[9px]" />
                                                     Bad Address
@@ -1766,13 +1975,12 @@ function ScheduleTable({
                                         // Fallback: when dispatch didn't enter a city, borrow the
                                         // plant's city so the geocoder still lands in the right
                                         // area — and flag that it was inferred.
-                                        const fallbackCity = city ? '' : plantCityByCode?.[o.plantCode] || ''
-                                        const effectiveCity = city || fallbackCity
-                                        const usingFallback = !city && !!fallbackCity
-                                        const displayText = [address, effectiveCity]
-                                            .filter(Boolean)
-                                            .join(', ')
-                                            .toUpperCase()
+                                        const fallbackCity = rawCity ? '' : plantCityByCode?.[o.plantCode] || ''
+                                        const effectiveCityRaw = rawCity || fallbackCity
+                                        const usingFallback = !rawCity && !!fallbackCity
+                                        const address = formatAddressSegment(rawAddress)
+                                        const effectiveCity = formatAddressSegment(effectiveCityRaw)
+                                        const displayText = [address, effectiveCity].filter(Boolean).join(', ')
                                         const orderForMap = usingFallback ? { ...o, city: fallbackCity } : o
                                         const closerPlant = getCloserPlantForOrder?.(o)
                                         return (
@@ -1781,7 +1989,7 @@ function ScheduleTable({
                                                     <button
                                                         type="button"
                                                         onClick={() => onOpenLocation?.(orderForMap)}
-                                                        className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 uppercase tracking-wide font-semibold"
+                                                        className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 font-semibold"
                                                         style={{ color: 'var(--text-primary)', fontSize: 12 }}
                                                         title={`Open map for ${composeAddress(orderForMap)}`}
                                                     >
@@ -2121,6 +2329,10 @@ function PlanScheduleView({
     const poolDayMultiplier = getPoolDayMultiplier(planDate)
     const plantsClosed = isClosedDay(planDate)
     const isSaturday = poolDayMultiplier === 0.5
+    /* "Same-day" badge gating — the 15:00 sentinel only means "same day" when
+     * the schedule being viewed is actually today; on past/future schedules a
+     * real 3:00 PM start is legitimate, so suppress the badge there. */
+    const isViewingToday = planDate === getTodayDate()
     /** Per-order ticket data from DetailOrderAnalysis reports. Keyed by
      *  orderId; values are merged across all plant files for the date. */
     const detailByOrderId = useDetailOrders(planDate)
@@ -2626,14 +2838,14 @@ function PlanScheduleView({
     const statusCounts = useMemo(() => {
         const out = { all: allOrders.length, cancelled: 0, sameDay: 0, scheduled: 0, test: 0 }
         allOrders.forEach((o) => {
-            const kind = getOrderStatus(o.startTime)?.kind
+            const kind = getOrderStatus(o.startTime, { isToday: isViewingToday })?.kind
             if (kind === 'cancelled') out.cancelled += 1
             else if (kind === 'sameDay') out.sameDay += 1
             else if (kind === 'test') out.test += 1
             else out.scheduled += 1
         })
         return out
-    }, [allOrders])
+    }, [allOrders, isViewingToday])
 
     const productOptions = useMemo(() => {
         const set = new Set()
@@ -2651,7 +2863,7 @@ function PlanScheduleView({
             .filter((o) => {
                 if (plantFilter !== 'all' && o.plantCode !== plantFilter) return false
                 if (statusFilter !== 'all') {
-                    const kind = getOrderStatus(o.startTime)?.kind || 'scheduled'
+                    const kind = getOrderStatus(o.startTime, { isToday: isViewingToday })?.kind || 'scheduled'
                     if (kind !== statusFilter) return false
                 }
                 if (productFilter !== 'all' && clean(o.productCode) !== productFilter) return false
@@ -2679,7 +2891,7 @@ function PlanScheduleView({
                 return true
             })
             .sort((a, b) => compareOrders(a, b, sortKey))
-    }, [allOrders, statusFilter, minYards, plantFilter, productFilter, query, sortKey])
+    }, [allOrders, isViewingToday, statusFilter, minYards, plantFilter, productFilter, query, sortKey])
 
     /* ── KPI numbers — non-production rows (cancelled at 17:00, test at 18:00)
        stay in the table for transparency but are excluded from yardage /
@@ -2766,6 +2978,67 @@ function PlanScheduleView({
         const n = getCalculatedTruckCount(o, getTravelOverrides ? getTravelOverrides(o) : undefined)
         return sum + (Number.isFinite(n) ? n : 0)
     }, 0)
+    /* Customer Satisfaction — blends pour-pace adherence and first-truck
+     * on-time using actual ticket load times. Past days score the whole
+     * day. Today scores in real time, including only orders that have
+     * settled (every expected truck has loaded, or the planned pour window
+     * plus one full cycle has elapsed) so in-progress pours don't drag
+     * pace down. We avoid leaning on loadedYardage to gate scoring — that
+     * field is currently unreliable. */
+    const today = getTodayDate()
+    const isPastDay = planDate && planDate < today
+    const isToday = planDate && planDate === today
+    /* Tick once a minute so today's "settled" cutoff and the live score
+     * advance as time passes — even when the ticket cache itself is stable. */
+    const [liveTick, setLiveTick] = useState(0)
+    useEffect(() => {
+        if (!isToday) return undefined
+        const id = setInterval(() => setLiveTick((t) => t + 1), 60_000)
+        return () => clearInterval(id)
+    }, [isToday])
+    /* Current minute-of-day for today, null for past/future. Drives per-row
+     * service badges (ongoing vs completed) on the schedule. */
+    const nowMin = useMemo(() => {
+        if (!isToday) return null
+        const now = new Date()
+        return now.getHours() * 60 + now.getMinutes()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isToday, liveTick])
+    const customerSatisfaction = useMemo(() => {
+        if (!isPastDay && !isToday) return null
+        if (isPastDay) {
+            const result = computeCustomerSatisfaction(liveOrders, detailByOrderId)
+            return result ? { ...result, isLive: false, inProgress: 0 } : null
+        }
+        // Today — only score orders that have settled.
+        const now = new Date()
+        const nowMin = now.getHours() * 60 + now.getMinutes()
+        const scoreable = []
+        let inProgress = 0
+        for (const order of liveOrders) {
+            const detail = order?.orderId ? detailByOrderId?.[order.orderId] : null
+            const tickets = Array.isArray(detail?.tickets) ? detail.tickets : []
+            if (!tickets.length) continue
+            const totalYardage = parseFloat(order.yardage) || 0
+            const loadSize = parseFloat(order.loadSize) || 0
+            const expectedTrucks =
+                loadSize > 0 && totalYardage > 0 ? Math.max(1, Math.ceil(totalYardage / loadSize)) : tickets.length
+            const startMin = timeToMinutes(order.startTime) ?? 0
+            const spacing = parseDurationMinutes(order.rate) ?? 5
+            // Add a single full-cycle buffer (~30 min) past the last expected
+            // load so a pour that's still wrapping up doesn't get scored
+            // before its closing trucks load.
+            const expectedEnd = startMin + Math.max(0, expectedTrucks - 1) * spacing + 30
+            const allTrucksLoaded = tickets.length >= expectedTrucks
+            const windowElapsed = nowMin > expectedEnd
+            if (allTrucksLoaded || windowElapsed) scoreable.push(order)
+            else inProgress += 1
+        }
+        if (!scoreable.length) return null
+        const result = computeCustomerSatisfaction(scoreable, detailByOrderId)
+        return result ? { ...result, isLive: true, inProgress } : null
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isPastDay, isToday, liveOrders, detailByOrderId, liveTick])
     /* Headline KPIs always reflect REAL production — cancelled (17:00) and
      * test (18:00) sentinel rows are dropped before counting plants /
      * customers / orders / start-window so a wave of cancellations doesn't
@@ -3205,6 +3478,47 @@ function PlanScheduleView({
                                     label="Window"
                                     value={earliestTime && latestTime ? `${earliestTime}–${latestTime}` : '—'}
                                 />
+                                {customerSatisfaction && customerSatisfaction.samples > 0 && (
+                                    <Stat
+                                        badge={
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {customerSatisfaction.isLive && (
+                                                    <span
+                                                        className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5"
+                                                        style={{
+                                                            background: 'rgba(220, 38, 38, 0.12)',
+                                                            color: '#dc2626'
+                                                        }}
+                                                        title="Live — score updates as orders complete throughout the day"
+                                                    >
+                                                        <span
+                                                            className="inline-block w-1.5 h-1.5 rounded-full"
+                                                            style={{ background: '#dc2626' }}
+                                                        />
+                                                        LIVE
+                                                    </span>
+                                                )}
+                                                <SatisfactionBadge score={customerSatisfaction.score} />
+                                            </span>
+                                        }
+                                        hint={(() => {
+                                            const parts = [
+                                                `${customerSatisfaction.goodService} Good Service`,
+                                                `${customerSatisfaction.badService} Bad Service`
+                                            ]
+                                            if (customerSatisfaction.isLive && customerSatisfaction.inProgress > 0) {
+                                                parts.push(`${customerSatisfaction.inProgress} in progress`)
+                                            }
+                                            return parts.join(' · ')
+                                        })()}
+                                        label={
+                                            customerSatisfaction.isLive
+                                                ? 'Customer Satisfaction · So Far'
+                                                : 'Customer Satisfaction'
+                                        }
+                                        value={`${Math.round(customerSatisfaction.score * 100)}%`}
+                                    />
+                                )}
                             </div>
 
                             {/* Filter bar — collapsible on mobile */}
@@ -3390,6 +3704,8 @@ function PlanScheduleView({
                                     helpRows={helpRows}
                                     filteredPlantCode={plantFilter !== 'all' ? plantFilter : null}
                                     isPlantFiltered={plantFilter !== 'all'}
+                                    isToday={isViewingToday}
+                                    nowMin={nowMin}
                                     showExtraRows={showExtraRows}
                                     keyForOrder={keyForOrder}
                                     onOpenLocation={setMapOrder}
@@ -3437,6 +3753,7 @@ function PlanScheduleView({
                                                         key={`${code}-${o.orderId || idx}`}
                                                         accentColor={accentColor}
                                                         closerPlant={getCloserPlantForOrder(o)}
+                                                        isToday={isViewingToday}
                                                         onOpenLocation={setMapOrder}
                                                         onPickPlant={(c) =>
                                                             setPlantFilter((prev) => (prev === c ? 'all' : c))
@@ -3450,6 +3767,11 @@ function PlanScheduleView({
                                                         order={o}
                                                         plantCode={code}
                                                         plantName={plantNameByCode?.[code]}
+                                                        service={evaluateOrderService(
+                                                            o,
+                                                            o.orderId ? detailByOrderId[o.orderId] : null,
+                                                            nowMin
+                                                        )}
                                                         travelOverrides={getTravelOverrides(o)}
                                                     />
                                                 ))}

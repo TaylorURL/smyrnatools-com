@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import PourSizeBadge from '../../../app/components/common/PourSizeBadge'
 import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
 import {
     buildAssignmentDriverTimes,
     computePlantPoolTimeline,
     computePullUpRows,
+    computeSuggestedSlots,
     getEffectiveBase,
     timeToMinutes
 } from '../../../utils/PlanUtility'
@@ -452,6 +454,7 @@ const NAV_SECTIONS = [
     { icon: 'fa-project-diagram', id: 'flow-preview', label: 'Flow' },
     { icon: 'fa-circle-exclamation', id: 'extra-diligence', label: 'Extra Diligence' },
     { icon: 'fa-clock-rotate-left', id: 'compaction', label: 'Compact Schedule' },
+    { icon: 'fa-calendar-plus', id: 'open-windows', label: 'Open Windows' },
     { icon: 'fa-triangle-exclamation', id: 'insights', label: 'Plan Insights' },
     { icon: 'fa-cubes', id: 'yardage', label: 'Yardage by Plant' }
 ]
@@ -463,6 +466,7 @@ function SideNav({
     hasInsights,
     hasYourScope,
     onJump,
+    openWindowsCount = 0,
     sections,
     specialCount,
     qcCount,
@@ -475,10 +479,12 @@ function SideNav({
                     if (section.requiresYourScope && !hasYourScope) return null
                     if (section.id === 'insights' && !hasInsights) return null
                     if (section.id === 'compaction' && compactionCount === 0) return null
+                    if (section.id === 'open-windows' && openWindowsCount === 0) return null
                     const isActive = activeId === section.id
                     let badge = null
                     if (section.id === 'extra-diligence') badge = (specialCount || 0) + (qcCount || 0)
                     else if (section.id === 'compaction') badge = compactionCount
+                    else if (section.id === 'open-windows') badge = openWindowsCount
                     const label = section.id === 'my-plant' ? yourSectionLabel || section.label : section.label
                     return (
                         <button
@@ -728,6 +734,39 @@ function PlanDashboardView({
         return rows.sort((a, b) => b.originalStartMin - a.originalStartMin)
     }, [plantProduction, stats, assignments, planDate])
 
+    /** Open windows where a plant has surplus trucks and could absorb a new
+     *  pour. Mirrors the Schedule tab's suggested-slot rows so the dashboard
+     *  surfaces the same booking opportunities at a glance. */
+    const suggestedSlotRecommendations = useMemo(() => {
+        const flatOrders = []
+        Object.entries(plantProduction || {}).forEach(([code, data]) => {
+            if (code === PLAN_META_KEY || !Array.isArray(data?.orders)) return
+            data.orders.forEach((order) => flatOrders.push({ ...order, plantCode: code }))
+        })
+        if (flatOrders.length === 0) return []
+        const initialPoolByCode = {}
+        ;(stats || []).forEach((s) => {
+            if (!s?.code) return
+            const base = Number.isFinite(s.base) ? s.base : 0
+            initialPoolByCode[s.code] = getEffectiveBase(base, s.code, plantProduction, planDate)
+        })
+        const helpTransfers = []
+        ;(assignments || []).forEach((a) => {
+            if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) return
+            const home = a.returnPlant || a.fromPlant
+            buildAssignmentDriverTimes(a).forEach((dt) => {
+                if (!Number.isFinite(dt.arriveMin)) return
+                helpTransfers.push({ delta: -1, plantCode: a.fromPlant, time: dt.arriveMin })
+                helpTransfers.push({ delta: 1, plantCode: a.toPlant, time: dt.arriveMin })
+                if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
+                    helpTransfers.push({ delta: -1, plantCode: a.toPlant, time: dt.leaveMin })
+                    helpTransfers.push({ delta: 1, plantCode: home, time: dt.leaveMin })
+                }
+            })
+        })
+        return computeSuggestedSlots(flatOrders, initialPoolByCode, null, helpTransfers)
+    }, [plantProduction, stats, assignments, planDate])
+
     // Broader fleet-wide numbers to set today's plan in context.
     const totalOperatorsFleet = useMemo(
         () => Object.values(mixerCountsByPlant || {}).reduce((sum, count) => sum + (count || 0), 0),
@@ -930,6 +969,7 @@ function PlanDashboardView({
                     hasInsights={hasInsights}
                     hasYourScope={hasYourScope}
                     onJump={jumpTo}
+                    openWindowsCount={suggestedSlotRecommendations.length}
                     sections={NAV_SECTIONS}
                     specialCount={specialJobs.length}
                     qcCount={qcJobs.length}
@@ -1285,6 +1325,42 @@ function PlanDashboardView({
                                                     </b>
                                                     )
                                                 </span>
+                                            </span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </Card>
+                    )}
+
+                    {suggestedSlotRecommendations.length > 0 && (
+                        <Card id="open-windows" title={`Open windows · ${suggestedSlotRecommendations.length}`}>
+                            <div className="text-[12px] mb-2.5" style={{ color: 'var(--text-secondary)' }}>
+                                Idle-truck windows where a plant could absorb a new pour without disrupting today&apos;s
+                                plan. Use these when calling out for fill-in work.
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                {suggestedSlotRecommendations.map((row, i) => {
+                                    const hours = Math.round((row.durationMin / 60) * 10) / 10
+                                    return (
+                                        <div
+                                            key={`${row.plantCode}-${row.time}-${row.key}-${i}`}
+                                            className="flex flex-wrap items-baseline gap-2 text-[12.5px] py-1"
+                                            style={{ borderLeft: '2px solid var(--border-medium)', paddingLeft: 10 }}
+                                        >
+                                            <span
+                                                className="font-mono text-[11.5px] font-semibold"
+                                                style={{ color: 'var(--text-primary)', minWidth: 36 }}
+                                            >
+                                                {row.plantCode}
+                                            </span>
+                                            <PourSizeBadge size={row.key} truckRange={row.truckRange} />
+                                            <span style={{ color: 'var(--text-secondary)' }}>
+                                                <b style={{ color: 'var(--text-primary)' }}>
+                                                    {formatMinutesClock(row.time)}
+                                                </b>
+                                                {' · '}
+                                                {row.minTrucks}+ idle · ~{hours}h window
                                             </span>
                                         </div>
                                     )

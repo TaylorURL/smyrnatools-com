@@ -1222,3 +1222,83 @@ export const percentToTime = (pct) => {
     const totalMin = (pct / 100) * TIMELINE_HOURS * 60 + TIMELINE_START_HOUR * 60
     return minutesToTime(Math.round(totalMin))
 }
+
+/* ── Customer Satisfaction ────────────────────────────────────────────────
+ *  Customer-perceived performance score for a schedule day. Per-order
+ *  score is a weighted blend of two sub-scores derived from actual ticket
+ *  load times:
+ *    pace    — 0.6 weight. Did trucks load on the planned cadence?
+ *              Compares (lastLoad − firstLoad) against the planned
+ *              (numTrucks − 1) × spacing. Slow loading drags the
+ *              customer's pour out and the score down.
+ *    onTime  — 0.4 weight. Did the first truck load on or before the
+ *              scheduled job start? Lateness is graded over a 60-min
+ *              window — a truck that loads an hour late scores 0.
+ *  A completion / yardage-delivered sub-score is NOT used here: the
+ *  upstream loadedYardage data is incomplete, so any "X short" signal
+ *  derived from it would be misleading.
+ *
+ *  Shared across PlanScheduleView (live day score in the toolbar) and
+ *  PlanStatisticsView (aggregated trend over arbitrary windows). Single
+ *  source of truth so both surfaces always agree.
+ */
+export const CUSTOMER_SAT_PACE_WEIGHT = 0.6
+export const CUSTOMER_SAT_ONTIME_WEIGHT = 0.4
+export const CUSTOMER_SAT_LATE_WINDOW_MIN = 60
+export const BAD_SERVICE_LATE_THRESHOLD_MIN = 15
+export const BAD_SERVICE_PACE_THRESHOLD = 0.7
+
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
+
+export const computeCustomerSatisfaction = (orders, detailByOrderId) => {
+    if (!Array.isArray(orders) || !orders.length) return null
+    let weightedSum = 0
+    let totalWeight = 0
+    let samples = 0
+    let badService = 0
+
+    orders.forEach((order) => {
+        const detail = order?.orderId ? detailByOrderId?.[order.orderId] : null
+        const tickets = Array.isArray(detail?.tickets) ? detail.tickets : []
+        const loadedTimes = tickets
+            .map((t) => timeToMinutes(t?.loadedTime))
+            .filter((mins) => Number.isFinite(mins))
+            .sort((a, b) => a - b)
+        if (!loadedTimes.length) return
+
+        const totalYardage = parseFloat(order.yardage) || 0
+        const loadSize = parseFloat(order.loadSize) || 0
+        const numTrucks =
+            loadSize > 0 && totalYardage > 0 ? Math.max(1, Math.ceil(totalYardage / loadSize)) : loadedTimes.length
+        const startMin = timeToMinutes(order.startTime)
+        const spacing = parseDurationMinutes(order.rate) ?? 5
+
+        const firstLoad = loadedTimes[0]
+        const lastLoad = loadedTimes[loadedTimes.length - 1]
+        const expectedDuration = Math.max(0, (numTrucks - 1) * spacing)
+        const actualDuration = Math.max(0, lastLoad - firstLoad)
+        const overTime = Math.max(0, actualDuration - expectedDuration)
+        const paceToleranceMin = Math.max(spacing, 5)
+        const paceScore = expectedDuration === 0 ? 1 : clamp01(1 - overTime / Math.max(paceToleranceMin * 2, 1))
+
+        const startLateness = Number.isFinite(startMin) ? Math.max(0, firstLoad - startMin) : 0
+        const onTimeScore = clamp01(1 - startLateness / CUSTOMER_SAT_LATE_WINDOW_MIN)
+
+        const orderScore = CUSTOMER_SAT_PACE_WEIGHT * paceScore + CUSTOMER_SAT_ONTIME_WEIGHT * onTimeScore
+
+        const weight = totalYardage > 0 ? totalYardage : 1
+        weightedSum += orderScore * weight
+        totalWeight += weight
+        samples += 1
+        const isBad = startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN || paceScore < BAD_SERVICE_PACE_THRESHOLD
+        if (isBad) badService += 1
+    })
+
+    if (totalWeight === 0) return null
+    return {
+        badService,
+        goodService: samples - badService,
+        samples,
+        score: weightedSum / totalWeight
+    }
+}

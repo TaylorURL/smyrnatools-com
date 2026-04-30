@@ -563,7 +563,6 @@ function PlanDemandView({
                     peakByPlant={data.peakByPlant}
                     plantColorByCode={plantColorByCode}
                     rows={data.perPlant}
-                    totals={data.totals}
                 />
             </div>
             {isPlantModalOpen && (
@@ -976,7 +975,24 @@ function ProductMixPie({ rows, total }) {
    Per-plant breakdown
    ═══════════════════════════════════════════════════════════════════════ */
 
-function PerPlantTable({ peakByPlant, plantColorByCode, rows, totals }) {
+/** Verdict pill for how supply (effective truck pool) compares to peak
+ *  demand (concurrent trucks the schedule needs). Coverage = supply / demand:
+ *    ≥ 110% → Comfortable
+ *    100–109% → On target
+ *    80–99%  → Tight
+ *    < 80%   → Overbooked
+ *  No-demand plants render a neutral "Idle" pill so the row still says
+ *  something useful. */
+const supplyVerdict = (supply, demand) => {
+    if (!demand) return { color: 'var(--text-tertiary)', label: 'Idle', tone: 'idle' }
+    const coverage = supply > 0 ? (supply / demand) * 100 : 0
+    if (coverage >= 110) return { color: '#16a34a', coverage, label: 'Comfortable', tone: 'good' }
+    if (coverage >= 100) return { color: '#0ea5e9', coverage, label: 'On target', tone: 'good' }
+    if (coverage >= 80) return { color: '#d97706', coverage, label: 'Tight', tone: 'warn' }
+    return { color: '#dc2626', coverage, label: 'Overbooked', tone: 'bad' }
+}
+
+function PerPlantTable({ peakByPlant, plantColorByCode, rows }) {
     return (
         <div
             className="rounded-xl overflow-hidden"
@@ -993,33 +1009,50 @@ function PerPlantTable({ peakByPlant, plantColorByCode, rows, totals }) {
                     Breakdown by plant
                 </div>
                 <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                    {rows.length} plant{rows.length === 1 ? '' : 's'}
+                    Yards · trucks (incl. help) · how well supply meets demand
                 </div>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
                     <thead>
                         <tr>
-                            {['Plant', 'Orders', 'Yardage', 'Trucks', 'Peak', 'Base', 'Share'].map((h) => (
+                            {[
+                                { align: 'left', label: 'Plant' },
+                                { align: 'right', label: 'Yardage' },
+                                { align: 'right', label: 'Trucks (effective)' },
+                                { align: 'right', label: 'Peak demand' },
+                                { align: 'left', label: 'Coverage' }
+                            ].map((h) => (
                                 <th
-                                    key={h}
-                                    className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
+                                    key={h.label}
+                                    className={`px-3 py-2 font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap ${
+                                        h.align === 'right' ? 'text-right' : 'text-left'
+                                    }`}
                                     style={{
                                         background: 'var(--bg-tertiary)',
                                         borderBottom: '1px solid var(--border-light)',
                                         color: 'var(--text-secondary)'
                                     }}
                                 >
-                                    {h}
+                                    {h.label}
                                 </th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
                         {rows.map((p) => {
-                            const share = totals.trucks > 0 ? (p.totalTrucks / totals.trucks) * 100 : 0
                             const peak = peakByPlant[p.code] || 0
-                            const over = peak > p.adjustedBase && p.adjustedBase > 0
+                            const supply = p.adjustedBase || 0
+                            const baseTrucks = supply + (p.helpSend || 0) - (p.helpRecv || 0)
+                            const verdict = supplyVerdict(supply, peak)
+                            const coveragePct =
+                                verdict.tone === 'idle' ? null : Math.min(150, Math.round(verdict.coverage))
+                            const helpParts = []
+                            if (p.helpRecv > 0) helpParts.push(`+${p.helpRecv} in`)
+                            if (p.helpSend > 0) helpParts.push(`−${p.helpSend} out`)
+                            const helpLine = helpParts.length
+                                ? `${baseTrucks} base · ${helpParts.join(' · ')}`
+                                : `${baseTrucks} base`
                             return (
                                 <tr key={p.code} style={{ borderTop: '1px solid var(--border-light)' }}>
                                     <td className="px-3 py-2">
@@ -1032,67 +1065,122 @@ function PerPlantTable({ peakByPlant, plantColorByCode, rows, totals }) {
                                                     width: 10
                                                 }}
                                             />
-                                            <span
-                                                className="font-bold"
-                                                style={{
-                                                    color: 'var(--text-primary)',
-                                                    fontFamily: 'var(--font-heading)'
-                                                }}
-                                            >
-                                                {p.code}
-                                            </span>
-                                            <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                                {p.name !== p.code ? p.name : ''}
-                                            </span>
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className="font-bold"
+                                                        style={{
+                                                            color: 'var(--text-primary)',
+                                                            fontFamily: 'var(--font-heading)'
+                                                        }}
+                                                    >
+                                                        {p.code}
+                                                    </span>
+                                                    <span
+                                                        className="text-[11px]"
+                                                        style={{ color: 'var(--text-tertiary)' }}
+                                                    >
+                                                        {p.name !== p.code ? p.name : ''}
+                                                    </span>
+                                                </div>
+                                                <span
+                                                    className="text-[10.5px]"
+                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                >
+                                                    {p.orders} order{p.orders === 1 ? '' : 's'}
+                                                </span>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td className="px-3 py-2" style={{ color: 'var(--text-primary)' }}>
-                                        {p.orders}
-                                    </td>
                                     <td
-                                        className="px-3 py-2 font-mono whitespace-nowrap"
+                                        className="px-3 py-2 font-mono font-semibold whitespace-nowrap text-right"
                                         style={{ color: 'var(--text-primary)' }}
                                     >
                                         {Math.round(p.totalYardage).toLocaleString()} yd
                                     </td>
-                                    <td
-                                        className="px-3 py-2 font-mono font-bold"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
-                                        {p.totalTrucks}
-                                    </td>
-                                    <td
-                                        className="px-3 py-2 font-mono font-semibold"
-                                        style={{
-                                            color: over ? '#dc2626' : 'var(--text-primary)'
-                                        }}
-                                        title={
-                                            over
-                                                ? `Peak ${peak} exceeds assigned ${p.adjustedBase}`
-                                                : 'Peak concurrent trucks'
-                                        }
-                                    >
-                                        {peak}
-                                    </td>
-                                    <td className="px-3 py-2 font-mono" style={{ color: 'var(--text-secondary)' }}>
-                                        {p.adjustedBase}
-                                    </td>
-                                    <td className="px-3 py-2" style={{ color: 'var(--text-secondary)' }}>
-                                        <div className="flex items-center gap-2">
-                                            <div
-                                                className="rounded h-1.5 flex-1 max-w-[120px]"
-                                                style={{ background: 'var(--bg-tertiary)' }}
+                                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                                        <div className="flex flex-col items-end">
+                                            <span
+                                                className="font-mono font-bold text-[14px] tabular-nums"
+                                                style={{ color: 'var(--text-primary)' }}
                                             >
-                                                <div
-                                                    className="rounded h-1.5"
-                                                    style={{
-                                                        background: plantColorByCode[p.code],
-                                                        width: `${share}%`
-                                                    }}
-                                                />
+                                                {supply}
+                                            </span>
+                                            <span
+                                                className="text-[10.5px] font-mono"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                                title="Effective truck pool — base ± inter-plant help today"
+                                            >
+                                                {helpLine}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                                        <div className="flex flex-col items-end">
+                                            <span
+                                                className="font-mono font-bold text-[14px] tabular-nums"
+                                                style={{
+                                                    color:
+                                                        peak > supply && supply > 0 ? '#dc2626' : 'var(--text-primary)'
+                                                }}
+                                            >
+                                                {peak}
+                                            </span>
+                                            <span
+                                                className="text-[10.5px] font-mono"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                                title="Peak concurrent trucks the schedule needs at any hour"
+                                            >
+                                                concurrent
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        <div className="flex items-center gap-2.5 min-w-[180px]">
+                                            <div
+                                                className="rounded h-2 flex-1 overflow-hidden relative"
+                                                style={{ background: 'var(--bg-tertiary)' }}
+                                                title={
+                                                    coveragePct == null
+                                                        ? 'No demand scheduled'
+                                                        : `Supply / demand = ${coveragePct}%`
+                                                }
+                                            >
+                                                {coveragePct != null && (
+                                                    <>
+                                                        <div
+                                                            className="rounded h-2"
+                                                            style={{
+                                                                background: verdict.color,
+                                                                width: `${Math.min(100, (coveragePct / 110) * 100)}%`
+                                                            }}
+                                                        />
+                                                        {/* 100% marker — visual reference for "supply equals demand". */}
+                                                        <div
+                                                            className="absolute top-0 bottom-0"
+                                                            style={{
+                                                                background: 'var(--text-tertiary)',
+                                                                left: `${(100 / 110) * 100}%`,
+                                                                opacity: 0.5,
+                                                                width: 1
+                                                            }}
+                                                        />
+                                                    </>
+                                                )}
                                             </div>
-                                            <span className="font-mono text-[11px] min-w-[38px] text-right">
-                                                {share.toFixed(1)}%
+                                            <span
+                                                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
+                                                style={{
+                                                    background: `${verdict.color}1f`,
+                                                    color: verdict.color
+                                                }}
+                                            >
+                                                {verdict.label}
+                                                {coveragePct != null && (
+                                                    <span className="font-mono" style={{ opacity: 0.85 }}>
+                                                        · {coveragePct}%
+                                                    </span>
+                                                )}
                                             </span>
                                         </div>
                                     </td>
