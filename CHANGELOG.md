@@ -2,6 +2,23 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.9] - 2026-04-30
+
+- Decompose Plan views into focused components and hooks — extract 60+ files from monolithic PlanScheduleView, PlanFlowView, PlanStatisticsView, PlanDashboardView, PlanDemandView, PlanRealtimeView, and PlanView into dedicated components and hooks
+- Extract plan business logic into dedicated utilities — PlanScheduleUtility, PlanStatisticsUtility, PlanDemandUtility, PlanDashboardUtility, PlanFlowUtility, PlanRealtimeUtility, PlanRuntimeUtility, PlanCopyUtility, PlanStatisticsFormatUtility
+- Add MarkdownView component and MarkdownUtility for rendering AI-formatted plan notes with headings, lists, tables, blockquotes, and inline formatting
+- Add dispatch-import edge function with HTML report parsers for ingesting DailyOrder, DetailOrderAnalysis, and DetailDriver reports from storage into structured database tables
+- Add database migrations for dispatch report tables and a cron job to trigger periodic imports
+- Add DispatchDataService for querying parsed dispatch report data from the frontend
+- Add DetailDriverParser utility for extracting per-driver ticket data from DetailDriver HTML reports
+- Bump Dispatch Sync bridge to v2.9 — add DetailDriver report syncing per plant, increase worker concurrency from 6 to 10, reverse backfill order to prioritize most recent dates first, and add backfillEnabled flag to skip historic backfill for DetailOrderAnalysis
+- Add useCloserPlantLookup hook for identifying the nearest plant to a given address using travel time data
+- Add useLiveClock and useLiveMinuteOfDay hooks for real-time clock state in plan components
+- Add useLiveTravelTimes hook for streaming travel time estimates between plants
+- Move PlanFlowLayoutUtility from views directory to src/utils/ to match project conventions
+- Refactor useDetailOrders, useScheduleSync, useDashboardSchedule, and DetailOrderBucketService to support the new parsed dispatch data pipeline
+- Update DailyOrderParser with refinements to support the dispatch-import edge function's parsing needs
+
 ## [40.0.8] - 2026-04-30
 
 - Decompose Plan views into focused components and hooks — extract 60+ files from monolithic PlanScheduleView, PlanFlowView, PlanStatisticsView, PlanDashboardView, PlanDemandView, PlanRealtimeView, and PlanView into dedicated components under src/app/components/plan/ and hooks under src/app/hooks/
