@@ -96,7 +96,22 @@ Deno.serve(async (req: Request) => {
         detailOrder: { plantsFetched: 0, ticketsParsed: 0 },
         detailDriver: { plantsFetched: 0, ticketsParsed: 0 },
         rowsUpserted: 0,
+        rowsDeleted: 0,
         errors: [] as string[]
+    }
+
+    // Tracks every (order_id, ticket_num) tuple this run upserted. After the
+    // last upsert, anything in `dispatch_data` for `date` that ISN'T in this
+    // set gets deleted — that's how the table stays in lockstep with the
+    // bucket when an order or ticket disappears from a re-export.
+    const touchedKeys = new Set<string>()
+    const trackUpsertedRows = (rows: Record<string, unknown>[]) => {
+        for (const r of rows) {
+            const orderId = (r.order_id as string) || ''
+            if (!orderId) continue
+            const ticketNum = (r.ticket_num as string) || ''
+            touchedKeys.add(`${orderId}|${ticketNum}`)
+        }
     }
 
     // Stage 1 — DailyOrder. Order header rows land in dispatch_data with
@@ -150,8 +165,12 @@ Deno.serve(async (req: Request) => {
 
             if (stubRows.length) {
                 const { error } = await supabase.rpc('dispatch_upsert_data', { rows: stubRows })
-                if (error) result.errors.push(`DailyOrder upsert: ${error.message}`)
-                else result.rowsUpserted += stubRows.length
+                if (error) {
+                    result.errors.push(`DailyOrder upsert: ${error.message}`)
+                } else {
+                    result.rowsUpserted += stubRows.length
+                    trackUpsertedRows(stubRows)
+                }
             }
         }
     }
@@ -228,8 +247,12 @@ Deno.serve(async (req: Request) => {
         }
         if (ticketRows.length) {
             const { error } = await supabase.rpc('dispatch_upsert_data', { rows: ticketRows })
-            if (error) result.errors.push(`DetailOrderAnalysis upsert: ${error.message}`)
-            else result.rowsUpserted += ticketRows.length
+            if (error) {
+                result.errors.push(`DetailOrderAnalysis upsert: ${error.message}`)
+            } else {
+                result.rowsUpserted += ticketRows.length
+                trackUpsertedRows(ticketRows)
+            }
         }
     }
 
@@ -278,16 +301,48 @@ Deno.serve(async (req: Request) => {
         }
     }
 
-    // Stage 3 — DetailDriver. Per-plant fan-out. Match each ticket to its
-    // home order via (orderNum, customer) — that's how we capture cross-
-    // plant loads where DetailOrderAnalysis missed them.
+    // Stage 3 — DetailDriver. Match each ticket to its home order via
+    // (orderNum, customer) — that's how we capture cross-plant loads where
+    // DetailOrderAnalysis missed them.
+    //
+    // Bucket reality check: the bridge userscript that uploads driver HTMLs
+    // sometimes writes the SAME content to all 14 plant slots (per-date
+    // eTags collapse to 1-3 unique blobs across the 14 files). Downloading
+    // every slot was paying 14× for the same parse and OOM'ing the function
+    // on dates whose driver report was 11+ MB. We list once, group plants
+    // by content (eTag, with size as a fallback key), then download +
+    // parse exactly once per unique content. Tickets carry their own plant
+    // code via `parseDetailDriverHtml`'s section-header detection, so
+    // dropping the per-plant download doesn't change attribution.
     if (enabled.has('DetailDriver')) {
         const ticketRows: Record<string, unknown>[] = []
+        const { data: driverList } = await supabase.storage.from(BUCKET).list('driver', {
+            limit: 1000,
+            search: date
+        })
+        const filesByContent = new Map<string, { plants: string[]; sample: string }>()
         for (const plantId of eligiblePlants) {
-            const html = await downloadHtml(`driver/${date}_${plantId}.html`)
+            const fileName = `${date}_${plantId}.html`
+            const item = (driverList || []).find((f: { name: string }) => f.name === fileName)
+            if (!item) continue
+            const meta = (item as { metadata?: { eTag?: string; size?: number } }).metadata || {}
+            // Strip the surrounding quotes Supabase adds to eTag values so
+            // the dedupe key is stable across list responses.
+            const etag = (meta.eTag || '').replace(/"/g, '')
+            const contentKey = etag || `size-${meta.size ?? '?'}-${plantId}`
+            const group = filesByContent.get(contentKey)
+            if (group) {
+                group.plants.push(plantId)
+            } else {
+                filesByContent.set(contentKey, { plants: [plantId], sample: fileName })
+            }
+        }
+
+        for (const group of filesByContent.values()) {
+            const html = await downloadHtml(`driver/${group.sample}`)
             if (!html) continue
-            result.detailDriver.plantsFetched++
-            const { tickets } = parseDetailDriverHtml(html, plantId)
+            result.detailDriver.plantsFetched += group.plants.length
+            const { tickets } = parseDetailDriverHtml(html, group.plants[0])
             result.detailDriver.ticketsParsed += tickets.length
             for (const t of tickets) {
                 if (!t.ticketNum) continue
@@ -307,7 +362,7 @@ Deno.serve(async (req: Request) => {
                         orderId,
                         t.ticketNum,
                         {
-                            loaded_plant_code: t.plantCode || plantId,
+                            loaded_plant_code: t.plantCode || group.plants[0],
                             truck_num: t.truckNum || null,
                             driver_num: t.driverNum || null,
                             driver_name: t.driverName || null,
@@ -343,9 +398,35 @@ Deno.serve(async (req: Request) => {
             // existing quantity is null, so a real DetailOrderAnalysis
             // value never gets clobbered by an estimate.
             const { error } = await supabase.rpc('dispatch_upsert_data', { rows: dedupedRows })
-            if (error) result.errors.push(`DetailDriver upsert: ${error.message}`)
-            else result.rowsUpserted += dedupedRows.length
+            if (error) {
+                result.errors.push(`DetailDriver upsert: ${error.message}`)
+            } else {
+                result.rowsUpserted += dedupedRows.length
+                trackUpsertedRows(dedupedRows)
+            }
         }
+    }
+
+    // Sync step — drop any `dispatch_data` rows for this date that the just-
+    // completed parse didn't produce. Skipped on partial runs (specific
+    // plants OR a non-default report subset) because deleting rows we
+    // didn't have a chance to re-parse would silently wipe healthy data.
+    const isFullRun =
+        !plantFilter &&
+        enabled.has('DailyOrder') &&
+        enabled.has('DetailOrderAnalysis') &&
+        enabled.has('DetailDriver')
+    if (isFullRun && touchedKeys.size > 0) {
+        const keysArray = Array.from(touchedKeys).map((k) => {
+            const sep = k.indexOf('|')
+            return { order_id: k.slice(0, sep), ticket_num: k.slice(sep + 1) }
+        })
+        const { data: deletedCount, error } = await supabase.rpc('dispatch_sync_delete_orphans', {
+            p_date: date,
+            p_keys: keysArray
+        })
+        if (error) result.errors.push(`Sync delete: ${error.message}`)
+        else result.rowsDeleted = typeof deletedCount === 'number' ? deletedCount : 0
     }
 
     return jsonResponse(result, headers, 200)

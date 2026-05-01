@@ -2,6 +2,14 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.14] - 2026-05-01
+
+- Lift schedule filter/sort/view state from PlanScheduleView up into PlanView so dispatcher filters survive the loading-skeleton swap on every date change
+- Add scheduleFilters state and updateScheduleFilter callback in PlanView, passed down as controlled props
+- Replace local useState calls in PlanScheduleView with parent-controlled filter state and derived setters via setFilterValue helper
+- Add DEFAULT_FILTERS sentinel for standalone rendering of PlanScheduleView
+- Keep mapOrder as the only schedule-local state since it should reset across date changes
+
 ## [40.0.13] - 2026-05-01
 
 - Add OrderInfoModal — a tabbed "View order" modal (Details, Plan, Suggestions) accessible via right-click context menu on schedule order rows
