@@ -10,7 +10,6 @@ import {
 } from '../../../app/components/plan/PlanRealtimeTables'
 import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
 import PlantFilterButton from '../../../app/components/ui/PlantFilterButton'
-import { useDetailOrders } from '../../../app/hooks/useDetailOrders'
 import { useLiveClock } from '../../../app/hooks/useLiveClock'
 import {
     buildOrderSnapshots,
@@ -49,6 +48,7 @@ function PlanRealtimeView({
     accentColor,
     assignments,
     defaultPlantCode,
+    detailByOrderId = {},
     planDate,
     plantNameByCode,
     plantProduction,
@@ -64,8 +64,6 @@ function PlanRealtimeView({
     const isToday = planDate === clock.todayStr
     const nowMin = clock.nowMin
     const filterActive = plantFilter !== 'all' && plantFilter !== 'All' && plantFilter !== ''
-
-    const detailByOrderId = useDetailOrders(planDate, plantProduction)
 
     /** Pool simulation snapshot — derived once per plan/assignment change
      *  and shared by every downstream table. */

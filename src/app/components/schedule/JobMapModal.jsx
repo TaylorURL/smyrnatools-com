@@ -1,20 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { TrafficService } from '../../../services/TrafficService'
 import { formatFullAddress, formatOrderAddress } from '../../../utils/AddressUtility'
 
 // Run order addresses through the shared normalizer so the popup matches
 // the schedule table — no more `.lady Leslie Lane …` or `RD .` artifacts.
 const composeAddress = (order) => formatOrderAddress(order, ', ')
-
-const formatMinutesToHm = (mins) => {
-    if (!Number.isFinite(mins) || mins <= 0) return null
-    const h = Math.floor(mins / 60)
-    const m = Math.round(mins % 60)
-    if (h === 0) return `${m} min`
-    if (m === 0) return `${h}h`
-    return `${h}h ${m}m`
-}
 
 function RoutePoint({ children, color, icon, label, primary, sub, warn }) {
     return (
@@ -39,7 +29,7 @@ function RoutePoint({ children, color, icon, label, primary, sub, warn }) {
                     {label}
                 </div>
                 <div
-                    className="text-[12.5px] font-semibold leading-tight mt-0.5 truncate"
+                    className="text-[12.5px] font-semibold leading-tight mt-0.5 truncate uppercase tracking-wide"
                     style={{ color: warn ? '#92400e' : 'var(--text-primary)' }}
                     title={primary}
                 >
@@ -57,20 +47,18 @@ function RoutePoint({ children, color, icon, label, primary, sub, warn }) {
 }
 
 /**
- * Full-screen map modal for a single dispatch order. Defaults to the order's
- * assigned plant as the route origin, but lets the dispatcher switch to any
- * other plant via a dropdown to compare drive times.
+ * Full-screen map modal for a single dispatch order. Shows the route as an
+ * embedded Google Maps iframe with the assigned plant as the default origin.
+ * The dispatcher can switch the origin via a dropdown to compare any plant
+ * visually on the map.
+ *
+ * Travel-time metrics are intentionally NOT displayed — the project doesn't
+ * provision a Google Maps API key, so live traffic data isn't available and
+ * dispatch-report estimates only meaningfully apply to the assigned plant.
+ * Without a clean number to show for every origin, the map alone is more
+ * honest than a partial / fallback metric strip.
  */
-export default function JobMapModal({
-    accentColor,
-    onClose,
-    order,
-    plantAddress,
-    plantCode,
-    plantName,
-    plants = [],
-    travelMinutes
-}) {
+export default function JobMapModal({ accentColor, onClose, order, plantAddress, plantCode, plantName, plants = [] }) {
     const jobAddress = composeAddress(order)
     const hasJob = !!jobAddress
     const assignedPlantCode = plantCode || order?.plantCode || ''
@@ -137,57 +125,6 @@ export default function JobMapModal({
             document.body.style.overflow = prev
         }
     }, [onClose])
-
-    const dispatchMinutes = isAssignedPlant && Number.isFinite(travelMinutes) ? travelMinutes : null
-
-    const [live, setLive] = useState({ data: null, status: 'idle' })
-    useEffect(() => {
-        if (!canRoute) {
-            setLive({ data: null, status: 'idle' })
-            return undefined
-        }
-        let cancelled = false
-        setLive({ data: null, status: 'loading' })
-        TrafficService.fetchDistance(originAddress, jobAddress).then((result) => {
-            if (cancelled) return
-            if (!result) return setLive({ data: null, status: 'error' })
-            if (result.error) {
-                setLive({ data: null, status: result.error === 'not_configured' ? 'not_configured' : 'error' })
-                return
-            }
-            setLive({ data: result, status: 'ok' })
-        })
-        return () => {
-            cancelled = true
-        }
-    }, [canRoute, originAddress, jobAddress])
-
-    const liveMinutes =
-        live.status === 'ok' && Number.isFinite(live.data?.durationInTrafficSeconds)
-            ? Math.round(live.data.durationInTrafficSeconds / 60)
-            : null
-    const liveFreeFlowMinutes =
-        live.status === 'ok' && Number.isFinite(live.data?.durationSeconds)
-            ? Math.round(live.data.durationSeconds / 60)
-            : null
-    const oneWayMinutes = liveMinutes ?? dispatchMinutes
-    const roundTripMinutes = oneWayMinutes != null ? oneWayMinutes * 2 : null
-    const oneWayLabel = formatMinutesToHm(oneWayMinutes)
-    const roundTripLabel = formatMinutesToHm(roundTripMinutes)
-    const sourceLabel =
-        live.status === 'loading'
-            ? 'Loading live traffic…'
-            : liveMinutes != null
-              ? 'Google live · with traffic'
-              : live.status === 'not_configured' || live.status === 'error'
-                ? isAssignedPlant && dispatchMinutes != null
-                    ? 'Dispatch Estimate (Traffic not Included)'
-                    : 'Traffic unavailable'
-                : dispatchMinutes != null
-                  ? 'Dispatch Estimate (Traffic not Included)'
-                  : 'No travel time available'
-    const trafficDelta = liveMinutes != null && liveFreeFlowMinutes != null ? liveMinutes - liveFreeFlowMinutes : null
-    const dispatchVsLive = liveMinutes != null && dispatchMinutes != null ? liveMinutes - dispatchMinutes : null
 
     return (
         <div
@@ -267,7 +204,7 @@ export default function JobMapModal({
 
                 {hasJob && (
                     <div
-                        className="grid grid-cols-1 sm:grid-cols-3 gap-3 px-5 py-3 border-b"
+                        className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-3 border-b"
                         style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
                     >
                         <RoutePoint
@@ -315,58 +252,6 @@ export default function JobMapModal({
                                 </div>
                             )}
                         </RoutePoint>
-                        <div
-                            className="rounded-lg px-3 py-2 flex flex-col justify-center text-center"
-                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                            title={
-                                liveMinutes != null
-                                    ? 'Live driving time from Google with current traffic conditions.'
-                                    : 'Dispatch report estimate. Live traffic unavailable.'
-                            }
-                        >
-                            <div
-                                className="text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
-                                Travel time
-                                {live.status === 'loading' && <i className="fas fa-spinner fa-spin text-[9px]" />}
-                                {liveMinutes != null && (
-                                    <i
-                                        className="fas fa-traffic-light text-[10px]"
-                                        style={{ color: '#16a34a' }}
-                                        title="Includes live traffic"
-                                    />
-                                )}
-                            </div>
-                            <div
-                                className="font-bold text-[16px] leading-none mt-1"
-                                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                            >
-                                {oneWayLabel ? `${oneWayLabel} one-way` : '—'}
-                            </div>
-                            {roundTripLabel && (
-                                <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                                    Round trip ≈ {roundTripLabel}
-                                </div>
-                            )}
-                            <div className="text-[10px] mt-1 italic" style={{ color: 'var(--text-tertiary)' }}>
-                                {sourceLabel}
-                                {trafficDelta != null && trafficDelta > 1 && (
-                                    <span style={{ color: '#dc2626' }}> · +{trafficDelta}m vs free-flow</span>
-                                )}
-                            </div>
-                            {dispatchVsLive != null && Math.abs(dispatchVsLive) >= 3 && dispatchMinutes != null && (
-                                <div
-                                    className="text-[10px] mt-0.5"
-                                    style={{ color: dispatchVsLive > 0 ? '#dc2626' : '#16a34a' }}
-                                    title={`Live ${liveMinutes}m vs dispatch ${dispatchMinutes}m`}
-                                >
-                                    {dispatchVsLive > 0 ? '⚠ ' : '↓ '}
-                                    {dispatchVsLive > 0 ? '+' : ''}
-                                    {dispatchVsLive}m vs dispatch est ({dispatchMinutes}m)
-                                </div>
-                            )}
-                        </div>
                         <RoutePoint
                             color="#16a34a"
                             icon="fa-flag-checkered"

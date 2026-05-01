@@ -1,6 +1,7 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { PlantBadge } from '../../../app/components/plan/PlanScheduleBadges'
+import PlanScheduleCompactToolbar from '../../../app/components/plan/PlanScheduleCompactToolbar'
 import PlanScheduleFilterDrawer from '../../../app/components/plan/PlanScheduleFilterDrawer'
 import PlanScheduleOrderCard from '../../../app/components/plan/PlanScheduleOrderCard'
 import PlanScheduleSideRail from '../../../app/components/plan/PlanScheduleSideRail'
@@ -8,7 +9,6 @@ import PlanScheduleStatStrip from '../../../app/components/plan/PlanScheduleStat
 import PlanScheduleTable from '../../../app/components/plan/PlanScheduleTable'
 import JobMapModal from '../../../app/components/schedule/JobMapModal'
 import useCloserPlantLookup from '../../../app/hooks/useCloserPlantLookup'
-import { useDetailOrders } from '../../../app/hooks/useDetailOrders'
 import useLiveMinuteOfDay from '../../../app/hooks/useLiveMinuteOfDay'
 import useLiveTravelTimes from '../../../app/hooks/useLiveTravelTimes'
 import usePlanTravelPairs from '../../../app/hooks/usePlanTravelPairs'
@@ -22,7 +22,6 @@ import {
     evaluateScheduleSatisfaction,
     extractCityFromFullAddress,
     getOrderStatus,
-    parseHhmmToMinutes,
     sumField,
     VIEW_MODES
 } from '../../../utils/PlanScheduleUtility'
@@ -74,8 +73,11 @@ function PlanScheduleView({
     accentColor,
     adjacentProduction = {},
     assignments = [],
+    detailByOrderId = {},
     getTravelTime,
+    isMaximized = false,
     isMobile = false,
+    onChangeMaximized,
     onSwitchToPlanner,
     planDate,
     plantAddressByCode,
@@ -90,9 +92,6 @@ function PlanScheduleView({
      * the schedule being viewed is actually today; on past/future schedules a
      * real 3:00 PM start is legitimate, so suppress the badge there. */
     const isViewingToday = planDate === getTodayDate()
-    /** Per-order ticket data from DetailOrderAnalysis reports. Keyed by
-     *  orderId; values are merged across all plant files for the date. */
-    const detailByOrderId = useDetailOrders(planDate, plantProduction)
     /** Fallback city lookup: when an order's city is blank, we use the plant's
      *  city so the map/geocoder still lands near the right area. */
     const plantCityByCode = useMemo(() => {
@@ -131,6 +130,38 @@ function PlanScheduleView({
     const [mapOrder, setMapOrder] = useState(null)
     // Filter drawer is collapsed by default on mobile so the schedule fills the screen.
     const [filtersOpen, setFiltersOpen] = useState(!isMobile)
+    /** Maximized = the dispatcher hides the title row, KPI strip, side rail,
+     *  and full filter drawer in favor of a single sticky compact toolbar so
+     *  the table fills the visible area. Desktop-only (mobile is already
+     *  cards-on-a-narrow-screen, so there's nothing to expand into).
+     *
+     *  The `isMaximized` flag is owned by `PlanView` (parent) so it survives
+     *  the loading-skeleton swap that fires on every date change — when the
+     *  flag lived here, changing dates unmounted this view and reset it. */
+    const setMaximized = useCallback(
+        (next) => {
+            if (typeof onChangeMaximized === 'function') onChangeMaximized(next)
+        },
+        [onChangeMaximized]
+    )
+    const effectiveMaximized = isMaximized && !isMobile
+
+    // Bail out of maximized mode if the viewport drops to mobile so the
+    // user isn't stranded with desktop-only chrome on a phone.
+    useEffect(() => {
+        if (isMobile && isMaximized) setMaximized(false)
+    }, [isMobile, isMaximized, setMaximized])
+
+    // Esc exits maximized — same affordance as the JobMapModal so the
+    // dispatcher's muscle memory carries over.
+    useEffect(() => {
+        if (!effectiveMaximized) return undefined
+        const onKey = (e) => {
+            if (e.key === 'Escape') setMaximized(false)
+        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [effectiveMaximized, setMaximized])
 
     /** Flat list of every order with plantCode attached. */
     const allOrders = useMemo(() => {
@@ -531,69 +562,72 @@ function PlanScheduleView({
     }
 
     return (
-        <div className="flex-1 overflow-y-auto">
-            <div className="flex w-full">
-                {/* Side rail only matters once a plant is filtered. The outer
-                    wrapper animates `width` from 0 → 56 while the inner
-                    content keeps its fixed size and gets clipped during
-                    transit — animates more reliably than transitioning
-                    width/padding on the same element. */}
-                <aside
-                    aria-hidden={plantNotSelected}
-                    className="hidden lg:block sticky top-0 self-start overflow-hidden"
+        <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
+            {/* Desktop side rail — floating overlay pinned to the bottom-left
+                of the viewport. `position: fixed` so it stays anchored as
+                the schedule scrolls; `bottom: 50px` keeps it clear of any
+                browser status / footer surfaces. Takes zero space in the
+                page flow, so it stays visible even in maximized mode —
+                its controls (plant-scope chip, copy roster, send-home /
+                pull-up actions) aren't duplicated in the compact toolbar.
+                Transparent (~50%) at rest so the dispatcher can read the
+                schedule beneath the rail; ramps to fully opaque on hover
+                so it's solid the moment they reach for a control. */}
+            <div
+                aria-hidden={plantNotSelected}
+                className="hidden lg:block group"
+                style={{
+                    bottom: 50,
+                    left: 12,
+                    opacity: plantNotSelected ? 0 : 0.65,
+                    position: 'fixed',
+                    transform: plantNotSelected ? 'translateY(8px)' : 'translateY(0)',
+                    transition: 'opacity 200ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+                    visibility: plantNotSelected ? 'hidden' : 'visible',
+                    zIndex: 5
+                }}
+                onMouseEnter={(e) => {
+                    if (!plantNotSelected) e.currentTarget.style.opacity = '1'
+                }}
+                onMouseLeave={(e) => {
+                    if (!plantNotSelected) e.currentTarget.style.opacity = '0.65'
+                }}
+            >
+                <div
+                    className="rounded-xl overflow-hidden shadow-md"
                     style={{
-                        // Flex items default to `min-width: auto`, which would
-                        // let the inner content force the aside open even
-                        // when width is 0. Pin it explicitly so the collapsed
-                        // state really is 0.
-                        flexShrink: 0,
-                        height: 'fit-content',
-                        minWidth: 0,
-                        transition: 'width 260ms cubic-bezier(0.22, 1, 0.36, 1)',
-                        width: plantNotSelected ? 0 : 56
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border-light)'
                     }}
                 >
-                    <div
-                        style={{
-                            opacity: plantNotSelected ? 0 : 1,
-                            padding: '14px 4px 14px 10px',
-                            transform: plantNotSelected ? 'translateX(-8px)' : 'translateX(0)',
-                            transition: 'opacity 200ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
-                            width: 48
-                        }}
-                    >
-                        <div
-                            className="rounded-xl overflow-hidden shadow-sm"
-                            style={{
-                                background: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)'
-                            }}
-                        >
-                            <PlanScheduleSideRail {...sideRailProps} direction="col" />
-                        </div>
-                    </div>
-                </aside>
+                    <PlanScheduleSideRail {...sideRailProps} direction="col" />
+                </div>
+            </div>
+            <div className="flex w-full">
                 <div className="flex-1 min-w-0 px-3 sm:px-4 lg:pl-2 lg:pr-6 py-4 sm:py-5 flex flex-col gap-3 sm:gap-4">
                     {/* Mobile inline card — same content, animated via
                         max-height + opacity since vertical collapse is the
-                        natural fit on narrow screens. */}
-                    <div
-                        aria-hidden={plantNotSelected}
-                        className="lg:hidden overflow-hidden"
-                        style={{
-                            maxHeight: plantNotSelected ? 0 : 120,
-                            opacity: plantNotSelected ? 0 : 1,
-                            transition: 'max-height 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease'
-                        }}
-                    >
+                        natural fit on narrow screens. Hidden in maximized
+                        mode (the compact toolbar takes its place). */}
+                    {!effectiveMaximized && (
                         <div
-                            className="rounded-xl overflow-hidden shadow-sm inline-block"
-                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                            aria-hidden={plantNotSelected}
+                            className="lg:hidden overflow-hidden"
+                            style={{
+                                maxHeight: plantNotSelected ? 0 : 120,
+                                opacity: plantNotSelected ? 0 : 1,
+                                transition: 'max-height 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease'
+                            }}
                         >
-                            <PlanScheduleSideRail {...sideRailProps} direction="row" />
+                            <div
+                                className="rounded-xl overflow-hidden shadow-sm inline-block"
+                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                            >
+                                <PlanScheduleSideRail {...sideRailProps} direction="row" />
+                            </div>
                         </div>
-                    </div>
-                    {(plantsClosed || isSaturday) && (
+                    )}
+                    {!effectiveMaximized && (plantsClosed || isSaturday) && (
                         <div
                             className="rounded-lg px-4 py-3 flex items-start gap-3"
                             style={{
@@ -617,90 +651,147 @@ function PlanScheduleView({
                             </div>
                         </div>
                     )}
-                    {/* Title row */}
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                        <div className="flex-1 min-w-0">
-                            <div
-                                className="text-[18px] sm:text-[22px] font-bold leading-tight"
-                                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                            >
-                                Schedule
-                            </div>
-                            <div className="text-[11.5px] sm:text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                                {isMobile
-                                    ? `${filtered.length} of ${allOrders.length} orders`
-                                    : "Pulled from the Daily Order Listing import. Filter, sort, and scan every plant's orders on one page."}
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {!isMobile && (
+                    {/* Title row — hidden in maximized mode; the compact
+                        toolbar carries the view toggle and Exit button. */}
+                    {!effectiveMaximized && (
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                            <div className="flex-1 min-w-0">
                                 <div
-                                    className="flex items-center rounded-lg p-0.5"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
+                                    className="text-[18px] sm:text-[22px] font-bold leading-tight"
+                                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
                                 >
-                                    {VIEW_MODES.map((m) => (
-                                        <button
-                                            key={m}
-                                            type="button"
-                                            onClick={() => setViewMode(m)}
-                                            className="px-3 py-1.5 rounded-md text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
-                                            style={{
-                                                background: viewMode === m ? accentColor : 'transparent',
-                                                color: viewMode === m ? '#fff' : 'var(--text-secondary)'
-                                            }}
-                                        >
-                                            <i
-                                                className={`fas ${m === 'table' ? 'fa-table' : 'fa-grip'} text-[10px]`}
-                                            />
-                                            {m === 'table' ? 'Table' : 'Cards'}
-                                        </button>
-                                    ))}
+                                    Schedule
                                 </div>
-                            )}
-                            {isMobile && hasAnyOrders && (
-                                <button
-                                    type="button"
-                                    onClick={() => setFiltersOpen((v) => !v)}
-                                    className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
-                                    style={{
-                                        background:
-                                            filtersOpen || activeFilterCount > 0 ? accentColor : 'var(--bg-secondary)',
-                                        color: filtersOpen || activeFilterCount > 0 ? '#fff' : 'var(--text-secondary)'
-                                    }}
+                                <div
+                                    className="text-[11.5px] sm:text-[12px]"
+                                    style={{ color: 'var(--text-secondary)' }}
                                 >
-                                    <i className={`fas fa-filter text-[10px]`} />
-                                    Filters
-                                    {activeFilterCount > 0 && (
-                                        <span
-                                            className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
-                                            style={{
-                                                background: 'rgba(255,255,255,0.3)',
-                                                color: '#fff',
-                                                height: 18,
-                                                minWidth: 18,
-                                                padding: '0 5px'
-                                            }}
-                                        >
-                                            {activeFilterCount}
-                                        </span>
-                                    )}
-                                </button>
-                            )}
-                            {onSwitchToPlanner && (
-                                <button
-                                    type="button"
-                                    onClick={onSwitchToPlanner}
-                                    className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
-                                    style={{ background: accentColor, color: '#fff' }}
-                                >
-                                    <i className="fas fa-project-diagram text-[10px]" /> Planner
-                                </button>
-                            )}
+                                    {isMobile
+                                        ? `${filtered.length} of ${allOrders.length} orders`
+                                        : "Pulled from the Daily Order Listing import. Filter, sort, and scan every plant's orders on one page."}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {!isMobile && (
+                                    <div
+                                        className="flex items-center rounded-lg p-0.5"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)'
+                                        }}
+                                    >
+                                        {VIEW_MODES.map((m) => (
+                                            <button
+                                                key={m}
+                                                type="button"
+                                                onClick={() => setViewMode(m)}
+                                                className="px-3 py-1.5 rounded-md text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                                style={{
+                                                    background: viewMode === m ? accentColor : 'transparent',
+                                                    color: viewMode === m ? '#fff' : 'var(--text-secondary)'
+                                                }}
+                                            >
+                                                <i
+                                                    className={`fas ${m === 'table' ? 'fa-table' : 'fa-grip'} text-[10px]`}
+                                                />
+                                                {m === 'table' ? 'Table' : 'Cards'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                {isMobile && hasAnyOrders && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFiltersOpen((v) => !v)}
+                                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                        style={{
+                                            background:
+                                                filtersOpen || activeFilterCount > 0
+                                                    ? accentColor
+                                                    : 'var(--bg-secondary)',
+                                            color:
+                                                filtersOpen || activeFilterCount > 0 ? '#fff' : 'var(--text-secondary)'
+                                        }}
+                                    >
+                                        <i className={`fas fa-filter text-[10px]`} />
+                                        Filters
+                                        {activeFilterCount > 0 && (
+                                            <span
+                                                className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.3)',
+                                                    color: '#fff',
+                                                    height: 18,
+                                                    minWidth: 18,
+                                                    padding: '0 5px'
+                                                }}
+                                            >
+                                                {activeFilterCount}
+                                            </span>
+                                        )}
+                                    </button>
+                                )}
+                                {!isMobile && hasAnyOrders && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setMaximized(true)}
+                                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)',
+                                            color: 'var(--text-secondary)'
+                                        }}
+                                        title="Maximize the schedule — hide the KPI strip and side rail so the table fills the screen"
+                                    >
+                                        <i className="fas fa-expand text-[10px]" />
+                                        Maximize
+                                    </button>
+                                )}
+                                {onSwitchToPlanner && (
+                                    <button
+                                        type="button"
+                                        onClick={onSwitchToPlanner}
+                                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                                        style={{ background: accentColor, color: '#fff' }}
+                                    >
+                                        <i className="fas fa-project-diagram text-[10px]" /> Planner
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {effectiveMaximized && hasAnyOrders && (
+                        <PlanScheduleCompactToolbar
+                            accentColor={accentColor}
+                            activeFilterCount={activeFilterCount}
+                            allOrdersCount={allOrders.length}
+                            filteredCount={filtered.length}
+                            hasActiveFilters={hasActiveFilters}
+                            isMobile={isMobile}
+                            minYards={minYards}
+                            onChangeMinYards={setMinYards}
+                            onChangePlant={setPlantFilter}
+                            onChangeProduct={setProductFilter}
+                            onChangeQuery={setQuery}
+                            onChangeSort={setSortKey}
+                            onChangeStatus={setStatusFilter}
+                            onChangeViewMode={setViewMode}
+                            onClearFilters={clearAllFilters}
+                            onExitMaximized={() => setMaximized(false)}
+                            plantFilter={plantFilter}
+                            plantNameByCode={plantNameByCode}
+                            plantOptions={plantOptions}
+                            productFilter={productFilter}
+                            productOptions={productOptions}
+                            query={query}
+                            sortKey={sortKey}
+                            statusCounts={statusCounts}
+                            statusFilter={statusFilter}
+                            viewMode={viewMode}
+                            viewModes={VIEW_MODES}
+                        />
+                    )}
 
                     {!hasAnyOrders ? (
                         <div
@@ -727,25 +818,27 @@ function PlanScheduleView({
                         </div>
                     ) : (
                         <>
-                            <PlanScheduleStatStrip
-                                allOrdersCount={allOrders.length}
-                                customerSatisfaction={customerSatisfaction}
-                                earliestTime={earliestTime}
-                                filteredCount={filtered.length}
-                                hasActiveFilters={hasActiveFilters}
-                                latestTime={latestTime}
-                                liveOrdersCount={liveOrders.length}
-                                previousBusinessDayLabel={previousBusinessDayLabel}
-                                previousBusinessDayYardage={previousBusinessDayYardage}
-                                totalTrucks={totalTrucks}
-                                totalYards={totalYards}
-                                uniqueCustomers={uniqueCustomers}
-                                uniquePlants={uniquePlants}
-                                weekYardage={weekYardage}
-                                yardageDeltaPct={yardageDeltaPct}
-                            />
+                            {!effectiveMaximized && (
+                                <PlanScheduleStatStrip
+                                    allOrdersCount={allOrders.length}
+                                    customerSatisfaction={customerSatisfaction}
+                                    earliestTime={earliestTime}
+                                    filteredCount={filtered.length}
+                                    hasActiveFilters={hasActiveFilters}
+                                    latestTime={latestTime}
+                                    liveOrdersCount={liveOrders.length}
+                                    previousBusinessDayLabel={previousBusinessDayLabel}
+                                    previousBusinessDayYardage={previousBusinessDayYardage}
+                                    totalTrucks={totalTrucks}
+                                    totalYards={totalYards}
+                                    uniqueCustomers={uniqueCustomers}
+                                    uniquePlants={uniquePlants}
+                                    weekYardage={weekYardage}
+                                    yardageDeltaPct={yardageDeltaPct}
+                                />
+                            )}
 
-                            {filtersOpen && (
+                            {!effectiveMaximized && filtersOpen && (
                                 <PlanScheduleFilterDrawer
                                     minYards={minYards}
                                     onChangeMinYards={setMinYards}
@@ -766,7 +859,7 @@ function PlanScheduleView({
                                 />
                             )}
 
-                            {hasActiveFilters && (
+                            {!effectiveMaximized && hasActiveFilters && (
                                 <div className="flex items-center gap-2">
                                     <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
                                         {filtered.length} of {allOrders.length} orders match your filters.
@@ -806,6 +899,7 @@ function PlanScheduleView({
                                     getTravelOverrides={getTravelOverrides}
                                     helpRows={helpRows}
                                     filteredPlantCode={plantFilter !== 'all' ? plantFilter : null}
+                                    isMaximized={effectiveMaximized}
                                     isPlantFiltered={plantFilter !== 'all'}
                                     isToday={isViewingToday}
                                     nowMin={nowMin}
@@ -896,7 +990,6 @@ function PlanScheduleView({
                     plantCode={mapOrder?.plantCode}
                     plantName={plantNameByCode?.[mapOrder?.plantCode] || ''}
                     plants={plantOptionsForMap}
-                    travelMinutes={parseHhmmToMinutes(mapOrder?.toJobTime)}
                 />
             )}
         </div>

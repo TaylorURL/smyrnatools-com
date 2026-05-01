@@ -1,65 +1,43 @@
-import APIUtility from '../utils/APIUtility'
-
-const SERVICE_PREFIX = 'traffic-service'
-
 /**
- * Live driving-time service backed by `traffic-service` edge function (Google
- * Distance Matrix). Returns null on any failure so callers can fall back to
- * the dispatch estimate without crashing the UI.
+ * Live driving-time service — DISABLED.
  *
- * Response shape on success:
- *   { durationSeconds, durationInTrafficSeconds, distanceMeters, provider, cached }
+ * The Plan view originally proxied Google Distance Matrix lookups through a
+ * `traffic-service` Supabase edge function so the schedule could show live
+ * pour-pace data alongside dispatch estimates. The project decided not to
+ * provision a `GOOGLE_MAPS_API_KEY`, so every call to that edge function
+ * returns `503 not_configured`. Even with client-side latching, the first
+ * probe of every session produced console noise and wasted a network round-
+ * trip.
  *
- * Latching behavior: only the explicit `not_configured` signal (GOOGLE_MAPS_API_KEY
- * missing on the edge function) is treated as permanent — retrying that case
- * never helps. Transient failures (502, network errors, generic 503) are NOT
- * latched so callers like the JobMapModal origin-plant switcher can retry on
- * subsequent calls and actually get live data when conditions recover.
+ * This module now exposes the same public surface (`fetchDistance`,
+ * `isUnavailable`, `markUnavailable`, `reset`) but never hits the network.
+ * Every caller gets `{ error: 'not_configured' }` synchronously and falls
+ * back to the dispatch report's `toJobTime` field, which is what they did
+ * anyway in the latched-unavailable branch.
+ *
+ * If the project ever adopts a Maps key, swap this module back to the
+ * networked version (see git history for the original implementation).
  */
 class TrafficServiceImpl {
-    constructor() {
-        this._unavailable = false
-    }
-
-    /** Flag the service as unavailable so subsequent calls bail locally. */
-    markUnavailable() {
-        this._unavailable = true
-    }
-
-    /** Clear the latch so the next call retries the upstream service. */
-    reset() {
-        this._unavailable = false
-    }
-
     isUnavailable() {
-        return this._unavailable
+        return true
     }
 
-    /** Look up live travel time between two free-text addresses. */
-    async fetchDistance(origin, destination) {
-        if (this._unavailable) return { error: 'not_configured' }
-        const o = String(origin || '').trim()
-        const d = String(destination || '').trim()
-        if (!o || !d) return null
-        try {
-            const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/distance`, {
-                destination: d,
-                origin: o
-            })
-            if (!res.ok) {
-                // Only the explicit `not_configured` payload is permanent
-                // (API key missing). Other 503s and non-2xx responses can be
-                // transient — let the caller retry on the next interaction.
-                if (res.status === 503 && json?.error === 'not_configured') {
-                    this._unavailable = true
-                    return { error: 'not_configured' }
-                }
-                return { error: json?.error || 'lookup_failed', status: res.status }
-            }
-            return json
-        } catch {
-            return { error: 'network' }
-        }
+    markUnavailable() {
+        // No-op — the service is hardcoded unavailable.
+    }
+
+    reset() {
+        // No-op — there's nothing to retry. Kept so existing callers
+        // (`JobMapModal`'s origin-plant switcher) don't break.
+    }
+
+    /**
+     * Returns the same shape the networked version returned on a permanent
+     * failure, so consumers' fallback branches handle it without changes.
+     */
+    async fetchDistance() {
+        return { error: 'not_configured' }
     }
 }
 

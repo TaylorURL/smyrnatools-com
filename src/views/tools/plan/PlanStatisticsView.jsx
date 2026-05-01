@@ -16,17 +16,10 @@ import {
     PlanStatisticsSidebar
 } from '../../../app/components/plan/PlanStatisticsSidebar'
 import { usePlanStatistics } from '../../../app/hooks/usePlanStatistics'
-import { fmtRange } from '../../../utils/PlanStatisticsFormatUtility'
 import { buildScheduleCsv } from '../../../utils/PlanStatisticsUtility'
 
 /** How many rows to show in the customer / product top lists. */
 const TOP_LIST_LIMIT = 8
-
-/** Sections that depend on the schedule-side aggregates and should fall
- *  back to a "no data" empty state when the active range has no rows.
- *  Customer satisfaction owns its own data + empty state, so it stays
- *  reachable even without saved schedules in the current range. */
-const SCHEDULE_DEPENDENT_SECTIONS = new Set(['overview', 'yardage', 'plants', 'customers', 'bigPours'])
 
 /**
  * Statistics dashboard for the Plan tab. Renders a left-rail navigation that
@@ -40,7 +33,20 @@ const SCHEDULE_DEPENDENT_SECTIONS = new Set(['overview', 'yardage', 'plants', 'c
  * same active range and comparison window.
  */
 function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduction, mixerCountsByPlant }) {
-    const stats = usePlanStatistics({ liveProduction, planDate })
+    const [activeSection, setActiveSection] = useState('overview')
+    /** Satisfaction-side memos (per-plant rank, trend, per-day, aggregate) are
+     *  the most expensive work the hook does. Only run them when a sub-page
+     *  that actually displays satisfaction is mounted — currently Overview
+     *  (renders the aggregate summary card) and Satisfaction (full deep-dive
+     *  page). The other sub-pages don't read those fields, so computing
+     *  them eagerly was running thousands of operations per render for
+     *  nothing. */
+    const satisfactionEnabled = activeSection === 'satisfaction' || activeSection === 'overview'
+    const stats = usePlanStatistics({
+        liveProduction,
+        planDate,
+        satisfactionEnabled
+    })
     const {
         anchor,
         availablePlantCodes,
@@ -57,8 +63,12 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         previousSummary,
         range,
         satisfactionAggregate,
+        satisfactionByWeekday,
         satisfactionLoading,
+        satisfactionMomentum,
         satisfactionTrend,
+        satisfactionWorstCustomers,
+        satisfactionWorstOrders,
         selectedPlant,
         setAnchor,
         setComparison,
@@ -70,8 +80,6 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         trendData,
         workingDayCount
     } = stats
-
-    const [activeSection, setActiveSection] = useState('overview')
 
     /** The schedule HTML occasionally lists ghost plant codes (956, 601, 265, …)
      *  that are sentinels or stale entries — not real production plants. The
@@ -128,96 +136,62 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         [activeSection]
     )
 
-    /** True when the active section needs the schedule aggregates and the
-     *  active range turned up nothing. Satisfaction handles its own state. */
-    const showScheduleEmpty = !loading && currentDays.length === 0 && SCHEDULE_DEPENDENT_SECTIONS.has(activeSection)
-    const scheduleReady = !loading && currentDays.length > 0
-
+    /** Each sub-page now owns its own empty + loading state, so we render
+     *  the active sub-page unconditionally and pass `loading` + the
+     *  derived datasets through. The old "hide everything until scheduleReady"
+     *  gate caused tabs to flash blank during refetches. */
     const renderActiveSection = () => {
+        const commonProps = {
+            accentColor,
+            comparison,
+            currentDays,
+            currentSummary,
+            isSingleDay,
+            knownPlantRows,
+            knownPlantSummary,
+            loading,
+            mixerCountsByPlant,
+            plantNameByCode,
+            previousSummary,
+            range: range.current,
+            selectedPlant,
+            topCustomers,
+            topProducts,
+            trendComparison,
+            trendData
+        }
         if (activeSection === 'satisfaction') {
             return (
                 <PlanStatisticsSatisfactionPage
                     accentColor={accentColor}
                     aggregate={satisfactionAggregate}
-                    comparison={comparison}
-                    loading={satisfactionLoading}
+                    byWeekday={satisfactionByWeekday}
+                    loading={satisfactionLoading || loading}
+                    momentum={satisfactionMomentum}
+                    onSelectPlant={(code) => setSelectedPlant((current) => (current === code ? null : code))}
                     perPlant={perPlantSatisfaction}
                     plantNameByCode={plantNameByCode}
                     previousAggregate={previousSatisfactionAggregate}
                     range={range.current}
+                    selectedPlant={selectedPlant}
                     trend={satisfactionTrend}
+                    worstCustomers={satisfactionWorstCustomers}
+                    worstOrders={satisfactionWorstOrders}
                 />
             )
         }
-        if (!scheduleReady) return null
-        if (activeSection === 'yardage') {
-            return (
-                <PlanStatisticsYardagePage
-                    accentColor={accentColor}
-                    comparison={comparison}
-                    currentDays={currentDays}
-                    knownPlantRows={knownPlantRows}
-                    knownPlantSummary={knownPlantSummary}
-                    plantNameByCode={plantNameByCode}
-                    selectedPlant={selectedPlant}
-                    trendComparison={trendComparison}
-                    trendData={trendData}
-                />
-            )
-        }
-        if (activeSection === 'plants') {
-            return (
-                <PlanStatisticsPlantsPage
-                    accentColor={accentColor}
-                    currentDays={currentDays}
-                    currentSummary={currentSummary}
-                    isSingleDay={isSingleDay}
-                    knownPlantRows={knownPlantRows}
-                    knownPlantSummary={knownPlantSummary}
-                    mixerCountsByPlant={mixerCountsByPlant}
-                    plantNameByCode={plantNameByCode}
-                    previousSummary={previousSummary}
-                    selectedPlant={selectedPlant}
-                />
-            )
-        }
-        if (activeSection === 'customers') {
-            return (
-                <PlanStatisticsCustomersPage
-                    accentColor={accentColor}
-                    currentSummary={currentSummary}
-                    topCustomers={topCustomers}
-                    topProducts={topProducts}
-                />
-            )
-        }
-        if (activeSection === 'bigPours') {
-            return (
-                <PlanStatisticsBigPoursPage
-                    accentColor={accentColor}
-                    currentSummary={currentSummary}
-                    plantNameByCode={plantNameByCode}
-                />
-            )
-        }
+        if (activeSection === 'yardage') return <PlanStatisticsYardagePage {...commonProps} />
+        if (activeSection === 'plants') return <PlanStatisticsPlantsPage {...commonProps} />
+        if (activeSection === 'customers') return <PlanStatisticsCustomersPage {...commonProps} />
+        if (activeSection === 'bigPours') return <PlanStatisticsBigPoursPage {...commonProps} />
         // Overview is the default landing page.
         return (
             <PlanStatisticsOverviewPage
-                accentColor={accentColor}
-                comparison={comparison}
-                currentDays={currentDays}
-                currentSummary={currentSummary}
-                isSingleDay={isSingleDay}
-                knownPlantRows={knownPlantRows}
-                knownPlantSummary={knownPlantSummary}
-                mixerCountsByPlant={mixerCountsByPlant}
-                plantNameByCode={plantNameByCode}
-                previousSummary={previousSummary}
-                selectedPlant={selectedPlant}
-                topCustomers={topCustomers}
-                topProducts={topProducts}
-                trendComparison={trendComparison}
-                trendData={trendData}
+                {...commonProps}
+                onSelectSection={setActiveSection}
+                satisfactionAggregate={satisfactionAggregate}
+                satisfactionLoading={satisfactionLoading}
+                satisfactionWorstOrders={satisfactionWorstOrders}
             />
         )
     }
@@ -278,37 +252,6 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                                 {sectionMeta.description}
                             </span>
                         </div>
-
-                        {loading && (
-                            <div
-                                className="rounded px-4 py-3 flex items-center gap-2 text-xs"
-                                style={{
-                                    background: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-secondary)'
-                                }}
-                            >
-                                <i className="fas fa-spinner fa-spin" />
-                                Loading schedule data…
-                            </div>
-                        )}
-
-                        {showScheduleEmpty && (
-                            <div
-                                className="rounded p-8 text-center text-sm"
-                                style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-secondary)'
-                                }}
-                            >
-                                <i
-                                    className="fas fa-chart-line text-2xl mb-2 block"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                />
-                                No saved schedules in {fmtRange(range.current.start, range.current.end)}.
-                            </div>
-                        )}
 
                         {renderActiveSection()}
                     </div>

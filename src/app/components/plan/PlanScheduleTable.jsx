@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { getScheduleRowDelay } from '../../../utils/PlanScheduleUtility'
 import { timeToMinutes } from '../../../utils/PlanUtility'
 import OrderTicketsModal from '../schedule/OrderTicketsModal'
+import TruckCoverageHoverCard from '../schedule/TruckCoverageHoverCard'
 import PlanScheduleOrderRow from './PlanScheduleOrderRow'
 import {
     ClockInRow,
@@ -297,9 +298,12 @@ function useRowContextMenu() {
     return { openRowMenu, rowMenu, setRowMenu, setTicketsOrder, ticketsOrder }
 }
 
-/** Hover state for the truck-coverage card — open / cancel close / queue close. */
+/** Hover state for the truck-coverage side panel — tracks both the hovered
+ *  row key and the row's full payload so the panel can render outside the
+ *  row's stacking context. Close is queued (not immediate) so cursor can
+ *  move from the cell into the panel without flicker. */
 function useHoverModal() {
-    const [hoveredKey, setHoveredKey] = useState(null)
+    const [hoveredPayload, setHoveredPayload] = useState(null)
     const hoverCloseTimer = useRef(null)
     const cancelHoverClose = useCallback(() => {
         if (hoverCloseTimer.current) {
@@ -308,18 +312,18 @@ function useHoverModal() {
         }
     }, [])
     const openHover = useCallback(
-        (key) => {
+        (payload) => {
             cancelHoverClose()
-            setHoveredKey(key)
+            if (payload) setHoveredPayload(payload)
         },
         [cancelHoverClose]
     )
     const queueCloseHover = useCallback(() => {
         cancelHoverClose()
-        hoverCloseTimer.current = setTimeout(() => setHoveredKey(null), HOVER_CLOSE_DELAY_MS)
+        hoverCloseTimer.current = setTimeout(() => setHoveredPayload(null), HOVER_CLOSE_DELAY_MS)
     }, [cancelHoverClose])
     useEffect(() => () => cancelHoverClose(), [cancelHoverClose])
-    return { hoveredKey, openHover, queueCloseHover }
+    return { hoveredPayload, openHover, queueCloseHover }
 }
 
 /**
@@ -335,6 +339,7 @@ export default function PlanScheduleTable({
     getCloserPlantForOrder,
     getTravelOverrides,
     helpRows = [],
+    isMaximized = false,
     isPlantFiltered = false,
     isToday = false,
     keyForOrder,
@@ -352,7 +357,7 @@ export default function PlanScheduleTable({
     suggestedSlotRows = []
 }) {
     const { openRowMenu, rowMenu, setRowMenu, setTicketsOrder, ticketsOrder } = useRowContextMenu()
-    const { hoveredKey, openHover, queueCloseHover } = useHoverModal()
+    const { hoveredPayload, openHover, queueCloseHover } = useHoverModal()
 
     // Synthetic rows require a plant filter AND the toggle to be on — both
     // gates collapse into one effective flag for the rest of the component.
@@ -427,144 +432,153 @@ export default function PlanScheduleTable({
     )
 
     return (
-        <div
-            className="rounded-xl overflow-auto"
-            style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                // Give the table its own scroll viewport so the header can
-                // actually stick when the dispatcher scrolls through a long
-                // schedule. Height is capped to "viewport minus surrounding
-                // chrome" (page nav, title, KPIs, filters) so the sticky
-                // header pins within the table, not within a container that
-                // itself scrolls out of view.
-                maxHeight: 'calc(100vh - 260px)'
-            }}
-        >
-            <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
-                <thead>
-                    <tr>
-                        {TABLE_HEADERS.map((h) => (
-                            <th
-                                key={h}
-                                className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
-                                style={{
-                                    background: 'var(--bg-tertiary)',
-                                    borderBottom: '1px solid var(--border-light)',
-                                    boxShadow: '0 1px 0 0 var(--border-light)',
-                                    color: 'var(--text-secondary)',
-                                    position: 'sticky',
-                                    top: 0,
-                                    zIndex: 10
-                                }}
-                            >
-                                {h}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {tableRows.map((row, idx) => {
-                        const animationDelayMs = getScheduleRowDelay(idx)
-                        const sharedProps = { accentColor, animationDelayMs, plantNameByCode, row }
-                        switch (row.kind) {
-                            case 'return':
-                                return (
-                                    <ReturnRow
-                                        key={`return-${keyForOrder(row.order)}-${row.returnIndex ?? 0}`}
-                                        {...sharedProps}
-                                    />
-                                )
-                            case 'tradeoff':
-                                return <TradeoffRow key={`tradeoff-${row.tradeoffKey}`} {...sharedProps} />
-                            case 'slot':
-                                return <SlotRow key={`slot-${row.slotKey}`} {...sharedProps} />
-                            case 'pullUp':
-                                return <PullUpRow key={`pull-up-${row.pullUpKey}`} {...sharedProps} />
-                            case 'clockIn':
-                                return <ClockInRow key={`clock-in-${row.clockInKey}`} {...sharedProps} />
-                            case 'sendHome':
-                                return <SendHomeRow key={`send-home-${row.sendHomeKey}`} {...sharedProps} />
-                            case 'help':
-                                return <HelpRow key={`help-${row.helpKey}`} {...sharedProps} />
-                            default: {
-                                const o = row.order
-                                const rowKey = keyForOrder(o)
-                                return (
-                                    <PlanScheduleOrderRow
-                                        key={`${o.plantCode}-${o.orderId || idx}`}
-                                        accentColor={accentColor}
-                                        animationDelayMs={animationDelayMs}
-                                        detail={o.orderId ? detailByOrderId[o.orderId] : null}
-                                        getCloserPlantForOrder={getCloserPlantForOrder}
-                                        hoveredKey={hoveredKey}
-                                        isToday={isToday}
-                                        nowMin={nowMin}
-                                        onContextMenu={(e) => openRowMenu(e, o)}
-                                        onHoverEnter={() => openHover(rowKey)}
-                                        onHoverLeave={queueCloseHover}
-                                        onOpenLocation={onOpenLocation}
-                                        order={o}
-                                        plantCityByCode={plantCityByCode}
-                                        plantNameByCode={plantNameByCode}
-                                        poolSourceByCode={poolSourceByCode}
-                                        poolTimeline={poolTimeline}
-                                        poolTimelinesByPlant={poolTimelinesByPlant}
-                                        rowKey={rowKey}
-                                        travelOverrides={getTravelOverrides ? getTravelOverrides(o) : undefined}
-                                    />
-                                )
+        <div className="relative">
+            <div
+                className="rounded-xl overflow-auto"
+                style={{
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-light)',
+                    // Give the table its own scroll viewport so the header can
+                    // actually stick when the dispatcher scrolls through a long
+                    // schedule. Height is capped to "viewport minus surrounding
+                    // chrome" (page nav, title, KPIs, filters) so the sticky
+                    // header pins within the table, not within a container that
+                    // itself scrolls out of view. Maximized mode hides most of
+                    // that chrome, so the budget shrinks accordingly.
+                    maxHeight: `calc(100vh - ${isMaximized ? 150 : 260}px)`
+                }}
+            >
+                <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
+                    <thead>
+                        <tr>
+                            {TABLE_HEADERS.map((h) => (
+                                <th
+                                    key={h}
+                                    className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
+                                    style={{
+                                        background: 'var(--bg-tertiary)',
+                                        borderBottom: '1px solid var(--border-light)',
+                                        boxShadow: '0 1px 0 0 var(--border-light)',
+                                        color: 'var(--text-secondary)',
+                                        position: 'sticky',
+                                        top: 0,
+                                        zIndex: 10
+                                    }}
+                                >
+                                    {h}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {tableRows.map((row, idx) => {
+                            const animationDelayMs = getScheduleRowDelay(idx)
+                            const sharedProps = { accentColor, animationDelayMs, plantNameByCode, row }
+                            switch (row.kind) {
+                                case 'return':
+                                    return (
+                                        <ReturnRow
+                                            key={`return-${keyForOrder(row.order)}-${row.returnIndex ?? 0}`}
+                                            {...sharedProps}
+                                        />
+                                    )
+                                case 'tradeoff':
+                                    return <TradeoffRow key={`tradeoff-${row.tradeoffKey}`} {...sharedProps} />
+                                case 'slot':
+                                    return <SlotRow key={`slot-${row.slotKey}`} {...sharedProps} />
+                                case 'pullUp':
+                                    return <PullUpRow key={`pull-up-${row.pullUpKey}`} {...sharedProps} />
+                                case 'clockIn':
+                                    return <ClockInRow key={`clock-in-${row.clockInKey}`} {...sharedProps} />
+                                case 'sendHome':
+                                    return <SendHomeRow key={`send-home-${row.sendHomeKey}`} {...sharedProps} />
+                                case 'help':
+                                    return <HelpRow key={`help-${row.helpKey}`} {...sharedProps} />
+                                default: {
+                                    const o = row.order
+                                    const rowKey = keyForOrder(o)
+                                    return (
+                                        <PlanScheduleOrderRow
+                                            key={`${o.plantCode}-${o.orderId || idx}`}
+                                            accentColor={accentColor}
+                                            animationDelayMs={animationDelayMs}
+                                            detail={o.orderId ? detailByOrderId[o.orderId] : null}
+                                            getCloserPlantForOrder={getCloserPlantForOrder}
+                                            isToday={isToday}
+                                            nowMin={nowMin}
+                                            onContextMenu={(e) => openRowMenu(e, o)}
+                                            onHoverEnter={openHover}
+                                            onHoverLeave={queueCloseHover}
+                                            onOpenLocation={onOpenLocation}
+                                            order={o}
+                                            plantCityByCode={plantCityByCode}
+                                            plantNameByCode={plantNameByCode}
+                                            poolSourceByCode={poolSourceByCode}
+                                            poolTimeline={poolTimeline}
+                                            poolTimelinesByPlant={poolTimelinesByPlant}
+                                            rowKey={rowKey}
+                                            travelOverrides={getTravelOverrides ? getTravelOverrides(o) : undefined}
+                                        />
+                                    )
+                                }
                             }
-                        }
-                    })}
-                </tbody>
-            </table>
-            {rowMenu &&
-                createPortal(
-                    <div
-                        // The menu lives inside a portal at fixed coords so it
-                        // can't be clipped by the schedule's scroll container,
-                        // and clicking outside the menu (the global click
-                        // listener registered above) dismisses it.
-                        // stopPropagation on the menu itself keeps clicks
-                        // INSIDE from dismissing.
-                        onClick={(e) => e.stopPropagation()}
-                        onContextMenu={(e) => e.preventDefault()}
-                        className="rounded-md py-1 min-w-[180px]"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border-light)',
-                            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
-                            left: Math.min(rowMenu.x, window.innerWidth - 200),
-                            position: 'fixed',
-                            top: Math.min(rowMenu.y, window.innerHeight - 80),
-                            zIndex: 9999
-                        }}
-                    >
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setTicketsOrder(rowMenu.order)
-                                setRowMenu(null)
+                        })}
+                    </tbody>
+                </table>
+                {rowMenu &&
+                    createPortal(
+                        <div
+                            // The menu lives inside a portal at fixed coords so it
+                            // can't be clipped by the schedule's scroll container,
+                            // and clicking outside the menu (the global click
+                            // listener registered above) dismisses it.
+                            // stopPropagation on the menu itself keeps clicks
+                            // INSIDE from dismissing.
+                            onClick={(e) => e.stopPropagation()}
+                            onContextMenu={(e) => e.preventDefault()}
+                            className="rounded-md py-1 min-w-[180px]"
+                            style={{
+                                background: 'var(--bg-primary)',
+                                border: '1px solid var(--border-light)',
+                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
+                                left: Math.min(rowMenu.x, window.innerWidth - 200),
+                                position: 'fixed',
+                                top: Math.min(rowMenu.y, window.innerHeight - 80),
+                                zIndex: 9999
                             }}
-                            className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)]"
-                            style={{ color: 'var(--text-primary)' }}
                         >
-                            <i className="fas fa-ticket text-[12px]" style={{ color: 'var(--text-tertiary)' }} />
-                            View tickets
-                        </button>
-                    </div>,
-                    document.body
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setTicketsOrder(rowMenu.order)
+                                    setRowMenu(null)
+                                }}
+                                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)]"
+                                style={{ color: 'var(--text-primary)' }}
+                            >
+                                <i className="fas fa-ticket text-[12px]" style={{ color: 'var(--text-tertiary)' }} />
+                                View tickets
+                            </button>
+                        </div>,
+                        document.body
+                    )}
+                {ticketsOrder && (
+                    <OrderTicketsModal
+                        accentColor={accentColor}
+                        detail={ticketsOrder.orderId ? detailByOrderId[ticketsOrder.orderId] : null}
+                        onClose={() => setTicketsOrder(null)}
+                        order={ticketsOrder}
+                        plantNameByCode={plantNameByCode}
+                    />
                 )}
-            {ticketsOrder && (
-                <OrderTicketsModal
-                    accentColor={accentColor}
-                    detail={ticketsOrder.orderId ? detailByOrderId[ticketsOrder.orderId] : null}
-                    onClose={() => setTicketsOrder(null)}
-                    order={ticketsOrder}
-                    plantNameByCode={plantNameByCode}
-                />
-            )}
+            </div>
+            <TruckCoverageHoverCard
+                accentColor={accentColor}
+                isOpen={!!hoveredPayload}
+                onMouseEnter={() => openHover(hoveredPayload)}
+                onMouseLeave={queueCloseHover}
+                payload={hoveredPayload}
+            />
         </div>
     )
 }

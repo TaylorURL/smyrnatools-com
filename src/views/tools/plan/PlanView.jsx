@@ -46,6 +46,14 @@ function PlanView() {
     const effectiveViewMode = isMobile ? 'schedule' : viewMode
     const { planDate, setPlanDate } = usePlanDate(effectiveViewMode)
 
+    /* Schedule tab's "maximize" toggle lives here so it survives the data
+     * skeleton swap. On a date change `usePlanData` flips `isLoading` true,
+     * which routes the body to `PlanTabSkeleton` and unmounts the Schedule
+     * view — when state lived inside the view, that unmount silently dropped
+     * the maximized flag back to false. Lifted up, it persists across both
+     * date changes and tab switches. */
+    const [isScheduleMaximized, setIsScheduleMaximized] = useState(false)
+
     // `startTransition` marks the tab swap as low-priority. The current tab
     // stays visible and interactive while React renders the new tab in the
     // background — without this, the Schedule tab's heavy useMemos (table
@@ -70,7 +78,9 @@ function PlanView() {
         adjacentProduction,
         assignments,
         canEdit,
+        detailByOrderId,
         getTravelTime,
+        isDetailOrdersLoading,
         isLoading,
         isSchedulesSyncing,
         mixerCountsByPlant,
@@ -166,17 +176,21 @@ function PlanView() {
                 style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
             >
                 {/* Show the skeleton through the WHOLE bootstrap, not just
-                    the plants-list fetch. `isLoading` flips false as soon as
-                    plants land, but plantProduction (the schedule HTML
-                    parse) lands a beat later — and when it does, the heavy
-                    useMemos in the tab views fire at once and freeze the
-                    page. Holding the skeleton until either we have parsed
-                    schedule data OR the initial sync has finished gives the
-                    browser something to paint while that work happens. */}
+                    the plants-list fetch. We hold until:
+                      • plants list loads (`isLoading`)
+                      • the initial schedule sync resolves (or schedule data
+                        is already on screen — late background syncs don't
+                        re-trigger the skeleton)
+                      • the first ticket-detail fetch resolves so cards that
+                        depend on ticket data don't pop in after the layout
+                        already painted.
+                    Each gate clears as soon as that data type lands, so a
+                    date with genuinely no schedule / no tickets still drops
+                    the skeleton in well under a second. */}
                 {(() => {
                     const productionKeys = Object.keys(plantProduction || {}).filter((k) => k !== PLAN_META_KEY)
                     const hasScheduleData = productionKeys.length > 0
-                    return isLoading || (isSchedulesSyncing && !hasScheduleData)
+                    return isLoading || (isSchedulesSyncing && !hasScheduleData) || isDetailOrdersLoading
                 })() ? (
                     <PlanTabSkeleton mode={effectiveViewMode} />
                 ) : (
@@ -247,8 +261,11 @@ function PlanView() {
                                 accentColor={accentColor}
                                 adjacentProduction={adjacentProduction}
                                 assignments={assignments}
+                                detailByOrderId={detailByOrderId}
                                 getTravelTime={getTravelTime}
+                                isMaximized={isScheduleMaximized}
                                 isMobile={isMobile}
+                                onChangeMaximized={setIsScheduleMaximized}
                                 onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
                                 planDate={planDate}
                                 plantAddressByCode={plantAddressByCode}
@@ -276,6 +293,7 @@ function PlanView() {
                                 accentColor={accentColor}
                                 assignments={assignments}
                                 defaultPlantCode={hasDefaultPlantPermission ? userPlantCode : ''}
+                                detailByOrderId={detailByOrderId}
                                 planDate={planDate}
                                 plantNameByCode={plantNameByCode}
                                 plantProduction={plantProduction}

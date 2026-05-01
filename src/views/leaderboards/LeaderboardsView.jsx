@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-import EfficiencyInfoCard from '../../../app/components/leaderboards/EfficiencyInfoCard'
-import HelpDetailsModal from '../../../app/components/leaderboards/HelpDetailsModal'
-import LeaderboardCategorySelector from '../../../app/components/leaderboards/LeaderboardCategorySelector'
-import LeaderboardItem, { LeaderboardSkeleton } from '../../../app/components/leaderboards/LeaderboardItem'
-import EmptyState from '../../../app/components/ui/EmptyState'
-import YearSelector from '../../../app/components/ui/YearSelector'
-import { usePreferences } from '../../../app/context/PreferencesContext'
-import { useIsMobile } from '../../../app/hooks/useIsMobile'
-import { useLeaderboardData } from '../../../app/hooks/useLeaderboardData'
-import LeaderboardsUtility from '../../../utils/LeaderboardsUtility'
+import EfficiencyInfoCard from '../../app/components/leaderboards/EfficiencyInfoCard'
+import HelpDetailsModal from '../../app/components/leaderboards/HelpDetailsModal'
+import LeaderboardCategorySelector from '../../app/components/leaderboards/LeaderboardCategorySelector'
+import LeaderboardItem, { LeaderboardSkeleton } from '../../app/components/leaderboards/LeaderboardItem'
+import EmptyState from '../../app/components/ui/EmptyState'
+import YearSelector from '../../app/components/ui/YearSelector'
+import { usePreferences } from '../../app/context/PreferencesContext'
+import { useIsMobile } from '../../app/hooks/useIsMobile'
+import { useLeaderboardData } from '../../app/hooks/useLeaderboardData'
+import LeaderboardsUtility from '../../utils/LeaderboardsUtility'
 
 const CURRENT_YEAR = new Date().getFullYear()
 const SKELETON_COUNT = 5

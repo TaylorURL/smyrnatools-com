@@ -321,14 +321,30 @@ Deno.serve(async (req: Request) => {
             }
         }
         if (ticketRows.length) {
+            // Dedupe by (order_id, ticket_num) — when the same driver HTML
+            // got uploaded for every plant (a known bridge bug we see in
+            // the bucket: 14 plant-named files with identical content), the
+            // per-plant fan-out above produces up to 14 copies of every
+            // ticket. Postgres rejects ON CONFLICT batches that touch the
+            // same row twice, so we collapse the duplicates here. Keep the
+            // first occurrence — the ticket payload is identical across
+            // duplicates, only the iterating plantId fallback may differ
+            // and we don't want it to overwrite a real DetailOrderAnalysis
+            // plant code from a previous pass.
+            const dedupedMap = new Map<string, Record<string, unknown>>()
+            for (const row of ticketRows) {
+                const key = `${row.order_id}|${row.ticket_num}`
+                if (!dedupedMap.has(key)) dedupedMap.set(key, row)
+            }
+            const dedupedRows = Array.from(dedupedMap.values())
             // Note: when both DetailOrderAnalysis AND DetailDriver have the
             // The dispatch_upsert_data RPC handles the conditional merge:
             // DetailDriver's load_size estimate fills in only when the
             // existing quantity is null, so a real DetailOrderAnalysis
             // value never gets clobbered by an estimate.
-            const { error } = await supabase.rpc('dispatch_upsert_data', { rows: ticketRows })
+            const { error } = await supabase.rpc('dispatch_upsert_data', { rows: dedupedRows })
             if (error) result.errors.push(`DetailDriver upsert: ${error.message}`)
-            else result.rowsUpserted += ticketRows.length
+            else result.rowsUpserted += dedupedRows.length
         }
     }
 

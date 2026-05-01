@@ -69,6 +69,38 @@ const ALL_DIGITS_RE = /^\d+$/
 const cleanTime = (t: string): string => (HHMM_RE.test((t || '').trim()) ? t.trim() : '')
 const cleanIdentifier = (t: string): string => (ALL_DIGITS_RE.test((t || '').trim()) ? t.trim() : '')
 
+// FastReport occasionally splits a numeric cell across two stacked divs at
+// the same left position — e.g. "8528" rendered as "85" on one div and "28"
+// on another a few px below. Single-cell lookup grabs only one fragment,
+// which is why truck numbers sometimes show up as "28" or as "—" when no
+// fragment lands inside the standard row tolerance. This helper widens the
+// row tolerance, gathers every digit-only fragment at the column, and
+// concatenates them top-to-bottom to reassemble the original value.
+const findIdentifierAt = (
+    cells: PositionedDiv[],
+    targetLeft: number,
+    targetTop: number,
+    leftTol = COLUMN_TOL,
+    topTol = ROW_TOL * 2,
+    page: Element | null = null
+): string => {
+    const matches: PositionedDiv[] = []
+    for (const d of cells) {
+        if (page && d.page !== page) continue
+        if (Math.abs(d.left - targetLeft) > leftTol) continue
+        if (Math.abs(d.top - targetTop) > topTol) continue
+        if (!ALL_DIGITS_RE.test(d.text.trim())) continue
+        matches.push(d)
+    }
+    if (matches.length === 0) return ''
+    if (matches.length === 1) return matches[0].text.trim()
+    return matches
+        .slice()
+        .sort((a, b) => a.top - b.top)
+        .map((m) => m.text.trim())
+        .join('')
+}
+
 const normalizeDispatchPlantCode = (code: string): string => {
     const c = String(code || '').trim()
     if (!c) return ''
@@ -439,7 +471,7 @@ export function parseDetailOrderHtml(htmlString: string): DetailTicketRecord[] {
             const ticketPage = getPageWrapper(ticketAnchor)
 
             const truckNum = ticketTop != null
-                ? cleanIdentifier(findCellText(cells, DETAIL_TRUCK_LEFT, ticketTop, 6, ROW_TOL, ticketPage))
+                ? findIdentifierAt(cells, DETAIL_TRUCK_LEFT, ticketTop, 6, ROW_TOL * 2, ticketPage)
                 : ''
             const driverNum = ticketTop != null
                 ? cleanIdentifier(findCellText(cells, DETAIL_DRIVER_LEFT, ticketTop, 6, ROW_TOL, ticketPage))
@@ -584,6 +616,35 @@ export function parseDetailDriverHtml(
         return ''
     }
 
+    // Like findNearby, but gathers every digit-only fragment at the column
+    // within a widened row tolerance and concatenates them top-to-bottom —
+    // recovers truck numbers FastReport split across stacked divs (e.g.
+    // "8528" → "85" + "28").
+    const collectIdentifierNearby = (
+        anchorIdx: number,
+        targetLeft: number,
+        targetTop: number,
+        leftTol: number,
+        topTol = ROW_TOL * 2,
+        windowSize = 60
+    ): string => {
+        const lo = Math.max(0, anchorIdx - windowSize)
+        const hi = Math.min(cells.length, anchorIdx + windowSize)
+        const matches: { top: number; text: string }[] = []
+        for (let i = lo; i < hi; i++) {
+            const c = cells[i]
+            if (Math.abs(c.left - targetLeft) > leftTol) continue
+            if (Math.abs(c.top - targetTop) > topTol) continue
+            const t = c.text.trim()
+            if (!ALL_DIGITS_RE.test(t)) continue
+            matches.push({ top: c.top, text: t })
+        }
+        if (matches.length === 0) return ''
+        if (matches.length === 1) return matches[0].text
+        matches.sort((a, b) => a.top - b.top)
+        return matches.map((m) => m.text).join('')
+    }
+
     const tickets: DetailDriverRecord[] = []
     const seen = new Set<string>()
     let currentDriverNum = ''
@@ -614,7 +675,7 @@ export function parseDetailDriverHtml(
         if (seen.has(ticketNum)) continue
         seen.add(ticketNum)
 
-        const truckNum = cleanIdentifier(findNearby(i, DD_TRUCK_NUM_LEFT, cell.top, COLUMN_TOL))
+        const truckNum = collectIdentifierNearby(i, DD_TRUCK_NUM_LEFT, cell.top, COLUMN_TOL)
         const orderNum = cleanIdentifier(findNearby(i, DD_ORDER_NUM_LEFT, cell.top, COLUMN_TOL))
         const customer = findNearby(i, DD_CUSTOMER_LEFT, cell.top, 8).trim()
         const timesTop = cell.top + DD_TIMES_ROW_OFFSET

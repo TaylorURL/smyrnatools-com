@@ -1286,8 +1286,6 @@ const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
 
 export const computeCustomerSatisfaction = (orders, detailByOrderId) => {
     if (!Array.isArray(orders) || !orders.length) return null
-    let weightedSum = 0
-    let totalWeight = 0
     let samples = 0
     let badService = 0
 
@@ -1314,25 +1312,25 @@ export const computeCustomerSatisfaction = (orders, detailByOrderId) => {
         const overTime = Math.max(0, actualDuration - expectedDuration)
         const paceToleranceMin = Math.max(spacing, 5)
         const paceScore = expectedDuration === 0 ? 1 : clamp01(1 - overTime / Math.max(paceToleranceMin * 2, 1))
-
         const startLateness = Number.isFinite(startMin) ? Math.max(0, firstLoad - startMin) : 0
-        const onTimeScore = clamp01(1 - startLateness / CUSTOMER_SAT_LATE_WINDOW_MIN)
 
-        const orderScore = CUSTOMER_SAT_PACE_WEIGHT * paceScore + CUSTOMER_SAT_ONTIME_WEIGHT * onTimeScore
-
-        const weight = totalYardage > 0 ? totalYardage : 1
-        weightedSum += orderScore * weight
-        totalWeight += weight
+        // Per-order verdict: an order is "bad" if dispatch was late starting
+        // (>15 min past the scheduled start) OR if the truck cadence slowed
+        // far enough below schedule that the customer noticed (paceScore <
+        // 0.7). No partial credit, no weighted blend — every order is just
+        // good or bad. The aggregate `score` is the ratio of good orders to
+        // total scored orders.
         samples += 1
         const isBad = startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN || paceScore < BAD_SERVICE_PACE_THRESHOLD
         if (isBad) badService += 1
     })
 
-    if (totalWeight === 0) return null
+    if (samples === 0) return null
+    const goodService = samples - badService
     return {
         badService,
-        goodService: samples - badService,
+        goodService,
         samples,
-        score: weightedSum / totalWeight
+        score: goodService / samples
     }
 }

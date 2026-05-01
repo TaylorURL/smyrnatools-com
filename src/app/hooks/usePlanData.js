@@ -6,6 +6,7 @@ import { ReportService } from '../../services/ReportService'
 import { UserService } from '../../services/UserService'
 import { AUTOSAVE_DELAY_MS, createEmptyAssignment, ensureUniqueIds, getOffsetDate } from '../../utils/PlanUtility'
 import { usePreferences } from '../context/PreferencesContext'
+import { useDetailOrders } from './useDetailOrders'
 import { useRealtimeSubscription } from './useRealtimeSubscription'
 import { useScheduleSync } from './useScheduleSync'
 
@@ -273,13 +274,20 @@ export function usePlanData(planDate) {
         enabled: !isLoading && plants.length > 0
     })
 
+    // Detail (ticket-level) orders are fetched once at this level so every
+    // downstream tab (Schedule, Realtime, Statistics) sees the same map and
+    // PlanView can hold its skeleton until tickets actually land.
+    const { detailByOrderId, isLoading: isDetailOrdersLoading } = useDetailOrders(planDate)
+
     return {
         adjacentPlans,
         adjacentProduction,
         assignments,
         canEdit,
+        detailByOrderId,
         dirtyRef,
         getTravelTime,
+        isDetailOrdersLoading,
         isLoading,
         isSchedulesSyncing,
         mixerCountsByPlant,

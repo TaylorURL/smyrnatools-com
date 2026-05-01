@@ -14,9 +14,14 @@ const INITIAL_RETRY_DELAYS_MS = [1500, 4000, 10_000, 30_000]
  *   2. Realtime postgres_changes on dispatch_data (debounced).
  *   3. 5-minute safety interval.
  *
- * Returns the same `{ [orderId]: { tickets, byPlant, loadedYardage, … } }`
- * shape useDetailOrders has always returned, so existing callers don't
- * need to change.
+ * Returns `{ detailByOrderId, isLoading }`:
+ *   - `detailByOrderId`: `{ [orderId]: { tickets, byPlant, loadedYardage, … } }`
+ *     — same shape as before so existing callers can `.detailByOrderId` it.
+ *   - `isLoading`: `true` until the very first fetch resolves (success OR
+ *     failure). Lets the page-level skeleton hold until ticket data is
+ *     actually in (or has been determined to be absent for the date) — we
+ *     do NOT keep `isLoading` true through the retry ladder, because a
+ *     date that genuinely has no tickets would otherwise block forever.
  *
  * NOTE: `plantProduction` is no longer needed for the join — the importer
  * does the (orderNum, customer) → orderId resolution server-side and
@@ -25,6 +30,7 @@ const INITIAL_RETRY_DELAYS_MS = [1500, 4000, 10_000, 30_000]
  */
 export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
     const [detailByOrderId, setDetailByOrderId] = useState({})
+    const [isLoading, setIsLoading] = useState(true)
     const cancelledRef = useRef(false)
     const dateRef = useRef(dateStr)
     dateRef.current = dateStr
@@ -35,9 +41,11 @@ export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
         cancelledRef.current = false
         retryTimersRef.current.forEach(clearTimeout)
         retryTimersRef.current = []
+        setIsLoading(true)
 
         if (!dateStr) {
             setDetailByOrderId({})
+            setIsLoading(false)
             return undefined
         }
 
@@ -56,6 +64,10 @@ export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
 
         const runWithRetries = async () => {
             const ok = await fetchAndStore()
+            // First attempt resolved — release the page-level skeleton even
+            // if we got nothing. Background retries keep running to catch
+            // late uploads but don't gate the UI any longer.
+            if (!cancelledRef.current) setIsLoading(false)
             if (ok || cancelledRef.current) return
             INITIAL_RETRY_DELAYS_MS.forEach((delay, idx) => {
                 const timer = setTimeout(async () => {
@@ -113,5 +125,5 @@ export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
         }
     }, [dateStr])
 
-    return detailByOrderId
+    return { detailByOrderId, isLoading }
 }

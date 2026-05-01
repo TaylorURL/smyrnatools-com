@@ -568,6 +568,12 @@ export const aggregateMetrics = (days) => {
  * Pad missing dates with zero-rows so the trend chart shows the full window.
  * Skips Sundays since plants are closed and we don't surface them anywhere
  * else on the page.
+ *
+ * Future dates are clamped to today — there's no schedule data past the
+ * current day yet, so padding them as zero rows makes the chart look like
+ * production fell off a cliff (and shows future days the user can't act
+ * on). Clamping yields a chart that ends at "today" or, for past windows,
+ * at the actual range end.
  */
 export const padTrend = (start, end, sourceDays) => {
     const map = new Map(sourceDays.map((p) => [p.planDate, p]))
@@ -575,14 +581,22 @@ export const padTrend = (start, end, sourceDays) => {
     const cursor = parseIsoLocal(start)
     const endDate = parseIsoLocal(end)
     if (!cursor || !endDate) return sourceDays
-    while (cursor <= endDate) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const effectiveEnd = endDate > today ? today : endDate
+    if (cursor > effectiveEnd) return []
+    while (cursor <= effectiveEnd) {
         if (cursor.getDay() !== 0) {
             const iso = isoDate(cursor)
             const row = map.get(iso)
+            // Days without a saved plan render as null so the line chart
+            // draws a gap there instead of dropping to 0 (which reads as
+            // "we shut down that day"). Days that exist with zero yardage
+            // still render as 0.
             out.push({
                 planDate: iso,
-                totalLoads: row?.totalLoads || 0,
-                totalYardage: row?.totalYardage || 0
+                totalLoads: row ? row.totalLoads || 0 : null,
+                totalYardage: row ? row.totalYardage || 0 : null
             })
         }
         cursor.setDate(cursor.getDate() + 1)
@@ -603,6 +617,28 @@ export const countWorkingDays = (startIso, endIso) => {
         cursor.setDate(cursor.getDate() + 1)
     }
     return count
+}
+
+/** Enumerate every working-day ISO date (Sundays skipped) inside the
+ *  inclusive range. Used by the Statistics hook to figure out which dates
+ *  need to be backfilled from `dispatch_data` because no `plans` row was
+ *  ever saved for them. */
+export const listWorkingDaysInRange = (startIso, endIso) => {
+    const start = parseIsoLocal(startIso)
+    const end = parseIsoLocal(endIso)
+    if (!start || !end) return []
+    const out = []
+    const cursor = new Date(start)
+    while (cursor <= end) {
+        if (cursor.getDay() !== 0) {
+            const y = cursor.getFullYear()
+            const m = String(cursor.getMonth() + 1).padStart(2, '0')
+            const d = String(cursor.getDate()).padStart(2, '0')
+            out.push(`${y}-${m}-${d}`)
+        }
+        cursor.setDate(cursor.getDate() + 1)
+    }
+    return out
 }
 
 /**

@@ -14,7 +14,6 @@ import {
     getCalculatedTruckCount,
     isBigPourOrder
 } from '../../../utils/PlanUtility'
-import TruckCoverageHoverCard from '../schedule/TruckCoverageHoverCard'
 import { OrderStatusBadge, PlantBadge, ServiceBadge } from './PlanScheduleBadges'
 import PlanScheduleLoadedCell from './PlanScheduleLoadedCell'
 
@@ -72,7 +71,7 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
                 <button
                     type="button"
                     onClick={() => onOpenLocation?.(orderForMap)}
-                    className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 font-semibold"
+                    className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 font-semibold uppercase tracking-wide"
                     style={{ color: 'var(--text-primary)', fontSize: 12 }}
                     title={`Open map for ${composeAddress(orderForMap)}`}
                 >
@@ -105,11 +104,10 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
 }
 
 /** Trucks cell — shows the canonical computed truck count, the trailing pool
- *  pill colored by margin, the "Needs Help" warning, and the truck-coverage
- *  hover card portal anchored to this cell. */
+ *  pill colored by margin, and the "Needs Help" warning. The full coverage
+ *  detail is rendered by the table-level slide-in side panel; this cell just
+ *  publishes its current payload upstream on hover. */
 function TrucksCell({
-    accentColor,
-    hoveredKey,
     isNonProduction,
     onHoverEnter,
     onHoverLeave,
@@ -159,12 +157,33 @@ function TrucksCell({
     // Estimate realistic timing for late orders — first truck arrival, estimated
     // completion, and delay in minutes.
     const timing = overbooked && poolEntry ? estimateOrderTiming(order, poolEntry, travelOverrides) : null
-    const isHovered = hoveredKey === rowKey
+    const buildPayload = () => ({
+        bigPour: isBigPourOrder(order),
+        computed,
+        customer: clean(order.customer),
+        differsFromDispatch,
+        dispatchTrucks,
+        helpInWindow,
+        kickerBigPourActive: !!poolEntry?.kickerBigPourActive,
+        kickerHeld: poolEntry?.kickerHeldAtDispatch || 0,
+        liveTravel: !!travelOverrides,
+        orderNum: order.orderNum,
+        overbooked,
+        plantCode: order.plantCode,
+        poolAfter,
+        poolAfterEffective,
+        poolAtStart,
+        poolSource,
+        recommendedMoveTime,
+        rowKey,
+        timing,
+        yardage
+    })
     return (
         <td
             className="px-3 py-2 font-mono text-right whitespace-nowrap"
             style={{ color: 'var(--text-secondary)', position: 'relative' }}
-            onMouseEnter={onHoverEnter}
+            onMouseEnter={() => onHoverEnter?.(buildPayload())}
             onMouseLeave={onHoverLeave}
         >
             <div className="flex flex-col items-end gap-0.5">
@@ -214,32 +233,6 @@ function TrucksCell({
                     </span>
                 )}
             </div>
-            {isHovered && (
-                <TruckCoverageHoverCard
-                    accentColor={accentColor}
-                    bigPour={isBigPourOrder(order)}
-                    computed={computed}
-                    customer={clean(order.customer)}
-                    differsFromDispatch={differsFromDispatch}
-                    dispatchTrucks={dispatchTrucks}
-                    helpInWindow={helpInWindow}
-                    kickerBigPourActive={!!poolEntry?.kickerBigPourActive}
-                    kickerHeld={poolEntry?.kickerHeldAtDispatch || 0}
-                    liveTravel={!!travelOverrides}
-                    onMouseEnter={onHoverEnter}
-                    onMouseLeave={onHoverLeave}
-                    orderNum={order.orderNum}
-                    overbooked={overbooked}
-                    plantCode={order.plantCode}
-                    poolAfter={poolAfter}
-                    poolAfterEffective={poolAfterEffective}
-                    poolAtStart={poolAtStart}
-                    poolSource={poolSource}
-                    recommendedMoveTime={recommendedMoveTime}
-                    timing={timing}
-                    yardage={yardage}
-                />
-            )}
         </td>
     )
 }
@@ -254,7 +247,6 @@ export default function PlanScheduleOrderRow({
     animationDelayMs,
     detail,
     getCloserPlantForOrder,
-    hoveredKey,
     isToday,
     nowMin,
     onContextMenu,
@@ -355,8 +347,6 @@ export default function PlanScheduleOrderRow({
                 {loadSize > 0 ? loadSize : '—'}
             </td>
             <TrucksCell
-                accentColor={accentColor}
-                hoveredKey={hoveredKey}
                 isNonProduction={isNonProduction}
                 onHoverEnter={onHoverEnter}
                 onHoverLeave={onHoverLeave}

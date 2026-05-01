@@ -110,11 +110,15 @@ function ExtrasToggleButton({ accentColor, active, disabled, onClick, plantNotSe
  * Compact icon rail (desktop) / inline pill cluster (mobile) hosting
  * per-plant quick actions: a colored plant-scope chip, copy the operator
  * roster, and toggle the synthetic schedule rows. Always minimized — labels
- * live in tooltips and short legends so the rail takes minimal horizontal /
- * vertical space and never crowds the schedule.
+ * live in tooltips so the rail takes minimal space and never crowds the
+ * schedule.
  *
- * The same JSX backs the desktop sticky rail and the mobile horizontal
- * cluster — `direction` flips the flex layout.
+ * Desktop renders the rail as a floating overlay anchored to the top-left
+ * of the schedule area (handled by the wrapper in PlanScheduleView), so it
+ * never reserves horizontal space.
+ *
+ * The same JSX backs the desktop column and the mobile horizontal cluster
+ * — `direction` flips the flex layout.
  */
 export default function PlanScheduleSideRail({
     accentColor,

@@ -13,14 +13,22 @@ import { TrafficService } from '../../services/TrafficService'
  * identify the pair (e.g. `${plantCode}::${jobAddress}`); callers reuse it
  * to look up the result via `getMinutes(key)`.
  *
- * IMPORTANT — this hook used to depend on its own state in the effect's
- * dependency array, which produced a runaway loop: every `setMinutesByKey`
- * write re-ran the effect, and any pair whose Promise was still in flight
- * (no state row yet) would re-enter `pending` and fire a duplicate fetch.
- * On a 350-pair prefetch that compounds to hundreds of thousands of
- * in-flight fetches and OOMs the browser tab. The fix tracks in-flight
- * keys in a ref so duplicate fetches are filtered out without needing the
- * effect to re-read its own state.
+ * Two anti-thrash safeguards:
+ *
+ *   1. **In-flight tracking via ref.** This hook used to depend on its own
+ *      state in the effect's dependency array, which produced a runaway
+ *      loop: every `setMinutesByKey` write re-ran the effect, and any pair
+ *      whose Promise was still in flight (no state row yet) re-entered
+ *      `pending` and fired a duplicate fetch. On a 350-pair prefetch that
+ *      compounded to hundreds of thousands of in-flight fetches and OOMed
+ *      the tab. The fix tracks in-flight keys in a ref so duplicates are
+ *      filtered out without needing the effect to re-read its own state.
+ *
+ *   2. **Single-pair probe before the batch.** Firing 350 fetches in
+ *      parallel against an unauthenticated / misconfigured edge function
+ *      produces 350 console errors before any of them resolves and tells
+ *      `TrafficService` to latch unavailable. We probe with the first pair
+ *      first — if it latches the service, we skip the batch entirely.
  */
 export default function useLiveTravelTimes(travelPairs) {
     const [minutesByKey, setMinutesByKey] = useState({})
@@ -44,34 +52,51 @@ export default function useLiveTravelTimes(travelPairs) {
         const pending = travelPairs.filter((p) => !knownKeysRef.current.has(p.key) && !inFlightRef.current.has(p.key))
         if (!pending.length) return undefined
 
-        pending.forEach((p) => inFlightRef.current.add(p.key))
-
         let cancelled = false
 
-        Promise.allSettled(
-            pending.map(async (pair) => {
-                const result = await TrafficService.fetchDistance(pair.origin, pair.destination)
-                if (!result || result.error) return { key: pair.key, minutes: null }
-                const seconds = result.durationInTrafficSeconds ?? result.durationSeconds ?? null
-                if (!Number.isFinite(seconds)) return { key: pair.key, minutes: null }
-                return { key: pair.key, minutes: Math.max(1, Math.round(seconds / 60)) }
-            })
-        ).then((results) => {
-            // Always release in-flight slots so a remount can retry the
-            // same key — even if the batch was cancelled and we skip the
-            // state write, the keys must come off the in-flight set.
-            const next = {}
-            for (const r of results) {
-                if (r.status !== 'fulfilled' || !r.value) continue
-                inFlightRef.current.delete(r.value.key)
-                knownKeysRef.current.add(r.value.key)
-                next[r.value.key] = r.value.minutes
-            }
+        /** Resolve a single pair and update the in-flight / known sets. */
+        const resolvePair = async (pair) => {
+            const result = await TrafficService.fetchDistance(pair.origin, pair.destination)
+            inFlightRef.current.delete(pair.key)
+            knownKeysRef.current.add(pair.key)
+            if (!result || result.error) return { key: pair.key, minutes: null }
+            const seconds = result.durationInTrafficSeconds ?? result.durationSeconds ?? null
+            if (!Number.isFinite(seconds)) return { key: pair.key, minutes: null }
+            return { key: pair.key, minutes: Math.max(1, Math.round(seconds / 60)) }
+        }
+
+        /** Apply a batch of resolved results to state. No-op when cancelled
+         *  or when the batch produced nothing new. */
+        const commit = (entries) => {
             if (cancelled) return
+            const next = {}
+            for (const entry of entries) {
+                if (!entry) continue
+                next[entry.key] = entry.minutes
+            }
             if (Object.keys(next).length > 0) {
                 setMinutesByKey((prev) => ({ ...prev, ...next }))
             }
-        })
+        }
+
+        const run = async () => {
+            // Probe with the first pair. If `TrafficService` latches
+            // unavailable (auth missing, API key missing, gateway rejecting)
+            // we skip the rest of the batch and avoid spamming the console
+            // with N−1 wasted 503 errors.
+            const [probe, ...rest] = pending
+            inFlightRef.current.add(probe.key)
+            const probeResult = await resolvePair(probe)
+            if (cancelled) return
+            commit([probeResult])
+            if (TrafficService.isUnavailable() || !rest.length) return
+
+            rest.forEach((p) => inFlightRef.current.add(p.key))
+            const restResults = await Promise.allSettled(rest.map(resolvePair))
+            commit(restResults.map((r) => (r.status === 'fulfilled' ? r.value : null)))
+        }
+
+        run()
 
         return () => {
             cancelled = true

@@ -1,6 +1,33 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { parseDurationMinutes, timeToMinutes } from '../../../utils/PlanUtility'
+
 const clean = (value) => (value == null ? '' : String(value).trim())
+
+/** One label-over-value tile in the modal's metrics strip. */
+function MetricTile({ hint, label, value }) {
+    return (
+        <div
+            className="rounded-lg px-3 py-2 flex flex-col gap-0.5"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
+            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+                {label}
+            </span>
+            <span
+                className="font-mono font-bold text-[15px]"
+                style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+            >
+                {value}
+            </span>
+            {hint && (
+                <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                    {hint}
+                </span>
+            )}
+        </div>
+    )
+}
 
 /**
  * Modal listing every ticket loaded for a single dispatch order, sourced from
@@ -34,6 +61,56 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
     const customerLabel = clean(order?.customer)
     const homePlantCode = order?.plantCode || ''
     const homePlantName = plantNameByCode?.[homePlantCode] || ''
+
+    /** Realized pour metrics — first / last truck loaded (minute-of-day
+     *  parsed from each ticket's `loadedTime`) plus a yards-per-hour pace.
+     *
+     *  Pace is computed against the LARGER of:
+     *    a) the actual load span (last - first loadedTime), and
+     *    b) the planned pour duration: (expected loads − 1) × spacing.
+     *
+     *  This avoids a meaningless "218 yd/hr on a 40 yd pour" reading for
+     *  small orders where every truck was filled in a 10-min burst at the
+     *  plant — the actual pour at the job site spans the planned window,
+     *  not the loadout window. Same rule covers the single-load case
+     *  (actual span is 0, so the planned window dominates). */
+    const realized = useMemo(() => {
+        const parsed = tickets
+            .map((t) => ({ mins: timeToMinutes(t?.loadedTime), time: t?.loadedTime }))
+            .filter((entry) => Number.isFinite(entry.mins) && entry.time)
+            .sort((a, b) => a.mins - b.mins)
+        if (!parsed.length) return null
+        const first = parsed[0]
+        const last = parsed[parsed.length - 1]
+        const actualSpan = Math.max(0, last.mins - first.mins)
+
+        const loadSize = parseFloat(order?.loadSize) || 0
+        const expectedTrucks =
+            loadSize > 0 && orderTotal > 0 ? Math.max(1, Math.ceil(orderTotal / loadSize)) : parsed.length
+        const spacing = parseDurationMinutes(order?.rate) ?? 5
+        const plannedSpan = expectedTrucks > 1 ? (expectedTrucks - 1) * spacing : 0
+
+        const effectiveSpan = Math.max(actualSpan, plannedSpan)
+        const yph = effectiveSpan > 0 && totalLoaded > 0 ? (totalLoaded / effectiveSpan) * 60 : null
+        return {
+            actualSpan,
+            effectiveSpan,
+            firstTime: first.time,
+            lastTime: last.time,
+            plannedSpan,
+            ticketCount: parsed.length,
+            yph
+        }
+    }, [order?.loadSize, order?.rate, orderTotal, tickets, totalLoaded])
+
+    const formatYph = (yph) => (Number.isFinite(yph) ? `${yph.toFixed(1)} yd/hr` : '—')
+    const formatDuration = (mins) => {
+        if (!Number.isFinite(mins) || mins <= 0) return null
+        if (mins < 60) return `${mins} min`
+        const h = Math.floor(mins / 60)
+        const m = mins % 60
+        return `${h}h ${m}m`
+    }
 
     return (
         <div
@@ -116,6 +193,34 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                         </button>
                     </div>
                 </div>
+
+                {realized && (
+                    <div
+                        className="px-5 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 border-b"
+                        style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
+                    >
+                        <MetricTile label="First truck loaded" value={realized.firstTime} />
+                        <MetricTile
+                            hint={
+                                realized.ticketCount > 1
+                                    ? `${realized.ticketCount} loads total`
+                                    : 'only one load so far'
+                            }
+                            label="Last truck loaded"
+                            value={realized.lastTime}
+                        />
+                        <MetricTile
+                            hint={(() => {
+                                if (realized.yph == null) return 'order has no yardage to pace'
+                                const planned = realized.plannedSpan > 0 && realized.plannedSpan >= realized.actualSpan
+                                const span = formatDuration(realized.effectiveSpan)
+                                return planned ? `over planned ${span} pour` : `over actual ${span} pour`
+                            })()}
+                            label="Pour pace"
+                            value={formatYph(realized.yph)}
+                        />
+                    </div>
+                )}
 
                 <div className="flex-1 overflow-auto">
                     {tickets.length === 0 ? (

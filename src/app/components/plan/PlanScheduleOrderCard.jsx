@@ -167,7 +167,9 @@ export default function PlanScheduleOrderCard({
                                 style={{ color: 'var(--text-secondary)' }}
                             >
                                 <i className="fas fa-location-dot text-[10px] opacity-70" />
-                                <span className="truncate">{formatOrderAddress(order, ' · ')}</span>
+                                <span className="truncate uppercase tracking-wide">
+                                    {formatOrderAddress(order, ' · ')}
+                                </span>
                             </div>
                         ))}
                 </div>
