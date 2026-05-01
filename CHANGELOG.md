@@ -2,6 +2,16 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.13] - 2026-05-01
+
+- Add OrderInfoModal — a tabbed "View order" modal (Details, Plan, Suggestions) accessible via right-click context menu on schedule order rows
+- Move truck coverage detail from hover side-panel into the new Order Info modal's Plan tab, removing the per-row hover card and its associated state management
+- Remove the Dispatcher column from the schedule table and reduce synthetic row colspan accordingly
+- Strip hover-enter/leave props and coverage payload building from PlanScheduleOrderRow, simplifying the TrucksCell significantly
+- Extract buildOrderCoveragePayload helper into PlanScheduleUtility for reuse by the modal
+- Add average yardage reference line (red dashed) to the TrendChart in PlanStatisticsCharts
+- Add changelog entries summarizing the v40.0.12 release
+
 ## [40.0.12] - 2026-05-01
 
 - Add compact sticky toolbar for maximized schedule view with inline search, filters, sort, view-mode toggle, and exit button

@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { getScheduleRowDelay } from '../../../utils/PlanScheduleUtility'
+import { buildOrderCoveragePayload, getScheduleRowDelay } from '../../../utils/PlanScheduleUtility'
 import { timeToMinutes } from '../../../utils/PlanUtility'
+import OrderInfoModal from '../schedule/OrderInfoModal'
 import OrderTicketsModal from '../schedule/OrderTicketsModal'
-import TruckCoverageHoverCard from '../schedule/TruckCoverageHoverCard'
 import PlanScheduleOrderRow from './PlanScheduleOrderRow'
 import {
     ClockInRow,
@@ -29,8 +29,7 @@ const TABLE_HEADERS = [
     'Trucks',
     'Travel',
     'Spacing',
-    'Contact',
-    'Dispatcher'
+    'Contact'
 ]
 
 /* Order in which synthetic rows resolve when they share a minute. Returns
@@ -262,18 +261,14 @@ function groupClockInRows(clockInRows, visiblePlantCodes) {
     return Array.from(grouped.values())
 }
 
-/* Hover-card timing — the truck-coverage modal lingers briefly when the
- * cursor leaves so the user can move from the cell onto the modal itself
- * without the modal disappearing mid-transit. */
-const HOVER_CLOSE_DELAY_MS = 400
-
-/** Right-click context menu hook for order rows + the "View tickets" modal
- *  it launches. Lives at the table level (not inside the row map) because
- *  the menu needs to render once at fixed screen coords and dismiss on
- *  outside click. */
+/** Right-click context menu hook for order rows + the "View tickets" /
+ *  "View order" modals it launches. Lives at the table level (not inside the
+ *  row map) because the menu needs to render once at fixed screen coords
+ *  and dismiss on outside click. */
 function useRowContextMenu() {
     const [rowMenu, setRowMenu] = useState(null)
     const [ticketsOrder, setTicketsOrder] = useState(null)
+    const [infoOrder, setInfoOrder] = useState(null)
     useEffect(() => {
         if (!rowMenu) return undefined
         const dismiss = () => setRowMenu(null)
@@ -295,35 +290,7 @@ function useRowContextMenu() {
         event.preventDefault()
         setRowMenu({ order, x: event.clientX, y: event.clientY })
     }, [])
-    return { openRowMenu, rowMenu, setRowMenu, setTicketsOrder, ticketsOrder }
-}
-
-/** Hover state for the truck-coverage side panel — tracks both the hovered
- *  row key and the row's full payload so the panel can render outside the
- *  row's stacking context. Close is queued (not immediate) so cursor can
- *  move from the cell into the panel without flicker. */
-function useHoverModal() {
-    const [hoveredPayload, setHoveredPayload] = useState(null)
-    const hoverCloseTimer = useRef(null)
-    const cancelHoverClose = useCallback(() => {
-        if (hoverCloseTimer.current) {
-            clearTimeout(hoverCloseTimer.current)
-            hoverCloseTimer.current = null
-        }
-    }, [])
-    const openHover = useCallback(
-        (payload) => {
-            cancelHoverClose()
-            if (payload) setHoveredPayload(payload)
-        },
-        [cancelHoverClose]
-    )
-    const queueCloseHover = useCallback(() => {
-        cancelHoverClose()
-        hoverCloseTimer.current = setTimeout(() => setHoveredPayload(null), HOVER_CLOSE_DELAY_MS)
-    }, [cancelHoverClose])
-    useEffect(() => () => cancelHoverClose(), [cancelHoverClose])
-    return { hoveredPayload, openHover, queueCloseHover }
+    return { infoOrder, openRowMenu, rowMenu, setInfoOrder, setRowMenu, setTicketsOrder, ticketsOrder }
 }
 
 /**
@@ -356,8 +323,8 @@ export default function PlanScheduleTable({
     showExtraRows = true,
     suggestedSlotRows = []
 }) {
-    const { openRowMenu, rowMenu, setRowMenu, setTicketsOrder, ticketsOrder } = useRowContextMenu()
-    const { hoveredPayload, openHover, queueCloseHover } = useHoverModal()
+    const { infoOrder, openRowMenu, rowMenu, setInfoOrder, setRowMenu, setTicketsOrder, ticketsOrder } =
+        useRowContextMenu()
 
     // Synthetic rows require a plant filter AND the toggle to be on — both
     // gates collapse into one effective flag for the rest of the component.
@@ -507,15 +474,11 @@ export default function PlanScheduleTable({
                                             isToday={isToday}
                                             nowMin={nowMin}
                                             onContextMenu={(e) => openRowMenu(e, o)}
-                                            onHoverEnter={openHover}
-                                            onHoverLeave={queueCloseHover}
                                             onOpenLocation={onOpenLocation}
                                             order={o}
                                             plantCityByCode={plantCityByCode}
                                             plantNameByCode={plantNameByCode}
-                                            poolSourceByCode={poolSourceByCode}
                                             poolTimeline={poolTimeline}
-                                            poolTimelinesByPlant={poolTimelinesByPlant}
                                             rowKey={rowKey}
                                             travelOverrides={getTravelOverrides ? getTravelOverrides(o) : undefined}
                                         />
@@ -550,6 +513,21 @@ export default function PlanScheduleTable({
                             <button
                                 type="button"
                                 onClick={() => {
+                                    setInfoOrder(rowMenu.order)
+                                    setRowMenu(null)
+                                }}
+                                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)]"
+                                style={{ color: 'var(--text-primary)' }}
+                            >
+                                <i
+                                    className="fas fa-clipboard-list text-[12px]"
+                                    style={{ color: 'var(--text-tertiary)' }}
+                                />
+                                View order
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
                                     setTicketsOrder(rowMenu.order)
                                     setRowMenu(null)
                                 }}
@@ -571,14 +549,23 @@ export default function PlanScheduleTable({
                         plantNameByCode={plantNameByCode}
                     />
                 )}
+                {infoOrder && (
+                    <OrderInfoModal
+                        accentColor={accentColor}
+                        closerPlant={getCloserPlantForOrder ? getCloserPlantForOrder(infoOrder) : null}
+                        coverage={buildOrderCoveragePayload(infoOrder, {
+                            poolSourceByCode,
+                            poolTimeline,
+                            poolTimelinesByPlant,
+                            rowKey: keyForOrder(infoOrder),
+                            travelOverrides: getTravelOverrides ? getTravelOverrides(infoOrder) : undefined
+                        })}
+                        onClose={() => setInfoOrder(null)}
+                        order={infoOrder}
+                        plantName={plantNameByCode?.[infoOrder.plantCode] || ''}
+                    />
+                )}
             </div>
-            <TruckCoverageHoverCard
-                accentColor={accentColor}
-                isOpen={!!hoveredPayload}
-                onMouseEnter={() => openHover(hoveredPayload)}
-                onMouseLeave={queueCloseHover}
-                payload={hoveredPayload}
-            />
         </div>
     )
 }

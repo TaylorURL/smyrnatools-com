@@ -2,6 +2,28 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.12] - 2026-05-01
+
+- Add compact sticky toolbar for maximized schedule view with inline search, filters, sort, view-mode toggle, and exit button
+- Move Documents, List, and ListDetail views from productivity/ to tools/ directory and update lazy imports in App.js
+- Move LeaderboardsView from productivity/ to leaderboards/ directory
+- Rename service quality labels from "Late Start" / "Slow Pour" to "Late" / "Poor Service" and "Late + Slow" to "Late, Poor Service"
+- Refactor truck coverage hover card out of individual order rows into a table-level slide-in side panel, passing payload upstream on hover instead of rendering per-row portals
+- Make order addresses uppercase with wider tracking in both card and table row views
+- Overhaul Plan Statistics pages and satisfaction page with significant layout and data presentation improvements
+- Expand usePlanStatistics hook with additional computed metrics and data processing
+- Add DispatchDataService with new dispatch data querying capabilities
+- Refactor TrafficService and useLiveTravelTimes hook for improved travel time handling
+- Update PlanScheduleTable to support the new hover panel architecture and compact toolbar integration
+- Refactor PlanScheduleView with maximized mode support and updated filter/toolbar wiring
+- Update PlanStatisticsView layout and sub-page routing
+- Add PlanView layout changes for schedule maximization
+- Update PlanScheduleSideRail to render as a floating overlay on desktop instead of reserving horizontal space
+- Extend usePlanData and useDetailOrders hooks with additional data fields
+- Update PlanUtility and PlanStatisticsUtility with new helper functions
+- Fix dispatch-import edge function truck number parsing to correctly reassemble fragmented truck numbers
+- Add diagnostic SQL scripts for investigating missing plan statistics data
+
 ## [40.0.11] - 2026-04-30
 
 - Fix import sort order in PlanFlowNode and PlanFlowView to satisfy simple-import-sort lint rules

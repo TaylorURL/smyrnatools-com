@@ -103,7 +103,7 @@ export default function TruckCoverageHoverCard({ accentColor, isOpen, onMouseEnt
     )
 }
 
-function TruckCoveragePanelBody({
+export function TruckCoveragePanelBody({
     accentColor,
     bigPour,
     computed,

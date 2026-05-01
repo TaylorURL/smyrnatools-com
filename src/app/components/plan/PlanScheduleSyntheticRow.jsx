@@ -46,7 +46,7 @@ export default function PlanScheduleSyntheticRow({
             <td className="px-3 py-2 whitespace-nowrap align-top" style={{ width: 1 }}>
                 {plantCell}
             </td>
-            <td className="px-3 py-2 align-top" colSpan={12}>
+            <td className="px-3 py-2 align-top" colSpan={11}>
                 <div className="flex items-start gap-2.5 text-[12px] flex-wrap">
                     <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"

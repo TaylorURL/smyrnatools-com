@@ -7,6 +7,7 @@ import {
     Legend,
     Line,
     LineChart,
+    ReferenceLine,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -58,6 +59,17 @@ export function TrendChart({ data, accent, comparisonData }) {
             })),
         [data, comparisonData]
     )
+    /** Average yardage across days with production. Drawn as a red dashed
+     *  reference line so the dispatcher sees at a glance which days beat
+     *  the typical pour and which lagged. Days with zero yardage are
+     *  excluded from the denominator — they dilute the "typical day" sense
+     *  when the import hasn't landed yet or the day was a holiday. */
+    const avgYardage = useMemo(() => {
+        const productive = (data || []).filter((d) => (d.totalYardage || 0) > 0)
+        if (!productive.length) return null
+        const sum = productive.reduce((s, d) => s + (d.totalYardage || 0), 0)
+        return sum / productive.length
+    }, [data])
     return (
         <div style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -103,6 +115,22 @@ export function TrendChart({ data, accent, comparisonData }) {
                             strokeWidth={1.5}
                             dot={false}
                             strokeDasharray="2 4"
+                        />
+                    )}
+                    {Number.isFinite(avgYardage) && (
+                        <ReferenceLine
+                            y={avgYardage}
+                            stroke="#dc2626"
+                            strokeDasharray="4 3"
+                            strokeWidth={1.5}
+                            ifOverflow="extendDomain"
+                            label={{
+                                fill: '#dc2626',
+                                fontSize: 11,
+                                fontWeight: 600,
+                                position: 'insideTopRight',
+                                value: `avg ${fmtInt(Math.round(avgYardage))} yd/day`
+                            }}
                         />
                     )}
                 </LineChart>

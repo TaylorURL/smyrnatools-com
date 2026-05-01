@@ -8,6 +8,10 @@ import {
     BUFFER_MINUTES,
     buildAssignmentDriverTimes,
     computeCustomerSatisfaction,
+    estimateOrderTiming,
+    findNextViableStart,
+    getCalculatedTruckCount,
+    isBigPourOrder,
     isExcludedOrder,
     parseDurationMinutes,
     PRE_TRIP_MINUTES,
@@ -298,6 +302,70 @@ export const SERVICE_BADGE_BASE =
  *  variance in live traffic estimates is enough that small savings aren't
  *  reliable. */
 export const CLOSER_PLANT_MIN_SAVINGS = 5
+
+/**
+ * Build the truck-coverage payload for a single dispatch order — the same
+ * shape `TruckCoveragePanelBody` consumes. Pure: takes the order plus a
+ * context bag and returns the assembled payload, no React state.
+ *
+ * Lives here (not in `PlanScheduleOrderRow`) so both the schedule's order
+ * row AND the "Plan" tab inside `OrderInfoModal` derive coverage from the
+ * exact same logic. `rowKey` defaults to `order.orderId` when not provided
+ * so the modal call site doesn't need to pass it.
+ */
+export const buildOrderCoveragePayload = (
+    order,
+    { poolSourceByCode, poolTimeline, poolTimelinesByPlant, rowKey, travelOverrides } = {}
+) => {
+    if (!order) return null
+    const computed = getCalculatedTruckCount(order, travelOverrides)
+    const dispatchTrucks = parseFloat(order.truckCount) || 0
+    const differsFromDispatch = computed != null && dispatchTrucks > 0 && computed !== dispatchTrucks
+    const key = rowKey || order.orderId || ''
+    const poolEntry = poolTimeline?.[key]
+    const poolAtStart = poolEntry?.poolAtDispatch
+    const poolAfter = poolEntry?.poolAfterDispatch
+    const poolAfterEffective = Number.isFinite(poolEntry?.poolAfterDispatchEffective)
+        ? poolEntry.poolAfterDispatchEffective
+        : poolAfter
+    const helpInWindow = poolEntry?.inboundDuringPour || 0
+    const overbooked = Number.isFinite(poolAfterEffective) && poolAfterEffective < 0
+    let recommendedMoveTime = null
+    if (overbooked && Number.isFinite(computed) && poolEntry) {
+        const timeline = poolTimelinesByPlant?.[order.plantCode]
+        const pourDuration = Math.max(0, (poolEntry.lastReturnMinutes ?? 0) - (poolEntry.dispatchMinutes ?? 0))
+        recommendedMoveTime = findNextViableStart(
+            timeline,
+            computed,
+            (poolEntry.dispatchMinutes ?? 0) + 1,
+            pourDuration
+        )
+    }
+    const poolSource = poolSourceByCode?.[order.plantCode]
+    const timing = overbooked && poolEntry ? estimateOrderTiming(order, poolEntry, travelOverrides) : null
+    return {
+        bigPour: isBigPourOrder(order),
+        computed,
+        customer: clean(order.customer),
+        differsFromDispatch,
+        dispatchTrucks,
+        helpInWindow,
+        kickerBigPourActive: !!poolEntry?.kickerBigPourActive,
+        kickerHeld: poolEntry?.kickerHeldAtDispatch || 0,
+        liveTravel: !!travelOverrides,
+        orderNum: order.orderNum,
+        overbooked,
+        plantCode: order.plantCode,
+        poolAfter,
+        poolAfterEffective,
+        poolAtStart,
+        poolSource,
+        recommendedMoveTime,
+        rowKey: key,
+        timing,
+        yardage: parseFloat(order.yardage) || 0
+    }
+}
 
 /** 30-minute bucket size for help rows. A staggered crew arriving over an
  *  hour reads as two rows ("5 between 08:00–08:30, 5 between 08:30–09:00")

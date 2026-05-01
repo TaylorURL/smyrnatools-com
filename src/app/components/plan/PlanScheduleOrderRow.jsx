@@ -8,12 +8,7 @@ import {
     getOrderStatus,
     isLikelyBadAddress
 } from '../../../utils/PlanScheduleUtility'
-import {
-    estimateOrderTiming,
-    findNextViableStart,
-    getCalculatedTruckCount,
-    isBigPourOrder
-} from '../../../utils/PlanUtility'
+import { getCalculatedTruckCount } from '../../../utils/PlanUtility'
 import { OrderStatusBadge, PlantBadge, ServiceBadge } from './PlanScheduleBadges'
 import PlanScheduleLoadedCell from './PlanScheduleLoadedCell'
 
@@ -104,21 +99,9 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
 }
 
 /** Trucks cell — shows the canonical computed truck count, the trailing pool
- *  pill colored by margin, and the "Needs Help" warning. The full coverage
- *  detail is rendered by the table-level slide-in side panel; this cell just
- *  publishes its current payload upstream on hover. */
-function TrucksCell({
-    isNonProduction,
-    onHoverEnter,
-    onHoverLeave,
-    order,
-    poolSourceByCode,
-    poolTimeline,
-    poolTimelinesByPlant,
-    rowKey,
-    travelOverrides,
-    yardage
-}) {
+ *  pill colored by margin, and the "Needs Help" warning. Full coverage detail
+ *  lives in the View Order modal (right-click → View order → Plan tab). */
+function TrucksCell({ isNonProduction, order, poolTimeline, rowKey, travelOverrides }) {
     if (isNonProduction) {
         return (
             <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
@@ -130,62 +113,13 @@ function TrucksCell({
     const dispatchTrucks = parseFloat(order.truckCount) || 0
     const differsFromDispatch = computed != null && dispatchTrucks > 0 && computed !== dispatchTrucks
     const poolEntry = poolTimeline?.[rowKey]
-    const poolAtStart = poolEntry?.poolAtDispatch
     const poolAfter = poolEntry?.poolAfterDispatch
     const poolAfterEffective = Number.isFinite(poolEntry?.poolAfterDispatchEffective)
         ? poolEntry.poolAfterDispatchEffective
         : poolAfter
-    const helpInWindow = poolEntry?.inboundDuringPour || 0
-    // Count help arriving during the pour window — it covers later trips even
-    // if the first few are short.
     const overbooked = Number.isFinite(poolAfterEffective) && poolAfterEffective < 0
-    // When an order is overbooked, recommend the earliest time the plant will
-    // actually be able to cover the full pour — so the dispatcher can pitch a
-    // specific "move to HH:MM" suggestion.
-    let recommendedMoveTime = null
-    if (overbooked && Number.isFinite(computed) && poolEntry) {
-        const timeline = poolTimelinesByPlant?.[order.plantCode]
-        const pourDuration = Math.max(0, (poolEntry.lastReturnMinutes ?? 0) - (poolEntry.dispatchMinutes ?? 0))
-        recommendedMoveTime = findNextViableStart(
-            timeline,
-            computed,
-            (poolEntry.dispatchMinutes ?? 0) + 1,
-            pourDuration
-        )
-    }
-    const poolSource = poolSourceByCode?.[order.plantCode]
-    // Estimate realistic timing for late orders — first truck arrival, estimated
-    // completion, and delay in minutes.
-    const timing = overbooked && poolEntry ? estimateOrderTiming(order, poolEntry, travelOverrides) : null
-    const buildPayload = () => ({
-        bigPour: isBigPourOrder(order),
-        computed,
-        customer: clean(order.customer),
-        differsFromDispatch,
-        dispatchTrucks,
-        helpInWindow,
-        kickerBigPourActive: !!poolEntry?.kickerBigPourActive,
-        kickerHeld: poolEntry?.kickerHeldAtDispatch || 0,
-        liveTravel: !!travelOverrides,
-        orderNum: order.orderNum,
-        overbooked,
-        plantCode: order.plantCode,
-        poolAfter,
-        poolAfterEffective,
-        poolAtStart,
-        poolSource,
-        recommendedMoveTime,
-        rowKey,
-        timing,
-        yardage
-    })
     return (
-        <td
-            className="px-3 py-2 font-mono text-right whitespace-nowrap"
-            style={{ color: 'var(--text-secondary)', position: 'relative' }}
-            onMouseEnter={() => onHoverEnter?.(buildPayload())}
-            onMouseLeave={onHoverLeave}
-        >
+        <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
             <div className="flex flex-col items-end gap-0.5">
                 <span
                     className="inline-flex items-center gap-1 justify-end"
@@ -239,8 +173,8 @@ function TrucksCell({
 
 /**
  * Single `<tr>` rendering one dispatch order in the schedule table. Owns the
- * customer + status, address, product, yards, trucks-with-coverage, contact,
- * and dispatcher columns.
+ * customer + status, address, product, yards, trucks-with-coverage, and
+ * contact columns.
  */
 export default function PlanScheduleOrderRow({
     accentColor,
@@ -250,15 +184,11 @@ export default function PlanScheduleOrderRow({
     isToday,
     nowMin,
     onContextMenu,
-    onHoverEnter,
-    onHoverLeave,
     onOpenLocation,
     order,
     plantCityByCode,
     plantNameByCode,
-    poolSourceByCode,
     poolTimeline,
-    poolTimelinesByPlant,
     rowKey,
     travelOverrides
 }) {
@@ -348,15 +278,10 @@ export default function PlanScheduleOrderRow({
             </td>
             <TrucksCell
                 isNonProduction={isNonProduction}
-                onHoverEnter={onHoverEnter}
-                onHoverLeave={onHoverLeave}
                 order={order}
-                poolSourceByCode={poolSourceByCode}
                 poolTimeline={poolTimeline}
-                poolTimelinesByPlant={poolTimelinesByPlant}
                 rowKey={rowKey}
                 travelOverrides={travelOverrides}
-                yardage={yardage}
             />
             <td
                 className="px-3 py-2 font-mono whitespace-nowrap"
@@ -382,13 +307,6 @@ export default function PlanScheduleOrderRow({
                 title={clean(order.phone) || undefined}
             >
                 <PhoneCell phone={clean(order.phone)} />
-            </td>
-            <td
-                className="px-3 py-2 whitespace-nowrap max-w-[180px] truncate"
-                style={{ color: 'var(--text-secondary)' }}
-                title={clean(order.contact) || undefined}
-            >
-                {clean(order.contact) || '—'}
             </td>
         </tr>
     )
