@@ -17,16 +17,46 @@ const FIELD_STYLE = {
 }
 const FIELD_INPUT_CLASS = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border disabled:opacity-90'
 
-const TAG_OPTIONS = ['Accident', 'Injury', 'Non-DOT', 'DOT', 'Compliance', 'Environmental', 'Reprimand', 'Safety']
+/* TAG_OPTIONS — incident categories surfaced as the picker on the form
+ * row. Grouped loosely: severity/accidents → person impact → operational
+ * → general categories. Preserve the prior order of the original eight
+ * tags so reports filed before the expansion still render in the same
+ * sequence. */
+const TAG_OPTIONS = [
+    'Accident',
+    'DOT',
+    'DOT Recordable',
+    'Non-DOT',
+    'Property Damage',
+    'Injury',
+    'Medical',
+    'First Aid',
+    'Backing / Chute Incident',
+    'Spill',
+    'Compliance',
+    'Environmental',
+    'Reprimand',
+    'Safety'
+]
 const TAG_COLORS = {
     Accident: { bg: 'rgba(239, 68, 68, 0.15)', color: '#dc2626', icon: 'fas fa-car-crash' },
+    'Backing / Chute Incident': {
+        bg: 'rgba(217, 119, 6, 0.15)',
+        color: '#92400e',
+        icon: 'fas fa-truck-arrow-right'
+    },
     Compliance: { bg: 'rgba(59, 130, 246, 0.15)', color: '#2563eb', icon: 'fas fa-clipboard-check' },
     DOT: { bg: 'rgba(234, 179, 8, 0.15)', color: '#a16207', icon: 'fas fa-truck' },
+    'DOT Recordable': { bg: 'rgba(234, 179, 8, 0.20)', color: '#854d0e', icon: 'fas fa-triangle-exclamation' },
     Environmental: { bg: 'rgba(34, 197, 94, 0.15)', color: '#15803d', icon: 'fas fa-leaf' },
+    'First Aid': { bg: 'rgba(20, 184, 166, 0.15)', color: '#0f766e', icon: 'fas fa-kit-medical' },
     Injury: { bg: 'rgba(220, 38, 38, 0.15)', color: '#b91c1c', icon: 'fas fa-user-injured' },
+    Medical: { bg: 'rgba(244, 63, 94, 0.15)', color: '#be123c', icon: 'fas fa-briefcase-medical' },
     'Non-DOT': { bg: 'rgba(249, 115, 22, 0.15)', color: '#c2410c', icon: 'fas fa-file-alt' },
+    'Property Damage': { bg: 'rgba(234, 88, 12, 0.18)', color: '#9a3412', icon: 'fas fa-car-burst' },
     Reprimand: { bg: 'rgba(168, 85, 247, 0.15)', color: '#7c3aed', icon: 'fas fa-exclamation-triangle' },
-    Safety: { bg: 'rgba(14, 165, 233, 0.15)', color: '#0369a1', icon: 'fas fa-shield-alt' }
+    Safety: { bg: 'rgba(14, 165, 233, 0.15)', color: '#0369a1', icon: 'fas fa-shield-alt' },
+    Spill: { bg: 'rgba(6, 182, 212, 0.15)', color: '#0e7490', icon: 'fas fa-droplet' }
 }
 
 /** Compact card header — icon chip + label/title — same primitive used by

@@ -2,6 +2,15 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.15] - 2026-05-01
+
+- Deduplicate DetailDriver downloads by grouping plant files with identical eTag/size, parsing each unique blob once instead of downloading all 14 plant slots
+- Add orphan cleanup to dispatch-import: after a full run, delete any dispatch_data rows for the date that weren't part of the freshly-parsed set
+- Add dispatch_sync_delete_orphans Postgres function that removes stale rows by diffing the live (order_id, ticket_num) tuples against what was just upserted
+- Track all upserted (order_id, ticket_num) keys during import via a touchedKeys set for the sync-delete pass
+- Skip orphan deletion on partial runs (filtered plants or subset of report types) to avoid wiping valid data
+- Add rowsDeleted counter to the import result payload
+
 ## [40.0.14] - 2026-05-01
 
 - Lift schedule filter/sort/view state from PlanScheduleView up into PlanView so dispatcher filters survive the loading-skeleton swap on every date change
