@@ -69,14 +69,32 @@ const sumDayYardage = (production) => {
  * narrow by plant, customer, product, time bucket, truck class, minimum
  * yardage, and a free-text search across customer/address/PO.
  */
+/** Default-shape sentinel — used only when this view renders standalone (e.g.
+ *  in tests or a future preview surface). The real PlanView always supplies
+ *  `filters` + `onChangeFilter` so the schedule-tab filters survive the
+ *  loading-skeleton swap on every date change. */
+const DEFAULT_FILTERS = {
+    filtersOpen: true,
+    minYards: '',
+    plantFilter: 'all',
+    productFilter: 'all',
+    query: '',
+    showExtraRows: false,
+    sortKey: 'plantThenTime',
+    statusFilter: 'all',
+    viewMode: 'table'
+}
+
 function PlanScheduleView({
     accentColor,
     adjacentProduction = {},
     assignments = [],
     detailByOrderId = {},
+    filters = DEFAULT_FILTERS,
     getTravelTime,
     isMaximized = false,
     isMobile = false,
+    onChangeFilter,
     onChangeMaximized,
     onSwitchToPlanner,
     planDate,
@@ -112,24 +130,39 @@ function PlanScheduleView({
         }))
     }, [plantAddressByCode, plantNameByCode])
 
-    const [query, setQuery] = useState('')
-    const [plantFilter, setPlantFilter] = useState('all')
-    const [statusFilter, setStatusFilter] = useState('all')
-    const [productFilter, setProductFilter] = useState('all')
-    const [minYards, setMinYards] = useState('')
-    const [sortKey, setSortKey] = useState('plantThenTime')
+    /** Filter / view / sort state is controlled by the parent (`PlanView`)
+     *  so it survives the loading-skeleton swap on every date change. We
+     *  derive each individual setter here so the rest of this view doesn't
+     *  need to know the state lives upstream. */
+    const setFilterValue = useCallback(
+        (key) => (value) => {
+            if (typeof onChangeFilter === 'function') onChangeFilter(key, value)
+        },
+        [onChangeFilter]
+    )
+    const setQuery = useMemo(() => setFilterValue('query'), [setFilterValue])
+    const setPlantFilter = useMemo(() => setFilterValue('plantFilter'), [setFilterValue])
+    const setStatusFilter = useMemo(() => setFilterValue('statusFilter'), [setFilterValue])
+    const setProductFilter = useMemo(() => setFilterValue('productFilter'), [setFilterValue])
+    const setMinYards = useMemo(() => setFilterValue('minYards'), [setFilterValue])
+    const setSortKey = useMemo(() => setFilterValue('sortKey'), [setFilterValue])
     /** When the schedule is filtered to a single plant we interleave synthetic
      *  rows (truck returns, help events, send-home recommendations, open-slot
      *  suggestions, trade-offs). Those rows only make sense chronologically,
      *  so turning them ON forces a time-based sort; turning them OFF lets the
      *  Sort by picker actually reorder the table. Default off so the sort
      *  controls work immediately — dispatchers opt-in to the extras. */
-    const [showExtraRows, setShowExtraRows] = useState(false)
+    const setShowExtraRows = useMemo(() => setFilterValue('showExtraRows'), [setFilterValue])
     // Mobile is always cards (the 12-column table needs hundreds of px to read).
-    const [viewMode, setViewMode] = useState(isMobile ? 'cards' : 'table')
-    const [mapOrder, setMapOrder] = useState(null)
+    const setViewMode = useMemo(() => setFilterValue('viewMode'), [setFilterValue])
     // Filter drawer is collapsed by default on mobile so the schedule fills the screen.
-    const [filtersOpen, setFiltersOpen] = useState(!isMobile)
+    const setFiltersOpen = useMemo(() => setFilterValue('filtersOpen'), [setFilterValue])
+    const { filtersOpen, minYards, plantFilter, productFilter, query, showExtraRows, sortKey, statusFilter, viewMode } =
+        filters
+    // mapOrder is the only schedule-local state that genuinely shouldn't
+    // persist across date changes — closing this view should drop the open
+    // map modal (the order it points at no longer exists in the new day).
+    const [mapOrder, setMapOrder] = useState(null)
     /** Maximized = the dispatcher hides the title row, KPI strip, side rail,
      *  and full filter drawer in favor of a single sticky compact toolbar so
      *  the table fills the visible area. Desktop-only (mobile is already

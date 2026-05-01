@@ -54,6 +54,29 @@ function PlanView() {
      * date changes and tab switches. */
     const [isScheduleMaximized, setIsScheduleMaximized] = useState(false)
 
+    /* Schedule tab's filter / view / sort state — same lift-up rationale as
+     * `isScheduleMaximized`. The dispatcher's plant filter, search query,
+     * status / product / min-yards filters, sort key, view mode, drawer
+     * open-state, and "show extra rows" toggle all need to survive the
+     * loading skeleton swap that fires on every date change. */
+    const [scheduleFilters, setScheduleFilters] = useState(() => ({
+        filtersOpen: !isMobile,
+        minYards: '',
+        plantFilter: 'all',
+        productFilter: 'all',
+        query: '',
+        showExtraRows: false,
+        sortKey: 'plantThenTime',
+        statusFilter: 'all',
+        viewMode: isMobile ? 'cards' : 'table'
+    }))
+    const updateScheduleFilter = useCallback((key, value) => {
+        setScheduleFilters((prev) => ({
+            ...prev,
+            [key]: typeof value === 'function' ? value(prev[key]) : value
+        }))
+    }, [])
+
     // `startTransition` marks the tab swap as low-priority. The current tab
     // stays visible and interactive while React renders the new tab in the
     // background — without this, the Schedule tab's heavy useMemos (table
@@ -262,9 +285,11 @@ function PlanView() {
                                 adjacentProduction={adjacentProduction}
                                 assignments={assignments}
                                 detailByOrderId={detailByOrderId}
+                                filters={scheduleFilters}
                                 getTravelTime={getTravelTime}
                                 isMaximized={isScheduleMaximized}
                                 isMobile={isMobile}
+                                onChangeFilter={updateScheduleFilter}
                                 onChangeMaximized={setIsScheduleMaximized}
                                 onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
                                 planDate={planDate}
