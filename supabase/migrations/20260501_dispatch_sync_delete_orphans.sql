@@ -8,8 +8,9 @@
 -- (order_date, order_id, ticket_num) primary key of the table.
 
 CREATE OR REPLACE FUNCTION dispatch_sync_delete_orphans(
-    p_date  date,
-    p_keys  jsonb
+    p_date         date,
+    p_keys         jsonb,
+    p_run_reports  text[] DEFAULT ARRAY['DailyOrder','DetailOrderAnalysis','DetailDriver']
 ) RETURNS integer
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -33,6 +34,14 @@ BEGIN
         RETURN 0;
     END IF;
 
+    -- `p_run_reports` lists the reports the caller actually parsed this
+    -- run. We only delete rows whose `source_reports` is a SUBSET of that
+    -- list — i.e., rows owned exclusively by reports that just re-parsed.
+    -- Rows that also list a report we didn't run are left alone, since we
+    -- didn't have a chance to verify them.
+    --
+    -- Default = the full report set, which means the subset check passes
+    -- for every row (preserving behavior for full-default callers).
     WITH live AS (
         SELECT
             (k->>'order_id')::text                  AS order_id,
@@ -42,6 +51,7 @@ BEGIN
     )
     DELETE FROM dispatch_data d
     WHERE d.order_date = p_date
+      AND coalesce(d.source_reports, ARRAY[]::text[]) <@ p_run_reports
       AND NOT EXISTS (
           SELECT 1 FROM live l
           WHERE l.order_id   = d.order_id

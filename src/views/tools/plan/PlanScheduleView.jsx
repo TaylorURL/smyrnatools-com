@@ -933,6 +933,7 @@ function PlanScheduleView({
                                     helpRows={helpRows}
                                     filteredPlantCode={plantFilter !== 'all' ? plantFilter : null}
                                     isMaximized={effectiveMaximized}
+                                    isPastDay={isPastDay}
                                     isPlantFiltered={plantFilter !== 'all'}
                                     isToday={isViewingToday}
                                     nowMin={nowMin}

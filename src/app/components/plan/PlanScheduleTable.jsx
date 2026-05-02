@@ -307,6 +307,7 @@ export default function PlanScheduleTable({
     getTravelOverrides,
     helpRows = [],
     isMaximized = false,
+    isPastDay = false,
     isPlantFiltered = false,
     isToday = false,
     keyForOrder,
@@ -471,6 +472,7 @@ export default function PlanScheduleTable({
                                             animationDelayMs={animationDelayMs}
                                             detail={o.orderId ? detailByOrderId[o.orderId] : null}
                                             getCloserPlantForOrder={getCloserPlantForOrder}
+                                            isPastDay={isPastDay}
                                             isToday={isToday}
                                             nowMin={nowMin}
                                             onContextMenu={(e) => openRowMenu(e, o)}

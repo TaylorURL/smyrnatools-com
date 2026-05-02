@@ -20,7 +20,13 @@ import {
 // Trigger surface: POST with an optional JSON body. Defaults to today.
 //   { date?: 'YYYY-MM-DD',
 //     plants?: string[],          // limit to these plant codes (else all)
-//     reports?: string[]          // ["DailyOrder","DetailOrderAnalysis","DetailDriver"]
+//     reports?: string[],         // ["DailyOrder","DetailOrderAnalysis","DetailDriver"]
+//     reconcile?: boolean         // when true, ignore date/plants/reports.
+//                                 // List every `<date>.html` in the bucket
+//                                 // and DELETE all dispatch_data rows
+//                                 // whose order_date isn't in that list.
+//                                 // Handles whole dates removed from the
+//                                 // bucket — per-date sync can't catch that.
 //   }
 // ============================================================================
 
@@ -56,7 +62,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'OPTIONS') return handleOptions(origin)
     if (req.method !== 'POST') return errorResponse('Method not allowed', headers, 405)
 
-    let body: { date?: string; plants?: string[]; reports?: string[] } = {}
+    let body: { date?: string; plants?: string[]; reports?: string[]; reconcile?: boolean } = {}
     try {
         body = req.method === 'POST' ? await req.json().catch(() => ({})) : {}
     } catch {
@@ -64,7 +70,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const date = body.date || todayIso()
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!body.reconcile && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return errorResponse('Invalid date — expected YYYY-MM-DD', headers, 400)
     }
 
@@ -83,6 +89,63 @@ Deno.serve(async (req: Request) => {
         const { data, error } = await supabase.storage.from(BUCKET).download(path)
         if (error || !data) return null
         return await data.text()
+    }
+
+    // Reconcile mode — list every `<date>.html` at the root of the bucket
+    // and prune any `dispatch_data` rows whose `order_date` isn't in that
+    // list. Handles the case where a whole date was deleted from the
+    // bucket; per-date sync (which only runs when `dispatch-import` is
+    // called for that specific date) can never catch this on its own.
+    //
+    // Bucket list is paginated at 1000 entries per page so the call works
+    // for any year-window of dates. Empty bucket aborts the reconcile —
+    // the SQL function also rejects an empty `p_bucket_dates` so the DB
+    // can't be wiped by a misfire on either side.
+    if (body.reconcile) {
+        const bucketDates: string[] = []
+        let offset = 0
+        // safety bound — 100k files is well past anything we'd have
+        for (let safety = 0; safety < 100; safety++) {
+            const { data, error } = await supabase.storage.from(BUCKET).list('', {
+                limit: 1000,
+                offset
+            })
+            if (error) {
+                return errorResponse(`Reconcile: bucket list failed — ${error.message}`, headers, 500)
+            }
+            if (!data || data.length === 0) break
+            for (const entry of data) {
+                const m = (entry.name || '').match(/^(\d{4}-\d{2}-\d{2})\.html$/)
+                if (m) bucketDates.push(m[1])
+            }
+            if (data.length < 1000) break
+            offset += 1000
+        }
+        if (bucketDates.length === 0) {
+            return errorResponse(
+                'Reconcile aborted — bucket has no daily HTMLs. Refusing to wipe the table.',
+                headers,
+                400
+            )
+        }
+        const { data: pruneRows, error: pruneError } = await supabase.rpc('dispatch_reconcile_with_bucket', {
+            p_bucket_dates: bucketDates
+        })
+        if (pruneError) {
+            return errorResponse(`Reconcile: prune failed — ${pruneError.message}`, headers, 500)
+        }
+        const orphans = (pruneRows || []) as { orphan_date: string; rows_deleted: number }[]
+        const totalRowsDeleted = orphans.reduce((sum, r) => sum + (r.rows_deleted || 0), 0)
+        return jsonResponse(
+            {
+                reconcile: true,
+                bucketDateCount: bucketDates.length,
+                orphanDates: orphans,
+                totalRowsDeleted
+            },
+            headers,
+            200
+        )
     }
 
     // Hydrate the plants table once so the DailyOrder parser can resolve
@@ -408,23 +471,42 @@ Deno.serve(async (req: Request) => {
     }
 
     // Sync step — drop any `dispatch_data` rows for this date that the just-
-    // completed parse didn't produce. Skipped on partial runs (specific
-    // plants OR a non-default report subset) because deleting rows we
-    // didn't have a chance to re-parse would silently wipe healthy data.
-    const isFullRun =
-        !plantFilter &&
-        enabled.has('DailyOrder') &&
-        enabled.has('DetailOrderAnalysis') &&
-        enabled.has('DetailDriver')
-    if (isFullRun && touchedKeys.size > 0) {
+    // completed parse didn't produce. The RPC scopes deletion to rows whose
+    // `source_reports` is a subset of `p_run_reports`, so a partial run
+    // (e.g., DailyOrder + DetailOrderAnalysis without DetailDriver) only
+    // touches rows owned by those two reports — DetailDriver-only tickets
+    // survive even though we didn't re-parse them.
+    //
+    // Skipped on plant-filtered runs: per-plant dispatches don't see other
+    // plants' data, so deleting their rows would silently wipe healthy
+    // entries this invocation never had a chance to verify.
+    if (!plantFilter && touchedKeys.size > 0) {
         const keysArray = Array.from(touchedKeys).map((k) => {
             const sep = k.indexOf('|')
             return { order_id: k.slice(0, sep), ticket_num: k.slice(sep + 1) }
         })
-        const { data: deletedCount, error } = await supabase.rpc('dispatch_sync_delete_orphans', {
+        const runReports = Array.from(enabled)
+        let { data: deletedCount, error } = await supabase.rpc('dispatch_sync_delete_orphans', {
             p_date: date,
-            p_keys: keysArray
+            p_keys: keysArray,
+            p_run_reports: runReports
         })
+        // Migration that adds `p_run_reports` may not be applied yet.
+        // Fall back to the 2-arg signature, but only when re-parsing the
+        // full default report set — otherwise the older function would
+        // delete rows owned by reports we didn't run.
+        if (error && (error as { code?: string }).code === 'PGRST202') {
+            const isFullDefault =
+                enabled.has('DailyOrder') &&
+                enabled.has('DetailOrderAnalysis') &&
+                enabled.has('DetailDriver')
+            if (isFullDefault) {
+                ;({ data: deletedCount, error } = await supabase.rpc('dispatch_sync_delete_orphans', {
+                    p_date: date,
+                    p_keys: keysArray
+                }))
+            }
+        }
         if (error) result.errors.push(`Sync delete: ${error.message}`)
         else result.rowsDeleted = typeof deletedCount === 'number' ? deletedCount : 0
     }

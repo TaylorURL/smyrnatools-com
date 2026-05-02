@@ -100,8 +100,12 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
 
 /** Trucks cell — shows the canonical computed truck count, the trailing pool
  *  pill colored by margin, and the "Needs Help" warning. Full coverage detail
- *  lives in the View Order modal (right-click → View order → Plan tab). */
-function TrucksCell({ isNonProduction, order, poolTimeline, rowKey, travelOverrides }) {
+ *  lives in the View Order modal (right-click → View order → Plan tab).
+ *
+ *  The "Needs Help" badge is suppressed for past days and for orders the
+ *  service evaluator already considers completed (`good`/`bad`) — once a pour
+ *  is finished, calling for help is moot and the badge is just noise. */
+function TrucksCell({ isNonProduction, isPastDay, order, poolTimeline, rowKey, service, travelOverrides }) {
     if (isNonProduction) {
         return (
             <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
@@ -117,7 +121,8 @@ function TrucksCell({ isNonProduction, order, poolTimeline, rowKey, travelOverri
     const poolAfterEffective = Number.isFinite(poolEntry?.poolAfterDispatchEffective)
         ? poolEntry.poolAfterDispatchEffective
         : poolAfter
-    const overbooked = Number.isFinite(poolAfterEffective) && poolAfterEffective < 0
+    const isCompleted = service?.status === 'good' || service?.status === 'bad'
+    const overbooked = Number.isFinite(poolAfterEffective) && poolAfterEffective < 0 && !isPastDay && !isCompleted
     return (
         <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
             <div className="flex flex-col items-end gap-0.5">
@@ -181,6 +186,7 @@ export default function PlanScheduleOrderRow({
     animationDelayMs,
     detail,
     getCloserPlantForOrder,
+    isPastDay,
     isToday,
     nowMin,
     onContextMenu,
@@ -199,6 +205,7 @@ export default function PlanScheduleOrderRow({
     const isCancelled = status?.kind === 'cancelled'
     const isTest = status?.kind === 'test'
     const isNonProduction = isCancelled || isTest
+    const service = !isNonProduction ? evaluateOrderService(order, detail, nowMin) : null
     return (
         <tr
             className="animate-slide-in-row"
@@ -240,7 +247,7 @@ export default function PlanScheduleOrderRow({
                         {clean(order.customer) || '—'}
                     </span>
                     {status && <OrderStatusBadge status={status} />}
-                    {!isCancelled && !isTest && <ServiceBadge service={evaluateOrderService(order, detail, nowMin)} />}
+                    {!isCancelled && !isTest && <ServiceBadge service={service} />}
                 </div>
             </td>
             <td className="px-3 py-2 max-w-[280px]">
@@ -278,9 +285,11 @@ export default function PlanScheduleOrderRow({
             </td>
             <TrucksCell
                 isNonProduction={isNonProduction}
+                isPastDay={isPastDay}
                 order={order}
                 poolTimeline={poolTimeline}
                 rowKey={rowKey}
+                service={service}
                 travelOverrides={travelOverrides}
             />
             <td

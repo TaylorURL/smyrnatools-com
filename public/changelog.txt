@@ -2,6 +2,11 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.16] - 2026-05-01
+
+- Expand Weekly Safety Manager Report incident tags from 8 to 14 categories (added DOT Recordable, Property Damage, Medical, First Aid, Backing / Chute Incident, and Spill)
+- Add color themes and icons for each new tag category in the TAG_COLORS map
+
 ## [40.0.15] - 2026-05-01
 
 - Deduplicate DetailDriver downloads by grouping plant files with identical eTag/size, parsing each unique blob once instead of downloading all 14 plant slots
