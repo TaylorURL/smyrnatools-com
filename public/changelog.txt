@@ -2,6 +2,29 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.19] - 2026-05-04
+
+- Redesign PlanScheduleFilterDrawer as a compact single-row toolbar with status pills, toggle switches, and a plant modal instead of the old grid of dropdowns
+- Add district-level multi-select to PlantDropdownModal with "tap to toggle all plants in district" rows and a Clear button in the footer
+- Fix PlantDropdownModal stale state by re-seeding local selections from props each time the modal opens
+- Expand OrderInfoModal with richer dispatch detail display (ticket-level rows, plant badges, yardage breakdowns, driver info)
+- Add PlanScheduleStatStrip changes to reflect new filter structure
+- Add new columns and expandable extra-row support to PlanScheduleTable
+- Wire up realtime subscription for plan tables via new enable_realtime migration
+- Add usePlanStatistics hook for aggregated plan statistics data fetching
+- Extend PlanStatisticsTables with additional stat breakdowns and new page support in PlanStatisticsPages
+- Refactor PlanScheduleView to support multi-plant filtering, single-plant maximized mode with operator roster copy, cancelled/test order visibility toggles, and extras row expansion
+- Update useScheduleSync to handle new filter and sync requirements
+- Extend useDetailOrders with additional query parameters and data shaping
+- Add new methods to DispatchDataService for fetching dispatch detail and summary data
+- Rework OverdueBanner layout and MergedReviewList formatting in the reports v2 components
+- Update LostLoadsList with revised column display
+- Adjust ReportsView layout and routing
+- Update PlanView tab structure and PlanStatisticsView integration
+- Add custom CSS keyframe animations and utility classes in index.css
+- Clean up stale SQL diagnostic scripts from the repo root
+- Remove old applied migration files that were already run against the database
+
 ## [40.0.18] - 2026-05-04
 
 - Remove the entire Leaderboards feature — deleted the view, all leaderboard components (EfficiencyInfoCard, HelpDetailsModal, LeaderboardCategorySelector, LeaderboardItem), the useLeaderboardData hook, and leaderboardConstants
