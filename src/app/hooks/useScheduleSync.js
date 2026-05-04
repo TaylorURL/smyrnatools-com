@@ -3,7 +3,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Database } from '../../services/DatabaseService'
 import { DispatchDataService } from '../../services/DispatchDataService'
 
-const SYNC_INTERVAL_MS = 5 * 60 * 1000
+/* Safety interval — short enough that even when realtime is down (publication
+ * misconfigured, websocket dropped) the schedule still feels live, long
+ * enough that we're not hammering the API in the steady state. */
+const SYNC_INTERVAL_MS = 60 * 1000
 const REALTIME_DEBOUNCE_MS = 750
 
 /**
@@ -73,23 +76,29 @@ export function useScheduleSync({ planDate, plants, setPlantProduction, enabled 
         }
     }, [planDate, enabled, sync])
 
-    // Realtime: any change on a dispatch_data row for the current planDate
-    // triggers a debounced re-sync. We refetch the whole map rather than
-    // patching incrementally — DispatchDataService aggregates per plant
-    // and the cost of one re-read is small compared to keeping the merge
-    // logic in two places.
+    // Realtime: any change on dispatch_data triggers a debounced re-sync.
+    // We don't filter the payload by `order_date` — DELETE events ship
+    // only a partial `old` row that may not include order_date, so an
+    // overzealous filter ate every event and the schedule never updated
+    // without a manual refresh. The re-sync inside `sync()` is keyed by
+    // the current planDate via `planDateRef`, so unrelated dates trigger
+    // at most one cheap refetch — a fair price for not missing changes.
     useEffect(() => {
         if (!enabled) return undefined
         const channelName = `dispatch-data-schedule-${Date.now()}`
-        const onChange = (payload) => {
-            const row = payload?.new || payload?.old
-            if (row?.order_date !== planDateRef.current) return
+        const onChange = () => {
             if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
             realtimeDebounceRef.current = setTimeout(() => sync(), REALTIME_DEBOUNCE_MS)
         }
         const channel = Database.channel(channelName)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'dispatch_data' }, onChange)
-            .subscribe()
+            .subscribe((status, err) => {
+                // Surface a hard failure in the console — a silent
+                // CHANNEL_ERROR is what kept the original bug invisible.
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    console.warn('[useScheduleSync] realtime subscription failed:', status, err?.message || '')
+                }
+            })
         return () => {
             if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
             Database.removeChannel(channel)

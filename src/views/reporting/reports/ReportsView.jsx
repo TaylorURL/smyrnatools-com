@@ -1623,9 +1623,18 @@ function ReportsView() {
                                                       meaningfulStr(d.project) ||
                                                       'QC Strength Report'
                                                 const iconClass = isLabReport ? 'fa-vial' : 'fa-flask'
+                                                /* color-mix tints adapt to whatever the page background
+                                                 * is, so the same value reads well in both light and
+                                                 * dark mode without a separate dark-mode override. */
                                                 const iconTint = isLabReport
-                                                    ? { bg: '#ffe4e6', fg: '#9f1239' }
-                                                    : { bg: '#ede9fe', fg: '#6d28d9' }
+                                                    ? {
+                                                          bg: 'color-mix(in srgb, #f43f5e 14%, transparent)',
+                                                          fg: '#f43f5e'
+                                                      }
+                                                    : {
+                                                          bg: 'color-mix(in srgb, #8b5cf6 14%, transparent)',
+                                                          fg: '#8b5cf6'
+                                                      }
                                                 return (
                                                     <div
                                                         key={report.id}
@@ -1677,23 +1686,11 @@ function ReportsView() {
                                                             </div>
                                                         </div>
                                                         {report.reviewed ? (
-                                                            <span
-                                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0"
-                                                                style={{
-                                                                    background: '#dcfce7',
-                                                                    color: '#166534'
-                                                                }}
-                                                            >
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-green-100 text-green-800">
                                                                 Reviewed
                                                             </span>
                                                         ) : (
-                                                            <span
-                                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0"
-                                                                style={{
-                                                                    background: '#fef3c7',
-                                                                    color: '#92400e'
-                                                                }}
-                                                            >
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-amber-100 text-amber-800">
                                                                 Pending
                                                             </span>
                                                         )}

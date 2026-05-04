@@ -563,8 +563,23 @@ export default function PlanScheduleTable({
                             travelOverrides: getTravelOverrides ? getTravelOverrides(infoOrder) : undefined
                         })}
                         onClose={() => setInfoOrder(null)}
+                        onOpenLocation={
+                            onOpenLocation
+                                ? (o) => {
+                                      setInfoOrder(null)
+                                      onOpenLocation(o)
+                                  }
+                                : undefined
+                        }
+                        onViewTickets={(o) => {
+                            setInfoOrder(null)
+                            setTicketsOrder(o)
+                        }}
                         order={infoOrder}
                         plantName={plantNameByCode?.[infoOrder.plantCode] || ''}
+                        ticketCount={
+                            infoOrder.orderId ? (detailByOrderId?.[infoOrder.orderId]?.ticketCount ?? null) : null
+                        }
                     />
                 )}
             </div>

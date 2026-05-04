@@ -2,6 +2,13 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.18] - 2026-05-04
+
+- Remove the entire Leaderboards feature — deleted the view, all leaderboard components (EfficiencyInfoCard, HelpDetailsModal, LeaderboardCategorySelector, LeaderboardItem), the useLeaderboardData hook, and leaderboardConstants
+- Remove the "Realtime" tab from the Plan tab switcher and update the tab comment accordingly
+- Simplify PlanView by removing the Realtime mode import, state handling, and rendering logic
+- Remove the leaderboards link from MyAccountView
+
 ## [40.0.17] - 2026-05-02
 
 - Suppress "Needs Help" badge on past days and completed orders in the Plan Schedule — once a pour is finished or the day has passed, the warning is just noise

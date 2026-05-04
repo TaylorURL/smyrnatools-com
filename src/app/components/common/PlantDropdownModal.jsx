@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
@@ -32,6 +32,14 @@ function PlantDropdownModal({
 }) {
     const [search, setSearch] = useState('')
     const [localSelectedCodes, setLocalSelectedCodes] = useState(selectedPlantCodes || [])
+    /** Re-seed local state every time the modal opens so the checked rows
+     *  always reflect the parent's current `selectedPlantCodes`. Without
+     *  this, an external selection change while the modal was closed
+     *  would leave the next open in a stale state. */
+    useEffect(() => {
+        if (isOpen) setLocalSelectedCodes(selectedPlantCodes || [])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen])
     const accentColor = useAccentColor()
     const districtGroups = (() => {
         const map = {}
@@ -71,6 +79,32 @@ function PlantDropdownModal({
             onSelect(code)
             onClose()
         }
+    }
+    /** Multi-select district click — when every plant in the district is
+     *  already selected, deselect them all; otherwise add the missing
+     *  ones. We surface the diff through `onSelect(code)` calls so the
+     *  parent's reducer sees the same per-code add/remove signals it gets
+     *  from the per-plant rows (no special-casing required upstream). */
+    const handleDistrictClickMulti = (district) => {
+        const codes = district.plantCodes || []
+        if (!codes.length) return
+        const currentlyAllSelected = codes.every((c) => localSelectedCodes.includes(c))
+        setLocalSelectedCodes((prev) => {
+            const set = new Set(prev)
+            codes.forEach((c) => {
+                if (currentlyAllSelected) set.delete(c)
+                else set.add(c)
+            })
+            return [...set]
+        })
+        codes.forEach((c) => {
+            const already = localSelectedCodes.includes(c)
+            // Only emit an event for codes whose membership actually flips,
+            // so a parent that mirrors the codes via per-event toggling
+            // ends up in the right state regardless of seed order.
+            if (currentlyAllSelected && already) onSelect(c)
+            else if (!currentlyAllSelected && !already) onSelect(c)
+        })
     }
     if (!isOpen || typeof document === 'undefined' || !document.body) return null
     return ReactDOM.createPortal(
@@ -160,6 +194,48 @@ function PlantDropdownModal({
                             <div className="mx-4 my-1 border-t border-border-light" />
                         </>
                     )}
+                    {allowMultiple && districtGroups.length > 0 && (
+                        <>
+                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Districts — tap to toggle every plant
+                            </div>
+                            {districtGroups.map((district) => {
+                                const inDistrict = district.plantCodes
+                                const selectedInDistrict = inDistrict.filter((c) =>
+                                    localSelectedCodes.includes(c)
+                                ).length
+                                const allSelected = inDistrict.length > 0 && selectedInDistrict === inDistrict.length
+                                const partial = selectedInDistrict > 0 && !allSelected
+                                return (
+                                    <div
+                                        key={district.name}
+                                        className={`mb-1 flex cursor-pointer items-center gap-3 rounded-[10px] px-4 py-2.5 text-sm transition-colors hover:bg-slate-100 ${allSelected ? 'bg-blue-50 font-semibold' : 'text-gray-700'}`}
+                                        onClick={() => handleDistrictClickMulti(district)}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={allSelected}
+                                            ref={(el) => {
+                                                if (el) el.indeterminate = partial
+                                            }}
+                                            onChange={() => {}}
+                                            className="h-[18px] w-[18px]"
+                                            style={{ accentColor }}
+                                        />
+                                        <i className="fas fa-layer-group" style={{ color: accentColor }} />
+                                        <span className="flex-1">{district.name}</span>
+                                        <span className="text-xs text-slate-400">
+                                            {selectedInDistrict}/{inDistrict.length}
+                                        </span>
+                                    </div>
+                                )
+                            })}
+                            <div className="mx-4 my-2 border-t border-border-light" />
+                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Plants
+                            </div>
+                        </>
+                    )}
                     {sortedPlants.map((plant) => {
                         const code = plant.plantCode || plant.plant_code
                         const isSelected = allowMultiple && localSelectedCodes.includes(code)
@@ -186,10 +262,24 @@ function PlantDropdownModal({
                     })}
                 </div>
                 {allowMultiple && (
-                    <div className="border-t border-gray-200 bg-slate-50 px-4 py-3">
+                    <div className="border-t border-gray-200 bg-slate-50 px-4 py-3 flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                // Emit a toggle for every currently selected
+                                // code so the parent's per-event reducer
+                                // shrinks back to nothing.
+                                localSelectedCodes.forEach((c) => onSelect(c))
+                                setLocalSelectedCodes([])
+                            }}
+                            disabled={localSelectedCodes.length === 0}
+                            className="rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50"
+                        >
+                            Clear
+                        </button>
                         <button
                             onClick={onClose}
-                            className="w-full rounded-[10px] border-none px-5 py-3 text-sm font-semibold text-white"
+                            className="flex-1 rounded-[10px] border-none px-5 py-3 text-sm font-semibold text-white"
                             style={{ backgroundColor: accentColor }}
                         >
                             Done ({localSelectedCodes.length} selected)

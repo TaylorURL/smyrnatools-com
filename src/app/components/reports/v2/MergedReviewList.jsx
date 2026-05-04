@@ -97,10 +97,7 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                         className="flex items-center gap-2.5 px-3 py-2"
                         style={{ borderBottom: '1px solid var(--border-light)' }}
                     >
-                        <div
-                            className="w-6 h-6 rounded flex items-center justify-center shrink-0"
-                            style={{ background: '#fee2e2', color: '#b91c1c' }}
-                        >
+                        <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-red-100 text-red-700">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -173,18 +170,12 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                             </div>
                         </div>
                         {submittedLate && (
-                            <span className={STATUS_PILL_BASE} style={{ background: '#ffedd5', color: '#9a3412' }}>
-                                Late
-                            </span>
+                            <span className={`${STATUS_PILL_BASE} bg-orange-100 text-orange-800`}>Late</span>
                         )}
                         {isReviewed ? (
-                            <span className={STATUS_PILL_BASE} style={{ background: '#dcfce7', color: '#166534' }}>
-                                Reviewed
-                            </span>
+                            <span className={`${STATUS_PILL_BASE} bg-green-100 text-green-800`}>Reviewed</span>
                         ) : (
-                            <span className={STATUS_PILL_BASE} style={{ background: '#fef3c7', color: '#92400e' }}>
-                                Pending
-                            </span>
+                            <span className={`${STATUS_PILL_BASE} bg-amber-100 text-amber-800`}>Pending</span>
                         )}
                         <button
                             type="button"

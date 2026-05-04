@@ -765,6 +765,7 @@ export function PlanStatisticsPlantsPage({
     knownPlantSummary,
     loading,
     mixerCountsByPlant,
+    perPlantLoadAttribution,
     plantNameByCode,
     previousSummary,
     range,
@@ -833,6 +834,7 @@ export function PlanStatisticsPlantsPage({
                     <PlantScorecardTable
                         accent={accentColor}
                         isSingleDay={isSingleDay}
+                        loadAttributionByPlant={perPlantLoadAttribution}
                         mixerCountsByPlant={mixerCountsByPlant}
                         plantNameByCode={plantNameByCode}
                         rows={knownPlantRows}

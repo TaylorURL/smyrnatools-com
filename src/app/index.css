@@ -27,6 +27,13 @@
 /* ── Theme tokens ─────────────────────────────────────────────────────────── */
 
 :root {
+    /* Tells browsers to render native form elements (checkboxes, radios,
+     * scrollbars, date pickers, dropdown chrome) using the light theme.
+     * Without this, native checkboxes in PlantDropdownModal etc. render
+     * with white fills + light borders and look misplaced inside a dark-
+     * themed dialog. The `html.dark` rule below flips this to `dark` so
+     * the same controls flip with the rest of the site. */
+    color-scheme: light;
     --primary-color: #003896;
     --primary-hover: #002d76;
     --accent-color: #007aff;
@@ -75,6 +82,9 @@
 }
 
 html.dark {
+    /* See `:root.color-scheme` above — the dark variant flips native
+     * controls to render in the dark theme. */
+    color-scheme: dark;
     --primary-color: #4d8bd6;
     --primary-hover: #5a9ae6;
     --accent-color: #3d9eff;
@@ -1787,6 +1797,10 @@ html.dark .text-orange-600 {
     color: #fb923c;
 }
 
+html.dark .text-orange-800 {
+    color: #fed7aa;
+}
+
 /* Badge palette — green */
 html.dark .bg-green-100 {
     background-color: #0a1a0a;
@@ -1802,6 +1816,10 @@ html.dark .text-green-600 {
 
 html.dark .text-green-700 {
     color: #4ade80;
+}
+
+html.dark .text-green-800 {
+    color: #86efac;
 }
 
 html.dark .bg-emerald-100 {
@@ -1827,6 +1845,10 @@ html.dark .text-red-600 {
 
 html.dark .text-red-700 {
     color: #fca5a5;
+}
+
+html.dark .text-red-800 {
+    color: #fecaca;
 }
 
 /* Badge palette — amber/yellow */
@@ -1867,8 +1889,16 @@ html.dark .text-blue-800 {
     color: #93c5fd;
 }
 
+html.dark .bg-sky-50 {
+    background-color: #0a101a;
+}
+
 html.dark .bg-sky-100 {
     background-color: #0a101a;
+}
+
+html.dark .border-sky-200 {
+    border-color: #1a2645;
 }
 
 html.dark .text-sky-700 {

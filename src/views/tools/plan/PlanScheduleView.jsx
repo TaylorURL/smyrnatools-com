@@ -1,10 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { PlantBadge } from '../../../app/components/plan/PlanScheduleBadges'
-import PlanScheduleCompactToolbar from '../../../app/components/plan/PlanScheduleCompactToolbar'
 import PlanScheduleFilterDrawer from '../../../app/components/plan/PlanScheduleFilterDrawer'
 import PlanScheduleOrderCard from '../../../app/components/plan/PlanScheduleOrderCard'
-import PlanScheduleSideRail from '../../../app/components/plan/PlanScheduleSideRail'
 import PlanScheduleStatStrip from '../../../app/components/plan/PlanScheduleStatStrip'
 import PlanScheduleTable from '../../../app/components/plan/PlanScheduleTable'
 import JobMapModal from '../../../app/components/schedule/JobMapModal'
@@ -76,10 +74,19 @@ const sumDayYardage = (production) => {
 const DEFAULT_FILTERS = {
     filtersOpen: true,
     minYards: '',
-    plantFilter: 'all',
+    /** Multi-select array of plant codes — empty means "all plants".
+     *  Lets the dispatcher pick whole districts / arbitrary permutations
+     *  via PlantDropdownModal. */
+    plantFilters: [],
     productFilter: 'all',
     query: '',
+    /** Cancelled (17:00 sentinel) and test (18:00 sentinel) orders are noise
+     *  by default — they're real rows in the dispatch report but they
+     *  don't represent production. Hidden until the dispatcher explicitly
+     *  flips these toggles to inspect them. */
+    showCancelled: false,
     showExtraRows: false,
+    showTest: false,
     sortKey: 'plantThenTime',
     statusFilter: 'all',
     viewMode: 'table'
@@ -101,6 +108,9 @@ function PlanScheduleView({
     plantAddressByCode,
     plantNameByCode,
     plantProduction,
+    /** Plants with district memberships — fed to PlantDropdownModal so the
+     *  multi-select plant filter can offer district-level toggling. */
+    plants = [],
     stats = []
 }) {
     const poolDayMultiplier = getPoolDayMultiplier(planDate)
@@ -141,7 +151,7 @@ function PlanScheduleView({
         [onChangeFilter]
     )
     const setQuery = useMemo(() => setFilterValue('query'), [setFilterValue])
-    const setPlantFilter = useMemo(() => setFilterValue('plantFilter'), [setFilterValue])
+    const setPlantFilters = useMemo(() => setFilterValue('plantFilters'), [setFilterValue])
     const setStatusFilter = useMemo(() => setFilterValue('statusFilter'), [setFilterValue])
     const setProductFilter = useMemo(() => setFilterValue('productFilter'), [setFilterValue])
     const setMinYards = useMemo(() => setFilterValue('minYards'), [setFilterValue])
@@ -153,12 +163,46 @@ function PlanScheduleView({
      *  Sort by picker actually reorder the table. Default off so the sort
      *  controls work immediately — dispatchers opt-in to the extras. */
     const setShowExtraRows = useMemo(() => setFilterValue('showExtraRows'), [setFilterValue])
+    const setShowCancelled = useMemo(() => setFilterValue('showCancelled'), [setFilterValue])
+    const setShowTest = useMemo(() => setFilterValue('showTest'), [setFilterValue])
     // Mobile is always cards (the 12-column table needs hundreds of px to read).
     const setViewMode = useMemo(() => setFilterValue('viewMode'), [setFilterValue])
     // Filter drawer is collapsed by default on mobile so the schedule fills the screen.
     const setFiltersOpen = useMemo(() => setFilterValue('filtersOpen'), [setFilterValue])
-    const { filtersOpen, minYards, plantFilter, productFilter, query, showExtraRows, sortKey, statusFilter, viewMode } =
-        filters
+    const {
+        filtersOpen,
+        minYards,
+        plantFilters: plantFiltersRaw,
+        productFilter,
+        query,
+        showCancelled,
+        showExtraRows,
+        showTest,
+        sortKey,
+        statusFilter,
+        viewMode
+    } = filters
+    /** Array of selected plant codes — empty means "all plants". Memoised
+     *  so deps that depend on it stay stable when nothing changed. */
+    const plantFilters = useMemo(() => (Array.isArray(plantFiltersRaw) ? plantFiltersRaw : []), [plantFiltersRaw])
+    const plantFilterSet = useMemo(() => new Set(plantFilters), [plantFilters])
+    /** When exactly one plant is selected, "single-plant" affordances
+     *  (copy roster, extras toggle, plant-scope chip, pool-aware
+     *  computations) light up. With zero or 2+ plants picked, those
+     *  features stay disabled — they don't have a single subject. */
+    const singlePlant = plantFilters.length === 1 ? plantFilters[0] : null
+    /** Toggle a plant in the multi-select array — used both by the
+     *  PlantDropdownModal (per-event) and by code that wants to flip a
+     *  single chip on/off. */
+    const togglePlantFilter = useCallback(
+        (code) => {
+            setPlantFilters((prev) => {
+                const arr = Array.isArray(prev) ? prev : []
+                return arr.includes(code) ? arr.filter((c) => c !== code) : [...arr, code]
+            })
+        },
+        [setPlantFilters]
+    )
     // mapOrder is the only schedule-local state that genuinely shouldn't
     // persist across date changes — closing this view should drop the open
     // map modal (the order it points at no longer exists in the new day).
@@ -294,25 +338,22 @@ function PlanScheduleView({
     /** Operator clock-in roster for the currently filtered plant — sorted
      *  earliest first, then padded out to the plant's raw base count with
      *  "off" rows so removed/unneeded operators stay visible to the
-     *  dispatcher. Empty when no plant is selected. */
+     *  dispatcher. Empty when zero or 2+ plants are selected (the roster
+     *  is a per-plant artifact). */
     const operatorRosterText = useMemo(() => {
-        if (plantFilter === 'all') return ''
-        // Round each clock-in to the nearest 5-minute mark — dispatchers
-        // expect 06:00 / 07:50, never 07:48. Rounding happens BEFORE the
-        // sort so two operators that round to the same slot keep a stable
-        // ascending order in the output.
+        if (!singlePlant) return ''
         const sortedTimes = clockInRows
-            .filter((r) => r.plantCode === plantFilter)
+            .filter((r) => r.plantCode === singlePlant)
             .map((r) => (Number.isFinite(r.time) ? Math.round(r.time / 5) * 5 : r.time))
             .sort((a, b) => a - b)
-        const rawBase = poolSourceByCode?.[plantFilter]?.rawBase ?? sortedTimes.length
+        const rawBase = poolSourceByCode?.[singlePlant]?.rawBase ?? sortedTimes.length
         const slotCount = Math.max(rawBase, sortedTimes.length)
         if (slotCount === 0) return ''
         return Array.from({ length: slotCount }, (_, i) => {
             const time = sortedTimes[i]
             return `Operator ${i + 1}: ${Number.isFinite(time) ? formatMinutesClock(time) : 'off'}`
         }).join('\n')
-    }, [clockInRows, plantFilter, poolSourceByCode])
+    }, [clockInRows, singlePlant, poolSourceByCode])
 
     const [operatorRosterCopied, setOperatorRosterCopied] = useState(false)
     const copyOperatorRoster = useCallback(async () => {
@@ -416,11 +457,15 @@ function PlanScheduleView({
         const minYd = parseFloat(minYards) || 0
         return allOrders
             .filter((o) => {
-                if (plantFilter !== 'all' && o.plantCode !== plantFilter) return false
-                if (statusFilter !== 'all') {
-                    const kind = getOrderStatus(o.startTime, { isToday: isViewingToday })?.kind || 'scheduled'
-                    if (kind !== statusFilter) return false
-                }
+                if (plantFilterSet.size > 0 && !plantFilterSet.has(o.plantCode)) return false
+                const kind = getOrderStatus(o.startTime, { isToday: isViewingToday })?.kind || 'scheduled'
+                // Cancelled / test orders are gated by independent toggles
+                // — defaulted off so production tables stay clean by
+                // default. The Status pill below narrows further but only
+                // among the kinds that aren't filtered out here.
+                if (kind === 'cancelled' && !showCancelled) return false
+                if (kind === 'test' && !showTest) return false
+                if (statusFilter !== 'all' && kind !== statusFilter) return false
                 if (productFilter !== 'all' && clean(o.productCode) !== productFilter) return false
                 if (minYd > 0 && (parseFloat(o.yardage) || 0) < minYd) return false
                 if (q) {
@@ -446,7 +491,18 @@ function PlanScheduleView({
                 return true
             })
             .sort((a, b) => compareOrders(a, b, sortKey))
-    }, [allOrders, isViewingToday, statusFilter, minYards, plantFilter, productFilter, query, sortKey])
+    }, [
+        allOrders,
+        isViewingToday,
+        statusFilter,
+        minYards,
+        plantFilterSet,
+        productFilter,
+        query,
+        showCancelled,
+        showTest,
+        sortKey
+    ])
 
     /* ── KPI numbers — non-production rows (cancelled at 17:00, test at 18:00)
        stay in the table for transparency but are excluded from yardage /
@@ -548,17 +604,21 @@ function PlanScheduleView({
     const hasAnyOrders = allOrders.length > 0
     const hasActiveFilters =
         query ||
-        plantFilter !== 'all' ||
+        plantFilters.length > 0 ||
         statusFilter !== 'all' ||
         productFilter !== 'all' ||
-        (parseFloat(minYards) || 0) > 0
+        (parseFloat(minYards) || 0) > 0 ||
+        showCancelled ||
+        showTest
 
     const clearAllFilters = () => {
         setQuery('')
-        setPlantFilter('all')
+        setPlantFilters([])
         setStatusFilter('all')
         setProductFilter('all')
         setMinYards('')
+        setShowCancelled(false)
+        setShowTest(false)
     }
 
     const groupedByPlant = useMemo(() => {
@@ -574,92 +634,28 @@ function PlanScheduleView({
 
     const activeFilterCount =
         (query ? 1 : 0) +
-        (plantFilter !== 'all' ? 1 : 0) +
+        (plantFilters.length > 0 ? 1 : 0) +
         (statusFilter !== 'all' ? 1 : 0) +
         (productFilter !== 'all' ? 1 : 0) +
-        ((parseFloat(minYards) || 0) > 0 ? 1 : 0)
+        ((parseFloat(minYards) || 0) > 0 ? 1 : 0) +
+        (showCancelled ? 1 : 0) +
+        (showTest ? 1 : 0)
 
-    const plantNotSelected = plantFilter === 'all'
-    const operatorRosterReady = !plantNotSelected && !!operatorRosterText
-    const activePlantName = plantNotSelected ? '' : plantNameByCode?.[plantFilter] || ''
-
-    const sideRailProps = {
-        accentColor,
-        activePlantName,
-        onCopyRoster: copyOperatorRoster,
-        onToggleExtraRows: () => setShowExtraRows((v) => !v),
-        operatorRosterCopied,
-        operatorRosterReady,
-        plantFilter,
-        showExtraRows
-    }
+    /** Single-plant affordances (copy roster, extras toggle, plant scope
+     *  chip) only light up when exactly one plant is selected. */
+    const operatorRosterReady = !!singlePlant && !!operatorRosterText
+    const activePlantName = singlePlant ? plantNameByCode?.[singlePlant] || '' : ''
 
     return (
         <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
-            {/* Desktop side rail — floating overlay pinned to the bottom-left
-                of the viewport. `position: fixed` so it stays anchored as
-                the schedule scrolls; `bottom: 50px` keeps it clear of any
-                browser status / footer surfaces. Takes zero space in the
-                page flow, so it stays visible even in maximized mode —
-                its controls (plant-scope chip, copy roster, send-home /
-                pull-up actions) aren't duplicated in the compact toolbar.
-                Transparent (~50%) at rest so the dispatcher can read the
-                schedule beneath the rail; ramps to fully opaque on hover
-                so it's solid the moment they reach for a control. */}
-            <div
-                aria-hidden={plantNotSelected}
-                className="hidden lg:block group"
-                style={{
-                    bottom: 50,
-                    left: 12,
-                    opacity: plantNotSelected ? 0 : 0.65,
-                    position: 'fixed',
-                    transform: plantNotSelected ? 'translateY(8px)' : 'translateY(0)',
-                    transition: 'opacity 200ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
-                    visibility: plantNotSelected ? 'hidden' : 'visible',
-                    zIndex: 5
-                }}
-                onMouseEnter={(e) => {
-                    if (!plantNotSelected) e.currentTarget.style.opacity = '1'
-                }}
-                onMouseLeave={(e) => {
-                    if (!plantNotSelected) e.currentTarget.style.opacity = '0.65'
-                }}
-            >
-                <div
-                    className="rounded-xl overflow-hidden shadow-md"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-light)'
-                    }}
-                >
-                    <PlanScheduleSideRail {...sideRailProps} direction="col" />
-                </div>
-            </div>
             <div className="flex w-full">
                 <div className="flex-1 min-w-0 px-3 sm:px-4 lg:pl-2 lg:pr-6 py-4 sm:py-5 flex flex-col gap-3 sm:gap-4">
-                    {/* Mobile inline card — same content, animated via
-                        max-height + opacity since vertical collapse is the
-                        natural fit on narrow screens. Hidden in maximized
-                        mode (the compact toolbar takes its place). */}
-                    {!effectiveMaximized && (
-                        <div
-                            aria-hidden={plantNotSelected}
-                            className="lg:hidden overflow-hidden"
-                            style={{
-                                maxHeight: plantNotSelected ? 0 : 120,
-                                opacity: plantNotSelected ? 0 : 1,
-                                transition: 'max-height 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease'
-                            }}
-                        >
-                            <div
-                                className="rounded-xl overflow-hidden shadow-sm inline-block"
-                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                            >
-                                <PlanScheduleSideRail {...sideRailProps} direction="row" />
-                            </div>
-                        </div>
-                    )}
+                    {/* Plant tools (copy operator roster, extras toggle,
+                        plant-scope chip) live in the FilterDrawer's
+                        plant-tools section now — see PlanScheduleFilterDrawer.
+                        The previous floating bottom-left rail and the
+                        mobile inline rail were duplicating the same
+                        controls and have been removed. */}
                     {!effectiveMaximized && (plantsClosed || isSaturday) && (
                         <div
                             className="rounded-lg px-4 py-3 flex items-start gap-3"
@@ -794,38 +790,6 @@ function PlanScheduleView({
                         </div>
                     )}
 
-                    {effectiveMaximized && hasAnyOrders && (
-                        <PlanScheduleCompactToolbar
-                            accentColor={accentColor}
-                            activeFilterCount={activeFilterCount}
-                            allOrdersCount={allOrders.length}
-                            filteredCount={filtered.length}
-                            hasActiveFilters={hasActiveFilters}
-                            isMobile={isMobile}
-                            minYards={minYards}
-                            onChangeMinYards={setMinYards}
-                            onChangePlant={setPlantFilter}
-                            onChangeProduct={setProductFilter}
-                            onChangeQuery={setQuery}
-                            onChangeSort={setSortKey}
-                            onChangeStatus={setStatusFilter}
-                            onChangeViewMode={setViewMode}
-                            onClearFilters={clearAllFilters}
-                            onExitMaximized={() => setMaximized(false)}
-                            plantFilter={plantFilter}
-                            plantNameByCode={plantNameByCode}
-                            plantOptions={plantOptions}
-                            productFilter={productFilter}
-                            productOptions={productOptions}
-                            query={query}
-                            sortKey={sortKey}
-                            statusCounts={statusCounts}
-                            statusFilter={statusFilter}
-                            viewMode={viewMode}
-                            viewModes={VIEW_MODES}
-                        />
-                    )}
-
                     {!hasAnyOrders ? (
                         <div
                             className="rounded-xl p-10 text-center"
@@ -871,45 +835,49 @@ function PlanScheduleView({
                                 />
                             )}
 
-                            {!effectiveMaximized && filtersOpen && (
+                            {/* The same single-row filter drawer is the
+                                control surface in BOTH normal and maximized
+                                mode. In maximized mode it carries an inline
+                                "Exit" button so the dispatcher can drop back
+                                without rebuilding a separate compact toolbar.
+                                On mobile the dispatcher can collapse it via
+                                the Filters button above; desktop always
+                                shows it. */}
+                            {(!isMobile || filtersOpen) && (
                                 <PlanScheduleFilterDrawer
+                                    accent={accentColor}
+                                    activePlantName={activePlantName}
                                     minYards={minYards}
                                     onChangeMinYards={setMinYards}
-                                    onChangePlant={setPlantFilter}
                                     onChangeProduct={setProductFilter}
                                     onChangeQuery={setQuery}
+                                    onChangeShowCancelled={setShowCancelled}
+                                    onChangeShowTest={setShowTest}
                                     onChangeSort={setSortKey}
                                     onChangeStatus={setStatusFilter}
-                                    plantFilter={plantFilter}
+                                    onClearFilters={hasActiveFilters ? clearAllFilters : null}
+                                    onCopyRoster={copyOperatorRoster}
+                                    onExitMaximized={effectiveMaximized ? () => setMaximized(false) : null}
+                                    onToggleExtraRows={() => setShowExtraRows((v) => !v)}
+                                    onTogglePlantFilter={togglePlantFilter}
+                                    operatorRosterCopied={operatorRosterCopied}
+                                    operatorRosterReady={operatorRosterReady}
+                                    plantFilters={plantFilters}
                                     plantNameByCode={plantNameByCode}
                                     plantOptions={plantOptions}
+                                    plants={plants}
                                     productFilter={productFilter}
                                     productOptions={productOptions}
                                     query={query}
+                                    showCancelled={showCancelled}
+                                    showExtraRows={showExtraRows}
+                                    showTest={showTest}
                                     sortKey={sortKey}
                                     statusCounts={statusCounts}
                                     statusFilter={statusFilter}
+                                    totalShown={filtered.length}
+                                    totalUnfiltered={allOrders.length}
                                 />
-                            )}
-
-                            {!effectiveMaximized && hasActiveFilters && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                                        {filtered.length} of {allOrders.length} orders match your filters.
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={clearAllFilters}
-                                        className="px-2.5 py-1 rounded-md text-[11.5px] font-semibold border-none cursor-pointer"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-secondary)'
-                                        }}
-                                    >
-                                        <i className="fas fa-rotate-left mr-1" /> Reset filters
-                                    </button>
-                                </div>
                             )}
 
                             {filtered.length === 0 ? (
@@ -931,10 +899,10 @@ function PlanScheduleView({
                                     getCloserPlantForOrder={getCloserPlantForOrder}
                                     getTravelOverrides={getTravelOverrides}
                                     helpRows={helpRows}
-                                    filteredPlantCode={plantFilter !== 'all' ? plantFilter : null}
+                                    filteredPlantCode={singlePlant}
                                     isMaximized={effectiveMaximized}
                                     isPastDay={isPastDay}
-                                    isPlantFiltered={plantFilter !== 'all'}
+                                    isPlantFiltered={!!singlePlant}
                                     isToday={isViewingToday}
                                     nowMin={nowMin}
                                     showExtraRows={showExtraRows}
@@ -957,13 +925,11 @@ function PlanScheduleView({
                                             <div className="flex items-center gap-2 px-1 text-[13px]">
                                                 <button
                                                     type="button"
-                                                    onClick={() =>
-                                                        setPlantFilter((prev) => (prev === code ? 'all' : code))
-                                                    }
+                                                    onClick={() => togglePlantFilter(code)}
                                                     className="border-none bg-transparent p-0 cursor-pointer"
                                                     title={
-                                                        plantFilter === code
-                                                            ? 'Tap to clear plant filter'
+                                                        plantFilterSet.has(code)
+                                                            ? 'Tap to remove plant from filter'
                                                             : `Filter to plant ${code}`
                                                     }
                                                 >
@@ -986,9 +952,7 @@ function PlanScheduleView({
                                                         closerPlant={getCloserPlantForOrder(o)}
                                                         isToday={isViewingToday}
                                                         onOpenLocation={setMapOrder}
-                                                        onPickPlant={(c) =>
-                                                            setPlantFilter((prev) => (prev === c ? 'all' : c))
-                                                        }
+                                                        onPickPlant={(c) => togglePlantFilter(c)}
                                                         onPickProduct={(p) =>
                                                             setProductFilter((prev) => (prev === p ? 'all' : p))
                                                         }

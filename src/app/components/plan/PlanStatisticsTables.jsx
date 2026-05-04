@@ -176,6 +176,7 @@ const buildScorecardStatus = ({ isSingleDay, plant, singleDayShiftSpan, trucks }
 export function PlantScorecardTable({
     accent,
     isSingleDay,
+    loadAttributionByPlant,
     mixerCountsByPlant,
     plantNameByCode,
     rows,
@@ -190,6 +191,12 @@ export function PlantScorecardTable({
         )
     }
     const sorted = [...rows].sort((a, b) => b.yardage - a.yardage)
+    /** Show the cross-loaded column only when at least one plant has ticket
+     *  data — otherwise the column is all em-dashes and just clutters the
+     *  table for windows where the bucket hasn't synced detail orders. */
+    const hasAttributionData =
+        loadAttributionByPlant &&
+        Object.values(loadAttributionByPlant).some((entry) => entry && (entry.loaded > 0 || entry.crossOutYards > 0))
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-[12px]" style={{ borderCollapse: 'collapse' }}>
@@ -198,17 +205,33 @@ export function PlantScorecardTable({
                         <th className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2">
                             Plant
                         </th>
-                        <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
-                            Yardage
+                        <th
+                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                            title="Total ordered yardage attributed to this plant — schedule's own demand, regardless of who loaded the trucks."
+                        >
+                            Ordered
                         </th>
+                        {hasAttributionData && (
+                            <th
+                                className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                                title="Yardage actually loaded for this plant's orders (includes help received from sibling plants)."
+                            >
+                                Loaded
+                            </th>
+                        )}
+                        {hasAttributionData && (
+                            <th
+                                className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                                title="Cross-loaded yardage — help received (in) and help given to other plants (out)."
+                            >
+                                Cross-loaded
+                            </th>
+                        )}
                         <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
                             Loads
                         </th>
                         <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
                             Orders
-                        </th>
-                        <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
-                            Loads/day
                         </th>
                         <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
                             Share
@@ -228,8 +251,10 @@ export function PlantScorecardTable({
                             singleDayShiftSpan,
                             trucks
                         })
-                        const loadsPerDay =
-                            plant.activeDays > 0 ? Math.round((plant.loads / plant.activeDays) * 10) / 10 : null
+                        const attribution = loadAttributionByPlant?.[plant.code]
+                        const loadedYards = attribution?.loaded || 0
+                        const crossInYards = attribution?.crossInYards || 0
+                        const crossOutYards = attribution?.crossOutYards || 0
                         return (
                             <tr key={plant.code} style={{ borderTop: '1px solid var(--border-light)' }}>
                                 <td className="px-3 py-2">
@@ -254,9 +279,60 @@ export function PlantScorecardTable({
                                 <td
                                     className="px-2 py-2 text-right font-mono tabular-nums font-semibold"
                                     style={{ color: 'var(--text-primary)' }}
+                                    title="Ordered yardage attributed to this plant"
                                 >
                                     {fmtInt(plant.yardage)}
                                 </td>
+                                {hasAttributionData && (
+                                    <td
+                                        className="px-2 py-2 text-right font-mono tabular-nums"
+                                        style={{ color: 'var(--text-primary)' }}
+                                        title={
+                                            loadedYards > 0
+                                                ? `${fmtInt(loadedYards)} yd loaded for this plant's orders`
+                                                : 'No ticket data yet'
+                                        }
+                                    >
+                                        {loadedYards > 0 ? fmtInt(loadedYards) : '—'}
+                                    </td>
+                                )}
+                                {hasAttributionData && (
+                                    <td
+                                        className="px-2 py-2 text-right font-mono tabular-nums whitespace-nowrap"
+                                        style={{ color: 'var(--text-secondary)' }}
+                                    >
+                                        {crossInYards === 0 && crossOutYards === 0 ? (
+                                            '—'
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {crossInYards > 0 && (
+                                                    <span
+                                                        className="rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
+                                                        style={{
+                                                            background: 'rgba(37, 99, 235, 0.12)',
+                                                            color: '#1d4ed8'
+                                                        }}
+                                                        title={`Help received: ${fmtInt(crossInYards)} yd loaded by sibling plants for this plant's orders`}
+                                                    >
+                                                        +{fmtInt(crossInYards)} in
+                                                    </span>
+                                                )}
+                                                {crossOutYards > 0 && (
+                                                    <span
+                                                        className="rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
+                                                        style={{
+                                                            background: 'rgba(217, 119, 6, 0.12)',
+                                                            color: '#b45309'
+                                                        }}
+                                                        title={`Help given: ${fmtInt(crossOutYards)} yd loaded by this plant for other plants' orders`}
+                                                    >
+                                                        −{fmtInt(crossOutYards)} out
+                                                    </span>
+                                                )}
+                                            </span>
+                                        )}
+                                    </td>
+                                )}
                                 <td
                                     className="px-2 py-2 text-right font-mono tabular-nums"
                                     style={{ color: 'var(--text-primary)' }}
@@ -268,12 +344,6 @@ export function PlantScorecardTable({
                                     style={{ color: 'var(--text-secondary)' }}
                                 >
                                     {fmtInt(plant.orderCount)}
-                                </td>
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
-                                    {loadsPerDay != null ? fmtFloat(loadsPerDay) : '—'}
                                 </td>
                                 <td
                                     className="px-2 py-2 text-right font-mono tabular-nums"

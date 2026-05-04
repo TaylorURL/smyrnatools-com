@@ -1,16 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { formatOrderAddress } from '../../../utils/AddressUtility'
+import { isBigPourOrder, isCancelledOrder, plantBadgeColor, SAME_DAY_ORDER_START } from '../../../utils/PlanUtility'
 import { TruckCoveragePanelBody } from './TruckCoverageHoverCard'
 
 const clean = (value) => (value == null ? '' : String(value).trim())
 
-/** A single label-over-value pair. Stays quiet — no border, no tint. The
- *  label is small uppercase tertiary text; the value is regular weight
- *  primary so it reads at the same level as body copy elsewhere on the
- *  site (mirrors the dashboard sections' StatChip / KeyValue style).
- *
- *  `overflowWrap: anywhere` on the value forces long unbroken tokens to
- *  wrap inside the column instead of pushing past the card edge. */
+const isSameDayOrder = (order) => {
+    const t = String(order?.startTime || '').trim()
+    return t ? t.padStart(5, '0') === SAME_DAY_ORDER_START : false
+}
+
+/** Compact label-over-value pair used in the Details tab. Stays quiet — no
+ *  border, no tint — so the page reads as scannable text rather than a wall
+ *  of nested cards. Long unbroken tokens wrap inside the column. */
 function Field({ hint, label, mono, value, wide }) {
     const text = clean(value)
     if (!text) return null
@@ -39,8 +42,7 @@ function Field({ hint, label, mono, value, wide }) {
     )
 }
 
-/** Section card — quiet container around a group of fields. Heading-bar
- *  look mirrors the schedule's KPI strip / filter drawer. */
+/** Section card — quiet container around a group of fields. */
 function Section({ children, icon, title }) {
     if (!children) return null
     const validChildren = React.Children.toArray(children).filter(Boolean)
@@ -67,8 +69,84 @@ function Section({ children, icon, title }) {
     )
 }
 
-/** One row in the Suggestions tab — colored chip on the left, headline +
- *  body text on the right. Optional CTA for "apply" actions. */
+/** Hero metric tile — large value over a compact label, optional hint. */
+function HeroMetric({ accent, hint, icon, label, value }) {
+    return (
+        <div
+            className="rounded-lg px-3 py-2 flex items-start gap-2.5 min-w-0 flex-1"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
+            <div
+                className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
+                style={{ background: `${accent}15`, color: accent }}
+            >
+                <i className={`fas ${icon} text-[12px]`} />
+            </div>
+            <div className="flex-1 min-w-0">
+                <div
+                    className="text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    {label}
+                </div>
+                <div
+                    className="text-[15px] font-bold font-mono leading-tight mt-0.5 truncate"
+                    style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+                    title={value}
+                >
+                    {value || '—'}
+                </div>
+                {hint && (
+                    <div
+                        className="text-[10.5px] mt-0.5 truncate"
+                        style={{ color: 'var(--text-tertiary)' }}
+                        title={hint}
+                    >
+                        {hint}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+/** Header status pill — used for cancelled / same-day / big-pour / overbooked
+ *  / closer-plant-available callouts. */
+function StatusPill({ color, icon, label, title }) {
+    return (
+        <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider whitespace-nowrap"
+            style={{ background: `${color}1f`, color }}
+            title={title}
+        >
+            <i className={`fas ${icon} text-[9px]`} />
+            {label}
+        </span>
+    )
+}
+
+/** Header quick-action button — small icon + label, accent-tinted. */
+function HeaderAction({ accent, disabled, icon, label, onClick, title }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            title={title || label}
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer disabled:cursor-not-allowed"
+            style={{
+                background: disabled ? 'var(--bg-secondary)' : `${accent}15`,
+                color: disabled ? 'var(--text-tertiary)' : accent,
+                opacity: disabled ? 0.6 : 1
+            }}
+        >
+            <i className={`fas ${icon} text-[10.5px]`} />
+            {label}
+        </button>
+    )
+}
+
+/** One row in the Suggestions tab. */
 function Suggestion({ body, color = '#0ea5e9', icon, title }) {
     return (
         <div
@@ -96,8 +174,6 @@ function Suggestion({ body, color = '#0ea5e9', icon, title }) {
     )
 }
 
-/** Empty-state message used by the Plan / Suggestions tabs when there's
- *  nothing to show. */
 function EmptyTab({ hint, icon, title }) {
     return (
         <div
@@ -124,21 +200,33 @@ const TABS = [
 ]
 
 /**
- * Tabbed modal for a single dispatch order. Three tabs:
+ * Tabbed modal for a single dispatch order — the Schedule tab's right-click
+ * → "View order" target.
  *
- *   1. Details — every field carried on the order header (sourced from the
- *      Daily Order Listing import in `dispatch_data`).
- *   2. Plan — the truck-coverage explainer that used to render as a hover
- *      side-panel on the schedule table's Trucks column. Reuses the same
- *      `TruckCoveragePanelBody` so the math + copy stays identical.
- *   3. Suggestions — actionable nudges the dispatcher can take on this
- *      order: closer plant, recommended move time when overbooked, big-pour
- *      shortfall hint, dispatch-vs-canonical truck-count mismatch.
- *
- * Visual language mirrors the rest of the Schedule tab — section cards on
- * a tinted body, header bar on each panel, no per-field tile borders.
+ *   Header — colored plant strip with order #, customer, home plant chip,
+ *            status pills (cancelled / same-day / big pour / overbooked /
+ *            closer-plant), and quick-action buttons (Open map · View
+ *            tickets).
+ *   Hero strip — at-a-glance yardage / trucks / start time / address.
+ *   Tabs:
+ *     Details — every header field carried on the order (clean title-cased
+ *               address, mono codes, hint metadata).
+ *     Plan — the truck-coverage explainer reused from the Schedule's
+ *            hover side-panel.
+ *     Suggestions — actionable nudges (closer plant, recommended move
+ *                   time, big-pour shortfall, dispatch mismatch).
  */
-function OrderInfoModal({ accentColor = '#2563eb', closerPlant, coverage, onClose, order, plantName }) {
+function OrderInfoModal({
+    accentColor = '#2563eb',
+    closerPlant,
+    coverage,
+    onClose,
+    onOpenLocation,
+    onViewTickets,
+    order,
+    plantName,
+    ticketCount = null
+}) {
     const [tab, setTab] = useState('details')
 
     useEffect(() => {
@@ -160,18 +248,68 @@ function OrderInfoModal({ accentColor = '#2563eb', closerPlant, coverage, onClos
     const yardage = parseFloat(order?.yardage) || 0
     const loadSize = parseFloat(order?.loadSize) || 0
     const truckCount = parseFloat(order?.truckCount) || 0
-    const fullAddress = useMemo(() => {
-        const parts = [clean(order?.address), clean(order?.city), clean(order?.state), clean(order?.zip)].filter(
-            Boolean
-        )
-        return parts.length ? parts.join(', ') : clean(order?.address)
-    }, [order])
+
+    /** Schedule-tab address normalizer — applies the same Title-Case + stray
+     *  punctuation cleanup the schedule rows do, so this modal never shows
+     *  raw `.lady Leslie Lane &c.` artifacts. */
+    const formattedAddress = useMemo(() => formatOrderAddress(order, ', '), [order])
     const stateZip = useMemo(() => [clean(order?.state), clean(order?.zip)].filter(Boolean).join(' '), [order])
+
+    /** Header status pills — order classification first, then operational
+     *  flags that need dispatcher attention. */
+    const statusPills = useMemo(() => {
+        const out = []
+        if (isCancelledOrder(order)) {
+            out.push({
+                color: '#dc2626',
+                icon: 'fa-ban',
+                label: 'Cancelled',
+                title: 'Order has the cancellation start-time sentinel (17:00).'
+            })
+        }
+        if (isSameDayOrder(order)) {
+            out.push({
+                color: '#d97706',
+                icon: 'fa-bolt',
+                label: 'Same-day',
+                title: 'Order has the same-day rush sentinel (15:00).'
+            })
+        }
+        if (isBigPourOrder(order)) {
+            out.push({
+                color: '#4f46e5',
+                icon: 'fa-fire',
+                label: 'Big pour',
+                title: '> 120 yd³ with < 10-minute spacing — coordinate trucks early.'
+            })
+        }
+        if (coverage?.overbooked) {
+            out.push({
+                color: '#dc2626',
+                icon: 'fa-triangle-exclamation',
+                label: 'Overbooked',
+                title: 'Plant pool can’t cover the pour at the scheduled start.'
+            })
+        }
+        if (closerPlant && closerPlant.savings >= 5) {
+            out.push({
+                color: '#1d4ed8',
+                icon: 'fa-route',
+                label: `Closer: ${closerPlant.code}`,
+                title: `Plant ${closerPlant.code} is ~${closerPlant.savings} min closer one-way.`
+            })
+        }
+        return out
+    }, [order, coverage, closerPlant])
 
     const suggestions = useMemo(
         () => buildSuggestions({ closerPlant, coverage, order }),
         [closerPlant, coverage, order]
     )
+
+    /** Plant-stripe color — keys the header to `plantBadgeColor` so a glance
+     *  at the modal header makes the plant identity unmistakable. */
+    const stripeColor = plantBadgeColor(homePlantCode, accentColor)
 
     if (!order) return null
 
@@ -190,50 +328,136 @@ function OrderInfoModal({ accentColor = '#2563eb', closerPlant, coverage, onClos
                     background: 'var(--bg-primary)',
                     border: '1px solid var(--border-light)',
                     boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.35))',
-                    maxHeight: '90vh',
-                    maxWidth: 760
+                    maxHeight: '92vh',
+                    maxWidth: 880
                 }}
             >
-                <div
-                    className="flex items-start gap-3 px-5 py-3 border-b"
-                    style={{ borderColor: 'var(--border-light)' }}
-                >
-                    <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: `${accentColor}14`, color: accentColor }}
-                    >
-                        <i className="fas fa-clipboard-list text-[14px]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                            Order {orderNumLabel}
-                        </div>
+                {/* Header — plant-color stripe on the left, identification +
+                    status pills + quick actions on the right. */}
+                <div className="flex items-stretch border-b" style={{ borderColor: 'var(--border-light)' }}>
+                    <div style={{ background: stripeColor, flexShrink: 0, width: 6 }} />
+                    <div className="flex-1 min-w-0 px-5 py-3 flex items-start gap-3">
                         <div
-                            className="text-[12px] mt-0.5 truncate"
-                            style={{ color: 'var(--text-secondary)' }}
-                            title={customerLabel}
+                            className="rounded-lg flex items-center justify-center shrink-0 font-bold tabular-nums"
+                            style={{
+                                background: stripeColor,
+                                color: '#fff',
+                                fontFamily: 'var(--font-heading)',
+                                fontSize: 13,
+                                height: 38,
+                                width: 44
+                            }}
+                            title={`Plant ${homePlantCode}${plantName ? ` — ${plantName}` : ''}`}
                         >
-                            {customerLabel || '—'}
-                            {homePlantCode && (
-                                <span className="ml-2" style={{ color: 'var(--text-tertiary)' }}>
-                                    · home plant {homePlantCode}
-                                    {plantName ? ` (${plantName})` : ''}
+                            {homePlantCode || '—'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                                <span
+                                    className="text-[15px] font-bold leading-tight"
+                                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                                >
+                                    Order {orderNumLabel}
                                 </span>
+                                {plantName && (
+                                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                        {plantName}
+                                    </span>
+                                )}
+                            </div>
+                            <div
+                                className="text-[12.5px] font-semibold mt-0.5 truncate uppercase tracking-wide"
+                                style={{ color: 'var(--text-secondary)' }}
+                                title={customerLabel}
+                            >
+                                {customerLabel || '—'}
+                            </div>
+                            {statusPills.length > 0 && (
+                                <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                                    {statusPills.map((p) => (
+                                        <StatusPill key={p.label} {...p} />
+                                    ))}
+                                </div>
                             )}
                         </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            {onOpenLocation && (
+                                <HeaderAction
+                                    accent={accentColor}
+                                    icon="fa-map-location-dot"
+                                    label="Map"
+                                    onClick={() => onOpenLocation(order)}
+                                    title="Open route map for this job site"
+                                />
+                            )}
+                            {onViewTickets && (
+                                <HeaderAction
+                                    accent={accentColor}
+                                    icon="fa-ticket"
+                                    label={
+                                        ticketCount != null && ticketCount > 0 ? `Tickets · ${ticketCount}` : 'Tickets'
+                                    }
+                                    onClick={() => onViewTickets(order)}
+                                    title="View loaded tickets for this order"
+                                />
+                            )}
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="w-8 h-8 rounded-md flex items-center justify-center bg-transparent border-0 cursor-pointer"
+                                style={{ color: 'var(--text-secondary)' }}
+                                aria-label="Close"
+                                title="Close (Esc)"
+                            >
+                                <i className="fas fa-xmark text-[14px]" />
+                            </button>
+                        </div>
                     </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="w-8 h-8 rounded-md flex items-center justify-center bg-transparent border-0 cursor-pointer"
-                        style={{ color: 'var(--text-secondary)' }}
-                        aria-label="Close"
-                        title="Close"
-                    >
-                        <i className="fas fa-xmark text-[14px]" />
-                    </button>
                 </div>
 
+                {/* Hero metrics — at-a-glance answers to "how big, how many,
+                    when, where" without scrolling. */}
+                <div
+                    className="px-5 py-3 flex items-stretch gap-2 flex-wrap border-b"
+                    style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
+                >
+                    <HeroMetric
+                        accent={accentColor}
+                        icon="fa-cubes"
+                        label="Yardage"
+                        value={yardage > 0 ? `${yardage} yd³` : '—'}
+                        hint={loadSize > 0 ? `${loadSize} yd / load` : null}
+                    />
+                    <HeroMetric
+                        accent={accentColor}
+                        icon="fa-truck"
+                        label="Trucks"
+                        value={truckCount > 0 ? String(truckCount) : '—'}
+                        hint={
+                            order?.rate
+                                ? `every ${order.rate}`
+                                : order?.truckClass
+                                  ? `class ${clean(order.truckClass)}`
+                                  : null
+                        }
+                    />
+                    <HeroMetric
+                        accent={accentColor}
+                        icon="fa-clock"
+                        label="Start time"
+                        value={clean(order?.startTime) || '—'}
+                        hint={order?.toJobTime ? `${clean(order.toJobTime)} to job` : null}
+                    />
+                    <HeroMetric
+                        accent={accentColor}
+                        icon="fa-location-dot"
+                        label="Job address"
+                        value={formattedAddress || '—'}
+                        hint={stateZip || null}
+                    />
+                </div>
+
+                {/* Tabs */}
                 <div
                     className="flex items-center gap-1 px-5 py-2 border-b overflow-x-auto"
                     style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
@@ -285,13 +509,29 @@ function OrderInfoModal({ accentColor = '#2563eb', closerPlant, coverage, onClos
                                 <Field label="Job #" mono value={order.jobNumber} />
                             </Section>
 
-                            <Section icon="fa-user-tie" title="Customer">
+                            <Section icon="fa-user-tie" title="Customer & Contact">
                                 <Field label="Name" value={order.customer} wide />
                                 <Field label="Customer #" mono value={order.customerNum} />
+                                <Field label="Contact" value={order.contact} />
+                                <Field
+                                    label="Phone"
+                                    mono
+                                    value={
+                                        order.phone ? (
+                                            <a
+                                                href={`tel:${String(order.phone).replace(/\D/g, '')}`}
+                                                style={{ color: 'inherit' }}
+                                                className="hover:underline"
+                                            >
+                                                {order.phone}
+                                            </a>
+                                        ) : null
+                                    }
+                                />
                             </Section>
 
                             <Section icon="fa-location-dot" title="Job Location">
-                                <Field label="Address" value={fullAddress} wide />
+                                <Field label="Address" value={formattedAddress} wide />
                                 <Field label="City" value={order.city} />
                                 <Field label="State / ZIP" mono value={stateZip} />
                             </Section>
@@ -301,28 +541,11 @@ function OrderInfoModal({ accentColor = '#2563eb', closerPlant, coverage, onClos
                                 <Field label="Description" value={order.description} wide />
                             </Section>
 
-                            <Section icon="fa-clock" title="Schedule">
+                            <Section icon="fa-clock" title="Schedule & Timing">
                                 <Field label="Start time" mono value={order.startTime} />
                                 <Field label="Spacing" mono value={order.rate} hint="between loads" />
-                                <Field
-                                    label="Yardage"
-                                    mono
-                                    value={yardage > 0 ? `${yardage} yd` : ''}
-                                    hint={loadSize > 0 ? `${loadSize} yd / load` : null}
-                                />
-                                <Field
-                                    label="Trucks"
-                                    mono
-                                    value={truckCount > 0 ? String(truckCount) : ''}
-                                    hint={order.truckClass ? `class ${clean(order.truckClass)}` : null}
-                                />
                                 <Field label="Travel to job" mono value={order.toJobTime} />
                                 <Field label="Travel to plant" mono value={order.toPlantTime} />
-                            </Section>
-
-                            <Section icon="fa-phone" title="Contact">
-                                <Field label="Name" value={order.contact} />
-                                <Field label="Phone" mono value={order.phone} />
                             </Section>
                         </>
                     )}
@@ -359,9 +582,8 @@ function OrderInfoModal({ accentColor = '#2563eb', closerPlant, coverage, onClos
     )
 }
 
-/** Build the Suggestions list from the inputs we already have. Each entry
- *  is `{ icon, color, title, body }` — a Suggestion-component-shaped object.
- *  Suggestions are ordered by urgency: overbooked > big-pour shortfall >
+/** Build the Suggestions list — `{ icon, color, title, body }` shaped
+ *  Suggestion props. Ordered by urgency: overbooked > big-pour shortfall >
  *  closer plant > dispatch mismatch. */
 function buildSuggestions({ closerPlant, coverage, order }) {
     const out = []

@@ -93,16 +93,22 @@ export default function PlanScheduleStatStrip({
                         </span>
                     }
                     hint={(() => {
+                        // Sentence-case hints to match every other stat in the
+                        // strip ("this week (Mon–Sat)", "truck loads",
+                        // "cancelled excluded", …). The label above the value
+                        // is the only place that displays uppercase, and it
+                        // does so via CSS `text-transform: uppercase`, not
+                        // by hardcoding caps in the source string.
                         const parts = [
-                            `${customerSatisfaction.goodService} Good Service`,
-                            `${customerSatisfaction.badService} Bad Service`
+                            `${customerSatisfaction.goodService} good service`,
+                            `${customerSatisfaction.badService} bad service`
                         ]
                         if (customerSatisfaction.isLive && customerSatisfaction.inProgress > 0) {
                             parts.push(`${customerSatisfaction.inProgress} in progress`)
                         }
                         return parts.join(' · ')
                     })()}
-                    label={customerSatisfaction.isLive ? 'Customer Satisfaction · So Far' : 'Customer Satisfaction'}
+                    label={customerSatisfaction.isLive ? 'Customer satisfaction · so far' : 'Customer satisfaction'}
                     value={`${Math.round(customerSatisfaction.score * 100)}%`}
                 />
             )}

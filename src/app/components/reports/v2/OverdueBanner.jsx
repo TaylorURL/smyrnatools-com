@@ -11,26 +11,27 @@ function OverdueBanner({ count, title, dueLabel, onSubmit }) {
         count === 1
             ? 'You have 1 overdue report from a prior week'
             : `You have ${count} overdue reports from prior weeks`
+    // Tinted backgrounds use color-mix so the banner adapts to dark mode
+    // without us having to ship a separate dark-mode gradient.
     return (
         <div
             className="flex items-center gap-3.5 rounded-xl px-4 py-3 border"
             style={{
-                background: 'linear-gradient(90deg, #fee2e240, #fef3c740)',
-                borderColor: '#fca5a5'
+                background:
+                    'linear-gradient(90deg, color-mix(in srgb, #dc2626 14%, transparent), color-mix(in srgb, #f59e0b 14%, transparent))',
+                borderColor: 'color-mix(in srgb, #dc2626 35%, transparent)'
             }}
         >
             <div
-                className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
-                style={{ background: '#dc2626', color: '#fff' }}
+                className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 text-white"
+                style={{ background: '#dc2626' }}
             >
                 <i className="fas fa-triangle-exclamation text-[13px]" />
             </div>
             <div className="flex-1 min-w-0">
-                <div className="font-bold text-[13px]" style={{ color: '#991b1b' }}>
-                    {headline}
-                </div>
+                <div className="font-bold text-[13px] text-red-700">{headline}</div>
                 {title && (
-                    <div className="text-xs mt-0.5 truncate" style={{ color: '#b91c1c' }}>
+                    <div className="text-xs mt-0.5 truncate text-red-600">
                         {title}
                         {dueLabel ? ` · was due ${dueLabel}` : ''}
                     </div>
@@ -40,8 +41,8 @@ function OverdueBanner({ count, title, dueLabel, onSubmit }) {
                 <button
                     type="button"
                     onClick={onSubmit}
-                    className="font-bold text-xs px-3.5 py-2 rounded-lg shrink-0 inline-flex items-center gap-1.5 border-none cursor-pointer hover:opacity-90"
-                    style={{ background: '#dc2626', color: '#fff' }}
+                    className="font-bold text-xs px-3.5 py-2 rounded-lg shrink-0 inline-flex items-center gap-1.5 border-none cursor-pointer hover:opacity-90 text-white"
+                    style={{ background: '#dc2626' }}
                 >
                     <i className="fas fa-paper-plane text-[10px]" /> Submit now
                 </button>

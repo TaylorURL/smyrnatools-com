@@ -311,11 +311,34 @@ class DispatchDataServiceImpl {
                 }
             })
 
+            // Materialize per-ticket quantity. Estimate tickets already had
+            // theirs assigned in the loop above; confirmed tickets adopt
+            // their `_confirmedQuantity` from DetailOrderAnalysis.
             for (const t of order.tickets) {
                 if (!t._isEstimateOnly) t.quantity = t._confirmedQuantity
                 delete t._confirmedQuantity
                 delete t._isEstimateOnly
+            }
 
+            // Final-cap pass — when the source HTML reports a full-load
+            // quantity for every ticket (e.g., 4 × 10 yd = 40 on a 36 yd
+            // order), the per-ticket sum can exceed scheduledYardage. Trim
+            // from the last ticket backward until the displayed total
+            // matches scheduled, so the modal header (`loadedYardage / yd`)
+            // never reads more than the order called for and the per-row
+            // numbers always sum to the header.
+            if (meta.scheduledYardage > 0) {
+                let totalAfterFill = order.tickets.reduce((sum, t) => sum + (t.quantity || 0), 0)
+                let excess = totalAfterFill - meta.scheduledYardage
+                for (let i = order.tickets.length - 1; i >= 0 && excess > 0; i--) {
+                    const t = order.tickets[i]
+                    const reduce = Math.min(excess, t.quantity || 0)
+                    t.quantity = (t.quantity || 0) - reduce
+                    excess -= reduce
+                }
+            }
+
+            for (const t of order.tickets) {
                 order.ticketCount += 1
                 order.loadedYardage += t.quantity
                 if (t.plantId) {
@@ -457,10 +480,32 @@ class DispatchDataServiceImpl {
                         remaining = 0
                     }
                 })
+                // Materialize per-ticket quantity. Estimate tickets had
+                // theirs assigned in the loop above; confirmed tickets adopt
+                // their `_confirmedQuantity` from DetailOrderAnalysis.
                 for (const t of order.tickets) {
                     if (!t._isEstimateOnly) t.quantity = t._confirmedQuantity
                     delete t._confirmedQuantity
                     delete t._isEstimateOnly
+                }
+
+                // Final-cap pass — see fetchDetailByOrderId for the
+                // rationale. Trims per-ticket quantities from the last
+                // load backward when the source HTML over-reports (e.g.,
+                // 4 × 10 yd = 40 on a 36 yd order) so the displayed
+                // header total and per-row sum always match scheduled.
+                if (meta.scheduledYardage > 0) {
+                    let totalAfterFill = order.tickets.reduce((sum, t) => sum + (t.quantity || 0), 0)
+                    let excess = totalAfterFill - meta.scheduledYardage
+                    for (let i = order.tickets.length - 1; i >= 0 && excess > 0; i--) {
+                        const t = order.tickets[i]
+                        const reduce = Math.min(excess, t.quantity || 0)
+                        t.quantity = (t.quantity || 0) - reduce
+                        excess -= reduce
+                    }
+                }
+
+                for (const t of order.tickets) {
                     order.ticketCount += 1
                     order.loadedYardage += t.quantity
                     if (t.plantId) {

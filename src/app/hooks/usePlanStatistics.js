@@ -257,6 +257,80 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
         return out
     }, [detailByDay, satisfactionEnabled])
 
+    /** Per-plant load attribution — splits each plant's slice into:
+     *
+     *    ordered     = sum of order yardage where this plant is the home plant
+     *                  (ie. the plant that owns / scheduled the order). Pulled
+     *                  from the schedule HTML, not from tickets — represents
+     *                  the demand assigned to this plant.
+     *    loaded      = sum of TICKET yardage for those same orders, regardless
+     *                  of which plant actually loaded the truck. This is what
+     *                  the customer ultimately got delivered toward this
+     *                  plant's orders.
+     *    selfLoaded  = ticket yardage where the loading plant matches the
+     *                  order's home plant.
+     *    crossInYards = loaded − selfLoaded. Help RECEIVED — sibling plants
+     *                  loaded these trucks for this plant's orders.
+     *    crossOutYards = ticket yardage where this plant LOADED a truck for
+     *                  another plant's order. Help GIVEN.
+     *
+     *  Returns a map keyed by plant code so the scorecard table can join in
+     *  O(1). Empty map when ticket data isn't available for the window. */
+    const perPlantLoadAttribution = useMemo(() => {
+        const out = {}
+        const getEntry = (code) => {
+            if (!out[code]) {
+                out[code] = {
+                    code,
+                    crossInYards: 0,
+                    crossOutYards: 0,
+                    loaded: 0,
+                    ordered: 0,
+                    selfLoaded: 0
+                }
+            }
+            return out[code]
+        }
+        // Ordered side — runs even when detail data isn't loaded yet so
+        // the table can show ordered yardage as soon as the schedule
+        // arrives, then back-fill loaded/cross numbers when tickets land.
+        currentDays.forEach((day) => {
+            const dayOrders = day.allLiveOrders || []
+            dayOrders.forEach((order) => {
+                const homePlant = order?.plantCode
+                if (!homePlant) return
+                getEntry(homePlant).ordered += parseFloat(order?.yardage) || 0
+            })
+        })
+        // Loaded + cross-loaded side — only when we have ticket data.
+        if (Object.keys(mergedDetail).length > 0) {
+            currentDays.forEach((day) => {
+                const dayOrders = day.allLiveOrders || []
+                dayOrders.forEach((order) => {
+                    const homePlant = order?.plantCode
+                    if (!homePlant || !order?.orderId) return
+                    const detail = mergedDetail[order.orderId]
+                    if (!detail || typeof detail.byPlant !== 'object') return
+                    Object.entries(detail.byPlant).forEach(([loaderPlant, slice]) => {
+                        const loadedYards = parseFloat(slice?.loadedYardage) || 0
+                        if (loadedYards <= 0) return
+                        // Attribute the loaded yards to the order's home plant.
+                        const home = getEntry(homePlant)
+                        home.loaded += loadedYards
+                        if (loaderPlant === homePlant) {
+                            home.selfLoaded += loadedYards
+                        } else {
+                            home.crossInYards += loadedYards
+                            // The loader plant gave help to another plant.
+                            getEntry(loaderPlant).crossOutYards += loadedYards
+                        }
+                    })
+                })
+            })
+        }
+        return out
+    }, [currentDays, mergedDetail])
+
     /** Per-day satisfaction. Walks each day's orders ONCE, hits the shared
      *  detail map. Null entries mean we have no ticket data for that day. */
     const satisfactionByDay = useMemo(() => {
@@ -569,6 +643,7 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
         customStart,
         isSingleDay,
         loading,
+        perPlantLoadAttribution,
         perPlantSatisfaction,
         period,
         previousSatisfactionAggregate,

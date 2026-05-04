@@ -106,17 +106,25 @@ export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
             }
         }
 
-        const onChange = (payload) => {
-            const row = payload?.new || payload?.old
-            if (row?.order_date !== dateRef.current) return
+        // Don't filter the payload by `order_date`. DELETE events on
+        // Postgres replication ship only a partial `old` row (often just
+        // the primary key columns), so the previous date filter dropped
+        // every delete and the page never reflected ticket removals
+        // without a manual refresh. The refetch is debounced and only
+        // hits the API once per burst, so the extra refetches on
+        // unrelated-date events are cheap.
+        const onChange = () => {
             if (debounceRef.current) clearTimeout(debounceRef.current)
             debounceRef.current = setTimeout(refetch, REALTIME_DEBOUNCE_MS)
         }
 
         const channel = Database.channel(channelName)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'dispatch_data' }, onChange)
-            .subscribe((status) => {
+            .subscribe((status, err) => {
                 if (status === 'SUBSCRIBED') refetch()
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    console.warn('[useDetailOrders] realtime subscription failed:', status, err?.message || '')
+                }
             })
 
         return () => {

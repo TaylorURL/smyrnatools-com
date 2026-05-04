@@ -61,10 +61,15 @@ function PlanView() {
     const [scheduleFilters, setScheduleFilters] = useState(() => ({
         filtersOpen: !isMobile,
         minYards: '',
-        plantFilter: 'all',
+        // Multi-select plant filter: empty array = all plants. Keeping
+        // an array (not a single code) lets the dispatcher pick whole
+        // districts / arbitrary permutations from PlantDropdownModal.
+        plantFilters: [],
         productFilter: 'all',
         query: '',
+        showCancelled: false,
         showExtraRows: false,
+        showTest: false,
         sortKey: 'plantThenTime',
         statusFilter: 'all',
         viewMode: isMobile ? 'cards' : 'table'
@@ -289,7 +294,10 @@ function PlanView() {
                                 plantAddressByCode={plantAddressByCode}
                                 plantNameByCode={plantNameByCode}
                                 plantProduction={plantProduction}
-                                plants={plants}
+                                /* PlantDropdownModal in the filter bar reads
+                                 * `plant.districts` for the district groups —
+                                 * pass the enriched list. */
+                                plants={plantsWithDistricts}
                                 stats={stats}
                             />
                         )}
