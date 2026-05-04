@@ -1,17 +1,16 @@
 import React from 'react'
 
 /** Definition of every Plan tab in the order they appear in the switcher.
- *  Mobile users always land on Schedule — Planner, Dashboard, Demand,
- *  Statistics, and Realtime depend on wide layouts (zoomable canvas,
- *  sticky scrollspy) that don't fit a phone, so the switcher itself is
- *  hidden on mobile and this list is the desktop-only menu. */
+ *  Mobile users always land on Schedule — Planner, Dashboard, Demand, and
+ *  Statistics depend on wide layouts (zoomable canvas, sticky scrollspy)
+ *  that don't fit a phone, so the switcher itself is hidden on mobile and
+ *  this list is the desktop-only menu. */
 const PLAN_TABS = [
     { icon: 'fa-gauge-high', label: 'Plan Dashboard', mode: 'dashboard' },
     { icon: 'fa-calendar-days', label: 'Schedule', mode: 'schedule' },
     { icon: 'fa-project-diagram', label: 'Planner', mode: 'flow' },
     { icon: 'fa-chart-column', label: 'Demand', mode: 'demand' },
-    { icon: 'fa-chart-line', label: 'Statistics', mode: 'statistics' },
-    { icon: 'fa-circle-dot', label: 'Realtime', mode: 'realtime' }
+    { icon: 'fa-chart-line', label: 'Statistics', mode: 'statistics' }
 ]
 
 /**

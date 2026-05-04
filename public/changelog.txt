@@ -2,6 +2,16 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.17] - 2026-05-02
+
+- Suppress "Needs Help" badge on past days and completed orders in the Plan Schedule — once a pour is finished or the day has passed, the warning is just noise
+- Reuse the evaluated service result in PlanScheduleOrderRow instead of computing it twice
+- Thread isPastDay prop from PlanScheduleView through PlanScheduleTable to PlanScheduleOrderRow
+- Add bucket-wide reconcile mode to dispatch-import edge function — lists all date HTMLs in the bucket and prunes dispatch_data rows for dates no longer present
+- Add dispatch_reconcile_with_bucket SQL function with safety guards: rejects empty bucket lists and aborts when the supplied date count is less than 50% of distinct DB dates
+- Scope dispatch_sync_delete_orphans to only remove rows whose source_reports are a subset of the reports actually parsed in the current run, so partial imports no longer silently wipe rows from unrelated reports
+- Add p_run_reports parameter to dispatch_sync_delete_orphans with a backwards-compatible default, plus a fallback in the edge function for the old 2-arg signature
+
 ## [40.0.16] - 2026-05-01
 
 - Expand Weekly Safety Manager Report incident tags from 8 to 14 categories (added DOT Recordable, Property Damage, Medical, First Aid, Backing / Chute Incident, and Spill)

@@ -53,7 +53,6 @@ const START_PAGE_OPTIONS = [
     { icon: 'fa-list-check', id: 'List' },
     { icon: 'fa-file-lines', id: 'Reports' },
     { icon: 'fa-calendar-days', id: 'Plan' },
-    { icon: 'fa-trophy', id: 'Leaderboards' },
     { icon: 'fa-cogs', id: 'Heavy Equipment' },
     { icon: 'fa-truck-pickup', id: 'Pickup Trucks' },
     { icon: 'fa-calculator', id: 'Calculators' }

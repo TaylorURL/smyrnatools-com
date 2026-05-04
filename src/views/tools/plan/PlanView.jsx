@@ -14,11 +14,10 @@ import { usePlanInsights } from '../../../app/hooks/usePlanInsights'
 import { usePlanLookups } from '../../../app/hooks/usePlanLookups'
 import { usePlanUserContext } from '../../../app/hooks/usePlanUserContext'
 import { buildPlanDispatchText } from '../../../utils/PlanCopyUtility'
-import { getTodayDate, PLAN_META_KEY, skipSundayDate } from '../../../utils/PlanUtility'
+import { PLAN_META_KEY } from '../../../utils/PlanUtility'
 import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
 import PlanFlowView from './PlanFlowView'
-import PlanRealtimeView from './PlanRealtimeView'
 import PlanScheduleView from './PlanScheduleView'
 import PlanStatisticsView from './PlanStatisticsView'
 
@@ -85,17 +84,11 @@ function PlanView() {
     // eslint-disable-next-line no-unused-vars
     const [, startTabTransition] = useTransition()
 
-    const setViewMode = useCallback(
-        (mode) => {
-            // Date snap stays synchronous (it's cheap) — only the heavy
-            // tab render itself is deferred via startTransition.
-            if (mode === 'realtime') setPlanDate(skipSundayDate(getTodayDate(), 1))
-            startTabTransition(() => {
-                setViewModeRaw(mode)
-            })
-        },
-        [setPlanDate]
-    )
+    const setViewMode = useCallback((mode) => {
+        startTabTransition(() => {
+            setViewModeRaw(mode)
+        })
+    }, [])
 
     const {
         adjacentProduction,
@@ -154,7 +147,7 @@ function PlanView() {
         travelTimes
     })
 
-    const { canSeeYourTab, hasDefaultPlantPermission, userPlantCode, userRoleNames } = usePlanUserContext(userId)
+    const { canSeeYourTab, userPlantCode, userRoleNames } = usePlanUserContext(userId)
 
     const { plantAddressByCode, plantNameByCode, plantsWithDistricts, yourPlantScope } = usePlanLookups({
         canSeeYourTab,
@@ -182,7 +175,7 @@ function PlanView() {
                 copied={copied}
                 isDark={isDark}
                 isMobile={isMobile}
-                isRealtime={effectiveViewMode === 'realtime'}
+                isRealtime={false}
                 isSchedulesSyncing={isSchedulesSyncing}
                 onChangeDate={setPlanDate}
                 onChangeViewMode={setViewMode}
@@ -304,21 +297,6 @@ function PlanView() {
                         {effectiveViewMode === 'demand' && (
                             <PlanDemandView
                                 accentColor={accentColor}
-                                planDate={planDate}
-                                plantNameByCode={plantNameByCode}
-                                plantProduction={plantProduction}
-                                plants={plantsWithDistricts}
-                                stats={stats}
-                                userPlantCode={userPlantCode}
-                            />
-                        )}
-
-                        {effectiveViewMode === 'realtime' && (
-                            <PlanRealtimeView
-                                accentColor={accentColor}
-                                assignments={assignments}
-                                defaultPlantCode={hasDefaultPlantPermission ? userPlantCode : ''}
-                                detailByOrderId={detailByOrderId}
                                 planDate={planDate}
                                 plantNameByCode={plantNameByCode}
                                 plantProduction={plantProduction}
