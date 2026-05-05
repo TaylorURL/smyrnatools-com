@@ -1,51 +1,207 @@
-import { Database } from './DatabaseService'
+import APIUtility from '../utils/APIUtility'
+
+const SERVICE_PREFIX = 'dispatch-data-service'
 
 /**
- * Reads dispatch report data from the `dispatch_data` table — populated by
- * the `dispatch-import` edge function from bucket HTML files.
+ * Reads dispatch report data via the `dispatch-data-service` edge function.
+ * The frontend never queries the `dispatch_data` table directly — anon RLS
+ * is locked down so only the service role (used inside the edge function)
+ * can read it. The HTML files in the `dispatch-reports` bucket are also
+ * service-role-only; the `dispatch-import` edge function parses them and
+ * upserts into `dispatch_data`.
  *
  * The shape returned by each method matches what the legacy bucket-parsing
  * hooks (useScheduleSync, useDetailOrders) returned, so existing PlanView
- * consumers don't need to change. The site never reads bucket HTML
- * directly anymore.
+ * consumers don't need to change.
  */
-/**
- * PostgREST / Supabase enforces a server-side `max-rows` cap (1000 by
- * default). `.range(0, 49999)` doesn't override that — the response is
- * silently truncated, and on the Statistics page that meant a Month-window
- * fetch returned only the first ~13 days of data while a Week-window fetch
- * returned everything (because the smaller window stayed under the cap).
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+/** Heuristic for "this ticket was voided in the dispatch system."
  *
- * `paginate(buildQuery)` runs the query in `PAGE_SIZE`-row pages until a
- * partial page comes back, concatenates the data, and returns the whole
- * row set. The caller passes a builder that takes a (from, to) pair so we
- * can re-attach the same `.in / .eq / .order` filters on every page.
- *
- * Stable ordering is required for correct pagination — the second page's
- * "rows 1000–1999" must follow the first page's "rows 0–999" in the same
- * sort order, otherwise pages overlap or skip rows.
- */
-const PAGE_SIZE = 1000
-const paginate = async (buildQuery) => {
-    const out = []
-    let from = 0
-    // Hard upper bound — guards against an infinite loop if the server ever
-    // returns a full page repeatedly. 200 pages × 1000 rows = 200k rows,
-    // well past anything Statistics needs.
-    let safety = 200
-    while (safety > 0) {
-        const { data, error } = await buildQuery(from, from + PAGE_SIZE - 1)
-        if (error) {
-            console.warn('[DispatchDataService.paginate]', error)
-            break
-        }
-        if (!Array.isArray(data) || data.length === 0) break
-        out.push(...data)
-        if (data.length < PAGE_SIZE) break
-        from += PAGE_SIZE
-        safety -= 1
+ *  The dispatch report doesn't expose a `voided` flag we can read directly,
+ *  so we infer it from the ticket's load lifecycle: the ticket was issued
+ *  (a `ticket_time` was stamped when the row was generated) but no truck
+ *  ever loaded against it (`loaded_time` is empty / null). Rows that match
+ *  this pattern are dropped at the service layer so no consumer ever sees
+ *  them. */
+const isVoidedRow = (row) => {
+    const ticketTime = (row?.ticket_time || '').trim()
+    const loadedTime = (row?.loaded_time || '').trim()
+    return ticketTime !== '' && loadedTime === ''
+}
+
+/** Posts to the dispatch-data-service edge function and returns its parsed
+ *  JSON. Logs and returns `fallback` on any error so callers can keep their
+ *  existing "empty result" behavior. */
+const post = async (endpoint, payload, fallback) => {
+    const { json, res } = await APIUtility.post(`/${SERVICE_PREFIX}/${endpoint}`, payload)
+    if (!res.ok || json?.error) {
+        console.warn(`[DispatchDataService.${endpoint}]`, json?.error || `status ${res.status}`)
+        return fallback
     }
-    return out
+    return json
+}
+
+/** Builds the `{ [plantCode]: { firstJobTime, lastJobTime, orders, totalYardage } }`
+ *  map shared by `fetchSchedule` and the per-date entries of `fetchPlanRowsByDateRange`. */
+const groupOrderRowsByPlant = (rows) => {
+    const byPlant = {}
+    for (const row of rows || []) {
+        const code = row.home_plant_code
+        if (!code) continue
+        if (!byPlant[code]) {
+            byPlant[code] = { firstJobTime: '', lastJobTime: '', orders: [], totalYardage: 0 }
+        }
+        byPlant[code].orders.push({
+            address: row.address || '',
+            city: row.city || '',
+            contact: row.contact || '',
+            customer: row.customer || '',
+            customerNum: row.customer_num || '',
+            description: row.product_description || '',
+            jobNumber: row.job_number || '',
+            loadSize: row.load_size != null ? String(row.load_size) : '',
+            orderId: row.order_id,
+            orderNum: row.order_num || '',
+            phone: row.phone || '',
+            poNumber: row.po_number || '',
+            productCode: row.product_code || '',
+            rate: row.rate || '',
+            startTime: row.start_time || '',
+            tktTime: '',
+            toJobTime: row.sched_to_job_time || '',
+            toPlantTime: row.sched_to_plant_time || '',
+            truckClass: row.truck_class || '',
+            truckCount: row.truck_count != null ? String(row.truck_count) : '',
+            yardage: row.scheduled_yardage != null ? String(row.scheduled_yardage) : ''
+        })
+        byPlant[code].totalYardage += parseFloat(row.scheduled_yardage) || 0
+    }
+
+    for (const code of Object.keys(byPlant)) {
+        const block = byPlant[code]
+        const times = block.orders
+            .map((o) => o.startTime)
+            .filter((t) => /^\d{1,2}:\d{2}$/.test(t))
+            .map((t) => t.padStart(5, '0'))
+            .sort()
+        block.firstJobTime = times[0] || ''
+        block.lastJobTime = times[times.length - 1] || ''
+        block.totalYardage = block.totalYardage > 0 ? String(block.totalYardage) : ''
+        block.orders.sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')))
+    }
+    return byPlant
+}
+
+/** Folds raw ticket / order-meta rows into the
+ *  `{ [orderId]: { tickets, byPlant, loadedYardage, ticketCount, … } }`
+ *  shape both detail fetchers return. Applies the per-order DetailDriver
+ *  estimate cap and the final per-ticket trim so per-row sums always match
+ *  scheduled yardage. */
+const buildDetailByOrderId = (ticketRows, orderRows) => {
+    const orderMeta = new Map()
+    for (const o of orderRows || []) {
+        if (!o.order_id) continue
+        orderMeta.set(o.order_id, {
+            loadSize: parseFloat(o.load_size) || 0,
+            scheduledYardage: parseFloat(o.scheduled_yardage) || 0
+        })
+    }
+
+    const byOrderId = {}
+    for (const row of ticketRows || []) {
+        const orderId = row.order_id
+        if (!orderId) continue
+        if (isVoidedRow(row)) continue
+        let order = byOrderId[orderId]
+        if (!order) {
+            order = byOrderId[orderId] = {
+                byPlant: {},
+                loadedYardage: 0,
+                orderId,
+                orderNum: row.order_num || '',
+                ticketCount: 0,
+                tickets: []
+            }
+        }
+        const sourceList = Array.isArray(row.source_reports) ? row.source_reports : []
+        const isEstimateOnly = sourceList.includes('DetailDriver') && !sourceList.includes('DetailOrderAnalysis')
+        const plantId = row.loaded_plant_code || ''
+        order.tickets.push({
+            _confirmedQuantity: isEstimateOnly ? 0 : parseFloat(row.quantity) || 0,
+            _isEstimateOnly: isEstimateOnly,
+            customer: row.customer || '',
+            driverName: row.driver_name || '',
+            driverNum: row.driver_num || '',
+            loadedTime: row.loaded_time || '',
+            plantId,
+            quantity: 0,
+            sourceFilePlantId: plantId,
+            sourceReport: isEstimateOnly ? 'DetailDriver' : sourceList[0] || '',
+            ticketId: row.ticket_id || '',
+            ticketNum: row.ticket_num,
+            ticketTime: row.ticket_time || '',
+            truckNum: row.truck_num || ''
+        })
+    }
+
+    for (const order of Object.values(byOrderId)) {
+        order.tickets.sort((a, b) => String(a.loadedTime || '').localeCompare(String(b.loadedTime || '')))
+        const meta = orderMeta.get(order.orderId) || { loadSize: 0, scheduledYardage: 0 }
+        const confirmedTotal = order.tickets.reduce((sum, t) => sum + t._confirmedQuantity, 0)
+        let remaining = Math.max(0, meta.scheduledYardage - confirmedTotal)
+        const estimateTickets = order.tickets.filter((t) => t._isEstimateOnly)
+        const lastIdx = estimateTickets.length - 1
+
+        estimateTickets.forEach((t, i) => {
+            if (remaining <= 0) {
+                t.quantity = 0
+            } else if (i === lastIdx) {
+                t.quantity = remaining
+                remaining = 0
+            } else if (meta.loadSize > 0 && remaining >= meta.loadSize) {
+                t.quantity = meta.loadSize
+                remaining -= meta.loadSize
+            } else {
+                t.quantity = remaining
+                remaining = 0
+            }
+        })
+
+        for (const t of order.tickets) {
+            if (!t._isEstimateOnly) t.quantity = t._confirmedQuantity
+            delete t._confirmedQuantity
+            delete t._isEstimateOnly
+        }
+
+        // Final-cap pass — trims per-ticket quantities from the last load
+        // backward when the source HTML over-reports (e.g., 4 × 10 yd = 40
+        // on a 36 yd order) so the displayed header total and per-row sum
+        // always match scheduled.
+        if (meta.scheduledYardage > 0) {
+            const totalAfterFill = order.tickets.reduce((sum, t) => sum + (t.quantity || 0), 0)
+            let excess = totalAfterFill - meta.scheduledYardage
+            for (let i = order.tickets.length - 1; i >= 0 && excess > 0; i--) {
+                const t = order.tickets[i]
+                const reduce = Math.min(excess, t.quantity || 0)
+                t.quantity = (t.quantity || 0) - reduce
+                excess -= reduce
+            }
+        }
+
+        for (const t of order.tickets) {
+            order.ticketCount += 1
+            order.loadedYardage += t.quantity
+            if (t.plantId) {
+                const entry =
+                    order.byPlant[t.plantId] || (order.byPlant[t.plantId] = { loadedYardage: 0, ticketCount: 0 })
+                entry.ticketCount += 1
+                entry.loadedYardage += t.quantity
+            }
+        }
+    }
+    return byOrderId
 }
 
 class DispatchDataServiceImpl {
@@ -55,63 +211,9 @@ class DispatchDataServiceImpl {
      * used to produce.
      */
     async fetchSchedule(dateStr) {
-        if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return {}
-        const { data, error } = await Database.from('dispatch_data')
-            .select(
-                'order_id, order_num, home_plant_code, customer, customer_num, job_number, address, city, contact, phone, po_number, product_code, product_description, start_time, rate, scheduled_yardage, load_size, truck_count, truck_class, sched_to_job_time, sched_to_plant_time'
-            )
-            .eq('order_date', dateStr)
-            .eq('ticket_num', '')
-        if (error) {
-            console.warn('[DispatchDataService.fetchSchedule]', error)
-            return {}
-        }
-
-        const byPlant = {}
-        for (const row of data || []) {
-            const code = row.home_plant_code
-            if (!code) continue
-            if (!byPlant[code]) {
-                byPlant[code] = { firstJobTime: '', lastJobTime: '', orders: [], totalYardage: 0 }
-            }
-            byPlant[code].orders.push({
-                address: row.address || '',
-                city: row.city || '',
-                contact: row.contact || '',
-                customer: row.customer || '',
-                customerNum: row.customer_num || '',
-                description: row.product_description || '',
-                jobNumber: row.job_number || '',
-                loadSize: row.load_size != null ? String(row.load_size) : '',
-                orderId: row.order_id,
-                orderNum: row.order_num || '',
-                phone: row.phone || '',
-                poNumber: row.po_number || '',
-                productCode: row.product_code || '',
-                rate: row.rate || '',
-                startTime: row.start_time || '',
-                tktTime: '',
-                toJobTime: row.sched_to_job_time || '',
-                toPlantTime: row.sched_to_plant_time || '',
-                truckClass: row.truck_class || '',
-                truckCount: row.truck_count != null ? String(row.truck_count) : '',
-                yardage: row.scheduled_yardage != null ? String(row.scheduled_yardage) : ''
-            })
-            byPlant[code].totalYardage += parseFloat(row.scheduled_yardage) || 0
-        }
-
-        for (const code of Object.keys(byPlant)) {
-            const times = byPlant[code].orders
-                .map((o) => o.startTime)
-                .filter((t) => /^\d{1,2}:\d{2}$/.test(t))
-                .map((t) => t.padStart(5, '0'))
-                .sort()
-            byPlant[code].firstJobTime = times[0] || ''
-            byPlant[code].lastJobTime = times[times.length - 1] || ''
-            byPlant[code].totalYardage = byPlant[code].totalYardage > 0 ? String(byPlant[code].totalYardage) : ''
-            byPlant[code].orders.sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')))
-        }
-        return byPlant
+        if (!dateStr || !ISO_DATE.test(dateStr)) return {}
+        const { rows } = await post('fetch-schedule', { date: dateStr }, { rows: [] })
+        return groupOrderRowsByPlant(rows)
     }
 
     /**
@@ -121,96 +223,22 @@ class DispatchDataServiceImpl {
      * `dispatch_data` order-header rows so days the dispatcher never opened
      * in PlanView (and therefore never saved a `plans` row for) still
      * contribute to yardage / order / customer / product / plant charts.
-     *
-     * Date chunking matches `fetchDetailByDateRange` so a year window stays
-     * under Postgres' IN-clause limit and Supabase's row cap.
      */
     async fetchPlanRowsByDateRange(dateStrs) {
-        const validDates = (dateStrs || []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+        const validDates = (dateStrs || []).filter((d) => ISO_DATE.test(d))
         if (!validDates.length) return []
-        const CHUNK = 30
-        const chunks = []
-        for (let i = 0; i < validDates.length; i += CHUNK) {
-            chunks.push(validDates.slice(i, i + CHUNK))
-        }
-        const orderRows = []
-        await Promise.all(
-            chunks.map(async (chunk) => {
-                // Paginate so a chunk with > 1000 orders (a full month
-                // typically lands at 1500-3000 rows) actually returns all
-                // of its rows instead of being silently capped at the
-                // PostgREST max-rows default.
-                const rows = await paginate((from, to) =>
-                    Database.from('dispatch_data')
-                        .select(
-                            'order_date, order_id, order_num, home_plant_code, customer, customer_num, job_number, address, city, contact, phone, po_number, product_code, product_description, start_time, rate, scheduled_yardage, load_size, truck_count, truck_class, sched_to_job_time, sched_to_plant_time'
-                        )
-                        .in('order_date', chunk)
-                        .eq('ticket_num', '')
-                        .order('order_date', { ascending: true })
-                        .order('order_id', { ascending: true })
-                        .range(from, to)
-                )
-                orderRows.push(...rows)
-            })
-        )
+        const { rows } = await post('fetch-plan-rows-by-date-range', { dates: validDates }, { rows: [] })
 
-        // Group by date → plant code → orders[], mirroring `fetchSchedule`.
         const byDate = new Map()
-        for (const row of orderRows) {
+        for (const row of rows || []) {
             const date = row.order_date
-            const plantCode = row.home_plant_code
-            if (!date || !plantCode) continue
-            if (!byDate.has(date)) byDate.set(date, {})
-            const plantBlocks = byDate.get(date)
-            if (!plantBlocks[plantCode]) {
-                plantBlocks[plantCode] = { firstJobTime: '', lastJobTime: '', orders: [], totalYardage: 0 }
-            }
-            plantBlocks[plantCode].orders.push({
-                address: row.address || '',
-                city: row.city || '',
-                contact: row.contact || '',
-                customer: row.customer || '',
-                customerNum: row.customer_num || '',
-                description: row.product_description || '',
-                jobNumber: row.job_number || '',
-                loadSize: row.load_size != null ? String(row.load_size) : '',
-                orderId: row.order_id,
-                orderNum: row.order_num || '',
-                phone: row.phone || '',
-                poNumber: row.po_number || '',
-                productCode: row.product_code || '',
-                rate: row.rate || '',
-                startTime: row.start_time || '',
-                tktTime: '',
-                toJobTime: row.sched_to_job_time || '',
-                toPlantTime: row.sched_to_plant_time || '',
-                truckClass: row.truck_class || '',
-                truckCount: row.truck_count != null ? String(row.truck_count) : '',
-                yardage: row.scheduled_yardage != null ? String(row.scheduled_yardage) : ''
-            })
-            plantBlocks[plantCode].totalYardage += parseFloat(row.scheduled_yardage) || 0
-        }
-
-        // Snap per-plant fields the same way `fetchSchedule` does so the
-        // synthesized blocks behave identically downstream.
-        for (const plantBlocks of byDate.values()) {
-            for (const code of Object.keys(plantBlocks)) {
-                const block = plantBlocks[code]
-                const times = block.orders
-                    .map((o) => o.startTime)
-                    .filter((t) => /^\d{1,2}:\d{2}$/.test(t))
-                    .map((t) => t.padStart(5, '0'))
-                    .sort()
-                block.firstJobTime = times[0] || ''
-                block.lastJobTime = times[times.length - 1] || ''
-                block.totalYardage = block.totalYardage > 0 ? String(block.totalYardage) : ''
-                block.orders.sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')))
-            }
+            if (!date) continue
+            if (!byDate.has(date)) byDate.set(date, [])
+            byDate.get(date).push(row)
         }
 
         return Array.from(byDate.entries())
-            .map(([date, plantBlocks]) => ({ plan_date: date, plant_production: plantBlocks }))
+            .map(([date, dateRows]) => ({ plan_date: date, plant_production: groupOrderRowsByPlant(dateRows) }))
             .sort((a, b) => a.plan_date.localeCompare(b.plan_date))
     }
 
@@ -220,303 +248,46 @@ class DispatchDataServiceImpl {
      * ticketCount, tickets[] } }`. Tickets are sorted by loadedTime.
      */
     async fetchDetailByOrderId(dateStr) {
-        if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return {}
-        const [ticketsRes, ordersRes] = await Promise.all([
-            Database.from('dispatch_data')
-                .select(
-                    'order_id, order_num, ticket_id, ticket_num, customer, home_plant_code, loaded_plant_code, truck_num, driver_num, driver_name, ticket_time, loaded_time, quantity, source_reports'
-                )
-                .eq('order_date', dateStr)
-                .neq('ticket_num', ''),
-            Database.from('dispatch_data')
-                .select('order_id, scheduled_yardage, load_size')
-                .eq('order_date', dateStr)
-                .eq('ticket_num', '')
-        ])
-        if (ticketsRes.error) {
-            console.warn('[DispatchDataService.fetchDetailByOrderId]', ticketsRes.error)
-            return {}
-        }
-
-        const orderMeta = new Map()
-        for (const o of ordersRes.data || []) {
-            if (!o.order_id) continue
-            orderMeta.set(o.order_id, {
-                loadSize: parseFloat(o.load_size) || 0,
-                scheduledYardage: parseFloat(o.scheduled_yardage) || 0
-            })
-        }
-
-        const byOrderId = {}
-        for (const row of ticketsRes.data || []) {
-            const orderId = row.order_id
-            if (!orderId) continue
-            let order = byOrderId[orderId]
-            if (!order) {
-                order = byOrderId[orderId] = {
-                    byPlant: {},
-                    loadedYardage: 0,
-                    orderId,
-                    orderNum: row.order_num || '',
-                    ticketCount: 0,
-                    tickets: []
-                }
-            }
-            const sourceList = Array.isArray(row.source_reports) ? row.source_reports : []
-            const isEstimateOnly = sourceList.includes('DetailDriver') && !sourceList.includes('DetailOrderAnalysis')
-            const plantId = row.loaded_plant_code || ''
-            order.tickets.push({
-                _confirmedQuantity: isEstimateOnly ? 0 : parseFloat(row.quantity) || 0,
-                _isEstimateOnly: isEstimateOnly,
-                customer: row.customer || '',
-                driverName: row.driver_name || '',
-                driverNum: row.driver_num || '',
-                loadedTime: row.loaded_time || '',
-                plantId,
-                quantity: 0,
-                sourceFilePlantId: plantId,
-                sourceReport: isEstimateOnly ? 'DetailDriver' : sourceList[0] || '',
-                ticketId: row.ticket_id || '',
-                ticketNum: row.ticket_num,
-                ticketTime: row.ticket_time || '',
-                truckNum: row.truck_num || ''
-            })
-        }
-
-        // Apply per-order capping for DetailDriver-only tickets so estimated
-        // yardage never pushes the order over its scheduled total. The last
-        // estimate-only ticket absorbs whatever remainder is left, matching
-        // dispatch reality where most loads are full and the final partial.
-        for (const order of Object.values(byOrderId)) {
-            order.tickets.sort((a, b) => String(a.loadedTime || '').localeCompare(String(b.loadedTime || '')))
-
-            const meta = orderMeta.get(order.orderId) || { loadSize: 0, scheduledYardage: 0 }
-            const confirmedTotal = order.tickets.reduce((sum, t) => sum + t._confirmedQuantity, 0)
-            let remaining = Math.max(0, meta.scheduledYardage - confirmedTotal)
-            const estimateTickets = order.tickets.filter((t) => t._isEstimateOnly)
-            const lastIdx = estimateTickets.length - 1
-
-            estimateTickets.forEach((t, i) => {
-                if (remaining <= 0) {
-                    t.quantity = 0
-                } else if (i === lastIdx) {
-                    t.quantity = remaining
-                    remaining = 0
-                } else if (meta.loadSize > 0 && remaining >= meta.loadSize) {
-                    t.quantity = meta.loadSize
-                    remaining -= meta.loadSize
-                } else {
-                    t.quantity = remaining
-                    remaining = 0
-                }
-            })
-
-            // Materialize per-ticket quantity. Estimate tickets already had
-            // theirs assigned in the loop above; confirmed tickets adopt
-            // their `_confirmedQuantity` from DetailOrderAnalysis.
-            for (const t of order.tickets) {
-                if (!t._isEstimateOnly) t.quantity = t._confirmedQuantity
-                delete t._confirmedQuantity
-                delete t._isEstimateOnly
-            }
-
-            // Final-cap pass — when the source HTML reports a full-load
-            // quantity for every ticket (e.g., 4 × 10 yd = 40 on a 36 yd
-            // order), the per-ticket sum can exceed scheduledYardage. Trim
-            // from the last ticket backward until the displayed total
-            // matches scheduled, so the modal header (`loadedYardage / yd`)
-            // never reads more than the order called for and the per-row
-            // numbers always sum to the header.
-            if (meta.scheduledYardage > 0) {
-                let totalAfterFill = order.tickets.reduce((sum, t) => sum + (t.quantity || 0), 0)
-                let excess = totalAfterFill - meta.scheduledYardage
-                for (let i = order.tickets.length - 1; i >= 0 && excess > 0; i--) {
-                    const t = order.tickets[i]
-                    const reduce = Math.min(excess, t.quantity || 0)
-                    t.quantity = (t.quantity || 0) - reduce
-                    excess -= reduce
-                }
-            }
-
-            for (const t of order.tickets) {
-                order.ticketCount += 1
-                order.loadedYardage += t.quantity
-                if (t.plantId) {
-                    const entry =
-                        order.byPlant[t.plantId] || (order.byPlant[t.plantId] = { loadedYardage: 0, ticketCount: 0 })
-                    entry.ticketCount += 1
-                    entry.loadedYardage += t.quantity
-                }
-            }
-        }
-        return byOrderId
+        if (!dateStr || !ISO_DATE.test(dateStr)) return {}
+        const { tickets, orders } = await post(
+            'fetch-detail-by-order-id',
+            { date: dateStr },
+            { tickets: [], orders: [] }
+        )
+        return buildDetailByOrderId(tickets, orders)
     }
 
     /**
      * Range version of `fetchDetailByOrderId`: pulls every date in `dateStrs`
-     * with chunked `.in('order_date', …)` queries instead of one round-trip
-     * per date. Returns `{ [date]: { [orderId]: { tickets, byPlant, … } } }`.
-     *
-     * Reuses the per-order capping logic from `fetchDetailByOrderId` so the
-     * shape is identical to that method's output, just keyed by date.
-     *
-     * Date chunking keeps each query well under Postgres' IN-clause limit
-     * and Supabase's row cap. For a year-long window (~313 dates) this
-     * produces ~11 queries instead of 313.
+     * in one server-side paginated call. Returns
+     * `{ [date]: { [orderId]: { tickets, byPlant, … } } }`.
      */
     async fetchDetailByDateRange(dateStrs) {
-        const validDates = (dateStrs || []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+        const validDates = (dateStrs || []).filter((d) => ISO_DATE.test(d))
         if (!validDates.length) return {}
-        const CHUNK = 30
-        const chunks = []
-        for (let i = 0; i < validDates.length; i += CHUNK) {
-            chunks.push(validDates.slice(i, i + CHUNK))
+        const { tickets, orders } = await post(
+            'fetch-detail-by-date-range',
+            { dates: validDates },
+            { tickets: [], orders: [] }
+        )
+
+        const ticketsByDate = new Map()
+        for (const row of tickets || []) {
+            if (!row.order_date) continue
+            if (!ticketsByDate.has(row.order_date)) ticketsByDate.set(row.order_date, [])
+            ticketsByDate.get(row.order_date).push(row)
         }
-
-        const ticketsRows = []
-        const orderRows = []
-        // Both subqueries paginate — a busy month easily exceeds the 1000-
-        // row cap for either tickets or order headers, and we need every
-        // row for satisfaction scoring + per-order ticket capping to
-        // line up with the schedule view.
-        const queries = chunks.map(async (chunk) => {
-            const [tickets, orders] = await Promise.all([
-                paginate((from, to) =>
-                    Database.from('dispatch_data')
-                        .select(
-                            'order_date, order_id, order_num, ticket_id, ticket_num, customer, home_plant_code, loaded_plant_code, truck_num, driver_num, driver_name, ticket_time, loaded_time, quantity, source_reports'
-                        )
-                        .in('order_date', chunk)
-                        .neq('ticket_num', '')
-                        .order('order_date', { ascending: true })
-                        .order('ticket_id', { ascending: true })
-                        .range(from, to)
-                ),
-                paginate((from, to) =>
-                    Database.from('dispatch_data')
-                        .select('order_date, order_id, scheduled_yardage, load_size')
-                        .in('order_date', chunk)
-                        .eq('ticket_num', '')
-                        .order('order_date', { ascending: true })
-                        .order('order_id', { ascending: true })
-                        .range(from, to)
-                )
-            ])
-            ticketsRows.push(...tickets)
-            orderRows.push(...orders)
-        })
-        await Promise.all(queries)
-
-        // Group order metadata by (date, orderId) so the per-order cap
-        // pass below knows the scheduled total + load size for each row.
-        const orderMetaByKey = new Map()
-        for (const o of orderRows) {
-            if (!o.order_id || !o.order_date) continue
-            orderMetaByKey.set(`${o.order_date}|${o.order_id}`, {
-                loadSize: parseFloat(o.load_size) || 0,
-                scheduledYardage: parseFloat(o.scheduled_yardage) || 0
-            })
+        const ordersByDate = new Map()
+        for (const row of orders || []) {
+            if (!row.order_date) continue
+            if (!ordersByDate.has(row.order_date)) ordersByDate.set(row.order_date, [])
+            ordersByDate.get(row.order_date).push(row)
         }
 
         const out = {}
-        for (const row of ticketsRows) {
-            const date = row.order_date
-            const orderId = row.order_id
-            if (!date || !orderId) continue
-            if (!out[date]) out[date] = {}
-            let order = out[date][orderId]
-            if (!order) {
-                order = out[date][orderId] = {
-                    byPlant: {},
-                    loadedYardage: 0,
-                    orderId,
-                    orderNum: row.order_num || '',
-                    ticketCount: 0,
-                    tickets: []
-                }
-            }
-            const sourceList = Array.isArray(row.source_reports) ? row.source_reports : []
-            const isEstimateOnly = sourceList.includes('DetailDriver') && !sourceList.includes('DetailOrderAnalysis')
-            const plantId = row.loaded_plant_code || ''
-            order.tickets.push({
-                _confirmedQuantity: isEstimateOnly ? 0 : parseFloat(row.quantity) || 0,
-                _isEstimateOnly: isEstimateOnly,
-                customer: row.customer || '',
-                driverName: row.driver_name || '',
-                driverNum: row.driver_num || '',
-                loadedTime: row.loaded_time || '',
-                plantId,
-                quantity: 0,
-                sourceFilePlantId: plantId,
-                sourceReport: isEstimateOnly ? 'DetailDriver' : sourceList[0] || '',
-                ticketId: row.ticket_id || '',
-                ticketNum: row.ticket_num,
-                ticketTime: row.ticket_time || '',
-                truckNum: row.truck_num || ''
-            })
-        }
-
-        // Mirror fetchDetailByOrderId's per-order cap pass so consumers see
-        // the same `quantity` semantics regardless of which fetch they used.
-        for (const date of Object.keys(out)) {
-            for (const order of Object.values(out[date])) {
-                order.tickets.sort((a, b) => String(a.loadedTime || '').localeCompare(String(b.loadedTime || '')))
-                const meta = orderMetaByKey.get(`${date}|${order.orderId}`) || { loadSize: 0, scheduledYardage: 0 }
-                const confirmedTotal = order.tickets.reduce((sum, t) => sum + t._confirmedQuantity, 0)
-                let remaining = Math.max(0, meta.scheduledYardage - confirmedTotal)
-                const estimateTickets = order.tickets.filter((t) => t._isEstimateOnly)
-                const lastIdx = estimateTickets.length - 1
-                estimateTickets.forEach((t, i) => {
-                    if (remaining <= 0) {
-                        t.quantity = 0
-                    } else if (i === lastIdx) {
-                        t.quantity = remaining
-                        remaining = 0
-                    } else if (meta.loadSize > 0 && remaining >= meta.loadSize) {
-                        t.quantity = meta.loadSize
-                        remaining -= meta.loadSize
-                    } else {
-                        t.quantity = remaining
-                        remaining = 0
-                    }
-                })
-                // Materialize per-ticket quantity. Estimate tickets had
-                // theirs assigned in the loop above; confirmed tickets adopt
-                // their `_confirmedQuantity` from DetailOrderAnalysis.
-                for (const t of order.tickets) {
-                    if (!t._isEstimateOnly) t.quantity = t._confirmedQuantity
-                    delete t._confirmedQuantity
-                    delete t._isEstimateOnly
-                }
-
-                // Final-cap pass — see fetchDetailByOrderId for the
-                // rationale. Trims per-ticket quantities from the last
-                // load backward when the source HTML over-reports (e.g.,
-                // 4 × 10 yd = 40 on a 36 yd order) so the displayed
-                // header total and per-row sum always match scheduled.
-                if (meta.scheduledYardage > 0) {
-                    let totalAfterFill = order.tickets.reduce((sum, t) => sum + (t.quantity || 0), 0)
-                    let excess = totalAfterFill - meta.scheduledYardage
-                    for (let i = order.tickets.length - 1; i >= 0 && excess > 0; i--) {
-                        const t = order.tickets[i]
-                        const reduce = Math.min(excess, t.quantity || 0)
-                        t.quantity = (t.quantity || 0) - reduce
-                        excess -= reduce
-                    }
-                }
-
-                for (const t of order.tickets) {
-                    order.ticketCount += 1
-                    order.loadedYardage += t.quantity
-                    if (t.plantId) {
-                        const entry =
-                            order.byPlant[t.plantId] ||
-                            (order.byPlant[t.plantId] = { loadedYardage: 0, ticketCount: 0 })
-                        entry.ticketCount += 1
-                        entry.loadedYardage += t.quantity
-                    }
-                }
-            }
+        const seen = new Set([...ticketsByDate.keys(), ...ordersByDate.keys()])
+        for (const date of seen) {
+            out[date] = buildDetailByOrderId(ticketsByDate.get(date) || [], ordersByDate.get(date) || [])
         }
 
         // Ensure every requested date has a (possibly empty) entry so
@@ -529,14 +300,9 @@ class DispatchDataServiceImpl {
 
     /** Last-modified timestamp of any row for the date (max of updated_at). */
     async fetchLastUpdatedAt(dateStr) {
-        if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null
-        const { data, error } = await Database.from('dispatch_data')
-            .select('updated_at')
-            .eq('order_date', dateStr)
-            .order('updated_at', { ascending: false })
-            .limit(1)
-        if (error || !data || !data[0]) return null
-        return new Date(data[0].updated_at)
+        if (!dateStr || !ISO_DATE.test(dateStr)) return null
+        const { updatedAt } = await post('fetch-last-updated-at', { date: dateStr }, { updatedAt: null })
+        return updatedAt ? new Date(updatedAt) : null
     }
 }
 

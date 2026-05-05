@@ -1,6 +1,6 @@
 // @ts-ignore
 import { createClient } from 'npm:@supabase/supabase-js@2.55.0'
-import { buildForgotPasswordEmail } from '../../../emails/forgot-passwords-email.js' // @ts-ignore
+import { buildForgotPasswordEmail } from '../../../scripts/emails/forgot-passwords-email.js' // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
 
 const USERS_TABLE = 'users'

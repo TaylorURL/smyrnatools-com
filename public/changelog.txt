@@ -2,6 +2,12 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.20] - 2026-05-04
+
+- Replace dispatch_upsert_data RPC with conditional-merge logic so DetailDriver estimate quantities never overwrite confirmed values from DetailOrderAnalysis
+- Union and deduplicate source_reports across upsert passes instead of replacing them
+- Coalesce all header/context columns on conflict so each import pass fills in its own fields without nulling values from earlier passes
+
 ## [40.0.19] - 2026-05-04
 
 - Redesign PlanScheduleFilterDrawer as a compact single-row toolbar with status pills, toggle switches, and a plant modal instead of the old grid of dropdowns

@@ -1,6 +1,6 @@
 // @ts-ignore
 import { createClient } from 'npm:@supabase/supabase-js@2.55.0'
-import { buildForgotPasswordEmail } from '../../../emails/forgot-passwords-email.js'
+import { buildForgotPasswordEmail } from '../../../scripts/emails/forgot-passwords-email.js'
 // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
 // @ts-ignore
@@ -20,6 +20,10 @@ import {
 } from '../_shared/auth-helpers.ts'
 // @ts-ignore
 import { generateSalt, hashPassword, rehashAndUpdate, verifyPassword } from '../_shared/crypto-helpers.ts'
+// @ts-ignore
+import { mintSessionJwt } from '../_shared/jwt.ts'
+
+const JWT_TTL_SECONDS = 3600
 
 const USERS_TABLE = 'users'
 const PROFILES_TABLE = 'users_profiles'
@@ -279,8 +283,23 @@ Deno.serve(async (req) => {
                         .select(PROFILE_SELECT_FIELDS)
                         .eq('id', data.id)
                         .single()
+
+                    let jwt: string | null = null
+                    let expiresIn: number | null = null
+                    if (sessionId) {
+                        const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                        if (jwtSecret) {
+                            jwt = await mintSessionJwt(data.id, sessionId, jwtSecret, JWT_TTL_SECONDS)
+                            expiresIn = JWT_TTL_SECONDS
+                        }
+                    }
                     return jsonResponse(
-                        { success: true, user: { id: data.id, email: data.email, profile: profile ?? {} } },
+                        {
+                            success: true,
+                            user: { id: data.id, email: data.email, profile: profile ?? {} },
+                            jwt,
+                            expiresIn
+                        },
                         headers
                     )
                 } catch {
@@ -554,7 +573,38 @@ Deno.serve(async (req) => {
                         { onConflict: 'id' }
                     )
                 if (error) return errorResponse('Failed to create session', headers, 500)
-                return jsonResponse({ success: true }, headers)
+                const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                if (!jwtSecret) return errorResponse('Server JWT secret missing', headers, 500)
+                const jwt = await mintSessionJwt(userId, sessionId, jwtSecret, JWT_TTL_SECONDS)
+                return jsonResponse({ success: true, jwt, expiresIn: JWT_TTL_SECONDS }, headers)
+            }
+
+            case 'refresh-token': {
+                const { userId, sessionId } = await req.json()
+                if (!userId || !sessionId) return errorResponse('userId and sessionId required', headers, 401)
+                const { data, error } = await supabase
+                    .from('users_sessions')
+                    .select('id, last_active')
+                    .eq('id', sessionId)
+                    .eq('user_id', userId)
+                    .maybeSingle()
+                if (error || !data) return errorResponse('Unauthorized', headers, 401)
+                if (data.last_active) {
+                    const lastActive = new Date(data.last_active)
+                    const expiry = new Date()
+                    expiry.setDate(expiry.getDate() - SESSION_EXPIRY_DAYS)
+                    if (lastActive < expiry) return errorResponse('Session expired', headers, 401)
+                }
+                supabase
+                    .from('users_sessions')
+                    .update({ last_active: nowISO() })
+                    .eq('id', sessionId)
+                    .then(() => {})
+                    .catch(() => {})
+                const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                if (!jwtSecret) return errorResponse('Server JWT secret missing', headers, 500)
+                const jwt = await mintSessionJwt(userId, sessionId, jwtSecret, JWT_TTL_SECONDS)
+                return jsonResponse({ jwt, expiresIn: JWT_TTL_SECONDS }, headers)
             }
 
             case 'delete-session': {

@@ -242,6 +242,11 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                             <thead>
                                 <tr>
                                     {[
+                                        // Sequential 1-based position of each ticket in this
+                                        // order's load sequence — gives the dispatcher a
+                                        // quick way to talk about "load 12 was late" without
+                                        // needing to read the dispatch ticket number.
+                                        { align: 'right', label: 'Load' },
                                         { align: 'left', label: 'Plant' },
                                         { align: 'left', label: 'Order #' },
                                         { align: 'left', label: 'Ticket #' },
@@ -279,6 +284,15 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                             key={t.ticketId || `${plantCode}-${t.ticketNum || idx}-${idx}`}
                                             style={{ borderTop: '1px solid var(--border-light)' }}
                                         >
+                                            <td
+                                                className="px-3 py-2 font-mono font-semibold text-right whitespace-nowrap"
+                                                style={{
+                                                    color: 'var(--text-tertiary)',
+                                                    fontVariantNumeric: 'tabular-nums'
+                                                }}
+                                            >
+                                                {idx + 1}
+                                            </td>
                                             <td className="px-3 py-2 whitespace-nowrap">
                                                 <span
                                                     className="font-mono font-semibold"

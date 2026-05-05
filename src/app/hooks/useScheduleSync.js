@@ -1,25 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { Database } from '../../services/DatabaseService'
 import { DispatchDataService } from '../../services/DispatchDataService'
 
-/* Safety interval — short enough that even when realtime is down (publication
- * misconfigured, websocket dropped) the schedule still feels live, long
- * enough that we're not hammering the API in the steady state. */
-const SYNC_INTERVAL_MS = 60 * 1000
-const REALTIME_DEBOUNCE_MS = 750
+const SYNC_INTERVAL_MS = 30 * 1000
+const UPDATE_CHECK_INTERVAL_MS = 10 * 1000
 
 /**
  * Keeps `plantProduction` in lockstep with the `dispatch_data` table — the
- * canonical source for parsed dispatch report data. The bucket's HTML
- * files are still uploaded by the bridge userscript, but they get parsed
- * server-side by the `dispatch-import` edge function and written to
- * `dispatch_data`. This hook reads from there only.
+ * canonical source for parsed dispatch report data. The bucket's HTML files
+ * are uploaded by the bridge userscript, parsed server-side by the
+ * `dispatch-import` edge function, and written to `dispatch_data`.
  *
  *   1. Pulls schedule rows for `planDate` on mount / date change.
- *   2. Re-pulls every 5 minutes as a safety net.
- *   3. Subscribes to realtime postgres_changes on `dispatch_data` so any
- *      upsert (from the importer running) triggers a debounced refresh.
+ *   2. Polls `fetchLastUpdatedAt` every 10s; a newer timestamp triggers a
+ *      re-pull immediately (cheap "is there anything new?" check that
+ *      replaces the realtime postgres_changes subscription, which can no
+ *      longer reach the locked-down `dispatch_data` table from the anon role).
+ *   3. Re-pulls every 30s as a safety net even if the timestamp probe
+ *      misses (clock skew, dropped requests).
  *   4. Exposes `refresh()` for manual user-driven refreshes.
  *
  * The `_meta` blob (special/QC jobs, formatted notes) is preserved across
@@ -35,7 +33,7 @@ export function useScheduleSync({ planDate, plants, setPlantProduction, enabled 
     const planDateRef = useRef(planDate)
     planDateRef.current = planDate
     const cancelledRef = useRef(false)
-    const realtimeDebounceRef = useRef(null)
+    const lastSeenUpdatedAtRef = useRef(null)
 
     const sync = useCallback(async () => {
         const date = planDateRef.current
@@ -47,7 +45,10 @@ export function useScheduleSync({ planDate, plants, setPlantProduction, enabled 
                 DispatchDataService.fetchLastUpdatedAt(date)
             ])
             if (cancelledRef.current) return false
-            if (updatedAt) setFileUpdatedAt(updatedAt)
+            if (updatedAt) {
+                setFileUpdatedAt(updatedAt)
+                lastSeenUpdatedAtRef.current = updatedAt.getTime()
+            }
             if (!production || Object.keys(production).length === 0) return false
             setPlantProductionRef.current((prev) => {
                 const next = { ...production }
@@ -68,42 +69,27 @@ export function useScheduleSync({ planDate, plants, setPlantProduction, enabled 
     useEffect(() => {
         if (!enabled || !planDate) return undefined
         cancelledRef.current = false
+        lastSeenUpdatedAtRef.current = null
         sync()
-        const interval = setInterval(sync, SYNC_INTERVAL_MS)
+        const safetyInterval = setInterval(sync, SYNC_INTERVAL_MS)
+        const updateCheckInterval = setInterval(async () => {
+            try {
+                const updatedAt = await DispatchDataService.fetchLastUpdatedAt(planDateRef.current)
+                if (cancelledRef.current || !updatedAt) return
+                const ts = updatedAt.getTime()
+                if (lastSeenUpdatedAtRef.current == null || ts > lastSeenUpdatedAtRef.current) {
+                    sync()
+                }
+            } catch {
+                // Network blips fall back to the next safety interval tick.
+            }
+        }, UPDATE_CHECK_INTERVAL_MS)
         return () => {
             cancelledRef.current = true
-            clearInterval(interval)
+            clearInterval(safetyInterval)
+            clearInterval(updateCheckInterval)
         }
     }, [planDate, enabled, sync])
-
-    // Realtime: any change on dispatch_data triggers a debounced re-sync.
-    // We don't filter the payload by `order_date` — DELETE events ship
-    // only a partial `old` row that may not include order_date, so an
-    // overzealous filter ate every event and the schedule never updated
-    // without a manual refresh. The re-sync inside `sync()` is keyed by
-    // the current planDate via `planDateRef`, so unrelated dates trigger
-    // at most one cheap refetch — a fair price for not missing changes.
-    useEffect(() => {
-        if (!enabled) return undefined
-        const channelName = `dispatch-data-schedule-${Date.now()}`
-        const onChange = () => {
-            if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
-            realtimeDebounceRef.current = setTimeout(() => sync(), REALTIME_DEBOUNCE_MS)
-        }
-        const channel = Database.channel(channelName)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'dispatch_data' }, onChange)
-            .subscribe((status, err) => {
-                // Surface a hard failure in the console — a silent
-                // CHANNEL_ERROR is what kept the original bug invisible.
-                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                    console.warn('[useScheduleSync] realtime subscription failed:', status, err?.message || '')
-                }
-            })
-        return () => {
-            if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
-            Database.removeChannel(channel)
-        }
-    }, [enabled, sync])
 
     return { fileUpdatedAt, isSyncing, lastSyncedAt, refresh: sync }
 }

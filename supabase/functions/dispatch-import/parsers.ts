@@ -66,16 +66,38 @@ const findCellText = (
 
 const HHMM_RE = /^\d{1,2}:\d{2}$/
 const ALL_DIGITS_RE = /^\d+$/
+const TRUCK_DIGITS_RE = /\d+/
 const cleanTime = (t: string): string => (HHMM_RE.test((t || '').trim()) ? t.trim() : '')
 const cleanIdentifier = (t: string): string => (ALL_DIGITS_RE.test((t || '').trim()) ? t.trim() : '')
 
-// FastReport occasionally splits a numeric cell across two stacked divs at
-// the same left position — e.g. "8528" rendered as "85" on one div and "28"
-// on another a few px below. Single-cell lookup grabs only one fragment,
-// which is why truck numbers sometimes show up as "28" or as "—" when no
-// fragment lands inside the standard row tolerance. This helper widens the
-// row tolerance, gathers every digit-only fragment at the column, and
-// concatenates them top-to-bottom to reassemble the original value.
+/**
+ * Pull the canonical numeric truck number out of an arbitrary truck-cell
+ * label. Dispatch fleets mix pure digits ("201"), bay codes ("bay32"),
+ * region prefixes ("TX175", "Y165"), and vendor-suffixed identifiers
+ * ("1234-ARGOS"). The numeric run is the truck identity — everything else
+ * is a tag we strip out so downstream lookups (truck history, cross-plant
+ * matching, schedule modal) all key on the same value.
+ */
+const extractTruckDigits = (text: string): string => {
+    const match = (text || '').trim().match(TRUCK_DIGITS_RE)
+    return match ? match[0] : ''
+}
+
+/**
+ * Locate the truck cell at a column/row anchor and normalize it to its
+ * digit run.
+ *
+ * FastReport occasionally splits a numeric cell across two stacked divs at
+ * the same left position — e.g. "8528" rendered as "85" on one div and
+ * "28" on another a few px below. Single-cell lookup grabs only one
+ * fragment, which is why truck numbers sometimes used to show up as "28".
+ * This helper widens the row tolerance, gathers every cell at the column
+ * that yields a digit run, and concatenates them top-to-bottom so split
+ * fragments reassemble.
+ *
+ * Cells whose text contains no digits at all (e.g. "Truck #" header,
+ * blank spacers) are skipped — they contribute no truck identity.
+ */
 const findIdentifierAt = (
     cells: PositionedDiv[],
     targetLeft: number,
@@ -84,20 +106,21 @@ const findIdentifierAt = (
     topTol = ROW_TOL * 2,
     page: Element | null = null
 ): string => {
-    const matches: PositionedDiv[] = []
+    const matches: { top: number; digits: string }[] = []
     for (const d of cells) {
         if (page && d.page !== page) continue
         if (Math.abs(d.left - targetLeft) > leftTol) continue
         if (Math.abs(d.top - targetTop) > topTol) continue
-        if (!ALL_DIGITS_RE.test(d.text.trim())) continue
-        matches.push(d)
+        const digits = extractTruckDigits(d.text)
+        if (!digits) continue
+        matches.push({ top: d.top, digits })
     }
     if (matches.length === 0) return ''
-    if (matches.length === 1) return matches[0].text.trim()
+    if (matches.length === 1) return matches[0].digits
     return matches
         .slice()
         .sort((a, b) => a.top - b.top)
-        .map((m) => m.text.trim())
+        .map((m) => m.digits)
         .join('')
 }
 
@@ -616,10 +639,12 @@ export function parseDetailDriverHtml(
         return ''
     }
 
-    // Like findNearby, but gathers every digit-only fragment at the column
-    // within a widened row tolerance and concatenates them top-to-bottom —
-    // recovers truck numbers FastReport split across stacked divs (e.g.
-    // "8528" → "85" + "28").
+    // Like findNearby, but gathers every cell at the column that yields
+    // a digit run, normalises each to its numeric portion, and
+    // concatenates top-to-bottom — recovers split truck numbers
+    // ("8528" → "85" + "28") AND strips bay/region/vendor tags off
+    // values like "bay32", "TX175", "1234-ARGOS" so downstream tables
+    // see the canonical numeric truck.
     const collectIdentifierNearby = (
         anchorIdx: number,
         targetLeft: number,
@@ -630,19 +655,19 @@ export function parseDetailDriverHtml(
     ): string => {
         const lo = Math.max(0, anchorIdx - windowSize)
         const hi = Math.min(cells.length, anchorIdx + windowSize)
-        const matches: { top: number; text: string }[] = []
+        const matches: { top: number; digits: string }[] = []
         for (let i = lo; i < hi; i++) {
             const c = cells[i]
             if (Math.abs(c.left - targetLeft) > leftTol) continue
             if (Math.abs(c.top - targetTop) > topTol) continue
-            const t = c.text.trim()
-            if (!ALL_DIGITS_RE.test(t)) continue
-            matches.push({ top: c.top, text: t })
+            const digits = extractTruckDigits(c.text)
+            if (!digits) continue
+            matches.push({ top: c.top, digits })
         }
         if (matches.length === 0) return ''
-        if (matches.length === 1) return matches[0].text
+        if (matches.length === 1) return matches[0].digits
         matches.sort((a, b) => a.top - b.top)
-        return matches.map((m) => m.text).join('')
+        return matches.map((m) => m.digits).join('')
     }
 
     const tickets: DetailDriverRecord[] = []

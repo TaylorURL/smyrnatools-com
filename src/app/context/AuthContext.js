@@ -1,11 +1,21 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
+import { setDatabaseAuth } from '../../services/DatabaseService'
 import APIUtility from '../../utils/APIUtility'
 import { SESSION_STORAGE_KEYS } from '../constants/auth'
 import { getBrowserMetadata } from '../utils/BrowserDetection'
 
 const AUTH_FUNCTION = '/auth-service'
 const SESSION_EXPIRY_DAYS = 2
+
+/* Re-mint the session JWT when it has less than this many seconds of life
+ * left. With a 1h server-side TTL and a 10-minute floor we get ~5 silent
+ * refreshes per active hour, well under the rate the auth-service can
+ * handle and small enough that a tab waking from sleep almost always still
+ * holds a usable token. */
+const JWT_REFRESH_FLOOR_SECONDS = 600
+const JWT_REFRESH_INTERVAL_MS = 60 * 1000
+
 /**
  * Authentication context providing sign-in, sign-up, sign-out, session restoration,
  * credential updates, and profile management to the entire component tree.
@@ -29,8 +39,11 @@ function clearAllSessionData() {
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.USER_ID)
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.SESSION_KEY)
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.SESSION_ID)
+    sessionStorage.removeItem(SESSION_STORAGE_KEYS.JWT)
+    sessionStorage.removeItem(SESSION_STORAGE_KEYS.JWT_EXPIRES_AT)
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.CACHED_PLANTS)
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.USER_ROLE)
+    setDatabaseAuth(null)
 }
 function getStoredUserId() {
     return (
@@ -39,13 +52,50 @@ function getStoredUserId() {
         null
     )
 }
+
+/** Persists a freshly-minted JWT and propagates it to the realtime channel. */
+function applyJwt(jwt, expiresInSeconds) {
+    if (!jwt) return
+    sessionStorage.setItem(SESSION_STORAGE_KEYS.JWT, jwt)
+    if (expiresInSeconds) {
+        const expiresAt = Date.now() + expiresInSeconds * 1000
+        sessionStorage.setItem(SESSION_STORAGE_KEYS.JWT_EXPIRES_AT, String(expiresAt))
+    }
+    setDatabaseAuth(jwt)
+}
+
+/** Re-mints the session JWT against the current users_sessions row. Returns
+ *  true on success. Used both by the periodic timer and by the initial
+ *  bootstrap when restore-session can't deliver one. */
+async function refreshJwtIfPossible() {
+    const userId = getStoredUserId()
+    const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
+    if (!userId || !sessionId) return false
+    try {
+        const { json, res } = await APIUtility.post(`${AUTH_FUNCTION}/refresh-token`, { sessionId, userId })
+        if (!res.ok || !json?.jwt) return false
+        applyJwt(json.jwt, json.expiresIn)
+        return true
+    } catch {
+        return false
+    }
+}
+
 /** Creates a database-tracked session record with browser metadata via auth-service. */
 async function createDbSession(userId) {
     const sessionId = generateSessionId()
     const { browser, os, device, userAgent } = getBrowserMetadata()
     try {
-        await APIUtility.post(`${AUTH_FUNCTION}/create-session`, { browser, device, os, sessionId, userAgent, userId })
+        const { json } = await APIUtility.post(`${AUTH_FUNCTION}/create-session`, {
+            browser,
+            device,
+            os,
+            sessionId,
+            userAgent,
+            userId
+        })
         sessionStorage.setItem(SESSION_STORAGE_KEYS.SESSION_ID, sessionId)
+        if (json?.jwt) applyJwt(json.jwt, json.expiresIn)
     } catch {}
     storeUserId(userId)
 }
@@ -82,6 +132,7 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const profileTimerRef = useRef(null)
+
     const restoreSession = useCallback(async () => {
         setLoading(true)
         setError(null)
@@ -96,6 +147,8 @@ export function AuthProvider({ children }) {
             const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
             const { json } = await APIUtility.post(`${AUTH_FUNCTION}/restore-session`, { sessionId, userId })
             if (json.success && json.user) {
+                if (json.jwt) applyJwt(json.jwt, json.expiresIn)
+                else await refreshJwtIfPossible()
                 setUser(json.user)
                 storeUserId(userId)
                 setLoading(false)
@@ -112,11 +165,39 @@ export function AuthProvider({ children }) {
             return false
         }
     }, [])
+
     useEffect(() => {
+        // Re-attach realtime auth on mount in case sessionStorage already
+        // has a JWT (e.g. a tab refresh before the restore-session call
+        // returns) — keeps any subscription set up before restore from
+        // running with a stale anon-key bearer.
+        const existingJwt = sessionStorage.getItem(SESSION_STORAGE_KEYS.JWT)
+        if (existingJwt) setDatabaseAuth(existingJwt)
         setLoading(true)
         restoreSession().finally(() => setLoading(false))
         return () => clearTimeout(profileTimerRef.current)
     }, [restoreSession])
+
+    /* Silent token refresh — fires once per minute, but only re-mints when
+     * the stored JWT has < JWT_REFRESH_FLOOR_SECONDS of life left. Without
+     * this loop the JWT goes stale 1h after login and every Database call
+     * starts coming back 401. The interval keeps running across signin /
+     * signout because the inner check no-ops when the user is signed out. */
+    useEffect(() => {
+        const tick = () => {
+            const userId = getStoredUserId()
+            const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
+            if (!userId || !sessionId) return
+            const expiresAtRaw = sessionStorage.getItem(SESSION_STORAGE_KEYS.JWT_EXPIRES_AT)
+            const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : 0
+            const secondsLeft = (expiresAt - Date.now()) / 1000
+            if (secondsLeft > JWT_REFRESH_FLOOR_SECONDS) return
+            refreshJwtIfPossible()
+        }
+        const interval = setInterval(tick, JWT_REFRESH_INTERVAL_MS)
+        return () => clearInterval(interval)
+    }, [])
+
     const loadUserProfile = useCallback(async (userId) => {
         if (!userId) return
         try {

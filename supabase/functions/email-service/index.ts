@@ -2,8 +2,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.55.0' // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts' // @ts-ignore
 import { buildThemeConfig, envOrDefault } from '../_shared/auth-helpers.ts' // @ts-ignore
-import { buildReportSubmittedEmail } from '../../../emails/report-submitted-email.js' // @ts-ignore
-import { buildCommentNotificationEmail } from '../../../emails/comment-notification-email.js'
+import { buildReportSubmittedEmail } from '../../../scripts/emails/report-submitted-email.js' // @ts-ignore
+import { buildCommentNotificationEmail } from '../../../scripts/emails/comment-notification-email.js'
 
 const MAILERSEND_API_URL = 'https://api.mailersend.com/v1/email'
 const DEFAULT_FROM_NAME = 'Smyrna Tools'

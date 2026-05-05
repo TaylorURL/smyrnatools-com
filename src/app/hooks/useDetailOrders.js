@@ -1,32 +1,29 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { Database } from '../../services/DatabaseService'
 import { DispatchDataService } from '../../services/DispatchDataService'
 
-const SAFETY_REFRESH_MS = 5 * 60 * 1000
-const REALTIME_DEBOUNCE_MS = 750
+const SAFETY_REFRESH_MS = 60 * 1000
+const UPDATE_CHECK_INTERVAL_MS = 10 * 1000
 const INITIAL_RETRY_DELAYS_MS = [1500, 4000, 10_000, 30_000]
 
 /**
- * Reads ticket-level dispatch data from `dispatch_data` (populated by the
- * `dispatch-import` edge function) and stays live via three triggers:
+ * Reads ticket-level dispatch data via `DispatchDataService` (which goes
+ * through the session-validated `dispatch-data-service` edge function) and
+ * stays live via three triggers:
  *   1. Initial load on mount, retry-laddered for cold-start.
- *   2. Realtime postgres_changes on dispatch_data (debounced).
- *   3. 5-minute safety interval.
+ *   2. `fetchLastUpdatedAt` poll every 10s — re-fetches as soon as a newer
+ *      timestamp shows up. Replaces the old realtime postgres_changes
+ *      subscription, which can no longer reach the locked-down
+ *      `dispatch_data` table from the anon role.
+ *   3. 60s safety interval in case the timestamp probe misses.
  *
  * Returns `{ detailByOrderId, isLoading }`:
  *   - `detailByOrderId`: `{ [orderId]: { tickets, byPlant, loadedYardage, … } }`
- *     — same shape as before so existing callers can `.detailByOrderId` it.
  *   - `isLoading`: `true` until the very first fetch resolves (success OR
  *     failure). Lets the page-level skeleton hold until ticket data is
  *     actually in (or has been determined to be absent for the date) — we
  *     do NOT keep `isLoading` true through the retry ladder, because a
  *     date that genuinely has no tickets would otherwise block forever.
- *
- * NOTE: `plantProduction` is no longer needed for the join — the importer
- * does the (orderNum, customer) → orderId resolution server-side and
- * stores the result. The arg is kept for backwards compatibility but
- * ignored.
  */
 export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
     const [detailByOrderId, setDetailByOrderId] = useState({})
@@ -34,13 +31,14 @@ export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
     const cancelledRef = useRef(false)
     const dateRef = useRef(dateStr)
     dateRef.current = dateStr
-    const debounceRef = useRef(null)
     const retryTimersRef = useRef([])
+    const lastSeenUpdatedAtRef = useRef(null)
 
     useEffect(() => {
         cancelledRef.current = false
         retryTimersRef.current.forEach(clearTimeout)
         retryTimersRef.current = []
+        lastSeenUpdatedAtRef.current = null
         setIsLoading(true)
 
         if (!dateStr) {
@@ -51,8 +49,12 @@ export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
 
         const fetchAndStore = async () => {
             try {
-                const data = await DispatchDataService.fetchDetailByOrderId(dateRef.current)
+                const [data, updatedAt] = await Promise.all([
+                    DispatchDataService.fetchDetailByOrderId(dateRef.current),
+                    DispatchDataService.fetchLastUpdatedAt(dateRef.current)
+                ])
                 if (cancelledRef.current) return false
+                if (updatedAt) lastSeenUpdatedAtRef.current = updatedAt.getTime()
                 const hasData = data && Object.keys(data).length > 0
                 if (hasData) setDetailByOrderId(data)
                 return hasData
@@ -64,9 +66,6 @@ export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
 
         const runWithRetries = async () => {
             const ok = await fetchAndStore()
-            // First attempt resolved — release the page-level skeleton even
-            // if we got nothing. Background retries keep running to catch
-            // late uploads but don't gate the UI any longer.
             if (!cancelledRef.current) setIsLoading(false)
             if (ok || cancelledRef.current) return
             INITIAL_RETRY_DELAYS_MS.forEach((delay, idx) => {
@@ -80,56 +79,26 @@ export function useDetailOrders(dateStr /* , plantProduction (unused) */) {
         }
 
         runWithRetries()
-        const interval = setInterval(fetchAndStore, SAFETY_REFRESH_MS)
+        const safetyInterval = setInterval(fetchAndStore, SAFETY_REFRESH_MS)
+        const updateCheckInterval = setInterval(async () => {
+            try {
+                const updatedAt = await DispatchDataService.fetchLastUpdatedAt(dateRef.current)
+                if (cancelledRef.current || !updatedAt) return
+                const ts = updatedAt.getTime()
+                if (lastSeenUpdatedAtRef.current == null || ts > lastSeenUpdatedAtRef.current) {
+                    fetchAndStore()
+                }
+            } catch {
+                // Network blips fall back to the next safety interval tick.
+            }
+        }, UPDATE_CHECK_INTERVAL_MS)
+
         return () => {
             cancelledRef.current = true
             retryTimersRef.current.forEach(clearTimeout)
             retryTimersRef.current = []
-            clearInterval(interval)
-        }
-    }, [dateStr])
-
-    // Realtime: any change on a dispatch_data row for the current date
-    // debounces a re-fetch. We re-fetch the whole map rather than
-    // patching one row — the merge logic in DispatchDataService handles
-    // tickets-per-order aggregation that's awkward to do incrementally.
-    useEffect(() => {
-        if (!dateStr) return undefined
-        const channelName = `dispatch-data-detail-${dateStr}-${Date.now()}`
-
-        const refetch = async () => {
-            try {
-                const data = await DispatchDataService.fetchDetailByOrderId(dateRef.current)
-                if (!cancelledRef.current) setDetailByOrderId(data || {})
-            } catch {
-                // Errors surface via the safety interval / retry ladder.
-            }
-        }
-
-        // Don't filter the payload by `order_date`. DELETE events on
-        // Postgres replication ship only a partial `old` row (often just
-        // the primary key columns), so the previous date filter dropped
-        // every delete and the page never reflected ticket removals
-        // without a manual refresh. The refetch is debounced and only
-        // hits the API once per burst, so the extra refetches on
-        // unrelated-date events are cheap.
-        const onChange = () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current)
-            debounceRef.current = setTimeout(refetch, REALTIME_DEBOUNCE_MS)
-        }
-
-        const channel = Database.channel(channelName)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'dispatch_data' }, onChange)
-            .subscribe((status, err) => {
-                if (status === 'SUBSCRIBED') refetch()
-                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                    console.warn('[useDetailOrders] realtime subscription failed:', status, err?.message || '')
-                }
-            })
-
-        return () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current)
-            Database.removeChannel(channel)
+            clearInterval(safetyInterval)
+            clearInterval(updateCheckInterval)
         }
     }, [dateStr])
 
