@@ -9,12 +9,13 @@ import { Panel, Stat, StatGroup } from '../ui/Panel'
  */
 export default function DashboardReportsSection({ reports }) {
     const {
-        draftsThisWeek,
+        expectedThisWeek,
         loading,
         overdueCount,
         submittedThisWeek,
         topOverdueReports,
         topOverdueUsers,
+        weeklyCompletionRate,
         yearReportCount
     } = reports || {}
 
@@ -29,8 +30,15 @@ export default function DashboardReportsSection({ reports }) {
     }
 
     const submittedColor = submittedThisWeek > 0 ? '#16a34a' : undefined
-    const draftColor = draftsThisWeek > 0 ? '#d97706' : undefined
     const overdueColor = overdueCount > 0 ? '#dc2626' : undefined
+    const completionColor =
+        weeklyCompletionRate == null
+            ? undefined
+            : weeklyCompletionRate >= 90
+              ? '#16a34a'
+              : weeklyCompletionRate >= 70
+                ? '#d97706'
+                : '#dc2626'
 
     return (
         <Panel
@@ -52,10 +60,14 @@ export default function DashboardReportsSection({ reports }) {
                         valueColor={submittedColor}
                     />
                     <Stat
-                        hint={draftsThisWeek > 0 ? 'In progress' : 'No drafts'}
-                        label="Drafts this week"
-                        value={draftsThisWeek || 0}
-                        valueColor={draftColor}
+                        hint={
+                            expectedThisWeek > 0
+                                ? `${submittedThisWeek || 0} of ${expectedThisWeek} expected`
+                                : 'No reports due'
+                        }
+                        label="Completion rate"
+                        value={weeklyCompletionRate == null ? '—' : `${weeklyCompletionRate}%`}
+                        valueColor={completionColor}
                     />
                     <Stat
                         hint={overdueCount > 0 ? 'Across all users' : 'All caught up'}

@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { ReportService } from '../../services/ReportService'
 import ReportUtility from '../../utils/ReportUtility'
+import { oneOffReportTypeMap, reportTypeMap } from '../types/ReportTypes'
+
+/** snake_case report name → human title from reportTypes config. */
+const formatReportName = (name) => reportTypeMap[name]?.title || oneOffReportTypeMap[name]?.title || name
 
 /**
  * Bootstrap report-system data for the Dashboard. Fetches the year's
@@ -48,16 +52,24 @@ export function useDashboardReports({ refreshKey } = {}) {
             return monday === currentMondayIso
         })
         const submittedThisWeek = reportsThisWeek.filter((r) => r.completed).length
-        const draftsThisWeek = reportsThisWeek.filter((r) => !r.completed).length
 
-        // Group overdue rows by report type for the top-N summary.
+        // "Expected this week" = what's been submitted plus what's still
+        // overdue for the current week. Lets us derive an at-a-glance
+        // weekly completion rate the dashboard can colour by health.
+        const overdueThisWeek = overdue.filter((row) => row?.week === currentMondayIso).length
+        const expectedThisWeek = submittedThisWeek + overdueThisWeek
+        const weeklyCompletionRate =
+            expectedThisWeek > 0 ? Math.round((submittedThisWeek / expectedThisWeek) * 100) : null
+
+        // Group overdue rows by report type for the top-N summary, formatted
+        // to the human-readable title from reportTypes config.
         const overdueByReport = overdue.reduce((acc, row) => {
             const key = row?.report_name || 'unknown'
             acc[key] = (acc[key] || 0) + 1
             return acc
         }, {})
         const topOverdueReports = Object.entries(overdueByReport)
-            .map(([name, count]) => ({ count, name }))
+            .map(([name, count]) => ({ count, name: formatReportName(name) }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 5)
 
@@ -77,12 +89,13 @@ export function useDashboardReports({ refreshKey } = {}) {
 
         return {
             currentMondayIso,
-            draftsThisWeek,
+            expectedThisWeek,
             loading,
             overdueCount: overdue.length,
             submittedThisWeek,
             topOverdueReports,
             topOverdueUsers,
+            weeklyCompletionRate,
             yearReportCount: reports.length
         }
     }, [reports, overdue, loading, currentMondayIso])

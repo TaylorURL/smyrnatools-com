@@ -2,6 +2,14 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.24] - 2026-05-05
+
+- Replace "Drafts this week" stat with a weekly completion rate percentage in DashboardReportsSection
+- Add color-coded thresholds for completion rate (green >= 90%, amber >= 70%, red below)
+- Compute expectedThisWeek and weeklyCompletionRate in useDashboardReports hook
+- Format overdue report names to human-readable titles using reportTypes config
+- Show "X of Y expected" hint text alongside the completion rate stat
+
 ## [40.0.23] - 2026-05-05
 
 - Add DashboardScheduleSection showing today's plan/dispatch rollup with headline stats and a per-plant activity table with expand/collapse
