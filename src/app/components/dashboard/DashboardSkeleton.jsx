@@ -99,19 +99,78 @@ export default function DashboardSkeleton({ isMobile }) {
                 <ListChrome delay={40} rows={3} />
             </PanelChrome>
 
-            <PanelChrome delay={140} titleWidth={64}>
-                <TableChrome columns={isMobile ? 4 : 7} delay={180} rows={6} />
+            <PanelChrome delay={120} titleWidth={120}>
+                <div className="flex flex-col gap-3">
+                    <div
+                        className="grid rounded overflow-hidden"
+                        style={{
+                            border: '1px solid var(--border-light)',
+                            gridTemplateColumns: `repeat(${isMobile ? 3 : 6}, minmax(0, 1fr))`
+                        }}
+                    >
+                        {Array.from({ length: isMobile ? 3 : 6 }, (_, i) => (
+                            <div
+                                key={i}
+                                className="flex flex-col gap-1.5 px-3 py-2.5"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    borderRight: i < (isMobile ? 3 : 6) - 1 ? '1px solid var(--border-light)' : 'none'
+                                }}
+                            >
+                                <Block delay={140 + i * 30} height={10} width="60%" />
+                                <Block delay={180 + i * 30} height={20} width="50%" />
+                                <Block delay={220 + i * 30} height={10} width="80%" />
+                            </div>
+                        ))}
+                    </div>
+                    <TableChrome columns={4} delay={300} rows={5} />
+                </div>
             </PanelChrome>
 
-            <PanelChrome delay={380} titleWidth={70}>
+            <PanelChrome delay={460} titleWidth={64}>
+                <TableChrome columns={isMobile ? 4 : 7} delay={500} rows={6} />
+            </PanelChrome>
+
+            <PanelChrome delay={680} titleWidth={70}>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
-                        <Block delay={420} height={10} width={70} />
-                        <TableChrome columns={2} delay={440} rows={5} />
+                        <Block delay={720} height={10} width={70} />
+                        <TableChrome columns={2} delay={740} rows={5} />
                     </div>
                     <div className="flex flex-col gap-2">
-                        <Block delay={500} height={10} width={70} />
-                        <TableChrome columns={2} delay={520} rows={4} />
+                        <Block delay={800} height={10} width={70} />
+                        <TableChrome columns={2} delay={820} rows={4} />
+                    </div>
+                </div>
+            </PanelChrome>
+
+            <PanelChrome delay={920} titleWidth={80}>
+                <div className="flex flex-col gap-3">
+                    <div
+                        className="grid rounded overflow-hidden"
+                        style={{
+                            border: '1px solid var(--border-light)',
+                            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))'
+                        }}
+                    >
+                        {Array.from({ length: 4 }, (_, i) => (
+                            <div
+                                key={i}
+                                className="flex flex-col gap-1.5 px-3 py-2.5"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    borderRight: i < 3 ? '1px solid var(--border-light)' : 'none'
+                                }}
+                            >
+                                <Block delay={940 + i * 30} height={10} width="60%" />
+                                <Block delay={980 + i * 30} height={20} width="50%" />
+                                <Block delay={1020 + i * 30} height={10} width="80%" />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <TableChrome columns={2} delay={1080} rows={4} />
+                        <TableChrome columns={2} delay={1140} rows={4} />
                     </div>
                 </div>
             </PanelChrome>

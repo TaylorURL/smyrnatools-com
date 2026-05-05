@@ -6,8 +6,10 @@ import React from 'react'
  */
 export const DASHBOARD_NAV_SECTIONS = [
     { icon: 'fa-bell', id: 'alerts', label: 'Alerts' },
+    { icon: 'fa-calendar-day', id: 'schedule', label: 'Schedule' },
     { icon: 'fa-truck-fast', id: 'fleet', label: 'Fleet' },
-    { icon: 'fa-users', id: 'people', label: 'People' }
+    { icon: 'fa-users', id: 'people', label: 'People' },
+    { icon: 'fa-file-lines', id: 'reports', label: 'Reports' }
 ]
 
 /**
@@ -17,7 +19,10 @@ export const DASHBOARD_NAV_SECTIONS = [
  */
 export function DashboardScrollSpyNav({ accent, activeId, alertCount = 0, onJump, peopleCount = 0, sections }) {
     return (
-        <aside className="hidden lg:block sticky top-0 self-start py-5 pr-3" style={{ width: 200 }}>
+        <aside
+            className="hidden lg:block sticky top-0 self-start py-5 pr-3 overflow-y-auto"
+            style={{ maxHeight: '100vh', width: 200 }}
+        >
             <div
                 className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2"
                 style={{ color: 'var(--text-tertiary)' }}

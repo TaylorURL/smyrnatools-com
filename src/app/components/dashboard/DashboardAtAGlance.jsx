@@ -25,7 +25,10 @@ const SKELETON_ROW_LABELS = [
 export function DashboardAtAGlance({ alertCount, displayStats, loading = false, openIssues }) {
     if (loading) {
         return (
-            <aside className="hidden xl:block sticky top-0 self-start py-5 pl-4" style={{ width: 240 }}>
+            <aside
+                className="hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto"
+                style={{ maxHeight: '100vh', width: 240 }}
+            >
                 <div className="h-3 w-32 mb-2 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
                 <div className="flex flex-col">
                     {SKELETON_ROW_LABELS.map((label, i) => (
@@ -95,7 +98,10 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
     ]
 
     return (
-        <aside className="hidden xl:block sticky top-0 self-start py-5 pl-4" style={{ width: 240 }}>
+        <aside
+            className="hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto"
+            style={{ maxHeight: '100vh', width: 240 }}
+        >
             <div className="text-[12px] mb-1" style={{ color: 'var(--text-tertiary)' }}>
                 {dateLabel}
             </div>

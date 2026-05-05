@@ -2,6 +2,17 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.23] - 2026-05-05
+
+- Add DashboardScheduleSection showing today's plan/dispatch rollup with headline stats and a per-plant activity table with expand/collapse
+- Add DashboardReportsSection showing weekly submission counts, overdue totals, and top overdue report types and users
+- Add useDashboardSchedule hook for fetching and computing schedule data
+- Add useDashboardReports hook for fetching and computing report rollup data
+- Add "Schedule" and "Reports" entries to the scroll-spy navigation
+- Make DashboardAtAGlance and DashboardScrollSpyNav sidebars scrollable with overflow-y-auto and max-height
+- Rebuild DashboardSkeleton to include skeleton states for the new schedule and reports sections
+- Wire new schedule and reports sections into DashboardView
+
 ## [40.0.22] - 2026-05-05
 
 - Redesign dashboard layout with a three-column structure: scroll-spy nav, main content, and an "at a glance" sidebar
