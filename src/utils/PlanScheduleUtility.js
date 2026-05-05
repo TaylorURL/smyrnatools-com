@@ -13,10 +13,21 @@ import {
     getCalculatedTruckCount,
     isBigPourOrder,
     isExcludedOrder,
+    LOAD_MINUTES,
     parseDurationMinutes,
     PRE_TRIP_MINUTES,
     timeToMinutes
 } from './PlanUtility'
+
+/** Driver shift cap per DOT regulations — operators can't be on the clock
+ *  longer than this from first load-out to back-at-yard. */
+export const HOURS_LIMIT_MINUTES = 14 * 60
+/** Slump / QC test minutes the truck waits at the plant before leaving for
+ *  the job. The user-configured value used by the limit calculator. */
+export const HOURS_LIMIT_SLUMP_MINUTES = 15
+/** On-site pour duration assumed by the limit calculator when an order's own
+ *  pour-time estimate isn't available. */
+export const HOURS_LIMIT_POUR_MINUTES = 60
 
 /** Trim/normalize any value to a string. Empty / null / undefined → ''. */
 export const clean = (value) => (value == null ? '' : String(value).trim())
@@ -302,6 +313,62 @@ export const SERVICE_BADGE_BASE =
  *  variance in live traffic estimates is enough that small savings aren't
  *  reliable. */
 export const CLOSER_PLANT_MIN_SAVINGS = 5
+
+/**
+ * Earliest "load-out" minute of the day across a list of dispatch orders.
+ * Equivalent to "when the first concrete left a plant today" — used as the
+ * anchor for the 14-hour driver-shift check. Excluded orders (cancelled /
+ * test) don't anchor the day; they'd otherwise inflate the elapsed window.
+ */
+export const getFirstLoadOutMinutes = (orders) => {
+    let earliest = null
+    for (const order of orders || []) {
+        if (!order || isExcludedOrder(order)) continue
+        const startMin = timeToMinutes(order?.startTime)
+        if (!Number.isFinite(startMin)) continue
+        if (earliest == null || startMin < earliest) earliest = startMin
+    }
+    return earliest
+}
+
+/**
+ * Project the operator's "back at yard" minute for one dispatch order:
+ *   load → slump → travel out → pour → travel back
+ * and check whether the total elapsed time from `firstLoadOutMin` exceeds
+ * the 14-hour DOT limit. Travel times come from the order's own
+ * `toJobTime` / `toPlantTime` (HH:MM dispatch values); a missing back-leg
+ * falls back to the out-leg estimate. Returns null when we lack enough
+ * signal to compute a meaningful answer.
+ */
+export const evaluateHoursLimit = (order, firstLoadOutMin) => {
+    if (!order || isExcludedOrder(order)) return null
+    if (!Number.isFinite(firstLoadOutMin)) return null
+    const startMin = timeToMinutes(order?.startTime)
+    if (!Number.isFinite(startMin)) return null
+    const travelOut = parseDurationMinutes(order?.toJobTime)
+    const travelBackRaw = parseDurationMinutes(order?.toPlantTime)
+    const travelBack = Number.isFinite(travelBackRaw) ? travelBackRaw : travelOut
+    if (!Number.isFinite(travelOut) && !Number.isFinite(travelBack)) return null
+    const segments = {
+        load: LOAD_MINUTES,
+        pour: HOURS_LIMIT_POUR_MINUTES,
+        slump: HOURS_LIMIT_SLUMP_MINUTES,
+        travelBack: Number.isFinite(travelBack) ? travelBack : 0,
+        travelOut: Number.isFinite(travelOut) ? travelOut : 0
+    }
+    const finishMin =
+        startMin + segments.load + segments.slump + segments.travelOut + segments.pour + segments.travelBack
+    const elapsedMin = finishMin - firstLoadOutMin
+    return {
+        elapsedHours: elapsedMin / 60,
+        elapsedMin,
+        exceeds: elapsedMin >= HOURS_LIMIT_MINUTES,
+        finishMin,
+        firstLoadOutMin,
+        segments,
+        startMin
+    }
+}
 
 /**
  * Build the truck-coverage payload for a single dispatch order — the same

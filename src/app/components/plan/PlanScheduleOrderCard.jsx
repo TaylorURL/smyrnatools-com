@@ -1,9 +1,15 @@
 import React from 'react'
 
 import { formatOrderAddress } from '../../../utils/AddressUtility'
-import { clean, formatHhmm, getOrderStatus, isLikelyBadAddress } from '../../../utils/PlanScheduleUtility'
+import {
+    clean,
+    evaluateHoursLimit,
+    formatHhmm,
+    getOrderStatus,
+    isLikelyBadAddress
+} from '../../../utils/PlanScheduleUtility'
 import { getCalculatedTruckCount } from '../../../utils/PlanUtility'
-import { BigPourBadge, KeyValue, OrderStatusBadge, ServiceBadge } from './PlanScheduleBadges'
+import { BigPourBadge, HoursLimitBadge, KeyValue, OrderStatusBadge, ServiceBadge } from './PlanScheduleBadges'
 
 const composeAddress = (order) => formatOrderAddress(order, ', ')
 
@@ -15,6 +21,7 @@ const composeAddress = (order) => formatOrderAddress(order, ', ')
 export default function PlanScheduleOrderCard({
     accentColor,
     closerPlant,
+    firstLoadOutMin,
     isToday = false,
     onOpenLocation,
     onPickPlant,
@@ -35,6 +42,7 @@ export default function PlanScheduleOrderCard({
     // Test + cancelled orders are not real pours — suppress truck count and
     // style the card so the dispatcher knows not to act on it.
     const isNonProduction = isCancelled || isTest
+    const hoursLimit = !isNonProduction ? evaluateHoursLimit(order, firstLoadOutMin) : null
     const computedTrucks = isNonProduction ? null : getCalculatedTruckCount(order, travelOverrides)
     const trucks = computedTrucks ?? 0
     const addressBad = isLikelyBadAddress(clean(order.address))
@@ -99,6 +107,7 @@ export default function PlanScheduleOrderCard({
                             ))}
                         <BigPourBadge order={order} travelOverrides={travelOverrides} />
                         {!isNonProduction && <ServiceBadge service={service} />}
+                        {!isNonProduction && <HoursLimitBadge limit={hoursLimit} />}
                     </div>
                     <div
                         className="text-[11.5px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1"

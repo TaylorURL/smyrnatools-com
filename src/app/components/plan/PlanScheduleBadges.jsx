@@ -1,6 +1,15 @@
 import React from 'react'
 
 import { SERVICE_BADGE_BASE } from '../../../utils/PlanScheduleUtility'
+
+/** Format a minute-of-day count back into "HH:MM", wrapping past midnight. */
+const minuteOfDayToHhmm = (mins) => {
+    if (!Number.isFinite(mins)) return ''
+    const wrapped = ((mins % 1440) + 1440) % 1440
+    const h = Math.floor(wrapped / 60)
+    const m = Math.floor(wrapped % 60)
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
 import {
     BIG_POUR_MIN_TRUCKS,
     getEffectiveMinTrucks,
@@ -180,6 +189,33 @@ export function BigPourBadge({ order, travelOverrides }) {
                 : isBigPour
                   ? `Big Pour · ${rate} yd/hr`
                   : `Needs ${needed} trucks`}
+        </span>
+    )
+}
+
+/** Driver shift cap warning — fires when the projected back-at-yard time
+ *  for this order pushes the operator past the 14-hour DOT limit measured
+ *  from the day's first load-out. The tooltip breaks down each segment
+ *  (load · slump · travel · pour · travel back) so dispatchers see
+ *  exactly which leg pushed them over. Render nothing when the order
+ *  isn't over the limit or when the limit can't be evaluated. */
+export function HoursLimitBadge({ limit }) {
+    if (!limit || !limit.exceeds) return null
+    const { elapsedHours, finishMin, firstLoadOutMin, segments } = limit
+    const tooltipLines = [
+        `Driver shift would hit ${elapsedHours.toFixed(1)}h — past the 14h DOT limit.`,
+        `Anchor (first load-out): ${minuteOfDayToHhmm(firstLoadOutMin)}`,
+        `Projected back at yard: ${minuteOfDayToHhmm(finishMin)}`,
+        `Load ${segments.load}m + slump ${segments.slump}m + travel ${segments.travelOut}m + pour ${segments.pour}m + return ${segments.travelBack}m`
+    ]
+    return (
+        <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
+            style={{ background: '#dc2626', color: '#fff' }}
+            title={tooltipLines.join('\n')}
+        >
+            <i className="fas fa-clock text-[9px]" />
+            Limit Exceeded · {elapsedHours.toFixed(1)}h
         </span>
     )
 }

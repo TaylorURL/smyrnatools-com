@@ -19,6 +19,7 @@ import {
     evaluateOrderService,
     evaluateScheduleSatisfaction,
     extractCityFromFullAddress,
+    getFirstLoadOutMinutes,
     getOrderStatus,
     sumField,
     VIEW_MODES
@@ -632,6 +633,11 @@ function PlanScheduleView({
             .sort((a, b) => String(a.code).localeCompare(String(b.code)))
     }, [filtered])
 
+    /* Anchor for the per-card 14h driver-shift check — computed once per
+     * filtered order set and shared across every order card. Card view also
+     * consumes this; table view reads its own copy from PlanScheduleTable. */
+    const cardFirstLoadOutMin = useMemo(() => getFirstLoadOutMinutes(filtered), [filtered])
+
     const activeFilterCount =
         (query ? 1 : 0) +
         (plantFilters.length > 0 ? 1 : 0) +
@@ -950,6 +956,7 @@ function PlanScheduleView({
                                                         key={`${code}-${o.orderId || idx}`}
                                                         accentColor={accentColor}
                                                         closerPlant={getCloserPlantForOrder(o)}
+                                                        firstLoadOutMin={cardFirstLoadOutMin}
                                                         isToday={isViewingToday}
                                                         onOpenLocation={setMapOrder}
                                                         onPickPlant={(c) => togglePlantFilter(c)}

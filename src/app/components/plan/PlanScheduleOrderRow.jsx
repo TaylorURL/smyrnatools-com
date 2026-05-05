@@ -3,13 +3,14 @@ import React from 'react'
 import { formatAddressSegment, formatOrderAddress } from '../../../utils/AddressUtility'
 import {
     clean,
+    evaluateHoursLimit,
     evaluateOrderService,
     formatHhmm,
     getOrderStatus,
     isLikelyBadAddress
 } from '../../../utils/PlanScheduleUtility'
 import { getCalculatedTruckCount } from '../../../utils/PlanUtility'
-import { OrderStatusBadge, PlantBadge, ServiceBadge } from './PlanScheduleBadges'
+import { HoursLimitBadge, OrderStatusBadge, PlantBadge, ServiceBadge } from './PlanScheduleBadges'
 import PlanScheduleLoadedCell from './PlanScheduleLoadedCell'
 
 const composeAddress = (order) => formatOrderAddress(order, ', ')
@@ -185,6 +186,7 @@ export default function PlanScheduleOrderRow({
     accentColor,
     animationDelayMs,
     detail,
+    firstLoadOutMin,
     getCloserPlantForOrder,
     isPastDay,
     isToday,
@@ -206,6 +208,7 @@ export default function PlanScheduleOrderRow({
     const isTest = status?.kind === 'test'
     const isNonProduction = isCancelled || isTest
     const service = !isNonProduction ? evaluateOrderService(order, detail, nowMin) : null
+    const hoursLimit = !isNonProduction ? evaluateHoursLimit(order, firstLoadOutMin) : null
     return (
         <tr
             className="animate-slide-in-row"
@@ -248,6 +251,7 @@ export default function PlanScheduleOrderRow({
                     </span>
                     {status && <OrderStatusBadge status={status} />}
                     {!isCancelled && !isTest && <ServiceBadge service={service} />}
+                    {!isCancelled && !isTest && <HoursLimitBadge limit={hoursLimit} />}
                 </div>
             </td>
             <td className="px-3 py-2 max-w-[280px]">

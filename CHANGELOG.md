@@ -2,6 +2,15 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.25] - 2026-05-05
+
+- Add 14-hour DOT driver shift limit badge to plan schedule orders in both table and card views
+- Compute projected back-at-yard time per order using load, slump, travel, pour, and return segments
+- Show red "Limit Exceeded" badge with detailed tooltip breaking down each time segment when an operator would exceed the 14h cap
+- Add getFirstLoadOutMinutes utility to anchor the shift window against the earliest valid start time of the day
+- Memoize firstLoadOutMin at the table and view level to avoid redundant recomputation per row/card
+- Remove unused fmtFloat import from PlanStatisticsTables
+
 ## [40.0.24] - 2026-05-05
 
 - Replace "Drafts this week" stat with a weekly completion rate percentage in DashboardReportsSection

@@ -4,7 +4,6 @@ import {
     deltaColor,
     deltaPct,
     fmtDate,
-    fmtFloat,
     fmtInt,
     fmtMinutesAsHHMM,
     fmtPct

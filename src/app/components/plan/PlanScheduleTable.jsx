@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { buildOrderCoveragePayload, getScheduleRowDelay } from '../../../utils/PlanScheduleUtility'
+import {
+    buildOrderCoveragePayload,
+    getFirstLoadOutMinutes,
+    getScheduleRowDelay
+} from '../../../utils/PlanScheduleUtility'
 import { timeToMinutes } from '../../../utils/PlanUtility'
 import OrderInfoModal from '../schedule/OrderInfoModal'
 import OrderTicketsModal from '../schedule/OrderTicketsModal'
@@ -373,6 +377,11 @@ export default function PlanScheduleTable({
         [clockInRows, visiblePlantCodes, extrasActive]
     )
 
+    /* Anchor for the per-row 14h driver-shift check — earliest valid start
+     * time across all visible orders. Memoised so it doesn't recompute on
+     * every row render. */
+    const firstLoadOutMin = useMemo(() => getFirstLoadOutMinutes(orders), [orders])
+
     const tableRows = useMemo(
         () =>
             buildTableRows({
@@ -471,6 +480,7 @@ export default function PlanScheduleTable({
                                             accentColor={accentColor}
                                             animationDelayMs={animationDelayMs}
                                             detail={o.orderId ? detailByOrderId[o.orderId] : null}
+                                            firstLoadOutMin={firstLoadOutMin}
                                             getCloserPlantForOrder={getCloserPlantForOrder}
                                             isPastDay={isPastDay}
                                             isToday={isToday}
