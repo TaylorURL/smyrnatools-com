@@ -42,6 +42,7 @@ export const INITIAL_STATS = {
         pending: 0,
         total: 0,
         tractorAssigned: 0,
+        training: 0,
         unassigned: 0
     },
     overallAllocationPercent: 0,

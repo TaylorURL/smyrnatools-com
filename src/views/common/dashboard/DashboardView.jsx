@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
+import DashboardAlertsPanel from '../../../app/components/dashboard/DashboardAlertsPanel'
+import { DashboardAtAGlance } from '../../../app/components/dashboard/DashboardAtAGlance'
 import DashboardHeader from '../../../app/components/dashboard/DashboardHeader'
 import DashboardPeopleSection from '../../../app/components/dashboard/DashboardPeopleSection'
-import DashboardSidebar from '../../../app/components/dashboard/DashboardSidebar'
+import { DASHBOARD_NAV_SECTIONS, DashboardScrollSpyNav } from '../../../app/components/dashboard/DashboardScrollSpyNav'
 import DashboardSkeleton from '../../../app/components/dashboard/DashboardSkeleton'
 import EmbeddedViewModal from '../../../app/components/dashboard/EmbeddedViewModal'
 import FleetOverviewSection from '../../../app/components/dashboard/FleetOverviewSection'
-import KeyMetricsStrip from '../../../app/components/dashboard/KeyMetricsStrip'
-import { INITIAL_EXPANDED_SECTIONS } from '../../../app/constants/dashboardConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useDashboardAssets, useIssueCommentCounts, usePlantFilter } from '../../../app/hooks/useDashboardData'
 import { useAnimatedStats, useDateFilter } from '../../../app/hooks/useDashboardEffects'
@@ -16,24 +16,26 @@ import { useDashboardInit } from '../../../app/hooks/useDashboardInit'
 import { useDashboardManagers } from '../../../app/hooks/useDashboardManagers'
 import { useDashboardStats } from '../../../app/hooks/useDashboardStats'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
+import { usePlanScrollSpy } from '../../../app/hooks/usePlanScrollSpy'
 import { useLeaderboardMetrics, usePlantNotifications } from '../../../app/hooks/usePlantNotifications'
 import { useStatusHistory } from '../../../app/hooks/useStatusHistory'
 import { PlantService } from '../../../services/PlantService'
 
 /**
- * Primary dashboard view with a sidebar + main content layout.
- * The sidebar houses alerts, people pipeline, AI insights, and plant rankings.
- * The main content displays key metrics, fleet overview, analytics, people, and maintenance.
+ * Primary dashboard view — Plan-tab-style 3-column layout.
+ * Left: sticky scrollspy side nav with section anchors.
+ * Center: KPI strip, fleet table, people table, alerts list.
+ * Right: at-a-glance rail with vertical label/value snapshot.
  */
 export default function DashboardView() {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
     const isMobile = useIsMobile()
-    const [expandedSections, setExpandedSections] = useState(INITIAL_EXPANDED_SECTIONS)
     const [embeddedView, setEmbeddedView] = useState(null)
     const [embeddedViewSearch, setEmbeddedViewSearch] = useState('')
     const [, startTransition] = useTransition()
     const filterTimeoutRef = useRef(null)
+    const scrollContainerRef = useRef(null)
     const { plantSetRef } = usePlantFilter('', '', [], [])
     const {
         allPlants,
@@ -42,11 +44,9 @@ export default function DashboardView() {
         dashboardRegionCode,
         dashboardRegionName,
         hasAllRegionsPermission,
-        isPlantManager,
         onRefresh,
         permittedRegions,
         plantModalOpen,
-        refreshKey,
         refreshing,
         regionPlants,
         regionPlantsLoaded,
@@ -58,8 +58,7 @@ export default function DashboardView() {
         totalRegionsExcludingOffice,
         userAdditionalPlants,
         userPlantCode,
-        userRoleName,
-        userRoleWeight
+        refreshKey
     } = useDashboardInit({ plantSetRef, preferences })
     const myPlantCodesSet = useMemo(() => {
         if (!userPlantCode && !userAdditionalPlants.length) return null
@@ -68,8 +67,6 @@ export default function DashboardView() {
         userAdditionalPlants.forEach((code) => codes.add(code))
         return codes
     }, [userPlantCode, userAdditionalPlants])
-    const isMultiPlantFilter = dashboardPlant === 'MY_PLANTS' || dashboardPlant?.startsWith('DISTRICT:')
-    const isPlantMode = !!dashboardPlant && !isMultiPlantFilter
     const plantFilter = usePlantFilter(dashboardRegionCode, dashboardPlant, regionPlants, allPlants, myPlantCodesSet)
     const {
         createFilterFn: activeCreateFilterFn,
@@ -117,15 +114,9 @@ export default function DashboardView() {
         computeStats,
         countsRef
     })
-    const {
-        handleQuickDateFilter,
-        historyEndDate,
-        historyStartDate,
-        setHistoryEndDate,
-        setHistoryStartDate,
-        setOldestHistoryDate
-    } = useDateFilter()
-    const { historyLoaded, historyRecordsRef, statusHistoryData } = useStatusHistory({
+    const { historyEndDate, historyStartDate, setHistoryEndDate, setHistoryStartDate, setOldestHistoryDate } =
+        useDateFilter()
+    const { historyLoaded, historyRecordsRef } = useStatusHistory({
         allEquipmentRef,
         allMixersRef,
         allPickupsRef,
@@ -143,7 +134,7 @@ export default function DashboardView() {
         setOldestHistoryDate,
         updatePlantSet: activeUpdatePlantSet
     })
-    const { filterByPlantSet, plantNotifications, setPlantNotifications } = usePlantNotifications({
+    const { plantNotifications, setPlantNotifications } = usePlantNotifications({
         allEquipmentRef,
         allMixersRef,
         allOperatorsFullRef,
@@ -196,21 +187,6 @@ export default function DashboardView() {
     const isAggregate = selectedRegion?.type === 'Aggregate'
     const showSkeleton = !dataReady
 
-    // Scope operator status lists to the active plant set
-    const filteredTrainingOperators = filterByPlantSet(
-        trainingOperators,
-        activePlantSetRef.current,
-        'operatorPlant',
-        'trainerPlant'
-    )
-    const filteredPendingStartOperators = filterByPlantSet(
-        pendingStartOperators,
-        activePlantSetRef.current,
-        'operatorPlant',
-        'trainerPlant'
-    )
-    const filteredLightDutyOperators = filterByPlantSet(lightDutyOperators, activePlantSetRef.current, 'plant')
-    // Snapshot the plant scope so the manager hook re-derives when filters change.
     const managerPlantSet = useMemo(() => {
         const set = activePlantSetRef.current
         if (!set || set.size === 0) return null
@@ -218,7 +194,7 @@ export default function DashboardView() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dashboardPlant, dashboardRegionCode, stats.fleetTotal])
     const managerStats = useDashboardManagers({ plantSet: managerPlantSet })
-    // Resolve display labels
+
     const regionDisplayName = (() => {
         if (selectedRegion?.type === 'Office') return 'Home Office'
         return dashboardRegionCode
@@ -242,65 +218,68 @@ export default function DashboardView() {
               : `${allPlantsCount} ${plantLabel}${allPlantsCount !== 1 ? 's' : ''}`
     })()
 
-    // Reveal animation state
-    const wasLoadingRef = useRef(true)
-    const hasRevealedRef = useRef(false)
-    const [revealContent, setRevealContent] = useState(false)
-    useEffect(() => {
-        if (wasLoadingRef.current && !showSkeleton && !hasRevealedRef.current) {
-            hasRevealedRef.current = true
-            setRevealContent(true)
-            const timer = setTimeout(() => setRevealContent(false), 1500)
-            return () => clearTimeout(timer)
-        }
-        wasLoadingRef.current = showSkeleton
-    }, [showSkeleton])
-    const REVEAL_DIRECTION_MAP = { left: 'animate-reveal-left', right: 'animate-reveal-right', up: 'animate-reveal-up' }
-    const revealClass = (direction) => (revealContent ? REVEAL_DIRECTION_MAP[direction] || '' : '')
-    const revealStyle = (delay) => (revealContent ? { animationDelay: `${delay}ms` } : undefined)
+    const alertCount =
+        (plantNotifications.longTermShopAssets?.length || 0) +
+        (plantNotifications.shopIssue ? 1 : 0) +
+        (plantNotifications.unassignedOperators?.length > 0 ? 1 : 0) +
+        (plantNotifications.pendingOperators?.length > 0 ? 1 : 0) +
+        (plantNotifications.trainingOperators?.length > 0 ? 1 : 0)
+    const peopleCount = (managerStats?.total || 0) + (stats.operators?.total || 0)
+    const openIssues =
+        (stats.mixers?.issues || 0) +
+        (stats.tractors?.issues || 0) +
+        (stats.trailers?.issues || 0) +
+        (stats.equipment?.issues || 0)
+
+    const [activeSection, jumpTo] = usePlanScrollSpy({
+        deps: [showSkeleton, alertCount, peopleCount],
+        scrollContainerRef,
+        sections: DASHBOARD_NAV_SECTIONS
+    })
 
     return (
-        <div className="dashboard-full-width min-h-screen bg-bg-secondary text-text-primary">
-            <div className="flex min-h-screen">
-                {/* Sidebar — left rail */}
-                {!isMobile && (
-                    <DashboardSidebar
-                        accentColor={accentColor}
-                        dashboardPlant={dashboardPlant}
-                        dashboardRegionCode={dashboardRegionCode}
-                        dataReady={dataReady}
-                        expandedSections={expandedSections}
-                        isPlantManager={isPlantManager}
-                        isPlantMode={isPlantMode}
-                        onRefresh={onRefresh}
-                        plantNotifications={plantNotifications}
-                        refreshing={refreshing}
-                        regionDisplayName={regionDisplayName}
-                        regionPlants={regionPlants}
-                        selectedRegion={selectedRegion}
-                        setEmbeddedView={setEmbeddedView}
-                        setEmbeddedViewSearch={setEmbeddedViewSearch}
-                        setExpandedSections={setExpandedSections}
-                        setPlantModalOpen={setPlantModalOpen}
-                        userPlantCode={userPlantCode}
-                        userRoleName={userRoleName}
-                    />
-                )}
-                {/* Main content */}
-                <main className="flex-1 min-w-0 flex flex-col">
-                    <DashboardHeader
-                        accentColor={accentColor}
-                        isMobile={isMobile}
-                        regionDisplayName={regionDisplayName}
-                        heroRegionSub={heroRegionSub}
-                        isLoading={showSkeleton}
-                        onPlantFilterClick={() => setPlantModalOpen(true)}
-                    />
-                    <div className={`w-full flex-1 ${isMobile ? 'p-3' : 'px-4 lg:px-6 py-5'}`}>
+        <div
+            className="dashboard-full-width global-flush-top flush-top text-text-primary"
+            style={{
+                background: 'var(--bg-secondary)',
+                display: 'flex',
+                flexDirection: 'column',
+                inset: 0,
+                overflow: 'hidden',
+                position: 'absolute'
+            }}
+        >
+            <DashboardHeader
+                accentColor={accentColor}
+                heroRegionSub={heroRegionSub}
+                isLoading={showSkeleton}
+                isMobile={isMobile}
+                onPlantFilterClick={() => setPlantModalOpen(true)}
+                onRefresh={onRefresh}
+                refreshing={refreshing}
+                regionDisplayName={regionDisplayName}
+            />
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
+                <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 lg:px-6 flex gap-4">
+                    {!isMobile && (
+                        <DashboardScrollSpyNav
+                            accent={accentColor}
+                            activeId={activeSection}
+                            alertCount={alertCount}
+                            onJump={jumpTo}
+                            peopleCount={peopleCount}
+                            sections={DASHBOARD_NAV_SECTIONS}
+                        />
+                    )}
+
+                    <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                         {error && (
                             <div
-                                className="flex items-center justify-between rounded text-red-600 mb-4 px-4 py-3"
-                                style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.3)' }}
+                                className="flex items-center justify-between rounded text-red-600 px-4 py-3"
+                                style={{
+                                    background: 'rgba(220,38,38,0.06)',
+                                    border: '1px solid rgba(220,38,38,0.3)'
+                                }}
                             >
                                 <span className="text-[13px] font-semibold">{error}</span>
                                 <button
@@ -314,56 +293,53 @@ export default function DashboardView() {
                         {showSkeleton ? (
                             <DashboardSkeleton isMobile={isMobile} />
                         ) : (
-                            <div className={`flex flex-col ${isMobile ? 'gap-4' : 'gap-5'}`}>
-                                <div className={revealClass('up')} style={revealStyle(0)}>
-                                    <KeyMetricsStrip
-                                        displayStats={displayStats}
-                                        plantNotifications={plantNotifications}
-                                        isPlantMode={isPlantMode}
-                                        accentColor={accentColor}
-                                        isMobile={isMobile}
-                                    />
-                                </div>
-
-                                <div className={revealClass('left')} style={revealStyle(80)}>
-                                    <FleetOverviewSection
-                                        displayStats={displayStats}
-                                        stats={stats}
-                                        isAggregate={isAggregate}
-                                        selectedRegion={selectedRegion}
-                                        accentColor={accentColor}
-                                        isMobile={isMobile}
-                                    />
-                                </div>
-
-                                <div className={revealClass('up')} style={revealStyle(160)}>
-                                    <DashboardPeopleSection
-                                        displayStats={displayStats}
-                                        isAggregate={isAggregate}
-                                        managerStats={managerStats}
-                                        accentColor={accentColor}
-                                    />
-                                </div>
-                            </div>
+                            <>
+                                <DashboardAlertsPanel
+                                    plantNotifications={plantNotifications}
+                                    setEmbeddedView={setEmbeddedView}
+                                    setEmbeddedViewSearch={setEmbeddedViewSearch}
+                                />
+                                <FleetOverviewSection
+                                    accentColor={accentColor}
+                                    displayStats={displayStats}
+                                    isAggregate={isAggregate}
+                                    selectedRegion={selectedRegion}
+                                    stats={stats}
+                                />
+                                <DashboardPeopleSection
+                                    accentColor={accentColor}
+                                    displayStats={displayStats}
+                                    isAggregate={isAggregate}
+                                    managerStats={managerStats}
+                                />
+                                <div className="h-8" />
+                            </>
                         )}
-                    </div>
-                </main>
+                    </main>
+
+                    <DashboardAtAGlance
+                        alertCount={alertCount}
+                        displayStats={displayStats}
+                        loading={showSkeleton}
+                        openIssues={openIssues}
+                    />
+                </div>
             </div>
 
             <PlantDropdownModal
                 isOpen={plantModalOpen}
                 onClose={() => setPlantModalOpen(false)}
-                plants={regionPlants}
                 onSelect={(plantCode) => setDashboardPlant(plantCode === 'All' ? '' : plantCode)}
+                plants={regionPlants}
                 showAllPlants={true}
                 showMyPlants={false}
                 userPlantCode={userPlantCode}
             />
             {embeddedView && (
                 <EmbeddedViewModal
+                    accentColor={accentColor}
                     embeddedView={embeddedView}
                     embeddedViewSearch={embeddedViewSearch}
-                    accentColor={accentColor}
                     onClose={() => {
                         setEmbeddedView(null)
                         setEmbeddedViewSearch('')

@@ -25,7 +25,6 @@ const ICONS = {
     Assets: 'fa-truck',
     Calculators: 'fa-calculator',
     Dashboard: 'fa-tachometer-alt',
-    Documents: 'fa-folder-open',
     'Heavy Equipment': 'fa-snowplow',
     List: 'fa-list',
     Logout: 'fa-sign-out-alt',
@@ -64,7 +63,6 @@ const menuItems = [
     { id: 'Regions', permission: 'regions.view', text: 'Regions' },
     { id: 'Roles', permission: 'roles.view', text: 'Roles' },
     { id: 'Calculators', permission: 'calculator.view', text: 'Calculators' },
-    { id: 'Documents', permission: 'documents.view', text: 'Documents' },
     { id: 'Maintenance', permission: 'maintenance.view', text: 'Maintenance' },
     { id: 'NRMCA', permission: 'nrmca.view', text: 'Calibrations & Certifications' }
 ]
@@ -75,7 +73,7 @@ const PEOPLE_ITEMS = ['Operators', 'Managers']
 /** Navigation item IDs grouped under the "Reporting" dropdown. */
 const REPORTING_ITEMS = ['Reports', 'Maintenance', 'NRMCA']
 /** Navigation item IDs grouped under the "Tools" dropdown. */
-const TOOLS_ITEMS = ['Plan', 'List', 'Documents', 'Calculators']
+const TOOLS_ITEMS = ['Plan', 'List', 'Calculators']
 /** Navigation item IDs grouped under the "Admin" category (two-level mode). */
 const ADMIN_ITEMS = ['Plants', 'Regions', 'Roles']
 

@@ -178,16 +178,16 @@ export function AuthProvider({ children }) {
         return () => clearTimeout(profileTimerRef.current)
     }, [restoreSession])
 
-    /* Silent token refresh — fires once per minute, but only re-mints when
-     * the stored JWT has < JWT_REFRESH_FLOOR_SECONDS of life left. Without
-     * this loop the JWT goes stale 1h after login and every Database call
-     * starts coming back 401. The interval keeps running across signin /
-     * signout because the inner check no-ops when the user is signed out. */
+    /* Silent token refresh — only runs when a JWT was actually minted at
+     * login (which requires SUPABASE_JWT_SECRET on the edge function side).
+     * If no JWT is present we skip entirely; the app falls through to the
+     * anon key like it always has, and we don't spam refresh-token. */
     useEffect(() => {
         const tick = () => {
             const userId = getStoredUserId()
             const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
-            if (!userId || !sessionId) return
+            const existingJwt = sessionStorage.getItem(SESSION_STORAGE_KEYS.JWT)
+            if (!userId || !sessionId || !existingJwt) return
             const expiresAtRaw = sessionStorage.getItem(SESSION_STORAGE_KEYS.JWT_EXPIRES_AT)
             const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : 0
             const secondsLeft = (expiresAt - Date.now()) / 1000

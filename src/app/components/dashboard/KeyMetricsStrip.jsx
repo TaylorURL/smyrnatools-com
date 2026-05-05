@@ -22,23 +22,25 @@ export default function KeyMetricsStrip({ displayStats, plantNotifications, isPl
         const netHelpColor = netHelp > 0 ? '#16a34a' : netHelp < 0 ? '#dc2626' : undefined
         const safetyIncidents = leaderboard.safetyIncidents || 0
         return (
-            <StatGroup columns={5}>
-                <Stat label="Raw YPH" value={leaderboard.rawYPH?.toFixed(2) || '--'} />
-                <Stat label="Adjusted YPH" value={leaderboard.adjustedYPH?.toFixed(2) || '--'} />
-                <Stat
-                    label="Net Help"
-                    value={`${netHelp > 0 ? '+' : ''}${netHelp}h`}
-                    valueColor={netHelpColor}
-                    hint={netHelp === 0 ? 'No transfers' : netHelp > 0 ? 'Receiving' : 'Sending'}
-                />
-                <Stat label="Cleanliness" value={cleanliness.toFixed(1)} valueColor={cleanColor} hint="0–5 score" />
-                <Stat
-                    label="Safety"
-                    value={safetyIncidents}
-                    valueColor={safetyIncidents === 0 ? '#16a34a' : '#dc2626'}
-                    hint={safetyIncidents === 0 ? 'No incidents' : 'Incidents'}
-                />
-            </StatGroup>
+            <section id="overview" className="scroll-mt-4">
+                <StatGroup columns={5}>
+                    <Stat label="Raw YPH" value={leaderboard.rawYPH?.toFixed(2) || '--'} />
+                    <Stat label="Adjusted YPH" value={leaderboard.adjustedYPH?.toFixed(2) || '--'} />
+                    <Stat
+                        label="Net Help"
+                        value={`${netHelp > 0 ? '+' : ''}${netHelp}h`}
+                        valueColor={netHelpColor}
+                        hint={netHelp === 0 ? 'No transfers' : netHelp > 0 ? 'Receiving' : 'Sending'}
+                    />
+                    <Stat label="Cleanliness" value={cleanliness.toFixed(1)} valueColor={cleanColor} hint="0–5 score" />
+                    <Stat
+                        label="Safety"
+                        value={safetyIncidents}
+                        valueColor={safetyIncidents === 0 ? '#16a34a' : '#dc2626'}
+                        hint={safetyIncidents === 0 ? 'No incidents' : 'Incidents'}
+                    />
+                </StatGroup>
+            </section>
         )
     }
 
@@ -51,23 +53,42 @@ export default function KeyMetricsStrip({ displayStats, plantNotifications, isPl
         (stats.tractors?.shop || 0) +
         (stats.trailers?.shop || 0) +
         (stats.equipment?.shop || 0)
+    const critical = plantNotifications?.assetsWithMostIssues?.length || 0
 
     return (
-        <StatGroup columns={5}>
-            <Stat label="Fleet Total" value={(stats.fleetTotal || 0).toLocaleString()} />
-            <Stat label="Allocation" value={`${allocation}%`} valueColor={allocationColor} hint="Active vs total" />
-            <Stat
-                label="In Shop"
-                value={inShop}
-                valueColor={inShop > 0 ? '#d97706' : undefined}
-                hint={inShop === 0 ? 'None down' : 'Across fleet'}
-            />
-            <Stat
-                label="Operators"
-                value={opStats.active || 0}
-                hint={opStats.unassigned > 0 ? `${opStats.unassigned} idle` : 'All assigned'}
-            />
-            <Stat label="Verified" value={`${verified}%`} valueColor={verifiedColor} hint="Inspection compliance" />
-        </StatGroup>
+        <section id="overview" className="scroll-mt-4">
+            <StatGroup columns={7}>
+                <Stat
+                    hint="3 regions · all sites"
+                    label="Fleet total"
+                    value={(stats.fleetTotal || 0).toLocaleString()}
+                />
+                <Stat hint="Active vs total" label="Allocation" value={`${allocation}%`} valueColor={allocationColor} />
+                <Stat
+                    hint={inShop === 0 ? 'None down' : 'Across fleet'}
+                    label="In shop"
+                    value={inShop}
+                    valueColor={inShop > 0 ? '#d97706' : undefined}
+                />
+                <Stat
+                    hint={opStats.unassigned > 0 ? `${opStats.unassigned} idle` : 'All assigned'}
+                    label="Operators"
+                    value={opStats.active || 0}
+                />
+                <Stat hint="Inspection compliance" label="Verified" value={`${verified}%`} valueColor={verifiedColor} />
+                <Stat
+                    hint={critical > 0 ? 'Assets w/ open issues' : 'All clear'}
+                    label="Critical"
+                    value={critical}
+                    valueColor={critical > 0 ? '#dc2626' : undefined}
+                />
+                <Stat
+                    hint={opStats.lightDuty > 0 ? 'Reassigned' : 'Healthy roster'}
+                    label="Light duty"
+                    value={opStats.lightDuty || 0}
+                    valueColor={opStats.lightDuty > 0 ? '#7c3aed' : undefined}
+                />
+            </StatGroup>
+        </section>
     )
 }

@@ -2,6 +2,25 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.21] - 2026-05-05
+
+- Implement JWT-based session authentication for edge functions with a shared jwt.ts helper for token signing and verification
+- Add RLS global lockdown migration enforcing session-based access control across all tables instead of Supabase default auth
+- Lock down dispatch_data table and dispatch_reports storage bucket with dedicated RLS migration policies
+- Create dispatch-data-service edge function to handle dispatch data mutations server-side instead of direct client access
+- Refactor AuthContext to use JWT session tokens, adding token refresh logic and authenticated request helpers
+- Add JWT_SECRET constant to auth constants
+- Refactor DatabaseService to remove direct mutation methods, restricting the client to read-only operations
+- Rewrite DispatchDataService to route all mutations through the new dispatch-data-service edge function
+- Simplify useDetailOrders and useScheduleSync hooks to use the refactored DispatchDataService
+- Update auth-service edge function to issue and validate JWT session tokens
+- Update auth-context edge function to use the new JWT verification flow
+- Update email-service to use verified JWT context for sender identity
+- Refactor dispatch-import parsers to coalesce header/context columns on conflict and deduplicate source_reports across upsert passes
+- Add order ticket count display to OrderTicketsModal
+- Remove dead code: MaintenanceFormViewOnly, PlanAssignmentCard, PlanScheduleCompactToolbar, ImageAttachment, YearSelector, useDashboardChat, useDashboardSchedule, useMaintenanceForm, DetailOrderBucketService, ScheduleBucketService, DailyOrderParser, DetailDriverParser, DetailOrderParser, and PickupTrucksCard
+- Reorganize repo scripts: move bridge and email templates into scripts/ directory
+
 ## [40.0.20] - 2026-05-04
 
 - Replace dispatch_upsert_data RPC with conditional-merge logic so DetailDriver estimate quantities never overwrite confirmed values from DetailOrderAnalysis

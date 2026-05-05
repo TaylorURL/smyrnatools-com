@@ -63,6 +63,7 @@ export function useDashboardStats({ createFilterFn, dashboardRegionCode, updateP
             pending: 0,
             total: 0,
             tractorAssigned: 0,
+            training: 0,
             unassigned: 0
         }
         const mixerAssignedIds = new Set()
@@ -174,6 +175,8 @@ export function useDashboardStats({ createFilterFn, dashboardRegionCode, updateP
                 operatorsTotals.pending++
             } else if (o.status === 'Light Duty') {
                 operatorsTotals.lightDuty++
+            } else if (o.status === 'Training') {
+                operatorsTotals.training++
             }
         })
         const mixerActiveOperators = allOperatorsRef.current.filter(

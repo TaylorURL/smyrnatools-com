@@ -1,147 +1,120 @@
 import React from 'react'
 
-import { DashboardCard } from '../ui/DashboardCards'
+const PULSE_BASE = 'animate-pulse'
 
-const BASE_DELAY = 80
-const DECAY = 0.92
-
-function staggerDelay(index) {
-    let total = 0
-    for (let i = 0; i < index; i++) total += Math.max(20, BASE_DELAY * Math.pow(DECAY, i))
-    return Math.round(total)
-}
-
-function PulseBlock({ className, style, delay }) {
+function Block({ className = '', delay = 0, height, width = '100%' }) {
     return (
         <div
-            className={`bg-bg-tertiary rounded-lg animate-pulse ${className}`}
-            style={{ animationDelay: `${delay}ms`, animationFillMode: 'both', ...style }}
+            className={`${PULSE_BASE} rounded ${className}`}
+            style={{
+                animationDelay: `${delay}ms`,
+                animationFillMode: 'both',
+                background: 'var(--bg-tertiary)',
+                height,
+                width
+            }}
         />
     )
 }
 
-function SkeletonMetricCard({ delay, isMobile }) {
+/** Flat panel chrome — title row + bordered body — matches the live layout. */
+function PanelChrome({ children, titleWidth = 80, delay = 0 }) {
     return (
-        <div
-            className={`rounded-xl ${isMobile ? 'p-4' : 'p-5'} bg-bg-tertiary border border-border-light animate-pulse`}
-            style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
-        >
-            <div className="flex items-start justify-between mb-3">
-                <div>
-                    <div className="h-3.5 w-20 rounded bg-bg-tertiary mb-2" />
-                    <div className="h-8 w-14 rounded bg-bg-tertiary" />
+        <section className="flex flex-col gap-2">
+            <Block delay={delay} height={14} width={titleWidth} />
+            <div
+                className="rounded p-3"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+            >
+                {children}
+            </div>
+        </section>
+    )
+}
+
+/** Flat-table skeleton — header row + N body rows. */
+function TableChrome({ delay = 0, columns = 7, rows = 5 }) {
+    return (
+        <div className="rounded overflow-hidden" style={{ border: '1px solid var(--border-light)' }}>
+            <div
+                className="grid px-3 py-2"
+                style={{
+                    background: 'var(--bg-secondary)',
+                    borderBottom: '1px solid var(--border-light)',
+                    gridTemplateColumns: `1.5fr repeat(${columns - 1}, 1fr)`
+                }}
+            >
+                {Array.from({ length: columns }, (_, i) => (
+                    <Block key={i} delay={delay + i * 20} height={10} width="50%" />
+                ))}
+            </div>
+            {Array.from({ length: rows }, (_, r) => (
+                <div
+                    key={r}
+                    className="grid px-3 py-2.5"
+                    style={{
+                        background: 'var(--bg-primary)',
+                        borderBottom: r < rows - 1 ? '1px solid var(--border-light)' : 'none',
+                        gridTemplateColumns: `1.5fr repeat(${columns - 1}, 1fr)`
+                    }}
+                >
+                    {Array.from({ length: columns }, (_, c) => (
+                        <Block key={c} delay={delay + r * 60 + c * 20} height={12} width={c === 0 ? '70%' : '40%'} />
+                    ))}
                 </div>
-                <div className="h-9 w-9 rounded-lg bg-bg-tertiary" />
-            </div>
-            <div className="flex flex-wrap gap-1.5 mt-2">
-                <div className="h-6 w-16 rounded bg-bg-tertiary" />
-                <div className="h-6 w-14 rounded bg-bg-tertiary" />
-                <div className="h-6 w-18 rounded bg-bg-tertiary" />
-            </div>
+            ))}
+        </div>
+    )
+}
+
+/** List skeleton — row with text on left, metric on right. Used for alerts. */
+function ListChrome({ rows = 3, delay = 0 }) {
+    return (
+        <div className="flex flex-col">
+            {Array.from({ length: rows }, (_, i) => (
+                <div
+                    key={i}
+                    className="flex items-center justify-between px-3 py-2.5"
+                    style={{
+                        borderBottom: i < rows - 1 ? '1px solid var(--border-light)' : 'none'
+                    }}
+                >
+                    <Block delay={delay + i * 60} height={12} width="60%" />
+                    <Block delay={delay + i * 60 + 30} height={12} width={48} />
+                </div>
+            ))}
         </div>
     )
 }
 
 /**
- * Placeholder skeleton UI rendered while dashboard data is loading.
- * Mimics the layout of Fleet Overview, Fleet Analytics, People, and
- * Maintenance Quality sections with staggered shimmer animations.
- * @param {Object} props
- * @param {boolean} props.isMobile - Uses single-column grid on mobile.
+ * Loading placeholder — mirrors the live 3-column dashboard layout.
+ * Renders skeletons for: alerts list, KPI strip, fleet table, and
+ * the side-by-side operators / managers tables.
  */
 export default function DashboardSkeleton({ isMobile }) {
-    const fleetCards = 5
-    const gridCols = isMobile ? 'gap-3 grid-cols-1' : 'gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]'
-
     return (
-        <div className={`flex flex-col ${isMobile ? 'gap-4' : 'gap-6'}`}>
-            {/* KPI strip */}
-            <div
-                className={`grid gap-2.5 ${isMobile ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6'}`}
-            >
-                {Array.from({ length: 6 }, (_, i) => (
-                    <PulseBlock key={i} className="h-16 rounded-xl" delay={staggerDelay(i)} />
-                ))}
-            </div>
+        <div className="flex flex-col gap-3 sm:gap-5">
+            <PanelChrome delay={0} titleWidth={70}>
+                <ListChrome delay={40} rows={3} />
+            </PanelChrome>
 
-            {/* Schedule */}
-            <DashboardCard>
-                <PulseBlock className="h-5 w-44 mb-5" delay={staggerDelay(6)} />
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 rounded-xl bg-bg-tertiary border border-border-light">
-                    {[0, 1, 2, 3].map((i) => (
-                        <PulseBlock key={i} className="h-12 rounded-lg" delay={staggerDelay(7 + i)} />
-                    ))}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                    {[0, 1, 2, 3].map((i) => (
-                        <PulseBlock key={i} className="h-12 rounded-lg" delay={staggerDelay(11 + i)} />
-                    ))}
-                </div>
-            </DashboardCard>
+            <PanelChrome delay={140} titleWidth={64}>
+                <TableChrome columns={isMobile ? 4 : 7} delay={180} rows={6} />
+            </PanelChrome>
 
-            {/* Fleet Overview */}
-            <DashboardCard>
-                <PulseBlock className="h-5 w-36 mb-5" delay={staggerDelay(0)} />
-                <div className={`grid ${gridCols}`}>
-                    {Array.from({ length: fleetCards }, (_, i) => (
-                        <SkeletonMetricCard key={i} delay={staggerDelay(i + 1)} isMobile={isMobile} />
-                    ))}
+            <PanelChrome delay={380} titleWidth={70}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-2">
+                        <Block delay={420} height={10} width={70} />
+                        <TableChrome columns={2} delay={440} rows={5} />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <Block delay={500} height={10} width={70} />
+                        <TableChrome columns={2} delay={520} rows={4} />
+                    </div>
                 </div>
-            </DashboardCard>
-
-            {/* Fleet Analytics */}
-            <DashboardCard>
-                <PulseBlock className="h-5 w-32 mb-5" delay={staggerDelay(fleetCards + 1)} />
-                <div
-                    className="animate-pulse rounded-xl bg-bg-tertiary border border-border-light"
-                    style={{
-                        animationDelay: `${staggerDelay(fleetCards + 2)}ms`,
-                        animationFillMode: 'both',
-                        height: isMobile ? '200px' : '300px'
-                    }}
-                />
-            </DashboardCard>
-
-            {/* People */}
-            <DashboardCard>
-                <PulseBlock className="h-5 w-20 mb-5" delay={staggerDelay(fleetCards + 3)} />
-                <SkeletonMetricCard delay={staggerDelay(fleetCards + 4)} isMobile={isMobile} />
-                <div className="mt-4 flex flex-col gap-3">
-                    {[0, 1, 2].map((i) => (
-                        <div
-                            key={i}
-                            className="flex items-center justify-between bg-bg-tertiary border border-border-light rounded-lg px-4 py-3.5 animate-pulse"
-                            style={{
-                                animationDelay: `${staggerDelay(fleetCards + 5 + i)}ms`,
-                                animationFillMode: 'both'
-                            }}
-                        >
-                            <div className="h-4 w-48 rounded bg-bg-tertiary" />
-                            <div className="h-4 w-4 rounded bg-bg-tertiary" />
-                        </div>
-                    ))}
-                </div>
-            </DashboardCard>
-
-            {/* Maintenance Quality */}
-            <DashboardCard>
-                <PulseBlock className="h-5 w-44 mb-5" delay={staggerDelay(fleetCards + 8)} />
-                <div
-                    className={`grid ${isMobile ? 'gap-3 grid-cols-1' : 'gap-4 grid-cols-[repeat(auto-fit,minmax(250px,1fr))]'} mb-5`}
-                >
-                    {[0, 1].map((i) => (
-                        <SkeletonMetricCard key={i} delay={staggerDelay(fleetCards + 9 + i)} isMobile={isMobile} />
-                    ))}
-                </div>
-                <div
-                    className="animate-pulse rounded-xl bg-bg-tertiary border border-border-light"
-                    style={{
-                        animationDelay: `${staggerDelay(fleetCards + 11)}ms`,
-                        animationFillMode: 'both',
-                        height: isMobile ? '160px' : '240px'
-                    }}
-                />
-            </DashboardCard>
+            </PanelChrome>
         </div>
     )
 }

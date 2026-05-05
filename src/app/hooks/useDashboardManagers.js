@@ -12,6 +12,7 @@ const classifyRole = (roleName) => {
     if (name.includes('district') && name.includes('manager')) return 'district'
     if (name.includes('safety') && name.includes('manager')) return 'safety'
     if (name.includes('plant') && name.includes('manager')) return 'plant'
+    if (name.includes('dispatch')) return 'dispatcher'
     if (name.includes('manager')) return 'other'
     return null
 }
@@ -49,7 +50,7 @@ export function useDashboardManagers({ plantSet }) {
             if (user.plantCode && plantSet.has(user.plantCode)) return true
             return (user.additionalAssignedPlants || []).some((code) => plantSet.has(code))
         }
-        const buckets = { district: 0, other: 0, plant: 0, safety: 0 }
+        const buckets = { dispatcher: 0, district: 0, other: 0, plant: 0, safety: 0 }
         let total = 0
         users.forEach((user) => {
             const bucket = classifyRole(user.roleName)

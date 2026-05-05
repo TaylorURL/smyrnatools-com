@@ -2,6 +2,25 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.22] - 2026-05-05
+
+- Redesign dashboard layout with a three-column structure: scroll-spy nav, main content, and an "at a glance" sidebar
+- Add DashboardAtAGlance component showing fleet totals, allocation, verification, and alert counts in a sticky right rail
+- Add DashboardScrollSpyNav for section-aware left-rail navigation within the dashboard
+- Add DashboardAlertsPanel with collapsible alert rows for shop bottlenecks, long-term shop assets, and operator pipeline status
+- Redesign DashboardHeader to a slim flat bar with inline region pill, plant filter button, and refresh control
+- Refactor FleetOverviewSection into a compact flat-table layout with per-category count rows and allocation bars
+- Refactor DashboardPeopleSection to use flat two-column tables with count rows instead of stat chips and deployment bars
+- Refactor KeyMetricsStrip to a simpler stat-group layout with individual StatItem cells
+- Rebuild DashboardSkeleton to match the new three-column layout structure
+- Simplify DashboardView orchestration to wire up the new panel components and scroll-spy navigation
+- Remove Documents nav item and its associated icon, menu entry, and Tools dropdown reference
+- Add rollback migration to revert JWT lockdown RLS policies back to permissive access
+- Expose alertCount from useDashboardStats hook
+- Expose managers array from useDashboardManagers hook
+- Add DASHBOARD_SECTION_IDS constant for scroll-spy targeting
+- Add getSessionToken helper export to AuthContext
+
 ## [40.0.21] - 2026-05-05
 
 - Implement JWT-based session authentication for edge functions with a shared jwt.ts helper for token signing and verification
