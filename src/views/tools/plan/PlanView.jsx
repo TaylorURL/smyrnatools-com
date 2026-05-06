@@ -15,6 +15,7 @@ import { usePlanLookups } from '../../../app/hooks/usePlanLookups'
 import { usePlanUserContext } from '../../../app/hooks/usePlanUserContext'
 import { buildPlanDispatchText } from '../../../utils/PlanCopyUtility'
 import { PLAN_META_KEY } from '../../../utils/PlanUtility'
+import CallListView from './CallListView'
 import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
 import PlanFlowView from './PlanFlowView'
@@ -323,6 +324,8 @@ function PlanView() {
                                 plantNameByCode={plantNameByCode}
                             />
                         )}
+
+                        {effectiveViewMode === 'call-list' && <CallListView accentColor={accentColor} />}
                     </div>
                 )}
             </div>

@@ -12,6 +12,7 @@ import useLiveTravelTimes from '../../../app/hooks/useLiveTravelTimes'
 import usePlanTravelPairs from '../../../app/hooks/usePlanTravelPairs'
 import { formatOrderAddress } from '../../../utils/AddressUtility'
 import {
+    applyLoadingPlantReassignment,
     buildHelpRows,
     buildHelpTransfers,
     clean,
@@ -112,12 +113,20 @@ function PlanScheduleView({
     planDate,
     plantAddressByCode,
     plantNameByCode,
-    plantProduction,
+    plantProduction: rawPlantProduction,
     /** Plants with district memberships — fed to PlantDropdownModal so the
      *  multi-select plant filter can offer district-level toggling. */
     plants = [],
     stats = []
 }) {
+    /** Reassign fully-loaded orders to the plant that actually loaded them
+     *  (e.g. dispatch parked it on 401 but every ticket came from 402). The
+     *  schedule view then renders the order under the working plant. */
+    const plantProduction = useMemo(
+        () => applyLoadingPlantReassignment(rawPlantProduction, detailByOrderId),
+        [rawPlantProduction, detailByOrderId]
+    )
+
     const poolDayMultiplier = getPoolDayMultiplier(planDate)
     const plantsClosed = isClosedDay(planDate)
     const isSaturday = poolDayMultiplier === 0.5

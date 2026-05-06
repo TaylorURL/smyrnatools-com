@@ -18,6 +18,7 @@ import {
     isSmallPourJob,
     LOAD_MINUTES,
     parseDurationMinutes,
+    PLAN_META_KEY,
     PRE_TRIP_MINUTES,
     timeToMinutes
 } from './PlanUtility'
@@ -624,4 +625,101 @@ export const buildHelpTransfers = (helpRows, clockInRows) => {
         out.push({ delta: row.count, plantCode: row.plantCode, time: row.time })
     })
     return out
+}
+
+/** Plant codes that never inherit a reassigned order — these are special
+ *  yards (404 lab/QC, 409 satellite) where loading from them doesn't imply
+ *  the job actually belongs to them. */
+const REASSIGNMENT_EXCLUDED_PLANTS = new Set(['404', '409'])
+/** Floating-point slack when comparing loaded vs scheduled yardage. */
+const REASSIGNMENT_YARDAGE_TOLERANCE = 0.01
+
+/** Recompute the per-plant header values (`firstJobTime`, `lastJobTime`,
+ *  `totalYardage`) after the order list changes. Mirrors the math in
+ *  `groupOrderRowsByPlant` so reassigned blocks stay consistent. */
+const recomputePlantBlockTotals = (orders) => {
+    const realOrders = orders.filter((o) => !isExcludedOrder(o))
+    const totalYardage = realOrders.reduce((sum, o) => sum + (parseFloat(o.yardage) || 0), 0)
+    const times = realOrders
+        .map((o) => o.startTime)
+        .filter((t) => /^\d{1,2}:\d{2}$/.test(t))
+        .map((t) => t.padStart(5, '0'))
+        .sort()
+    return {
+        firstJobTime: times[0] || '',
+        lastJobTime: times[times.length - 1] || '',
+        totalYardage: totalYardage > 0 ? String(totalYardage) : ''
+    }
+}
+
+/** When an order is fully loaded by a single plant other than its assigned
+ *  one (and that plant isn't on the excluded list), return that plant code.
+ *  Otherwise null. */
+const computeReassignmentTarget = (order, currentPlant, detailByOrderId) => {
+    const orderId = order?.orderId
+    if (!orderId) return null
+    const detail = detailByOrderId[orderId]
+    if (!detail) return null
+    const scheduled = parseFloat(order.yardage) || 0
+    if (scheduled <= 0) return null
+    if ((detail.loadedYardage || 0) + REASSIGNMENT_YARDAGE_TOLERANCE < scheduled) return null
+
+    const loadingPlants = Object.keys(detail.byPlant || {}).filter(
+        (plant) => (detail.byPlant[plant]?.ticketCount || 0) > 0
+    )
+    if (loadingPlants.length !== 1) return null
+    const target = loadingPlants[0]
+    if (!target || target === currentPlant) return null
+    if (REASSIGNMENT_EXCLUDED_PLANTS.has(target)) return null
+    return target
+}
+
+/**
+ * Move fully-loaded orders to the plant that actually loaded them. Only
+ * fires when every ticket came from a single non-excluded plant other than
+ * the order's currently-assigned plant — the schedule then visually
+ * attributes the order to the plant doing the work.
+ *
+ * Returns the same `plantProduction` reference when nothing qualifies, so
+ * downstream memos keep their referential equality.
+ *
+ * @param {Object} plantProduction - Original `{ [plantCode]: { orders, … } }`.
+ * @param {Object} detailByOrderId - Ticket detail by order id (provides `byPlant`
+ *   and `loadedYardage`).
+ * @returns {Object} Reassigned `plantProduction`, or the original when no-op.
+ */
+export const applyLoadingPlantReassignment = (plantProduction, detailByOrderId) => {
+    if (!plantProduction || !detailByOrderId) return plantProduction
+
+    const moves = []
+    Object.entries(plantProduction).forEach(([code, data]) => {
+        if (code === PLAN_META_KEY) return
+        if (!Array.isArray(data?.orders)) return
+        data.orders.forEach((order) => {
+            const target = computeReassignmentTarget(order, code, detailByOrderId)
+            if (target) moves.push({ fromPlant: code, order, toPlant: target })
+        })
+    })
+    if (moves.length === 0) return plantProduction
+
+    const changeByPlant = new Map()
+    const ensureChange = (plant) => {
+        if (!changeByPlant.has(plant)) changeByPlant.set(plant, { add: [], remove: new Set() })
+        return changeByPlant.get(plant)
+    }
+    moves.forEach(({ fromPlant, order, toPlant }) => {
+        ensureChange(fromPlant).remove.add(order.orderId)
+        ensureChange(toPlant).add.push(order)
+    })
+
+    const next = { ...plantProduction }
+    changeByPlant.forEach((change, plant) => {
+        const existing = next[plant] || { firstJobTime: '', lastJobTime: '', orders: [], totalYardage: '' }
+        const orders = (existing.orders || [])
+            .filter((o) => !change.remove.has(o.orderId))
+            .concat(change.add)
+            .sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')))
+        next[plant] = { ...existing, orders, ...recomputePlantBlockTotals(orders) }
+    })
+    return next
 }

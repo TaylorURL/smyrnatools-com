@@ -10,7 +10,8 @@ const PLAN_TABS = [
     { icon: 'fa-calendar-days', label: 'Schedule', mode: 'schedule' },
     { icon: 'fa-project-diagram', label: 'Planner', mode: 'flow' },
     { icon: 'fa-chart-column', label: 'Demand', mode: 'demand' },
-    { icon: 'fa-chart-line', label: 'Statistics', mode: 'statistics' }
+    { icon: 'fa-chart-line', label: 'Statistics', mode: 'statistics' },
+    { icon: 'fa-phone-volume', label: 'Call List', mode: 'call-list' }
 ]
 
 /**
