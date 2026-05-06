@@ -1281,6 +1281,38 @@ export const CUSTOMER_SAT_ONTIME_WEIGHT = 0.4
 export const CUSTOMER_SAT_LATE_WINDOW_MIN = 60
 export const BAD_SERVICE_LATE_THRESHOLD_MIN = 15
 export const BAD_SERVICE_PACE_THRESHOLD = 0.7
+/** Jobs at or below either threshold skip the slow-pace check entirely.
+ *  Small pours (driveways, patches, hand-finished slabs) are routinely
+ *  paced slower than the planned truck-spacing implies, and treating that
+ *  as "Poor Service" is a false positive. The on-time start check still
+ *  applies — late dispatch is bad regardless of pour size. */
+export const SMALL_JOB_TRUCK_THRESHOLD = 3
+export const SMALL_JOB_YARDAGE_THRESHOLD = 30
+
+/** Convert truck `loadSize` (yards) and `spacing` (minutes between trucks)
+ *  into the requested pour rate the schedule plan implies. Returns null
+ *  when either input is missing so callers can skip ratio-based checks. */
+export const computeRequestedYardsPerHour = (loadSize, spacingMinutes) => {
+    if (!(loadSize > 0) || !(spacingMinutes > 0)) return null
+    return (loadSize * 60) / spacingMinutes
+}
+
+/** Actual pour rate over the loaded-truck window. `actualDurationMinutes`
+ *  is the gap between first and last loaded times — when only one truck has
+ *  loaded the window is zero, so we return null instead of dividing by 0. */
+export const computeActualYardsPerHour = (totalYardage, actualDurationMinutes) => {
+    if (!(totalYardage > 0) || !(actualDurationMinutes > 0)) return null
+    return (totalYardage / actualDurationMinutes) * 60
+}
+
+/** True when a pour is small enough that the slow-pace check should be
+ *  suppressed. Either dimension on its own is sufficient — a 3-truck job
+ *  or a sub-30-yard job both qualify. */
+export const isSmallPourJob = (expectedTrucks, totalYardage) => {
+    const trucks = Number(expectedTrucks) || 0
+    const yards = Number(totalYardage) || 0
+    return (trucks > 0 && trucks <= SMALL_JOB_TRUCK_THRESHOLD) || (yards > 0 && yards <= SMALL_JOB_YARDAGE_THRESHOLD)
+}
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
 
@@ -1307,22 +1339,25 @@ export const computeCustomerSatisfaction = (orders, detailByOrderId) => {
 
         const firstLoad = loadedTimes[0]
         const lastLoad = loadedTimes[loadedTimes.length - 1]
-        const expectedDuration = Math.max(0, (numTrucks - 1) * spacing)
         const actualDuration = Math.max(0, lastLoad - firstLoad)
-        const overTime = Math.max(0, actualDuration - expectedDuration)
-        const paceToleranceMin = Math.max(spacing, 5)
-        const paceScore = expectedDuration === 0 ? 1 : clamp01(1 - overTime / Math.max(paceToleranceMin * 2, 1))
         const startLateness = Number.isFinite(startMin) ? Math.max(0, firstLoad - startMin) : 0
 
+        // Pace verdict compares actual yd/hr to the requested yd/hr the
+        // schedule plan implies (loadSize / spacing). When either input is
+        // missing we can't compute a ratio, so we don't penalize the order.
+        const requestedYdPerHr = computeRequestedYardsPerHour(loadSize, spacing)
+        const actualYdPerHr = computeActualYardsPerHour(totalYardage, actualDuration)
+        const paceScore = requestedYdPerHr && actualYdPerHr ? clamp01(actualYdPerHr / requestedYdPerHr) : 1
+
         // Per-order verdict: an order is "bad" if dispatch was late starting
-        // (>15 min past the scheduled start) OR if the truck cadence slowed
-        // far enough below schedule that the customer noticed (paceScore <
-        // 0.7). No partial credit, no weighted blend — every order is just
-        // good or bad. The aggregate `score` is the ratio of good orders to
-        // total scored orders.
+        // (>15 min past the scheduled start) OR — for non-small jobs — the
+        // actual pour rate fell below 70% of the requested rate. Small pours
+        // (≤3 trucks or ≤30 yd) skip the slow check; their cadence is set by
+        // the customer's finishing crew, not dispatch.
         samples += 1
-        const isBad = startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN || paceScore < BAD_SERVICE_PACE_THRESHOLD
-        if (isBad) badService += 1
+        const isLate = startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN
+        const isSlow = !isSmallPourJob(numTrucks, totalYardage) && paceScore < BAD_SERVICE_PACE_THRESHOLD
+        if (isLate || isSlow) badService += 1
     })
 
     if (samples === 0) return null

@@ -41,7 +41,11 @@ export function ServiceBadge({ service }) {
     if (service.status === 'bad') {
         const issues = []
         if (service.isLate) issues.push(`first truck ${service.startLateness} min late`)
-        if (service.isSlow) issues.push(`pour ran ${service.overTime} min over plan`)
+        if (service.isSlow && service.actualYdPerHr != null && service.requestedYdPerHr != null) {
+            issues.push(
+                `poured ${service.actualYdPerHr.toFixed(1)} yd/hr vs ${service.requestedYdPerHr.toFixed(1)} yd/hr requested`
+            )
+        }
         const label = service.isLate && service.isSlow ? 'Late, Poor Service' : service.isLate ? 'Late' : 'Poor Service'
         return (
             <span

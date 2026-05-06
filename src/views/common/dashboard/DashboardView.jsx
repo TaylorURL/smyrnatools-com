@@ -189,14 +189,14 @@ export default function DashboardView() {
     const isAggregate = selectedRegion?.type === 'Aggregate'
     const showSkeleton = !dataReady
 
-    const managerPlantSet = useMemo(() => {
+    const activePlantSet = useMemo(() => {
         const set = activePlantSetRef.current
         if (!set || set.size === 0) return null
         return new Set(set)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dashboardPlant, dashboardRegionCode, stats.fleetTotal])
-    const managerStats = useDashboardManagers({ plantSet: managerPlantSet })
-    const scheduleData = useDashboardSchedule({ refreshKey })
+    const managerStats = useDashboardManagers({ plantSet: activePlantSet })
+    const scheduleData = useDashboardSchedule({ plantSet: activePlantSet, refreshKey })
 
     const regionDisplayName = (() => {
         if (selectedRegion?.type === 'Office') return 'Home Office'

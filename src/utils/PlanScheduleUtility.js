@@ -7,12 +7,15 @@ import {
     BAD_SERVICE_PACE_THRESHOLD,
     BUFFER_MINUTES,
     buildAssignmentDriverTimes,
+    computeActualYardsPerHour,
     computeCustomerSatisfaction,
+    computeRequestedYardsPerHour,
     estimateOrderTiming,
     findNextViableStart,
     getCalculatedTruckCount,
     isBigPourOrder,
     isExcludedOrder,
+    isSmallPourJob,
     LOAD_MINUTES,
     parseDurationMinutes,
     PRE_TRIP_MINUTES,
@@ -201,11 +204,17 @@ export const evaluateOrderService = (order, detail, nowMin) => {
     const firstLoad = loadedTimes[0]
     const lastLoad = loadedTimes[loadedTimes.length - 1]
     const startLateness = Number.isFinite(startMin) ? Math.max(0, firstLoad - startMin) : 0
-    const expectedDuration = expectedTrucks ? Math.max(0, (expectedTrucks - 1) * spacing) : 0
     const actualDuration = Math.max(0, lastLoad - firstLoad)
-    const overTime = Math.max(0, actualDuration - expectedDuration)
-    const paceToleranceMin = Math.max(spacing, 5)
-    const paceScore = expectedDuration === 0 ? 1 : clamp01(1 - overTime / Math.max(paceToleranceMin * 2, 1))
+
+    // Pace verdict compares actual yd/hr against the requested yd/hr the
+    // schedule plan implies (loadSize / spacing). Small pours (≤3 trucks or
+    // ≤30 yd) skip the slow check — their cadence is set by the customer's
+    // finishing crew, not dispatch, and treating it as "Poor Service" is a
+    // false positive. The on-time start check still applies in every case.
+    const requestedYdPerHr = computeRequestedYardsPerHour(loadSize, spacing)
+    const actualYdPerHr = computeActualYardsPerHour(totalYardage, actualDuration)
+    const paceScore = requestedYdPerHr && actualYdPerHr ? clamp01(actualYdPerHr / requestedYdPerHr) : 1
+    const smallJob = isSmallPourJob(expectedTrucks, totalYardage)
 
     const allTrucksLoaded = expectedTrucks ? loadedTimes.length >= expectedTrucks : false
     // For past days, `nowMin` is null and we treat everything with tickets
@@ -225,13 +234,14 @@ export const evaluateOrderService = (order, detail, nowMin) => {
     }
 
     const isLate = startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN
-    const isSlow = paceScore < BAD_SERVICE_PACE_THRESHOLD
+    const isSlow = !smallJob && paceScore < BAD_SERVICE_PACE_THRESHOLD
     return {
+        actualYdPerHr,
         expectedTrucks: expectedTrucks ?? null,
         isLate,
         isSlow,
-        overTime,
         paceScore,
+        requestedYdPerHr,
         startLateness,
         status: isLate || isSlow ? 'bad' : 'good',
         ticketsLoaded: loadedTimes.length

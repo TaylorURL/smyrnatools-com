@@ -9,6 +9,14 @@ import ReportUtility from '../../utils/ReportUtility'
 const PLANT_PRODUCTION_KEYS = (production) =>
     production ? Object.keys(production).filter((code) => code !== PLAN_META_KEY) : []
 
+const normalizePlantCode = (code) => String(code || '').trim()
+
+const buildPlantPredicate = (plantSet) => {
+    const isFiltering = plantSet instanceof Set && plantSet.size > 0
+    if (!isFiltering) return () => true
+    return (code) => plantSet.has(normalizePlantCode(code))
+}
+
 /** Per-plant rollup of real (non-excluded) orders only. The dispatch
  *  service's prebuilt `totalYardage` blindly sums every row, including
  *  cancelled (17:00) and test (18:00) sentinels — recompute from the
@@ -30,9 +38,11 @@ const summarizePlantSchedule = (block) => {
  * Aggregates today's dispatch plan + schedule into a flat snapshot for the
  * Dashboard. Pulls the saved plan (assignments, plant_production) plus the
  * day's actual order schedule so the dashboard surfaces both the "what's
- * planned" and "what's coming in from dispatch" views.
+ * planned" and "what's coming in from dispatch" views. When `plantSet` is
+ * provided, totals and rows are restricted to those plants so the section
+ * stays in sync with the dashboard's region/plant filter.
  */
-export function useDashboardSchedule({ refreshKey } = {}) {
+export function useDashboardSchedule({ plantSet, refreshKey } = {}) {
     const [loading, setLoading] = useState(true)
     const [planDate, setPlanDate] = useState(() => ReportUtility.getTodayISODate())
     const [plan, setPlan] = useState(null)
@@ -65,9 +75,10 @@ export function useDashboardSchedule({ refreshKey } = {}) {
     }, [refreshKey])
 
     return useMemo(() => {
+        const isPlantAllowed = buildPlantPredicate(plantSet)
         const plantProduction = plan?.plant_production || {}
         const assignments = Array.isArray(plan?.assignments) ? plan.assignments : []
-        const scheduledPlantCodes = PLANT_PRODUCTION_KEYS(schedule)
+        const scheduledPlantCodes = PLANT_PRODUCTION_KEYS(schedule).filter(isPlantAllowed)
 
         // Per-plant rollups — exclude cancelled/test orders so totals match
         // what the Schedule tab shows for "real" production.
@@ -77,9 +88,18 @@ export function useDashboardSchedule({ refreshKey } = {}) {
         }))
         const orderCount = plantSummaries.reduce((sum, row) => sum + row.orderCount, 0)
         const scheduledYardage = plantSummaries.reduce((sum, row) => sum + row.yardage, 0)
-        const planYardage = sumPlanYardage(plantProduction)
 
-        const validAssignments = assignments.filter((a) => a?.fromPlant && a?.toPlant && a?.time)
+        const filteredPlantProduction = Object.fromEntries(
+            Object.entries(plantProduction).filter(([code]) => code === PLAN_META_KEY || isPlantAllowed(code))
+        )
+        const planYardage = sumPlanYardage(filteredPlantProduction)
+
+        // Movement assignments belong to the schedule slice when either end
+        // sits inside the active plant filter — drop transfers that touch
+        // neither selected plant so totals reflect the visible scope.
+        const validAssignments = assignments.filter(
+            (a) => a?.fromPlant && a?.toPlant && a?.time && (isPlantAllowed(a.fromPlant) || isPlantAllowed(a.toPlant))
+        )
         const totalOps = validAssignments.reduce((sum, a) => sum + (parseInt(a.driverCount, 10) || 0), 0)
         const sendingPlants = new Set(validAssignments.map((a) => a.fromPlant)).size
         const receivingPlants = new Set(validAssignments.map((a) => a.toPlant)).size
@@ -119,5 +139,5 @@ export function useDashboardSchedule({ refreshKey } = {}) {
             sendingPlants,
             totalOps
         }
-    }, [loading, plan, planDate, schedule])
+    }, [loading, plan, planDate, plantSet, schedule])
 }

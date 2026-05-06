@@ -47,8 +47,11 @@ import {
 const composeAddress = (order) => formatOrderAddress(order, ', ')
 
 /** Sum real-pour yardage across a day's `plant_production` object — mirrors
- *  the liveOrders filter (excludes cancelled + test sentinel orders). */
-const sumDayYardage = (production) => {
+ *  the liveOrders filter (excludes cancelled + test sentinel orders). The
+ *  optional `orderPredicate` lets callers reapply the user's active plant /
+ *  product / minYards filters so day-over-day comparisons stay apples-to-
+ *  apples when the toolbar is filtered. */
+const sumDayYardage = (production, orderPredicate) => {
     if (!production || typeof production !== 'object') return 0
     let sum = 0
     Object.entries(production).forEach(([code, prod]) => {
@@ -56,6 +59,7 @@ const sumDayYardage = (production) => {
         const list = Array.isArray(prod?.orders) ? prod.orders : []
         list.forEach((o) => {
             if (isExcludedOrder(o)) return
+            if (orderPredicate && !orderPredicate(o)) return
             sum += parseFloat(o?.yardage) || 0
         })
     })
@@ -518,11 +522,14 @@ function PlanScheduleView({
     )
     const totalYards = sumField(liveOrders, 'yardage')
 
-    /** Most recent NON-CLOSED day before planDate. On Mondays this snaps to
-     *  Saturday so the comparison reflects an actual production day, not the
-     *  Sunday closure. Walks back up to 7 days before giving up. */
+    /** Most recent NON-CLOSED day before planDate. Skips Sundays (plants
+     *  closed). On Mondays we return null instead of snapping to Saturday
+     *  — comparing Monday production to a half-crew Saturday is misleading,
+     *  so the badge simply hides on Mondays. */
     const previousBusinessDate = useMemo(() => {
         if (!planDate) return null
+        const planDayOfWeek = new Date(planDate + 'T00:00:00').getDay()
+        if (planDayOfWeek === 1) return null
         for (let offset = -1; offset >= -7; offset--) {
             const candidate = getOffsetDate(planDate, offset)
             if (!isClosedDay(candidate)) return candidate
@@ -535,10 +542,29 @@ function PlanScheduleView({
         return new Date(previousBusinessDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })
     }, [previousBusinessDate])
 
+    /** Predicate that mirrors the toolbar's structural filters (plant /
+     *  product / minimum yards) so day-over-day and week totals scope to
+     *  the same slice the user is viewing. Free-text search and status
+     *  pills are intentionally omitted — they're display filters, not
+     *  scoping filters, and applying them to historical days would make
+     *  the comparison incoherent. */
+    const adjacentDayOrderFilter = useMemo(() => {
+        const minYd = parseFloat(minYards) || 0
+        const hasPlantFilter = plantFilterSet.size > 0
+        const productCode = productFilter !== 'all' ? productFilter : null
+        if (!hasPlantFilter && !productCode && minYd <= 0) return null
+        return (order) => {
+            if (hasPlantFilter && !plantFilterSet.has(order.plantCode)) return false
+            if (productCode && clean(order.productCode) !== productCode) return false
+            if (minYd > 0 && (parseFloat(order.yardage) || 0) < minYd) return false
+            return true
+        }
+    }, [minYards, plantFilterSet, productFilter])
+
     const previousBusinessDayYardage = useMemo(() => {
         if (!previousBusinessDate) return 0
-        return sumDayYardage(adjacentProduction?.[previousBusinessDate])
-    }, [adjacentProduction, previousBusinessDate])
+        return sumDayYardage(adjacentProduction?.[previousBusinessDate], adjacentDayOrderFilter)
+    }, [adjacentDayOrderFilter, adjacentProduction, previousBusinessDate])
 
     /** Mon–Sat date strings of the week containing planDate. Sunday is
      *  excluded (plants are closed). When planDate is Sunday, the week is
@@ -551,15 +577,16 @@ function PlanScheduleView({
     }, [planDate])
 
     /** Total yardage for the current Mon–Sat week. Today's yardage comes
-     *  from the live `totalYards` (already filtered for cancellations);
-     *  every other day is summed from the adjacent fetch cache. */
+     *  from the live `totalYards` (already filtered); every other day is
+     *  summed from the adjacent fetch cache with the same structural
+     *  filters reapplied so the week total matches the user's view. */
     const weekYardage = useMemo(() => {
         if (currentWeekDates.length === 0) return totalYards
         return currentWeekDates.reduce((sum, date) => {
             if (date === planDate) return sum + totalYards
-            return sum + sumDayYardage(adjacentProduction?.[date])
+            return sum + sumDayYardage(adjacentProduction?.[date], adjacentDayOrderFilter)
         }, 0)
-    }, [adjacentProduction, currentWeekDates, planDate, totalYards])
+    }, [adjacentDayOrderFilter, adjacentProduction, currentWeekDates, planDate, totalYards])
 
     /** Percent change vs the previous business day. Null when that day has
      *  no data so the badge renders nothing instead of a misleading "+∞%". */

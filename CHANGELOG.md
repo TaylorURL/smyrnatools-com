@@ -2,6 +2,17 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.28] - 2026-05-06
+
+- Redesign plan dispatch copy text into a structured per-plant briefing with per-truck staggered arrive/leave times, grouped by send/receive, with a plain-English summary header
+- Replace duration-over-plan pace metric with actual yd/hr vs requested yd/hr comparison for service quality evaluation
+- Skip slow-pace check for small pours (3 or fewer trucks or under 30 yards) to eliminate false "Poor Service" verdicts on customer-paced jobs
+- Show actual vs requested yd/hr in the service badge tooltip instead of generic "ran X min over plan"
+- Pass active plant filter into useDashboardSchedule so schedule section totals respect the dashboard's region/plant selection
+- Filter plan yardage and movement assignments by active plant set so dashboard stats reflect only the visible scope
+- Skip Monday-to-Saturday day-over-day yardage comparison (half-crew Saturday is misleading) — hide the badge on Mondays instead
+- Apply structural toolbar filters (plant, product, min yards) to adjacent-day and week yardage totals so comparisons match the user's current view slice
+
 ## [40.0.27] - 2026-05-06
 
 - Exclude cancelled (17:00) and test (18:00) sentinel orders from per-plant yardage and first-job-time totals in both the dispatch data service and dashboard schedule hook
