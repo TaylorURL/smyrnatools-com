@@ -5,7 +5,6 @@ import DashboardAlertsPanel from '../../../app/components/dashboard/DashboardAle
 import { DashboardAtAGlance } from '../../../app/components/dashboard/DashboardAtAGlance'
 import DashboardHeader from '../../../app/components/dashboard/DashboardHeader'
 import DashboardPeopleSection from '../../../app/components/dashboard/DashboardPeopleSection'
-import DashboardReportsSection from '../../../app/components/dashboard/DashboardReportsSection'
 import DashboardScheduleSection from '../../../app/components/dashboard/DashboardScheduleSection'
 import { DASHBOARD_NAV_SECTIONS, DashboardScrollSpyNav } from '../../../app/components/dashboard/DashboardScrollSpyNav'
 import DashboardSkeleton from '../../../app/components/dashboard/DashboardSkeleton'
@@ -16,7 +15,6 @@ import { useDashboardAssets, useIssueCommentCounts, usePlantFilter } from '../..
 import { useAnimatedStats, useDateFilter } from '../../../app/hooks/useDashboardEffects'
 import { useDashboardInit } from '../../../app/hooks/useDashboardInit'
 import { useDashboardManagers } from '../../../app/hooks/useDashboardManagers'
-import { useDashboardReports } from '../../../app/hooks/useDashboardReports'
 import { useDashboardSchedule } from '../../../app/hooks/useDashboardSchedule'
 import { useDashboardStats } from '../../../app/hooks/useDashboardStats'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
@@ -199,7 +197,6 @@ export default function DashboardView() {
     }, [dashboardPlant, dashboardRegionCode, stats.fleetTotal])
     const managerStats = useDashboardManagers({ plantSet: managerPlantSet })
     const scheduleData = useDashboardSchedule({ refreshKey })
-    const reportsData = useDashboardReports({ refreshKey })
 
     const regionDisplayName = (() => {
         if (selectedRegion?.type === 'Office') return 'Home Office'
@@ -238,14 +235,7 @@ export default function DashboardView() {
         (stats.equipment?.issues || 0)
 
     const [activeSection, jumpTo] = usePlanScrollSpy({
-        deps: [
-            showSkeleton,
-            alertCount,
-            peopleCount,
-            scheduleData.loading,
-            reportsData.loading,
-            reportsData.overdueCount
-        ],
+        deps: [showSkeleton, alertCount, peopleCount, scheduleData.loading],
         scrollContainerRef,
         sections: DASHBOARD_NAV_SECTIONS
     })
@@ -326,7 +316,6 @@ export default function DashboardView() {
                                     isAggregate={isAggregate}
                                     managerStats={managerStats}
                                 />
-                                <DashboardReportsSection reports={reportsData} />
                                 <div className="h-8" />
                             </>
                         )}

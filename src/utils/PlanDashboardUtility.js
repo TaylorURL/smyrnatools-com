@@ -3,9 +3,26 @@ import {
     computePlantPoolTimeline,
     computePullUpRows,
     computeSuggestedSlots,
+    isExcludedOrder,
     PLAN_META_KEY,
     timeToMinutes
 } from './PlanUtility'
+
+/** Sum a plant production block's REAL yardage. Re-derives from each
+ *  block's `orders[]` so cancelled (17:00) and test (18:00) sentinels are
+ *  excluded from the total — even when the precomputed `totalYardage`
+ *  field on the block was built before that filter existed. Falls back to
+ *  `totalYardage` only when the orders array isn't present. */
+const plantBlockYardage = (block) => {
+    if (!block) return 0
+    if (Array.isArray(block.orders)) {
+        return block.orders.reduce((sum, order) => {
+            if (isExcludedOrder(order)) return sum
+            return sum + (parseFloat(order?.yardage) || 0)
+        }, 0)
+    }
+    return parseFloat(block.totalYardage) || 0
+}
 
 /**
  * Pure helpers for the Plan Dashboard view — meta blob accessors, time
@@ -132,14 +149,15 @@ export const computeDashboardSuggestedSlots = ({ plantProduction, stats, assignm
 }
 
 /** Total yardage planned across every plant on the day, ignoring the
- *  reserved `_meta` key. */
+ *  reserved `_meta` key and stripping cancelled/test order rows that the
+ *  legacy precomputed `totalYardage` baked in. */
 export const sumPlanYardage = (plantProduction) =>
     Object.entries(plantProduction || {})
         .filter(([code]) => code !== PLAN_META_KEY)
-        .reduce((sum, [, prod]) => sum + (parseFloat(prod?.totalYardage) || 0), 0)
+        .reduce((sum, [, prod]) => sum + plantBlockYardage(prod), 0)
 
 /** Number of plants that have any planned yardage today. */
 export const countPlantsWithYardage = (plantProduction) =>
     Object.keys(plantProduction || {}).filter(
-        (code) => code !== PLAN_META_KEY && (parseFloat(plantProduction[code]?.totalYardage) || 0) > 0
+        (code) => code !== PLAN_META_KEY && plantBlockYardage(plantProduction[code]) > 0
     ).length

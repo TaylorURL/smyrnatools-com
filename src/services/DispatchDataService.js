@@ -1,4 +1,5 @@
 import APIUtility from '../utils/APIUtility'
+import { isExcludedOrder } from '../utils/PlanUtility'
 
 const SERVICE_PREFIX = 'dispatch-data-service'
 
@@ -44,7 +45,12 @@ const post = async (endpoint, payload, fallback) => {
 }
 
 /** Builds the `{ [plantCode]: { firstJobTime, lastJobTime, orders, totalYardage } }`
- *  map shared by `fetchSchedule` and the per-date entries of `fetchPlanRowsByDateRange`. */
+ *  map shared by `fetchSchedule` and the per-date entries of `fetchPlanRowsByDateRange`.
+ *
+ *  `totalYardage` and `firstJobTime` are derived from REAL production rows
+ *  only — cancelled (17:00) and test (18:00) sentinel orders stay in the
+ *  `orders` array (the schedule UI still renders them) but never inflate
+ *  the per-plant totals or anchor the day's first job. */
 const groupOrderRowsByPlant = (rows) => {
     const byPlant = {}
     for (const row of rows || []) {
@@ -76,19 +82,20 @@ const groupOrderRowsByPlant = (rows) => {
             truckCount: row.truck_count != null ? String(row.truck_count) : '',
             yardage: row.scheduled_yardage != null ? String(row.scheduled_yardage) : ''
         })
-        byPlant[code].totalYardage += parseFloat(row.scheduled_yardage) || 0
     }
 
     for (const code of Object.keys(byPlant)) {
         const block = byPlant[code]
-        const times = block.orders
+        const realOrders = block.orders.filter((o) => !isExcludedOrder(o))
+        const totalYardage = realOrders.reduce((sum, o) => sum + (parseFloat(o.yardage) || 0), 0)
+        const times = realOrders
             .map((o) => o.startTime)
             .filter((t) => /^\d{1,2}:\d{2}$/.test(t))
             .map((t) => t.padStart(5, '0'))
             .sort()
         block.firstJobTime = times[0] || ''
         block.lastJobTime = times[times.length - 1] || ''
-        block.totalYardage = block.totalYardage > 0 ? String(block.totalYardage) : ''
+        block.totalYardage = totalYardage > 0 ? String(totalYardage) : ''
         block.orders.sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')))
     }
     return byPlant

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { Panel, Stat, StatGroup } from '../ui/Panel'
+import { Panel } from '../ui/Panel'
 
 const COLLAPSED_PLANT_LIMIT = 5
 
@@ -12,22 +12,7 @@ const COLLAPSED_PLANT_LIMIT = 5
  */
 export default function DashboardScheduleSection({ schedule }) {
     const [expanded, setExpanded] = useState(false)
-    const {
-        earliestArrival,
-        earliestFirstJob,
-        hasPlan,
-        loading,
-        orderCount,
-        plantRows = [],
-        planDate,
-        planYardage,
-        receivingPlants,
-        routeCount,
-        scheduledPlants,
-        scheduledYardage,
-        sendingPlants,
-        totalOps
-    } = schedule || {}
+    const { hasPlan, loading, orderCount, plantRows = [], planDate, scheduledPlants, scheduledYardage } = schedule || {}
 
     if (loading) {
         return (
@@ -50,6 +35,9 @@ export default function DashboardScheduleSection({ schedule }) {
               weekday: 'long'
           })
         : 'Today'
+    const headerSummary = hasAnyData
+        ? `${orderCount.toLocaleString()} order${orderCount === 1 ? '' : 's'} · ${scheduledYardage.toLocaleString()} yd`
+        : null
 
     return (
         <Panel
@@ -58,48 +46,11 @@ export default function DashboardScheduleSection({ schedule }) {
             innerClassName="p-3"
             right={
                 <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {dateLabel}
+                    {[dateLabel, headerSummary].filter(Boolean).join(' · ')}
                 </span>
             }
         >
             <div className="flex flex-col gap-3">
-                <StatGroup columns={6}>
-                    <Stat
-                        hint={hasPlan ? `Plan saved` : 'No plan saved'}
-                        label="Plan yardage"
-                        value={(planYardage || 0).toLocaleString()}
-                        valueColor={hasPlan ? undefined : '#a16207'}
-                    />
-                    <Stat
-                        hint={`${scheduledPlants || 0} plant${scheduledPlants === 1 ? '' : 's'} scheduled`}
-                        label="Dispatch yardage"
-                        value={(scheduledYardage || 0).toLocaleString()}
-                    />
-                    <Stat
-                        hint={orderCount > 0 ? 'From dispatch' : 'No orders'}
-                        label="Orders"
-                        value={(orderCount || 0).toLocaleString()}
-                    />
-                    <Stat
-                        hint={routeCount > 0 ? `${sendingPlants}→${receivingPlants} plants` : 'No transfers'}
-                        label="Routes"
-                        value={routeCount || 0}
-                    />
-                    <Stat
-                        hint={totalOps > 0 ? 'Inter-plant moves' : 'No moves'}
-                        label="Operators moving"
-                        value={totalOps || 0}
-                    />
-                    <Stat
-                        hint={
-                            earliestFirstJob ? 'Earliest scheduled' : earliestArrival ? 'Earliest arrival' : 'No jobs'
-                        }
-                        label="First job"
-                        value={earliestFirstJob || earliestArrival || '—'}
-                        valueColor={earliestFirstJob || earliestArrival ? '#16a34a' : undefined}
-                    />
-                </StatGroup>
-
                 {hasAnyData && plantRows.length > 0 && (
                     <div className="flex flex-col gap-2">
                         <table

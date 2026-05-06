@@ -2,6 +2,24 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.27] - 2026-05-06
+
+- Exclude cancelled (17:00) and test (18:00) sentinel orders from per-plant yardage and first-job-time totals in both the dispatch data service and dashboard schedule hook
+- Add `summarizePlantSchedule` helper in useDashboardSchedule to recompute plant rollups from filtered real orders only
+- Add `plantBlockYardage` helper in PlanDashboardUtility to re-derive plant totals from real orders, falling back to precomputed `totalYardage` when the orders array is absent
+- Update `sumPlanYardage` and `countPlantsWithYardage` to use the filtered helper so the dashboard never inflates planned yardage with sentinel rows
+- Reshape DashboardScheduleSection from six separate stats (plan yardage, dispatch yardage, orders, routes, operators moving, first job) into a streamlined header summary showing order count and yardage inline
+- Drop plants with zero real production from the schedule rollup so empty rows no longer appear in the per-plant table
+- Remove the Reports section entirely from the dashboard — delete DashboardReportsSection component, useDashboardReports hook, and the "Reports" entry from the scroll-spy nav
+
+## [40.0.26] - 2026-05-05
+
+- Exclude cancelled (17:00) and test (18:00) sentinel orders from per-plant yardage and first-job-time totals across the dispatch and dashboard layers
+- Add `plantBlockYardage` helper in PlanDashboardUtility that re-derives plant totals from real orders, falling back to the precomputed `totalYardage` only when the orders array is absent
+- Update `sumPlanYardage` and `countPlantsWithYardage` to use the filtered helper so the dashboard never inflates the day's planned yardage with sentinel rows
+- Reshape DashboardScheduleSection from separate "Plan yardage" + "Dispatch yardage" stats into a single "Yardage" stat with a hint that surfaces the plan-vs-dispatch variance (e.g. "Plan +5 yd vs dispatch") and amber color when they diverge
+- Drop plants with zero real production from the schedule rollup so empty rows no longer show up in the per-plant table
+
 ## [40.0.25] - 2026-05-05
 
 - Add 14-hour DOT driver shift limit badge to plan schedule orders in both table and card views

@@ -8,8 +8,7 @@ export const DASHBOARD_NAV_SECTIONS = [
     { icon: 'fa-bell', id: 'alerts', label: 'Alerts' },
     { icon: 'fa-calendar-day', id: 'schedule', label: 'Schedule' },
     { icon: 'fa-truck-fast', id: 'fleet', label: 'Fleet' },
-    { icon: 'fa-users', id: 'people', label: 'People' },
-    { icon: 'fa-file-lines', id: 'reports', label: 'Reports' }
+    { icon: 'fa-users', id: 'people', label: 'People' }
 ]
 
 /**

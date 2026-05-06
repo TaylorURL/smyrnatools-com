@@ -3,10 +3,28 @@ import { useEffect, useMemo, useState } from 'react'
 import { DispatchDataService } from '../../services/DispatchDataService'
 import { PlanService } from '../../services/PlanService'
 import { PLAN_META_KEY, sumPlanYardage } from '../../utils/PlanDashboardUtility'
+import { isExcludedOrder } from '../../utils/PlanUtility'
 import ReportUtility from '../../utils/ReportUtility'
 
 const PLANT_PRODUCTION_KEYS = (production) =>
     production ? Object.keys(production).filter((code) => code !== PLAN_META_KEY) : []
+
+/** Per-plant rollup of real (non-excluded) orders only. The dispatch
+ *  service's prebuilt `totalYardage` blindly sums every row, including
+ *  cancelled (17:00) and test (18:00) sentinels — recompute from the
+ *  filtered orders so the dashboard never inflates the day's numbers. */
+const summarizePlantSchedule = (block) => {
+    const orders = Array.isArray(block?.orders) ? block.orders : []
+    const realOrders = orders.filter((o) => !isExcludedOrder(o))
+    const yardage = realOrders.reduce((sum, o) => sum + (parseFloat(o?.yardage) || 0), 0)
+    const firstJobTime =
+        realOrders
+            .map((o) => o?.startTime)
+            .filter((t) => /^\d{1,2}:\d{2}$/.test(String(t || '')))
+            .map((t) => String(t).padStart(5, '0'))
+            .sort()[0] || null
+    return { firstJobTime, orderCount: realOrders.length, yardage }
+}
 
 /**
  * Aggregates today's dispatch plan + schedule into a flat snapshot for the
@@ -50,14 +68,15 @@ export function useDashboardSchedule({ refreshKey } = {}) {
         const plantProduction = plan?.plant_production || {}
         const assignments = Array.isArray(plan?.assignments) ? plan.assignments : []
         const scheduledPlantCodes = PLANT_PRODUCTION_KEYS(schedule)
-        const orderCount = scheduledPlantCodes.reduce(
-            (sum, code) => sum + (Array.isArray(schedule[code]?.orders) ? schedule[code].orders.length : 0),
-            0
-        )
-        const scheduledYardage = scheduledPlantCodes.reduce(
-            (sum, code) => sum + (Number(schedule[code]?.totalYardage) || 0),
-            0
-        )
+
+        // Per-plant rollups — exclude cancelled/test orders so totals match
+        // what the Schedule tab shows for "real" production.
+        const plantSummaries = scheduledPlantCodes.map((code) => ({
+            code,
+            ...summarizePlantSchedule(schedule[code])
+        }))
+        const orderCount = plantSummaries.reduce((sum, row) => sum + row.orderCount, 0)
+        const scheduledYardage = plantSummaries.reduce((sum, row) => sum + row.yardage, 0)
         const planYardage = sumPlanYardage(plantProduction)
 
         const validAssignments = assignments.filter((a) => a?.fromPlant && a?.toPlant && a?.time)
@@ -69,17 +88,17 @@ export function useDashboardSchedule({ refreshKey } = {}) {
             .map((a) => a.time)
             .filter(Boolean)
             .sort()[0]
-        const earliestFirstJob = scheduledPlantCodes
-            .map((code) => schedule[code]?.firstJobTime)
+        const earliestFirstJob = plantSummaries
+            .map((row) => row.firstJobTime)
             .filter(Boolean)
             .sort()[0]
 
-        const plantRows = scheduledPlantCodes
-            .map((code) => ({
+        const plantRows = plantSummaries
+            .map(({ code, firstJobTime, orderCount: rowOrders, yardage }) => ({
                 code,
-                firstJobTime: schedule[code]?.firstJobTime || null,
-                orderCount: Array.isArray(schedule[code]?.orders) ? schedule[code].orders.length : 0,
-                yardage: Number(schedule[code]?.totalYardage) || 0
+                firstJobTime,
+                orderCount: rowOrders,
+                yardage
             }))
             .filter((row) => row.yardage > 0 || row.orderCount > 0)
             .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }))
@@ -95,7 +114,7 @@ export function useDashboardSchedule({ refreshKey } = {}) {
             planYardage,
             receivingPlants,
             routeCount: validAssignments.length,
-            scheduledPlants: scheduledPlantCodes.length,
+            scheduledPlants: plantRows.length,
             scheduledYardage,
             sendingPlants,
             totalOps

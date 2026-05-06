@@ -2,6 +2,23 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.26] - 2026-05-05
+
+- Exclude cancelled (17:00) and test (18:00) sentinel orders from per-plant yardage and first-job-time totals across the dispatch and dashboard layers
+- Add `plantBlockYardage` helper in PlanDashboardUtility that re-derives plant totals from real orders, falling back to the precomputed `totalYardage` only when the orders array is absent
+- Update `sumPlanYardage` and `countPlantsWithYardage` to use the filtered helper so the dashboard never inflates the day's planned yardage with sentinel rows
+- Reshape DashboardScheduleSection from separate "Plan yardage" + "Dispatch yardage" stats into a single "Yardage" stat with a hint that surfaces the plan-vs-dispatch variance (e.g. "Plan +5 yd vs dispatch") and amber color when they diverge
+- Drop plants with zero real production from the schedule rollup so empty rows no longer show up in the per-plant table
+
+## [40.0.25] - 2026-05-05
+
+- Add 14-hour DOT driver shift limit badge to plan schedule orders in both table and card views
+- Compute projected back-at-yard time per order using load, slump, travel, pour, and return segments
+- Show red "Limit Exceeded" badge with detailed tooltip breaking down each time segment when an operator would exceed the 14h cap
+- Add getFirstLoadOutMinutes utility to anchor the shift window against the earliest valid start time of the day
+- Memoize firstLoadOutMin at the table and view level to avoid redundant recomputation per row/card
+- Remove unused fmtFloat import from PlanStatisticsTables
+
 ## [40.0.24] - 2026-05-05
 
 - Replace "Drafts this week" stat with a weekly completion rate percentage in DashboardReportsSection
