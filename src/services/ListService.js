@@ -11,27 +11,43 @@ const MAX_PLANNED_ITEMS_PER_DAY = 3
 const PRIORITY_CACHE_PREFIX = 'ai:priority:'
 
 /** Priority levels with display config — ordered from highest to lowest severity. */
+/** Priority/urgency display metadata. Colors are CSS values (not Tailwind
+ *  classes) so the badges read correctly in both light and dark mode — the
+ *  rgba bg/border layer over the active theme background instead of relying
+ *  on a hard-coded pale tint that disappears on dark surfaces. */
 const PRIORITY_CONFIG = {
-    urgent: { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', icon: 'fa-fire', label: 'Urgent' },
+    urgent: {
+        bg: 'rgba(220,38,38,0.12)',
+        border: 'rgba(220,38,38,0.35)',
+        color: '#ef4444',
+        icon: 'fa-fire',
+        label: 'Urgent'
+    },
     high: {
-        color: 'text-orange-600',
-        bg: 'bg-orange-50',
-        border: 'border-orange-200',
+        bg: 'rgba(234,88,12,0.12)',
+        border: 'rgba(234,88,12,0.35)',
+        color: '#f97316',
         icon: 'fa-arrow-up',
         label: 'High'
     },
     medium: {
-        color: 'text-yellow-600',
-        bg: 'bg-yellow-50',
-        border: 'border-yellow-200',
+        bg: 'rgba(202,138,4,0.12)',
+        border: 'rgba(202,138,4,0.35)',
+        color: '#eab308',
         icon: 'fa-minus',
         label: 'Medium'
     },
-    low: { color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200', icon: 'fa-arrow-down', label: 'Low' },
+    low: {
+        bg: 'rgba(59,130,246,0.12)',
+        border: 'rgba(59,130,246,0.35)',
+        color: '#60a5fa',
+        icon: 'fa-arrow-down',
+        label: 'Low'
+    },
     none: {
-        color: 'text-slate-400',
-        bg: 'bg-slate-50',
-        border: 'border-slate-200',
+        bg: 'rgba(148,163,184,0.12)',
+        border: 'rgba(148,163,184,0.30)',
+        color: '#94a3b8',
         icon: 'fa-minus',
         label: 'No Priority'
     }

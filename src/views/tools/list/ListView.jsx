@@ -982,12 +982,19 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                             />
                                                             {ListService.getStatusLabel(itemStatus)}
                                                         </span>
-                                                        <span
-                                                            className={`inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border ${pc.bg} ${pc.border} ${pc.color}`}
-                                                        >
-                                                            <i className={`fas ${pc.icon} text-[8px]`} />
-                                                            {pc.label}
-                                                        </span>
+                                                        {!isMobile && (
+                                                            <span
+                                                                className="inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border"
+                                                                style={{
+                                                                    background: pc.bg,
+                                                                    borderColor: pc.border,
+                                                                    color: pc.color
+                                                                }}
+                                                            >
+                                                                <i className={`fas ${pc.icon} text-[8px]`} />
+                                                                {pc.label}
+                                                            </span>
+                                                        )}
                                                         <div className="flex flex-1 min-w-0 items-baseline gap-2">
                                                             <span
                                                                 className="text-[12px] font-semibold truncate"
@@ -1074,25 +1081,32 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
             </div>
             {selectedIds.size > 0 && (
                 <div
-                    className={`flex items-center bg-white border border-border-light rounded shadow-[0_8px_24px_rgba(0,0,0,0.15)] fixed left-1/2 -translate-x-1/2 z-[1000] ${
+                    className={`flex items-center border border-border-light rounded shadow-[0_8px_24px_rgba(0,0,0,0.15)] fixed left-1/2 -translate-x-1/2 z-[1000] ${
                         isMobile
-                            ? 'bottom-4 flex-wrap gap-2 justify-center max-w-[calc(100%-2rem)] px-4 py-3'
+                            ? 'bottom-4 gap-2 max-w-[calc(100%-1rem)] px-2 py-2'
                             : 'bottom-8 flex-nowrap gap-4 justify-start px-6 py-4'
                     }`}
+                    style={{ background: 'var(--bg-primary)' }}
                 >
-                    <div className="text-[0.9375rem] font-bold" style={{ color: accentColor }}>
-                        {selectedIds.size} selected
+                    <div
+                        className={`font-bold shrink-0 ${isMobile ? 'text-xs px-1' : 'text-[0.9375rem]'}`}
+                        style={{ color: accentColor }}
+                    >
+                        {isMobile ? selectedIds.size : `${selectedIds.size} selected`}
                     </div>
-                    <div className="flex gap-2">
+                    <div className={`flex ${isMobile ? 'gap-1' : 'gap-2'}`}>
                         <button
                             onClick={() => bulkToggleCompletion(true)}
-                            className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                            className={`flex items-center border-none rounded cursor-pointer font-semibold outline-none transition-all duration-200 ${
+                                isMobile ? 'gap-1 px-2 py-1.5 text-xs' : 'gap-2 px-4 py-2 text-sm'
+                            }`}
                             style={getBulkButtonStyle('complete')}
                             onMouseEnter={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.complete.hover)}
                             onMouseLeave={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.complete.bg)}
+                            aria-label="Complete"
                         >
                             <i className="fas fa-check" />
-                            <span>Complete</span>
+                            {!isMobile && <span>Complete</span>}
                         </button>
                         <div className="relative" ref={bulkStatusRef}>
                             <button
@@ -1100,15 +1114,18 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                     setBulkStatusOpen((p) => !p)
                                     setBulkPriorityOpen(false)
                                 }}
-                                className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                                className={`flex items-center border-none rounded cursor-pointer font-semibold outline-none transition-all duration-200 ${
+                                    isMobile ? 'gap-1 px-2 py-1.5 text-xs' : 'gap-2 px-4 py-2 text-sm'
+                                }`}
                                 style={getBulkButtonStyle('neutral')}
                                 onMouseEnter={(e) =>
                                     (e.currentTarget.style.background = BULK_ACTION_COLORS.neutral.hover)
                                 }
                                 onMouseLeave={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.neutral.bg)}
+                                aria-label="Status"
                             >
                                 <i className="fas fa-layer-group" />
-                                <span>Status</span>
+                                {!isMobile && <span>Status</span>}
                                 <i
                                     className={`fas fa-chevron-down text-[8px] opacity-60 transition-transform duration-150 ${bulkStatusOpen ? 'rotate-180' : ''}`}
                                 />
@@ -1154,15 +1171,18 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                     setBulkPriorityOpen((p) => !p)
                                     setBulkStatusOpen(false)
                                 }}
-                                className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                                className={`flex items-center border-none rounded cursor-pointer font-semibold outline-none transition-all duration-200 ${
+                                    isMobile ? 'gap-1 px-2 py-1.5 text-xs' : 'gap-2 px-4 py-2 text-sm'
+                                }`}
                                 style={getBulkButtonStyle('neutral')}
                                 onMouseEnter={(e) =>
                                     (e.currentTarget.style.background = BULK_ACTION_COLORS.neutral.hover)
                                 }
                                 onMouseLeave={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.neutral.bg)}
+                                aria-label="Priority"
                             >
                                 <i className="fas fa-flag" />
-                                <span>Priority</span>
+                                {!isMobile && <span>Priority</span>}
                                 <i
                                     className={`fas fa-chevron-down text-[8px] opacity-60 transition-transform duration-150 ${bulkPriorityOpen ? 'rotate-180' : ''}`}
                                 />
@@ -1189,7 +1209,8 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                     }
                                                 >
                                                     <span
-                                                        className={`flex items-center justify-center h-5 w-5 rounded-md text-[9px] ${pc.bg} ${pc.color}`}
+                                                        className="flex items-center justify-center h-5 w-5 rounded-md text-[9px]"
+                                                        style={{ background: pc.bg, color: pc.color }}
                                                     >
                                                         <i className={`fas ${pc.icon}`} />
                                                     </span>
@@ -1203,23 +1224,29 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                         </div>
                         <button
                             onClick={bulkDelete}
-                            className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                            className={`flex items-center border-none rounded cursor-pointer font-semibold outline-none transition-all duration-200 ${
+                                isMobile ? 'gap-1 px-2 py-1.5 text-xs' : 'gap-2 px-4 py-2 text-sm'
+                            }`}
                             style={getBulkButtonStyle('delete')}
                             onMouseEnter={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.delete.hover)}
                             onMouseLeave={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.delete.bg)}
+                            aria-label="Delete"
                         >
                             <i className="fas fa-trash" />
-                            <span>Delete</span>
+                            {!isMobile && <span>Delete</span>}
                         </button>
                         <button
                             onClick={() => setSelectedIds(new Set())}
-                            className="flex items-center border-none rounded cursor-pointer text-sm font-semibold gap-2 outline-none px-4 py-2 transition-all duration-200"
+                            className={`flex items-center border-none rounded cursor-pointer font-semibold outline-none transition-all duration-200 ${
+                                isMobile ? 'gap-1 px-2 py-1.5 text-xs' : 'gap-2 px-4 py-2 text-sm'
+                            }`}
                             style={getBulkButtonStyle('cancel')}
                             onMouseEnter={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.cancel.hover)}
                             onMouseLeave={(e) => (e.currentTarget.style.background = BULK_ACTION_COLORS.cancel.bg)}
+                            aria-label="Cancel"
                         >
                             <i className="fas fa-times" />
-                            <span>Cancel</span>
+                            {!isMobile && <span>Cancel</span>}
                         </button>
                     </div>
                 </div>

@@ -1,13 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import { PlanDashboardAtAGlance } from '../../../app/components/plan/PlanDashboardAtAGlance'
-import { PlanDashboardJobsSection } from '../../../app/components/plan/PlanDashboardJobs'
-import {
-    PlanCompactionList,
-    PlanInsightsList,
-    PlanOpenWindowsList,
-    PlanYardageByPlantList
-} from '../../../app/components/plan/PlanDashboardLists'
+import { PlanInsightsList, PlanYardageByPlantList } from '../../../app/components/plan/PlanDashboardLists'
 import {
     DASHBOARD_NAV_SECTIONS,
     PlanDashboardSideNav,
@@ -528,51 +522,6 @@ function PlanDashboardView({
                             plantProduction={plantProduction}
                         />
                     </Card>
-
-                    {/* Extra Diligence — combined Special Attention + QC Attention block.
-                        The wrapper id matches the consolidated nav entry; inner ids stay
-                        so existing inline jumpTo('special') / jumpTo('qc') links still scroll
-                        to the right subsection. Uses <section> + scroll-mt-4 to match the
-                        scrollIntoView landing pattern of every other anchor on the page. */}
-                    <section id="extra-diligence" className="scroll-mt-4 flex flex-col gap-3 sm:gap-5">
-                        <PlanDashboardJobsSection
-                            id="special"
-                            accent={accentColor}
-                            canEdit={canEdit}
-                            tint="#d97706"
-                            title="Special Attention"
-                            emptyHint="No special-attention jobs yet. Add anything the crew needs to double-check — VIP pours, tight sequences, high-slump runs, late starts, etc."
-                            jobs={specialJobs}
-                            plants={plants}
-                            plantNameByCode={plantNameByCode}
-                            onCreate={addSpecialJob}
-                            onSave={saveSpecialJob}
-                            onDelete={deleteSpecialJob}
-                            titleLabel="Title (e.g. Harbor Dev · Mix 4000-B pour at 6:00)"
-                        />
-
-                        <PlanDashboardJobsSection
-                            id="qc"
-                            accent={accentColor}
-                            canEdit={canEdit}
-                            tint="#7c3aed"
-                            title="QC Attention"
-                            emptyHint="No QC-flagged jobs yet. Add any pour that needs cylinders cast, mix-design watch, slump re-checks, temp monitoring, or technician on site."
-                            jobs={qcJobs}
-                            plants={plants}
-                            plantNameByCode={plantNameByCode}
-                            onCreate={addQcJob}
-                            onSave={saveQcJob}
-                            onDelete={deleteQcJob}
-                            titleLabel="Title (e.g. QC cylinders on Mix 4500 · Plant 214)"
-                        />
-                    </section>
-
-                    {pullUpRecommendations.length > 0 && <PlanCompactionList rows={pullUpRecommendations} />}
-
-                    {suggestedSlotRecommendations.length > 0 && (
-                        <PlanOpenWindowsList rows={suggestedSlotRecommendations} />
-                    )}
 
                     {hasInsights && (
                         <PlanInsightsList warnings={planInsights.warnings} suggestions={planInsights.suggestions} />
