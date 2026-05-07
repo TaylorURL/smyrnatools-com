@@ -11,7 +11,8 @@ const PLAN_TABS = [
     { icon: 'fa-project-diagram', label: 'Planner', mode: 'flow' },
     { icon: 'fa-chart-column', label: 'Demand', mode: 'demand' },
     { icon: 'fa-chart-line', label: 'Statistics', mode: 'statistics' },
-    { icon: 'fa-phone-volume', label: 'Call List', mode: 'call-list' }
+    { icon: 'fa-phone-volume', label: 'Call List', mode: 'call-list' },
+    { icon: 'fa-clipboard-list', label: 'Book An Order', mode: 'book-order' }
 ]
 
 /**

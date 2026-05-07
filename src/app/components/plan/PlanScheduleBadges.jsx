@@ -34,7 +34,7 @@ export function ServiceBadge({ service }) {
                 title="On-time start, on-pace pour"
             >
                 <i className="fas fa-circle-check text-[9px]" />
-                Good Service
+                Good Experience
             </span>
         )
     }
@@ -46,7 +46,7 @@ export function ServiceBadge({ service }) {
                 `poured ${service.actualYdPerHr.toFixed(1)} yd/hr vs ${service.requestedYdPerHr.toFixed(1)} yd/hr requested`
             )
         }
-        const label = service.isLate && service.isSlow ? 'Late, Poor Service' : service.isLate ? 'Late' : 'Poor Service'
+        const label = service.isLate && service.isSlow ? 'Late, Bad Experience' : service.isLate ? 'Late' : 'Bad Experience'
         return (
             <span
                 className={SERVICE_BADGE_BASE}

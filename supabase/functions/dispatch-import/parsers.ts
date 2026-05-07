@@ -157,6 +157,11 @@ const inRange = (el: Element, startEl: Element, endEl: Element | null): boolean 
 
 const PLANT_HEADER_RE = /^(\d{3,6}[A-Z]?)\s*-\s*(.*[A-Za-z].*)$/
 const PLANT_NAME_MIN_LETTERS = 3
+// FastReport renders plant section banners as a full-row div anchored at the
+// left edge. Address cells (e.g. "20139- 20143 WHITE DOVE DR") sit at left
+// ≈ 297 with width ≈ 173 and would otherwise satisfy the header regex.
+const PLANT_HEADER_MAX_LEFT = 8
+const PLANT_HEADER_MIN_WIDTH = 600
 
 // HOME-plant overrides for DailyOrder. Orders are only ever booked at the
 // canonical sibling (403, 408) — 404 and 409 are loading-only plants. If a
@@ -290,7 +295,17 @@ export function parseDailyOrderHtml(htmlString: string, plants: PlantsRow[] = []
         return null
     }
 
+    // Real plant section banners always render as a full-row div at left=0
+    // spanning the report width. Address cells like "20139- 20143 WHITE DOVE
+    // DR" can match the header regex by sheer coincidence, so we gate on
+    // geometry first — anything not at the left edge with a near-full width
+    // can't be a section header regardless of how its text reads.
     const plantHeaders = allDivs.filter((d) => {
+        const style = d.getAttribute('style') || ''
+        const left = parseFloat(style.match(/left:\s*([\d.]+)/)?.[1] || 'NaN')
+        const width = parseFloat(style.match(/width:\s*([\d.]+)/)?.[1] || 'NaN')
+        if (!Number.isFinite(left) || left > PLANT_HEADER_MAX_LEFT) return false
+        if (!Number.isFinite(width) || width < PLANT_HEADER_MIN_WIDTH) return false
         const text = (d.textContent || '').trim()
         const m = text.match(PLANT_HEADER_RE)
         if (!m) return false

@@ -19,8 +19,8 @@ const AUTH_FUNCTION = '/auth-service'
 const MAX_BRIGHTNESS_HEX = '#D6D6D6'
 const MAX_BRIGHTNESS_VALUE = 214
 
-const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
-const FIELD_LABEL_CLASS = 'block text-[10px] font-semibold uppercase tracking-wider mb-1.5'
+const SECTION_LABEL_CLASS = 'text-[11px] font-semibold uppercase tracking-wider'
+const FIELD_LABEL_CLASS = 'block text-[11px] font-semibold uppercase tracking-wider mb-2'
 
 /** Parses a 6-digit hex color string into its {r, g, b} components. */
 const getRgbFromHex = (hex) => {
@@ -69,7 +69,7 @@ const FieldStyle = {
 function Card({ children, className = '' }) {
     return (
         <div
-            className={`rounded ${className}`}
+            className={`rounded-lg ${className}`}
             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
         >
             {children}
@@ -79,19 +79,19 @@ function Card({ children, className = '' }) {
 
 function CardHeader({ icon, title, description, accentColor }) {
     return (
-        <div className="flex items-center gap-2.5 px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+        <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--border-light)' }}>
             <div
-                className="flex h-7 w-7 items-center justify-center rounded shrink-0"
+                className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
                 style={{ background: 'var(--bg-tertiary)', color: accentColor }}
             >
-                <i className={`fas ${icon} text-[12px]`} />
+                <i className={`fas ${icon} text-[16px]`} />
             </div>
             <div className="min-w-0">
-                <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {title}
                 </div>
                 {description && (
-                    <div className="text-[11px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                         {description}
                     </div>
                 )}
@@ -106,10 +106,10 @@ function PrimaryButton({ accentColor, children, disabled, icon, onClick, type = 
             type={type}
             onClick={onClick}
             disabled={disabled}
-            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider text-white px-4 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: accentColor }}
         >
-            {icon && <i className={`fas ${icon} text-[10px]`} />}
+            {icon && <i className={`fas ${icon} text-[12px]`} />}
             {children}
         </button>
     )
@@ -121,14 +121,14 @@ function SubtleButton({ children, danger = false, disabled = false, icon, onClic
             type={type}
             onClick={onClick}
             disabled={disabled}
-            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95"
+            className="inline-flex items-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider px-3.5 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95"
             style={{
-                background: danger ? '#fee2e2' : 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: danger ? '#b91c1c' : 'var(--text-secondary)'
+                background: danger ? 'rgba(220, 38, 38, 0.12)' : 'var(--bg-secondary)',
+                border: `1px solid ${danger ? 'rgba(220, 38, 38, 0.35)' : 'var(--border-light)'}`,
+                color: danger ? '#dc2626' : 'var(--text-secondary)'
             }}
         >
-            {icon && <i className={`fas ${icon} text-[10px]`} />}
+            {icon && <i className={`fas ${icon} text-[12px]`} />}
             {children}
         </button>
     )
@@ -142,21 +142,21 @@ function Toggle({ accentColor, checked, onChange, ariaLabel }) {
             aria-checked={checked}
             aria-label={ariaLabel}
             onClick={onChange}
-            className="relative inline-flex shrink-0 rounded transition-colors"
+            className="relative inline-flex shrink-0 rounded-full transition-colors"
             style={{
                 background: checked ? accentColor : 'var(--bg-tertiary)',
                 border: '1px solid var(--border-light)',
-                height: 18,
-                width: 32
+                height: 24,
+                width: 44
             }}
         >
             <span
-                className="absolute top-1/2 -translate-y-1/2 rounded transition-all bg-white"
+                className="absolute top-1/2 -translate-y-1/2 rounded-full transition-all bg-white"
                 style={{
-                    boxShadow: '0 1px 1px rgba(0,0,0,0.15)',
-                    height: 12,
-                    left: checked ? 16 : 2,
-                    width: 12
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                    height: 18,
+                    left: checked ? 22 : 2,
+                    width: 18
                 }}
             />
         </button>
@@ -182,29 +182,33 @@ function StartPageDropdown({ value, accentColor, onChange }) {
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded px-2.5 py-1.5 text-left transition-colors"
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors"
                 style={FieldStyle}
             >
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-3">
                     <span
-                        className="flex h-6 w-6 items-center justify-center rounded"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg"
                         style={{ background: 'var(--bg-tertiary)', color: accentColor }}
                     >
-                        <i className={`fas ${selected.icon} text-[10px]`} />
+                        <i className={`fas ${selected.icon} text-[14px]`} />
                     </span>
-                    <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    <span className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                         {selected.id}
                     </span>
                 </span>
                 <i
-                    className={`fas fa-chevron-down text-[9px] transition-transform ${open ? 'rotate-180' : ''}`}
+                    className={`fas fa-chevron-down text-[11px] transition-transform ${open ? 'rotate-180' : ''}`}
                     style={{ color: 'var(--text-tertiary)' }}
                 />
             </button>
             {open && (
                 <div
-                    className="absolute left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto rounded py-1"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    className="absolute left-0 right-0 z-50 mt-1.5 max-h-72 overflow-y-auto rounded-lg py-1.5"
+                    style={{
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border-light)',
+                        boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.18))'
+                    }}
                 >
                     {START_PAGE_OPTIONS.map(({ icon, id }) => {
                         const isActive = id === value
@@ -216,24 +220,26 @@ function StartPageDropdown({ value, accentColor, onChange }) {
                                     onChange(id)
                                     setOpen(false)
                                 }}
-                                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] transition-colors hover:bg-bg-tertiary"
+                                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-bg-tertiary"
                                 style={{
                                     background: isActive ? `${accentColor}14` : 'transparent',
-                                    color: isActive ? accentColor : 'var(--text-primary)',
+                                    color: 'var(--text-primary)',
                                     fontWeight: isActive ? 600 : 500
                                 }}
                             >
                                 <span
-                                    className="flex h-5 w-5 items-center justify-center rounded"
+                                    className="flex h-7 w-7 items-center justify-center rounded-md"
                                     style={{
                                         background: isActive ? `${accentColor}20` : 'var(--bg-tertiary)',
                                         color: accentColor
                                     }}
                                 >
-                                    <i className={`fas ${icon} text-[10px]`} />
+                                    <i className={`fas ${icon} text-[12px]`} />
                                 </span>
                                 {id}
-                                {isActive && <i className="fas fa-check ml-auto text-[10px]" />}
+                                {isActive && (
+                                    <i className="fas fa-check ml-auto text-[11px]" style={{ color: accentColor }} />
+                                )}
                             </button>
                         )
                     })}
@@ -625,76 +631,85 @@ function MyAccountView({ userId }) {
                 className="sticky top-0 z-30"
                 style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
             >
-                <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-2">
-                    <div className="flex items-center gap-2">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-4">
+                    <div className="flex items-center gap-3">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
+                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
                             style={{ background: 'var(--bg-tertiary)', color: accentColor }}
                         >
-                            <i className="fas fa-user-cog text-[11px]" />
+                            <i className="fas fa-user-cog text-[16px]" />
                         </div>
-                        <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                            Account Settings
-                        </span>
-                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                            · profile, security, preferences
-                        </span>
+                        <div className="min-w-0">
+                            <div className="text-[18px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                                Account Settings
+                            </div>
+                            <div className="text-[12px]" style={{ color: 'var(--text-tertiary)' }}>
+                                Profile, security, preferences & notifications
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-4">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-6">
                 {message && (
                     <div
-                        className="mb-3 flex items-center gap-2 rounded px-3 py-2"
+                        className="mb-5 flex items-center gap-3 rounded-lg px-4 py-3"
                         style={{
-                            background: message.includes('Error') ? '#fee2e2' : '#dcfce7',
-                            border: `1px solid ${message.includes('Error') ? '#fca5a5' : '#86efac'}`,
-                            color: message.includes('Error') ? '#b91c1c' : '#166534'
+                            background: message.includes('Error')
+                                ? 'rgba(220, 38, 38, 0.12)'
+                                : 'rgba(22, 163, 74, 0.12)',
+                            border: `1px solid ${message.includes('Error') ? 'rgba(220, 38, 38, 0.35)' : 'rgba(22, 163, 74, 0.35)'}`,
+                            color: message.includes('Error') ? '#dc2626' : '#16a34a'
                         }}
                     >
                         <i
-                            className={`fas ${message.includes('Error') ? 'fa-exclamation-circle' : 'fa-check-circle'} text-[12px]`}
+                            className={`fas ${message.includes('Error') ? 'fa-exclamation-circle' : 'fa-check-circle'} text-[14px]`}
                         />
-                        <span className="flex-1 text-[12px] font-medium">{message}</span>
+                        <span className="flex-1 text-[13px] font-medium">{message}</span>
                         <button
                             onClick={() => setMessage('')}
                             className="opacity-60 hover:opacity-100"
                             aria-label="Dismiss"
                         >
-                            <i className="fas fa-times text-[11px]" />
+                            <i className="fas fa-times text-[12px]" />
                         </button>
                     </div>
                 )}
 
-                <div className="grid gap-4 lg:grid-cols-3">
+                {/* Three-column grid: sidebar (3/12) + content split into two columns (9/12 → 2 cols on xl).
+                    Below xl the content collapses to a single column under the sidebar — wide enough that
+                    cards never feel cramped. */}
+                <div className="grid gap-5 lg:grid-cols-12">
                     {/* Sidebar */}
-                    <div className="lg:col-span-1">
-                        <div className="lg:sticky lg:top-16 flex flex-col gap-3">
-                            {/* Profile card */}
+                    <aside className="lg:col-span-3">
+                        <div className="lg:sticky lg:top-24 flex flex-col gap-4">
                             <Card>
-                                <div className="flex items-center gap-3 px-4 py-3">
+                                <div className="flex items-center gap-4 px-5 py-5">
                                     <div
-                                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded text-[14px] font-bold text-white"
+                                        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg text-[20px] font-bold text-white"
                                         style={{ background: accentColor }}
                                     >
-                                        {getInitials() || <i className="fas fa-user text-[14px]" />}
+                                        {getInitials() || <i className="fas fa-user text-[20px]" />}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <div
-                                            className="text-[13px] font-semibold truncate"
+                                            className="text-[16px] font-semibold truncate"
                                             style={{ color: 'var(--text-primary)' }}
                                         >
                                             {firstName || lastName
                                                 ? `${firstName || ''} ${lastName || ''}`.trim()
                                                 : 'My Account'}
                                         </div>
-                                        <div className="text-[11px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                                        <div
+                                            className="text-[12px] truncate mt-0.5"
+                                            style={{ color: 'var(--text-tertiary)' }}
+                                        >
                                             {email || 'No email'}
                                         </div>
                                         {userRole && (
                                             <span
-                                                className="mt-1 inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider"
+                                                className="mt-2 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
                                                 style={{ background: `${accentColor}14`, color: accentColor }}
                                             >
                                                 {userRole}
@@ -704,7 +719,6 @@ function MyAccountView({ userId }) {
                                 </div>
                             </Card>
 
-                            {/* Tab nav */}
                             <Card>
                                 <nav className="flex flex-col">
                                     {TABS.map(({ id, icon, label }, idx) => {
@@ -714,7 +728,7 @@ function MyAccountView({ userId }) {
                                                 key={id}
                                                 onClick={() => setActiveTab(id)}
                                                 data-tutorial-target={id === 'preferences' ? 'preferences-tab' : null}
-                                                className="flex items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-bg-tertiary"
+                                                className="flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg-tertiary"
                                                 style={{
                                                     background: isActive ? `${accentColor}14` : 'transparent',
                                                     borderBottom:
@@ -722,13 +736,13 @@ function MyAccountView({ userId }) {
                                                             ? '1px solid var(--border-light)'
                                                             : 'none',
                                                     borderLeft: isActive
-                                                        ? `2px solid ${accentColor}`
-                                                        : '2px solid transparent',
+                                                        ? `3px solid ${accentColor}`
+                                                        : '3px solid transparent',
                                                     color: isActive ? accentColor : 'var(--text-secondary)'
                                                 }}
                                             >
-                                                <i className={`fas ${icon} text-[12px] w-4 text-center`} />
-                                                <span className="text-[12px] font-semibold">{label}</span>
+                                                <i className={`fas ${icon} text-[14px] w-5 text-center`} />
+                                                <span className="text-[14px] font-semibold">{label}</span>
                                             </button>
                                         )
                                     })}
@@ -737,21 +751,21 @@ function MyAccountView({ userId }) {
 
                             <button
                                 onClick={handleSignOut}
-                                className="flex items-center gap-2 px-3 py-2 rounded text-[10.5px] font-semibold uppercase tracking-wider transition-colors hover:brightness-95"
+                                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-[12px] font-semibold uppercase tracking-wider transition-colors hover:brightness-95"
                                 style={{
-                                    background: '#fee2e2',
-                                    border: '1px solid #fca5a5',
-                                    color: '#b91c1c'
+                                    background: 'rgba(220, 38, 38, 0.12)',
+                                    border: '1px solid rgba(220, 38, 38, 0.35)',
+                                    color: '#dc2626'
                                 }}
                             >
-                                <i className="fas fa-sign-out-alt text-[10px]" />
+                                <i className="fas fa-sign-out-alt text-[12px]" />
                                 Sign Out
                             </button>
                         </div>
-                    </div>
+                    </aside>
 
-                    {/* Main column */}
-                    <div className="flex flex-col gap-3 lg:col-span-2">
+                    {/* Main content — two-column card grid on xl viewports for the actual 3-column page feel */}
+                    <main className="lg:col-span-9 grid grid-cols-1 xl:grid-cols-2 gap-5 auto-rows-min">
                         {activeTab === 'profile' && (
                             <ProfileTab
                                 accentColor={accentColor}
@@ -804,7 +818,7 @@ function MyAccountView({ userId }) {
                                 updatePreferences={updatePreferences}
                             />
                         )}
-                    </div>
+                    </main>
                 </div>
             </div>
 
@@ -857,8 +871,8 @@ function ProfileTab({
                     title="Personal Information"
                     description="Update your name and contact details"
                 />
-                <form onSubmit={onSubmit} className="px-4 py-3 flex flex-col gap-3">
-                    <div className="grid gap-3 sm:grid-cols-2">
+                <form onSubmit={onSubmit} className="px-5 py-5 flex flex-col gap-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                                 First Name
@@ -869,7 +883,7 @@ function ProfileTab({
                                 onChange={(e) => setFirstName(e.target.value)}
                                 placeholder="Enter first name"
                                 required
-                                className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                                className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                                 style={FieldStyle}
                             />
                         </div>
@@ -883,14 +897,16 @@ function ProfileTab({
                                 onChange={(e) => setLastName(e.target.value)}
                                 placeholder="Enter last name"
                                 required
-                                className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                                className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                                 style={FieldStyle}
                             />
                         </div>
                     </div>
-                    <PrimaryButton accentColor={accentColor} disabled={loading} icon="fa-save" type="submit">
-                        Save Changes
-                    </PrimaryButton>
+                    <div>
+                        <PrimaryButton accentColor={accentColor} disabled={loading} icon="fa-save" type="submit">
+                            Save Changes
+                        </PrimaryButton>
+                    </div>
                 </form>
             </Card>
 
@@ -901,19 +917,19 @@ function ProfileTab({
                     title="Account Details"
                     description="View your account information"
                 />
-                <div className="px-4">
+                <div className="px-5">
                     <DetailRow icon="fa-envelope" label="Email" value={email || 'Not set'} />
                     {userRole && <DetailRow icon="fa-user-tag" label="Role" value={userRole} />}
                     <div
-                        className="flex items-center justify-between py-2.5"
+                        className="flex items-center justify-between py-3.5"
                         style={{ borderBottom: '1px solid var(--border-light)' }}
                     >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-3">
                             <i
-                                className="fas fa-globe text-[11px] w-4 text-center"
+                                className="fas fa-globe text-[13px] w-5 text-center"
                                 style={{ color: 'var(--text-tertiary)' }}
                             />
-                            <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                            <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                                 Region
                             </span>
                         </div>
@@ -922,7 +938,7 @@ function ProfileTab({
                                 value={preferences.selectedRegion?.code || ''}
                                 onChange={onChangeRegion}
                                 disabled={!regionsLoaded}
-                                className="appearance-none rounded py-1 pl-2.5 pr-7 text-[12px] font-semibold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                className="appearance-none rounded-lg py-2 pl-3 pr-9 text-[13px] font-semibold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                                 style={FieldStyle}
                             >
                                 {permittedRegions.map((r) => (
@@ -931,9 +947,9 @@ function ProfileTab({
                                     </option>
                                 ))}
                             </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                                 <i
-                                    className="fas fa-chevron-down text-[9px]"
+                                    className="fas fa-chevron-down text-[10px]"
                                     style={{ color: 'var(--text-tertiary)' }}
                                 />
                             </div>
@@ -941,21 +957,21 @@ function ProfileTab({
                     </div>
                     {plantCode && <DetailRow icon="fa-building" label="Plant Code" value={plantCode} mono />}
                     {additionalPlants.length > 0 && (
-                        <div className="py-2.5">
-                            <div className="flex items-center gap-2.5 mb-1.5">
+                        <div className="py-3.5">
+                            <div className="flex items-center gap-3 mb-2">
                                 <i
-                                    className="fas fa-building text-[11px] w-4 text-center"
+                                    className="fas fa-building text-[13px] w-5 text-center"
                                     style={{ color: 'var(--text-tertiary)' }}
                                 />
-                                <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                                <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                                     Additional Plants
                                 </span>
                             </div>
-                            <div className="flex flex-wrap gap-1.5 ml-7">
+                            <div className="flex flex-wrap gap-2 ml-8">
                                 {additionalPlants.map((code) => (
                                     <span
                                         key={code}
-                                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider font-mono tabular-nums"
+                                        className="inline-flex items-center rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wider font-mono tabular-nums"
                                         style={{
                                             background: `${accentColor}14`,
                                             color: accentColor
@@ -976,17 +992,17 @@ function ProfileTab({
 function DetailRow({ icon, label, mono, value }) {
     return (
         <div
-            className="flex items-center justify-between py-2.5"
+            className="flex items-center justify-between py-3.5"
             style={{ borderBottom: '1px solid var(--border-light)' }}
         >
-            <div className="flex items-center gap-2.5">
-                <i className={`fas ${icon} text-[11px] w-4 text-center`} style={{ color: 'var(--text-tertiary)' }} />
-                <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+            <div className="flex items-center gap-3">
+                <i className={`fas ${icon} text-[13px] w-5 text-center`} style={{ color: 'var(--text-tertiary)' }} />
+                <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                     {label}
                 </span>
             </div>
             <span
-                className={`text-[12px] font-semibold ${mono ? 'font-mono tabular-nums' : ''}`}
+                className={`text-[14px] font-semibold ${mono ? 'font-mono tabular-nums' : ''}`}
                 style={{ color: 'var(--text-primary)' }}
             >
                 {value}
@@ -1005,34 +1021,66 @@ function SecurityTab({ accentColor, formatSessionTime, onOpenPasswordModal, onRe
                     title="Password"
                     description="Keep your account secure with a strong password"
                 />
-                <div className="px-4 py-3">
+                <div className="px-5 py-5">
                     <PrimaryButton accentColor={accentColor} icon="fa-lock" onClick={onOpenPasswordModal}>
                         Change Password
                     </PrimaryButton>
                 </div>
             </Card>
 
-            <Card>
+            <div
+                className="rounded-lg flex items-center justify-between gap-3 px-5 py-4"
+                style={{
+                    background: 'rgba(220, 38, 38, 0.08)',
+                    border: '1px solid rgba(220, 38, 38, 0.3)'
+                }}
+            >
+                <div className="flex items-center gap-3 min-w-0">
+                    <div
+                        className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
+                        style={{ background: 'rgba(220, 38, 38, 0.15)', color: '#dc2626' }}
+                    >
+                        <i className="fas fa-sign-out-alt text-[16px]" />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="text-[14px] font-semibold" style={{ color: '#dc2626' }}>
+                            Sign Out
+                        </div>
+                        <div className="text-[12px] mt-0.5" style={{ color: '#dc2626', opacity: 0.85 }}>
+                            End your current session
+                        </div>
+                    </div>
+                </div>
+                <button
+                    onClick={onSignOut}
+                    className="rounded-lg text-[12px] font-semibold uppercase tracking-wider text-white px-4 py-2.5"
+                    style={{ background: '#dc2626' }}
+                >
+                    Sign Out
+                </button>
+            </div>
+
+            <Card className="xl:col-span-2">
                 <div
-                    className="flex items-center gap-2.5 px-4 py-3"
+                    className="flex items-center gap-3 px-5 py-4"
                     style={{ borderBottom: '1px solid var(--border-light)' }}
                 >
                     <div
-                        className="flex h-7 w-7 items-center justify-center rounded shrink-0"
+                        className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
                         style={{ background: 'var(--bg-tertiary)', color: accentColor }}
                     >
-                        <i className="fas fa-laptop text-[12px]" />
+                        <i className="fas fa-laptop text-[16px]" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                        <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                             Active Sessions
                         </div>
-                        <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                             Manage your login sessions
                         </div>
                     </div>
                     <span
-                        className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
+                        className="font-mono tabular-nums rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wider"
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
                     >
                         {sessions.length}
@@ -1043,43 +1091,45 @@ function SecurityTab({ accentColor, formatSessionTime, onOpenPasswordModal, onRe
                         sessions.map((session, idx) => (
                             <div
                                 key={session.id}
-                                className="flex items-center justify-between gap-3 px-4 py-2.5"
+                                className="flex items-center justify-between gap-3 px-5 py-3.5"
                                 style={{
-                                    background: session.isCurrent ? '#dcfce780' : 'transparent',
+                                    background: session.isCurrent ? 'rgba(22, 163, 74, 0.08)' : 'transparent',
                                     borderBottom: idx < sessions.length - 1 ? '1px solid var(--border-light)' : 'none'
                                 }}
                             >
-                                <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="flex items-center gap-3 min-w-0">
                                     <div
-                                        className="flex h-7 w-7 items-center justify-center rounded shrink-0"
+                                        className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
                                         style={{
-                                            background: session.isCurrent ? '#dcfce7' : 'var(--bg-tertiary)',
-                                            color: session.isCurrent ? '#166534' : 'var(--text-secondary)'
+                                            background: session.isCurrent
+                                                ? 'rgba(22, 163, 74, 0.15)'
+                                                : 'var(--bg-tertiary)',
+                                            color: session.isCurrent ? '#16a34a' : 'var(--text-secondary)'
                                         }}
                                     >
                                         <i
-                                            className={`fas ${session.device === 'Mobile' ? 'fa-mobile-alt' : session.device === 'Tablet' ? 'fa-tablet-alt' : 'fa-desktop'} text-[11px]`}
+                                            className={`fas ${session.device === 'Mobile' ? 'fa-mobile-alt' : session.device === 'Tablet' ? 'fa-tablet-alt' : 'fa-desktop'} text-[14px]`}
                                         />
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center gap-2">
                                             <span
-                                                className="text-[12px] font-semibold truncate"
+                                                className="text-[14px] font-semibold truncate"
                                                 style={{ color: 'var(--text-primary)' }}
                                             >
                                                 {session.browser}
                                             </span>
                                             {session.isCurrent && (
                                                 <span
-                                                    className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                                                    style={{ background: '#dcfce7', color: '#166534' }}
+                                                    className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                                    style={{ background: 'rgba(22, 163, 74, 0.15)', color: '#16a34a' }}
                                                 >
                                                     Current
                                                 </span>
                                             )}
                                         </div>
                                         <div
-                                            className="text-[10.5px] font-mono tabular-nums"
+                                            className="text-[12px] mt-0.5 font-mono tabular-nums"
                                             style={{ color: 'var(--text-tertiary)' }}
                                         >
                                             {session.os} · {session.device} · {formatSessionTime(session.lastActive)}
@@ -1095,44 +1145,15 @@ function SecurityTab({ accentColor, formatSessionTime, onOpenPasswordModal, onRe
                         ))
                     ) : (
                         <div
-                            className="flex flex-col items-center justify-center py-8"
+                            className="flex flex-col items-center justify-center py-12"
                             style={{ color: 'var(--text-tertiary)' }}
                         >
-                            <i className="fas fa-laptop text-2xl mb-2" />
-                            <span className="text-[12px]">No active sessions found</span>
+                            <i className="fas fa-laptop text-3xl mb-3" />
+                            <span className="text-[14px]">No active sessions found</span>
                         </div>
                     )}
                 </div>
             </Card>
-
-            <div
-                className="rounded flex items-center justify-between gap-3 px-4 py-3"
-                style={{ background: '#fee2e280', border: '1px solid #fca5a580' }}
-            >
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <div
-                        className="flex h-7 w-7 items-center justify-center rounded shrink-0"
-                        style={{ background: '#fee2e2', color: '#b91c1c' }}
-                    >
-                        <i className="fas fa-sign-out-alt text-[12px]" />
-                    </div>
-                    <div className="min-w-0">
-                        <div className={SECTION_LABEL_CLASS} style={{ color: '#b91c1c' }}>
-                            Sign Out
-                        </div>
-                        <div className="text-[11px]" style={{ color: '#b91c1c', opacity: 0.85 }}>
-                            End your current session
-                        </div>
-                    </div>
-                </div>
-                <button
-                    onClick={onSignOut}
-                    className="rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5"
-                    style={{ background: '#dc2626' }}
-                >
-                    Sign Out
-                </button>
-            </div>
         </>
     )
 }
@@ -1162,7 +1183,7 @@ function PreferencesTab({
                     title="Start Page"
                     description="Choose which page loads when you open the app"
                 />
-                <div className="px-4 py-3">
+                <div className="px-5 py-5">
                     <StartPageDropdown
                         value={preferences.startPage || 'Dashboard'}
                         accentColor={accentColor}
@@ -1171,27 +1192,27 @@ function PreferencesTab({
                 </div>
             </Card>
 
-            <Card>
+            <Card className="xl:col-span-2">
                 <CardHeader
                     accentColor={accentColor}
                     icon="fa-palette"
                     title="Appearance"
                     description="Customize the look of the application"
                 />
-                <div className="px-4 py-3 flex flex-col gap-4">
+                <div className="px-5 py-5 grid gap-5 md:grid-cols-2">
                     {/* Accent color */}
                     <div>
                         <div className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                             Accent Color
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2.5">
                             {ACCENT_PRESETS.map(({ color, name }) => {
                                 const isActive = (preferences.accentColor || '#2A3163') === color
                                 return (
                                     <button
                                         key={color}
                                         onClick={() => updatePreferences('accentColor', color)}
-                                        className="relative h-8 w-8 rounded transition-transform hover:scale-105"
+                                        className="relative h-10 w-10 rounded-lg transition-transform hover:scale-105"
                                         style={{
                                             background: color,
                                             boxShadow: isActive
@@ -1202,7 +1223,7 @@ function PreferencesTab({
                                         aria-label={`Set accent color to ${name}`}
                                     >
                                         {isActive && (
-                                            <i className="fas fa-check text-white text-[11px] absolute inset-0 flex items-center justify-center" />
+                                            <i className="fas fa-check text-white text-[13px] absolute inset-0 flex items-center justify-center" />
                                         )}
                                     </button>
                                 )
@@ -1215,36 +1236,36 @@ function PreferencesTab({
                                         const clampedColor = clampColorToMaxBrightness(e.target.value)
                                         updatePreferences('accentColor', clampedColor)
                                     }}
-                                    className="absolute inset-0 h-8 w-8 cursor-pointer opacity-0"
+                                    className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
                                     aria-label="Custom accent color"
                                 />
                                 <div
-                                    className="flex h-8 w-8 items-center justify-center rounded"
+                                    className="flex h-10 w-10 items-center justify-center rounded-lg"
                                     style={{
                                         background: 'var(--bg-secondary)',
                                         border: '1px dashed var(--border-light)',
                                         color: 'var(--text-tertiary)'
                                     }}
                                 >
-                                    <i className="fas fa-eyedropper text-[11px]" />
+                                    <i className="fas fa-eyedropper text-[13px]" />
                                 </div>
                             </div>
                         </div>
-                        <p className="mt-1.5 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <p className="mt-2.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
                             Very light colors will be clamped for readability (max {MAX_BRIGHTNESS_HEX})
                         </p>
-                        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                            <div className="flex items-center gap-2.5 rounded px-2.5 py-1.5" style={FieldStyle}>
-                                <div className="h-5 w-5 rounded" style={{ background: accentColor }} />
+                        <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                            <div className="flex items-center gap-3 rounded-lg px-3 py-2" style={FieldStyle}>
+                                <div className="h-7 w-7 rounded-md" style={{ background: accentColor }} />
                                 <div>
                                     <div
-                                        className="text-[9.5px] font-semibold uppercase tracking-wider"
+                                        className="text-[10.5px] font-semibold uppercase tracking-wider"
                                         style={{ color: 'var(--text-tertiary)' }}
                                     >
                                         Current
                                     </div>
                                     <div
-                                        className="font-mono text-[12px] font-semibold tabular-nums"
+                                        className="font-mono text-[14px] font-semibold tabular-nums"
                                         style={{ color: 'var(--text-primary)' }}
                                     >
                                         {(preferences.accentColor || '#2A3163').toUpperCase()}
@@ -1287,7 +1308,7 @@ function PreferencesTab({
                     title="Navigation Style"
                     description="Choose your preferred navigation layout"
                 />
-                <div className="px-4 py-3">
+                <div className="px-5 py-5">
                     <SegmentedControl
                         accentColor={accentColor}
                         options={[
@@ -1308,13 +1329,16 @@ function PreferencesTab({
                         title="Tutorials"
                         description="Manage tutorial hints and guides"
                     />
-                    <div className="px-4 py-3 flex flex-col gap-2.5">
-                        <div className="flex items-center justify-between gap-3 rounded px-3 py-2" style={FieldStyle}>
+                    <div className="px-5 py-5 flex flex-col gap-3">
+                        <div
+                            className="flex items-center justify-between gap-3 rounded-lg px-4 py-3"
+                            style={FieldStyle}
+                        >
                             <div className="min-w-0">
-                                <div className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                                     Enable Tutorials
                                 </div>
-                                <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                                <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                                     Show helpful tips and guides throughout the app
                                 </div>
                             </div>
@@ -1339,7 +1363,7 @@ function PreferencesTab({
                     title="Cache"
                     description="Clear cached data to free up space and fix stale content"
                 />
-                <div className="px-4 py-3">
+                <div className="px-5 py-5">
                     <SubtleButton
                         disabled={cacheClearing}
                         icon={cacheClearing ? 'fa-spinner fa-spin' : 'fa-broom'}
@@ -1356,7 +1380,7 @@ function PreferencesTab({
 function SegmentedControl({ accentColor, options, value, onChange }) {
     return (
         <div
-            className="inline-flex items-center rounded p-0.5 gap-0.5"
+            className="inline-flex items-center rounded-lg p-1 gap-1"
             style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
         >
             {options.map((opt) => {
@@ -1366,13 +1390,13 @@ function SegmentedControl({ accentColor, options, value, onChange }) {
                         key={opt.value}
                         type="button"
                         onClick={() => onChange(opt.value)}
-                        className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1 transition-colors flex items-center gap-1.5"
+                        className="rounded-md text-[12.5px] font-semibold uppercase tracking-wider px-3.5 py-2 transition-colors flex items-center gap-2"
                         style={{
                             background: active ? accentColor : 'transparent',
                             color: active ? '#fff' : 'var(--text-secondary)'
                         }}
                     >
-                        {opt.icon && <i className={`fas ${opt.icon} text-[10px]`} />}
+                        {opt.icon && <i className={`fas ${opt.icon} text-[12px]`} />}
                         {opt.label}
                     </button>
                 )
@@ -1383,23 +1407,23 @@ function SegmentedControl({ accentColor, options, value, onChange }) {
 
 function NotificationsTab({ accentColor, preferences, updatePreferences }) {
     return (
-        <Card>
+        <Card className="xl:col-span-2">
             <CardHeader
                 accentColor={accentColor}
                 icon="fa-bell"
                 title="Email Notifications"
                 description="Control which email notifications you receive"
             />
-            <div className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3 rounded px-3 py-2.5" style={FieldStyle}>
+            <div className="px-5 py-5">
+                <div className="flex items-start justify-between gap-4 rounded-lg px-4 py-4" style={FieldStyle}>
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                            <i className="fas fa-comment-dots text-[11px]" style={{ color: 'var(--text-tertiary)' }} />
-                            <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        <div className="flex items-center gap-2">
+                            <i className="fas fa-comment-dots text-[13px]" style={{ color: 'var(--text-tertiary)' }} />
+                            <span className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                                 Asset Comment Emails
                             </span>
                         </div>
-                        <p className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                        <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                             Receive an email when someone comments on an asset assigned to your plant. Applies to Plant
                             Managers and District Managers only.
                         </p>
@@ -1438,41 +1462,45 @@ function PasswordModal({
             onClick={onClose}
         >
             <div
-                className="w-full max-w-md rounded overflow-hidden"
+                className="w-full max-w-lg rounded-lg overflow-hidden"
                 style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div
-                    className="flex items-center justify-between px-3 py-2"
+                    className="flex items-center justify-between px-5 py-4"
                     style={{ borderBottom: '1px solid var(--border-light)' }}
                 >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded"
+                            className="flex h-10 w-10 items-center justify-center rounded-lg"
                             style={{ background: 'var(--bg-tertiary)', color: accentColor }}
                         >
-                            <i className="fas fa-key text-[11px]" />
+                            <i className="fas fa-key text-[16px]" />
                         </div>
-                        <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                        <span className="text-[16px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                             Change Password
                         </span>
                     </div>
                     <button
                         onClick={onClose}
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-bg-tertiary"
                         style={{ color: 'var(--text-secondary)' }}
                         aria-label="Close"
                     >
-                        <i className="fas fa-times text-[11px]" />
+                        <i className="fas fa-times text-[14px]" />
                     </button>
                 </div>
-                <form onSubmit={onSubmit} className="px-4 py-3 flex flex-col gap-3">
+                <form onSubmit={onSubmit} className="px-5 py-5 flex flex-col gap-4">
                     {passwordError && (
                         <div
-                            className="flex items-center gap-2 rounded px-2.5 py-1.5 text-[12px] font-medium"
-                            style={{ background: '#fee2e2', color: '#b91c1c' }}
+                            className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium"
+                            style={{
+                                background: 'rgba(220, 38, 38, 0.12)',
+                                border: '1px solid rgba(220, 38, 38, 0.35)',
+                                color: '#dc2626'
+                            }}
                         >
-                            <i className="fas fa-exclamation-circle text-[11px]" />
+                            <i className="fas fa-exclamation-circle text-[13px]" />
                             <span>{passwordError}</span>
                         </div>
                     )}
@@ -1486,7 +1514,7 @@ function PasswordModal({
                             onChange={(e) => setCurrentPassword(e.target.value)}
                             placeholder="Enter current password"
                             required
-                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                             style={FieldStyle}
                         />
                     </div>
@@ -1500,10 +1528,10 @@ function PasswordModal({
                             onChange={(e) => setNewPassword(e.target.value)}
                             placeholder="Enter new password"
                             required
-                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                             style={FieldStyle}
                         />
-                        <p className="mt-1 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <p className="mt-1.5 text-[11.5px]" style={{ color: 'var(--text-tertiary)' }}>
                             Must be at least 8 characters
                         </p>
                     </div>
@@ -1517,16 +1545,16 @@ function PasswordModal({
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="Confirm new password"
                             required
-                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                             style={FieldStyle}
                         />
                     </div>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-3 mt-1">
                         <SubtleButton onClick={onClose}>Cancel</SubtleButton>
                         <button
                             type="submit"
                             disabled={!canSubmit}
-                            className="flex-1 rounded py-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 rounded-lg py-2.5 text-[12px] font-semibold uppercase tracking-wider text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{ background: accentColor }}
                         >
                             Update Password
@@ -1540,61 +1568,67 @@ function PasswordModal({
 
 function AccountSkeleton() {
     const Bar = ({ className = '', style }) => (
-        <div className={`rounded animate-pulse ${className}`} style={{ background: 'var(--bg-tertiary)', ...style }} />
+        <div
+            className={`rounded-lg animate-pulse ${className}`}
+            style={{ background: 'var(--bg-tertiary)', ...style }}
+        />
     )
     return (
         <div className="min-h-screen" style={{ background: 'var(--bg-secondary)' }}>
             <div style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}>
-                <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-2 flex items-center gap-2">
-                    <Bar className="h-6 w-6" />
-                    <Bar className="h-3 w-32" />
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-4 flex items-center gap-3">
+                    <Bar className="h-10 w-10" />
+                    <div className="flex-1 flex flex-col gap-1.5">
+                        <Bar className="h-4 w-40" />
+                        <Bar className="h-3 w-56" />
+                    </div>
                 </div>
             </div>
-            <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-4 grid gap-4 lg:grid-cols-3">
-                <div className="lg:col-span-1 flex flex-col gap-3">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-6 grid gap-5 lg:grid-cols-12">
+                <div className="lg:col-span-3 flex flex-col gap-4">
                     <div
-                        className="rounded p-4 flex items-center gap-3"
+                        className="rounded-lg p-5 flex items-center gap-4"
                         style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                     >
-                        <Bar className="h-12 w-12" />
-                        <div className="flex-1 flex flex-col gap-1.5">
-                            <Bar className="h-3 w-32" />
-                            <Bar className="h-2.5 w-40" />
+                        <Bar className="h-16 w-16" />
+                        <div className="flex-1 flex flex-col gap-2">
+                            <Bar className="h-4 w-32" />
+                            <Bar className="h-3 w-44" />
                         </div>
                     </div>
                     <div
-                        className="rounded"
+                        className="rounded-lg"
                         style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                     >
                         {[1, 2, 3, 4].map((i) => (
                             <div
                                 key={i}
-                                className="px-3 py-2 flex items-center gap-2"
+                                className="px-4 py-3 flex items-center gap-3"
                                 style={{ borderBottom: i < 4 ? '1px solid var(--border-light)' : 'none' }}
                             >
-                                <Bar className="h-3 w-3" />
-                                <Bar className="h-3 w-20" />
+                                <Bar className="h-4 w-4" />
+                                <Bar className="h-4 w-24" />
                             </div>
                         ))}
                     </div>
                 </div>
-                <div className="lg:col-span-2 flex flex-col gap-3">
-                    {[1, 2].map((i) => (
+                <div className="lg:col-span-9 grid grid-cols-1 xl:grid-cols-2 gap-5">
+                    {[1, 2, 3, 4].map((i) => (
                         <div
                             key={i}
-                            className="rounded"
+                            className="rounded-lg"
                             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                         >
                             <div
-                                className="px-4 py-3 flex items-center gap-2.5"
+                                className="px-5 py-4 flex items-center gap-3"
                                 style={{ borderBottom: '1px solid var(--border-light)' }}
                             >
-                                <Bar className="h-7 w-7" />
-                                <Bar className="h-3 w-32" />
+                                <Bar className="h-10 w-10" />
+                                <Bar className="h-4 w-40" />
                             </div>
-                            <div className="px-4 py-3 flex flex-col gap-2">
-                                <Bar className="h-8 w-full" />
-                                <Bar className="h-8 w-full" />
+                            <div className="px-5 py-5 flex flex-col gap-3">
+                                <Bar className="h-10 w-full" />
+                                <Bar className="h-10 w-2/3" />
                             </div>
                         </div>
                     ))}

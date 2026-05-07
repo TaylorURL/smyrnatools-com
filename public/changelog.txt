@@ -2,6 +2,21 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.29] - 2026-05-06
+
+- Add Call List tab to the Plan view for cold-calling dormant customers — full feature including roster list, detail panel with KPI stats, call outcome logging, comment history, and delete support
+- Create CallListService, useCallList hook, and CallListUtility with dormancy scoring, phone formatting, relative date helpers, and outcome color/label constants
+- Add call-list-service edge function with roster, history, log-call, and delete-log endpoints backed by a new customer_call_log table
+- Add customer_call_log migration with RLS policies, indexes, and a trigger to auto-populate created_by_name from the users table
+- Redesign plan dispatch copy text into structured per-plant briefings with per-truck staggered arrive/leave times grouped by send/receive
+- Replace duration-over-plan pace metric with actual yd/hr vs requested yd/hr comparison for service quality evaluation
+- Skip slow-pace check for small pours (3 or fewer trucks or under 30 yards) to avoid false "Poor Service" verdicts
+- Show actual vs requested yd/hr in the service badge tooltip
+- Pass active plant filter into useDashboardSchedule so schedule totals respect the dashboard's region/plant selection
+- Filter plan yardage and movement assignments by active plant set so dashboard stats reflect only the visible scope
+- Skip Monday-to-Saturday day-over-day yardage comparison and hide the badge on Mondays
+- Apply structural toolbar filters (plant, product, min yards) to adjacent-day and week yardage totals
+
 ## [40.0.28] - 2026-05-06
 
 - Redesign plan dispatch copy text into a structured per-plant briefing with per-truck staggered arrive/leave times, grouped by send/receive, with a plain-English summary header

@@ -2,6 +2,14 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.30] - 2026-05-07
+
+- Add "Book An Order" tab to the Plan view with a new BookOrderView for dispatchers to evaluate plant recommendations based on capacity, proximity, and load balance
+- Create BookOrderUtility with address parsing, proximity scoring, truck estimation, pour duration calculation, and plant ranking logic
+- Redesign MyAccountView with larger typography, bigger icons, rounded-lg cards, wider max-width, roomy padding, full-rounded toggles, and improved dark-mode-friendly color treatments using rgba backgrounds
+- Rename "Good Service" badge label to "Good Experience" in PlanScheduleBadges
+- Add parser support for new fields in the dispatch-import edge function
+
 ## [40.0.29] - 2026-05-06
 
 - Add Call List tab to the Plan view for cold-calling dormant customers — full feature including roster list, detail panel with KPI stats, call outcome logging, comment history, and delete support

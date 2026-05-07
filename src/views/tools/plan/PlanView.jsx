@@ -15,6 +15,7 @@ import { usePlanLookups } from '../../../app/hooks/usePlanLookups'
 import { usePlanUserContext } from '../../../app/hooks/usePlanUserContext'
 import { buildPlanDispatchText } from '../../../utils/PlanCopyUtility'
 import { PLAN_META_KEY } from '../../../utils/PlanUtility'
+import BookOrderView from './BookOrderView'
 import CallListView from './CallListView'
 import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
@@ -326,6 +327,16 @@ function PlanView() {
                         )}
 
                         {effectiveViewMode === 'call-list' && <CallListView accentColor={accentColor} />}
+
+                        {effectiveViewMode === 'book-order' && (
+                            <BookOrderView
+                                accentColor={accentColor}
+                                mixerCountsByPlant={mixerCountsByPlant}
+                                planDate={planDate}
+                                plantProduction={plantProduction}
+                                plants={plants}
+                            />
+                        )}
                     </div>
                 )}
             </div>
