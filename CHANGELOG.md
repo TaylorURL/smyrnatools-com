@@ -2,6 +2,14 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.35] - 2026-05-07
+
+- Add animated fade/slide transitions to BookOrderView recommendation panels using a FadeIn wrapper component with entrance and exit states
+- Add decorative schedule preview that cycles through plants with scheduled orders while the form is idle, giving the right-hand pane ambient motion
+- Auto-snap plan date to tomorrow (Sunday-skipped to Monday) when entering the Find-a-Spot tab so dispatchers start on a useful forward-looking date
+- Show the Clear button whenever any form field has a value, not only after submission, and rename it from "Reset" to "Clear" with an eraser icon
+- Refactor recommendation panel rendering from nested conditionals into a flat FadeIn-based layout with staggered delay timings for smoother state transitions
+
 ## [40.0.34] - 2026-05-07
 
 - Add DOT 10-hour rest window enforcement to booking suggestions — alternate times, move candidates, and recommended start times now respect per-plant operator rest floors derived from yesterday's actual dispatch tickets

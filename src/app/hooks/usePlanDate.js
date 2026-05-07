@@ -57,5 +57,19 @@ export function usePlanDate(effectiveViewMode) {
         return () => clearInterval(id)
     }, [effectiveViewMode])
 
+    /* Find-a-Spot tab: snap to tomorrow (Sunday-skipped to Monday) on
+     * entry. Bookings are forward-looking by definition — the planner is
+     * never used to book historic dates, and same-day bookings have a
+     * dedicated 15:00 shortcut, so anchoring on tomorrow gives the
+     * dispatcher a useful default the moment the tab opens. We also flip
+     * `hasInitializedDateRef` so the async "jump to latest saved plan"
+     * effect above doesn't race past us and overwrite the snap. */
+    useEffect(() => {
+        if (effectiveViewMode !== 'book-order') return undefined
+        const target = skipSundayDate(getTomorrowDate(), 1)
+        setPlanDate((prev) => (prev === target ? prev : target))
+        hasInitializedDateRef.current = true
+    }, [effectiveViewMode])
+
     return { planDate, setPlanDate }
 }

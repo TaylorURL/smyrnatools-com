@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import AddressAutocomplete from '../../../app/components/common/AddressAutocomplete'
 import { PlantBadge } from '../../../app/components/plan/PlanScheduleBadges'
@@ -63,6 +63,88 @@ function SameDayAdvice({ accentColor }) {
                 </div>
             </div>
         </div>
+    )
+}
+
+/** Wraps a result block so it fades + slides in on mount and fades out
+ *  before unmounting. Drives the entrance/exit animation for every panel
+ *  in the right-hand recommendations column so swapping between idle /
+ *  loading / advice / conflict states never just snaps. The last live
+ *  children are stashed in a ref so a state flip that simultaneously
+ *  hides this branch AND nullifies its inner data (e.g. `top` going null
+ *  on reset) still has something to fade out instead of vanishing. */
+function FadeIn({ children, delayMs = 0, show }) {
+    const [mounted, setMounted] = useState(show)
+    const [visible, setVisible] = useState(false)
+    const lastChildrenRef = useRef(children)
+    if (show && children) lastChildrenRef.current = children
+
+    useEffect(() => {
+        let timer
+        if (show) {
+            setMounted(true)
+            timer = setTimeout(() => setVisible(true), delayMs + 20)
+        } else {
+            setVisible(false)
+            timer = setTimeout(() => setMounted(false), 400)
+        }
+        return () => clearTimeout(timer)
+    }, [show, delayMs])
+
+    if (!mounted) return null
+
+    return (
+        <div
+            className={`transition-all duration-500 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
+        >
+            {show ? children : lastChildrenRef.current}
+        </div>
+    )
+}
+
+const DECORATIVE_CYCLE_MS = 5000
+
+/** Idle-state filler — rotates through every plant with at least one
+ *  scheduled order on the selected date, swapping the schedule preview
+ *  every few seconds so the right-hand pane has motion / depth even
+ *  before the dispatcher submits. The `key` on the inner preview forces
+ *  a remount on each cycle so the row-level slide-in animations re-fire
+ *  and each plant arrives with the same visual rhythm a real result
+ *  does. */
+function DecorativeSchedulePreview({ accentColor, plantProduction, plants }) {
+    const eligiblePlants = useMemo(() => {
+        return (plants || []).filter((p) => {
+            const code = p?.plantCode || p?.plant_code
+            const orders = plantProduction?.[code]?.orders
+            return Array.isArray(orders) && orders.length > 0
+        })
+    }, [plants, plantProduction])
+
+    const [index, setIndex] = useState(0)
+
+    useEffect(() => {
+        if (eligiblePlants.length <= 1) return undefined
+        const id = setInterval(() => {
+            setIndex((i) => (i + 1) % eligiblePlants.length)
+        }, DECORATIVE_CYCLE_MS)
+        return () => clearInterval(id)
+    }, [eligiblePlants.length])
+
+    if (eligiblePlants.length === 0) return null
+
+    const plant = eligiblePlants[index % eligiblePlants.length]
+    const plantCode = plant?.plantCode || plant?.plant_code
+    const plantName = plant?.plantName || plant?.plant_name || plantCode
+
+    return (
+        <SchedulePreview
+            key={plantCode}
+            accentColor={accentColor}
+            existingOrders={plantProduction?.[plantCode]?.orders || []}
+            newOrder={null}
+            plantCode={plantCode}
+            plantName={plantName}
+        />
     )
 }
 
@@ -995,7 +1077,12 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                 <i className="fas fa-magnifying-glass-chart text-[12px]" />
                                 Find Best Plant
                             </button>
-                            {submitted && (
+                            {/* Same handler as the post-submit Reset button — flushes
+                             * yardage / start time / spacing / address and drops the
+                             * `submitted` flag so the right pane returns to its idle
+                             * state. Hidden when every field is already empty so the
+                             * button doesn't add noise on a fresh form. */}
+                            {(yardage || startTime || spacingMin || address || submitted) && (
                                 <button
                                     type="button"
                                     onClick={handleReset}
@@ -1005,9 +1092,10 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                         border: '1px solid var(--border-light)',
                                         color: 'var(--text-secondary)'
                                     }}
+                                    title="Clear every field on the form"
                                 >
-                                    <i className="fas fa-rotate-left text-[12px]" />
-                                    Reset
+                                    <i className="fas fa-eraser text-[12px]" />
+                                    Clear
                                 </button>
                             )}
                         </div>
@@ -1016,111 +1104,157 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
 
                 {/* Recommendations */}
                 <section className="lg:col-span-8 flex flex-col gap-3">
-                    {!submitted && (
-                        <div
-                            className="rounded-lg p-8 text-center flex flex-col items-center gap-2"
-                            style={{
-                                background: 'var(--bg-primary)',
-                                border: '1px dashed var(--border-light)',
-                                color: 'var(--text-tertiary)'
-                            }}
-                        >
-                            <i className="fas fa-route text-3xl mb-2" />
-                            <div className="text-[14px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                                Fill the form to see a booking recommendation
-                            </div>
-                            <div className="text-[12px]">
-                                I&apos;ll suggest the best plant and time, and flag any conflicts with the existing
-                                schedule.
-                            </div>
-                        </div>
-                    )}
+                    {(() => {
+                        /* Roll up the branch conditions once so each FadeIn
+                         * gets the same boolean it'd have in an `if/else`
+                         * tree, but the markup stays flat and animations
+                         * can overlap during a state transition. */
+                        const showIdle = !submitted
+                        const showSunday = submitted && planDateIsSunday
+                        const showSameDay = submitted && !planDateIsSunday && isBookingToday
+                        const showLoading = submitted && !planDateIsSunday && !isBookingToday && distancesLoading
+                        const showNoPlants =
+                            submitted &&
+                            !planDateIsSunday &&
+                            !isBookingToday &&
+                            !distancesLoading &&
+                            ranked.length === 0
+                        const showResult = submitted && !planDateIsSunday && !isBookingToday && top && !conflict
+                        const showConflict = submitted && !planDateIsSunday && !isBookingToday && !!conflict
+                        const showDecorative = showIdle || showLoading || showNoPlants
 
-                    {submitted && planDateIsSunday && (
-                        <div
-                            className="rounded-lg p-6 text-center"
-                            style={{
-                                background: 'rgba(220, 38, 38, 0.08)',
-                                border: '1px solid rgba(220, 38, 38, 0.35)',
-                                color: '#b91c1c'
-                            }}
-                        >
-                            <i className="fas fa-ban text-2xl mb-2" />
-                            <div className="text-[14px] font-semibold">Plants are closed on Sundays.</div>
-                            <div className="text-[12px] mt-1">Pick a weekday or Saturday to see a recommendation.</div>
-                        </div>
-                    )}
+                        return (
+                            <>
+                                <FadeIn show={showIdle}>
+                                    <div
+                                        className="rounded-lg p-8 text-center flex flex-col items-center gap-2"
+                                        style={{
+                                            background: 'var(--bg-primary)',
+                                            border: '1px dashed var(--border-light)',
+                                            color: 'var(--text-tertiary)'
+                                        }}
+                                    >
+                                        <i className="fas fa-route text-3xl mb-2" />
+                                        <div
+                                            className="text-[14px] font-semibold"
+                                            style={{ color: 'var(--text-secondary)' }}
+                                        >
+                                            Fill the form to see a booking recommendation
+                                        </div>
+                                        <div className="text-[12px]">
+                                            I&apos;ll suggest the best plant and time, and flag any conflicts with the
+                                            existing schedule.
+                                        </div>
+                                    </div>
+                                </FadeIn>
 
-                    {submitted && !planDateIsSunday && isBookingToday && <SameDayAdvice accentColor={accentColor} />}
+                                <FadeIn show={showSunday}>
+                                    <div
+                                        className="rounded-lg p-6 text-center"
+                                        style={{
+                                            background: 'rgba(220, 38, 38, 0.08)',
+                                            border: '1px solid rgba(220, 38, 38, 0.35)',
+                                            color: '#b91c1c'
+                                        }}
+                                    >
+                                        <i className="fas fa-ban text-2xl mb-2" />
+                                        <div className="text-[14px] font-semibold">Plants are closed on Sundays.</div>
+                                        <div className="text-[12px] mt-1">
+                                            Pick a weekday or Saturday to see a recommendation.
+                                        </div>
+                                    </div>
+                                </FadeIn>
 
-                    {submitted && !planDateIsSunday && !isBookingToday && distancesLoading && (
-                        <div
-                            className="rounded-lg px-4 py-2.5 flex items-center gap-2 text-[12px]"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-secondary)'
-                            }}
-                        >
-                            <i className="fas fa-route fa-spin text-[11px]" />
-                            Calculating drive times — plants further than {TRAVEL_MIN_HORIZON} min will be hidden.
-                        </div>
-                    )}
+                                <FadeIn show={showSameDay}>
+                                    <SameDayAdvice accentColor={accentColor} />
+                                </FadeIn>
 
-                    {submitted && !planDateIsSunday && !isBookingToday && !distancesLoading && ranked.length === 0 && (
-                        <div
-                            className="rounded-lg p-6 text-center"
-                            style={{
-                                background: 'rgba(217, 119, 6, 0.1)',
-                                border: '1px solid rgba(217, 119, 6, 0.35)',
-                                color: '#b45309'
-                            }}
-                        >
-                            <i className="fas fa-triangle-exclamation text-2xl mb-2" />
-                            <div className="text-[14px] font-semibold">
-                                No plants within {TRAVEL_MIN_HORIZON} minutes.
-                            </div>
-                            <div className="text-[12px] mt-1">
-                                Every plant is more than {TRAVEL_MIN_HORIZON} min from the job, closed for the day, or
-                                missing driver-pool data. Try a different address or date.
-                            </div>
-                        </div>
-                    )}
+                                <FadeIn show={showLoading}>
+                                    <div
+                                        className="rounded-lg px-4 py-2.5 flex items-center gap-2 text-[12px]"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-light)',
+                                            color: 'var(--text-secondary)'
+                                        }}
+                                    >
+                                        <i className="fas fa-route fa-spin text-[11px]" />
+                                        Calculating drive times — plants further than {TRAVEL_MIN_HORIZON} min will be
+                                        hidden.
+                                    </div>
+                                </FadeIn>
 
-                    {submitted && !planDateIsSunday && !isBookingToday && top && !conflict && (
-                        <>
-                            <RecommendationAdvice
-                                accentColor={accentColor}
-                                recommendedSlot={recommendedSlot}
-                                request={request}
-                                top={top}
-                            />
-                            <SchedulePreview
-                                accentColor={accentColor}
-                                existingOrders={plantProduction?.[top.plantCode]?.orders || []}
-                                newOrder={
-                                    recommendedSlot && recommendedSlot.startMin !== request.startMin
-                                        ? { ...request, startMin: recommendedSlot.startMin }
-                                        : request
-                                }
-                                plantCode={top.plantCode}
-                                plantName={top.plantName}
-                            />
-                        </>
-                    )}
+                                <FadeIn show={showNoPlants}>
+                                    <div
+                                        className="rounded-lg p-6 text-center"
+                                        style={{
+                                            background: 'rgba(217, 119, 6, 0.1)',
+                                            border: '1px solid rgba(217, 119, 6, 0.35)',
+                                            color: '#b45309'
+                                        }}
+                                    >
+                                        <i className="fas fa-triangle-exclamation text-2xl mb-2" />
+                                        <div className="text-[14px] font-semibold">
+                                            No plants within {TRAVEL_MIN_HORIZON} minutes.
+                                        </div>
+                                        <div className="text-[12px] mt-1">
+                                            Every plant is more than {TRAVEL_MIN_HORIZON} min from the job, closed for
+                                            the day, or missing driver-pool data. Try a different address or date.
+                                        </div>
+                                    </div>
+                                </FadeIn>
 
-                    {submitted && !planDateIsSunday && !isBookingToday && conflict && (
-                        <>
-                            <BookingConflictPanel conflict={conflict} />
-                            <SchedulePreview
-                                accentColor={accentColor}
-                                existingOrders={plantProduction?.[conflict.plantCode]?.orders || []}
-                                newOrder={request}
-                                plantCode={conflict.plantCode}
-                                plantName={conflict.plantName}
-                            />
-                        </>
-                    )}
+                                <FadeIn show={showResult} delayMs={80}>
+                                    {top && !conflict && (
+                                        <RecommendationAdvice
+                                            accentColor={accentColor}
+                                            recommendedSlot={recommendedSlot}
+                                            request={request}
+                                            top={top}
+                                        />
+                                    )}
+                                </FadeIn>
+                                <FadeIn show={showResult} delayMs={160}>
+                                    {top && !conflict && (
+                                        <SchedulePreview
+                                            accentColor={accentColor}
+                                            existingOrders={plantProduction?.[top.plantCode]?.orders || []}
+                                            newOrder={
+                                                recommendedSlot && recommendedSlot.startMin !== request.startMin
+                                                    ? { ...request, startMin: recommendedSlot.startMin }
+                                                    : request
+                                            }
+                                            plantCode={top.plantCode}
+                                            plantName={top.plantName}
+                                        />
+                                    )}
+                                </FadeIn>
+
+                                <FadeIn show={showConflict} delayMs={80}>
+                                    {conflict && <BookingConflictPanel conflict={conflict} />}
+                                </FadeIn>
+                                <FadeIn show={showConflict} delayMs={160}>
+                                    {conflict && (
+                                        <SchedulePreview
+                                            accentColor={accentColor}
+                                            existingOrders={plantProduction?.[conflict.plantCode]?.orders || []}
+                                            newOrder={request}
+                                            plantCode={conflict.plantCode}
+                                            plantName={conflict.plantName}
+                                        />
+                                    )}
+                                </FadeIn>
+
+                                <FadeIn show={showDecorative} delayMs={120}>
+                                    <DecorativeSchedulePreview
+                                        accentColor={accentColor}
+                                        plantProduction={plantProduction}
+                                        plants={plants}
+                                    />
+                                </FadeIn>
+                            </>
+                        )
+                    })()}
                 </section>
             </div>
         </div>
