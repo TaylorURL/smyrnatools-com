@@ -2,6 +2,17 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.32] - 2026-05-07
+
+- Rename "Book An Order" plan tab to "Find a Spot"
+- Switch priority badge colors from Tailwind classes to rgba/hex CSS values for proper dark mode support
+- Hide priority badges on mobile in the task list item rows
+- Make the bulk action toolbar mobile-responsive: compact padding, icon-only buttons, and smaller text on small screens
+- Add aria-labels to all bulk action toolbar buttons
+- Use theme-aware background on the bulk action toolbar via var(--bg-primary)
+- Remove the Extra Diligence section (Special Attention + QC Attention), pull-up compaction recommendations, and open windows suggestions from the Plan Dashboard
+- Remove unused PlanDashboardJobsSection, PlanCompactionList, and PlanOpenWindowsList imports from PlanDashboardView
+
 ## [40.0.31] - 2026-05-07
 
 - Add "Book An Order" tab to the Plan view with a full BookOrderView for dispatchers to evaluate plant recommendations based on capacity, proximity, and load balance

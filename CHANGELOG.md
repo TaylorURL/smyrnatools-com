@@ -2,6 +2,19 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.33] - 2026-05-07
+
+- Replace inline style colors on plan schedule badges (danger, warning, info, neutral) with themed utility classes for proper dark mode support
+- Use status-badge-danger class for bad-address pills in PlanScheduleOrderCard and PlanScheduleOrderRow
+- Use status-badge-warning class for overbooked trucks pill in PlanScheduleOrderRow
+- Map OrderStatusBadge kinds (sameDay, cancelled, test) to themed badge classes via STATUS_BADGE_TONE_CLASS lookup
+- Switch ListView container and activity log backgrounds from hardcoded bg-slate-100 to theme-aware bg-bg-secondary/bg-bg-tertiary
+- Add a subtle bordered pill style to the plant code badge in task list item rows
+- Redesign the bulk action toolbar on mobile: full-width bottom sheet with safe-area padding, icon-above-label button layout, and larger touch targets
+- Show button labels on mobile bulk actions instead of icon-only, using a stacked flex-col layout with min-height for consistency
+- Center-align bulk status and priority dropdown menus on mobile with constrained width
+- Increase tap target size for status and priority dropdown options on mobile
+
 ## [40.0.32] - 2026-05-07
 
 - Rename "Book An Order" plan tab to "Find a Spot"

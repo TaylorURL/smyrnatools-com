@@ -42,8 +42,7 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
     if (isLikelyBadAddress(rawAddress)) {
         return (
             <span
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider whitespace-nowrap"
-                style={{ background: '#dc2626', color: '#fff' }}
+                className="status-badge-danger inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider whitespace-nowrap"
                 title={`Address looks invalid — original value: "${rawAddress}"${rawCity ? ` · City: ${rawCity}` : ''}`}
             >
                 <i className="fas fa-triangle-exclamation text-[9px]" />
@@ -164,8 +163,7 @@ function TrucksCell({ isNonProduction, isPastDay, order, poolTimeline, rowKey, s
                 </span>
                 {overbooked && (
                     <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
-                        style={{ background: '#d97706', color: '#fff' }}
+                        className="status-badge-warning inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
                         title="Fewer trucks than needed to hold the scheduled pour rate — send help from another plant to pour on pace."
                     >
                         <i className="fas fa-handshake-angle text-[8px]" />

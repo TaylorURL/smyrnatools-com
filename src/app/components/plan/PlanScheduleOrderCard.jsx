@@ -138,8 +138,7 @@ export default function PlanScheduleOrderCard({
                     {hasAddress &&
                         (addressBad ? (
                             <span
-                                className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider"
-                                style={{ background: '#dc2626', color: '#fff' }}
+                                className="status-badge-danger mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider"
                                 title={`Address looks invalid — original value: "${clean(order.address)}"`}
                             >
                                 <i className="fas fa-triangle-exclamation text-[9px]" />

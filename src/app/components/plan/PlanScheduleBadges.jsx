@@ -215,8 +215,7 @@ export function HoursLimitBadge({ limit }) {
     ]
     return (
         <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
-            style={{ background: '#dc2626', color: '#fff' }}
+            className="status-badge-danger inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
             title={tooltipLines.join('\n')}
         >
             <i className="fas fa-clock text-[9px]" />
@@ -225,14 +224,22 @@ export function HoursLimitBadge({ limit }) {
     )
 }
 
-/** Solid pill for cancelled / same-day / test orders, driven by the
+/** Maps the start-time sentinel `kind` to one of the project's themed badge
+ *  utility classes so the pill flips correctly between light and dark mode. */
+const STATUS_BADGE_TONE_CLASS = {
+    sameDay: 'status-badge-warning',
+    cancelled: 'status-badge-danger',
+    test: 'status-badge-info'
+}
+
+/** Themed pill for cancelled / same-day / test orders, driven by the
  *  start-time sentinel descriptor returned by `getOrderStatus`. */
 export function OrderStatusBadge({ status }) {
     if (!status) return null
+    const toneClass = STATUS_BADGE_TONE_CLASS[status.kind] || 'status-badge-neutral'
     return (
         <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
-            style={{ background: status.color, color: '#fff' }}
+            className={`${toneClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap`}
             title={`Start time sentinel — order is ${status.label.toLowerCase()}`}
         >
             <i className={`fas ${status.icon} text-[8px]`} />
