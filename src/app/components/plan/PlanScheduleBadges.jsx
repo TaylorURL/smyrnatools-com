@@ -46,7 +46,8 @@ export function ServiceBadge({ service }) {
                 `poured ${service.actualYdPerHr.toFixed(1)} yd/hr vs ${service.requestedYdPerHr.toFixed(1)} yd/hr requested`
             )
         }
-        const label = service.isLate && service.isSlow ? 'Late, Bad Experience' : service.isLate ? 'Late' : 'Bad Experience'
+        const label =
+            service.isLate && service.isSlow ? 'Late, Bad Experience' : service.isLate ? 'Late' : 'Bad Experience'
         return (
             <span
                 className={SERVICE_BADGE_BASE}

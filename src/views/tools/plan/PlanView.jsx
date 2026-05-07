@@ -211,6 +211,14 @@ function PlanView() {
                     date with genuinely no schedule / no tickets still drops
                     the skeleton in well under a second. */}
                 {(() => {
+                    /* Book An Order owns its own form state and lazy-renders
+                     * its recommendation panel once data is in. Swapping the
+                     * whole view to a skeleton on every date change made the
+                     * tab flicker out to a dashboard-shaped placeholder and
+                     * back, which read as "the date control bounced me to
+                     * another tab." Keep the view mounted and let the panel
+                     * handle empty data internally. */
+                    if (effectiveViewMode === 'book-order') return false
                     const productionKeys = Object.keys(plantProduction || {}).filter((k) => k !== PLAN_META_KEY)
                     const hasScheduleData = productionKeys.length > 0
                     return isLoading || (isSchedulesSyncing && !hasScheduleData) || isDetailOrdersLoading
@@ -332,6 +340,7 @@ function PlanView() {
                             <BookOrderView
                                 accentColor={accentColor}
                                 mixerCountsByPlant={mixerCountsByPlant}
+                                onChangePlanDate={setPlanDate}
                                 planDate={planDate}
                                 plantProduction={plantProduction}
                                 plants={plants}

@@ -2,6 +2,16 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.31] - 2026-05-07
+
+- Add "Book An Order" tab to the Plan view with a full BookOrderView for dispatchers to evaluate plant recommendations based on capacity, proximity, and load balance
+- Create GeocodeService backed by Nominatim (OpenStreetMap) with localStorage caching, rate-limited request queuing, and address search for autocomplete
+- Add AddressAutocomplete component with debounced Nominatim lookup, keyboard navigation, and geocode cache pre-warming on selection
+- Add useAddressDistances hook that geocodes the job and plant addresses to compute haversine-based one-way drive-time estimates per plant
+- Expand BookOrderUtility with live travel-time proximity scoring, a closest-plant-wins ranking strategy, alternate start-time suggestions with preferred time windows, isolation penalties, and conflict detection for overlapping orders
+- Add hard cutoff filtering to drop plants beyond 60 minutes travel time from recommendations
+- Rename "Good Service" badge label to "Good Experience" in PlanScheduleBadges
+
 ## [40.0.30] - 2026-05-07
 
 - Add "Book An Order" tab to the Plan view with a new BookOrderView for dispatchers to evaluate plant recommendations based on capacity, proximity, and load balance

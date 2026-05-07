@@ -1,4 +1,10 @@
-import { adjustPoolForDate, isExcludedOrder, parseDurationMinutes, timeToMinutes } from './PlanUtility'
+import {
+    adjustPoolForDate,
+    BIG_POUR_YARDAGE_THRESHOLD,
+    isExcludedOrder,
+    parseDurationMinutes,
+    timeToMinutes
+} from './PlanUtility'
 
 /* Defaults used when an explicit field isn't provided on the request or an
  * order. Tuned to match common Smyrna pours so the recommender stays close
@@ -160,9 +166,32 @@ export const computeConcurrentTrucks = (plantOrders, requestStart, requestEnd) =
 
 const clamp01 = (value) => (value < 0 ? 0 : value > 1 ? 1 : value)
 
+/* Conversion of one-way travel minutes → 0..1 proximity score. 0 min ≈ 1.0,
+ * a 60+ min haul collapses to 0. Linear decay reads naturally for the
+ * dispatcher: a 30-min plant scores ~0.5, half as "close" as a 0-min one.
+ * Same horizon doubles as the hard cutoff in `rankPlantsForBooking` —
+ * plants further than this are dropped from the recommendations entirely. */
+export const TRAVEL_MIN_HORIZON = 60
+
+const travelMinutesToProximity = (travelMin) => {
+    if (!Number.isFinite(travelMin) || travelMin < 0) return null
+    return clamp01(1 - travelMin / TRAVEL_MIN_HORIZON)
+}
+
 /** Score one plant for the given booking request. Returns the full
- *  breakdown so the UI can explain WHY a plant ranked where it did. */
-export const scorePlantForBooking = ({ plant, plantProduction, mixerCountsByPlant, planDate, request }) => {
+ *  breakdown so the UI can explain WHY a plant ranked where it did.
+ *
+ *  When `travelMinByPlantCode[plantCode]` is provided, real driving minutes
+ *  drive the proximity score. ZIP/token matching only kicks in as a
+ *  fallback while the live travel-time fetch is still in flight. */
+export const scorePlantForBooking = ({
+    plant,
+    plantProduction,
+    mixerCountsByPlant,
+    planDate,
+    request,
+    travelMinByPlantCode
+}) => {
     const plantCode = plant?.plantCode || plant?.plant_code
     const plantAddress = plant?.plantAddress || plant?.plant_address || ''
     const plantName = plant?.plantName || plant?.plant_name || plantCode
@@ -175,7 +204,10 @@ export const scorePlantForBooking = ({ plant, plantProduction, mixerCountsByPlan
     const busy = computeConcurrentTrucks(orders, requestStart, requestEnd)
     const free = Math.max(0, adjustedPool - busy)
     const capacityScore = trucksNeeded > 0 ? clamp01(free / trucksNeeded) : adjustedPool > 0 ? 1 : 0
-    const proximityScore = scoreProximity(request.address, plantAddress)
+    const travelMin = travelMinByPlantCode?.[plantCode]
+    const liveProximity = travelMinutesToProximity(travelMin)
+    const proximityScore = liveProximity != null ? liveProximity : scoreProximity(request.address, plantAddress)
+    const proximitySource = liveProximity != null ? 'travel' : 'heuristic'
     const loadBalanceScore = adjustedPool > 0 ? clamp01(1 - busy / adjustedPool) : 0
     const composite =
         WEIGHT_CAPACITY * capacityScore + WEIGHT_PROXIMITY * proximityScore + WEIGHT_LOAD_BALANCE * loadBalanceScore
@@ -190,34 +222,450 @@ export const scorePlantForBooking = ({ plant, plantProduction, mixerCountsByPlan
         plantCode,
         plantName,
         proximityScore,
+        proximitySource,
         rawPool,
+        travelMin: Number.isFinite(travelMin) ? travelMin : null,
         trucksNeeded
     }
 }
 
 /** Rank every plant for the request, best-first. Plants with no usable code
- *  or zero adjusted pool (e.g. closed Sundays) are filtered out. */
-export const rankPlantsForBooking = ({ plants, plantProduction, mixerCountsByPlant, planDate, request }) => {
+ *  or zero adjusted pool (e.g. closed Sundays) are filtered out.
+ *
+ *  Closest-plant-wins rule: the highest proximity score always takes the #1
+ *  slot — sending concrete from a far plant to a job a closer plant could
+ *  cover is a worse outcome than that closer plant being temporarily short
+ *  on trucks (the conflict panel surfaces the time-shift / order-move fix).
+ *  Ties on proximity fall back to the composite score so capacity / load
+ *  still break ties between equally-close plants. */
+export const rankPlantsForBooking = ({
+    plants,
+    plantProduction,
+    mixerCountsByPlant,
+    planDate,
+    request,
+    travelMinByPlantCode
+}) => {
     if (!Array.isArray(plants) || !request) return []
     const scored = plants
-        .map((plant) => scorePlantForBooking({ mixerCountsByPlant, plant, planDate, plantProduction, request }))
+        .map((plant) =>
+            scorePlantForBooking({
+                mixerCountsByPlant,
+                planDate,
+                plant,
+                plantProduction,
+                request,
+                travelMinByPlantCode
+            })
+        )
         .filter((row) => row.plantCode && row.adjustedPool > 0)
-    scored.sort((a, b) => b.composite - a.composite)
+        /* Hard cutoff: plants known to be more than TRAVEL_MIN_HORIZON away
+         * are dropped entirely so dispatch never sees them. Plants with no
+         * travel data yet (geocode in flight, or address that didn't
+         * resolve) stay in the list — silently hiding them on a transient
+         * lookup failure would be worse than showing a slightly-stale row. */
+        .filter((row) => !Number.isFinite(row.travelMin) || row.travelMin <= TRAVEL_MIN_HORIZON)
+    /* Closest plant wins #1. When live travel minutes are available we sort
+     * directly on minutes (smallest first) so two plants with proximity 1.0
+     * from a same-ZIP heuristic can still be ordered correctly once the real
+     * drive time arrives. Heuristic-scored plants fall back to proximity ties
+     * broken by composite. */
+    scored.sort((a, b) => {
+        const aTravel = Number.isFinite(a.travelMin) ? a.travelMin : null
+        const bTravel = Number.isFinite(b.travelMin) ? b.travelMin : null
+        if (aTravel != null && bTravel != null && aTravel !== bTravel) return aTravel - bTravel
+        if (b.proximityScore !== a.proximityScore) return b.proximityScore - a.proximityScore
+        return b.composite - a.composite
+    })
     return scored
+}
+
+/* Window scanned when proposing alternate start times. We never suggest
+ * a booking past 13:00 — Smyrna's policy is to start every pour by 1 PM
+ * so trucks are back well before end-of-shift. Big pours (≥ the existing
+ * BIG_POUR_YARDAGE_THRESHOLD) ideally start in the 00:00–06:00 graveyard
+ * window so concrete is in place before the morning rush; smaller pours
+ * fit best in the 07:00–12:00 daylight window. The scan covers the full
+ * 00:00–13:00 span and the sort below reorders so the right size-window
+ * lands at the top.
+ *
+ * 15-min granularity matches the dispatcher's mental model (orders are
+ * scheduled on 15-min boundaries). The min-gap is set to one step so we
+ * only skip the dispatcher's exact requested time — a 15-minute shift
+ * can absolutely be the right answer when the plant is just barely
+ * overcommitted at the requested minute. */
+const ALTERNATE_SCAN_STEP_MIN = 15
+const ALTERNATE_SCAN_START_MIN = 0
+const ALTERNATE_SCAN_END_MIN = 13 * 60
+const ALTERNATE_MIN_GAP_MIN = ALTERNATE_SCAN_STEP_MIN
+const BIG_POUR_PREFERRED_START_MIN = 0
+const BIG_POUR_PREFERRED_END_MIN = 6 * 60
+const SMALL_POUR_PREFERRED_START_MIN = 7 * 60
+const SMALL_POUR_PREFERRED_END_MIN = 12 * 60
+
+/** True when `startMin` falls in the size-appropriate sweet-spot window
+ *  (graveyard for big pours, mid-morning for everything else). */
+const isPreferredStartWindow = (yardage, startMin) => {
+    if (yardage >= BIG_POUR_YARDAGE_THRESHOLD) {
+        return startMin >= BIG_POUR_PREFERRED_START_MIN && startMin < BIG_POUR_PREFERRED_END_MIN
+    }
+    return startMin >= SMALL_POUR_PREFERRED_START_MIN && startMin < SMALL_POUR_PREFERRED_END_MIN
+}
+
+/** Minutes between a candidate window and the nearest existing pour. Used to
+ *  penalize alternates that strand trucks in multi-hour idle gaps — booking
+ *  a 04:00 pour when nothing else runs until 08:00 leaves the pool sitting
+ *  for hours, which is exactly what dispatchers want to avoid. Returns 0
+ *  when the candidate overlaps or directly adjoins an existing order, and
+ *  Infinity when the day has no real orders to anchor against. */
+const computeIsolationMin = (candidateStart, candidateEnd, orders) => {
+    let minDistance = Infinity
+    for (const order of orders || []) {
+        if (isExcludedOrder(order)) continue
+        const window = orderTimeWindow(order)
+        if (!window) continue
+        if (window.startMin < candidateEnd && window.endMin > candidateStart) return 0
+        if (candidateEnd <= window.startMin) {
+            const gap = window.startMin - candidateEnd
+            if (gap < minDistance) minDistance = gap
+        }
+        if (candidateStart >= window.endMin) {
+            const gap = candidateStart - window.endMin
+            if (gap < minDistance) minDistance = gap
+        }
+    }
+    return minDistance
+}
+
+/* The request's full `durationMin` is misleading for the alternate-time
+ * scan. A 200-yd pour with 30-min spacing has a 10-hour pour duration
+ * (because the LAST truck doesn't return until the very end), but the
+ * plant's pool is only fully *locked* for `trucksNeeded × spacing + cycle`
+ * minutes — after that, dispatched trucks are returning one-by-one and
+ * the pool can absorb other work. Use the lock-window for collision
+ * detection so we don't wrongly conclude the day is full. */
+const computeLockWindowMin = (request) => {
+    const trucksNeeded = Math.max(1, request?.trucksNeeded || 0)
+    const spacing =
+        Number.isFinite(request?.spacingMin) && request.spacingMin > 0 ? request.spacingMin : DEFAULT_TRUCK_SPACING_MIN
+    const cycle = DEFAULT_TRAVEL_OUT_MIN * 2 + DEFAULT_POUR_TAIL_MIN
+    return Math.min(request.durationMin, trucksNeeded * spacing + cycle)
+}
+
+/** Best start times where the SAME plant could host the request. Each row
+ *  carries `{ startMin, free, fits, shortBy }` so the UI can clearly mark
+ *  windows that fully fit (no help / no rescheduling) versus windows that
+ *  are merely "closest" (still short by N trucks). When at least one
+ *  fitting slot exists we surface only fitting slots; otherwise we fall
+ *  back to the highest-free windows so the dispatcher always sees the
+ *  concrete best option Baytown can offer today. */
+export const findAlternateStartTimes = ({
+    count = 3,
+    mixerCountsByPlant,
+    planDate,
+    plant,
+    plantProduction,
+    request
+}) => {
+    if (!plant || !request) return []
+    const plantCode = plant?.plantCode || plant?.plant_code
+    const orders = plantProduction?.[plantCode]?.orders || []
+    const rawPool = mixerCountsByPlant?.[plantCode] || 0
+    const adjustedPool = adjustPoolForDate(rawPool, planDate)
+    if (adjustedPool <= 0) return []
+    const { startMin: requestStart, trucksNeeded } = request
+    if (trucksNeeded <= 0) return []
+    const lockWindowMin = computeLockWindowMin(request)
+
+    const allWindows = []
+    for (
+        let start = ALTERNATE_SCAN_START_MIN;
+        start + lockWindowMin <= ALTERNATE_SCAN_END_MIN;
+        start += ALTERNATE_SCAN_STEP_MIN
+    ) {
+        if (Math.abs(start - requestStart) < ALTERNATE_MIN_GAP_MIN) continue
+        const end = start + lockWindowMin
+        const busy = computeConcurrentTrucks(orders, start, end)
+        const free = Math.max(0, adjustedPool - busy)
+        allWindows.push({
+            fits: free >= trucksNeeded,
+            free,
+            isolationMin: computeIsolationMin(start, end, orders),
+            preferred: isPreferredStartWindow(request.yardage, start),
+            shortBy: Math.max(0, trucksNeeded - free),
+            startMin: start
+        })
+    }
+
+    /* Sort key precedence:
+     *   1. preferred size-window (graveyard for big, mid-morning for small)
+     *   2. tightest cluster against existing pours — avoids stranding
+     *      trucks in multi-hour idle gaps when a closer slot exists.
+     *   3. earliest start, as a final tiebreaker. */
+    const sortKey = (a, b) => {
+        if (a.preferred !== b.preferred) return a.preferred ? -1 : 1
+        if (a.isolationMin !== b.isolationMin) return a.isolationMin - b.isolationMin
+        return a.startMin - b.startMin
+    }
+    const fitting = allWindows
+        .filter((w) => w.fits)
+        .sort(sortKey)
+        .slice(0, count)
+    if (fitting.length > 0) return fitting
+
+    // Fallback: closest-possible windows. Smallest shortfall first, then
+    // the standard preference / cluster / earliest cascade.
+    return [...allWindows]
+        .filter((w) => w.free > 0)
+        .sort((a, b) => a.shortBy - b.shortBy || sortKey(a, b))
+        .slice(0, count)
+}
+
+/** Existing orders at `plant` whose pour window overlaps the request and
+ *  whose removal would free enough trucks for the new booking. Sorted
+ *  smallest-first so the dispatcher sees the smallest disruption first.
+ *  Each candidate carries a list of `alternateTimes` — start times on the
+ *  SAME plant where that order could be re-scheduled (the plant always
+ *  keeps its own bookings, we just shift them off the new request's
+ *  window). Cross-plant absorption was removed because the closest-plant
+ *  rule means the suggesting plant is the right home for jobs in this
+ *  area; suggesting Conroe absorb a Pasadena order undermined that. */
+export const findMoveCandidates = ({
+    mixerCountsByPlant,
+    planDate,
+    plant,
+    plantProduction,
+    request,
+    maxCandidates = 3
+}) => {
+    if (!plant || !request) return []
+    const plantCode = plant?.plantCode || plant?.plant_code
+    const orders = plantProduction?.[plantCode]?.orders || []
+    const rawPool = mixerCountsByPlant?.[plantCode] || 0
+    const adjustedPool = adjustPoolForDate(rawPool, planDate)
+    if (adjustedPool <= 0) return []
+    const requestStart = request.startMin
+    const requestEnd = request.startMin + request.durationMin
+    const busy = computeConcurrentTrucks(orders, requestStart, requestEnd)
+    const free = Math.max(0, adjustedPool - busy)
+    const shortBy = Math.max(0, request.trucksNeeded - free)
+    if (shortBy <= 0) return []
+
+    const overlapping = orders
+        .map((order) => {
+            if (isExcludedOrder(order)) return null
+            const window = orderTimeWindow(order)
+            if (!overlapsWindow(window, requestStart, requestEnd)) return null
+            const explicit = parseFloat(order?.truckCount)
+            const trucks = Number.isFinite(explicit) && explicit > 0 ? explicit : window.trips
+            return { order, trucks, window }
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.trucks - b.trucks || a.window.startMin - b.window.startMin)
+
+    /* For each move candidate, scan the day for windows where the SAME
+     * plant could re-host the moved order. We exclude the candidate from
+     * the busy calc (since we're moving it) and treat the new request as
+     * already booked (since that's the whole point of the move). */
+    const findReschedulesForOrder = (candidate, candidateDuration) => {
+        const otherOrders = orders.filter((o) => o !== candidate.order)
+        const out = []
+        for (
+            let start = ALTERNATE_SCAN_START_MIN;
+            start + candidateDuration <= ALTERNATE_SCAN_END_MIN;
+            start += ALTERNATE_SCAN_STEP_MIN
+        ) {
+            if (Math.abs(start - candidate.window.startMin) < ALTERNATE_MIN_GAP_MIN) continue
+            const end = start + candidateDuration
+            const otherBusy = computeConcurrentTrucks(otherOrders, start, end)
+            const requestOverlapsHere = start < requestEnd && end > requestStart
+            const requestBusy = requestOverlapsHere ? request.trucksNeeded : 0
+            const totalBusy = otherBusy + requestBusy
+            if (adjustedPool - totalBusy >= candidate.trucks) {
+                out.push({ free: adjustedPool - totalBusy, startMin: start })
+                if (out.length >= 2) break
+            }
+        }
+        return out
+    }
+
+    const candidates = []
+    for (const cand of overlapping) {
+        const candidateDuration = Math.max(ALTERNATE_SCAN_STEP_MIN, cand.window.endMin - cand.window.startMin)
+        candidates.push({
+            alternateTimes: findReschedulesForOrder(cand, candidateDuration),
+            order: cand.order,
+            trucks: cand.trucks,
+            window: cand.window
+        })
+        if (candidates.length >= maxCandidates) break
+    }
+    return candidates
+}
+
+/** Single best start time on a plant for the given request. Considers the
+ *  full 00:00–13:00 scan window and prioritises:
+ *    1. windows where the request fully fits (no help / no rescheduling)
+ *    2. size-appropriate preferred window (graveyard for big pours, mid-
+ *       morning for small)
+ *    3. cluster adjacency — minimises idle gaps next to existing pours
+ *    4. earliest start as a final tiebreaker
+ *
+ *  Used to detect when the dispatcher's typed time is suboptimal even
+ *  without a truck shortage — a 17:00 booking on a plant whose last
+ *  existing pour ends at 12:30 would happily fit, but it strands trucks
+ *  for hours and violates the 1 PM cap. The view compares this slot's
+ *  startMin to `request.startMin` and surfaces the shift with a reason
+ *  when they differ. */
+export const findRecommendedStartTime = ({ mixerCountsByPlant, planDate, plant, plantProduction, request }) => {
+    if (!plant || !request) return null
+    const plantCode = plant?.plantCode || plant?.plant_code
+    const orders = plantProduction?.[plantCode]?.orders || []
+    const adjustedPool = adjustPoolForDate(mixerCountsByPlant?.[plantCode] || 0, planDate)
+    if (adjustedPool <= 0) return null
+    const trucksNeeded = request.trucksNeeded
+    if (trucksNeeded <= 0) return null
+    const lockWindowMin = computeLockWindowMin(request)
+
+    const candidates = []
+    for (
+        let start = ALTERNATE_SCAN_START_MIN;
+        start + lockWindowMin <= ALTERNATE_SCAN_END_MIN;
+        start += ALTERNATE_SCAN_STEP_MIN
+    ) {
+        const end = start + lockWindowMin
+        const busy = computeConcurrentTrucks(orders, start, end)
+        const free = Math.max(0, adjustedPool - busy)
+        candidates.push({
+            fits: free >= trucksNeeded,
+            free,
+            isolationMin: computeIsolationMin(start, end, orders),
+            preferred: isPreferredStartWindow(request.yardage, start),
+            shortBy: Math.max(0, trucksNeeded - free),
+            startMin: start
+        })
+    }
+    if (candidates.length === 0) return null
+    candidates.sort((a, b) => {
+        if (a.fits !== b.fits) return a.fits ? -1 : 1
+        if (a.preferred !== b.preferred) return a.preferred ? -1 : 1
+        if (a.isolationMin !== b.isolationMin) return a.isolationMin - b.isolationMin
+        return a.startMin - b.startMin
+    })
+    return candidates[0]
+}
+
+/** Other plants that could lend trucks to `excludePlantCode` during the
+ *  request window. "Help" in dispatch parlance means a plant sends one or
+ *  more trucks to another plant for a pour. We list every plant with at
+ *  least one free truck during the window, sorted by drive time from the
+ *  job address (proxy for proximity to the suggesting plant — plants close
+ *  to the job tend to be close to the suggesting plant since the job is
+ *  what made it the suggestion). Returns empty when no plant has spare
+ *  capacity, so the UI can render a "no help available" notice. */
+export const findHelpAvailability = ({
+    excludePlantCode,
+    mixerCountsByPlant,
+    planDate,
+    plants,
+    plantProduction,
+    request,
+    travelMinByPlantCode
+}) => {
+    if (!Array.isArray(plants) || !request) return []
+    const requestStart = request.startMin
+    const requestEnd = request.startMin + request.durationMin
+    const result = []
+    for (const plant of plants) {
+        const plantCode = plant?.plantCode || plant?.plant_code
+        if (!plantCode || plantCode === excludePlantCode) continue
+        const plantOrders = plantProduction?.[plantCode]?.orders || []
+        const adjustedPool = adjustPoolForDate(mixerCountsByPlant?.[plantCode] || 0, planDate)
+        if (adjustedPool <= 0) continue
+        const busy = computeConcurrentTrucks(plantOrders, requestStart, requestEnd)
+        const free = Math.max(0, adjustedPool - busy)
+        if (free <= 0) continue
+        const travelMin = travelMinByPlantCode?.[plantCode]
+        result.push({
+            free,
+            plantCode,
+            plantName: plant?.plantName || plant?.plant_name || plantCode,
+            travelMinFromJob: Number.isFinite(travelMin) ? travelMin : null
+        })
+    }
+    result.sort((a, b) => {
+        const aTravel = a.travelMinFromJob ?? Number.POSITIVE_INFINITY
+        const bTravel = b.travelMinFromJob ?? Number.POSITIVE_INFINITY
+        if (aTravel !== bTravel) return aTravel - bTravel
+        return b.free - a.free
+    })
+    return result.slice(0, 4)
+}
+
+/** Bundles the "closest plant is short" diagnosis: how many trucks short,
+ *  alternate times on the same plant, overlapping orders that could be
+ *  re-scheduled, and nearby plants that have spare trucks they could lend
+ *  for the request window. Returns null when the top plant can cover the
+ *  request as-is. */
+export const computeBookingConflict = ({
+    mixerCountsByPlant,
+    planDate,
+    plants,
+    plantProduction,
+    ranked,
+    request,
+    travelMinByPlantCode
+}) => {
+    const top = ranked?.[0]
+    if (!top || !request) return null
+    if (top.free >= top.trucksNeeded) return null
+    const plant = (plants || []).find((p) => (p?.plantCode || p?.plant_code) === top.plantCode)
+    if (!plant) return null
+    return {
+        alternateTimes: findAlternateStartTimes({ mixerCountsByPlant, planDate, plant, plantProduction, request }),
+        helpAvailability: findHelpAvailability({
+            excludePlantCode: top.plantCode,
+            mixerCountsByPlant,
+            planDate,
+            plantProduction,
+            plants,
+            request,
+            travelMinByPlantCode
+        }),
+        moveCandidates: findMoveCandidates({ mixerCountsByPlant, planDate, plant, plantProduction, request }),
+        plantCode: top.plantCode,
+        plantName: top.plantName,
+        shortBy: top.trucksNeeded - top.free
+    }
 }
 
 /** Build the request shape consumed by the scorer from raw form values.
  *  Returns null when required fields are missing or invalid so the view
- *  can show a friendly "fill the form first" placeholder. */
-export const buildBookingRequest = ({ address, startTime, yardage }) => {
+ *  can show a friendly "fill the form first" placeholder.
+ *
+ *  `spacingMin` is required to be > 0 only when the pour spans more than one
+ *  load (yardage > DEFAULT_LOAD_SIZE_YARDS) — single-truck pours don't have a
+ *  spacing decision to make. When omitted/falsy it falls back to
+ *  DEFAULT_TRUCK_SPACING_MIN inside the duration / truck-count helpers. */
+export const buildBookingRequest = ({ address, spacingMin, startTime, yardage }) => {
     const yards = parseFloat(yardage)
     const startMin = timeToMinutes(startTime)
     if (!yards || yards <= 0) return null
     if (!Number.isFinite(startMin)) return null
     if (!address || !String(address).trim()) return null
-    const trucksNeeded = estimateRequiredTrucks({ yardage: yards })
-    const durationMin = estimatePourDurationMinutes({ yardage: yards })
-    return { address: String(address).trim(), durationMin, startMin, trucksNeeded, yardage: yards }
+    const spacing = parseFloat(spacingMin)
+    const requiresSpacing = yards > DEFAULT_LOAD_SIZE_YARDS
+    if (requiresSpacing && (!Number.isFinite(spacing) || spacing <= 0)) return null
+    const trucksNeeded = estimateRequiredTrucks({ spacingMin: spacing, yardage: yards })
+    const durationMin = estimatePourDurationMinutes({ spacingMin: spacing, yardage: yards })
+    return {
+        address: String(address).trim(),
+        durationMin,
+        spacingMin: Number.isFinite(spacing) && spacing > 0 ? spacing : DEFAULT_TRUCK_SPACING_MIN,
+        startMin,
+        trucksNeeded,
+        yardage: yards
+    }
 }
 
 /** Color tone for a 0..1 score — same red/amber/green palette used elsewhere
