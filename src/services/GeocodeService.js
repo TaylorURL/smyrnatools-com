@@ -39,6 +39,22 @@ class GeocodeServiceImpl {
         this._cache = this._loadCache()
         this._queue = Promise.resolve()
         this._saveTimer = null
+        /** Wall-clock timestamp of the most recent Nominatim request fired
+         *  by either `geocode` or `search`. Both code paths read it to
+         *  honor the 1 req/sec policy without serialising every keystroke
+         *  through a single promise chain. */
+        this._lastRequestAt = 0
+    }
+
+    /** Sleep just long enough that the next request lands at least
+     *  `REQUEST_SPACING_MS` after the last one fired. Returns immediately
+     *  when the spacer window is already clear. */
+    async _waitForRateLimit() {
+        const sinceLast = Date.now() - this._lastRequestAt
+        if (sinceLast < REQUEST_SPACING_MS) {
+            await new Promise((resolve) => setTimeout(resolve, REQUEST_SPACING_MS - sinceLast))
+        }
+        this._lastRequestAt = Date.now()
     }
 
     _loadCache() {
@@ -76,7 +92,7 @@ class GeocodeServiceImpl {
         const result = this._queue.then(async () => {
             const fresh = this._cache[key]
             if (fresh && !isExpired(fresh)) return fresh.coord || null
-            await new Promise((resolve) => setTimeout(resolve, REQUEST_SPACING_MS))
+            await this._waitForRateLimit()
             const coord = await this._fetchCoord(address)
             this._cache[key] = { coord, ts: Date.now() }
             this._saveCache()
@@ -123,24 +139,27 @@ class GeocodeServiceImpl {
      *  geocode cache (autocomplete queries are exploratory and short-lived
      *  — caching every prefix would balloon storage), but each accepted
      *  pick still pre-warms the canonical address into the geocode cache
-     *  so the subsequent ranking call is a localStorage hit. */
+     *  so the subsequent ranking call is a localStorage hit.
+     *
+     *  Searches do NOT chain onto the queued geocode promise — only the
+     *  latest keystroke's results matter, and queueing every prefix behind
+     *  the last would compound the spacer wait into a multi-second backlog
+     *  (the dispatcher would see suggestions appear ~30s after they
+     *  stopped typing). The shared `_waitForRateLimit` keeps both code
+     *  paths inside Nominatim's 1 req/sec budget. */
     async search(query, { limit = 5 } = {}) {
         const trimmed = String(query || '').trim()
         if (trimmed.length < 4) return []
-        const result = this._queue.then(async () => {
-            await new Promise((resolve) => setTimeout(resolve, REQUEST_SPACING_MS))
-            const hits = await this._fetchHits(trimmed, limit)
-            return hits
-                .map((hit) => {
-                    const lat = parseFloat(hit?.lat)
-                    const lng = parseFloat(hit?.lon)
-                    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
-                    return { coord: { lat, lng }, displayName: String(hit.display_name || '').trim() }
-                })
-                .filter(Boolean)
-        })
-        this._queue = result.catch(() => {})
-        return result
+        await this._waitForRateLimit()
+        const hits = await this._fetchHits(trimmed, limit)
+        return hits
+            .map((hit) => {
+                const lat = parseFloat(hit?.lat)
+                const lng = parseFloat(hit?.lon)
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+                return { coord: { lat, lng }, displayName: String(hit.display_name || '').trim() }
+            })
+            .filter(Boolean)
     }
 
     /** Pre-warm the geocode cache with a known-good coord — used by the

@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import AddressAutocomplete from '../../../app/components/common/AddressAutocomplete'
+import { PlantBadge } from '../../../app/components/plan/PlanScheduleBadges'
 import useAddressDistances from '../../../app/hooks/useAddressDistances'
+import useYesterdayOperatorRestFloor from '../../../app/hooks/useYesterdayOperatorRestFloor'
+import { formatOrderAddress } from '../../../utils/AddressUtility'
 import {
     buildBookingRequest,
     computeBookingConflict,
@@ -12,6 +15,7 @@ import {
     TRAVEL_MIN_HORIZON
 } from '../../../utils/BookOrderUtility'
 import DateUtility from '../../../utils/DateUtility'
+import { clean, formatHhmm } from '../../../utils/PlanScheduleUtility'
 import { getTodayDate, timeToMinutes } from '../../../utils/PlanUtility'
 
 const FIELD_STYLE = {
@@ -62,12 +66,33 @@ function SameDayAdvice({ accentColor }) {
     )
 }
 
-/** Compact table preview of the recommended plant's day with the proposed
- *  booking inserted in chronological position. The new row fades + slides
- *  in on mount (and again whenever the proposed time / yardage change), so
- *  the dispatcher visually sees where the booking will sit relative to
- *  existing pours — same column layout as the Schedule tab. */
-function SchedulePreview({ accentColor, existingOrders, newOrder, plantName }) {
+const SCHEDULE_PREVIEW_HEADERS = ['Start', 'Plant', 'Order', 'Customer', 'Location', 'Product', 'Yards', 'Trucks']
+
+/** Match the Schedule-tab table header — sticky `bg-tertiary` strip with an
+ *  uppercase 10.5px label, divider via `borderBottom + boxShadow` so it reads
+ *  the same on either side of the seam. */
+const SchedulePreviewHeaderCell = ({ label }) => (
+    <th
+        className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
+        style={{
+            background: 'var(--bg-tertiary)',
+            borderBottom: '1px solid var(--border-light)',
+            boxShadow: '0 1px 0 0 var(--border-light)',
+            color: 'var(--text-secondary)'
+        }}
+    >
+        {label}
+    </th>
+)
+
+/**
+ * Schedule-tab-styled preview of the recommended plant's day with the
+ * proposed booking inserted in chronological position. The new row fades +
+ * slides in on mount (and again whenever the proposed time / yardage
+ * change), so the dispatcher visually sees where the booking will sit
+ * relative to existing pours.
+ */
+function SchedulePreview({ accentColor, existingOrders, newOrder, plantCode, plantName }) {
     const sortedRows = useMemo(() => {
         const existing = (existingOrders || [])
             .map((order) => {
@@ -91,7 +116,7 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantName }) {
 
     return (
         <div
-            className="rounded-lg overflow-hidden"
+            className="rounded-xl overflow-hidden"
             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
         >
             <div
@@ -107,17 +132,11 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantName }) {
                 </div>
             </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-[12px]">
+                <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
                     <thead>
-                        <tr style={{ background: 'var(--bg-secondary)' }}>
-                            {['Start', 'Customer', 'Yards', 'Trucks'].map((header) => (
-                                <th
-                                    key={header}
-                                    className="px-3 py-2 text-left font-semibold uppercase text-[10.5px] tracking-wider"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                >
-                                    {header}
-                                </th>
+                        <tr>
+                            {SCHEDULE_PREVIEW_HEADERS.map((label) => (
+                                <SchedulePreviewHeaderCell key={label} label={label} />
                             ))}
                         </tr>
                     </thead>
@@ -125,7 +144,7 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantName }) {
                         {sortedRows.length === 0 && (
                             <tr>
                                 <td
-                                    colSpan={4}
+                                    colSpan={SCHEDULE_PREVIEW_HEADERS.length}
                                     className="px-3 py-3 text-center italic"
                                     style={{ color: 'var(--text-tertiary)' }}
                                 >
@@ -133,7 +152,7 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantName }) {
                                 </td>
                             </tr>
                         )}
-                        {sortedRows.map((row) => {
+                        {sortedRows.map((row, idx) => {
                             if (row.isNew) {
                                 return (
                                     <tr
@@ -146,22 +165,46 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantName }) {
                                         }}
                                     >
                                         <td
-                                            className="px-3 py-2 font-mono tabular-nums font-bold"
+                                            className="px-3 py-2 font-mono font-bold whitespace-nowrap"
                                             style={{ color: 'var(--text-primary)' }}
                                         >
                                             {formatMinutesAsClock(row.startMin)}
                                         </td>
-                                        <td className="px-3 py-2 font-semibold" style={{ color: accentColor }}>
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <PlantBadge code={plantCode} fallback={accentColor} name={plantName} />
+                                        </td>
+                                        <td
+                                            className="px-3 py-2 whitespace-nowrap font-semibold"
+                                            style={{ color: accentColor }}
+                                        >
+                                            NEW
+                                        </td>
+                                        <td
+                                            className="px-3 py-2 max-w-[220px] font-semibold"
+                                            style={{ color: accentColor }}
+                                        >
                                             New booking
                                         </td>
                                         <td
-                                            className="px-3 py-2 font-mono tabular-nums"
+                                            className="px-3 py-2 max-w-[220px]"
+                                            style={{ color: 'var(--text-tertiary)' }}
+                                        >
+                                            —
+                                        </td>
+                                        <td
+                                            className="px-3 py-2 whitespace-nowrap"
+                                            style={{ color: 'var(--text-tertiary)' }}
+                                        >
+                                            —
+                                        </td>
+                                        <td
+                                            className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"
                                             style={{ color: 'var(--text-primary)' }}
                                         >
                                             {row.order.yardage}
                                         </td>
                                         <td
-                                            className="px-3 py-2 font-mono tabular-nums"
+                                            className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"
                                             style={{ color: 'var(--text-primary)' }}
                                         >
                                             {row.order.trucksNeeded}
@@ -170,28 +213,80 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantName }) {
                                 )
                             }
                             const o = row.order
+                            const customer = clean(o.customer) || '—'
+                            const address = formatOrderAddress(o, ', ')
+                            const productCode = clean(o.productCode)
+                            const description = clean(o.description)
+                            const yards = parseFloat(o.yardage)
                             return (
                                 <tr
                                     key={o.orderId || `${o.orderNum}-${row.startMin}`}
-                                    style={{ borderTop: '1px solid var(--border-light)' }}
+                                    className="animate-slide-in-row"
+                                    style={{
+                                        animationDelay: `${idx * 35}ms`,
+                                        borderTop: '1px solid var(--border-light)'
+                                    }}
                                 >
                                     <td
-                                        className="px-3 py-2 font-mono tabular-nums"
-                                        style={{ color: 'var(--text-secondary)' }}
+                                        className="px-3 py-2 font-mono font-bold whitespace-nowrap"
+                                        style={{ color: 'var(--text-primary)' }}
                                     >
-                                        {o.startTime || '—'}
+                                        {formatHhmm(o.startTime) || '—'}
                                     </td>
-                                    <td className="px-3 py-2 truncate" style={{ color: 'var(--text-secondary)' }}>
-                                        {o.customer || '—'}
+                                    <td className="px-3 py-2 whitespace-nowrap">
+                                        <PlantBadge
+                                            code={o.plantCode || plantCode}
+                                            fallback={accentColor}
+                                            name={plantName}
+                                        />
                                     </td>
                                     <td
-                                        className="px-3 py-2 font-mono tabular-nums"
-                                        style={{ color: 'var(--text-secondary)' }}
+                                        className="px-3 py-2 whitespace-nowrap font-semibold"
+                                        style={{ color: 'var(--text-primary)' }}
                                     >
-                                        {o.yardage || '—'}
+                                        {o.orderNum ? `#${o.orderNum}` : '—'}
                                     </td>
                                     <td
-                                        className="px-3 py-2 font-mono tabular-nums"
+                                        className="px-3 py-2 max-w-[220px]"
+                                        style={{ color: 'var(--text-primary)' }}
+                                        title={customer}
+                                    >
+                                        <span className="font-semibold truncate inline-block max-w-full align-middle">
+                                            {customer}
+                                        </span>
+                                    </td>
+                                    <td
+                                        className="px-3 py-2 max-w-[220px]"
+                                        style={{ color: 'var(--text-secondary)' }}
+                                        title={address}
+                                    >
+                                        <span className="truncate inline-block max-w-full align-middle text-[11.5px] uppercase tracking-wide">
+                                            {address || '—'}
+                                        </span>
+                                    </td>
+                                    <td
+                                        className="px-3 py-2 whitespace-nowrap"
+                                        style={{ color: 'var(--text-primary)' }}
+                                        title={description || undefined}
+                                    >
+                                        <span className="font-mono font-semibold">{productCode || '—'}</span>
+                                        {description && (
+                                            <span
+                                                className="ml-1 max-w-[160px] truncate inline-block align-middle"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
+                                                {description}
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td
+                                        className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        {Number.isFinite(yards) && yards > 0 ? yards : '—'}
+                                    </td>
+                                    <td
+                                        className="px-3 py-2 font-mono text-right whitespace-nowrap"
                                         style={{ color: 'var(--text-secondary)' }}
                                     >
                                         {o.truckCount || '—'}
@@ -393,12 +488,10 @@ function BookingConflictPanel({ conflict }) {
                         {alternateTimes.map((slot) => {
                             const fits = slot.fits
                             const tone = fits ? '#16a34a' : '#b45309'
-                            const trailing = fits
-                                ? `${slot.free} trucks free`
-                                : `still short ${slot.shortBy} truck${slot.shortBy === 1 ? '' : 's'}`
+                            const trailing = fits ? `${slot.free} trucks free` : 'will still need help to pour on pace'
                             const tooltip = fits
                                 ? `${plantName} can cover this booking at ${formatMinutesAsClock(slot.startMin)} with no help or rescheduling.`
-                                : `${plantName}'s closest match — ${slot.free} of ${slot.free + slot.shortBy} trucks free at ${formatMinutesAsClock(slot.startMin)}.`
+                                : `${formatMinutesAsClock(slot.startMin)} is the best window ${plantName} can offer — ${slot.free} of ${slot.free + slot.shortBy} trucks free here, so you'll still need help from another plant to keep the pour on pace.`
                             return (
                                 <span
                                     key={slot.startMin}
@@ -462,33 +555,83 @@ function BookingConflictPanel({ conflict }) {
     )
 }
 
+/** Compact "5h later" / "30m earlier" label for a move target relative to
+ *  the order's current start time. Used inside the move-candidate rows so
+ *  the dispatcher can see at a glance how far the suggestion shifts the
+ *  pour without doing the math themselves. */
+const formatMoveDelta = (deltaMin) => {
+    if (!Number.isFinite(deltaMin) || deltaMin === 0) return 'same time'
+    const abs = Math.abs(deltaMin)
+    const h = Math.floor(abs / 60)
+    const m = abs % 60
+    const span = [h > 0 ? `${h}h` : '', m > 0 ? `${m}m` : ''].filter(Boolean).join(' ') || '0m'
+    return deltaMin > 0 ? `${span} later` : `${span} earlier`
+}
+
 function MoveCandidateRow({ candidate }) {
     const { alternateTimes, order, trucks, window } = candidate
     const customer = order?.customer || 'Order'
     const yards = parseFloat(order?.yardage) || 0
     const orderLabel = order?.orderNum ? `#${order.orderNum}` : ''
+    /* Sort the displayed moves chronologically so dispatchers read them
+     * left-to-right by time, but keep the picker's "best first" intent by
+     * tagging the top result. The scanner already returns at most two
+     * options, so the labeling stays simple: Best + Backup. */
+    const slotsByPreference = alternateTimes
+    const slotsChronological = [...alternateTimes].sort((a, b) => a.startMin - b.startMin)
     return (
         <div
-            className="rounded-md px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1"
+            className="rounded-md px-3 py-2 flex flex-col gap-1"
             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
         >
-            <div className="flex items-center gap-2 min-w-0">
-                <i className="fas fa-arrows-up-down-left-right text-[10px]" style={{ color: '#b45309' }} />
-                <span className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                    {customer} {orderLabel}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <div className="flex items-center gap-2 min-w-0">
+                    <i className="fas fa-arrows-up-down-left-right text-[10px]" style={{ color: '#b45309' }} />
+                    <span className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                        {customer} {orderLabel}
+                    </span>
+                </div>
+                <span className="text-[11.5px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+                    Currently {formatMinutesAsClock(window.startMin)} · {yards} yd · {trucks} truck
+                    {trucks === 1 ? '' : 's'}
                 </span>
             </div>
-            <span className="text-[11.5px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
-                {formatMinutesAsClock(window.startMin)} · {yards} yd · {trucks} truck{trucks === 1 ? '' : 's'}
-            </span>
-            {alternateTimes.length > 0 ? (
-                <span className="text-[11px] flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
-                    <i className="fas fa-arrow-right text-[9px]" />
-                    move to {alternateTimes.map((slot) => formatMinutesAsClock(slot.startMin)).join(' · ')}
-                </span>
+            {slotsByPreference.length > 0 ? (
+                <div className="flex flex-col gap-0.5 pl-1">
+                    {slotsChronological.map((slot) => {
+                        const isBest = slot === slotsByPreference[0]
+                        const time = formatMinutesAsClock(slot.startMin)
+                        const delta = formatMoveDelta(slot.startMin - window.startMin)
+                        return (
+                            <span
+                                key={slot.startMin}
+                                className="text-[11.5px] inline-flex items-center gap-2"
+                                style={{ color: isBest ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                            >
+                                <i
+                                    className="fas fa-arrow-right text-[9px]"
+                                    style={{ color: 'var(--text-tertiary)' }}
+                                />
+                                <span
+                                    className="text-[9.5px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5"
+                                    style={{
+                                        background: isBest ? 'rgba(22, 163, 74, 0.14)' : 'var(--bg-secondary)',
+                                        color: isBest ? '#15803d' : 'var(--text-tertiary)'
+                                    }}
+                                >
+                                    {isBest ? 'Best' : 'Backup'}
+                                </span>
+                                <span className="font-mono tabular-nums font-semibold">{time}</span>
+                                <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                                    ({delta})
+                                </span>
+                            </span>
+                        )
+                    })}
+                </div>
             ) : (
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                    no clear reschedule slot today
+                <span className="text-[11px] pl-1" style={{ color: 'var(--text-tertiary)' }}>
+                    No clear reschedule slot today.
                 </span>
             )}
         </div>
@@ -621,6 +764,13 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
     const top = ranked[0]
     const planDateLabel = DateUtility.formatDate(planDate)
 
+    /* Per-plant earliest legal first-load-out for the booking date,
+     * derived from yesterday's actual ticket times + the 10-hour DOT rest
+     * window. Drives the move / alternate-time / recommended-time
+     * scanners so suggestions never propose dispatching an operator who's
+     * still inside their mandatory rest window. */
+    const restFloorByPlant = useYesterdayOperatorRestFloor(planDate)
+
     /* Surface time-shift / order-move / help-available suggestions only
      * when the closest plant (now always #1) genuinely can't cover the
      * requested window. travelMinByPlantCode lets the help section sort
@@ -635,9 +785,10 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                 plants,
                 ranked,
                 request,
+                restFloorByPlant,
                 travelMinByPlantCode
             }),
-        [mixerCountsByPlant, planDate, plantProduction, plants, ranked, request, travelMinByPlantCode]
+        [mixerCountsByPlant, planDate, plantProduction, plants, ranked, request, restFloorByPlant, travelMinByPlantCode]
     )
 
     /* The system's preferred start time for this booking on the closest
@@ -652,14 +803,16 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
     }, [ranked, plants])
     const recommendedSlot = useMemo(() => {
         if (!topPlantRecord || !request || conflict) return null
+        const plantCode = topPlantRecord?.plantCode || topPlantRecord?.plant_code
         return findRecommendedStartTime({
             mixerCountsByPlant,
             planDate,
             plant: topPlantRecord,
             plantProduction,
-            request
+            request,
+            restFloorMin: restFloorByPlant?.[plantCode]
         })
-    }, [topPlantRecord, request, conflict, mixerCountsByPlant, planDate, plantProduction])
+    }, [topPlantRecord, request, conflict, mixerCountsByPlant, planDate, plantProduction, restFloorByPlant])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col gap-4 px-3 sm:px-4 lg:px-6 py-4 sm:py-5 overflow-y-auto">
@@ -950,6 +1103,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                         ? { ...request, startMin: recommendedSlot.startMin }
                                         : request
                                 }
+                                plantCode={top.plantCode}
                                 plantName={top.plantName}
                             />
                         </>
@@ -962,6 +1116,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                 accentColor={accentColor}
                                 existingOrders={plantProduction?.[conflict.plantCode]?.orders || []}
                                 newOrder={request}
+                                plantCode={conflict.plantCode}
                                 plantName={conflict.plantName}
                             />
                         </>

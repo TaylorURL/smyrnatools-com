@@ -294,7 +294,11 @@ export const rankPlantsForBooking = ({
  * only skip the dispatcher's exact requested time — a 15-minute shift
  * can absolutely be the right answer when the plant is just barely
  * overcommitted at the requested minute. */
-const ALTERNATE_SCAN_STEP_MIN = 15
+/* Suggested slot granularity. Dispatchers schedule pours on the half-hour
+ * (07:00 / 07:30 / 08:00 …); :15 and :45 starts are confusing to read on
+ * the schedule strip and never used in practice, so we constrain every
+ * slot the alternate-time and move scanners emit to the same boundary. */
+const ALTERNATE_SCAN_STEP_MIN = 30
 const ALTERNATE_SCAN_START_MIN = 0
 const ALTERNATE_SCAN_END_MIN = 13 * 60
 const ALTERNATE_MIN_GAP_MIN = ALTERNATE_SCAN_STEP_MIN
@@ -302,6 +306,154 @@ const BIG_POUR_PREFERRED_START_MIN = 0
 const BIG_POUR_PREFERRED_END_MIN = 6 * 60
 const SMALL_POUR_PREFERRED_START_MIN = 7 * 60
 const SMALL_POUR_PREFERRED_END_MIN = 12 * 60
+/* Earliest minute the scan considers when neither yesterday's tickets nor
+ * today's existing orders give us an anchor. 04:30 is roughly the absolute
+ * earliest Smyrna plants ever dispatch — and gives operators 10 hours of
+ * rest off a prior shift ending at 18:30. */
+const DEFAULT_EARLIEST_DISPATCH_MIN = 4 * 60 + 30
+/* DOT 14-hour driver shift cap — clock-in to back-at-yard. Mirrored from
+ * PlanScheduleUtility so this util stays self-contained. Suggestions whose
+ * projected back-at-yard would push the plant's earliest operator past
+ * this many minutes are filtered out. */
+const SHIFT_LIMIT_MIN = 14 * 60
+/* Mandated minimum off-the-clock window between an operator's last back-
+ * at-yard and their next clock-in. Drives the per-plant floor derived
+ * from yesterday's actual ticket times. */
+const REST_HOURS_MIN = 10 * 60
+/* Single-load discharge time at the job. Each ticket = one truck load; the
+ * full pour TAIL only matters at the order level. */
+const PER_LOAD_POUR_MIN = 10
+
+/** Parse "HH:MM" or "HH:MM:SS" into minutes-of-day. Returns null on
+ *  malformed input — matches the way dispatch's `loaded_time` cells come
+ *  through. */
+const parseHhmmToMin = (value) => {
+    const parts = String(value || '').split(':')
+    if (parts.length < 2) return null
+    const h = parseInt(parts[0], 10)
+    const m = parseInt(parts[1], 10)
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return null
+    return h * 60 + m
+}
+
+/** Estimated round-trip cycle for a single dispatch ticket — travel out +
+ *  one-load discharge + travel back — using the order's actual `toJobTime`
+ *  / `toPlantTime` HH:MM cells when present, defaults otherwise. Added to
+ *  a ticket's `loadedTime` to project back-at-yard for that truck. */
+const projectTicketCycleMin = (order) => {
+    const travelOut = parseDurationMinutes(order?.toJobTime) ?? DEFAULT_TRAVEL_OUT_MIN
+    const travelBackRaw = parseDurationMinutes(order?.toPlantTime)
+    const travelBack = Number.isFinite(travelBackRaw) ? travelBackRaw : travelOut
+    return travelOut + PER_LOAD_POUR_MIN + travelBack
+}
+
+/**
+ * Today's earliest legal first-load-out per plant, derived from
+ * yesterday's actual dispatch tickets. For each truck that loaded at a
+ * plant yesterday, we project its last back-at-yard from the ticket's
+ * `loadedTime` plus the order's travel cycle, add the 10-hour DOT rest
+ * window, and keep the minimum across that plant's trucks (the earliest
+ * the plant could dispatch a single truck today). Returns
+ * `{ [plantCode]: minutesOfDay }`. Plants with no yesterday activity are
+ * omitted — callers can fall back to the schedule-derived floor for
+ * those.
+ *
+ * @param {Object} yesterdayDetail - `fetchDetailByOrderId` output for the prior day.
+ * @param {Object} yesterdayProduction - `fetchSchedule` output for the prior day,
+ *   used to resolve each ticket back to its order's travel times.
+ */
+export const computeRestFloorByPlant = (yesterdayDetail, yesterdayProduction) => {
+    if (!yesterdayDetail || typeof yesterdayDetail !== 'object') return {}
+
+    const orderById = new Map()
+    Object.entries(yesterdayProduction || {}).forEach(([code, block]) => {
+        const orders = Array.isArray(block?.orders) ? block.orders : []
+        orders.forEach((order) => {
+            if (order?.orderId) orderById.set(order.orderId, { ...order, plantCode: code })
+        })
+    })
+
+    /** truckNum → { plantCode, latestBackAtYardMin } — keep the latest
+     *  projected end across yesterday's tickets per truck. */
+    const perTruck = new Map()
+    Object.values(yesterdayDetail).forEach((detail) => {
+        const tickets = Array.isArray(detail?.tickets) ? detail.tickets : []
+        tickets.forEach((ticket) => {
+            const truckNum = String(ticket?.truckNum || '').trim()
+            if (!truckNum) return
+            const loadedMin = parseHhmmToMin(ticket?.loadedTime)
+            if (!Number.isFinite(loadedMin)) return
+            const order = orderById.get(detail.orderId)
+            const backAtYard = loadedMin + projectTicketCycleMin(order)
+            const plantCode = String(ticket.plantId || order?.plantCode || '').trim()
+            if (!plantCode) return
+            const existing = perTruck.get(truckNum)
+            if (!existing || existing.latestBackAtYardMin < backAtYard) {
+                perTruck.set(truckNum, { latestBackAtYardMin: backAtYard, plantCode })
+            }
+        })
+    })
+
+    const byPlant = {}
+    perTruck.forEach(({ latestBackAtYardMin, plantCode }) => {
+        // back-at-yard + 10h rest, mapped onto today's clock. If the rest
+        // window ends before midnight today (e.g. truck back at 10:00 +
+        // 10h = 20:00 same day), the operator is free all of today and
+        // the floor collapses to 0.
+        const earliestClockInTodayMin = Math.max(0, latestBackAtYardMin + REST_HOURS_MIN - 24 * 60)
+        if (byPlant[plantCode] == null || byPlant[plantCode] > earliestClockInTodayMin) {
+            byPlant[plantCode] = earliestClockInTodayMin
+        }
+    })
+    return byPlant
+}
+
+/** Round any minute-of-day up to the next ALTERNATE_SCAN_STEP_MIN
+ *  boundary so the scan loop only ever lands on :00 / :30 starts even
+ *  when the upstream floor (rest window or existing first-load-out) is
+ *  off-grid. */
+const roundUpToScanGranularity = (mins) => {
+    if (!Number.isFinite(mins) || mins <= 0) return 0
+    return Math.ceil(mins / ALTERNATE_SCAN_STEP_MIN) * ALTERNATE_SCAN_STEP_MIN
+}
+
+/** Earliest minute the alternate-time scan should consider for the given
+ *  plant day. Prefers the rest-derived floor (yesterday's actual ticket
+ *  times → projected back-at-yard + 10h rest) when available. Falls back
+ *  to the existing first-load-out so we don't push pours earlier than
+ *  what's already booked, then to a hardcoded earliest-dispatch when the
+ *  plant has no anchor at all. Always rounded up to the half-hour so
+ *  every scan slot lands on :00 / :30. */
+const computeScanFloor = (orders, restFloorMin) => {
+    if (Number.isFinite(restFloorMin)) {
+        return roundUpToScanGranularity(Math.max(ALTERNATE_SCAN_START_MIN, restFloorMin))
+    }
+    let earliest = null
+    for (const order of orders || []) {
+        if (!order || isExcludedOrder(order)) continue
+        const startMin = timeToMinutes(order?.startTime)
+        if (!Number.isFinite(startMin)) continue
+        if (earliest == null || startMin < earliest) earliest = startMin
+    }
+    const anchor = earliest ?? DEFAULT_EARLIEST_DISPATCH_MIN
+    return roundUpToScanGranularity(Math.max(ALTERNATE_SCAN_START_MIN, anchor))
+}
+
+/** Approximate back-at-yard minute for a candidate window — the supplied
+ *  `baseDurationMin` covers load + slump + travel-out + pour, so we tack
+ *  on one default travel leg for the trip home. Conservative on requests
+ *  whose `durationMin` already includes a return-cycle term, which biases
+ *  us toward filtering aggressively rather than under-counting hours. */
+const projectedBackAtYardMin = (startMin, baseDurationMin) => startMin + baseDurationMin + DEFAULT_TRAVEL_OUT_MIN
+
+/** True when a candidate slot doesn't push any operator past the 14-hour
+ *  shift cap. The clock-in anchor is whichever's earlier: the existing
+ *  first-load-out or the candidate's own start — moving a pour earlier
+ *  effectively becomes the day's new clock-in. */
+const respectsShiftLimit = (startMin, projectedEndMin, scanFloorMin) => {
+    const anchor = Math.min(scanFloorMin, startMin)
+    return projectedEndMin - anchor <= SHIFT_LIMIT_MIN
+}
 
 /** True when `startMin` falls in the size-appropriate sweet-spot window
  *  (graveyard for big pours, mid-morning for everything else). */
@@ -365,7 +517,8 @@ export const findAlternateStartTimes = ({
     planDate,
     plant,
     plantProduction,
-    request
+    request,
+    restFloorMin
 }) => {
     if (!plant || !request) return []
     const plantCode = plant?.plantCode || plant?.plant_code
@@ -376,15 +529,13 @@ export const findAlternateStartTimes = ({
     const { startMin: requestStart, trucksNeeded } = request
     if (trucksNeeded <= 0) return []
     const lockWindowMin = computeLockWindowMin(request)
+    const scanFloor = computeScanFloor(orders, restFloorMin)
 
     const allWindows = []
-    for (
-        let start = ALTERNATE_SCAN_START_MIN;
-        start + lockWindowMin <= ALTERNATE_SCAN_END_MIN;
-        start += ALTERNATE_SCAN_STEP_MIN
-    ) {
+    for (let start = scanFloor; start + lockWindowMin <= ALTERNATE_SCAN_END_MIN; start += ALTERNATE_SCAN_STEP_MIN) {
         if (Math.abs(start - requestStart) < ALTERNATE_MIN_GAP_MIN) continue
         const end = start + lockWindowMin
+        if (!respectsShiftLimit(start, projectedBackAtYardMin(start, request.durationMin), scanFloor)) continue
         const busy = computeConcurrentTrucks(orders, start, end)
         const free = Math.max(0, adjustedPool - busy)
         allWindows.push({
@@ -436,6 +587,7 @@ export const findMoveCandidates = ({
     plant,
     plantProduction,
     request,
+    restFloorMin,
     maxCandidates = 3
 }) => {
     if (!plant || !request) return []
@@ -464,29 +616,51 @@ export const findMoveCandidates = ({
         .sort((a, b) => a.trucks - b.trucks || a.window.startMin - b.window.startMin)
 
     /* For each move candidate, scan the day for windows where the SAME
-     * plant could re-host the moved order. We exclude the candidate from
-     * the busy calc (since we're moving it) and treat the new request as
-     * already booked (since that's the whole point of the move). */
+     * plant could re-host the moved order. Exclude the candidate from the
+     * busy calc (we're moving it) and treat the new request as already
+     * booked (the whole point of the move).
+     *
+     * Slot ranking mirrors `findAlternateStartTimes`: prefer size-window-
+     * appropriate starts, then tightest cluster against the rest of the
+     * day, then proximity to the order's original time (small shifts beat
+     * big ones), earliest as a final tiebreaker. Floor + shift-cap stop
+     * us from suggesting "move it to 00:00" when nothing else is running
+     * pre-dawn. */
     const findReschedulesForOrder = (candidate, candidateDuration) => {
         const otherOrders = orders.filter((o) => o !== candidate.order)
+        const moveScanFloor = computeScanFloor(otherOrders, restFloorMin)
+        const candidateYardage = parseFloat(candidate.order?.yardage) || 0
         const out = []
         for (
-            let start = ALTERNATE_SCAN_START_MIN;
+            let start = moveScanFloor;
             start + candidateDuration <= ALTERNATE_SCAN_END_MIN;
             start += ALTERNATE_SCAN_STEP_MIN
         ) {
             if (Math.abs(start - candidate.window.startMin) < ALTERNATE_MIN_GAP_MIN) continue
             const end = start + candidateDuration
+            if (!respectsShiftLimit(start, projectedBackAtYardMin(start, candidateDuration), moveScanFloor)) continue
             const otherBusy = computeConcurrentTrucks(otherOrders, start, end)
             const requestOverlapsHere = start < requestEnd && end > requestStart
             const requestBusy = requestOverlapsHere ? request.trucksNeeded : 0
             const totalBusy = otherBusy + requestBusy
-            if (adjustedPool - totalBusy >= candidate.trucks) {
-                out.push({ free: adjustedPool - totalBusy, startMin: start })
-                if (out.length >= 2) break
-            }
+            if (adjustedPool - totalBusy < candidate.trucks) continue
+            out.push({
+                free: adjustedPool - totalBusy,
+                isolationMin: computeIsolationMin(start, end, otherOrders),
+                preferred: isPreferredStartWindow(candidateYardage, start),
+                proximityMin: Math.abs(start - candidate.window.startMin),
+                startMin: start
+            })
         }
         return out
+            .sort((a, b) => {
+                if (a.preferred !== b.preferred) return a.preferred ? -1 : 1
+                if (a.isolationMin !== b.isolationMin) return a.isolationMin - b.isolationMin
+                if (a.proximityMin !== b.proximityMin) return a.proximityMin - b.proximityMin
+                return a.startMin - b.startMin
+            })
+            .slice(0, 2)
+            .map(({ free, startMin }) => ({ free, startMin }))
     }
 
     const candidates = []
@@ -517,7 +691,14 @@ export const findMoveCandidates = ({
  *  for hours and violates the 1 PM cap. The view compares this slot's
  *  startMin to `request.startMin` and surfaces the shift with a reason
  *  when they differ. */
-export const findRecommendedStartTime = ({ mixerCountsByPlant, planDate, plant, plantProduction, request }) => {
+export const findRecommendedStartTime = ({
+    mixerCountsByPlant,
+    planDate,
+    plant,
+    plantProduction,
+    request,
+    restFloorMin
+}) => {
     if (!plant || !request) return null
     const plantCode = plant?.plantCode || plant?.plant_code
     const orders = plantProduction?.[plantCode]?.orders || []
@@ -526,14 +707,12 @@ export const findRecommendedStartTime = ({ mixerCountsByPlant, planDate, plant, 
     const trucksNeeded = request.trucksNeeded
     if (trucksNeeded <= 0) return null
     const lockWindowMin = computeLockWindowMin(request)
+    const scanFloor = computeScanFloor(orders, restFloorMin)
 
     const candidates = []
-    for (
-        let start = ALTERNATE_SCAN_START_MIN;
-        start + lockWindowMin <= ALTERNATE_SCAN_END_MIN;
-        start += ALTERNATE_SCAN_STEP_MIN
-    ) {
+    for (let start = scanFloor; start + lockWindowMin <= ALTERNATE_SCAN_END_MIN; start += ALTERNATE_SCAN_STEP_MIN) {
         const end = start + lockWindowMin
+        if (!respectsShiftLimit(start, projectedBackAtYardMin(start, request.durationMin), scanFloor)) continue
         const busy = computeConcurrentTrucks(orders, start, end)
         const free = Math.max(0, adjustedPool - busy)
         candidates.push({
@@ -614,6 +793,7 @@ export const computeBookingConflict = ({
     plantProduction,
     ranked,
     request,
+    restFloorByPlant,
     travelMinByPlantCode
 }) => {
     const top = ranked?.[0]
@@ -621,8 +801,16 @@ export const computeBookingConflict = ({
     if (top.free >= top.trucksNeeded) return null
     const plant = (plants || []).find((p) => (p?.plantCode || p?.plant_code) === top.plantCode)
     if (!plant) return null
+    const restFloorMin = restFloorByPlant?.[top.plantCode]
     return {
-        alternateTimes: findAlternateStartTimes({ mixerCountsByPlant, planDate, plant, plantProduction, request }),
+        alternateTimes: findAlternateStartTimes({
+            mixerCountsByPlant,
+            planDate,
+            plant,
+            plantProduction,
+            request,
+            restFloorMin
+        }),
         helpAvailability: findHelpAvailability({
             excludePlantCode: top.plantCode,
             mixerCountsByPlant,
@@ -632,7 +820,14 @@ export const computeBookingConflict = ({
             request,
             travelMinByPlantCode
         }),
-        moveCandidates: findMoveCandidates({ mixerCountsByPlant, planDate, plant, plantProduction, request }),
+        moveCandidates: findMoveCandidates({
+            mixerCountsByPlant,
+            planDate,
+            plant,
+            plantProduction,
+            request,
+            restFloorMin
+        }),
         plantCode: top.plantCode,
         plantName: top.plantName,
         shortBy: top.trucksNeeded - top.free

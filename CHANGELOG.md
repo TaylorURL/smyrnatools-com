@@ -2,6 +2,21 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.34] - 2026-05-07
+
+- Add DOT 10-hour rest window enforcement to booking suggestions — alternate times, move candidates, and recommended start times now respect per-plant operator rest floors derived from yesterday's actual dispatch tickets
+- Add useYesterdayOperatorRestFloor hook to fetch prior-day tickets and compute earliest legal first-load-out per plant
+- Add useTodaysRecentJobsByTruck hook to surface each truck's most recent load from today's dispatch data, refreshing every 60 seconds
+- Change alternate time scan granularity from 15-minute to 30-minute steps to match dispatcher scheduling conventions (half-hour boundaries)
+- Add 14-hour shift cap filtering to alternate time, move candidate, and recommended start time scanners
+- Compute a dynamic scan floor per plant based on rest window or existing first-load-out instead of always starting at minute zero
+- Improve move candidate reschedule ranking: prefer size-appropriate windows, tightest clustering, proximity to original time, then earliest
+- Refactor GeocodeService to decouple search requests from the queued geocode promise chain — searches no longer serialize behind pending geocodes, preventing multi-second suggestion backlogs on rapid keystrokes
+- Add shared _waitForRateLimit method in GeocodeService so both geocode and search honor Nominatim's 1 req/sec budget independently
+- Redesign BookOrderView schedule preview to match the Schedule tab's table layout with sticky themed headers, plant badges, and full order detail columns (plant, order number, customer, location, product)
+- Add "Recent Job" column to the schedule preview showing each truck's latest load-out from today's dispatch data
+- Display formatted address and product info in schedule preview rows using AddressUtility and PlanScheduleUtility helpers
+
 ## [40.0.33] - 2026-05-07
 
 - Replace inline style colors on plan schedule badges (danger, warning, info, neutral) with themed utility classes for proper dark mode support
