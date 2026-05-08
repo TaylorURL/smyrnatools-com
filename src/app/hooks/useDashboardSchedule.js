@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { DispatchDataService } from '../../services/DispatchDataService'
 import { PlanService } from '../../services/PlanService'
 import { PLAN_META_KEY, sumPlanYardage } from '../../utils/PlanDashboardUtility'
+import { applyLoadingPlantReassignment } from '../../utils/PlanScheduleUtility'
 import { isExcludedOrder } from '../../utils/PlanUtility'
 import ReportUtility from '../../utils/ReportUtility'
+import { useDetailOrders } from './useDetailOrders'
 
 const PLANT_PRODUCTION_KEYS = (production) =>
     production ? Object.keys(production).filter((code) => code !== PLAN_META_KEY) : []
@@ -47,6 +49,10 @@ export function useDashboardSchedule({ plantSet, refreshKey } = {}) {
     const [planDate, setPlanDate] = useState(() => ReportUtility.getTodayISODate())
     const [plan, setPlan] = useState(null)
     const [schedule, setSchedule] = useState({})
+    // Live ticket data — drives the same loading-plant reassignment the
+    // Schedule tab applies, so dashboard per-plant totals match once the
+    // day's first tickets start loading.
+    const { detailByOrderId } = useDetailOrders(planDate)
 
     useEffect(() => {
         let cancelled = false
@@ -78,13 +84,18 @@ export function useDashboardSchedule({ plantSet, refreshKey } = {}) {
         const isPlantAllowed = buildPlantPredicate(plantSet)
         const plantProduction = plan?.plant_production || {}
         const assignments = Array.isArray(plan?.assignments) ? plan.assignments : []
-        const scheduledPlantCodes = PLANT_PRODUCTION_KEYS(schedule).filter(isPlantAllowed)
+        // Re-bucket fully-loaded orders onto the plant that actually loaded
+        // them — mirrors what PlanScheduleView does, so the dashboard's
+        // per-plant rollup stays in sync with the Schedule tab as tickets
+        // come in. No-op until ticket details have loaded.
+        const reassignedSchedule = applyLoadingPlantReassignment(schedule, detailByOrderId)
+        const scheduledPlantCodes = PLANT_PRODUCTION_KEYS(reassignedSchedule).filter(isPlantAllowed)
 
         // Per-plant rollups — exclude cancelled/test orders so totals match
         // what the Schedule tab shows for "real" production.
         const plantSummaries = scheduledPlantCodes.map((code) => ({
             code,
-            ...summarizePlantSchedule(schedule[code])
+            ...summarizePlantSchedule(reassignedSchedule[code])
         }))
         const orderCount = plantSummaries.reduce((sum, row) => sum + row.orderCount, 0)
         const scheduledYardage = plantSummaries.reduce((sum, row) => sum + row.yardage, 0)
@@ -139,5 +150,5 @@ export function useDashboardSchedule({ plantSet, refreshKey } = {}) {
             sendingPlants,
             totalOps
         }
-    }, [loading, plan, planDate, plantSet, schedule])
+    }, [detailByOrderId, loading, plan, planDate, plantSet, schedule])
 }

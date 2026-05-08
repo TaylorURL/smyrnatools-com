@@ -1,10 +1,4 @@
-import {
-    adjustPoolForDate,
-    BIG_POUR_YARDAGE_THRESHOLD,
-    isExcludedOrder,
-    parseDurationMinutes,
-    timeToMinutes
-} from './PlanUtility'
+import { adjustPoolForDate, isExcludedOrder, parseDurationMinutes, timeToMinutes } from './PlanUtility'
 
 /* Defaults used when an explicit field isn't provided on the request or an
  * order. Tuned to match common Smyrna pours so the recommender stays close
@@ -302,10 +296,21 @@ const ALTERNATE_SCAN_STEP_MIN = 30
 const ALTERNATE_SCAN_START_MIN = 0
 const ALTERNATE_SCAN_END_MIN = 13 * 60
 const ALTERNATE_MIN_GAP_MIN = ALTERNATE_SCAN_STEP_MIN
+/* Booking-side definition of "big pour" — distinct from the scheduling /
+ * statistics threshold in PlanUtility because the booking recommender
+ * applies a stricter rule: anything ≥ this many yards belongs in the
+ * 00:00–06:00 graveyard window so it doesn't tie up the day's pool while
+ * smaller orders run through business hours. */
+const BIG_POUR_BOOKING_THRESHOLD_YD = 150
 const BIG_POUR_PREFERRED_START_MIN = 0
 const BIG_POUR_PREFERRED_END_MIN = 6 * 60
-const SMALL_POUR_PREFERRED_START_MIN = 7 * 60
-const SMALL_POUR_PREFERRED_END_MIN = 12 * 60
+/* Small / medium pours run cleanest after the graveyard pours wrap up
+ * but well before the day's last back-at-yard cutoff. 06:00 picks up
+ * right where the graveyard window ends; 14:00 leaves enough runway for
+ * a 5-yd, 1-truck pour to finish before the 14h shift cap kicks in even
+ * on a 04:30 first-load-out anchor. */
+const SMALL_POUR_PREFERRED_START_MIN = 6 * 60
+const SMALL_POUR_PREFERRED_END_MIN = 14 * 60
 /* Earliest minute the scan considers when neither yesterday's tickets nor
  * today's existing orders give us an anchor. 04:30 is roughly the absolute
  * earliest Smyrna plants ever dispatch — and gives operators 10 hours of
@@ -455,10 +460,17 @@ const respectsShiftLimit = (startMin, projectedEndMin, scanFloorMin) => {
     return projectedEndMin - anchor <= SHIFT_LIMIT_MIN
 }
 
-/** True when `startMin` falls in the size-appropriate sweet-spot window
- *  (graveyard for big pours, mid-morning for everything else). */
+/** True when `yardage` qualifies as a "big pour" for booking purposes —
+ *  uses the booking-specific threshold (150 yd) rather than the global
+ *  scheduling threshold so dispatch's "should this be in graveyard"
+ *  rule can diverge from the analytics labeling. */
+const isBigBookingPour = (yardage) => Number(yardage) >= BIG_POUR_BOOKING_THRESHOLD_YD
+
+/** True when `startMin` falls in the size-appropriate sweet-spot window:
+ *  big pours (≥150 yd) belong in 00:00–06:00 so they don't choke business
+ *  hours; smaller pours land cleanly in 06:00–14:00. */
 const isPreferredStartWindow = (yardage, startMin) => {
-    if (yardage >= BIG_POUR_YARDAGE_THRESHOLD) {
+    if (isBigBookingPour(yardage)) {
         return startMin >= BIG_POUR_PREFERRED_START_MIN && startMin < BIG_POUR_PREFERRED_END_MIN
     }
     return startMin >= SMALL_POUR_PREFERRED_START_MIN && startMin < SMALL_POUR_PREFERRED_END_MIN
@@ -572,6 +584,43 @@ export const findAlternateStartTimes = ({
         .slice(0, count)
 }
 
+/**
+ * Cross-day fallback for the "always show 3 viable options" rule. Walks
+ * each upcoming day's plant production (typically the next 2–4
+ * non-Sunday days) and asks the same `findAlternateStartTimes` scanner
+ * for fitting slots on the supplied plant. Returns the per-day clusters
+ * — `[{ dateStr, slots }]` — sorted by date ascending, capped at
+ * `maxDays` entries so the UI doesn't drown in suggestions.
+ *
+ * Adjacent-day rest floors are not threaded through (we'd need to fetch
+ * each prior day's tickets separately), so the only floor in play here
+ * is the schedule-derived one. That's intentional — a multi-day-ahead
+ * suggestion is informational; the dispatcher will re-run the full
+ * recommender on the chosen day before booking.
+ */
+export const findCrossDaySuggestions = ({ adjacentProduction, maxDays = 2, mixerCountsByPlant, plant, request }) => {
+    if (!plant || !request || !adjacentProduction) return []
+    const out = []
+    const dates = Object.keys(adjacentProduction).sort()
+    for (const dateStr of dates) {
+        const prod = adjacentProduction[dateStr]
+        if (!prod || typeof prod !== 'object') continue
+        const slots = findAlternateStartTimes({
+            count: 3,
+            mixerCountsByPlant,
+            planDate: dateStr,
+            plant,
+            plantProduction: prod,
+            request
+        })
+        const fitting = slots.filter((s) => s.fits).slice(0, 3)
+        if (fitting.length === 0) continue
+        out.push({ dateStr, slots: fitting })
+        if (out.length >= maxDays) break
+    }
+    return out
+}
+
 /** Existing orders at `plant` whose pour window overlaps the request and
  *  whose removal would free enough trucks for the new booking. Sorted
  *  smallest-first so the dispatcher sees the smallest disruption first.
@@ -644,7 +693,16 @@ export const findMoveCandidates = ({
             const requestBusy = requestOverlapsHere ? request.trucksNeeded : 0
             const totalBusy = otherBusy + requestBusy
             if (adjustedPool - totalBusy < candidate.trucks) continue
+            /* Direction relative to the new pour: 'after' means the move
+             * lands cleanly past the new pour's tail (push the small order
+             * back); 'before' means it lands ahead of the new pour's lead
+             * (pull the small order up); 'overlap' would mean it still
+             * collides — filtered out by the truck-fit check above when
+             * the math doesn't work, so this entry exists mostly for
+             * sorting clarity. */
+            const direction = start >= requestEnd ? 'after' : end <= requestStart ? 'before' : 'overlap'
             out.push({
+                direction,
                 free: adjustedPool - totalBusy,
                 isolationMin: computeIsolationMin(start, end, otherOrders),
                 preferred: isPreferredStartWindow(candidateYardage, start),
@@ -652,7 +710,17 @@ export const findMoveCandidates = ({
                 startMin: start
             })
         }
-        return out
+        /* Strongly prefer pushing the moved order BACK (after the new
+         * pour ends) over pulling it UP (before the new pour starts).
+         * Dispatchers mentally "push small jobs back" once a big anchor
+         * pour locks the morning; suggesting "move ZEN from 09:00 to
+         * 05:30" assumes operators can clock in earlier than they were
+         * already scheduled to, which usually conflicts with the rest
+         * window and feels wrong. Only fall back to "before" moves when
+         * no "after" slot fits at all. */
+        const afterMoves = out.filter((o) => o.direction === 'after')
+        const ranked = afterMoves.length > 0 ? afterMoves : out
+        return ranked
             .sort((a, b) => {
                 if (a.preferred !== b.preferred) return a.preferred ? -1 : 1
                 if (a.isolationMin !== b.isolationMin) return a.isolationMin - b.isolationMin
@@ -709,29 +777,78 @@ export const findRecommendedStartTime = ({
     const lockWindowMin = computeLockWindowMin(request)
     const scanFloor = computeScanFloor(orders, restFloorMin)
 
-    const candidates = []
-    for (let start = scanFloor; start + lockWindowMin <= ALTERNATE_SCAN_END_MIN; start += ALTERNATE_SCAN_STEP_MIN) {
+    /** Build a candidate evaluation for an arbitrary start minute. Same
+     *  shape as the grid-scan candidates so the typed-time check below
+     *  can return a candidate that wasn't on the 30-minute scan grid. */
+    const evaluateAt = (start) => {
+        if (!Number.isFinite(start)) return null
         const end = start + lockWindowMin
-        if (!respectsShiftLimit(start, projectedBackAtYardMin(start, request.durationMin), scanFloor)) continue
+        if (start < scanFloor) return null
+        if (end > ALTERNATE_SCAN_END_MIN) return null
+        if (!respectsShiftLimit(start, projectedBackAtYardMin(start, request.durationMin), scanFloor)) return null
         const busy = computeConcurrentTrucks(orders, start, end)
         const free = Math.max(0, adjustedPool - busy)
-        candidates.push({
+        return {
             fits: free >= trucksNeeded,
             free,
             isolationMin: computeIsolationMin(start, end, orders),
             preferred: isPreferredStartWindow(request.yardage, start),
             shortBy: Math.max(0, trucksNeeded - free),
             startMin: start
-        })
+        }
+    }
+
+    const candidates = []
+    for (let start = scanFloor; start + lockWindowMin <= ALTERNATE_SCAN_END_MIN; start += ALTERNATE_SCAN_STEP_MIN) {
+        const c = evaluateAt(start)
+        if (c) candidates.push(c)
     }
     if (candidates.length === 0) return null
-    candidates.sort((a, b) => {
-        if (a.fits !== b.fits) return a.fits ? -1 : 1
-        if (a.preferred !== b.preferred) return a.preferred ? -1 : 1
-        if (a.isolationMin !== b.isolationMin) return a.isolationMin - b.isolationMin
-        return a.startMin - b.startMin
-    })
-    return candidates[0]
+
+    /* Honor the dispatcher's typed time when it's a complete fit. The
+     * sort cascade below would otherwise pick the earliest of several
+     * tied "fits + preferred + isolated" slots and override the typed
+     * time for no operational reason — moving 07:00 → 06:00 just
+     * expands the shift envelope by an hour. The recommender should
+     * only nudge the typed time when it genuinely fails a rule
+     * (overbooked, wrong size-window, outside rest floor, past 14h
+     * shift cap). When all rules pass, the dispatcher's choice wins. */
+    const typedFit = evaluateAt(request.startMin) ?? candidates.find((c) => c.startMin === request.startMin)
+    let chosen = typedFit && typedFit.fits && typedFit.preferred ? typedFit : null
+
+    if (!chosen) {
+        candidates.sort((a, b) => {
+            if (a.fits !== b.fits) return a.fits ? -1 : 1
+            if (a.preferred !== b.preferred) return a.preferred ? -1 : 1
+            if (a.isolationMin !== b.isolationMin) return a.isolationMin - b.isolationMin
+            return a.startMin - b.startMin
+        })
+        chosen = candidates[0]
+    }
+
+    /* Tighter-pack hint — when the chosen slot starts BEFORE the day's
+     * existing first-load-out, the new pour expands the shift envelope
+     * (operators clock in earlier than they otherwise would). If the
+     * existing first-load-out time would also fit cleanly + sit inside
+     * the size-appropriate window, surface it as a non-binding
+     * suggestion so the dispatcher can choose to pack tighter without
+     * the system overriding their typed time. */
+    let existingFirstLoadOut = null
+    for (const order of orders || []) {
+        if (!order || isExcludedOrder(order)) continue
+        const startMin = timeToMinutes(order?.startTime)
+        if (!Number.isFinite(startMin)) continue
+        if (existingFirstLoadOut == null || startMin < existingFirstLoadOut) existingFirstLoadOut = startMin
+    }
+    let tighterAlternative = null
+    if (Number.isFinite(existingFirstLoadOut) && chosen.startMin < existingFirstLoadOut) {
+        const altCandidate = evaluateAt(existingFirstLoadOut)
+        if (altCandidate && altCandidate.fits && altCandidate.preferred) {
+            tighterAlternative = altCandidate
+        }
+    }
+
+    return tighterAlternative ? { ...chosen, tighterAlternative } : chosen
 }
 
 /** Other plants that could lend trucks to `excludePlantCode` during the
@@ -802,22 +919,50 @@ export const computeBookingConflict = ({
     const plant = (plants || []).find((p) => (p?.plantCode || p?.plant_code) === top.plantCode)
     if (!plant) return null
     const restFloorMin = restFloorByPlant?.[top.plantCode]
+    const alternateTimes = findAlternateStartTimes({
+        mixerCountsByPlant,
+        planDate,
+        plant,
+        plantProduction,
+        request,
+        restFloorMin
+    })
+    /* "Wrong window for this size" hint — fires when the dispatcher
+     * typed a start time outside the size-appropriate sweet-spot. The
+     * conflict panel uses this to lead with "shift to graveyard" before
+     * the help / reschedule advice when applicable, especially for big
+     * pours (≥ 150 yd) that should always be in the 00:00–06:00 window. */
+    const requestInPreferredWindow = isPreferredStartWindow(request.yardage, request.startMin)
+    const sizeWindowAdvice = !requestInPreferredWindow
+        ? {
+              isBigPour: isBigBookingPour(request.yardage),
+              preferredWindowLabel: isBigBookingPour(request.yardage) ? '00:00–06:00' : '06:00–14:00',
+              suggestedSlot: alternateTimes.find((s) => isPreferredStartWindow(request.yardage, s.startMin)) || null
+          }
+        : null
+    /* Pivot to the SHIFT TARGET's perspective when a size-window shift
+     * is recommended. Help availability, shortBy, and the schedule
+     * preview should all reflect the time the dispatcher is actually
+     * being told to book — not the typed time they're being told to
+     * abandon. Without this pivot the panel says "shift to 04:00, you
+     * still need 2 trucks" while showing 9 free trucks at 07:00, and the
+     * preview row stays at 07:00. */
+    const effectiveStartMin = sizeWindowAdvice?.suggestedSlot?.startMin ?? request.startMin
+    const effectiveRequest =
+        effectiveStartMin === request.startMin ? request : { ...request, startMin: effectiveStartMin }
+    const effectiveShortBy = sizeWindowAdvice?.suggestedSlot
+        ? (sizeWindowAdvice.suggestedSlot.shortBy ?? 0)
+        : top.trucksNeeded - top.free
     return {
-        alternateTimes: findAlternateStartTimes({
-            mixerCountsByPlant,
-            planDate,
-            plant,
-            plantProduction,
-            request,
-            restFloorMin
-        }),
+        alternateTimes,
+        effectiveStartMin,
         helpAvailability: findHelpAvailability({
             excludePlantCode: top.plantCode,
             mixerCountsByPlant,
             planDate,
             plantProduction,
             plants,
-            request,
+            request: effectiveRequest,
             travelMinByPlantCode
         }),
         moveCandidates: findMoveCandidates({
@@ -830,7 +975,8 @@ export const computeBookingConflict = ({
         }),
         plantCode: top.plantCode,
         plantName: top.plantName,
-        shortBy: top.trucksNeeded - top.free
+        shortBy: effectiveShortBy,
+        sizeWindowAdvice
     }
 }
 

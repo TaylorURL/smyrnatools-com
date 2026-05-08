@@ -1,11 +1,9 @@
 import React from 'react'
 
-/** Refresh-from-bucket button — disables itself while a sync is already
- *  in flight so the user can't queue overlapping fetches. */
+/** Refresh button — disables itself while a sync is already in flight
+ *  so the user can't queue overlapping fetches. */
 function RefreshButton({ isMobile, isSyncing, lastSyncedAt, onRefresh }) {
-    const title = lastSyncedAt
-        ? `Pull the latest schedule from the dispatch bucket\nLast synced ${lastSyncedAt.toLocaleTimeString()}`
-        : 'Pull the latest schedule from the dispatch bucket'
+    const title = lastSyncedAt ? `Last updated ${lastSyncedAt.toLocaleTimeString()}` : 'Refresh schedule'
     return (
         <button
             onClick={() => onRefresh?.()}
