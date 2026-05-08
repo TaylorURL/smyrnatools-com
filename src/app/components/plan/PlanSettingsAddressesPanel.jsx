@@ -1,5 +1,7 @@
 import React from 'react'
 
+import AddressAutocomplete from '../common/AddressAutocomplete'
+
 const trimSafe = (value) => (value || '').trim()
 
 /**
@@ -28,7 +30,9 @@ export function PlanSettingsAddressesPanel({
                 Plant addresses
             </div>
             <p className="text-[11.5px] -mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                Used by the Schedule tab to draw plant → job → plant routes when an order address is clicked.
+                Start typing the plant&apos;s street address and pick a suggestion to verify it. The verified address
+                feeds the Schedule tab&apos;s plant → job → plant routes and the booking recommender&apos;s drive-time
+                math.
             </p>
             {error && <AddressErrorBanner message={error} />}
             {(plants || []).length === 0 ? (
@@ -80,6 +84,11 @@ function AddressErrorBanner({ message }) {
 
 function AddressRow({ accentColor, isDirty, isSaving, plant, value, wasJustSaved, onChange, onSave }) {
     const code = plant.plant_code
+    /* `AddressAutocomplete` matches the booking-form pattern: pick from
+     * Nominatim's suggestions and the canonical, geocodable display
+     * name lands in state. Picking also pre-warms the geocode cache
+     * with the verified lat/lng, so the routing service hits
+     * localStorage on the next plant↔job route instead of re-fetching. */
     return (
         <div className="rounded-lg px-3 py-2 flex items-center gap-2" style={{ background: 'var(--bg-secondary)' }}>
             <div
@@ -96,21 +105,19 @@ function AddressRow({ accentColor, isDirty, isSaving, plant, value, wasJustSaved
             >
                 {code}
             </div>
-            <input
-                type="text"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' && isDirty) onSave()
-                }}
-                placeholder={`Street address for ${plant.plant_name || code}`}
-                className="flex-1 border rounded-md text-[12.5px] outline-none px-2 py-1.5"
-                style={{
-                    background: 'var(--bg-primary)',
-                    borderColor: 'var(--border-medium)',
-                    color: 'var(--text-primary)'
-                }}
-            />
+            <div className="flex-1 min-w-0">
+                <AddressAutocomplete
+                    fieldStyle={{
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border-medium)',
+                        color: 'var(--text-primary)'
+                    }}
+                    inputClassName="w-full rounded-md text-[12.5px] outline-none px-2 py-1.5"
+                    onChange={onChange}
+                    placeholder={`Street address for ${plant.plant_name || code}`}
+                    value={value}
+                />
+            </div>
             <AddressSaveButton
                 accentColor={accentColor}
                 isDirty={isDirty}

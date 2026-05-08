@@ -21,7 +21,9 @@ const SUGGESTION_MIN_QUERY_LEN = 4
  * container) can't clip it out of view. Position is recomputed off the
  * input's bounding rect on open + on scroll/resize.
  */
-function AddressAutocomplete({ fieldStyle, onChange, placeholder, required, value }) {
+const DEFAULT_INPUT_CLASSNAME = 'w-full rounded-lg px-3 py-2.5 text-[14px] outline-none'
+
+function AddressAutocomplete({ fieldStyle, inputClassName, onChange, placeholder, required, value }) {
     const [suggestions, setSuggestions] = useState([])
     const [isOpen, setIsOpen] = useState(false)
     const [highlightIndex, setHighlightIndex] = useState(-1)
@@ -156,7 +158,7 @@ function AddressAutocomplete({ fieldStyle, onChange, placeholder, required, valu
                 placeholder={placeholder}
                 required={required}
                 autoComplete="off"
-                className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                className={inputClassName || DEFAULT_INPUT_CLASSNAME}
                 style={fieldStyle}
             />
             {isLoading && (

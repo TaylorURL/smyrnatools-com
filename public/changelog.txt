@@ -2,6 +2,48 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.0] - 2026-05-08
+
+- Rebuild AddressAutocomplete dropdown as a portal so it renders above scroll containers instead of getting clipped, with live repositioning on scroll/resize and loading/empty-state feedback
+- Add PhoneLink component that wraps phone numbers in tappable `tel:` links for Avaya/mobile dialer handoff
+- Add dedicated StatisticsSkeleton and CallListSkeleton loading states to replace the generic RealtimeSkeleton
+- Extract maintenance UI into shared components: MaintenanceFilterBar, MaintenanceFormAtoms, MaintenanceFormsRail, MaintenanceHeader, and MaintenanceTabSwitcher
+- Add PlanActivityBanner component for surfacing plan activity alerts
+- Add PlanDashboardActivityFeed and PlanDashboardClockInBoard components, replacing the old PlanDashboardSideNav
+- Expand PlanDateNav with richer navigation controls and layout updates
+- Rework CallListDetail and CallListRow with updated layout and interaction patterns
+- Add useMessages hook and MessageService for messaging/conversation support
+- Add useRecentLoadedTickets hook for tracking recently loaded ticket data
+- Add RoutingService for route/travel calculations
+- Expand BookOrderUtility with new booking logic, size-window advice, and cross-day suggestion support
+- Significantly expand MaintenancePdfFormUtility with additional form field handling and PDF generation improvements
+- Overhaul MyAccountView with expanded layout and pass onSelectView for in-app navigation from account page
+- Rebuild NotificationsView with substantially expanded notification handling and UI
+- Refactor MaintenanceView, extracting logic into the new shared maintenance components
+- Rework NRMCAView layout and data presentation
+- Expand BookOrderView with new recommendation panels and booking workflow enhancements
+- Update CallListView with revised list/detail split layout
+- Rework PlanDashboardView to use the new ActivityFeed and ClockInBoard components
+- Add PlanStatisticsControls tweaks and update PlanStatisticsView section tab handling
+- Update PlanScheduleOrderCard with minor layout adjustment
+- Refactor PlanMiniTimeline rendering logic
+- Update useLiveClock and useLiveMinuteOfDay hooks with revised timer logic
+- Refactor useAddressDistances with updated distance calculation flow
+- Update usePlanStatistics hook with revised computation logic
+- Refactor PlanUtility and PlanStatisticsUtility with updated helper functions
+- Update GeocodeService with revised geocoding logic
+- Standardize report modals (ConfirmationModal, ErrorModal, OperatorExclusionReasonModal, QCStrengthDetailModal, QCStrengthReportModal, ThirdPartyLabDetailModal, ThirdPartyLabReportModal) and report v2 components (MissingPanel, MyOneOffRail, OverdueBanner, QuickRail, TrackCard, WeekRibbon) with minor style/import updates
+- Update ReportsEmptyState, SubmitHeader, ReportsView, ReportsReviewView, and ReportsSubmitView with small refinements
+- Update WeeklyGeneralManagerReport and WeeklySafetyManagerReport with layout and data tweaks
+- Update shared ReportComponents with revised rendering
+- Add MaintenanceLogView layout improvements and MaintenanceFormView minor adjustments
+- Update OperatorCard and OperatorsView with small refinements
+- Update QualityIssuesView and DashboardView with minor adjustments
+- Add PlanRealtimeView updates and PlanScheduleView/PlanView routing tweaks
+- Add users_pinned_conversations table via new migration for pinned conversation support
+- Update DatabaseService with new table allowlist entry
+- Extend Tailwind config with additional theme utilities
+
 ## [40.0.36] - 2026-05-08
 
 - Add cross-day suggestion support to Find-a-Spot — when the selected day can't fill 3 viable slots, the recommender now scans the next 2-4 non-Sunday days via a new useAdjacentDayPlantProduction hook
