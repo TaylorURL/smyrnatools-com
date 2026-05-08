@@ -125,10 +125,18 @@ class GeocodeServiceImpl {
                 headers: { Accept: 'application/json' },
                 signal: controller?.signal
             })
-            if (!response.ok) return []
+            if (!response.ok) {
+                /* Surface the failure so a 403 / rate-limit / network
+                 * blip doesn't manifest as a silently-empty dropdown. */
+                console.warn(`[GeocodeService] Nominatim returned ${response.status} for "${query}"`)
+                return []
+            }
             const data = await response.json()
             return Array.isArray(data) ? data : []
-        } catch {
+        } catch (error) {
+            if (error?.name !== 'AbortError') {
+                console.warn(`[GeocodeService] Nominatim fetch failed for "${query}":`, error)
+            }
             return []
         } finally {
             if (timer) clearTimeout(timer)

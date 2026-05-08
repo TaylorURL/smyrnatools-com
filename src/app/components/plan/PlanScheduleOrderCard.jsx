@@ -9,6 +9,7 @@ import {
     isLikelyBadAddress
 } from '../../../utils/PlanScheduleUtility'
 import { getCalculatedTruckCount } from '../../../utils/PlanUtility'
+import PhoneLink from '../common/PhoneLink'
 import { BigPourBadge, HoursLimitBadge, KeyValue, OrderStatusBadge, ServiceBadge } from './PlanScheduleBadges'
 
 const composeAddress = (order) => formatOrderAddress(order, ', ')
@@ -240,7 +241,7 @@ export default function PlanScheduleOrderCard({
                 {loadSize > 0 && <KeyValue label="Load" value={`${loadSize} yd`} />}
                 {order.poNumber && <KeyValue label="PO" value={clean(order.poNumber)} />}
                 {order.jobNumber && <KeyValue label="Job" value={clean(order.jobNumber)} />}
-                {order.phone && <KeyValue label="Contact" value={clean(order.phone)} />}
+                {order.phone && <KeyValue label="Contact" value={<PhoneLink phone={clean(order.phone)} />} />}
                 {order.contact && <KeyValue label="Dispatcher" value={clean(order.contact)} />}
             </div>
         </div>

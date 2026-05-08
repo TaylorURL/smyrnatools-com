@@ -2,8 +2,10 @@ import React, { lazy, Suspense, useEffect, useRef, useState } from 'react'
 
 import VersionPopup from '../../../app/components/common/VersionPopup'
 import { useAuth } from '../../../app/context/AuthContext'
+import { useSharedMessages } from '../../../app/context/MessagesContext'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useTutorial } from '../../../app/context/TutorialContext'
+import { usePlanScrollSpy } from '../../../app/hooks/usePlanScrollSpy'
 import { useThemeMode } from '../../../app/hooks/useThemeMode'
 import { useVersion } from '../../../app/hooks/useVersion'
 import { getBrowserName, getDeviceType, getOSName } from '../../../app/utils/BrowserDetection'
@@ -19,7 +21,6 @@ const AUTH_FUNCTION = '/auth-service'
 const MAX_BRIGHTNESS_HEX = '#D6D6D6'
 const MAX_BRIGHTNESS_VALUE = 214
 
-const SECTION_LABEL_CLASS = 'text-[11px] font-semibold uppercase tracking-wider'
 const FIELD_LABEL_CLASS = 'block text-[11px] font-semibold uppercase tracking-wider mb-2'
 
 /** Parses a 6-digit hex color string into its {r, g, b} components. */
@@ -249,13 +250,395 @@ function StartPageDropdown({ value, accentColor, onChange }) {
     )
 }
 
-function MyAccountView({ userId }) {
+/* ── Cockpit primitives — Plan-tab inspired chrome ────────────────────── */
+
+/** Slim sticky page header. Mirrors `PlanHeader`'s rhythm: title + region
+ *  scope chip + flex spacer + action cluster + inline tab pill switcher. */
+function CockpitHeader({
+    accentColor,
+    activeTab,
+    isMobile,
+    onChangeTab,
+    onOpenMessages,
+    onSignOut,
+    regionLabel,
+    tabs,
+    unreadMessageCount = 0
+}) {
+    return (
+        <div
+            className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5"
+            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+        >
+            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0" style={{ color: 'var(--text-primary)' }}>
+                Account
+            </h1>
+            {regionLabel && (
+                <span
+                    className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full"
+                    style={{
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-light)',
+                        color: 'var(--text-primary)'
+                    }}
+                >
+                    <i className="fas fa-location-dot text-[10px]" style={{ color: '#16a34a' }} />
+                    <span className="truncate">{regionLabel}</span>
+                </span>
+            )}
+            <div className="flex-1 min-w-[8px]" />
+            <div className="flex items-center gap-1.5 shrink-0">
+                {onOpenMessages && (
+                    <button
+                        type="button"
+                        onClick={() => onOpenMessages()}
+                        title={
+                            unreadMessageCount > 0
+                                ? `${unreadMessageCount} unread message${unreadMessageCount === 1 ? '' : 's'}`
+                                : 'Open messages'
+                        }
+                        className="relative flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                    >
+                        <i className="fas fa-comments" />
+                        {!isMobile && <span>Messages</span>}
+                        {unreadMessageCount > 0 && (
+                            <span
+                                className="absolute font-mono tabular-nums rounded-full text-[9.5px] font-bold uppercase tracking-wider min-w-[16px] h-[16px] flex items-center justify-center px-1"
+                                style={{
+                                    background: '#dc2626',
+                                    border: '1.5px solid var(--bg-primary)',
+                                    color: '#fff',
+                                    right: -4,
+                                    top: -4
+                                }}
+                            >
+                                {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                            </span>
+                        )}
+                    </button>
+                )}
+                <button
+                    type="button"
+                    onClick={onSignOut}
+                    title="Sign out"
+                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95"
+                    style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#dc2626' }}
+                >
+                    <i className="fas fa-arrow-right-from-bracket" />
+                    {!isMobile && <span>Sign out</span>}
+                </button>
+            </div>
+            <div
+                className="flex items-center rounded-lg p-0.5 overflow-x-auto"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
+                role="tablist"
+            >
+                {tabs.map(({ icon, id, label }) => {
+                    const isActive = activeTab === id
+                    return (
+                        <button
+                            key={id}
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
+                            onClick={() => onChangeTab(id)}
+                            data-tutorial-target={id === 'preferences' ? 'preferences-tab' : null}
+                            className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 whitespace-nowrap transition-colors"
+                            style={{
+                                backgroundColor: isActive ? accentColor : 'transparent',
+                                color: isActive ? '#fff' : 'var(--text-secondary)'
+                            }}
+                        >
+                            <i className={`fas ${icon}`} />
+                            {!isMobile && <span>{label}</span>}
+                        </button>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+/** Single cell in the at-a-glance stat strip. Flat label / mono value / hint. */
+function StatCell({ hint, label, value, valueColor }) {
+    return (
+        <div
+            className="px-3 py-2.5 flex flex-col gap-0.5"
+            style={{ background: 'var(--bg-primary)', borderRight: '1px solid var(--border-light)' }}
+        >
+            <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                {label}
+            </span>
+            <span
+                className="font-semibold text-[20px] leading-tight font-mono tabular-nums"
+                style={{ color: valueColor || 'var(--text-primary)' }}
+            >
+                {value}
+            </span>
+            {hint && (
+                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                    {hint}
+                </span>
+            )}
+        </div>
+    )
+}
+
+/** Compact "X years Y months" label from a created_at timestamp. */
+function formatAccountAge(joinedAt) {
+    if (!joinedAt) return '—'
+    const joined = new Date(joinedAt)
+    if (Number.isNaN(joined.getTime())) return '—'
+    const now = new Date()
+    const months = (now.getFullYear() - joined.getFullYear()) * 12 + (now.getMonth() - joined.getMonth())
+    if (months < 1) return 'New'
+    if (months < 12) return `${months}mo`
+    const years = Math.floor(months / 12)
+    const remainingMonths = months % 12
+    return remainingMonths === 0 ? `${years}y` : `${years}y ${remainingMonths}mo`
+}
+
+function formatJoinedDate(joinedAt) {
+    if (!joinedAt) return '—'
+    const d = new Date(joinedAt)
+    if (Number.isNaN(d.getTime())) return '—'
+    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function formatRelativeTime(timestamp) {
+    if (!timestamp) return '—'
+    const d = new Date(timestamp)
+    if (Number.isNaN(d.getTime())) return '—'
+    const diff = Date.now() - d.getTime()
+    const mins = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+    if (mins < 5) return 'Active now'
+    if (mins < 60) return `${mins}m`
+    if (hours < 24) return `${hours}h`
+    return `${days}d`
+}
+
+/** 6-cell snapshot of the user's account that lives just under the header.
+ *  Hints are reserved for genuinely useful context (a date the value alone
+ *  can't convey, a device fingerprint, a count of related items). Cells with
+ *  nothing helpful to add show no third line at all. */
+function AccountStatStrip({ additionalPlants, joinedAt, plantCode, regionName, role, sessions }) {
+    const currentSession = sessions.find((s) => s.isCurrent) || sessions[0]
+    const sessionDeviceCounts = sessions.reduce(
+        (acc, s) => {
+            const device = (s.device || '').toLowerCase()
+            if (device.includes('mobile')) acc.mobile += 1
+            else if (device.includes('tablet')) acc.tablet += 1
+            else acc.desktop += 1
+            return acc
+        },
+        { desktop: 0, mobile: 0, tablet: 0 }
+    )
+    const sessionsHint =
+        sessions.length === 0
+            ? null
+            : [
+                  sessionDeviceCounts.desktop && `${sessionDeviceCounts.desktop} desktop`,
+                  sessionDeviceCounts.mobile && `${sessionDeviceCounts.mobile} mobile`,
+                  sessionDeviceCounts.tablet && `${sessionDeviceCounts.tablet} tablet`
+              ]
+                  .filter(Boolean)
+                  .join(' · ')
+    const additionalCount = additionalPlants?.length || 0
+    return (
+        <section className="scroll-mt-4" id="overview">
+            <div
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden"
+                style={{ border: '1px solid var(--border-light)' }}
+            >
+                <StatCell label="Account age" value={formatAccountAge(joinedAt)} hint={formatJoinedDate(joinedAt)} />
+                <StatCell
+                    label="Sessions"
+                    value={sessions.length}
+                    valueColor={sessions.length > 0 ? '#16a34a' : undefined}
+                    hint={sessionsHint}
+                />
+                <StatCell label="Region" value={regionName || '—'} />
+                <StatCell
+                    label="Home plant"
+                    value={plantCode || '—'}
+                    hint={additionalCount > 0 ? `+${additionalCount} more` : null}
+                />
+                <StatCell label="Role" value={role || '—'} />
+                <StatCell
+                    label="Last sign-in"
+                    value={currentSession ? formatRelativeTime(currentSession.lastActive) : '—'}
+                    valueColor={currentSession?.isCurrent ? '#16a34a' : undefined}
+                    hint={
+                        currentSession
+                            ? [currentSession.browser, currentSession.os].filter(Boolean).join(' · ') || null
+                            : null
+                    }
+                />
+            </div>
+        </section>
+    )
+}
+
+/** Sticky scrollspy nav for the cockpit's left column. Each entry scrolls
+ *  its section into view; active state mirrors the Plan dashboard side-nav
+ *  with a 2px accent border on the leading edge. */
+function AccountSideNav({ accentColor, activeId, onJump, sections }) {
+    return (
+        <aside
+            className="hidden lg:block sticky top-0 self-start py-5 pr-3 overflow-y-auto"
+            style={{ maxHeight: '100vh', width: 200 }}
+        >
+            <div
+                className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2"
+                style={{ color: 'var(--text-tertiary)' }}
+            >
+                Sections
+            </div>
+            <nav className="flex flex-col">
+                {sections.map(({ icon, id, label }) => {
+                    const isActive = activeId === id
+                    return (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => onJump(id)}
+                            className="flex items-center gap-2 px-2 py-1.5 border-none cursor-pointer text-[13px] text-left bg-transparent transition-colors"
+                            style={{
+                                borderLeft: `2px solid ${isActive ? accentColor : 'transparent'}`,
+                                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                fontWeight: isActive ? 600 : 400
+                            }}
+                        >
+                            <i
+                                className={`fas ${icon} text-[12px]`}
+                                style={{ color: isActive ? accentColor : 'var(--text-tertiary)', width: 14 }}
+                            />
+                            <span className="flex-1 truncate">{label}</span>
+                        </button>
+                    )
+                })}
+            </nav>
+        </aside>
+    )
+}
+
+/** Right-rail snapshot. Hidden under xl breakpoint where the stat strip
+ *  already covers the same ground. */
+function AccountAtAGlance({ additionalPlants, email, joinedAt, plantCode, regionName, sessions, userRole }) {
+    const currentSession = sessions.find((s) => s.isCurrent) || sessions[0]
+    const rows = [
+        { label: 'Email', mono: false, value: email || '—' },
+        { label: 'Joined', value: formatJoinedDate(joinedAt) },
+        {
+            color: currentSession?.isCurrent ? '#16a34a' : undefined,
+            hint: currentSession ? `${currentSession.browser || ''} · ${currentSession.os || ''}`.trim() : null,
+            label: 'Last sign-in',
+            value: currentSession ? formatRelativeTime(currentSession.lastActive) : '—'
+        },
+        {
+            hint: regionName ? null : 'No region selected',
+            label: 'Region',
+            value: regionName || '—'
+        },
+        {
+            hint: additionalPlants.length > 0 ? `+ ${additionalPlants.join(' · ')}` : null,
+            label: 'Home plant',
+            value: plantCode || '—'
+        },
+        { label: 'Sessions', value: sessions.length.toString() },
+        { label: 'Role', value: userRole || '—' }
+    ]
+    return (
+        <aside className="hidden xl:block sticky top-0 self-start py-5 pl-4" style={{ width: 240 }}>
+            <div
+                className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2"
+                style={{ color: 'var(--text-tertiary)' }}
+            >
+                At a glance
+            </div>
+            <div
+                className="rounded p-3 flex flex-col"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+            >
+                {rows.map((row, idx) => (
+                    <div
+                        key={row.label}
+                        className="flex flex-col py-2"
+                        style={{
+                            borderBottom: idx < rows.length - 1 ? '1px dashed var(--border-light)' : 'none'
+                        }}
+                    >
+                        <span
+                            className="text-[10px] font-semibold uppercase tracking-[0.05em]"
+                            style={{ color: 'var(--text-tertiary)' }}
+                        >
+                            {row.label}
+                        </span>
+                        <span
+                            className={`font-semibold text-[13px] ${row.mono === false ? '' : 'font-mono tabular-nums'} truncate`}
+                            style={{ color: row.color || 'var(--text-primary)' }}
+                            title={row.value}
+                        >
+                            {row.value}
+                        </span>
+                        {row.hint && (
+                            <span
+                                className="text-[11px] truncate"
+                                style={{ color: 'var(--text-secondary)' }}
+                                title={row.hint}
+                            >
+                                {row.hint}
+                            </span>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </aside>
+    )
+}
+
+/** Side-nav anchors per tab. Each entry must match a `<section id>` rendered
+ *  in the corresponding tab body. */
+const TAB_SECTIONS = {
+    notifications: [
+        { icon: 'fa-comments', id: 'messages', label: 'Messages' },
+        { icon: 'fa-bell', id: 'notifications', label: 'Email notifications' }
+    ],
+    preferences: [
+        { icon: 'fa-rocket', id: 'startpage', label: 'Start page' },
+        { icon: 'fa-palette', id: 'appearance', label: 'Appearance' },
+        { icon: 'fa-bars', id: 'navigation', label: 'Navigation' },
+        { icon: 'fa-graduation-cap', id: 'tutorials', label: 'Tutorials' },
+        { icon: 'fa-database', id: 'cache', label: 'Cache' }
+    ],
+    profile: [
+        { icon: 'fa-id-card', id: 'identity', label: 'Identity' },
+        { icon: 'fa-building', id: 'scope', label: 'Scope' }
+    ],
+    security: [
+        { icon: 'fa-key', id: 'password', label: 'Password' },
+        { icon: 'fa-laptop', id: 'sessions', label: 'Sessions' }
+    ]
+}
+
+function MyAccountView({ userId, onSelectView }) {
     const { preferences, updatePreferences } = usePreferences()
     const { isMobile, resetAllTutorials, triggerTutorial } = useTutorial()
     const { signOut: authSignOut, verifyPassword, updatePassword: authUpdatePassword } = useAuth()
     const { themeMode } = useThemeMode()
     const version = useVersion()
+    const { conversations, unreadCount: unreadMessageCount } = useSharedMessages()
     const accentColor = preferences.accentColor || '#2A3163'
+
+    /** Jump straight to the messages center. Optional `conversationId` deep-
+     *  links to a specific thread when the caller has one. */
+    const handleOpenMessages = (conversationId = null) => {
+        if (typeof onSelectView !== 'function') return
+        onSelectView('Notifications', conversationId ? { initialConversationId: conversationId } : {})
+    }
 
     const [loading, setLoading] = useState(true)
     const [message, setMessage] = useState('')
@@ -265,6 +648,7 @@ function MyAccountView({ userId }) {
     const [userRole, setUserRole] = useState('')
     const [plantCode, setPlantCode] = useState('')
     const [additionalPlants, setAdditionalPlants] = useState([])
+    const [joinedAt, setJoinedAt] = useState(null)
     const [_regionName, setRegionName] = useState('')
     const [showPasswordModal, setShowPasswordModal] = useState(false)
     const [currentPassword, setCurrentPassword] = useState('')
@@ -354,6 +738,7 @@ function MyAccountView({ userId }) {
                     if (profileData.first_name) setFirstName(profileData.first_name)
                     if (profileData.last_name) setLastName(profileData.last_name)
                     if (profileData.plant_code) setPlantCode(profileData.plant_code)
+                    if (profileData.created_at) setJoinedAt(profileData.created_at)
                     if (Array.isArray(profileData.additional_assigned_plants))
                         setAdditionalPlants(profileData.additional_assigned_plants)
                 }
@@ -599,6 +984,25 @@ function MyAccountView({ userId }) {
         }
     }
 
+    const TABS = [
+        { icon: 'fa-user', id: 'profile', label: 'Profile' },
+        { icon: 'fa-shield-halved', id: 'security', label: 'Security' },
+        { icon: 'fa-sliders', id: 'preferences', label: 'Preferences' },
+        { icon: 'fa-bell', id: 'notifications', label: 'Notifications' }
+    ]
+
+    const sectionsForTab = TAB_SECTIONS[activeTab] || []
+    const regionLabel = preferences.selectedRegion?.name || ''
+
+    // Hooks must run before any early-return guards below — keep the
+    // scrollspy ref + state at the top so React's hook order stays stable.
+    const scrollContainerRef = useRef(null)
+    const [activeSection, jumpTo] = usePlanScrollSpy({
+        deps: [activeTab, loading, sessions.length, additionalPlants.length],
+        scrollContainerRef,
+        sections: sectionsForTab
+    })
+
     if (loading) {
         return <AccountSkeleton />
     }
@@ -617,161 +1021,81 @@ function MyAccountView({ userId }) {
         )
     }
 
-    const TABS = [
-        { id: 'profile', icon: 'fa-user', label: 'Profile' },
-        { id: 'security', icon: 'fa-shield-alt', label: 'Security' },
-        { id: 'preferences', icon: 'fa-cog', label: 'Preferences' },
-        { id: 'notifications', icon: 'fa-bell', label: 'Notifications' }
-    ]
-
     return (
-        <div className="min-h-screen" style={{ background: 'var(--bg-secondary)' }}>
-            {/* Page header */}
-            <div
-                className="sticky top-0 z-30"
-                style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-            >
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-4">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
-                        >
-                            <i className="fas fa-user-cog text-[16px]" />
-                        </div>
-                        <div className="min-w-0">
-                            <div className="text-[18px] font-bold" style={{ color: 'var(--text-primary)' }}>
-                                Account Settings
-                            </div>
-                            <div className="text-[12px]" style={{ color: 'var(--text-tertiary)' }}>
-                                Profile, security, preferences & notifications
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div
+            className="global-dashboard-container dashboard-container global-flush-top flush-top"
+            style={{
+                background: 'var(--bg-secondary)',
+                display: 'flex',
+                flexDirection: 'column',
+                inset: 0,
+                overflow: 'hidden',
+                position: 'absolute'
+            }}
+        >
+            <CockpitHeader
+                accentColor={accentColor}
+                activeTab={activeTab}
+                isMobile={isMobile}
+                onChangeTab={setActiveTab}
+                onOpenMessages={onSelectView ? handleOpenMessages : undefined}
+                onSignOut={handleSignOut}
+                regionLabel={regionLabel}
+                tabs={TABS}
+                unreadMessageCount={unreadMessageCount}
+            />
 
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-6">
-                {message && (
-                    <div
-                        className="mb-5 flex items-center gap-3 rounded-lg px-4 py-3"
-                        style={{
-                            background: message.includes('Error')
-                                ? 'rgba(220, 38, 38, 0.12)'
-                                : 'rgba(22, 163, 74, 0.12)',
-                            border: `1px solid ${message.includes('Error') ? 'rgba(220, 38, 38, 0.35)' : 'rgba(22, 163, 74, 0.35)'}`,
-                            color: message.includes('Error') ? '#dc2626' : '#16a34a'
-                        }}
-                    >
-                        <i
-                            className={`fas ${message.includes('Error') ? 'fa-exclamation-circle' : 'fa-check-circle'} text-[14px]`}
-                        />
-                        <span className="flex-1 text-[13px] font-medium">{message}</span>
-                        <button
-                            onClick={() => setMessage('')}
-                            className="opacity-60 hover:opacity-100"
-                            aria-label="Dismiss"
-                        >
-                            <i className="fas fa-times text-[12px]" />
-                        </button>
-                    </div>
-                )}
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+                <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 lg:px-6 flex gap-4">
+                    <AccountSideNav
+                        accentColor={accentColor}
+                        activeId={activeSection}
+                        onJump={jumpTo}
+                        sections={sectionsForTab}
+                    />
 
-                {/* Three-column grid: sidebar (3/12) + content split into two columns (9/12 → 2 cols on xl).
-                    Below xl the content collapses to a single column under the sidebar — wide enough that
-                    cards never feel cramped. */}
-                <div className="grid gap-5 lg:grid-cols-12">
-                    {/* Sidebar */}
-                    <aside className="lg:col-span-3">
-                        <div className="lg:sticky lg:top-24 flex flex-col gap-4">
-                            <Card>
-                                <div className="flex items-center gap-4 px-5 py-5">
-                                    <div
-                                        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg text-[20px] font-bold text-white"
-                                        style={{ background: accentColor }}
-                                    >
-                                        {getInitials() || <i className="fas fa-user text-[20px]" />}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div
-                                            className="text-[16px] font-semibold truncate"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
-                                            {firstName || lastName
-                                                ? `${firstName || ''} ${lastName || ''}`.trim()
-                                                : 'My Account'}
-                                        </div>
-                                        <div
-                                            className="text-[12px] truncate mt-0.5"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
-                                            {email || 'No email'}
-                                        </div>
-                                        {userRole && (
-                                            <span
-                                                className="mt-2 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
-                                                style={{ background: `${accentColor}14`, color: accentColor }}
-                                            >
-                                                {userRole}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </Card>
-
-                            <Card>
-                                <nav className="flex flex-col">
-                                    {TABS.map(({ id, icon, label }, idx) => {
-                                        const isActive = activeTab === id
-                                        return (
-                                            <button
-                                                key={id}
-                                                onClick={() => setActiveTab(id)}
-                                                data-tutorial-target={id === 'preferences' ? 'preferences-tab' : null}
-                                                className="flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg-tertiary"
-                                                style={{
-                                                    background: isActive ? `${accentColor}14` : 'transparent',
-                                                    borderBottom:
-                                                        idx < TABS.length - 1
-                                                            ? '1px solid var(--border-light)'
-                                                            : 'none',
-                                                    borderLeft: isActive
-                                                        ? `3px solid ${accentColor}`
-                                                        : '3px solid transparent',
-                                                    color: isActive ? accentColor : 'var(--text-secondary)'
-                                                }}
-                                            >
-                                                <i className={`fas ${icon} text-[14px] w-5 text-center`} />
-                                                <span className="text-[14px] font-semibold">{label}</span>
-                                            </button>
-                                        )
-                                    })}
-                                </nav>
-                            </Card>
-
-                            <button
-                                onClick={handleSignOut}
-                                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-[12px] font-semibold uppercase tracking-wider transition-colors hover:brightness-95"
+                    <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
+                        {message && (
+                            <div
+                                className="flex items-center gap-3 rounded-lg px-4 py-3"
                                 style={{
-                                    background: 'rgba(220, 38, 38, 0.12)',
-                                    border: '1px solid rgba(220, 38, 38, 0.35)',
-                                    color: '#dc2626'
+                                    background: message.includes('Error')
+                                        ? 'rgba(220, 38, 38, 0.12)'
+                                        : 'rgba(22, 163, 74, 0.12)',
+                                    border: `1px solid ${message.includes('Error') ? 'rgba(220, 38, 38, 0.35)' : 'rgba(22, 163, 74, 0.35)'}`,
+                                    color: message.includes('Error') ? '#dc2626' : '#16a34a'
                                 }}
                             >
-                                <i className="fas fa-sign-out-alt text-[12px]" />
-                                Sign Out
-                            </button>
-                        </div>
-                    </aside>
+                                <i
+                                    className={`fas ${message.includes('Error') ? 'fa-exclamation-circle' : 'fa-check-circle'} text-[14px]`}
+                                />
+                                <span className="flex-1 text-[13px] font-medium">{message}</span>
+                                <button
+                                    onClick={() => setMessage('')}
+                                    className="opacity-60 hover:opacity-100"
+                                    aria-label="Dismiss"
+                                >
+                                    <i className="fas fa-times text-[12px]" />
+                                </button>
+                            </div>
+                        )}
 
-                    {/* Main content — two-column card grid on xl viewports for the actual 3-column page feel */}
-                    <main className="lg:col-span-9 grid grid-cols-1 xl:grid-cols-2 gap-5 auto-rows-min">
+                        <AccountStatStrip
+                            additionalPlants={additionalPlants}
+                            joinedAt={joinedAt}
+                            plantCode={plantCode}
+                            regionName={regionLabel}
+                            role={userRole}
+                            sessions={sessions}
+                        />
+
                         {activeTab === 'profile' && (
                             <ProfileTab
                                 accentColor={accentColor}
                                 additionalPlants={additionalPlants}
                                 email={email}
                                 firstName={firstName}
+                                getInitials={getInitials}
                                 lastName={lastName}
                                 loading={loading}
                                 onChangeRegion={handleChangeRegion}
@@ -791,7 +1115,6 @@ function MyAccountView({ userId }) {
                                 formatSessionTime={formatSessionTime}
                                 onOpenPasswordModal={() => setShowPasswordModal(true)}
                                 onRevokeSession={handleRevokeSession}
-                                onSignOut={handleSignOut}
                                 sessions={sessions}
                             />
                         )}
@@ -814,11 +1137,26 @@ function MyAccountView({ userId }) {
                         {activeTab === 'notifications' && (
                             <NotificationsTab
                                 accentColor={accentColor}
+                                conversations={conversations}
+                                onOpenMessages={onSelectView ? handleOpenMessages : undefined}
                                 preferences={preferences}
+                                unreadMessageCount={unreadMessageCount}
                                 updatePreferences={updatePreferences}
                             />
                         )}
+
+                        <div className="h-8" />
                     </main>
+
+                    <AccountAtAGlance
+                        additionalPlants={additionalPlants}
+                        email={email}
+                        joinedAt={joinedAt}
+                        plantCode={plantCode}
+                        regionName={regionLabel}
+                        sessions={sessions}
+                        userRole={userRole}
+                    />
                 </div>
             </div>
 
@@ -850,6 +1188,7 @@ function ProfileTab({
     additionalPlants,
     email,
     firstName,
+    getInitials,
     lastName,
     loading,
     onChangeRegion,
@@ -862,129 +1201,161 @@ function ProfileTab({
     setLastName,
     userRole
 }) {
+    const initials = getInitials?.()
     return (
         <>
-            <Card>
-                <CardHeader
-                    accentColor={accentColor}
-                    icon="fa-id-card"
-                    title="Personal Information"
-                    description="Update your name and contact details"
-                />
-                <form onSubmit={onSubmit} className="px-5 py-5 flex flex-col gap-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                                First Name
-                            </label>
-                            <input
-                                type="text"
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                                placeholder="Enter first name"
-                                required
-                                className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
-                                style={FieldStyle}
-                            />
-                        </div>
-                        <div>
-                            <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                                Last Name
-                            </label>
-                            <input
-                                type="text"
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                placeholder="Enter last name"
-                                required
-                                className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
-                                style={FieldStyle}
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <PrimaryButton accentColor={accentColor} disabled={loading} icon="fa-save" type="submit">
-                            Save Changes
-                        </PrimaryButton>
-                    </div>
-                </form>
-            </Card>
-
-            <Card>
-                <CardHeader
-                    accentColor={accentColor}
-                    icon="fa-info-circle"
-                    title="Account Details"
-                    description="View your account information"
-                />
-                <div className="px-5">
-                    <DetailRow icon="fa-envelope" label="Email" value={email || 'Not set'} />
-                    {userRole && <DetailRow icon="fa-user-tag" label="Role" value={userRole} />}
+            <section id="identity" className="scroll-mt-4">
+                <Card>
                     <div
-                        className="flex items-center justify-between py-3.5"
+                        className="flex items-center gap-4 px-5 py-4"
                         style={{ borderBottom: '1px solid var(--border-light)' }}
                     >
-                        <div className="flex items-center gap-3">
-                            <i
-                                className="fas fa-globe text-[13px] w-5 text-center"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            />
-                            <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                                Region
-                            </span>
+                        <div
+                            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg text-[18px] font-bold text-white"
+                            style={{ background: accentColor }}
+                        >
+                            {initials || <i className="fas fa-user text-[18px]" />}
                         </div>
-                        <div className="relative">
-                            <select
-                                value={preferences.selectedRegion?.code || ''}
-                                onChange={onChangeRegion}
-                                disabled={!regionsLoaded}
-                                className="appearance-none rounded-lg py-2 pl-3 pr-9 text-[13px] font-semibold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                                style={FieldStyle}
+                        <div className="min-w-0 flex-1">
+                            <div
+                                className="text-[16px] font-semibold truncate"
+                                style={{ color: 'var(--text-primary)' }}
                             >
-                                {permittedRegions.map((r) => (
-                                    <option key={r.regionCode || r.region_code} value={r.regionCode || r.region_code}>
-                                        {r.regionName || r.region_name || ''}
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                <i
-                                    className="fas fa-chevron-down text-[10px]"
-                                    style={{ color: 'var(--text-tertiary)' }}
+                                {firstName || lastName ? `${firstName || ''} ${lastName || ''}`.trim() : 'My Account'}
+                            </div>
+                            <div className="text-[12px] truncate mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                                {email || 'No email'}
+                            </div>
+                            {userRole && (
+                                <span
+                                    className="mt-2 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
+                                    style={{ background: `${accentColor}14`, color: accentColor }}
+                                >
+                                    {userRole}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <form onSubmit={onSubmit} className="px-5 py-5 flex flex-col gap-4">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                                    First Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={firstName}
+                                    onChange={(e) => setFirstName(e.target.value)}
+                                    placeholder="Enter first name"
+                                    required
+                                    className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                                    style={FieldStyle}
+                                />
+                            </div>
+                            <div>
+                                <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                                    Last Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={lastName}
+                                    onChange={(e) => setLastName(e.target.value)}
+                                    placeholder="Enter last name"
+                                    required
+                                    className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                                    style={FieldStyle}
                                 />
                             </div>
                         </div>
-                    </div>
-                    {plantCode && <DetailRow icon="fa-building" label="Plant Code" value={plantCode} mono />}
-                    {additionalPlants.length > 0 && (
-                        <div className="py-3.5">
-                            <div className="flex items-center gap-3 mb-2">
+                        <div>
+                            <PrimaryButton accentColor={accentColor} disabled={loading} icon="fa-save" type="submit">
+                                Save Changes
+                            </PrimaryButton>
+                        </div>
+                    </form>
+                </Card>
+            </section>
+
+            <section id="scope" className="scroll-mt-4">
+                <Card>
+                    <CardHeader
+                        accentColor={accentColor}
+                        icon="fa-building"
+                        title="Scope"
+                        description="Region and plant assignments"
+                    />
+                    <div className="px-5">
+                        <DetailRow icon="fa-envelope" label="Email" value={email || 'Not set'} />
+                        {userRole && <DetailRow icon="fa-user-tag" label="Role" value={userRole} />}
+                        <div
+                            className="flex items-center justify-between py-3.5"
+                            style={{ borderBottom: '1px solid var(--border-light)' }}
+                        >
+                            <div className="flex items-center gap-3">
                                 <i
-                                    className="fas fa-building text-[13px] w-5 text-center"
+                                    className="fas fa-globe text-[13px] w-5 text-center"
                                     style={{ color: 'var(--text-tertiary)' }}
                                 />
                                 <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                                    Additional Plants
+                                    Region
                                 </span>
                             </div>
-                            <div className="flex flex-wrap gap-2 ml-8">
-                                {additionalPlants.map((code) => (
-                                    <span
-                                        key={code}
-                                        className="inline-flex items-center rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wider font-mono tabular-nums"
-                                        style={{
-                                            background: `${accentColor}14`,
-                                            color: accentColor
-                                        }}
-                                    >
-                                        {code}
-                                    </span>
-                                ))}
+                            <div className="relative">
+                                <select
+                                    value={preferences.selectedRegion?.code || ''}
+                                    onChange={onChangeRegion}
+                                    disabled={!regionsLoaded}
+                                    className="appearance-none rounded-lg py-2 pl-3 pr-9 text-[13px] font-semibold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                    style={FieldStyle}
+                                >
+                                    {permittedRegions.map((r) => (
+                                        <option
+                                            key={r.regionCode || r.region_code}
+                                            value={r.regionCode || r.region_code}
+                                        >
+                                            {r.regionName || r.region_name || ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                    <i
+                                        className="fas fa-chevron-down text-[10px]"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    )}
-                </div>
-            </Card>
+                        {plantCode && <DetailRow icon="fa-building" label="Plant Code" value={plantCode} mono />}
+                        {additionalPlants.length > 0 && (
+                            <div className="py-3.5">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <i
+                                        className="fas fa-building text-[13px] w-5 text-center"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    />
+                                    <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+                                        Additional Plants
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap gap-2 ml-8">
+                                    {additionalPlants.map((code) => (
+                                        <span
+                                            key={code}
+                                            className="inline-flex items-center rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wider font-mono tabular-nums"
+                                            style={{
+                                                background: `${accentColor}14`,
+                                                color: accentColor
+                                            }}
+                                        >
+                                            {code}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </Card>
+            </section>
         </>
     )
 }
@@ -1011,149 +1382,126 @@ function DetailRow({ icon, label, mono, value }) {
     )
 }
 
-function SecurityTab({ accentColor, formatSessionTime, onOpenPasswordModal, onRevokeSession, onSignOut, sessions }) {
+function SecurityTab({ accentColor, formatSessionTime, onOpenPasswordModal, onRevokeSession, sessions }) {
     return (
         <>
-            <Card>
-                <CardHeader
-                    accentColor={accentColor}
-                    icon="fa-key"
-                    title="Password"
-                    description="Keep your account secure with a strong password"
-                />
-                <div className="px-5 py-5">
-                    <PrimaryButton accentColor={accentColor} icon="fa-lock" onClick={onOpenPasswordModal}>
-                        Change Password
-                    </PrimaryButton>
-                </div>
-            </Card>
+            <section id="password" className="scroll-mt-4">
+                <Card>
+                    <CardHeader
+                        accentColor={accentColor}
+                        icon="fa-key"
+                        title="Password"
+                        description="Keep your account secure with a strong password"
+                    />
+                    <div className="px-5 py-5">
+                        <PrimaryButton accentColor={accentColor} icon="fa-lock" onClick={onOpenPasswordModal}>
+                            Change Password
+                        </PrimaryButton>
+                    </div>
+                </Card>
+            </section>
 
-            <div
-                className="rounded-lg flex items-center justify-between gap-3 px-5 py-4"
-                style={{
-                    background: 'rgba(220, 38, 38, 0.08)',
-                    border: '1px solid rgba(220, 38, 38, 0.3)'
-                }}
-            >
-                <div className="flex items-center gap-3 min-w-0">
+            <section id="sessions" className="scroll-mt-4">
+                <Card>
                     <div
-                        className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                        style={{ background: 'rgba(220, 38, 38, 0.15)', color: '#dc2626' }}
+                        className="flex items-center gap-3 px-5 py-4"
+                        style={{ borderBottom: '1px solid var(--border-light)' }}
                     >
-                        <i className="fas fa-sign-out-alt text-[16px]" />
-                    </div>
-                    <div className="min-w-0">
-                        <div className="text-[14px] font-semibold" style={{ color: '#dc2626' }}>
-                            Sign Out
-                        </div>
-                        <div className="text-[12px] mt-0.5" style={{ color: '#dc2626', opacity: 0.85 }}>
-                            End your current session
-                        </div>
-                    </div>
-                </div>
-                <button
-                    onClick={onSignOut}
-                    className="rounded-lg text-[12px] font-semibold uppercase tracking-wider text-white px-4 py-2.5"
-                    style={{ background: '#dc2626' }}
-                >
-                    Sign Out
-                </button>
-            </div>
-
-            <Card className="xl:col-span-2">
-                <div
-                    className="flex items-center gap-3 px-5 py-4"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
-                    <div
-                        className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                        style={{ background: 'var(--bg-tertiary)', color: accentColor }}
-                    >
-                        <i className="fas fa-laptop text-[16px]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            Active Sessions
-                        </div>
-                        <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                            Manage your login sessions
-                        </div>
-                    </div>
-                    <span
-                        className="font-mono tabular-nums rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wider"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                    >
-                        {sessions.length}
-                    </span>
-                </div>
-                <div>
-                    {sessions.length > 0 ? (
-                        sessions.map((session, idx) => (
-                            <div
-                                key={session.id}
-                                className="flex items-center justify-between gap-3 px-5 py-3.5"
-                                style={{
-                                    background: session.isCurrent ? 'rgba(22, 163, 74, 0.08)' : 'transparent',
-                                    borderBottom: idx < sessions.length - 1 ? '1px solid var(--border-light)' : 'none'
-                                }}
-                            >
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div
-                                        className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                                        style={{
-                                            background: session.isCurrent
-                                                ? 'rgba(22, 163, 74, 0.15)'
-                                                : 'var(--bg-tertiary)',
-                                            color: session.isCurrent ? '#16a34a' : 'var(--text-secondary)'
-                                        }}
-                                    >
-                                        <i
-                                            className={`fas ${session.device === 'Mobile' ? 'fa-mobile-alt' : session.device === 'Tablet' ? 'fa-tablet-alt' : 'fa-desktop'} text-[14px]`}
-                                        />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span
-                                                className="text-[14px] font-semibold truncate"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
-                                                {session.browser}
-                                            </span>
-                                            {session.isCurrent && (
-                                                <span
-                                                    className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                                                    style={{ background: 'rgba(22, 163, 74, 0.15)', color: '#16a34a' }}
-                                                >
-                                                    Current
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div
-                                            className="text-[12px] mt-0.5 font-mono tabular-nums"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
-                                            {session.os} · {session.device} · {formatSessionTime(session.lastActive)}
-                                        </div>
-                                    </div>
-                                </div>
-                                {!session.isCurrent && (
-                                    <SubtleButton danger onClick={() => onRevokeSession(session.id)}>
-                                        Revoke
-                                    </SubtleButton>
-                                )}
-                            </div>
-                        ))
-                    ) : (
                         <div
-                            className="flex flex-col items-center justify-center py-12"
-                            style={{ color: 'var(--text-tertiary)' }}
+                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
+                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
                         >
-                            <i className="fas fa-laptop text-3xl mb-3" />
-                            <span className="text-[14px]">No active sessions found</span>
+                            <i className="fas fa-laptop text-[16px]" />
                         </div>
-                    )}
-                </div>
-            </Card>
+                        <div className="min-w-0 flex-1">
+                            <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                Active Sessions
+                            </div>
+                            <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                                Manage your login sessions
+                            </div>
+                        </div>
+                        <span
+                            className="font-mono tabular-nums rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wider"
+                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                        >
+                            {sessions.length}
+                        </span>
+                    </div>
+                    <div>
+                        {sessions.length > 0 ? (
+                            sessions.map((session, idx) => (
+                                <div
+                                    key={session.id}
+                                    className="flex items-center justify-between gap-3 px-5 py-3.5"
+                                    style={{
+                                        background: session.isCurrent ? 'rgba(22, 163, 74, 0.08)' : 'transparent',
+                                        borderBottom:
+                                            idx < sessions.length - 1 ? '1px solid var(--border-light)' : 'none'
+                                    }}
+                                >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div
+                                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
+                                            style={{
+                                                background: session.isCurrent
+                                                    ? 'rgba(22, 163, 74, 0.15)'
+                                                    : 'var(--bg-tertiary)',
+                                                color: session.isCurrent ? '#16a34a' : 'var(--text-secondary)'
+                                            }}
+                                        >
+                                            <i
+                                                className={`fas ${session.device === 'Mobile' ? 'fa-mobile-alt' : session.device === 'Tablet' ? 'fa-tablet-alt' : 'fa-desktop'} text-[14px]`}
+                                            />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className="text-[14px] font-semibold truncate"
+                                                    style={{ color: 'var(--text-primary)' }}
+                                                >
+                                                    {session.browser}
+                                                </span>
+                                                {session.isCurrent && (
+                                                    <span
+                                                        className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                                        style={{
+                                                            background: 'rgba(22, 163, 74, 0.15)',
+                                                            color: '#16a34a'
+                                                        }}
+                                                    >
+                                                        Current
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div
+                                                className="text-[12px] mt-0.5 font-mono tabular-nums"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
+                                                {session.os} · {session.device} ·{' '}
+                                                {formatSessionTime(session.lastActive)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {!session.isCurrent && (
+                                        <SubtleButton danger onClick={() => onRevokeSession(session.id)}>
+                                            Revoke
+                                        </SubtleButton>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <div
+                                className="flex flex-col items-center justify-center py-12"
+                                style={{ color: 'var(--text-tertiary)' }}
+                            >
+                                <i className="fas fa-laptop text-3xl mb-3" />
+                                <span className="text-[14px]">No active sessions found</span>
+                            </div>
+                        )}
+                    </div>
+                </Card>
+            </section>
         </>
     )
 }
@@ -1176,203 +1524,213 @@ function PreferencesTab({
     ]
     return (
         <>
-            <Card>
-                <CardHeader
-                    accentColor={accentColor}
-                    icon="fa-rocket"
-                    title="Start Page"
-                    description="Choose which page loads when you open the app"
-                />
-                <div className="px-5 py-5">
-                    <StartPageDropdown
-                        value={preferences.startPage || 'Dashboard'}
-                        accentColor={accentColor}
-                        onChange={(id) => updatePreferences('startPage', id)}
-                    />
-                </div>
-            </Card>
-
-            <Card className="xl:col-span-2">
-                <CardHeader
-                    accentColor={accentColor}
-                    icon="fa-palette"
-                    title="Appearance"
-                    description="Customize the look of the application"
-                />
-                <div className="px-5 py-5 grid gap-5 md:grid-cols-2">
-                    {/* Accent color */}
-                    <div>
-                        <div className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                            Accent Color
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                            {ACCENT_PRESETS.map(({ color, name }) => {
-                                const isActive = (preferences.accentColor || '#2A3163') === color
-                                return (
-                                    <button
-                                        key={color}
-                                        onClick={() => updatePreferences('accentColor', color)}
-                                        className="relative h-10 w-10 rounded-lg transition-transform hover:scale-105"
-                                        style={{
-                                            background: color,
-                                            boxShadow: isActive
-                                                ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${color}`
-                                                : 'none'
-                                        }}
-                                        title={name}
-                                        aria-label={`Set accent color to ${name}`}
-                                    >
-                                        {isActive && (
-                                            <i className="fas fa-check text-white text-[13px] absolute inset-0 flex items-center justify-center" />
-                                        )}
-                                    </button>
-                                )
-                            })}
-                            <div className="relative">
-                                <input
-                                    type="color"
-                                    value={preferences.accentColor || '#2A3163'}
-                                    onChange={(e) => {
-                                        const clampedColor = clampColorToMaxBrightness(e.target.value)
-                                        updatePreferences('accentColor', clampedColor)
-                                    }}
-                                    className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
-                                    aria-label="Custom accent color"
-                                />
-                                <div
-                                    className="flex h-10 w-10 items-center justify-center rounded-lg"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px dashed var(--border-light)',
-                                        color: 'var(--text-tertiary)'
-                                    }}
-                                >
-                                    <i className="fas fa-eyedropper text-[13px]" />
-                                </div>
-                            </div>
-                        </div>
-                        <p className="mt-2.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                            Very light colors will be clamped for readability (max {MAX_BRIGHTNESS_HEX})
-                        </p>
-                        <div className="mt-3 flex flex-wrap items-center gap-2.5">
-                            <div className="flex items-center gap-3 rounded-lg px-3 py-2" style={FieldStyle}>
-                                <div className="h-7 w-7 rounded-md" style={{ background: accentColor }} />
-                                <div>
-                                    <div
-                                        className="text-[10.5px] font-semibold uppercase tracking-wider"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    >
-                                        Current
-                                    </div>
-                                    <div
-                                        className="font-mono text-[14px] font-semibold tabular-nums"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
-                                        {(preferences.accentColor || '#2A3163').toUpperCase()}
-                                    </div>
-                                </div>
-                            </div>
-                            {preferences.accentColor && preferences.accentColor !== '#2A3163' && (
-                                <SubtleButton
-                                    icon="fa-undo"
-                                    onClick={() => updatePreferences('accentColor', '#2A3163')}
-                                >
-                                    Reset
-                                </SubtleButton>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Theme */}
-                    <div>
-                        <div className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                            Theme
-                        </div>
-                        <SegmentedControl
-                            accentColor={accentColor}
-                            options={[
-                                { icon: 'fa-sun', label: 'Light', value: 'light' },
-                                { icon: 'fa-moon', label: 'Dark', value: 'dark' }
-                            ]}
-                            value={themeMode}
-                            onChange={(v) => updatePreferences('themeMode', v)}
-                        />
-                    </div>
-                </div>
-            </Card>
-
-            <Card>
-                <CardHeader
-                    accentColor={accentColor}
-                    icon="fa-bars"
-                    title="Navigation Style"
-                    description="Choose your preferred navigation layout"
-                />
-                <div className="px-5 py-5">
-                    <SegmentedControl
-                        accentColor={accentColor}
-                        options={[
-                            { icon: 'fa-bars', label: 'Top Bar', value: 'top_bar_basic' },
-                            { icon: 'fa-layer-group', label: 'Two-Level Tabs', value: 'two_level_tabs' }
-                        ]}
-                        value={preferences.navStyle || 'top_bar_basic'}
-                        onChange={(v) => updatePreferences('navStyle', v)}
-                    />
-                </div>
-            </Card>
-
-            {!isMobile && (
+            <section id="startpage" className="scroll-mt-4">
                 <Card>
                     <CardHeader
                         accentColor={accentColor}
-                        icon="fa-graduation-cap"
-                        title="Tutorials"
-                        description="Manage tutorial hints and guides"
+                        icon="fa-rocket"
+                        title="Start Page"
+                        description="Choose which page loads when you open the app"
                     />
-                    <div className="px-5 py-5 flex flex-col gap-3">
-                        <div
-                            className="flex items-center justify-between gap-3 rounded-lg px-4 py-3"
-                            style={FieldStyle}
-                        >
-                            <div className="min-w-0">
-                                <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                    Enable Tutorials
-                                </div>
-                                <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                                    Show helpful tips and guides throughout the app
+                    <div className="px-5 py-5">
+                        <StartPageDropdown
+                            value={preferences.startPage || 'Dashboard'}
+                            accentColor={accentColor}
+                            onChange={(id) => updatePreferences('startPage', id)}
+                        />
+                    </div>
+                </Card>
+            </section>
+
+            <section id="appearance" className="scroll-mt-4">
+                <Card>
+                    <CardHeader
+                        accentColor={accentColor}
+                        icon="fa-palette"
+                        title="Appearance"
+                        description="Customize the look of the application"
+                    />
+                    <div className="px-5 py-5 grid gap-5 md:grid-cols-2">
+                        {/* Accent color */}
+                        <div>
+                            <div className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                                Accent Color
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                {ACCENT_PRESETS.map(({ color, name }) => {
+                                    const isActive = (preferences.accentColor || '#2A3163') === color
+                                    return (
+                                        <button
+                                            key={color}
+                                            onClick={() => updatePreferences('accentColor', color)}
+                                            className="relative h-10 w-10 rounded-lg transition-transform hover:scale-105"
+                                            style={{
+                                                background: color,
+                                                boxShadow: isActive
+                                                    ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${color}`
+                                                    : 'none'
+                                            }}
+                                            title={name}
+                                            aria-label={`Set accent color to ${name}`}
+                                        >
+                                            {isActive && (
+                                                <i className="fas fa-check text-white text-[13px] absolute inset-0 flex items-center justify-center" />
+                                            )}
+                                        </button>
+                                    )
+                                })}
+                                <div className="relative">
+                                    <input
+                                        type="color"
+                                        value={preferences.accentColor || '#2A3163'}
+                                        onChange={(e) => {
+                                            const clampedColor = clampColorToMaxBrightness(e.target.value)
+                                            updatePreferences('accentColor', clampedColor)
+                                        }}
+                                        className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
+                                        aria-label="Custom accent color"
+                                    />
+                                    <div
+                                        className="flex h-10 w-10 items-center justify-center rounded-lg"
+                                        style={{
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px dashed var(--border-light)',
+                                            color: 'var(--text-tertiary)'
+                                        }}
+                                    >
+                                        <i className="fas fa-eyedropper text-[13px]" />
+                                    </div>
                                 </div>
                             </div>
-                            <Toggle
+                            <p className="mt-2.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                Very light colors will be clamped for readability (max {MAX_BRIGHTNESS_HEX})
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                                <div className="flex items-center gap-3 rounded-lg px-3 py-2" style={FieldStyle}>
+                                    <div className="h-7 w-7 rounded-md" style={{ background: accentColor }} />
+                                    <div>
+                                        <div
+                                            className="text-[10.5px] font-semibold uppercase tracking-wider"
+                                            style={{ color: 'var(--text-tertiary)' }}
+                                        >
+                                            Current
+                                        </div>
+                                        <div
+                                            className="font-mono text-[14px] font-semibold tabular-nums"
+                                            style={{ color: 'var(--text-primary)' }}
+                                        >
+                                            {(preferences.accentColor || '#2A3163').toUpperCase()}
+                                        </div>
+                                    </div>
+                                </div>
+                                {preferences.accentColor && preferences.accentColor !== '#2A3163' && (
+                                    <SubtleButton
+                                        icon="fa-undo"
+                                        onClick={() => updatePreferences('accentColor', '#2A3163')}
+                                    >
+                                        Reset
+                                    </SubtleButton>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Theme */}
+                        <div>
+                            <div className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                                Theme
+                            </div>
+                            <SegmentedControl
                                 accentColor={accentColor}
-                                ariaLabel="Toggle tutorials"
-                                checked={!!preferences.tutorials}
-                                onChange={() => updatePreferences('tutorials', !preferences.tutorials)}
+                                options={[
+                                    { icon: 'fa-sun', label: 'Light', value: 'light' },
+                                    { icon: 'fa-moon', label: 'Dark', value: 'dark' }
+                                ]}
+                                value={themeMode}
+                                onChange={(v) => updatePreferences('themeMode', v)}
                             />
                         </div>
-                        <SubtleButton icon="fa-redo" onClick={onResetTutorials}>
-                            Reset All Tutorials
+                    </div>
+                </Card>
+            </section>
+
+            <section id="navigation" className="scroll-mt-4">
+                <Card>
+                    <CardHeader
+                        accentColor={accentColor}
+                        icon="fa-bars"
+                        title="Navigation Style"
+                        description="Choose your preferred navigation layout"
+                    />
+                    <div className="px-5 py-5">
+                        <SegmentedControl
+                            accentColor={accentColor}
+                            options={[
+                                { icon: 'fa-bars', label: 'Top Bar', value: 'top_bar_basic' },
+                                { icon: 'fa-layer-group', label: 'Two-Level Tabs', value: 'two_level_tabs' }
+                            ]}
+                            value={preferences.navStyle || 'top_bar_basic'}
+                            onChange={(v) => updatePreferences('navStyle', v)}
+                        />
+                    </div>
+                </Card>
+            </section>
+
+            {!isMobile && (
+                <section id="tutorials" className="scroll-mt-4">
+                    <Card>
+                        <CardHeader
+                            accentColor={accentColor}
+                            icon="fa-graduation-cap"
+                            title="Tutorials"
+                            description="Manage tutorial hints and guides"
+                        />
+                        <div className="px-5 py-5 flex flex-col gap-3">
+                            <div
+                                className="flex items-center justify-between gap-3 rounded-lg px-4 py-3"
+                                style={FieldStyle}
+                            >
+                                <div className="min-w-0">
+                                    <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                        Enable Tutorials
+                                    </div>
+                                    <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                                        Show helpful tips and guides throughout the app
+                                    </div>
+                                </div>
+                                <Toggle
+                                    accentColor={accentColor}
+                                    ariaLabel="Toggle tutorials"
+                                    checked={!!preferences.tutorials}
+                                    onChange={() => updatePreferences('tutorials', !preferences.tutorials)}
+                                />
+                            </div>
+                            <SubtleButton icon="fa-redo" onClick={onResetTutorials}>
+                                Reset All Tutorials
+                            </SubtleButton>
+                        </div>
+                    </Card>
+                </section>
+            )}
+
+            <section id="cache" className="scroll-mt-4">
+                <Card>
+                    <CardHeader
+                        accentColor={accentColor}
+                        icon="fa-database"
+                        title="Cache"
+                        description="Clear cached data to free up space and fix stale content"
+                    />
+                    <div className="px-5 py-5">
+                        <SubtleButton
+                            disabled={cacheClearing}
+                            icon={cacheClearing ? 'fa-spinner fa-spin' : 'fa-broom'}
+                            onClick={onClearCache}
+                        >
+                            {cacheClearing ? 'Clearing…' : 'Clear All Caches'}
                         </SubtleButton>
                     </div>
                 </Card>
-            )}
-
-            <Card>
-                <CardHeader
-                    accentColor={accentColor}
-                    icon="fa-database"
-                    title="Cache"
-                    description="Clear cached data to free up space and fix stale content"
-                />
-                <div className="px-5 py-5">
-                    <SubtleButton
-                        disabled={cacheClearing}
-                        icon={cacheClearing ? 'fa-spinner fa-spin' : 'fa-broom'}
-                        onClick={onClearCache}
-                    >
-                        {cacheClearing ? 'Clearing…' : 'Clear All Caches'}
-                    </SubtleButton>
-                </div>
-            </Card>
+            </section>
         </>
     )
 }
@@ -1405,38 +1763,131 @@ function SegmentedControl({ accentColor, options, value, onChange }) {
     )
 }
 
-function NotificationsTab({ accentColor, preferences, updatePreferences }) {
+function NotificationsTab({
+    accentColor,
+    conversations = [],
+    onOpenMessages,
+    preferences,
+    unreadMessageCount = 0,
+    updatePreferences
+}) {
+    const conversationCount = conversations?.length || 0
     return (
-        <Card className="xl:col-span-2">
-            <CardHeader
-                accentColor={accentColor}
-                icon="fa-bell"
-                title="Email Notifications"
-                description="Control which email notifications you receive"
-            />
-            <div className="px-5 py-5">
-                <div className="flex items-start justify-between gap-4 rounded-lg px-4 py-4" style={FieldStyle}>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                            <i className="fas fa-comment-dots text-[13px]" style={{ color: 'var(--text-tertiary)' }} />
-                            <span className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                Asset Comment Emails
-                            </span>
+        <>
+            {onOpenMessages && (
+                <section id="messages" className="scroll-mt-4">
+                    <Card>
+                        <CardHeader
+                            accentColor={accentColor}
+                            icon="fa-comments"
+                            title="Messages"
+                            description="Direct messages with teammates and managers"
+                        />
+                        <div className="px-5 py-5 flex flex-col gap-4">
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <div
+                                    className="flex items-center gap-2 rounded-lg px-3 py-2"
+                                    style={{
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-light)'
+                                    }}
+                                >
+                                    <span
+                                        className="font-mono tabular-nums text-[18px] font-bold"
+                                        style={{ color: unreadMessageCount > 0 ? '#dc2626' : 'var(--text-primary)' }}
+                                    >
+                                        {unreadMessageCount}
+                                    </span>
+                                    <span
+                                        className="text-[11px] font-semibold uppercase tracking-wider"
+                                        style={{ color: 'var(--text-secondary)' }}
+                                    >
+                                        Unread
+                                    </span>
+                                </div>
+                                <div
+                                    className="flex items-center gap-2 rounded-lg px-3 py-2"
+                                    style={{
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-light)'
+                                    }}
+                                >
+                                    <span
+                                        className="font-mono tabular-nums text-[18px] font-bold"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        {conversationCount}
+                                    </span>
+                                    <span
+                                        className="text-[11px] font-semibold uppercase tracking-wider"
+                                        style={{ color: 'var(--text-secondary)' }}
+                                    >
+                                        Conversation{conversationCount === 1 ? '' : 's'}
+                                    </span>
+                                </div>
+                                <div className="flex-1" />
+                                <PrimaryButton
+                                    accentColor={accentColor}
+                                    icon="fa-inbox"
+                                    onClick={() => onOpenMessages()}
+                                >
+                                    Open inbox
+                                </PrimaryButton>
+                            </div>
+                            {conversationCount === 0 && (
+                                <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                                    Nothing here yet. New messages from teammates will land in your inbox.
+                                </p>
+                            )}
                         </div>
-                        <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                            Receive an email when someone comments on an asset assigned to your plant. Applies to Plant
-                            Managers and District Managers only.
-                        </p>
-                    </div>
-                    <Toggle
+                    </Card>
+                </section>
+            )}
+
+            <section id="notifications" className="scroll-mt-4">
+                <Card>
+                    <CardHeader
                         accentColor={accentColor}
-                        ariaLabel="Toggle asset comment email notifications"
-                        checked={!!preferences.acceptCommentEmails}
-                        onChange={() => updatePreferences('acceptCommentEmails', !preferences.acceptCommentEmails)}
+                        icon="fa-bell"
+                        title="Email Notifications"
+                        description="Control which email notifications you receive"
                     />
-                </div>
-            </div>
-        </Card>
+                    <div className="px-5 py-5">
+                        <div className="flex items-start justify-between gap-4 rounded-lg px-4 py-4" style={FieldStyle}>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <i
+                                        className="fas fa-comment-dots text-[13px]"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    />
+                                    <span
+                                        className="text-[14px] font-semibold"
+                                        style={{ color: 'var(--text-primary)' }}
+                                    >
+                                        Asset Comment Emails
+                                    </span>
+                                </div>
+                                <p
+                                    className="mt-1 text-[12.5px] leading-relaxed"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
+                                    Receive an email when someone comments on an asset assigned to your plant. Applies
+                                    to Plant Managers and District Managers only.
+                                </p>
+                            </div>
+                            <Toggle
+                                accentColor={accentColor}
+                                ariaLabel="Toggle asset comment email notifications"
+                                checked={!!preferences.acceptCommentEmails}
+                                onChange={() =>
+                                    updatePreferences('acceptCommentEmails', !preferences.acceptCommentEmails)
+                                }
+                            />
+                        </div>
+                    </div>
+                </Card>
+            </section>
+        </>
     )
 }
 
@@ -1568,70 +2019,115 @@ function PasswordModal({
 
 function AccountSkeleton() {
     const Bar = ({ className = '', style }) => (
-        <div
-            className={`rounded-lg animate-pulse ${className}`}
-            style={{ background: 'var(--bg-tertiary)', ...style }}
-        />
+        <div className={`rounded animate-pulse ${className}`} style={{ background: 'var(--bg-tertiary)', ...style }} />
     )
     return (
-        <div className="min-h-screen" style={{ background: 'var(--bg-secondary)' }}>
-            <div style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}>
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-4 flex items-center gap-3">
-                    <Bar className="h-10 w-10" />
-                    <div className="flex-1 flex flex-col gap-1.5">
-                        <Bar className="h-4 w-40" />
-                        <Bar className="h-3 w-56" />
-                    </div>
-                </div>
+        <div
+            className="global-dashboard-container dashboard-container global-flush-top flush-top"
+            style={{
+                background: 'var(--bg-secondary)',
+                display: 'flex',
+                flexDirection: 'column',
+                inset: 0,
+                overflow: 'hidden',
+                position: 'absolute'
+            }}
+        >
+            {/* Slim header */}
+            <div
+                className="shrink-0 flex items-center gap-3 px-3 sm:px-4 py-2.5"
+                style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
+            >
+                <Bar className="h-6 w-24" />
+                <Bar className="h-6 w-40 rounded-md" />
+                <div className="flex-1" />
+                <Bar className="h-8 w-24 rounded-lg" />
+                <Bar className="h-8 w-72 rounded-lg" />
             </div>
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-6 grid gap-5 lg:grid-cols-12">
-                <div className="lg:col-span-3 flex flex-col gap-4">
-                    <div
-                        className="rounded-lg p-5 flex items-center gap-4"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <Bar className="h-16 w-16" />
-                        <div className="flex-1 flex flex-col gap-2">
-                            <Bar className="h-4 w-32" />
-                            <Bar className="h-3 w-44" />
-                        </div>
-                    </div>
-                    <div
-                        className="rounded-lg"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        {[1, 2, 3, 4].map((i) => (
-                            <div
-                                key={i}
-                                className="px-4 py-3 flex items-center gap-3"
-                                style={{ borderBottom: i < 4 ? '1px solid var(--border-light)' : 'none' }}
-                            >
-                                <Bar className="h-4 w-4" />
-                                <Bar className="h-4 w-24" />
+
+            {/* Content */}
+            <div className="flex-1 overflow-hidden">
+                <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 lg:px-6 flex gap-4 h-full">
+                    {/* Side nav skeleton */}
+                    <div className="hidden lg:flex flex-col gap-1.5 py-5" style={{ width: 200 }}>
+                        <Bar className="h-3 w-16 mb-2" />
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <div key={i} className="flex items-center gap-2 px-2 py-1.5">
+                                <Bar className="h-3 w-3" />
+                                <Bar className="h-3 w-24" />
                             </div>
                         ))}
                     </div>
-                </div>
-                <div className="lg:col-span-9 grid grid-cols-1 xl:grid-cols-2 gap-5">
-                    {[1, 2, 3, 4].map((i) => (
+
+                    {/* Main */}
+                    <div className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-4">
+                        {/* Stat strip */}
                         <div
-                            key={i}
-                            className="rounded-lg"
+                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden"
+                            style={{ border: '1px solid var(--border-light)' }}
+                        >
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <div
+                                    key={i}
+                                    className="px-3 py-2.5 flex flex-col gap-1.5"
+                                    style={{
+                                        background: 'var(--bg-primary)',
+                                        borderRight: i < 6 ? '1px solid var(--border-light)' : 'none'
+                                    }}
+                                >
+                                    <Bar className="h-2.5 w-16" />
+                                    <Bar className="h-5 w-12" />
+                                    <Bar className="h-2.5 w-20" />
+                                </div>
+                            ))}
+                        </div>
+                        {/* Cards */}
+                        {[1, 2, 3].map((i) => (
+                            <div
+                                key={i}
+                                className="rounded-lg"
+                                style={{
+                                    background: 'var(--bg-primary)',
+                                    border: '1px solid var(--border-light)'
+                                }}
+                            >
+                                <div
+                                    className="px-5 py-4 flex items-center gap-3"
+                                    style={{ borderBottom: '1px solid var(--border-light)' }}
+                                >
+                                    <Bar className="h-10 w-10" />
+                                    <div className="flex-1 flex flex-col gap-1.5">
+                                        <Bar className="h-3.5 w-40" />
+                                        <Bar className="h-2.5 w-56" />
+                                    </div>
+                                </div>
+                                <div className="px-5 py-5 flex flex-col gap-3">
+                                    <Bar className="h-10 w-full" />
+                                    <Bar className="h-10 w-2/3" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* At-a-glance rail skeleton */}
+                    <div className="hidden xl:block py-5" style={{ width: 240 }}>
+                        <Bar className="h-3 w-20 mb-2 ml-2" />
+                        <div
+                            className="rounded p-3 flex flex-col gap-2"
                             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
                         >
-                            <div
-                                className="px-5 py-4 flex items-center gap-3"
-                                style={{ borderBottom: '1px solid var(--border-light)' }}
-                            >
-                                <Bar className="h-10 w-10" />
-                                <Bar className="h-4 w-40" />
-                            </div>
-                            <div className="px-5 py-5 flex flex-col gap-3">
-                                <Bar className="h-10 w-full" />
-                                <Bar className="h-10 w-2/3" />
-                            </div>
+                            {[1, 2, 3, 4, 5, 6].map((i) => (
+                                <div
+                                    key={i}
+                                    className="flex flex-col gap-1.5 py-2"
+                                    style={{ borderBottom: i < 6 ? '1px dashed var(--border-light)' : 'none' }}
+                                >
+                                    <Bar className="h-2.5 w-14" />
+                                    <Bar className="h-3.5 w-24" />
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    </div>
                 </div>
             </div>
         </div>

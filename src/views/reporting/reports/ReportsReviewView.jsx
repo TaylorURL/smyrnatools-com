@@ -238,7 +238,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         </div>
     )
     const renderAggregateTable = () => (
-        <div className="bg-white rounded-xl border border-border-light overflow-hidden mb-6">
+        <div className="bg-bg-primary rounded-lg border border-border-light overflow-hidden mb-6">
             <table className="w-full border-collapse">
                 <thead>
                     <tr>
@@ -267,7 +267,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
     )
     return (
         <div ref={containerRef} className="bg-slate-50 min-h-screen w-full">
-            <div className="flex items-center justify-between flex-wrap gap-4 bg-white border-b border-border-light px-6 py-4 sticky top-0 z-40">
+            <div className="flex items-center justify-between flex-wrap gap-4 bg-bg-primary border-b border-border-light px-6 py-4 sticky top-0 z-40">
                 <div className="flex items-center gap-4">
                     <button
                         className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
@@ -322,9 +322,9 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 </div>
             )}
             {isPlantShutdown && (
-                <div className="mx-6 mt-4 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-5">
+                <div className="mx-6 mt-4 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-5">
                     <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-amber-200/60 flex items-center justify-center flex-shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-amber-200/60 flex items-center justify-center flex-shrink-0">
                             <i
                                 className={`fas ${operatorExclusionReason === 'operators_sent_to_other_location' ? 'fa-truck-loading' : 'fa-industry'} text-amber-700 text-sm`}
                             ></i>

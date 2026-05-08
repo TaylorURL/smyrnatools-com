@@ -137,7 +137,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
     return (
         <div className="fixed inset-0 z-[100] flex items-start sm:justify-center bg-black/40 backdrop-blur-sm overflow-y-auto sm:p-4">
             <div
-                className="bg-white rounded-none sm:rounded-2xl shadow-xl border-0 sm:border border-slate-200 w-full sm:max-w-2xl min-h-screen sm:min-h-0 sm:my-8"
+                className="bg-bg-primary rounded-none sm:rounded-2xl shadow-xl border-0 sm:border border-slate-200 w-full sm:max-w-2xl min-h-screen sm:min-h-0 sm:my-8"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}

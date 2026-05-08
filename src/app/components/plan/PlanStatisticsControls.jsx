@@ -2,11 +2,11 @@ import React, { useMemo, useState } from 'react'
 
 import {
     formatPeriodLabel,
-    isoDate,
     PLAN_STATS_COMPARISONS,
     PLAN_STATS_PERIODS,
     shiftAnchor
 } from '../../../utils/PlanStatisticsUtility'
+import { getTodayDate } from '../../../utils/PlanUtility'
 
 /** Period selector buttons (Day/Week/Month/Quarter/Year/Custom). */
 function PeriodSelector({ accentColor, period, setPeriod }) {
@@ -105,7 +105,7 @@ function PeriodNavigator({
                 <i className="fas fa-chevron-right text-xs" />
             </button>
             <button
-                onClick={() => setAnchor(isoDate(new Date()))}
+                onClick={() => setAnchor(getTodayDate())}
                 className="border-none bg-transparent cursor-pointer px-2 py-1 rounded text-xs font-semibold"
                 style={{ color: accentColor }}
             >

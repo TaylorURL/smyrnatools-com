@@ -65,7 +65,7 @@ function ErrorModal({ error, onClose }) {
     const parsed = isCommentError ? parseCommentError(error) : null
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+            <div className="bg-bg-primary rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
                 <div className="flex items-center gap-3 mb-4 sm:mb-5">
                     <ErrorIconBadge />
                     <div className="min-w-0">
@@ -82,7 +82,7 @@ function ErrorModal({ error, onClose }) {
                         <div className="bg-red-50 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                             <div className="text-red-800 text-xs sm:text-sm font-medium mb-2">{parsed.message}</div>
                             {parsed.hasComment && (
-                                <div className="bg-white border border-red-200 rounded-md p-2 sm:p-3 mb-2">
+                                <div className="bg-bg-primary border border-red-200 rounded-md p-2 sm:p-3 mb-2">
                                     <div className="text-slate-500 text-[10px] font-semibold uppercase mb-1">
                                         Your Comment
                                     </div>

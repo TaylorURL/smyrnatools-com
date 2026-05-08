@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { getNowCstMinutes } from '../../utils/PlanUtility'
+
 const ONE_MINUTE_MS = 60_000
 
 /**
- * Returns the current minute-of-day (0–1439), refreshed once a minute, when
- * `active` is true. Returns `null` otherwise so callers can short-circuit
- * any "now"-based UI on past or future schedules.
+ * Current minute-of-day (0–1439) on Smyrna's CST wall clock, refreshed
+ * once a minute when `active` is true. Returns `null` otherwise so
+ * callers can short-circuit "now"-based UI on past or future schedules.
+ *
+ * The CST anchor matters because PlanView is dispatch-driven: a planner
+ * in another timezone needs to see the same "now" a Houston dispatcher
+ * does, otherwise the realtime tab and the same-day booking guard land
+ * on a different day than the schedule itself.
  */
 export default function useLiveMinuteOfDay(active) {
     const [tick, setTick] = useState(0)
@@ -16,8 +23,7 @@ export default function useLiveMinuteOfDay(active) {
     }, [active])
     return useMemo(() => {
         if (!active) return null
-        const now = new Date()
-        return now.getHours() * 60 + now.getMinutes()
+        return getNowCstMinutes()
         // `tick` triggers re-evaluation each minute even though it's not read.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [active, tick])

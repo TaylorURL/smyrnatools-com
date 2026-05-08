@@ -915,7 +915,7 @@ function ReportsSubmitView({
 }
 const AIValidatingModal = ({ progress, reportName, accentColor }) => (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4">
-        <div className="bg-white rounded p-8 max-w-md w-full shadow-2xl">
+        <div className="bg-bg-primary rounded p-8 max-w-md w-full shadow-2xl">
             <div className="flex items-center gap-4 mb-6">
                 <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-amber-200 border-3 border-amber-500 text-amber-500 text-2xl animate-spin">
                     <i className="fas fa-robot"></i>

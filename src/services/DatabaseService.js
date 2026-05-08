@@ -99,7 +99,8 @@ const ALLOWED_TABLES = new Set([
     'documents',
     'client_errors',
     'messages',
-    'messages_decrypted'
+    'messages_decrypted',
+    'users_pinned_conversations'
 ])
 /** Allowlisted SQL migrations that can be executed via the migration endpoint. */
 const ALLOWED_MIGRATIONS = new Set(['alter table public.operators add column if not exists phone text'])

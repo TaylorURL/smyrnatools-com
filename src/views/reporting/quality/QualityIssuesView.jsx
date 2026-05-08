@@ -357,8 +357,8 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
     }, [issues, plants])
 
     return (
-        <div className="bg-slate-50 min-h-screen w-full">
-            <div className="w-full px-3 py-4 sm:px-4 sm:py-6 md:px-6">
+        <div className="w-full">
+            <div className="w-full">
                 <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-2.5 items-start">
                     <div className="flex flex-col gap-2.5 min-w-0">
                         {/* Toolbar card — search + plant + new button */}

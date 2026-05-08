@@ -15,13 +15,13 @@ const TipCard = ({ icon, title, text }) => (
     </div>
 )
 const NoAssignmentsState = () => (
-    <div className="flex flex-col items-center bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-6 sm:p-12 text-center">
+    <div className="flex flex-col items-center bg-bg-primary border border-gray-200 rounded-lg sm:rounded-2xl p-6 sm:p-12 text-center">
         <IconWrapper icon="fa-clipboard-list" />
         <h3 className="text-lg sm:text-xl font-bold text-slate-800 m-0 mb-2">No Reports Assigned</h3>
         <p className="text-sm sm:text-base text-slate-500 leading-relaxed m-0 mb-5 max-w-sm">
             You do not have any reports assigned to you yet. Contact your manager if you believe this is an error.
         </p>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 max-w-sm text-left">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-sm text-left">
             <div className="flex items-center gap-2 text-amber-800 text-sm font-semibold">
                 <i className="fas fa-lightbulb" />
                 What are reports?
@@ -34,7 +34,7 @@ const NoAssignmentsState = () => (
     </div>
 )
 const AllCaughtUpState = () => (
-    <div className="flex flex-col items-center bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-6 sm:p-12 text-center">
+    <div className="flex flex-col items-center bg-bg-primary border border-gray-200 rounded-lg sm:rounded-2xl p-6 sm:p-12 text-center">
         <IconWrapper icon="fa-check-circle" iconColorClass="text-emerald-500" />
         <h3 className="text-lg sm:text-xl font-bold text-slate-800 m-0 mb-2">All Caught Up!</h3>
         <p className="text-sm sm:text-base text-slate-500 leading-relaxed m-0 mb-5 max-w-sm">
@@ -51,13 +51,13 @@ const AllCaughtUpState = () => (
     </div>
 )
 const ReviewEmptyState = () => (
-    <div className="flex flex-col items-center bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-6 sm:p-12 text-center">
+    <div className="flex flex-col items-center bg-bg-primary border border-gray-200 rounded-lg sm:rounded-2xl p-6 sm:p-12 text-center">
         <IconWrapper icon="fa-eye" />
         <h3 className="text-lg sm:text-xl font-bold text-slate-800 m-0 mb-2">No Reports to Review</h3>
         <p className="text-sm sm:text-base text-slate-500 leading-relaxed m-0 mb-5 max-w-sm">
             There are no submitted reports waiting for your review at this time.
         </p>
-        <div className="flex items-start gap-3 bg-sky-50 border border-sky-200 rounded-xl p-4 max-w-md text-left">
+        <div className="flex items-start gap-3 bg-sky-50 border border-sky-200 rounded-lg p-4 max-w-md text-left">
             <i className="fas fa-info-circle text-sky-600 text-lg shrink-0 mt-0.5" />
             <div className="text-sm text-sky-700 leading-relaxed">
                 Reports will appear here once team members submit them. You will be able to review and provide feedback.

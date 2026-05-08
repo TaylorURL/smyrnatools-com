@@ -14,12 +14,13 @@ import {
     findAlternateStartTimes,
     findCrossDaySuggestions,
     findRecommendedStartTime,
+    POUR_METHOD_OPTIONS,
     rankPlantsForBooking,
     TRAVEL_MIN_HORIZON
 } from '../../../utils/BookOrderUtility'
 import DateUtility from '../../../utils/DateUtility'
 import { clean, formatHhmm } from '../../../utils/PlanScheduleUtility'
-import { getTodayDate, timeToMinutes } from '../../../utils/PlanUtility'
+import { getDayOfWeekForDate, getNowCstMinutes, getTodayDate, timeToMinutes } from '../../../utils/PlanUtility'
 
 const FIELD_STYLE = {
     background: 'var(--bg-secondary)',
@@ -65,6 +66,66 @@ function SameDayAdvice({ accentColor }) {
                     Same-day bookings run at 15:00 — no plant analysis needed.
                 </div>
             </div>
+        </div>
+    )
+}
+
+/**
+ * Embedded Google Maps preview of the driving route from the
+ * recommended plant to the job address. Reuses the same iframe URL
+ * shape `JobMapModal` uses on the Schedule tab so the dispatcher gets
+ * the familiar layout. Renders nothing when either address is missing.
+ */
+function RoutePreview({ jobAddress, plantAddress, plantName, travelMin }) {
+    const trimmedJob = (jobAddress || '').trim()
+    const trimmedPlant = (plantAddress || '').trim()
+    if (!trimmedJob || !trimmedPlant) return null
+    const plantQuery = encodeURIComponent(trimmedPlant)
+    const jobQuery = encodeURIComponent(trimmedJob)
+    /* `output=embed` is the documented embed-in-iframe form; saddr →
+     * daddr asks Google Maps to render the route between the two. */
+    const mapSrc = `https://www.google.com/maps?saddr=${plantQuery}&daddr=${jobQuery}&output=embed`
+    const externalUrl = `https://www.google.com/maps/dir/?api=1&origin=${plantQuery}&destination=${jobQuery}&travelmode=driving`
+    return (
+        <div
+            className="rounded-lg overflow-hidden"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
+            <div
+                className="px-4 py-2.5 flex items-center gap-2"
+                style={{ borderBottom: '1px solid var(--border-light)' }}
+            >
+                <i className="fas fa-route text-[11px]" style={{ color: 'var(--text-tertiary)' }} />
+                <div
+                    className="text-[10.5px] font-semibold uppercase tracking-wider"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    Route from {plantName || 'plant'} to job
+                </div>
+                {Number.isFinite(travelMin) && (
+                    <span className="text-[11px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+                        · {travelMin} min
+                    </span>
+                )}
+                <a
+                    href={externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-auto inline-flex items-center gap-1 text-[11px] hover:underline"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    title="Open this route in Google Maps"
+                >
+                    Open in Maps
+                    <i className="fas fa-arrow-up-right-from-square text-[9px]" />
+                </a>
+            </div>
+            <iframe
+                src={mapSrc}
+                title={`Route from ${plantName || 'plant'} to ${trimmedJob}`}
+                style={{ border: 0, display: 'block', height: 280, width: '100%' }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+            />
         </div>
     )
 }
@@ -638,9 +699,14 @@ function RecommendationAdvice({ accentColor, recommendedSlot, request, top }) {
     const recommendedTime = recommendedSlot ? formatMinutesAsClock(recommendedSlot.startMin) : requestedTime
     const isShifted = recommendedSlot && recommendedSlot.startMin !== request.startMin
     const trucksNeededLabel = `${request.trucksNeeded} truck${request.trucksNeeded === 1 ? '' : 's'}`
+    /* Honest distance label — only call a plant "closest" when we
+     *  actually have a drive-time number for it. Without one (job
+     *  address didn't geocode, plant address didn't resolve), the
+     *  recommendation is operating on a ZIP/heuristic guess and the
+     *  dispatcher needs to know that before trusting it. */
     const distanceLabel = Number.isFinite(top.travelMin)
         ? `${top.travelMin} min from the job`
-        : 'Closest plant to the job'
+        : 'Drive time unavailable — verify the job address geocoded correctly'
     const tone = isShifted
         ? {
               background: 'rgba(217, 119, 6, 0.08)',
@@ -720,8 +786,17 @@ function RecommendationAdvice({ accentColor, recommendedSlot, request, top }) {
  *  read-only suggestions; the dispatcher still books manually. */
 function BookingConflictPanel({ accentColor, conflict, request }) {
     if (!conflict) return null
-    const { alternateTimes, helpAvailability, moveCandidates, plantCode, plantName, shortBy, sizeWindowAdvice } =
-        conflict
+    const {
+        alternateTimes,
+        helpAvailability,
+        launchSlotFull,
+        moveCandidates,
+        plantCode,
+        plantName,
+        sameSlotCount,
+        shortBy,
+        sizeWindowAdvice
+    } = conflict
     const requestedTime = request ? formatMinutesAsClock(request.startMin) : null
 
     /* Score each fix against the actual shortfall so we can lead with the
@@ -736,15 +811,14 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
     const hasFittingAlternate = fittingAlternates.length > 0
 
     /* Pick which option leads — the one most likely to actually fix the
-     * shortage. Special case first: when the typed time is in the wrong
-     * window for the pour size (big pour outside graveyard, small pour
-     * outside business hours), prefer shifting to the size-appropriate
-     * window over pulling help — even if help could cover the typed
-     * time, running a 1000-yd pour through the day blocks every smaller
-     * order. Then the standard cascade: help, then clean time shift,
-     * then reschedule, then partial help, then no-fix. */
+     * shortage. Special cases first: launch-slot overflow (too many
+     * orders sharing a start minute) MUST shift — pulling help can't
+     * fix a physical loading-bay constraint; size-window mismatch then
+     * also routes to shift. After those, the standard cascade: help,
+     * clean time shift, reschedule, partial help, no-fix. */
     let primary
-    if (sizeWindowAdvice && sizeWindowAdvice.suggestedSlot) primary = 'shift'
+    if (launchSlotFull) primary = 'shift'
+    else if (sizeWindowAdvice && sizeWindowAdvice.suggestedSlot) primary = 'shift'
     else if (helpCovers) primary = 'help'
     else if (hasFittingAlternate) primary = 'shift'
     else if (movesCover) primary = 'reschedule'
@@ -765,6 +839,19 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
     const shiftTarget = sizeWindowAdvice?.suggestedSlot || (hasFittingAlternate ? fittingAlt : null)
     const yardageLabel = request?.yardage ? `${request.yardage}-yd` : ''
     const headlineCopy = (() => {
+        if (launchSlotFull) {
+            const launchSlot = shiftTarget
+            if (launchSlot) {
+                return {
+                    subtitle: `${plantName} already has ${sameSlotCount} order${sameSlotCount === 1 ? '' : 's'} starting at ${requestedTimeLabel} — that's the per-plant launch cap, so a fourth truck can't load at the same minute. Shifting to ${formatMinutesAsClock(launchSlot.startMin)} clears the constraint without expanding the day.`,
+                    title: `Shift to ${formatMinutesAsClock(launchSlot.startMin)} on ${plantName} — ${requestedTimeLabel} is already at the per-plant launch cap`
+                }
+            }
+            return {
+                subtitle: `${plantName} already has ${sameSlotCount} order${sameSlotCount === 1 ? '' : 's'} starting at ${requestedTimeLabel} — that's the per-plant launch cap. Pick a different start time on ${plantName} or try a nearby plant; pulling help can't fix a physical loading-bay constraint.`,
+                title: `${plantName} is at the per-plant launch cap at ${requestedTimeLabel}`
+            }
+        }
         if (primary === 'shift' && sizeWindowAdvice?.suggestedSlot) {
             const slot = sizeWindowAdvice.suggestedSlot
             const sizeKind = sizeWindowAdvice.isBigPour ? 'big' : 'small / medium'
@@ -815,19 +902,19 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
             ? { background: 'rgba(217, 119, 6, 0.18)', color: '#b45309', icon: 'fa-triangle-exclamation' }
             : { background: accentColor || '#1e3a5f', color: '#fff', icon: 'fa-thumbs-up' }
 
-    /* Hide secondary sections that wouldn't actually help. Help is shown
-     * whenever a nearby plant has any free trucks (might pair with a
-     * size-window shift when the graveyard slot still needs help on
-     * trucks); alternate-time chips only when at least one window fits
-     * cleanly AND we're not already recommending a size-window shift
-     * (which makes the alternates redundant); reschedule rows only when
-     * help can't fully cover AND we're not shifting — once the new pour
-     * moves out of business hours, the existing-order overlap goes away
-     * and the move list no longer applies. */
+    /* Hide secondary sections that wouldn't actually help. Help is
+     * irrelevant when the constraint is a launch-slot cap (truck pool
+     * isn't the bottleneck — the loading bay is). Alternate-time chips
+     * only when at least one window fits cleanly AND we're not already
+     * recommending a forced shift. Reschedule rows only when help can't
+     * fully cover AND we're not shifting — once the new pour moves out
+     * of the typed slot, the existing-order overlap goes away. */
     const isSizeShift = primary === 'shift' && !!sizeWindowAdvice?.suggestedSlot
-    const showHelpSection = (helpAvailability || []).length > 0
-    const showAlternatesSection = hasFittingAlternate && !isSizeShift
-    const showMoveSection = (moveCandidates || []).length > 0 && !helpCovers && !isSizeShift
+    const isLaunchCapShift = primary === 'shift' && !!launchSlotFull
+    const isForcedShift = isSizeShift || isLaunchCapShift
+    const showHelpSection = !isLaunchCapShift && (helpAvailability || []).length > 0
+    const showAlternatesSection = hasFittingAlternate && !isForcedShift
+    const showMoveSection = (moveCandidates || []).length > 0 && !helpCovers && !isForcedShift
 
     /* Trim + annotate the help section so a 2-truck shortage doesn't
      * read as "9 plants × 14 free trucks each". Walks plants in
@@ -1152,6 +1239,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
     const [startTime, setStartTime] = useState('')
     const [spacingMin, setSpacingMin] = useState('')
     const [address, setAddress] = useState('')
+    const [pourMethod, setPourMethod] = useState('')
     const [submitted, setSubmitted] = useState(false)
 
     /* Spacing is only meaningful for multi-load pours — a single-truck job
@@ -1168,12 +1256,10 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
     const isBookingToday = planDate === todayDate
     /* All Smyrna plants are closed Sundays — booking one would just stack
      * up against an empty pool. Track + flag the case so the date input
-     * can reject the choice and the recommendation logic can short-circuit. */
-    const isSundayDate = (dateString) => {
-        if (!dateString) return false
-        const date = new Date(`${dateString}T00:00:00`)
-        return Number.isFinite(date.getTime()) && date.getDay() === 0
-    }
+     * can reject the choice and the recommendation logic can short-
+     * circuit. CST-anchored day-of-week so the answer doesn't drift if
+     * the dispatcher (or a developer) is in another timezone. */
+    const isSundayDate = (dateString) => getDayOfWeekForDate(dateString) === 0
     const planDateIsSunday = isSundayDate(planDate)
     const [dateError, setDateError] = useState('')
 
@@ -1185,7 +1271,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
         setDateError('')
         onChangePlanDate?.(nextDate)
     }
-    const nowMinutes = isBookingToday ? new Date().getHours() * 60 + new Date().getMinutes() : null
+    const nowMinutes = isBookingToday ? getNowCstMinutes() : null
     const startTimeMinutes = isValidMilitaryTime(startTime) ? timeToMinutes(startTime) : null
     const startTimeIsPast =
         isBookingToday && startTimeMinutes != null && nowMinutes != null && startTimeMinutes < nowMinutes
@@ -1193,8 +1279,8 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
 
     const request = useMemo(() => {
         if (startTimeMalformed || startTimeIsPast || planDateIsSunday) return null
-        return buildBookingRequest({ address, spacingMin, startTime, yardage })
-    }, [address, planDateIsSunday, spacingMin, startTime, startTimeIsPast, startTimeMalformed, yardage])
+        return buildBookingRequest({ address, pourMethod, spacingMin, startTime, yardage })
+    }, [address, planDateIsSunday, pourMethod, spacingMin, startTime, startTimeIsPast, startTimeMalformed, yardage])
 
     /* Real distance signal for the recommender — geocodes via Nominatim and
      * derives one-way drive-time minutes per plant. Plants further than the
@@ -1234,6 +1320,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
         setStartTime('')
         setSpacingMin('')
         setAddress('')
+        setPourMethod('')
         setSubmitted(false)
     }
 
@@ -1277,6 +1364,13 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
         if (!ranked[0]) return null
         return (plants || []).find((p) => (p?.plantCode || p?.plant_code) === ranked[0].plantCode) || null
     }, [ranked, plants])
+    /* Plant record for the conflict path (could differ from `topPlantRecord`
+     * if ranking changes mid-session). Used to surface the plant address
+     * for the route map preview. */
+    const conflictPlantRecord = useMemo(() => {
+        if (!conflict?.plantCode) return null
+        return (plants || []).find((p) => (p?.plantCode || p?.plant_code) === conflict.plantCode) || null
+    }, [conflict, plants])
     const recommendedSlot = useMemo(() => {
         if (!topPlantRecord || !request || conflict) return null
         const plantCode = topPlantRecord?.plantCode || topPlantRecord?.plant_code
@@ -1344,10 +1438,16 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                         </div>
                         <div>
                             <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                Booking Request
+                                Find a Spot
                             </div>
                             <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                                {planDateLabel ? `Scheduling for ${planDateLabel}` : 'Enter the order details'}
+                                Booking-assist tool — surfaces the best plant + time for an order. It does not place the
+                                booking; the dispatcher still books manually.
+                                {planDateLabel && (
+                                    <span className="block mt-1" style={{ color: 'var(--text-secondary)' }}>
+                                        Looking at {planDateLabel}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1427,6 +1527,34 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                             </div>
                         </div>
 
+                        <div>
+                            <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+                                How are they pouring?
+                            </label>
+                            <div className="relative">
+                                <select
+                                    value={pourMethod}
+                                    onChange={(e) => setPourMethod(e.target.value)}
+                                    className="w-full appearance-none rounded-lg px-3 py-2.5 pr-9 text-[14px] outline-none cursor-pointer"
+                                    style={FIELD_STYLE}
+                                >
+                                    <option value="">Select a method (optional)</option>
+                                    {POUR_METHOD_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <i
+                                    className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none"
+                                    style={{ color: 'var(--text-tertiary)' }}
+                                />
+                            </div>
+                            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                Helps the system determine how many trucks this pour will need.
+                            </p>
+                        </div>
+
                         {requiresSpacing && (
                             <div>
                                 <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
@@ -1439,14 +1567,22 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                     step="1"
                                     value={spacingMin}
                                     onChange={(e) => setSpacingMin(e.target.value)}
+                                    /* Anything under 10 min is unrealistic for real-world
+                                     * loading-bay throughput — snap to 6 on blur so the
+                                     * recommender never works off a fantasy spacing the
+                                     * dispatcher typed in a hurry. */
+                                    onBlur={() => {
+                                        const num = parseFloat(spacingMin)
+                                        if (Number.isFinite(num) && num > 0 && num < 10) setSpacingMin('6')
+                                    }}
                                     placeholder={String(DEFAULT_TRUCK_SPACING_MIN)}
                                     required
                                     className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                                     style={FIELD_STYLE}
                                 />
                                 <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                    Minutes between truck arrivals on a multi-load pour. Tighter spacing pours faster
-                                    but needs more concurrent trucks.
+                                    Minutes between truck arrivals on a multi-load pour. Anything under 10 min snaps to
+                                    6 — that&apos;s the tightest spacing a loading bay can sustain.
                                 </p>
                             </div>
                         )}
@@ -1468,37 +1604,64 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                             </p>
                         </div>
 
-                        {request && (
-                            <div
-                                className="rounded-lg px-3 py-2.5 text-[12px] flex flex-col gap-1"
-                                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                            >
-                                <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
-                                    <span>Estimated trucks</span>
-                                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                        {request.trucksNeeded}
-                                    </span>
+                        {request &&
+                            (request.exceedsShiftLimit ? (
+                                <div
+                                    className="rounded-lg px-3 py-2.5 text-[12px] flex flex-col gap-1.5"
+                                    style={{
+                                        background: 'rgba(220, 38, 38, 0.08)',
+                                        border: '1px solid rgba(220, 38, 38, 0.35)',
+                                        color: '#b91c1c'
+                                    }}
+                                >
+                                    <div className="flex items-center gap-1.5 font-semibold">
+                                        <i className="fas fa-triangle-exclamation text-[11px]" />
+                                        Pour exceeds the 14-hour shift limit
+                                    </div>
+                                    <div className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
+                                        At {request.spacingMin}-min spacing, this {request.yardage}-yd pour runs about{' '}
+                                        {(request.projectedShiftMin / 60).toFixed(1)}h from first load-out to back-at-
+                                        yard — over the 14h driver-shift cap.
+                                    </div>
+                                    <div className="text-[11px]" style={{ color: '#b45309' }}>
+                                        Drop the spacing below it or shrink the yardage so the pour fits a single 14h
+                                        shift.
+                                    </div>
                                 </div>
-                                <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
-                                    <span>Pour window</span>
-                                    <span
-                                        className="font-semibold tabular-nums"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
-                                        {formatMinutesAsClock(request.startMin)}–
-                                        {formatMinutesAsClock(request.startMin + request.durationMin)}
-                                    </span>
+                            ) : (
+                                <div
+                                    className="rounded-lg px-3 py-2.5 text-[12px] flex flex-col gap-1"
+                                    style={{
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-light)'
+                                    }}
+                                >
+                                    <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
+                                        <span>Estimated trucks</span>
+                                        <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                            {request.trucksNeeded}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
+                                        <span>Pour window</span>
+                                        <span
+                                            className="font-semibold tabular-nums"
+                                            style={{ color: 'var(--text-primary)' }}
+                                        >
+                                            {formatMinutesAsClock(request.startMin)}–
+                                            {formatMinutesAsClock(request.startMin + request.durationMin)}
+                                        </span>
+                                    </div>
+                                    <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                                        Assumes {DEFAULT_LOAD_SIZE_YARDS}-yd loads, {request.spacingMin}-min spacing.
+                                    </div>
                                 </div>
-                                <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                                    Assumes {DEFAULT_LOAD_SIZE_YARDS}-yd loads, {request.spacingMin}-min spacing.
-                                </div>
-                            </div>
-                        )}
+                            ))}
 
                         <div className="flex gap-2">
                             <button
                                 type="submit"
-                                disabled={!request}
+                                disabled={!request || !!request.exceedsShiftLimit}
                                 className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider text-white px-4 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{ background: accentColor }}
                             >
@@ -1510,7 +1673,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                              * `submitted` flag so the right pane returns to its idle
                              * state. Hidden when every field is already empty so the
                              * button doesn't add noise on a fresh form. */}
-                            {(yardage || startTime || spacingMin || address || submitted) && (
+                            {(yardage || startTime || spacingMin || address || pourMethod || submitted) && (
                                 <button
                                     type="button"
                                     onClick={handleReset}
@@ -1536,23 +1699,104 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                         /* Roll up the branch conditions once so each FadeIn
                          * gets the same boolean it'd have in an `if/else`
                          * tree, but the markup stays flat and animations
-                         * can overlap during a state transition. */
-                        const showIdle = !submitted
-                        const showSunday = submitted && planDateIsSunday
-                        const showSameDay = submitted && !planDateIsSunday && isBookingToday
-                        const showLoading = submitted && !planDateIsSunday && !isBookingToday && distancesLoading
+                         * can overlap during a state transition.
+                         *
+                         * `showExceedsShift` short-circuits every other
+                         * branch — when the typed spacing/yardage produces
+                         * a pour that can't fit a 14h shift, the right
+                         * pane should reflect that immediately rather than
+                         * compute recommendations against an impossible
+                         * pour. */
+                        const showExceedsShift = !!request?.exceedsShiftLimit
+                        const showIdle = !submitted && !showExceedsShift
+                        const showSunday = submitted && planDateIsSunday && !showExceedsShift
+                        const showSameDay = submitted && !planDateIsSunday && isBookingToday && !showExceedsShift
+                        const showLoading =
+                            submitted && !planDateIsSunday && !isBookingToday && distancesLoading && !showExceedsShift
                         const showNoPlants =
                             submitted &&
                             !planDateIsSunday &&
                             !isBookingToday &&
                             !distancesLoading &&
-                            ranked.length === 0
-                        const showResult = submitted && !planDateIsSunday && !isBookingToday && top && !conflict
-                        const showConflict = submitted && !planDateIsSunday && !isBookingToday && !!conflict
-                        const showDecorative = showIdle || showLoading || showNoPlants
+                            ranked.length === 0 &&
+                            !showExceedsShift
+                        const showResult =
+                            submitted && !planDateIsSunday && !isBookingToday && top && !conflict && !showExceedsShift
+                        const showConflict =
+                            submitted && !planDateIsSunday && !isBookingToday && !!conflict && !showExceedsShift
+                        const showDecorative = (showIdle || showLoading || showNoPlants) && !showExceedsShift
 
                         return (
                             <>
+                                <FadeIn show={showExceedsShift}>
+                                    <div
+                                        className="rounded-lg p-5 flex flex-col gap-3"
+                                        style={{
+                                            background: 'rgba(220, 38, 38, 0.08)',
+                                            border: '1px solid rgba(220, 38, 38, 0.35)',
+                                            color: 'var(--text-primary)'
+                                        }}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div
+                                                className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
+                                                style={{ background: '#dc2626', color: '#fff' }}
+                                            >
+                                                <i className="fas fa-triangle-exclamation text-[16px]" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[15px] font-bold" style={{ color: '#b91c1c' }}>
+                                                    Pour exceeds the 14-hour shift limit
+                                                </div>
+                                                <div
+                                                    className="text-[12.5px] mt-1 leading-snug"
+                                                    style={{ color: 'var(--text-secondary)' }}
+                                                >
+                                                    At {request?.spacingMin}-min spacing, this {request?.yardage}-yd
+                                                    pour would run about{' '}
+                                                    <strong>
+                                                        {request?.projectedShiftMin
+                                                            ? (request.projectedShiftMin / 60).toFixed(1)
+                                                            : '?'}
+                                                        h
+                                                    </strong>{' '}
+                                                    from first load-out to back-at-yard. Operators can&apos;t legally
+                                                    stay on the clock past the 14h DOT cap, so no plant can host this
+                                                    pour as configured.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div
+                                            className="rounded-md p-3 text-[12px]"
+                                            style={{
+                                                background: 'var(--bg-primary)',
+                                                border: '1px solid var(--border-light)',
+                                                color: 'var(--text-secondary)'
+                                            }}
+                                        >
+                                            <div
+                                                className="text-[10.5px] font-bold uppercase tracking-wider mb-1.5"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                            >
+                                                Either of these brings the pour under 14 hours:
+                                            </div>
+                                            <ul className="list-disc pl-4 space-y-0.5">
+                                                <li>
+                                                    Tighten the truck spacing — currently{' '}
+                                                    <strong>{request?.spacingMin} min</strong>. Each minute trimmed cuts
+                                                    roughly {Math.max(1, Math.ceil((request?.yardage || 0) / 10) - 1)}{' '}
+                                                    minutes off the total pour duration.
+                                                </li>
+                                                <li>
+                                                    Shrink the yardage — currently{' '}
+                                                    <strong>{request?.yardage} yd</strong>. Splitting the order across
+                                                    two days or two plants is the standard play for pours this big.
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </FadeIn>
+
                                 <FadeIn show={showIdle}>
                                     <div
                                         className="rounded-lg p-8 text-center flex flex-col items-center gap-2"
@@ -1655,6 +1899,18 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                         />
                                     )}
                                 </FadeIn>
+                                <FadeIn show={showResult} delayMs={170}>
+                                    {top && !conflict && (
+                                        <RoutePreview
+                                            jobAddress={request?.address}
+                                            plantAddress={
+                                                topPlantRecord?.plantAddress || topPlantRecord?.plant_address || ''
+                                            }
+                                            plantName={top.plantName}
+                                            travelMin={top.travelMin}
+                                        />
+                                    )}
+                                </FadeIn>
                                 <FadeIn show={showResult} delayMs={200}>
                                     {top && !conflict && (
                                         <SchedulePreview
@@ -1693,6 +1949,20 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                             plantName={conflict.plantName}
                                             recommendedStartMin={null}
                                             sameDaySlots={topPlantViableSlots}
+                                        />
+                                    )}
+                                </FadeIn>
+                                <FadeIn show={showConflict} delayMs={170}>
+                                    {conflict && (
+                                        <RoutePreview
+                                            jobAddress={request?.address}
+                                            plantAddress={
+                                                conflictPlantRecord?.plantAddress ||
+                                                conflictPlantRecord?.plant_address ||
+                                                ''
+                                            }
+                                            plantName={conflict.plantName}
+                                            travelMin={travelMinByPlantCode?.[conflict.plantCode]}
                                         />
                                     )}
                                 </FadeIn>

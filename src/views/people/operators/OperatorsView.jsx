@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
+import PhoneLink from '../../../app/components/common/PhoneLink'
 import StatusHistoryBar from '../../../app/components/common/StatusHistoryBar'
 import { exportOperatorRatingsSheet } from '../../../app/components/modules/export/operators/OperatorRatingsExport'
 import GridViewModeSection from '../../../app/components/sections/GridViewModeSection'
@@ -13,7 +14,6 @@ import { MixerService } from '../../../services/MixerService'
 import { OperatorService } from '../../../services/OperatorService'
 import { PlantService } from '../../../services/PlantService'
 import { TractorService } from '../../../services/TractorService'
-import GrammarUtility from '../../../utils/GrammarUtility'
 import OperatorAddView from './OperatorAddView'
 import OperatorCard from './OperatorCard'
 import OperatorCommentModal from './OperatorCommentModal'
@@ -719,9 +719,7 @@ function OperatorsView({
                                                 <td
                                                     className={`${cellSecondaryCls} w-[14%] group-hover:bg-bg-tertiary`}
                                                 >
-                                                    {operator.phone
-                                                        ? GrammarUtility.formatPhone(operator.phone)
-                                                        : '\u2014'}
+                                                    {operator.phone ? <PhoneLink phone={operator.phone} /> : '\u2014'}
                                                 </td>
                                                 <td
                                                     className={`${cellSecondaryCls} w-[14%] group-hover:bg-bg-tertiary`}

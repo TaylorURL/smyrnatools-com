@@ -42,7 +42,7 @@ const titleFor = (report) => {
 function MyOneOffRail({ reports = [], title = 'Your submissions', onEdit, emptyLabel = 'Nothing submitted yet' }) {
     return (
         <aside
-            className="rounded-xl p-4 border"
+            className="rounded-lg p-4 border"
             style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
         >
             <div className="flex items-center gap-2 mb-3">

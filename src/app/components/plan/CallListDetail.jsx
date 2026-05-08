@@ -9,7 +9,6 @@ import {
 } from '../../../utils/CallListUtility'
 import DateUtility from '../../../utils/DateUtility'
 import { useAuth } from '../../context/AuthContext'
-import { Stat, StatGroup } from '../ui/Panel'
 
 const buildDisplayName = (user) => {
     if (!user) return ''
@@ -66,15 +65,21 @@ function HistoryList({ currentUserId, entries, isLoading, onDelete }) {
                         }}
                     >
                         <div className="flex items-center justify-between gap-2 flex-wrap text-[11px]">
-                            <span
-                                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-bold uppercase tracking-wider text-[9.5px]"
-                                style={{
-                                    background: `${CALL_OUTCOME_COLORS[entry.outcome] || '#64748b'}1f`,
-                                    color: CALL_OUTCOME_COLORS[entry.outcome] || '#64748b'
-                                }}
-                            >
-                                {CALL_OUTCOME_LABELS[entry.outcome] || entry.outcome}
-                            </span>
+                            {(() => {
+                                const tone = CALL_OUTCOME_COLORS[entry.outcome] || '#64748b'
+                                return (
+                                    <span
+                                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-bold uppercase tracking-wider text-[9.5px]"
+                                        style={{
+                                            background: `${tone}29`,
+                                            boxShadow: `inset 0 0 0 1px ${tone}55`,
+                                            color: tone
+                                        }}
+                                    >
+                                        {CALL_OUTCOME_LABELS[entry.outcome] || entry.outcome}
+                                    </span>
+                                )
+                            })()}
                             <span
                                 className="inline-flex items-center gap-1.5"
                                 style={{ color: 'var(--text-tertiary)' }}
@@ -129,10 +134,11 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
     if (!row) {
         return (
             <div
-                className="flex items-center justify-center text-sm italic p-8"
+                className="flex flex-col items-center justify-center text-center gap-2 p-10"
                 style={{ color: 'var(--text-tertiary)' }}
             >
-                Select a customer from the list to log a call.
+                <i className="fas fa-headset text-2xl" />
+                <div className="text-[12.5px]">Select a customer from the list to log a call.</div>
             </div>
         )
     }
@@ -158,65 +164,104 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
 
     return (
         <div className="flex flex-col">
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+            <div className="px-4 py-2.5 flex flex-col gap-1" style={{ borderBottom: '1px solid var(--border-light)' }}>
                 <div className="flex items-baseline gap-2 flex-wrap">
-                    <h3 className="text-[18px] font-bold m-0 truncate" style={{ color: 'var(--text-primary)' }}>
+                    <h3
+                        className="text-[16px] font-bold m-0 truncate"
+                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                    >
                         {row.customer_name || row.customer_num}
                     </h3>
                     <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
                         #{row.customer_num}
                     </span>
-                </div>
-                <div
-                    className="flex items-center gap-3 mt-1.5 flex-wrap text-[12px]"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
-                    {row.contact_name && (
-                        <span>
-                            <i className="fas fa-user mr-1" style={{ color: 'var(--text-tertiary)' }} />
-                            {row.contact_name}
-                        </span>
-                    )}
+                    <div className="flex-1" />
                     {row.phone ? (
                         <a
                             href={`tel:${row.phone}`}
-                            className="font-semibold underline"
+                            className="text-[12px] font-semibold inline-flex items-center gap-1.5"
                             style={{ color: 'var(--text-primary)' }}
                         >
-                            <i className="fas fa-phone mr-1" />
+                            <i className="fas fa-phone text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
                             {formatCallListPhone(row.phone)}
                         </a>
                     ) : (
-                        <span style={{ color: 'var(--text-tertiary)' }}>
-                            <i className="fas fa-phone-slash mr-1" />
-                            no phone on file
+                        <span
+                            className="text-[11.5px] inline-flex items-center gap-1.5"
+                            style={{ color: 'var(--text-tertiary)' }}
+                        >
+                            <i className="fas fa-phone-slash text-[10px]" />
+                            no phone
                         </span>
                     )}
                 </div>
+                {row.contact_name && (
+                    <div className="text-[11.5px] truncate" style={{ color: 'var(--text-secondary)' }}>
+                        <i className="fas fa-user mr-1.5 text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                        {row.contact_name}
+                    </div>
+                )}
             </div>
 
-            <StatGroup columns={4} className="rounded-none border-x-0">
-                <Stat
-                    hint={DateUtility.formatDate(row.last_pour_date)}
-                    label="Days dormant"
-                    value={row.days_since_last_pour}
-                    valueColor={tone}
-                />
-                <Stat hint="last 365 days" label="Pours / yr" value={row.pour_days_last_year} />
-                <Stat
-                    hint={row.last_call_at ? `last ${DateUtility.formatDateTime(row.last_call_at)}` : 'no calls yet'}
-                    label="Calls / 30d"
-                    value={row.call_count_last_30 || 0}
-                />
-                <Stat
-                    hint={row.last_call_by_name || ' '}
-                    label="Last outcome"
-                    value={row.last_call_outcome ? CALL_OUTCOME_LABELS[row.last_call_outcome] : '—'}
-                    valueColor={row.last_call_outcome ? CALL_OUTCOME_COLORS[row.last_call_outcome] : undefined}
-                />
-            </StatGroup>
+            {/* Compact KPI strip — replaces the 4-card StatGroup so the action
+             *  area surfaces in the same vertical real estate. */}
+            <div
+                className="px-4 py-2 flex items-center flex-wrap gap-x-3 gap-y-1 text-[11.5px]"
+                style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}
+            >
+                <span className="inline-flex items-baseline gap-1" title={DateUtility.formatDate(row.last_pour_date)}>
+                    <span className="font-bold text-[13px]" style={{ color: tone, fontFamily: 'var(--font-heading)' }}>
+                        {row.days_since_last_pour}d
+                    </span>
+                    <span style={{ color: 'var(--text-tertiary)' }}>dormant</span>
+                </span>
+                <span className="opacity-40">·</span>
+                <span className="inline-flex items-baseline gap-1" title="Pour days in the last 365 days">
+                    <span
+                        className="font-bold text-[13px]"
+                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                    >
+                        {row.pour_days_last_year}
+                    </span>
+                    <span style={{ color: 'var(--text-tertiary)' }}>pours/yr</span>
+                </span>
+                <span className="opacity-40">·</span>
+                <span
+                    className="inline-flex items-baseline gap-1"
+                    title={
+                        row.last_call_at
+                            ? `Last call ${DateUtility.formatDateTime(row.last_call_at)}`
+                            : 'No calls logged yet'
+                    }
+                >
+                    <span
+                        className="font-bold text-[13px]"
+                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                    >
+                        {row.call_count_last_30 || 0}
+                    </span>
+                    <span style={{ color: 'var(--text-tertiary)' }}>calls/30d</span>
+                </span>
+                {row.last_call_outcome && (
+                    <>
+                        <span className="opacity-40">·</span>
+                        <span
+                            className="inline-flex items-center gap-1"
+                            title={row.last_call_by_name ? `Logged by ${row.last_call_by_name}` : undefined}
+                        >
+                            <span style={{ color: 'var(--text-tertiary)' }}>last:</span>
+                            <span
+                                className="font-bold uppercase tracking-wider text-[10px]"
+                                style={{ color: CALL_OUTCOME_COLORS[row.last_call_outcome] || 'var(--text-secondary)' }}
+                            >
+                                {CALL_OUTCOME_LABELS[row.last_call_outcome]}
+                            </span>
+                        </span>
+                    </>
+                )}
+            </div>
 
-            <div className="px-4 py-3 flex flex-col gap-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+            <div className="px-4 py-3 flex flex-col gap-2.5" style={{ borderBottom: '1px solid var(--border-light)' }}>
                 <div className="grid grid-cols-2 gap-2">
                     {CALL_OUTCOME_BUTTONS.map(({ color, icon, key, label }) => {
                         const busy = submitting === key
@@ -226,10 +271,14 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
                                 type="button"
                                 onClick={() => submit(key)}
                                 disabled={isSaving || busy}
-                                className="inline-flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-[13px] font-semibold border-none cursor-pointer disabled:opacity-50"
-                                style={{ background: `${color}1f`, color }}
+                                className="inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-[12.5px] font-semibold cursor-pointer disabled:opacity-50 transition-colors"
+                                style={{
+                                    background: `${color}29`,
+                                    boxShadow: `inset 0 0 0 1px ${color}66`,
+                                    color
+                                }}
                             >
-                                <i className={`fas ${icon}`} />
+                                <i className={`fas ${icon} text-[11px]`} />
                                 {label}
                             </button>
                         )
@@ -239,11 +288,11 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
                     <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        placeholder="Comment (saved with the outcome above, or click Save Note for a comment-only entry)"
+                        placeholder="Optional comment — saved with the outcome above, or click Save Note for a comment-only entry."
                         rows={2}
-                        className="w-full rounded-md p-2 text-[12px] resize-y"
+                        className="w-full rounded-md p-2 text-[12px] resize-y outline-none"
                         style={{
-                            background: 'var(--bg-primary)',
+                            background: 'var(--bg-secondary)',
                             border: '1px solid var(--border-light)',
                             color: 'var(--text-primary)'
                         }}
@@ -265,8 +314,12 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
                             type="button"
                             onClick={() => submit('note')}
                             disabled={!comment.trim() || submitting === 'note'}
-                            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold border-none cursor-pointer disabled:opacity-40"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold cursor-pointer disabled:opacity-40 transition-colors"
+                            style={{
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-light)',
+                                color: 'var(--text-primary)'
+                            }}
                         >
                             <i className="fas fa-note-sticky" />
                             Save Note
@@ -277,7 +330,7 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
 
             <div className="flex flex-col">
                 <div
-                    className="px-4 py-2 text-[10.5px] font-bold uppercase tracking-[0.08em]"
+                    className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em]"
                     style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border-light)' }}
                 >
                     Call & Comment History

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { TIMELINE_HOURS, TIMELINE_START_HOUR } from '../../../utils/PlanUtility'
+import { getNowCstMinutes, TIMELINE_HOURS, TIMELINE_START_HOUR } from '../../../utils/PlanUtility'
 import { usePlanMiniTimelineRows } from '../../hooks/usePlanMiniTimelineRows'
 import { PlanMiniTimelineHeader } from './PlanMiniTimelineHeader'
 import { PlanMiniTimelineRow } from './PlanMiniTimelineRow'
@@ -26,14 +26,16 @@ export default function PlanMiniTimeline({
         getTravelTime,
         mixerCountsByPlant
     })
-    const [now, setNow] = useState(() => new Date())
+    /* Tracks Smyrna's CST minute-of-day so the "now" indicator matches the
+     * realtime tab regardless of the dispatcher's local timezone. */
+    const [nowMinutes, setNowMinutes] = useState(() => getNowCstMinutes())
 
     useEffect(() => {
-        const intervalId = window.setInterval(() => setNow(new Date()), NOW_TICK_INTERVAL_MS)
+        const intervalId = window.setInterval(() => setNowMinutes(getNowCstMinutes()), NOW_TICK_INTERVAL_MS)
         return () => window.clearInterval(intervalId)
     }, [])
 
-    const nowPct = computeNowPercent(now)
+    const nowPct = computeNowPercent(nowMinutes)
 
     if (allLanes.length === 0) return <PlanMiniTimelineEmptyState />
 
@@ -60,8 +62,8 @@ export default function PlanMiniTimeline({
     )
 }
 
-function computeNowPercent(now) {
-    const nowMinutes = now.getHours() * 60 + now.getMinutes()
+function computeNowPercent(nowMinutes) {
+    if (!Number.isFinite(nowMinutes)) return null
     const startMinutes = TIMELINE_START_HOUR * 60
     const totalMinutes = TIMELINE_HOURS * 60
     if (nowMinutes < startMinutes || nowMinutes > startMinutes + totalMinutes) return null

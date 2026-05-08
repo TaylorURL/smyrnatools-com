@@ -29,12 +29,12 @@ export function VarianceCell({ varianceStr }) {
     )
 }
 const RPT_INPUT =
-    'w-full rounded-md border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 box-border disabled:bg-slate-50 disabled:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10'
+    'w-full rounded-md border border-gray-200 bg-bg-primary px-3.5 py-2.5 text-sm text-slate-800 box-border disabled:bg-slate-50 disabled:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10'
 const RPT_TEXTAREA = `${RPT_INPUT} min-h-[60px] resize-y`
 const TH_STYLE =
     'bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-gray-200'
 const TD_STYLE =
-    'px-4 py-3 text-[0.9375rem] text-slate-800 border-b border-slate-100 align-middle bg-white last:border-b-0'
+    'px-4 py-3 text-[0.9375rem] text-slate-800 border-b border-slate-100 align-middle bg-bg-primary last:border-b-0'
 /** Table row showing last week's value (disabled), current week's editable input, and a variance cell. */
 export function ComparisonTableRow({
     label,
@@ -85,7 +85,7 @@ export function ComparisonTableRow({
 /** Styled table wrapper for week-over-week comparison grids used by report plugins. */
 export function ComparisonTable({ headers, children }) {
     return (
-        <table className="w-full border-collapse mt-3 rounded-lg overflow-hidden border border-gray-200 bg-white">
+        <table className="w-full border-collapse mt-3 rounded-lg overflow-hidden border border-gray-200 bg-bg-primary">
             <thead>
                 <tr>
                     {headers.map((h, i) => (
@@ -102,7 +102,7 @@ export function ComparisonTable({ headers, children }) {
 /** Styled card container used as a section wrapper in report plugins. Supports accent border and header actions. */
 export function ReportCard({ title, accent, badge, actions, children, className = '' }) {
     return (
-        <div className={`rounded-xl border border-gray-200 bg-white p-6 mb-6 ${className}`}>
+        <div className={`rounded-lg border border-gray-200 bg-bg-primary p-6 mb-6 ${className}`}>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="text-lg font-semibold text-slate-800 m-0">{title}</div>
                 {badge && (
@@ -158,7 +158,7 @@ export function LoadingSpinner({ text = 'Loading...' }) {
 export function AIAnalysisCard({ analysis, loading, error, onRegenerate, plantCount }) {
     if (loading) {
         return (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 mb-6">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 mb-6">
                 <div className="flex items-center justify-center gap-2 p-4 text-sm text-slate-500">
                     <i className="fas fa-circle-notch fa-spin"></i>
                     <span>Generating AI Analysis...</span>
@@ -182,7 +182,7 @@ export function AIAnalysisCard({ analysis, loading, error, onRegenerate, plantCo
     }
     if (!analysis) return null
     return (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 mb-6">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 mb-6">
             <div className="flex items-center gap-3 mb-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-accent text-base">
                     <i className="fas fa-robot"></i>
@@ -196,7 +196,7 @@ export function AIAnalysisCard({ analysis, loading, error, onRegenerate, plantCo
             </div>
             <div className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">{analysis}</div>
             <button
-                className="mt-3 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 cursor-pointer hover:bg-slate-100"
+                className="mt-3 rounded-md border border-slate-300 bg-bg-primary px-3 py-1.5 text-xs text-slate-600 cursor-pointer hover:bg-slate-100"
                 onClick={onRegenerate}
             >
                 <i className="fas fa-sync-alt mr-1.5"></i>

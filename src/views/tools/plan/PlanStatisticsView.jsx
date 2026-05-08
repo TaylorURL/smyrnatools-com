@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
+import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons'
 import { PlanStatisticsControls } from '../../../app/components/plan/PlanStatisticsControls'
 import { PlanStatisticsKpiStrip } from '../../../app/components/plan/PlanStatisticsKpiStrip'
 import {
@@ -198,8 +199,13 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         )
     }
 
+    /* Hold the layout-matching skeleton through the initial stats fetch so
+     * the user never sees an empty controls bar and KPI strip flash before
+     * data is in. Sub-pages still own their own `loading` handling for
+     * background re-fetches once the first load lands. */
+    if (loading && currentDays.length === 0) return <StatisticsSkeleton />
     return (
-        <div className="flex-1 min-h-0 overflow-y-auto" data-content-scroll>
+        <div className="flex-1 min-h-0 overflow-y-auto animate-fade-in-fast" data-content-scroll>
             <div className="px-3 sm:px-4 md:px-6 py-4 flex flex-col gap-4">
                 <PlanStatisticsControls
                     accentColor={accentColor}

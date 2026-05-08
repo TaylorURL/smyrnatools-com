@@ -678,7 +678,7 @@ export function SafetyManagerSubmitPlugin({ form, plants, readOnly, setForm }) {
                                             }}
                                         >
                                             <span
-                                                className="absolute rounded-full bg-white transition-all"
+                                                className="absolute rounded-full bg-bg-primary transition-all"
                                                 style={{
                                                     width: 12,
                                                     height: 12,

@@ -1,8 +1,8 @@
 import React from 'react'
 
+import PhoneLink from '../../../app/components/common/PhoneLink'
 import CardSection from '../../../app/components/sections/CardSection'
 import DateUtility from '../../../utils/DateUtility'
-import GrammarUtility from '../../../utils/GrammarUtility'
 
 /** Maps operator lifecycle statuses to their card accent colors. */
 const STATUS_COLORS = {
@@ -77,7 +77,7 @@ function OperatorCard({
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-gray-500 dark:text-gray-400">Phone</div>
                 <div className="text-sm font-medium">
-                    {operator.phone ? GrammarUtility.formatPhone(operator.phone) : 'Not Set'}
+                    {operator.phone ? <PhoneLink phone={operator.phone} /> : 'Not Set'}
                 </div>
             </div>
             {operator.status === 'Pending Start' && (

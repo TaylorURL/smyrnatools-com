@@ -1,9 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
+import { MaintenanceFormsRail } from '../../../app/components/maintenance/MaintenanceFormsRail'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
+import { Database } from '../../../services/DatabaseService'
 import { MaintenanceLogService } from '../../../services/MaintenanceLogService'
+import { MaintenanceService } from '../../../services/MaintenanceService'
+import MaintenanceFormView from './MaintenanceFormView'
 
 // ── Constants ───────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -1594,19 +1598,26 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
 // ── Main View (content-only, props from MaintenanceView) ────────
 
 export default function MaintenanceLogView({
+    categories,
+    categoryFilter,
+    dueItems = [],
+    equipment,
+    formLoading = false,
+    loading,
+    mySubmissions = [],
+    onCloseAddModal,
+    onFormDataReload,
+    onReload,
+    pendingReviews = [],
+    permissions = { canCreate: false, canReview: false },
+    plants,
+    recentEntries,
+    reviewedSubmissions = [],
     searchText,
     selectedPlant,
-    categoryFilter,
-    statusFilter,
-    plants,
-    loading,
-    equipment,
-    categories,
-    recentEntries,
     serviceTypes,
     showAddModal,
-    onCloseAddModal,
-    onReload
+    statusFilter
 }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#2A3163'
@@ -1620,6 +1631,52 @@ export default function MaintenanceLogView({
     const [serviceTarget, setServiceTarget] = useState(null)
     const [detailTarget, setDetailTarget] = useState(null)
     const [editTarget, setEditTarget] = useState(null)
+
+    // Combined-workflow selection. When set, the right pane swaps the
+    // equipment table for the inline upload / review / view UI so the user
+    // can act on a form without leaving the activity feed.
+    const [selectedFormItem, setSelectedFormItem] = useState(null)
+
+    // Refresh form data after the inline form view submits / reviews.
+    const handleFormSubmitted = useCallback(() => {
+        setSelectedFormItem(null)
+        onFormDataReload?.()
+    }, [onFormDataReload])
+
+    // Soft-delete a submission from the rail without leaving the page. Wraps
+    // both response + parent rows since the responses table FKs back to the
+    // submission and would orphan otherwise.
+    const handleDeleteSubmission = useCallback(
+        async (event, submissionId) => {
+            event?.stopPropagation()
+            if (!window.confirm('Delete this submission?')) return
+            try {
+                await Database.from('maintenance_submission_responses').delete().eq('submission_id', submissionId)
+                await Database.from('maintenance_submissions').delete().eq('id', submissionId)
+                if (selectedFormItem?.id === submissionId) setSelectedFormItem(null)
+                onFormDataReload?.()
+            } catch (err) {
+                console.error('Failed to delete submission:', err)
+            }
+        },
+        [onFormDataReload, selectedFormItem]
+    )
+
+    // Inline form-detail click resolves any submission attached to a
+    // completed due-item so the right pane can show the scanned upload
+    // instead of relaunching the upload form.
+    const handleSelectFormItem = useCallback(async (item) => {
+        if (item?.__kind === 'form-due' && item.status === 'completed' && item.submission_id) {
+            try {
+                const submission = await MaintenanceService.fetchSubmissionById(item.submission_id)
+                setSelectedFormItem({ ...item, ...submission, __kind: 'form-history', isViewOnly: true })
+                return
+            } catch {
+                // fall through and show the upload UI in case the lookup fails
+            }
+        }
+        setSelectedFormItem(item)
+    }, [])
 
     // ── Filtering (uses props) ──────────────────────────────────
     const filtered = useMemo(() => {
@@ -1736,9 +1793,9 @@ export default function MaintenanceLogView({
         </div>
     )
 
-    return (
-        <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4">
-            <div className="max-w-[1600px] mx-auto">
+    const equipmentBody = (
+        <div className="flex-1 overflow-y-auto">
+            <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-5">
                 {loading ? (
                     <ContentSkeleton isMobile={isMobile} />
                 ) : (
@@ -1955,6 +2012,62 @@ export default function MaintenanceLogView({
                     </div>
                 )}
             </div>
+        </div>
+    )
+
+    const showFormsRail = !!(
+        permissions.canCreate ||
+        permissions.canReview ||
+        dueItems.length > 0 ||
+        pendingReviews.length > 0 ||
+        reviewedSubmissions.length > 0 ||
+        mySubmissions.length > 0
+    )
+
+    return (
+        <>
+            <div
+                className="flex-1 overflow-hidden flex flex-col lg:flex-row"
+                style={{ background: 'var(--bg-secondary)' }}
+            >
+                {showFormsRail && (
+                    <aside
+                        className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 overflow-y-auto"
+                        style={{
+                            background: 'var(--bg-primary)',
+                            borderBottom: isMobile ? '1px solid var(--border-light)' : 'none',
+                            borderRight: isMobile ? 'none' : '1px solid var(--border-light)',
+                            maxHeight: isMobile ? '50vh' : 'none'
+                        }}
+                    >
+                        <MaintenanceFormsRail
+                            accentColor={accentColor}
+                            canReview={!!permissions.canReview}
+                            dueItems={dueItems}
+                            formLoading={formLoading}
+                            mySubmissions={mySubmissions}
+                            onDeleteSubmission={handleDeleteSubmission}
+                            onSelectItem={handleSelectFormItem}
+                            pendingReviews={pendingReviews}
+                            reviewedSubmissions={reviewedSubmissions}
+                            searchText={searchText}
+                            selectedItemId={selectedFormItem?.id || null}
+                            selectedPlant={selectedPlant}
+                        />
+                    </aside>
+                )}
+                <main className="flex-1 min-w-0 overflow-hidden flex flex-col">
+                    {selectedFormItem ? (
+                        <MaintenanceFormView
+                            item={selectedFormItem}
+                            onBack={() => setSelectedFormItem(null)}
+                            onSubmitted={handleFormSubmitted}
+                        />
+                    ) : (
+                        equipmentBody
+                    )}
+                </main>
+            </div>
 
             {/* Add Equipment Modal */}
             <AddEquipmentModal
@@ -2013,6 +2126,6 @@ export default function MaintenanceLogView({
                 plants={plants}
                 accentColor={accentColor}
             />
-        </div>
+        </>
     )
 }

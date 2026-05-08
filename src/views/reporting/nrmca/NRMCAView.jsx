@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import { ReportsActionBar } from '../../../app/components/reports/ReportsToolbar'
 import TopSection from '../../../app/components/sections/TopSection'
+import { Stat as SharedStat, StatGroup } from '../../../app/components/ui/Panel'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { NRMCAService } from '../../../services/NRMCAService'
 import { PlantService } from '../../../services/PlantService'
@@ -14,25 +15,40 @@ const CALIBRATION_WARN_DAYS = 30
 
 const SCALE_TYPES = ['batch', 'aggregate', 'truck', 'water', 'admixture', 'cement', 'other']
 
+/**
+ * Status descriptors share the same `status-badge-*` utility classes the rest
+ * of the app uses (defined in app/index.css with `html.dark` overrides), so
+ * pills flip cleanly between light and dark mode without per-status hex math.
+ */
 const STATUS_BADGE = {
-    valid: { label: 'Valid', bg: '#dcfce7', color: '#166534' },
-    expiring: { label: 'Expiring', bg: '#fef3c7', color: '#92400e' },
-    expired: { label: 'Expired', bg: '#fee2e2', color: '#b91c1c' },
-    ok: { label: 'OK', bg: '#dcfce7', color: '#166534' },
-    due_soon: { label: 'Due Soon', bg: '#fef3c7', color: '#92400e' },
-    overdue: { label: 'Overdue', bg: '#fee2e2', color: '#b91c1c' },
-    unknown: { label: 'Not Set', bg: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }
+    valid: { label: 'Valid', cls: 'status-badge-success' },
+    expiring: { label: 'Expiring', cls: 'status-badge-warning' },
+    expired: { label: 'Expired', cls: 'status-badge-danger' },
+    ok: { label: 'OK', cls: 'status-badge-success' },
+    due_soon: { label: 'Due Soon', cls: 'status-badge-warning' },
+    overdue: { label: 'Overdue', cls: 'status-badge-danger' },
+    unknown: { label: 'Not Set', cls: 'status-badge-neutral' }
 }
 
-const SCALE_ICON_BY_STATUS = {
-    ok: { bg: '#dcfce7', color: '#166534' },
-    due_soon: { bg: '#fef3c7', color: '#92400e' },
-    overdue: { bg: '#fee2e2', color: '#b91c1c' },
-    unknown: { bg: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }
+const SCALE_ICON_TONE_CLASS = {
+    ok: 'status-badge-success',
+    due_soon: 'status-badge-warning',
+    overdue: 'status-badge-danger',
+    unknown: 'status-badge-neutral'
 }
 
 const STATUS_PILL_CLS =
     'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0'
+
+// Shared form-control styling — flat 1px-bordered pill matching the Plan
+// tab's settings panels so the page reads as one design system.
+const INPUT_CLS = 'w-full rounded px-3 py-2.5 text-sm outline-none transition-colors'
+const INPUT_STYLE = {
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-light)',
+    color: 'var(--text-primary)'
+}
+const SELECT_CLS = `${INPUT_CLS} appearance-none cursor-pointer`
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -71,37 +87,46 @@ function getNextCalibrationDueDate(calibratedAt, intervalDays) {
 
 function StatusBadge({ status }) {
     const cfg = STATUS_BADGE[status] ?? STATUS_BADGE.unknown
-    return (
-        <span className={STATUS_PILL_CLS} style={{ background: cfg.bg, color: cfg.color }}>
-            {cfg.label}
-        </span>
-    )
+    return <span className={`${cfg.cls} ${STATUS_PILL_CLS}`}>{cfg.label}</span>
 }
 
 function Field({ label, children }) {
     return (
         <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</label>
+            <label
+                className="text-[11px] font-semibold uppercase tracking-wide"
+                style={{ color: 'var(--text-secondary)' }}
+            >
+                {label}
+            </label>
             {children}
         </div>
     )
 }
 
-const INPUT_CLS =
-    'w-full rounded-lg border border-border-light bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400'
-const SELECT_CLS =
-    'w-full appearance-none rounded-lg border border-border-light bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 cursor-pointer'
-
 function Modal({ title, onClose, onSubmit, submitting, children }) {
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <div className="sticky top-0 flex items-center justify-between px-6 py-4 border-b border-border-light bg-white rounded-t-2xl z-10">
-                    <h2 className="text-base font-bold text-slate-800">{title}</h2>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div
+                className="rounded shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+            >
+                <div
+                    className="sticky top-0 flex items-center justify-between px-6 py-4 z-10"
+                    style={{
+                        background: 'var(--bg-primary)',
+                        borderBottom: '1px solid var(--border-light)'
+                    }}
+                >
+                    <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+                        {title}
+                    </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-600 transition-colors"
+                        className="transition-colors"
+                        style={{ color: 'var(--text-tertiary)' }}
+                        aria-label="Close"
                     >
                         <i className="fas fa-times" />
                     </button>
@@ -115,11 +140,22 @@ function Modal({ title, onClose, onSubmit, submitting, children }) {
                 >
                     {children}
                 </form>
-                <div className="sticky bottom-0 flex justify-end gap-3 px-6 py-4 border-t border-border-light bg-white rounded-b-2xl">
+                <div
+                    className="sticky bottom-0 flex justify-end gap-3 px-6 py-4"
+                    style={{
+                        background: 'var(--bg-primary)',
+                        borderTop: '1px solid var(--border-light)'
+                    }}
+                >
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-semibold rounded-lg border border-border-light bg-white text-slate-700 hover:bg-slate-50 transition-colors"
+                        className="px-4 py-2 text-sm font-semibold rounded transition-colors"
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-light)',
+                            color: 'var(--text-primary)'
+                        }}
                     >
                         Cancel
                     </button>
@@ -127,7 +163,8 @@ function Modal({ title, onClose, onSubmit, submitting, children }) {
                         type="button"
                         onClick={onSubmit}
                         disabled={submitting}
-                        className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        className="px-4 py-2 text-sm font-semibold rounded text-white disabled:opacity-50 transition-colors"
+                        style={{ background: 'var(--accent)' }}
                     >
                         {submitting ? 'Saving…' : 'Save'}
                     </button>
@@ -189,6 +226,7 @@ function LogRenewalModal({ plant, onClose, onSaved }) {
                 <input
                     type="date"
                     className={INPUT_CLS}
+                    style={INPUT_STYLE}
                     value={renewedAt}
                     onChange={(e) => setRenewedAt(e.target.value)}
                     required
@@ -198,12 +236,19 @@ function LogRenewalModal({ plant, onClose, onSaved }) {
                 <input
                     type="date"
                     className={INPUT_CLS}
+                    style={INPUT_STYLE}
                     value={expiresAt}
                     onChange={(e) => setExpiresAt(e.target.value)}
                 />
             </Field>
             <Field label="Notes (optional)">
-                <textarea className={INPUT_CLS} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                <textarea
+                    className={INPUT_CLS}
+                    style={INPUT_STYLE}
+                    rows={2}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                />
             </Field>
         </Modal>
     )
@@ -244,6 +289,7 @@ function LogCalibrationModal({ scale, onClose, onSaved }) {
                 <input
                     type="date"
                     className={INPUT_CLS}
+                    style={INPUT_STYLE}
                     value={calibratedAt}
                     onChange={(e) => setCalibratedAt(e.target.value)}
                     required
@@ -253,13 +299,20 @@ function LogCalibrationModal({ scale, onClose, onSaved }) {
                 <input
                     type="text"
                     className={INPUT_CLS}
+                    style={INPUT_STYLE}
                     placeholder="Company or technician name"
                     value={calibratedBy}
                     onChange={(e) => setCalibratedBy(e.target.value)}
                 />
             </Field>
             <Field label="Notes (optional)">
-                <textarea className={INPUT_CLS} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                <textarea
+                    className={INPUT_CLS}
+                    style={INPUT_STYLE}
+                    rows={2}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                />
             </Field>
         </Modal>
     )
@@ -302,12 +355,13 @@ function PlantFormModal({ plant, regionPlants, onClose, onSaved }) {
                 <button
                     type="button"
                     onClick={() => setShowPlantPicker(true)}
-                    className={SELECT_CLS + ' text-left text-slate-900'}
+                    className={`${SELECT_CLS} text-left`}
+                    style={INPUT_STYLE}
                 >
                     {plantCode ? (
                         `(${plantCode}) ${selectedPlantName ?? ''}`
                     ) : (
-                        <span className="text-slate-400">Select plant…</span>
+                        <span style={{ color: 'var(--text-tertiary)' }}>Select plant…</span>
                     )}
                 </button>
                 <PlantDropdownModal
@@ -321,17 +375,24 @@ function PlantFormModal({ plant, regionPlants, onClose, onSaved }) {
                 <input
                     type="text"
                     className={INPUT_CLS}
+                    style={INPUT_STYLE}
                     placeholder="e.g. Main Batch Plant, Plant 1-A"
                     value={plantLabel}
                     onChange={(e) => setPlantLabel(e.target.value)}
                     required
                 />
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
                     Use labels to distinguish multiple batch plants at the same location.
                 </p>
             </Field>
             <Field label="Notes (optional)">
-                <textarea className={INPUT_CLS} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                <textarea
+                    className={INPUT_CLS}
+                    style={INPUT_STYLE}
+                    rows={2}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                />
             </Field>
         </Modal>
     )
@@ -373,6 +434,7 @@ function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, onSaved }
             <Field label="Plant">
                 <select
                     className={SELECT_CLS}
+                    style={INPUT_STYLE}
                     value={nrmcaPlantId}
                     onChange={(e) => setNrmcaPlantId(e.target.value)}
                     required
@@ -389,6 +451,7 @@ function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, onSaved }
                 <input
                     type="text"
                     className={INPUT_CLS}
+                    style={INPUT_STYLE}
                     placeholder="e.g. Batch Scale 1"
                     value={scaleName}
                     onChange={(e) => setScaleName(e.target.value)}
@@ -396,7 +459,12 @@ function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, onSaved }
                 />
             </Field>
             <Field label="Scale Type">
-                <select className={SELECT_CLS} value={scaleType} onChange={(e) => setScaleType(e.target.value)}>
+                <select
+                    className={SELECT_CLS}
+                    style={INPUT_STYLE}
+                    value={scaleType}
+                    onChange={(e) => setScaleType(e.target.value)}
+                >
                     {SCALE_TYPES.map((t) => (
                         <option key={t} value={t}>
                             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -408,14 +476,23 @@ function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, onSaved }
                 <input
                     type="number"
                     className={INPUT_CLS}
+                    style={INPUT_STYLE}
                     min="1"
                     value={intervalDays}
                     onChange={(e) => setIntervalDays(e.target.value)}
                 />
-                <p className="text-[11px] text-slate-400">365 = annual · 180 = semi-annual</p>
+                <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                    365 = annual · 180 = semi-annual
+                </p>
             </Field>
             <Field label="Notes (optional)">
-                <textarea className={INPUT_CLS} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                <textarea
+                    className={INPUT_CLS}
+                    style={INPUT_STYLE}
+                    rows={2}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                />
             </Field>
         </Modal>
     )
@@ -430,7 +507,7 @@ function ScaleRow({ scale, allPlants, onReload, accentColor }) {
     const status = getCalibrationStatus(scale.calibrated_at, scale.calibration_interval_days)
     const nextDue = getNextCalibrationDueDate(scale.calibrated_at, scale.calibration_interval_days)
     const days = nextDue ? daysFromNow(nextDue) : null
-    const iconCfg = SCALE_ICON_BY_STATUS[status] ?? SCALE_ICON_BY_STATUS.unknown
+    const iconToneClass = SCALE_ICON_TONE_CLASS[status] ?? SCALE_ICON_TONE_CLASS.unknown
 
     function confirmDelete() {
         if (!window.confirm(`Delete scale "${scale.scale_name}"?`)) return
@@ -442,14 +519,11 @@ function ScaleRow({ scale, allPlants, onReload, accentColor }) {
     return (
         <>
             <div
-                className="flex items-center gap-2.5 px-3 py-2 transition-colors hover:bg-bg-tertiary"
+                className="flex items-center gap-2.5 px-3 py-2 transition-colors"
                 style={{ borderBottom: '1px solid var(--border-light)' }}
             >
                 <div className="w-4 shrink-0" />
-                <div
-                    className="w-6 h-6 rounded flex items-center justify-center shrink-0"
-                    style={{ background: iconCfg.bg, color: iconCfg.color }}
-                >
+                <div className={`${iconToneClass} w-6 h-6 rounded flex items-center justify-center shrink-0`}>
                     <i className="fas fa-balance-scale text-[10px]" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -504,14 +578,15 @@ function ScaleRow({ scale, allPlants, onReload, accentColor }) {
     )
 }
 
-// ─── Plant Group ──────────────────────────────────────────────────────────────
+// ─── Plant Card ──────────────────────────────────────────────────────────────
 
 /**
- * Plant header row + nested scale rows. Mirrors the dense list chrome used by
- * `MergedReviewList` (Reports' review tab): tight padding, 6×6 icons, 12px
- * titles, 10.5px secondary text, accent CTA with uppercase tracking.
+ * Self-contained plant card — header (label, code, renewal status, action
+ * buttons) plus nested scale rows and an "Add scale" footer. Each card is a
+ * single grid cell in the page's 2-column layout, mirroring the flat panel
+ * aesthetic used throughout the Plan tab.
  */
-function PlantGroup({ plant, scales, allPlants, regionPlants, onReload, accentColor }) {
+function PlantCard({ plant, scales, allPlants, regionPlants, onReload, accentColor }) {
     const [renewModal, setRenewModal] = useState(false)
     const [editModal, setEditModal] = useState(false)
     const [addScaleModal, setAddScaleModal] = useState(false)
@@ -538,72 +613,83 @@ function PlantGroup({ plant, scales, allPlants, regionPlants, onReload, accentCo
 
     return (
         <>
-            {/* Plant header row */}
-            <div
-                className="flex items-center gap-2.5 px-3 py-2"
-                style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
+            <section
+                className="rounded overflow-hidden flex flex-col"
+                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
             >
                 <div
-                    className="w-6 h-6 rounded flex items-center justify-center shrink-0"
-                    style={{ background: `${accentColor}22`, color: accentColor }}
+                    className="flex items-center gap-2.5 px-3 py-2"
+                    style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
                 >
-                    <i className="fas fa-certificate text-[10px]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
-                        {plant.plant_label}
-                        <span
-                            className="ml-1.5 font-semibold uppercase tracking-wider"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
-                            · {plant.plant_code}
-                        </span>
+                    <div
+                        className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                        style={{ background: `${accentColor}22`, color: accentColor }}
+                    >
+                        <i className="fas fa-certificate text-[10px]" />
                     </div>
-                    <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
-                        NRMCA Certification · {contextLine}
+                    <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
+                            {plant.plant_label}
+                            <span
+                                className="ml-1.5 font-semibold uppercase tracking-wider"
+                                style={{ color: 'var(--text-tertiary)' }}
+                            >
+                                · {plant.plant_code}
+                            </span>
+                        </div>
+                        <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
+                            NRMCA Certification · {contextLine}
+                        </div>
                     </div>
+                    <StatusBadge status={renewalStatus} />
+                    <button
+                        type="button"
+                        onClick={() => setRenewModal(true)}
+                        className="text-white text-[10.5px] font-semibold px-2 py-1 rounded shrink-0 hidden sm:inline-flex items-center gap-1 uppercase tracking-wider"
+                        style={{ background: accentColor }}
+                    >
+                        Log Renewal
+                    </button>
+                    <IconBtn icon="fa-pencil-alt" onClick={() => setEditModal(true)} title="Edit plant" />
+                    <IconBtn icon="fa-trash-alt" onClick={confirmDeletePlant} danger title="Delete plant" />
                 </div>
-                <StatusBadge status={renewalStatus} />
-                <button
-                    type="button"
-                    onClick={() => setRenewModal(true)}
-                    className="text-white text-[10.5px] font-semibold px-2 py-1 rounded shrink-0 hidden sm:inline-flex items-center gap-1 uppercase tracking-wider"
-                    style={{ background: accentColor }}
-                >
-                    Log Renewal
-                </button>
-                <IconBtn icon="fa-pencil-alt" onClick={() => setEditModal(true)} title="Edit plant" />
-                <IconBtn icon="fa-trash-alt" onClick={confirmDeletePlant} danger title="Delete plant" />
-            </div>
 
-            {/* Scale rows */}
-            {plantScales.map((scale) => (
-                <ScaleRow
-                    key={scale.id}
-                    scale={scale}
-                    allPlants={allPlants}
-                    onReload={onReload}
-                    accentColor={accentColor}
-                />
-            ))}
+                {plantScales.length > 0 ? (
+                    plantScales.map((scale) => (
+                        <ScaleRow
+                            key={scale.id}
+                            scale={scale}
+                            allPlants={allPlants}
+                            onReload={onReload}
+                            accentColor={accentColor}
+                        />
+                    ))
+                ) : (
+                    <div
+                        className="px-3 py-3 text-[11.5px] text-center"
+                        style={{
+                            borderBottom: '1px solid var(--border-light)',
+                            color: 'var(--text-tertiary)'
+                        }}
+                    >
+                        No scales tracked for this plant yet.
+                    </div>
+                )}
 
-            {/* Add scale row */}
-            <div
-                className="flex items-center gap-2.5 px-3 py-1.5"
-                style={{ borderBottom: '1px solid var(--border-light)' }}
-            >
-                <div className="w-4 shrink-0" />
-                <div className="w-6 shrink-0" />
-                <button
-                    type="button"
-                    onClick={() => setAddScaleModal(true)}
-                    className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
-                    <i className="fas fa-plus text-[9px]" />
-                    Add scale
-                </button>
-            </div>
+                <div className="flex items-center gap-2.5 px-3 py-1.5">
+                    <div className="w-4 shrink-0" />
+                    <div className="w-6 shrink-0" />
+                    <button
+                        type="button"
+                        onClick={() => setAddScaleModal(true)}
+                        className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider"
+                        style={{ color: 'var(--text-tertiary)' }}
+                    >
+                        <i className="fas fa-plus text-[9px]" />
+                        Add scale
+                    </button>
+                </div>
+            </section>
 
             {renewModal && (
                 <LogRenewalModal
@@ -643,62 +729,56 @@ function PlantGroup({ plant, scales, allPlants, regionPlants, onReload, accentCo
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function NRMCASkeleton() {
+function PlantCardSkeleton() {
     return (
         <div
             className="rounded overflow-hidden"
             style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
         >
-            {[1, 2, 3].map((g) => (
-                <React.Fragment key={g}>
+            <div
+                className="flex items-center gap-2.5 px-3 py-2"
+                style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
+            >
+                <div className="w-6 h-6 rounded animate-pulse shrink-0" style={{ background: 'var(--bg-tertiary)' }} />
+                <div className="flex-1 min-w-0">
+                    <div className="h-3 w-40 rounded animate-pulse mb-1" style={{ background: 'var(--bg-tertiary)' }} />
+                    <div className="h-2.5 w-28 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                </div>
+                <div className="h-4 w-14 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+            </div>
+            {[1, 2].map((r) => (
+                <div
+                    key={r}
+                    className="flex items-center gap-2.5 px-3 py-2"
+                    style={{ borderBottom: '1px solid var(--border-light)' }}
+                >
+                    <div className="w-4 shrink-0" />
                     <div
-                        className="flex items-center gap-2.5 px-3 py-2"
-                        style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                    >
+                        className="w-6 h-6 rounded animate-pulse shrink-0"
+                        style={{ background: 'var(--bg-tertiary)' }}
+                    />
+                    <div className="flex-1 min-w-0">
                         <div
-                            className="w-6 h-6 rounded animate-pulse shrink-0"
+                            className="h-3 w-36 rounded animate-pulse mb-1"
                             style={{ background: 'var(--bg-tertiary)' }}
                         />
-                        <div className="flex-1 min-w-0">
-                            <div
-                                className="h-3 w-40 rounded animate-pulse mb-1"
-                                style={{ background: 'var(--bg-tertiary)' }}
-                            />
-                            <div
-                                className="h-2.5 w-28 rounded animate-pulse"
-                                style={{ background: 'var(--bg-tertiary)' }}
-                            />
-                        </div>
-                        <div className="h-4 w-14 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
-                    </div>
-                    {[1, 2].map((r) => (
                         <div
-                            key={r}
-                            className="flex items-center gap-2.5 px-3 py-2"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
-                            <div className="w-4 shrink-0" />
-                            <div
-                                className="w-6 h-6 rounded animate-pulse shrink-0"
-                                style={{ background: 'var(--bg-tertiary)' }}
-                            />
-                            <div className="flex-1 min-w-0">
-                                <div
-                                    className="h-3 w-36 rounded animate-pulse mb-1"
-                                    style={{ background: 'var(--bg-tertiary)' }}
-                                />
-                                <div
-                                    className="h-2.5 w-48 rounded animate-pulse"
-                                    style={{ background: 'var(--bg-tertiary)' }}
-                                />
-                            </div>
-                            <div
-                                className="h-4 w-12 rounded animate-pulse"
-                                style={{ background: 'var(--bg-tertiary)' }}
-                            />
-                        </div>
-                    ))}
-                </React.Fragment>
+                            className="h-2.5 w-48 rounded animate-pulse"
+                            style={{ background: 'var(--bg-tertiary)' }}
+                        />
+                    </div>
+                    <div className="h-4 w-12 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function NRMCASkeleton() {
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((g) => (
+                <PlantCardSkeleton key={g} />
             ))}
         </div>
     )
@@ -773,9 +853,19 @@ export default function NRMCAView() {
         () => plants.filter((p) => getRenewalStatus(p.renewal_expires_at) === 'expired').length,
         [plants]
     )
+    const expiringPlantCount = useMemo(
+        () => plants.filter((p) => getRenewalStatus(p.renewal_expires_at) === 'expiring').length,
+        [plants]
+    )
     const overdueScaleCount = useMemo(
         () =>
             scales.filter((s) => getCalibrationStatus(s.calibrated_at, s.calibration_interval_days) === 'overdue')
+                .length,
+        [scales]
+    )
+    const dueSoonScaleCount = useMemo(
+        () =>
+            scales.filter((s) => getCalibrationStatus(s.calibrated_at, s.calibration_interval_days) === 'due_soon')
                 .length,
         [scales]
     )
@@ -819,7 +909,7 @@ export default function NRMCAView() {
     )
 
     return (
-        <div className="bg-slate-50 min-h-screen w-full pb-16">
+        <div className="min-h-screen w-full pb-16" style={{ background: 'var(--bg-secondary)' }}>
             <TopSection
                 title="Calibrations & Certifications"
                 forwardedRef={headerRef}
@@ -849,7 +939,46 @@ export default function NRMCAView() {
                 }
             />
 
-            <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 flex flex-col gap-4">
+            <div className="w-full px-3 sm:px-4 lg:px-6 py-4 flex flex-col gap-4">
+                <StatGroup columns={4}>
+                    <SharedStat
+                        label="Plants"
+                        value={plants.length}
+                        hint={
+                            expiringPlantCount > 0
+                                ? `${expiringPlantCount} expiring soon`
+                                : plants.length > 0
+                                  ? 'All current'
+                                  : 'None tracked'
+                        }
+                        valueColor={expiredPlantCount > 0 ? '#dc2626' : undefined}
+                    />
+                    <SharedStat
+                        label="Scales"
+                        value={scales.length}
+                        hint={
+                            dueSoonScaleCount > 0
+                                ? `${dueSoonScaleCount} due soon`
+                                : scales.length > 0
+                                  ? 'All current'
+                                  : 'None tracked'
+                        }
+                        valueColor={overdueScaleCount > 0 ? '#dc2626' : undefined}
+                    />
+                    <SharedStat
+                        label="Expired Certs"
+                        value={expiredPlantCount}
+                        hint={expiredPlantCount === 0 ? 'No action needed' : 'Renew now'}
+                        valueColor={expiredPlantCount > 0 ? '#dc2626' : '#16a34a'}
+                    />
+                    <SharedStat
+                        label="Overdue Calibrations"
+                        value={overdueScaleCount}
+                        hint={overdueScaleCount === 0 ? 'No action needed' : 'Schedule today'}
+                        valueColor={overdueScaleCount > 0 ? '#dc2626' : '#16a34a'}
+                    />
+                </StatGroup>
+
                 {loading ? (
                     <NRMCASkeleton />
                 ) : plants.length === 0 ? (
@@ -881,12 +1010,9 @@ export default function NRMCAView() {
                         </div>
                     </div>
                 ) : (
-                    <div
-                        className="rounded overflow-hidden"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {visiblePlants.map((plant) => (
-                            <PlantGroup
+                            <PlantCard
                                 key={plant.id}
                                 plant={plant}
                                 scales={visibleScales}

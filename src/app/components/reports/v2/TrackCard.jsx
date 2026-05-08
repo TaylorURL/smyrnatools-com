@@ -83,7 +83,7 @@ function TrackCard({ item, history = [], onStart, onContinue, onView, plantLabel
     const isViewMode = status === 'submitted'
     return (
         <article
-            className="rounded-xl overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-px hover:shadow-md border"
+            className="rounded-lg overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-px hover:shadow-md border"
             style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
         >
             <div

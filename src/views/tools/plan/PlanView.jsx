@@ -1,6 +1,7 @@
 import React, { useCallback, useState, useTransition } from 'react'
 
 import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'
+import PlanActivityBanner from '../../../app/components/plan/PlanActivityBanner'
 import { PlanHeader } from '../../../app/components/plan/PlanHeader'
 import { PlanReadOnlyBanner } from '../../../app/components/plan/PlanReadOnlyBanner'
 import { PlanScheduleStaleBanner } from '../../../app/components/plan/PlanScheduleStaleBanner'
@@ -225,7 +226,7 @@ function PlanView() {
                 })() ? (
                     <PlanTabSkeleton mode={effectiveViewMode} />
                 ) : (
-                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden animate-fade-in-fast">
                         {!canEdit && <PlanReadOnlyBanner accentColor={accentColor} />}
                         <PlanScheduleStaleBanner planDate={planDate} scheduleFileUpdatedAt={scheduleFileUpdatedAt} />
 
@@ -248,6 +249,7 @@ function PlanView() {
                                 assignments={assignments}
                                 calcClockIn={calcClockIn}
                                 canEdit={canEdit}
+                                detailByOrderId={detailByOrderId}
                                 earliestClockIn={earliestClockIn}
                                 getTravelTime={getTravelTime}
                                 mixerCountsByPlant={mixerCountsByPlant}
@@ -349,6 +351,11 @@ function PlanView() {
                     </div>
                 )}
             </div>
+            <PlanActivityBanner
+                accentColor={accentColor}
+                plantCodes={(regionPlants || []).map((p) => p.plantCode || p.plant_code).filter(Boolean)}
+                plantNameByCode={plantNameByCode}
+            />
         </div>
     )
 }

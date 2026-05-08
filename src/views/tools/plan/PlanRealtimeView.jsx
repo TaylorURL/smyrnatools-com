@@ -28,6 +28,7 @@ import {
     formatRelativeMinutes,
     resolvePlantFilterCodes
 } from '../../../utils/PlanRuntimeUtility'
+import { PLAN_TIME_ZONE } from '../../../utils/PlanUtility'
 
 /** Stat color for the live "Status" pill — green only when the user is
  *  looking at today, neutral otherwise. */
@@ -178,9 +179,14 @@ function PlanRealtimeView({
         [upcomingOrders, activeOrders, upcomingHelp, upcomingSendHome, nowMin]
     )
 
+    /* Realtime header reads "now" from Smyrna's CST wall clock so the
+     * date label doesn't drift for dispatchers in other timezones — a
+     * Houston dispatcher and a Tokyo developer should see the same
+     * weekday + month/day. */
     const friendlyDate = clock.nowDate.toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'short',
+        timeZone: PLAN_TIME_ZONE,
         weekday: 'short'
     })
     const plantFilterDisplay = formatPlantFilterDisplay({

@@ -31,7 +31,8 @@ const ALLOWED_TABLES = new Set([
     'users_roles',
     'reports',
     'notifications',
-    'documents'
+    'documents',
+    'users_pinned_conversations'
 ])
 
 const ALLOWED_COLUMNS: Record<string, Set<string>> = {

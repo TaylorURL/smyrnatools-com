@@ -15,6 +15,7 @@ import {
     BIG_POUR_SPACING_THRESHOLD_MIN,
     BIG_POUR_YARDAGE_THRESHOLD,
     FLEET_MAX_LOAD_SIZE,
+    getTodayDate,
     isExcludedOrder,
     parseDurationMinutes,
     PLAN_META_KEY,
@@ -148,7 +149,9 @@ const endOfYear = (date) => {
  * one year prior) so deltas always compare like-for-like windows.
  */
 export const buildRange = (period, anchorIso, comparison, customStart, customEnd) => {
-    const anchor = parseIsoLocal(anchorIso) || new Date()
+    /* CST anchor for "no anchorIso supplied" — the dispatcher's "today"
+     * is Smyrna's wall clock, not the browser's local timezone. */
+    const anchor = parseIsoLocal(anchorIso) || parseIsoLocal(getTodayDate())
     let startD
     let endD
     if (period === 'custom') {
@@ -581,7 +584,10 @@ export const padTrend = (start, end, sourceDays) => {
     const cursor = parseIsoLocal(start)
     const endDate = parseIsoLocal(end)
     if (!cursor || !endDate) return sourceDays
-    const today = new Date()
+    /* "Today" anchored on Smyrna CST — keeps the chart from including
+     * future days for a dispatcher whose local clock has already crossed
+     * midnight while CST hasn't. */
+    const today = parseIsoLocal(getTodayDate()) || new Date()
     today.setHours(0, 0, 0, 0)
     const effectiveEnd = endDate > today ? today : endDate
     if (cursor > effectiveEnd) return []
@@ -673,7 +679,9 @@ export const formatPeriodLabel = (period, range) => {
  * same day-of-month three calendar months away.
  */
 export const shiftAnchor = (anchorIso, period, direction) => {
-    const base = parseIsoLocal(anchorIso) || new Date()
+    /* CST anchor for "no anchorIso supplied" — same reasoning as
+     * `buildRange` above; defer to Smyrna's wall clock, not the browser. */
+    const base = parseIsoLocal(anchorIso) || parseIsoLocal(getTodayDate()) || new Date()
     if (period === 'day') {
         base.setDate(base.getDate() + direction)
     } else if (period === 'week') {

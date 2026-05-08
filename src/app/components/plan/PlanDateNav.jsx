@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
-import { getTomorrowDate, offsetDateSkipSunday, skipSundayDate } from '../../../utils/PlanUtility'
+import { getTodayDate, getTomorrowDate, offsetDateSkipSunday, skipSundayDate } from '../../../utils/PlanUtility'
 
 /** Display variant for the realtime tab — date is locked to today and
  *  rendered as a read-only pill. Switching to realtime always anchors the
@@ -25,47 +25,245 @@ function RealtimeDatePill({ accentColor, isDark, planDate }) {
     )
 }
 
-/** Compact prev / picker / next cluster used on every non-realtime tab. */
-function DateStepper({ accentColor, isDark, onChange, planDate }) {
+const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+const padTwo = (n) => String(n).padStart(2, '0')
+const isoFromParts = (y, m1Based, d) => `${y}-${padTwo(m1Based)}-${padTwo(d)}`
+const monthLabel = (y, m1Based) =>
+    new Date(y, m1Based - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+/** Build the [leading blanks, ...days] cell list for a calendar month. */
+const buildCalendarCells = (year, month1Based) => {
+    const first = new Date(year, month1Based - 1, 1)
+    const startWeekday = first.getDay()
+    const daysInMonth = new Date(year, month1Based, 0).getDate()
+    const cells = []
+    for (let i = 0; i < startWeekday; i++) cells.push(null)
+    for (let d = 1; d <= daysInMonth; d++) {
+        cells.push({
+            day: d,
+            iso: isoFromParts(year, month1Based, d),
+            weekday: new Date(year, month1Based - 1, d).getDay()
+        })
+    }
+    return cells
+}
+
+/** Themed mini-calendar popover. Uses CSS variables for every color so it
+ *  reads in both light and dark mode without any accent reliance. Sundays
+ *  are dimmed and disabled (plants closed); the Today / Tomorrow shortcuts
+ *  route through `skipSundayDate` so the user can never land on one. */
+function MiniCalendar({ onClose, onSelect, planDate }) {
+    const todayIso = getTodayDate()
+    const initial = useMemo(() => {
+        const src = planDate || todayIso
+        const [y, m] = src.split('-').map(Number)
+        return { month: m, year: y }
+    }, [planDate, todayIso])
+    const [view, setView] = useState(initial)
+    useEffect(() => {
+        setView(initial)
+    }, [initial])
+
+    const cells = useMemo(() => buildCalendarCells(view.year, view.month), [view])
+
+    const stepMonth = (delta) => {
+        setView((prev) => {
+            let m = prev.month + delta
+            let y = prev.year
+            if (m < 1) {
+                m = 12
+                y -= 1
+            }
+            if (m > 12) {
+                m = 1
+                y += 1
+            }
+            return { month: m, year: y }
+        })
+    }
+
+    const pickDate = (iso) => {
+        onSelect(iso)
+        onClose()
+    }
+
     return (
         <div
-            className="inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1.5 py-1"
-            style={{ backgroundColor: `${accentColor}${isDark ? '30' : '15'}`, color: accentColor }}
+            className="absolute top-full left-0 mt-1.5 z-20 rounded-lg p-2"
+            style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-light)',
+                boxShadow: 'var(--shadow-lg)',
+                minWidth: 240
+            }}
+            role="dialog"
+            aria-label="Pick a date"
+        >
+            <div className="flex items-center justify-between mb-1.5 px-1">
+                <button
+                    type="button"
+                    onClick={() => stepMonth(-1)}
+                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center"
+                    style={{ color: 'var(--text-secondary)' }}
+                    title="Previous month"
+                    aria-label="Previous month"
+                >
+                    <i className="fas fa-chevron-left text-[11px]" />
+                </button>
+                <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {monthLabel(view.year, view.month)}
+                </span>
+                <button
+                    type="button"
+                    onClick={() => stepMonth(1)}
+                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center"
+                    style={{ color: 'var(--text-secondary)' }}
+                    title="Next month"
+                    aria-label="Next month"
+                >
+                    <i className="fas fa-chevron-right text-[11px]" />
+                </button>
+            </div>
+            <div className="grid grid-cols-7 gap-0.5">
+                {WEEKDAY_LABELS.map((d, i) => (
+                    <span
+                        key={`wd-${i}`}
+                        className="text-[9.5px] font-bold uppercase text-center py-1"
+                        style={{ color: 'var(--text-tertiary)' }}
+                    >
+                        {d}
+                    </span>
+                ))}
+                {cells.map((cell, idx) => {
+                    if (!cell) return <span key={`b-${idx}`} />
+                    const isToday = cell.iso === todayIso
+                    const isSelected = cell.iso === planDate
+                    const isSunday = cell.weekday === 0
+                    return (
+                        <button
+                            key={cell.iso}
+                            type="button"
+                            onClick={() => !isSunday && pickDate(cell.iso)}
+                            disabled={isSunday}
+                            className="text-[12px] py-1.5 rounded border-none transition-colors"
+                            style={{
+                                background: isSelected ? 'var(--bg-tertiary)' : 'transparent',
+                                boxShadow: isToday && !isSelected ? 'inset 0 0 0 1px var(--border-medium)' : 'none',
+                                color: isSunday ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                                cursor: isSunday ? 'not-allowed' : 'pointer',
+                                fontWeight: isSelected || isToday ? 700 : 500,
+                                opacity: isSunday ? 0.4 : 1
+                            }}
+                            title={isSunday ? 'Plants closed Sunday' : undefined}
+                        >
+                            {cell.day}
+                        </button>
+                    )
+                })}
+            </div>
+            <div
+                className="flex justify-between gap-1 mt-2 pt-1.5"
+                style={{ borderTop: '1px solid var(--border-light)' }}
+            >
+                <button
+                    type="button"
+                    onClick={() => pickDate(skipSundayDate(getTodayDate(), 1))}
+                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer"
+                    style={{
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-light)',
+                        color: 'var(--text-primary)'
+                    }}
+                >
+                    Today
+                </button>
+                <button
+                    type="button"
+                    onClick={() => pickDate(skipSundayDate(getTomorrowDate(), 1))}
+                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer"
+                    style={{
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-light)',
+                        color: 'var(--text-primary)'
+                    }}
+                >
+                    Tomorrow
+                </button>
+            </div>
+        </div>
+    )
+}
+
+/** Compact prev / picker / next cluster used on every non-realtime tab.
+ *  Uses neutral CSS-variable tones so it stays legible in dark mode (the
+ *  previous accent-tinted styling washed out against the dark surface). */
+function DateStepper({ onChange, planDate }) {
+    const [open, setOpen] = useState(false)
+    const containerRef = useRef(null)
+
+    useEffect(() => {
+        if (!open) return undefined
+        const onMouseDown = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false)
+        }
+        const onKey = (e) => {
+            if (e.key === 'Escape') setOpen(false)
+        }
+        document.addEventListener('mousedown', onMouseDown)
+        document.addEventListener('keydown', onKey)
+        return () => {
+            document.removeEventListener('mousedown', onMouseDown)
+            document.removeEventListener('keydown', onKey)
+        }
+    }, [open])
+
+    return (
+        <div
+            ref={containerRef}
+            className="relative inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1.5 py-1"
+            style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-light)',
+                color: 'var(--text-primary)'
+            }}
         >
             <button
+                type="button"
                 onClick={() => onChange(offsetDateSkipSunday(planDate, -1))}
-                className="border-none bg-transparent cursor-pointer p-1 rounded hover:opacity-80"
-                style={{ color: accentColor }}
+                className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center"
+                style={{ color: 'var(--text-secondary)' }}
                 title="Previous day"
+                aria-label="Previous day"
             >
                 <i className="fas fa-chevron-left text-xs" />
             </button>
             <button
-                className="relative border-none bg-transparent cursor-pointer px-2 py-0.5 rounded font-semibold text-sm"
-                style={{ color: accentColor }}
-                title="Click to pick date"
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="border-none bg-transparent cursor-pointer px-2 py-0.5 rounded font-semibold text-sm inline-flex items-center gap-1.5"
+                style={{ color: 'var(--text-primary)' }}
+                title="Click to pick a date"
+                aria-haspopup="dialog"
+                aria-expanded={open}
             >
                 {new Date(planDate + 'T00:00:00').toLocaleDateString('en-US', {
                     day: 'numeric',
                     month: 'short',
                     weekday: 'short'
                 })}
-                <input
-                    type="date"
-                    value={planDate}
-                    onChange={(e) => e.target.value && onChange(skipSundayDate(e.target.value, 1))}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    style={{ width: '100%', height: '100%' }}
-                />
+                <i className="fas fa-caret-down text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
             </button>
             <button
+                type="button"
                 onClick={() => onChange(offsetDateSkipSunday(planDate, 1))}
-                className="border-none bg-transparent cursor-pointer p-1 rounded hover:opacity-80"
-                style={{ color: accentColor }}
+                className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center"
+                style={{ color: 'var(--text-secondary)' }}
                 title="Next day"
+                aria-label="Next day"
             >
                 <i className="fas fa-chevron-right text-xs" />
             </button>
+            {open && <MiniCalendar onClose={() => setOpen(false)} onSelect={onChange} planDate={planDate} />}
         </div>
     )
 }
@@ -102,7 +300,7 @@ export function PlanDateNav({ accentColor, isDark, isRealtime, onChange, planDat
     }
     return (
         <>
-            <DateStepper accentColor={accentColor} isDark={isDark} onChange={onChange} planDate={planDate} />
+            <DateStepper onChange={onChange} planDate={planDate} />
             <TomorrowButton accentColor={accentColor} isDark={isDark} onChange={onChange} planDate={planDate} />
         </>
     )

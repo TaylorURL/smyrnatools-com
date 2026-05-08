@@ -80,12 +80,8 @@ export const FLEET_MAX_LOAD_SIZE = 10
  */
 export const getPoolDayMultiplier = (planDate) => {
     if (!planDate) return 1
-    const parts = String(planDate)
-        .split('-')
-        .map((v) => parseInt(v, 10))
-    if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return 1
-    const [year, month, day] = parts
-    const dow = new Date(year, month - 1, day).getDay()
+    const dow = getDayOfWeekForDate(planDate)
+    if (dow == null) return 1
     if (dow === 0) return 0
     if (dow === 6) return 0.5
     return 1
@@ -720,13 +716,18 @@ export const computeClockInRows = (orders, baseByPlant, getTravelOverrides) => {
             // when their truck is supposed to be on the job.
             const arrivalPrepMin = PRE_TRIP_MINUTES + LOAD_MINUTES + SLUMP_MINUTES + EARLY_ARRIVAL_MINUTES
             const clockInOffset = toJobMin + arrivalPrepMin
+            // The first truck arrives ON-SITE at the order's start time; each
+            // subsequent truck arrives `spacing` minutes later so they pour in
+            // sequence. Trucks already in the pool take the earliest dispatch
+            // slots (they're at the plant ready to load), so new clock-ins
+            // cover dispatches `[pool, pool+1, …, pool + toClockIn − 1]`. Each
+            // operator's clock-in must land `clockInOffset` ahead of their
+            // truck's on-site time. Rounded to the nearest 5-minute mark so
+            // the schedule reads 06:45 / 06:50, never 06:46.
+            const poolBase = Math.max(0, pool)
             for (let i = 0; i < toClockIn; i++) {
-                // The original `slot` staggers operators back from startMin by
-                // the pour spacing — keep that relative cadence so trucks
-                // still load in sequence — then shift everything earlier by
-                // the prep + travel cushion. Round to the nearest 5 minute
-                // mark so the schedule reads 06:45 / 06:50, never 06:46.
-                const slot = startMin - (toClockIn - 1 - i) * spacing
+                const dispatchIdx = poolBase + i
+                const slot = startMin + dispatchIdx * spacing
                 const raw = Math.max(0, slot - clockInOffset)
                 const t = Math.round(raw / 5) * 5
                 rows.push({
@@ -1137,40 +1138,103 @@ export const LANE_COLORS = [
     '#6366f1'
 ]
 
-export const getTomorrowDate = () => {
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    return tomorrow.toISOString().split('T')[0]
+/* Smyrna's operations run on Central Standard Time regardless of where
+ * the dispatcher (or developer) is sitting, so every "today / now /
+ * day-of-week" decision in PlanView anchors here. Pinning the timezone
+ * keeps the date math stable when an East-Coast user opens the planner
+ * at 11pm — UTC is already tomorrow, but CST is still today. */
+export const PLAN_TIME_ZONE = 'America/Chicago'
+
+const CST_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: PLAN_TIME_ZONE,
+    year: 'numeric'
+})
+
+const CST_TIME_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    hour12: false,
+    minute: '2-digit',
+    timeZone: PLAN_TIME_ZONE
+})
+
+/** Pull `{ year, month, day }` strings (zero-padded) for the supplied
+ *  Date — or "now" — interpreted in CST. Used by the date-string
+ *  helpers below so they always reflect Smyrna's operating wall clock,
+ *  not the dispatcher's local browser TZ. */
+const getCstDateParts = (date = new Date()) => {
+    const parts = CST_DATE_PARTS_FORMATTER.formatToParts(date)
+    const lookup = (type) => parts.find((p) => p.type === type)?.value || ''
+    return { day: lookup('day'), month: lookup('month'), year: lookup('year') }
 }
 
-/** Local-timezone YYYY-MM-DD for today — used by the realtime dashboard to
- *  anchor the live clock to the dispatcher's current day. */
+/** Pure calendar arithmetic on a `YYYY-MM-DD` string. Parses the input
+ *  components and walks days via UTC operations so the result doesn't
+ *  drift across DST boundaries or the dispatcher's local timezone. */
+const advanceIsoDate = (dateStr, offset) => {
+    const parts = String(dateStr || '').split('-')
+    if (parts.length !== 3) return dateStr
+    const [y, m, d] = parts.map((n) => parseInt(n, 10))
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return dateStr
+    const base = new Date(Date.UTC(y, m - 1, d))
+    base.setUTCDate(base.getUTCDate() + offset)
+    const yy = base.getUTCFullYear()
+    const mm = String(base.getUTCMonth() + 1).padStart(2, '0')
+    const dd = String(base.getUTCDate()).padStart(2, '0')
+    return `${yy}-${mm}-${dd}`
+}
+
+/** Day-of-week (0–6, Sunday=0) for a `YYYY-MM-DD` string, parsed as a
+ *  pure calendar date so the result is consistent regardless of where
+ *  the call site is running. */
+export const getDayOfWeekForDate = (dateStr) => {
+    const parts = String(dateStr || '').split('-')
+    if (parts.length !== 3) return null
+    const [y, m, d] = parts.map((n) => parseInt(n, 10))
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null
+    return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+}
+
+/** Tomorrow's CST calendar date in `YYYY-MM-DD`. */
+export const getTomorrowDate = () => advanceIsoDate(getTodayDate(), 1)
+
+/** Today's CST calendar date in `YYYY-MM-DD` — anchors the realtime
+ *  dashboard, the same-day booking shortcut, and every "is the user
+ *  looking at today" check across PlanView. */
 export const getTodayDate = () => {
-    const d = new Date()
-    const yyyy = d.getFullYear()
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
+    const { year, month, day } = getCstDateParts()
+    return `${year}-${month}-${day}`
 }
 
-export const getOffsetDate = (dateStr, offset) => {
-    const d = new Date(dateStr + 'T00:00:00')
-    d.setDate(d.getDate() + offset)
-    return d.toISOString().split('T')[0]
-}
+/** Add `offset` calendar days to a `YYYY-MM-DD` string. Pure date math
+ *  — no local-tz drift. */
+export const getOffsetDate = (dateStr, offset) => advanceIsoDate(dateStr, offset)
 
 /**
- * Returns `dateStr` unchanged if it isn't a Sunday; otherwise advances by
- * `direction` (+1 forward, −1 backward) until it lands on a non-Sunday.
- * Used so the Plan date selector skips Sundays entirely — plants are
- * closed on Sunday so a plan for that date has no meaning.
+ * Returns `dateStr` unchanged if it isn't a Sunday; otherwise advances
+ * by `direction` (+1 forward, −1 backward) until it lands on a non-
+ * Sunday. Lets the date selector skip Sundays entirely — plants are
+ * closed so a plan for that date has no meaning.
  */
 export const skipSundayDate = (dateStr, direction = 1) => {
     if (!dateStr) return dateStr
     const step = direction < 0 ? -1 : 1
-    const d = new Date(dateStr + 'T00:00:00')
-    while (d.getDay() === 0) d.setDate(d.getDate() + step)
-    return d.toISOString().split('T')[0]
+    let cursor = dateStr
+    while (getDayOfWeekForDate(cursor) === 0) cursor = advanceIsoDate(cursor, step)
+    return cursor
+}
+
+/** Current minute-of-day (0–1439) on Smyrna's CST wall clock. The Plan
+ *  realtime tab, the dispatch-ticket "X min ago" labels, and the
+ *  same-day booking guard all anchor here so a developer in another
+ *  timezone sees the same numbers a Houston dispatcher would. */
+export const getNowCstMinutes = () => {
+    const parts = CST_TIME_PARTS_FORMATTER.formatToParts(new Date())
+    const lookup = (type) => parts.find((p) => p.type === type)?.value
+    const h = parseInt(lookup('hour') || '0', 10) % 24
+    const m = parseInt(lookup('minute') || '0', 10)
+    return h * 60 + m
 }
 
 /** Same direction as `getOffsetDate`, but lands on the next non-Sunday.

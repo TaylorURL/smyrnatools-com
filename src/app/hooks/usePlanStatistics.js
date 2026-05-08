@@ -12,7 +12,7 @@ import {
     listWorkingDaysInRange,
     padTrend
 } from '../../utils/PlanStatisticsUtility'
-import { computeCustomerSatisfaction, isExcludedOrder, PLAN_META_KEY } from '../../utils/PlanUtility'
+import { computeCustomerSatisfaction, getTodayDate, isExcludedOrder, PLAN_META_KEY } from '../../utils/PlanUtility'
 
 /**
  * Walk every plan row once, emitting a flat `{ planDate, plantCode, order }`
@@ -66,9 +66,13 @@ const flattenLiveOrders = (rows) => {
 export function usePlanStatistics({ planDate, liveProduction, satisfactionEnabled = true }) {
     const [period, setPeriod] = useState('week')
     const [comparison, setComparison] = useState('none')
-    const [anchor, setAnchor] = useState(planDate || isoDate(new Date()))
-    const [customStart, setCustomStart] = useState(planDate || isoDate(new Date()))
-    const [customEnd, setCustomEnd] = useState(planDate || isoDate(new Date()))
+    /* Default to today's CST calendar date when the caller didn't pass
+     * a `planDate` — keeps the dispatcher's "today" stable across
+     * timezones so the Statistics tab opens on the same anchor whether
+     * the browser is in Houston, New York, or Tokyo. */
+    const [anchor, setAnchor] = useState(planDate || getTodayDate())
+    const [customStart, setCustomStart] = useState(planDate || getTodayDate())
+    const [customEnd, setCustomEnd] = useState(planDate || getTodayDate())
     const [loading, setLoading] = useState(true)
     /** Raw plan rows from the database — kept un-aggregated so the plant
      *  filter can re-derive every metric without a re-fetch. */

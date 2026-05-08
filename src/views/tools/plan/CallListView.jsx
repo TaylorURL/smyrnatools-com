@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { CallListSkeleton } from '../../../app/components/common/PlanSkeletons'
 import CallListDetail from '../../../app/components/plan/CallListDetail'
 import CallListRow from '../../../app/components/plan/CallListRow'
 import { Stat, StatGroup } from '../../../app/components/ui/Panel'
@@ -87,9 +88,15 @@ function CallListView({ accentColor }) {
      * tab in `flex flex-col flex-1 min-h-0 overflow-hidden`). The stat
      * strip takes its natural height; the grid below claims the rest with
      * `flex-1 min-h-0`, which lets the inner list panel scroll precisely
-     * within the remaining space — no viewport-math needed. */
+     * within the remaining space — no viewport-math needed.
+     *
+     * Show the layout-matching skeleton only on first load so the hand-off
+     * from the global Plan skeleton stays seamless. Manual refreshes keep
+     * the previous roster visible so the user isn't yanked back to a blank
+     * skeleton mid-task. */
+    if (isLoadingRoster && roster.length === 0) return <CallListSkeleton />
     return (
-        <div className="flex-1 min-h-0 flex flex-col gap-3 px-3 sm:px-4 lg:px-6 py-4 sm:py-5 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col gap-3 px-3 sm:px-4 lg:px-6 py-4 sm:py-5 overflow-hidden animate-fade-in-fast">
             <StatGroup columns={4}>
                 <Stat hint="poured 30d–365d ago" label="Dormant customers" value={stats.total.toLocaleString()} />
                 <Stat hint="at least one call / 30d" label="Contacted" value={stats.contacted.toLocaleString()} />
@@ -123,22 +130,28 @@ function CallListView({ accentColor }) {
                             className="flex items-center gap-2 px-3 py-2"
                             style={{ borderBottom: '1px solid var(--border-light)' }}
                         >
-                            <input
-                                type="search"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Search…"
-                                className="flex-1 rounded-md px-2.5 py-1.5 text-[12px]"
-                                style={{
-                                    background: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-primary)'
-                                }}
-                            />
+                            <div className="relative flex-1 min-w-0">
+                                <i
+                                    className="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none"
+                                    style={{ color: 'var(--text-tertiary)' }}
+                                />
+                                <input
+                                    type="search"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="Search customers, contacts, phone…"
+                                    className="w-full rounded-md pl-7 pr-2.5 py-1.5 text-[12px] outline-none"
+                                    style={{
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-light)',
+                                        color: 'var(--text-primary)'
+                                    }}
+                                />
+                            </div>
                             <select
                                 value={sortKey}
                                 onChange={(e) => setSortKey(e.target.value)}
-                                className="rounded-md px-2 py-1.5 text-[12px]"
+                                className="rounded-md px-2 py-1.5 text-[12px] cursor-pointer outline-none"
                                 style={{
                                     background: 'var(--bg-secondary)',
                                     border: '1px solid var(--border-light)',
@@ -179,9 +192,8 @@ function CallListView({ accentColor }) {
                                         <div
                                             className="px-3 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] flex items-center gap-2"
                                             style={{
-                                                background: 'var(--bg-tertiary)',
+                                                background: 'var(--bg-secondary)',
                                                 color: 'var(--text-tertiary)',
-                                                borderTop: '1px solid var(--border-light)',
                                                 borderBottom: '1px solid var(--border-light)'
                                             }}
                                         >
@@ -202,9 +214,19 @@ function CallListView({ accentColor }) {
                 </section>
 
                 <section className="lg:col-span-7 flex flex-col gap-2 min-h-0">
-                    <h3 className="text-[14px] font-semibold m-0" style={{ color: 'var(--text-primary)' }}>
-                        Detail
-                    </h3>
+                    <div className="flex items-center flex-wrap gap-x-2 gap-y-1.5">
+                        <h3
+                            className="text-[14px] font-semibold m-0 min-w-0 truncate"
+                            style={{ color: 'var(--text-primary)' }}
+                        >
+                            Detail
+                        </h3>
+                        {selectedRow && (
+                            <span className="text-[12px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                                · {selectedRow.customer_name || selectedRow.customer_num}
+                            </span>
+                        )}
+                    </div>
                     <div
                         className="flex-1 min-h-0 overflow-y-auto rounded"
                         style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}

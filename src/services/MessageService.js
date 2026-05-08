@@ -2,6 +2,7 @@ import { Database } from './DatabaseService'
 import { UserService } from './UserService'
 
 const MESSAGES_VIEW = 'messages_decrypted'
+
 /**
  * Resolves the canonical users table ID from whatever ID is in session storage.
  * Handles the case where session ID (users_sessions.id) is stored instead of users.id.
@@ -16,6 +17,7 @@ async function resolveUserId(sessionId) {
         return sessionId
     }
 }
+
 /**
  * Service for direct user-to-user encrypted messaging.
  * All reads go through the messages_decrypted view (bypasses RLS via view owner).
@@ -28,12 +30,14 @@ const MessageService = {
         const { error } = await Database.rpc('soft_delete_message_for_recipient', { p_message_id: messageId })
         if (error) console.error('Failed to soft-delete message (recipient):', error)
     },
+
     /** Soft-deletes a message for the sender. */
     async deleteForSender(messageId) {
         if (!messageId) return
         const { error } = await Database.rpc('soft_delete_message_for_sender', { p_message_id: messageId })
         if (error) console.error('Failed to soft-delete message (sender):', error)
     },
+
     /**
      * Fetches all messages the user is involved in (sent or received, not deleted).
      * Used to build conversation threads.
@@ -64,6 +68,26 @@ const MessageService = {
             if (!map.has(row.id)) map.set(row.id, formatMessage(row))
         })
         return [...map.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    },
+
+    /**
+     * Fetches the current user's pin/mute flags for every conversation
+     * partner. Returns an array of `{ otherUserId, pinned, muted }` so the
+     * caller can build whichever lookup shape it prefers.
+     */
+    async getConversationFlags(userId) {
+        const resolvedId = await resolveUserId(userId)
+        if (!resolvedId) return []
+        const { data, error } = await Database.from('users_pinned_conversations').select('*').eq('user_id', resolvedId)
+        if (error) {
+            console.error('Failed to load conversation flags:', error)
+            return []
+        }
+        return (data || []).map((row) => ({
+            muted: !!row.muted,
+            otherUserId: row.other_user_id,
+            pinned: !!row.pinned
+        }))
     },
 
     /** Fetches a single message by ID from the decrypted view. */
@@ -97,6 +121,7 @@ const MessageService = {
             })
             .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`))
     },
+
     /** Marks all unread inbox messages as read. */
     async markAllRead(userId) {
         const resolvedId = await resolveUserId(userId)
@@ -104,6 +129,7 @@ const MessageService = {
         const { error } = await Database.rpc('mark_all_messages_read', { p_recipient_id: resolvedId })
         if (error) console.error('Failed to mark all messages read:', error)
     },
+
     /** Marks a single message as read. */
     async markAsRead(messageId) {
         if (!messageId) return
@@ -111,6 +137,7 @@ const MessageService = {
         if (error) console.error('Failed to mark message read:', error)
         return !error
     },
+
     /** Marks all unread messages from a specific user as read. */
     async markConversationRead(userId, otherUserId) {
         const resolvedId = await resolveUserId(userId)
@@ -121,10 +148,12 @@ const MessageService = {
         })
         if (error) console.error('Failed to mark conversation read:', error)
     },
+
     /** Resolves a session/user ID to the canonical users.id. */
     async resolveId(userId) {
         return resolveUserId(userId)
     },
+
     /**
      * Sends an encrypted message to a recipient.
      * @param {string} senderId - Session or users table ID of the sender
@@ -147,8 +176,48 @@ const MessageService = {
         })
         if (error) throw new Error(error.message || 'Failed to send message')
         return data
+    },
+
+    /**
+     * Upserts pin/mute flags for a single conversation partner. Pass only
+     * the fields that should change; omitted flags are preserved by reading
+     * the current row first so we never accidentally clear the other flag.
+     */
+    async setConversationFlag(userId, otherUserId, { muted, pinned }) {
+        const resolvedId = await resolveUserId(userId)
+        if (!resolvedId || !otherUserId) return null
+        const { data: existing } = await Database.from('users_pinned_conversations')
+            .select('*')
+            .eq('user_id', resolvedId)
+            .eq('other_user_id', otherUserId)
+            .maybeSingle()
+        const nextPinned = pinned ?? !!existing?.pinned
+        const nextMuted = muted ?? !!existing?.muted
+
+        if (existing) {
+            const { error } = await Database.from('users_pinned_conversations')
+                .update({ muted: nextMuted, pinned: nextPinned })
+                .eq('id', existing.id)
+            if (error) {
+                console.error('Failed to update conversation flags:', error)
+                return null
+            }
+        } else {
+            const { error } = await Database.from('users_pinned_conversations').insert({
+                muted: nextMuted,
+                other_user_id: otherUserId,
+                pinned: nextPinned,
+                user_id: resolvedId
+            })
+            if (error) {
+                console.error('Failed to insert conversation flags:', error)
+                return null
+            }
+        }
+        return { muted: nextMuted, otherUserId, pinned: nextPinned }
     }
 }
+
 /** Normalizes a raw message row into a consistent shape. */
 function formatMessage(row) {
     return {
@@ -164,4 +233,5 @@ function formatMessage(row) {
         subject: row.subject || ''
     }
 }
+
 export default MessageService

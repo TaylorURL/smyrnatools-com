@@ -34,6 +34,7 @@ import {
     computeSuggestedSlots,
     formatMinutesClock,
     getCalculatedTruckCount,
+    getDayOfWeekForDate,
     getEffectiveBase,
     getMissingOperators,
     getOffsetDate,
@@ -537,7 +538,7 @@ function PlanScheduleView({
      *  so the badge simply hides on Mondays. */
     const previousBusinessDate = useMemo(() => {
         if (!planDate) return null
-        const planDayOfWeek = new Date(planDate + 'T00:00:00').getDay()
+        const planDayOfWeek = getDayOfWeekForDate(planDate)
         if (planDayOfWeek === 1) return null
         for (let offset = -1; offset >= -7; offset--) {
             const candidate = getOffsetDate(planDate, offset)
@@ -580,7 +581,8 @@ function PlanScheduleView({
      *  the prior Mon–Sat that just ended. */
     const currentWeekDates = useMemo(() => {
         if (!planDate) return []
-        const dow = new Date(planDate + 'T00:00:00').getDay()
+        const dow = getDayOfWeekForDate(planDate)
+        if (dow == null) return []
         const mondayOffset = dow === 0 ? -6 : -(dow - 1)
         return Array.from({ length: 6 }, (_, i) => getOffsetDate(planDate, mondayOffset + i))
     }, [planDate])

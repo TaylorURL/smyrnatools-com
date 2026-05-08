@@ -2,6 +2,24 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [40.0.36] - 2026-05-08
+
+- Add cross-day suggestion support to Find-a-Spot — when the selected day can't fill 3 viable slots, the recommender now scans the next 2-4 non-Sunday days via a new useAdjacentDayPlantProduction hook
+- Honor the dispatcher's typed start time when it already passes all rules (fits, preferred window, rest floor) instead of nudging it to an earlier slot for no operational reason
+- Add "tighter-pack" hint to recommended start time — when the chosen slot expands the shift envelope past the existing first-load-out, surface the alternative as a non-binding suggestion
+- Introduce size-window advice on booking conflicts — warns when a pour is outside its size-appropriate window (graveyard for big pours >= 150 yd, 06:00-14:00 for smaller) and pivots conflict metrics to the suggested slot
+- Separate booking-specific big-pour threshold (150 yd) from the global scheduling threshold so dispatch graveyard rules can diverge from analytics labeling
+- Widen the small/medium pour preferred window from 07:00-12:00 to 06:00-14:00 to give dispatchers more runway
+- Prefer "push back" move candidates over "pull up" moves — dispatchers mentally push small jobs later when a big pour anchors the morning; suggesting earlier moves conflicts with rest windows
+- Add direction metadata (after/before/overlap) to move candidates for sorting clarity
+- Apply loading-plant reassignment to dashboard schedule so per-plant yardage totals match the Schedule tab once tickets start loading
+- Add pool-after-dispatch column to schedule preview rows showing remaining truck availability at each order's start time with color-coded pills (green/amber/red)
+- Add animated FadeIn wrapper component with entrance/exit transitions and staggered delay timings for smoother recommendation panel state changes
+- Add decorative schedule preview that cycles through plants with scheduled orders while the form is idle
+- Auto-snap plan date to tomorrow (Sunday-skipped to Monday) when entering the Find-a-Spot tab
+- Rename Reset button to Clear with eraser icon, visible whenever any form field has a value
+- Simplify RefreshButton tooltip copy — remove "dispatch bucket" language
+
 ## [40.0.35] - 2026-05-07
 
 - Add animated fade/slide transitions to BookOrderView recommendation panels using a FadeIn wrapper component with entrance and exit states

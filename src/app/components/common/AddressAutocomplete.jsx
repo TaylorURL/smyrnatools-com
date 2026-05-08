@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { GeocodeService } from '../../../services/GeocodeService'
 
 const SUGGESTION_DEBOUNCE_MS = 350
-const SUGGESTION_MIN_QUERY_LEN = 5
+const SUGGESTION_MIN_QUERY_LEN = 4
 
 /**
  * Free-text address input with Nominatim-backed autocomplete + verification.
@@ -15,20 +16,29 @@ const SUGGESTION_MIN_QUERY_LEN = 5
  * coord is already cached so plant ranking runs without a network round-
  * trip and the address is guaranteed to be a real, geocodable location.
  *
- * Pure presentation otherwise — the parent owns `value` so spilling state
- * up into BookOrderView's request memo stays trivial.
+ * The dropdown renders inside a `createPortal` at document body level so an
+ * ancestor with `overflow: hidden | auto` (e.g. the booking form's scroll
+ * container) can't clip it out of view. Position is recomputed off the
+ * input's bounding rect on open + on scroll/resize.
  */
 function AddressAutocomplete({ fieldStyle, onChange, placeholder, required, value }) {
     const [suggestions, setSuggestions] = useState([])
     const [isOpen, setIsOpen] = useState(false)
     const [highlightIndex, setHighlightIndex] = useState(-1)
     const [isLoading, setIsLoading] = useState(false)
+    /* Tracks whether we've sent at least one search since the last
+     * accept / reset. Drives the empty-state copy: pre-search vs
+     * "no matches found" reads very differently to the dispatcher. */
+    const [hasSearched, setHasSearched] = useState(false)
+    const [dropdownStyle, setDropdownStyle] = useState(null)
     /* Tracks whether the latest text edit came from the user typing (we
      * SHOULD fetch suggestions) or from us programmatically setting the
      * value via a pick (we should NOT — that would re-open the dropdown
      * the dispatcher just dismissed). */
     const userTypedRef = useRef(false)
     const containerRef = useRef(null)
+    const inputRef = useRef(null)
+    const dropdownRef = useRef(null)
 
     useEffect(() => {
         if (!userTypedRef.current) return undefined
@@ -37,34 +47,65 @@ function AddressAutocomplete({ fieldStyle, onChange, placeholder, required, valu
             setSuggestions([])
             setIsOpen(false)
             setIsLoading(false)
+            setHasSearched(false)
             return undefined
         }
         let cancelled = false
         setIsLoading(true)
+        setIsOpen(true)
         const handle = setTimeout(async () => {
             const results = await GeocodeService.search(trimmed)
             if (cancelled) return
             setSuggestions(results)
-            setIsOpen(results.length > 0)
             setHighlightIndex(-1)
             setIsLoading(false)
+            setHasSearched(true)
+            setIsOpen(true)
         }, SUGGESTION_DEBOUNCE_MS)
         return () => {
             cancelled = true
             clearTimeout(handle)
-            setIsLoading(false)
         }
     }, [value])
 
     /* Click-outside closes the dropdown — without this it lingers on top
-     * of the next field the dispatcher tabs into. */
+     * of the next field the dispatcher tabs into. The portal lives
+     * outside the container, so we explicitly check both refs. */
     useEffect(() => {
         const handleClick = (event) => {
-            if (!containerRef.current?.contains(event.target)) setIsOpen(false)
+            const inContainer = containerRef.current?.contains(event.target)
+            const inDropdown = dropdownRef.current?.contains(event.target)
+            if (!inContainer && !inDropdown) setIsOpen(false)
         }
         document.addEventListener('mousedown', handleClick)
         return () => document.removeEventListener('mousedown', handleClick)
     }, [])
+
+    /* Position the portaled dropdown directly under the input. Recomputes
+     * synchronously after layout changes so a window resize, page scroll,
+     * or focus shift doesn't leave it floating in the wrong place. */
+    const positionDropdown = () => {
+        const input = inputRef.current
+        if (!input) return
+        const rect = input.getBoundingClientRect()
+        setDropdownStyle({
+            left: rect.left,
+            top: rect.bottom + 4,
+            width: rect.width
+        })
+    }
+
+    useLayoutEffect(() => {
+        if (!isOpen) return undefined
+        positionDropdown()
+        const handle = () => positionDropdown()
+        window.addEventListener('resize', handle)
+        window.addEventListener('scroll', handle, true)
+        return () => {
+            window.removeEventListener('resize', handle)
+            window.removeEventListener('scroll', handle, true)
+        }
+    }, [isOpen, suggestions.length])
 
     const handleType = (event) => {
         userTypedRef.current = true
@@ -78,6 +119,7 @@ function AddressAutocomplete({ fieldStyle, onChange, placeholder, required, valu
         setSuggestions([])
         setIsOpen(false)
         setHighlightIndex(-1)
+        setHasSearched(false)
     }
 
     const handleKeyDown = (event) => {
@@ -96,14 +138,21 @@ function AddressAutocomplete({ fieldStyle, onChange, placeholder, required, valu
         }
     }
 
+    const handleFocus = () => {
+        if (suggestions.length > 0 || isLoading || hasSearched) setIsOpen(true)
+    }
+
+    const showDropdown = isOpen && dropdownStyle && (suggestions.length > 0 || isLoading || hasSearched)
+
     return (
         <div ref={containerRef} className="relative">
             <input
+                ref={inputRef}
                 type="text"
                 value={value}
                 onChange={handleType}
                 onKeyDown={handleKeyDown}
-                onFocus={() => suggestions.length > 0 && setIsOpen(true)}
+                onFocus={handleFocus}
                 placeholder={placeholder}
                 required={required}
                 autoComplete="off"
@@ -116,38 +165,65 @@ function AddressAutocomplete({ fieldStyle, onChange, placeholder, required, valu
                     style={{ color: 'var(--text-tertiary)' }}
                 />
             )}
-            {isOpen && suggestions.length > 0 && (
-                <ul
-                    role="listbox"
-                    className="absolute z-20 left-0 right-0 mt-1 max-h-72 overflow-y-auto rounded-lg shadow-lg"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                >
-                    {suggestions.map((suggestion, index) => (
-                        <li
-                            key={`${suggestion.coord.lat}-${suggestion.coord.lng}-${index}`}
-                            role="option"
-                            aria-selected={highlightIndex === index}
-                            onMouseDown={(event) => {
-                                event.preventDefault()
-                                acceptSuggestion(suggestion)
-                            }}
-                            onMouseEnter={() => setHighlightIndex(index)}
-                            className="px-3 py-2 text-[12.5px] cursor-pointer leading-snug"
-                            style={{
-                                background: highlightIndex === index ? 'var(--bg-secondary)' : 'transparent',
-                                borderTop: index === 0 ? 'none' : '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }}
-                        >
-                            <i
-                                className="fas fa-location-dot text-[10px] mr-2"
+            {showDropdown &&
+                createPortal(
+                    <ul
+                        ref={dropdownRef}
+                        role="listbox"
+                        className="fixed z-[1000] max-h-72 overflow-y-auto rounded-lg shadow-lg"
+                        style={{
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border-light)',
+                            left: dropdownStyle.left,
+                            top: dropdownStyle.top,
+                            width: dropdownStyle.width
+                        }}
+                    >
+                        {suggestions.length === 0 && isLoading && (
+                            <li
+                                className="px-3 py-2 text-[12.5px] flex items-center gap-2"
                                 style={{ color: 'var(--text-tertiary)' }}
-                            />
-                            {suggestion.displayName}
-                        </li>
-                    ))}
-                </ul>
-            )}
+                            >
+                                <i className="fas fa-circle-notch fa-spin text-[10px]" />
+                                Searching addresses…
+                            </li>
+                        )}
+                        {suggestions.length === 0 && !isLoading && hasSearched && (
+                            <li
+                                className="px-3 py-2 text-[12.5px] flex items-center gap-2"
+                                style={{ color: 'var(--text-tertiary)' }}
+                            >
+                                <i className="fas fa-circle-info text-[10px]" />
+                                No matches found — keep typing or check spelling.
+                            </li>
+                        )}
+                        {suggestions.map((suggestion, index) => (
+                            <li
+                                key={`${suggestion.coord.lat}-${suggestion.coord.lng}-${index}`}
+                                role="option"
+                                aria-selected={highlightIndex === index}
+                                onMouseDown={(event) => {
+                                    event.preventDefault()
+                                    acceptSuggestion(suggestion)
+                                }}
+                                onMouseEnter={() => setHighlightIndex(index)}
+                                className="px-3 py-2 text-[12.5px] cursor-pointer leading-snug"
+                                style={{
+                                    background: highlightIndex === index ? 'var(--bg-secondary)' : 'transparent',
+                                    borderTop: index === 0 ? 'none' : '1px solid var(--border-light)',
+                                    color: 'var(--text-primary)'
+                                }}
+                            >
+                                <i
+                                    className="fas fa-location-dot text-[10px] mr-2"
+                                    style={{ color: 'var(--text-tertiary)' }}
+                                />
+                                {suggestion.displayName}
+                            </li>
+                        ))}
+                    </ul>,
+                    document.body
+                )}
         </div>
     )
 }

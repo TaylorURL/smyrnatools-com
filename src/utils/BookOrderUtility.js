@@ -101,29 +101,84 @@ export const scoreProximity = (jobAddress, plantAddress) => {
     return Math.min(1, tokenScore * 0.6 + stateBoost)
 }
 
+/**
+ * Pre-defined pour-method profiles. Each option carries the per-truck
+ * `tailMin` (the minutes the last truck spends on-site discharging +
+ * cleaning up) and a typical `spacingMin` between truck arrivals. The
+ * combination drives both how many trucks the recommender thinks are
+ * needed AND how long the pour ties up the plant's pool.
+ *
+ * Pumps move concrete fastest — the truck just dumps into the pump
+ * hopper and leaves — so spacing and tail are tight. Tailgating runs
+ * the chute directly, slower per truck. "Various locations" assumes the
+ * truck repositions multiple times for spread-out pours, which adds
+ * meaningful overhead per truck.
+ */
+export const POUR_METHOD_OPTIONS = [
+    { label: 'Large pump · fast pace', spacingMin: 4, tailMin: 20, value: 'large_pump_fast' },
+    { label: 'Large pump · slow pace', spacingMin: 7, tailMin: 35, value: 'large_pump_slow' },
+    { label: 'Small / ground pump · fast pace', spacingMin: 6, tailMin: 25, value: 'small_pump_fast' },
+    { label: 'Small / ground pump · slow pace', spacingMin: 10, tailMin: 40, value: 'small_pump_slow' },
+    { label: 'Tailgating · fast pace', spacingMin: 5, tailMin: 25, value: 'tailgate_fast' },
+    { label: 'Tailgating · slow pace', spacingMin: 10, tailMin: 40, value: 'tailgate_slow' },
+    { label: 'Tailgating · multiple locations', spacingMin: 12, tailMin: 50, value: 'tailgate_multi' },
+    { label: 'Other · fast pace', spacingMin: 5, tailMin: 30, value: 'other_fast' },
+    { label: 'Other · slow pace', spacingMin: 10, tailMin: 40, value: 'other_slow' }
+]
+
+/** Look up a pour-method profile by its `value` key. Returns null when the
+ *  dispatcher hasn't picked one (the duration math then falls back to the
+ *  spacing field + DEFAULT_POUR_TAIL_MIN). */
+export const getPourMethodTimings = (value) => POUR_METHOD_OPTIONS.find((option) => option.value === value) || null
+
 /** Trucks needed to sustain the requested pour. Falls back to defaults when
- *  the dispatcher hasn't filled in load size / spacing. */
-export const estimateRequiredTrucks = ({ yardage, loadSize, spacingMin, travelMin }) => {
+ *  the dispatcher hasn't filled in load size / spacing / pour method. */
+export const estimateRequiredTrucks = ({ yardage, loadSize, spacingMin, tailMin, travelMin }) => {
     const yards = Number(yardage) || 0
     if (yards <= 0) return 0
     const load = Number(loadSize) > 0 ? Number(loadSize) : DEFAULT_LOAD_SIZE_YARDS
     const spacing = Number(spacingMin) > 0 ? Number(spacingMin) : DEFAULT_TRUCK_SPACING_MIN
+    const tail = Number(tailMin) > 0 ? Number(tailMin) : DEFAULT_POUR_TAIL_MIN
     const travel = Number(travelMin) > 0 ? Number(travelMin) : DEFAULT_TRAVEL_OUT_MIN
     const trips = Math.max(1, Math.ceil(yards / load))
-    const cycleMin = travel * 2 + DEFAULT_POUR_TAIL_MIN
+    const cycleMin = travel * 2 + tail
     const rotation = Math.max(1, Math.ceil(cycleMin / spacing))
     return Math.min(trips, rotation)
 }
 
+/* Hard cap on simultaneous launches per plant. A single plant can't
+ * physically load four trucks at the same minute — load + slump + chute
+ * cleanup compete for the same loading bay, so dispatch reality is two
+ * trucks side-by-side at most plants and three at the busiest. We
+ * expose 3 as the ceiling and reject any slot suggestion that would
+ * push a plant past it. */
+export const MAX_CONCURRENT_LAUNCHES_PER_PLANT = 3
+
+/** Count of non-excluded orders at `plant` whose `startTime` matches
+ *  `startMin` exactly. Used by every slot scanner to enforce the
+ *  per-plant launch cap above. Cancelled / test orders are skipped so
+ *  they don't block real bookings. */
+export const countOrdersAtSameStart = (orders, startMin) => {
+    if (!Array.isArray(orders) || !Number.isFinite(startMin)) return 0
+    let count = 0
+    for (const order of orders) {
+        if (!order || isExcludedOrder(order)) continue
+        const orderStart = timeToMinutes(order?.startTime)
+        if (orderStart === startMin) count += 1
+    }
+    return count
+}
+
 /** End-to-end pour duration from first load to last truck back at plant. */
-export const estimatePourDurationMinutes = ({ yardage, loadSize, spacingMin, travelMin }) => {
+export const estimatePourDurationMinutes = ({ yardage, loadSize, spacingMin, tailMin, travelMin }) => {
     const yards = Number(yardage) || 0
     if (yards <= 0) return 0
     const load = Number(loadSize) > 0 ? Number(loadSize) : DEFAULT_LOAD_SIZE_YARDS
     const spacing = Number(spacingMin) > 0 ? Number(spacingMin) : DEFAULT_TRUCK_SPACING_MIN
+    const tail = Number(tailMin) > 0 ? Number(tailMin) : DEFAULT_POUR_TAIL_MIN
     const travel = Number(travelMin) > 0 ? Number(travelMin) : DEFAULT_TRAVEL_OUT_MIN
     const trips = Math.max(1, Math.ceil(yards / load))
-    return (trips - 1) * spacing + travel + DEFAULT_POUR_TAIL_MIN
+    return (trips - 1) * spacing + travel + tail
 }
 
 const orderTimeWindow = (order) => {
@@ -197,7 +252,17 @@ export const scorePlantForBooking = ({
     const adjustedPool = adjustPoolForDate(rawPool, planDate)
     const busy = computeConcurrentTrucks(orders, requestStart, requestEnd)
     const free = Math.max(0, adjustedPool - busy)
-    const capacityScore = trucksNeeded > 0 ? clamp01(free / trucksNeeded) : adjustedPool > 0 ? 1 : 0
+    /* Per-plant launch cap — three orders on the same start minute is
+     * the most a plant can physically load. When the requested time is
+     * already at or over the cap, treat the slot as full regardless of
+     * truck-pool headroom; the conflict panel will then surface the
+     * "shift / reschedule / pull help" options instead of falsely
+     * confirming the booking. */
+    const sameSlotCount = countOrdersAtSameStart(orders, requestStart)
+    const launchSlotFull = sameSlotCount >= MAX_CONCURRENT_LAUNCHES_PER_PLANT
+    const effectiveFree = launchSlotFull ? 0 : free
+    const capacityScore =
+        trucksNeeded > 0 ? clamp01(effectiveFree / trucksNeeded) : adjustedPool > 0 && !launchSlotFull ? 1 : 0
     const travelMin = travelMinByPlantCode?.[plantCode]
     const liveProximity = travelMinutesToProximity(travelMin)
     const proximityScore = liveProximity != null ? liveProximity : scoreProximity(request.address, plantAddress)
@@ -210,14 +275,21 @@ export const scorePlantForBooking = ({
         busy,
         capacityScore,
         composite,
-        free,
+        /* `free` reports zero when the launch slot is full so downstream
+         * fit checks (`top.free >= top.trucksNeeded`) treat same-slot
+         * overflow as a real shortage. `rawFree` keeps the unmasked
+         * truck-pool number for diagnostic / display use. */
+        free: effectiveFree,
+        launchSlotFull,
         loadBalanceScore,
         plantAddress,
         plantCode,
         plantName,
         proximityScore,
         proximitySource,
+        rawFree: free,
         rawPool,
+        sameSlotCount,
         travelMin: Number.isFinite(travelMin) ? travelMin : null,
         trucksNeeded
     }
@@ -259,19 +331,33 @@ export const rankPlantsForBooking = ({
          * resolve) stay in the list — silently hiding them on a transient
          * lookup failure would be worse than showing a slightly-stale row. */
         .filter((row) => !Number.isFinite(row.travelMin) || row.travelMin <= TRAVEL_MIN_HORIZON)
-    /* Closest plant wins #1. When live travel minutes are available we sort
-     * directly on minutes (smallest first) so two plants with proximity 1.0
-     * from a same-ZIP heuristic can still be ordered correctly once the real
-     * drive time arrives. Heuristic-scored plants fall back to proximity ties
-     * broken by composite. */
-    scored.sort((a, b) => {
+    /* When at least one plant has a real geocoded drive time, drop the
+     * plants that don't — a missing `travelMin` usually means the
+     * plant's address (or the job's) didn't resolve, and we'd rather
+     * recommend nothing for that plant than rank it on a coarse
+     * ZIP-prefix heuristic that can pick a 75-mile-away plant over a
+     * 35-mile one when both land in the same 3-digit ZIP region. The
+     * "everyone is null" case (job geocode failed entirely) keeps the
+     * heuristic ranking so the dispatcher still sees options — paired
+     * with the no-travel-data hint surfaced in the headline. */
+    const anyHasTravel = scored.some((row) => Number.isFinite(row.travelMin))
+    const trimmed = anyHasTravel ? scored.filter((row) => Number.isFinite(row.travelMin)) : scored
+    /* Closest plant wins #1. Sort priority:
+     *   1. Plants WITH a real travel-time number rank above those without,
+     *      so an unknown plant can never beat a known one purely on the
+     *      proximity-heuristic / capacity tiebreaker.
+     *   2. Among plants with travel data, smallest minutes first.
+     *   3. Among plants without travel data (only relevant when
+     *      `anyHasTravel` is false), heuristic proximity then composite. */
+    trimmed.sort((a, b) => {
         const aTravel = Number.isFinite(a.travelMin) ? a.travelMin : null
         const bTravel = Number.isFinite(b.travelMin) ? b.travelMin : null
+        if ((aTravel != null) !== (bTravel != null)) return aTravel != null ? -1 : 1
         if (aTravel != null && bTravel != null && aTravel !== bTravel) return aTravel - bTravel
         if (b.proximityScore !== a.proximityScore) return b.proximityScore - a.proximityScore
         return b.composite - a.composite
     })
-    return scored
+    return trimmed
 }
 
 /* Window scanned when proposing alternate start times. We never suggest
@@ -320,7 +406,7 @@ const DEFAULT_EARLIEST_DISPATCH_MIN = 4 * 60 + 30
  * PlanScheduleUtility so this util stays self-contained. Suggestions whose
  * projected back-at-yard would push the plant's earliest operator past
  * this many minutes are filtered out. */
-const SHIFT_LIMIT_MIN = 14 * 60
+export const SHIFT_LIMIT_MIN = 14 * 60
 /* Mandated minimum off-the-clock window between an operator's last back-
  * at-yard and their next clock-in. Drives the per-plant floor derived
  * from yesterday's actual ticket times. */
@@ -429,10 +515,11 @@ const roundUpToScanGranularity = (mins) => {
  *  what's already booked, then to a hardcoded earliest-dispatch when the
  *  plant has no anchor at all. Always rounded up to the half-hour so
  *  every scan slot lands on :00 / :30. */
-const computeScanFloor = (orders, restFloorMin) => {
-    if (Number.isFinite(restFloorMin)) {
-        return roundUpToScanGranularity(Math.max(ALTERNATE_SCAN_START_MIN, restFloorMin))
-    }
+/** Earliest non-excluded start minute among the given orders. Used to
+ *  detect "the day's first existing pour" so the scan doesn't suggest
+ *  slots hours before any existing activity (which expands the shift
+ *  envelope for no operational benefit). */
+const computeFirstLoadOutMinute = (orders) => {
     let earliest = null
     for (const order of orders || []) {
         if (!order || isExcludedOrder(order)) continue
@@ -440,8 +527,34 @@ const computeScanFloor = (orders, restFloorMin) => {
         if (!Number.isFinite(startMin)) continue
         if (earliest == null || startMin < earliest) earliest = startMin
     }
-    const anchor = earliest ?? DEFAULT_EARLIEST_DISPATCH_MIN
-    return roundUpToScanGranularity(Math.max(ALTERNATE_SCAN_START_MIN, anchor))
+    return earliest
+}
+
+const computeScanFloor = (orders, restFloorMin, request) => {
+    const firstLoadOut = computeFirstLoadOutMinute(orders)
+    /* Big pours are explicitly meant for the 00:00–06:00 graveyard
+     * window, so suggesting a graveyard slot for them is correct even
+     * when the existing first-load-out is later. For everything else
+     * (small / medium pours) we anchor to whichever's LATER of:
+     *   • the operator-rest floor (yesterday's tickets + 10h), and
+     *   • today's existing first-load-out
+     * because a 4 a.m. start when the day's first pour isn't until 7
+     * a.m. is a 3-hour shift extension for no real benefit. */
+    const wantsGraveyard = request && isBigBookingPour(request.yardage)
+    const restFloor = Number.isFinite(restFloorMin) ? restFloorMin : null
+    let baseFloor
+    if (wantsGraveyard) {
+        baseFloor = restFloor != null ? restFloor : (firstLoadOut ?? DEFAULT_EARLIEST_DISPATCH_MIN)
+    } else if (restFloor != null && Number.isFinite(firstLoadOut)) {
+        baseFloor = Math.max(restFloor, firstLoadOut)
+    } else if (restFloor != null) {
+        baseFloor = restFloor
+    } else if (Number.isFinite(firstLoadOut)) {
+        baseFloor = firstLoadOut
+    } else {
+        baseFloor = DEFAULT_EARLIEST_DISPATCH_MIN
+    }
+    return roundUpToScanGranularity(Math.max(ALTERNATE_SCAN_START_MIN, baseFloor))
 }
 
 /** Approximate back-at-yard minute for a candidate window — the supplied
@@ -541,13 +654,16 @@ export const findAlternateStartTimes = ({
     const { startMin: requestStart, trucksNeeded } = request
     if (trucksNeeded <= 0) return []
     const lockWindowMin = computeLockWindowMin(request)
-    const scanFloor = computeScanFloor(orders, restFloorMin)
+    const scanFloor = computeScanFloor(orders, restFloorMin, request)
 
     const allWindows = []
     for (let start = scanFloor; start + lockWindowMin <= ALTERNATE_SCAN_END_MIN; start += ALTERNATE_SCAN_STEP_MIN) {
         if (Math.abs(start - requestStart) < ALTERNATE_MIN_GAP_MIN) continue
         const end = start + lockWindowMin
         if (!respectsShiftLimit(start, projectedBackAtYardMin(start, request.durationMin), scanFloor)) continue
+        /* Per-plant launch cap — even with truck pool to spare, a plant
+         * can't physically load a 4th truck at the same minute. */
+        if (countOrdersAtSameStart(orders, start) >= MAX_CONCURRENT_LAUNCHES_PER_PLANT) continue
         const busy = computeConcurrentTrucks(orders, start, end)
         const free = Math.max(0, adjustedPool - busy)
         allWindows.push({
@@ -570,11 +686,34 @@ export const findAlternateStartTimes = ({
         if (a.isolationMin !== b.isolationMin) return a.isolationMin - b.isolationMin
         return a.startMin - b.startMin
     }
-    const fitting = allWindows
-        .filter((w) => w.fits)
-        .sort(sortKey)
-        .slice(0, count)
-    if (fitting.length > 0) return fitting
+    const fitting = allWindows.filter((w) => w.fits).sort(sortKey)
+
+    if (fitting.length > 0) {
+        /* Spread the surfaced slots across the day instead of returning
+         * three windows that sit within an hour of each other. Greedy
+         * walk through the preference-sorted list and reject any slot
+         * that's within DIVERSE_SPREAD_MIN of an already-picked slot —
+         * that way the dispatcher gets a morning / mid-day / late-day
+         * trio when the schedule allows it, and only falls back to a
+         * tighter cluster when nothing else fits. */
+        const DIVERSE_SPREAD_MIN = 120
+        const picked = []
+        for (const w of fitting) {
+            if (picked.length >= count) break
+            const tooClose = picked.some((p) => Math.abs(p.startMin - w.startMin) < DIVERSE_SPREAD_MIN)
+            if (!tooClose) picked.push(w)
+        }
+        // If the spread filter left us short (e.g. the day only has one
+        // pocket of fitting time), backfill from the same preference-
+        // sorted list so we still hit `count` when possible.
+        if (picked.length < count) {
+            for (const w of fitting) {
+                if (picked.length >= count) break
+                if (!picked.includes(w)) picked.push(w)
+            }
+        }
+        return picked.sort((a, b) => a.startMin - b.startMin)
+    }
 
     // Fallback: closest-possible windows. Smallest shortfall first, then
     // the standard preference / cluster / earliest cascade.
@@ -677,7 +816,7 @@ export const findMoveCandidates = ({
      * pre-dawn. */
     const findReschedulesForOrder = (candidate, candidateDuration) => {
         const otherOrders = orders.filter((o) => o !== candidate.order)
-        const moveScanFloor = computeScanFloor(otherOrders, restFloorMin)
+        const moveScanFloor = computeScanFloor(otherOrders, restFloorMin, request)
         const candidateYardage = parseFloat(candidate.order?.yardage) || 0
         const out = []
         for (
@@ -688,6 +827,12 @@ export const findMoveCandidates = ({
             if (Math.abs(start - candidate.window.startMin) < ALTERNATE_MIN_GAP_MIN) continue
             const end = start + candidateDuration
             if (!respectsShiftLimit(start, projectedBackAtYardMin(start, candidateDuration), moveScanFloor)) continue
+            /* Reject move targets that would push a launch slot past
+             * the per-plant cap. The new pour's launch is treated as
+             * "occupying" its requested start minute — moving the
+             * candidate INTO that minute counts toward the cap. */
+            const sameSlotAtTarget = countOrdersAtSameStart(otherOrders, start) + (start === requestStart ? 1 : 0)
+            if (sameSlotAtTarget >= MAX_CONCURRENT_LAUNCHES_PER_PLANT) continue
             const otherBusy = computeConcurrentTrucks(otherOrders, start, end)
             const requestOverlapsHere = start < requestEnd && end > requestStart
             const requestBusy = requestOverlapsHere ? request.trucksNeeded : 0
@@ -775,21 +920,27 @@ export const findRecommendedStartTime = ({
     const trucksNeeded = request.trucksNeeded
     if (trucksNeeded <= 0) return null
     const lockWindowMin = computeLockWindowMin(request)
-    const scanFloor = computeScanFloor(orders, restFloorMin)
+    const scanFloor = computeScanFloor(orders, restFloorMin, request)
 
     /** Build a candidate evaluation for an arbitrary start minute. Same
      *  shape as the grid-scan candidates so the typed-time check below
-     *  can return a candidate that wasn't on the 30-minute scan grid. */
+     *  can return a candidate that wasn't on the 30-minute scan grid.
+     *  `fits` only flips true when the plant has both the truck pool
+     *  AND a free launch slot — at most three orders may share a start
+     *  minute regardless of how much truck headroom exists. */
     const evaluateAt = (start) => {
         if (!Number.isFinite(start)) return null
         const end = start + lockWindowMin
         if (start < scanFloor) return null
         if (end > ALTERNATE_SCAN_END_MIN) return null
         if (!respectsShiftLimit(start, projectedBackAtYardMin(start, request.durationMin), scanFloor)) return null
+        const sameSlotCount = countOrdersAtSameStart(orders, start)
+        const launchSlotFull = sameSlotCount >= MAX_CONCURRENT_LAUNCHES_PER_PLANT
         const busy = computeConcurrentTrucks(orders, start, end)
         const free = Math.max(0, adjustedPool - busy)
         return {
-            fits: free >= trucksNeeded,
+            fits: !launchSlotFull && free >= trucksNeeded,
+            launchSlotFull,
             free,
             isolationMin: computeIsolationMin(start, end, orders),
             preferred: isPreferredStartWindow(request.yardage, start),
@@ -805,22 +956,44 @@ export const findRecommendedStartTime = ({
     }
     if (candidates.length === 0) return null
 
-    /* Honor the dispatcher's typed time when it's a complete fit. The
-     * sort cascade below would otherwise pick the earliest of several
-     * tied "fits + preferred + isolated" slots and override the typed
-     * time for no operational reason — moving 07:00 → 06:00 just
-     * expands the shift envelope by an hour. The recommender should
-     * only nudge the typed time when it genuinely fails a rule
-     * (overbooked, wrong size-window, outside rest floor, past 14h
-     * shift cap). When all rules pass, the dispatcher's choice wins. */
+    /* Honor the dispatcher's typed time when it's a complete fit AND
+     * the day's existing activity is already adjacent to it. The sort
+     * cascade below would otherwise pick the earliest of several tied
+     * slots — but pure earliest is wrong in two opposite ways:
+     *   • For non-big pours, picking 06:00 over a typed 07:00 expands
+     *     the shift envelope for nothing (existing fix).
+     *   • For big pours, a 01:00 start that ends 4h before the day's
+     *     first existing pour leaves a giant idle gap — picking 05:00
+     *     instead would have trucks back at 07:00 just as the day
+     *     starts (this fix).
+     * Threshold for "materially tighter" is 60 min: another preferred
+     * fitting slot must shave at least an hour off the chosen slot's
+     * idle gap before we override the dispatcher's choice. */
+    const TIGHTER_GAP_THRESHOLD_MIN = 60
     const typedFit = evaluateAt(request.startMin) ?? candidates.find((c) => c.startMin === request.startMin)
-    let chosen = typedFit && typedFit.fits && typedFit.preferred ? typedFit : null
+    let chosen = null
+    if (typedFit && typedFit.fits && typedFit.preferred) {
+        const typedIsolation = Number.isFinite(typedFit.isolationMin) ? typedFit.isolationMin : Infinity
+        const tighterCandidate = candidates.find(
+            (c) =>
+                c.fits &&
+                c.preferred &&
+                c.startMin !== typedFit.startMin &&
+                Number.isFinite(c.isolationMin) &&
+                c.isolationMin < typedIsolation - TIGHTER_GAP_THRESHOLD_MIN
+        )
+        if (!tighterCandidate) chosen = typedFit
+    }
 
     if (!chosen) {
         candidates.sort((a, b) => {
             if (a.fits !== b.fits) return a.fits ? -1 : 1
             if (a.preferred !== b.preferred) return a.preferred ? -1 : 1
             if (a.isolationMin !== b.isolationMin) return a.isolationMin - b.isolationMin
+            /* Prefer the typed time among isolation ties so the
+             * dispatcher's choice wins when nothing else is tighter. */
+            if (a.startMin === request.startMin) return -1
+            if (b.startMin === request.startMin) return 1
             return a.startMin - b.startMin
         })
         chosen = candidates[0]
@@ -965,6 +1138,11 @@ export const computeBookingConflict = ({
             request: effectiveRequest,
             travelMinByPlantCode
         }),
+        /* `launchSlotFull` propagates from `scorePlantForBooking` so the
+         * panel can lead with "too many simultaneous launches" instead
+         * of the misleading "1 truck short" framing when the real
+         * problem is the per-plant launch cap. */
+        launchSlotFull: !!top.launchSlotFull,
         moveCandidates: findMoveCandidates({
             mixerCountsByPlant,
             planDate,
@@ -975,6 +1153,7 @@ export const computeBookingConflict = ({
         }),
         plantCode: top.plantCode,
         plantName: top.plantName,
+        sameSlotCount: top.sameSlotCount ?? 0,
         shortBy: effectiveShortBy,
         sizeWindowAdvice
     }
@@ -988,22 +1167,41 @@ export const computeBookingConflict = ({
  *  load (yardage > DEFAULT_LOAD_SIZE_YARDS) — single-truck pours don't have a
  *  spacing decision to make. When omitted/falsy it falls back to
  *  DEFAULT_TRUCK_SPACING_MIN inside the duration / truck-count helpers. */
-export const buildBookingRequest = ({ address, spacingMin, startTime, yardage }) => {
+export const buildBookingRequest = ({ address, pourMethod, spacingMin, startTime, yardage }) => {
     const yards = parseFloat(yardage)
     const startMin = timeToMinutes(startTime)
     if (!yards || yards <= 0) return null
     if (!Number.isFinite(startMin)) return null
     if (!address || !String(address).trim()) return null
-    const spacing = parseFloat(spacingMin)
+    /* Pour-method profile (optional) — when present, its `tailMin`
+     * extends the per-truck on-site time and its `spacingMin` provides
+     * a sensible default when the dispatcher hasn't typed a spacing.
+     * The dispatcher's typed spacing always wins so they can override
+     * the profile's default for unusual pour conditions. */
+    const methodTimings = getPourMethodTimings(pourMethod)
+    const typedSpacing = parseFloat(spacingMin)
+    const spacing = Number.isFinite(typedSpacing) && typedSpacing > 0 ? typedSpacing : methodTimings?.spacingMin
+    const tailMin = methodTimings?.tailMin
     const requiresSpacing = yards > DEFAULT_LOAD_SIZE_YARDS
-    if (requiresSpacing && (!Number.isFinite(spacing) || spacing <= 0)) return null
-    const trucksNeeded = estimateRequiredTrucks({ spacingMin: spacing, yardage: yards })
-    const durationMin = estimatePourDurationMinutes({ spacingMin: spacing, yardage: yards })
+    if (requiresSpacing && !(Number.isFinite(spacing) && spacing > 0)) return null
+    const trucksNeeded = estimateRequiredTrucks({ spacingMin: spacing, tailMin, yardage: yards })
+    const durationMin = estimatePourDurationMinutes({ spacingMin: spacing, tailMin, yardage: yards })
+    /* Operators can't run more than 14 hours from first load-out to back-
+     * at-yard. If the pour as configured would exceed that even with a
+     * dawn start, it can't fit ANY shift today — flag it so the form
+     * surfaces the warning and the recommender skips ranking. The
+     * dispatcher fixes it by tightening spacing or shrinking yardage. */
+    const projectedShiftMin = durationMin + DEFAULT_TRAVEL_OUT_MIN
+    const exceedsShiftLimit = projectedShiftMin > SHIFT_LIMIT_MIN
     return {
         address: String(address).trim(),
         durationMin,
+        exceedsShiftLimit,
+        pourMethod: pourMethod || null,
+        projectedShiftMin,
         spacingMin: Number.isFinite(spacing) && spacing > 0 ? spacing : DEFAULT_TRUCK_SPACING_MIN,
         startMin,
+        tailMin: Number.isFinite(tailMin) ? tailMin : null,
         trucksNeeded,
         yardage: yards
     }

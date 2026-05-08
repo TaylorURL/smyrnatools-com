@@ -11,7 +11,7 @@ function ConfirmationModal({ confirmationChecks, setConfirmationChecks, onCancel
     const allChecked = confirmationChecks.every(Boolean)
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white rounded-2xl p-5 sm:p-8 max-w-md w-full shadow-2xl">
+            <div className="bg-bg-primary rounded-2xl p-5 sm:p-8 max-w-md w-full shadow-2xl">
                 <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-3 sm:mb-4">Confirm Submission</h2>
                 <div className="text-sm text-slate-600 mb-4 sm:mb-6">
                     Please confirm the following before submitting:

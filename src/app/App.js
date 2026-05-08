@@ -293,7 +293,11 @@ function AppContent() {
                 return <NRMCAView />
             case 'MyAccount': {
                 const effectiveUserId = userId || sessionStorage.getItem('userId')
-                return effectiveUserId ? <MyAccountView userId={effectiveUserId} /> : <LoginView />
+                return effectiveUserId ? (
+                    <MyAccountView userId={effectiveUserId} onSelectView={handleViewSelection} />
+                ) : (
+                    <LoginView />
+                )
             }
             case 'Documents':
                 return <DocumentsView />

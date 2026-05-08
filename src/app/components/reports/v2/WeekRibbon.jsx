@@ -47,7 +47,7 @@ function WeekRibbon({ weeks, activeIso, onPick }) {
                         ref={isActive ? activeRef : undefined}
                         type="button"
                         onClick={() => onPick?.(wk.iso)}
-                        className="shrink-0 w-[180px] snap-start text-left bg-white rounded-xl transition-all duration-150 hover:-translate-y-px hover:shadow-md cursor-pointer"
+                        className="shrink-0 w-[180px] snap-start text-left bg-bg-primary rounded-lg transition-all duration-150 hover:-translate-y-px hover:shadow-md cursor-pointer"
                         style={{
                             border: `${borderWidth} solid ${borderColor}`,
                             padding

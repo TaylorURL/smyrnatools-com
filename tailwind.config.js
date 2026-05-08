@@ -61,7 +61,8 @@ module.exports = {
                 'dv-spin': 'dvSpin 0.7s linear infinite',
                 'dv-fade-in': 'dvFadeIn 0.3s ease-out',
                 'dv-slide-up': 'dvSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                'dv-scale-in': 'dvScaleIn 0.2s ease-out'
+                'dv-scale-in': 'dvScaleIn 0.2s ease-out',
+                'marquee-scroll': 'marqueeScroll 60s linear infinite'
             },
             keyframes: {
                 fadeIn: {
@@ -172,6 +173,14 @@ module.exports = {
                 shimmer: {
                     '0%': { backgroundPosition: '200% 0' },
                     '100%': { backgroundPosition: '-200% 0' }
+                },
+                /* Continuous left-scroll for the Plan activity ticker.
+                 * Translates the track from 0% to -50% so the duplicate
+                 * copy of the items lines up exactly where the original
+                 * started — gives a seamless loop with no visible jump. */
+                marqueeScroll: {
+                    '0%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'translateX(-50%)' }
                 }
             }
         }

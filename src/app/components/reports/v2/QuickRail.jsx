@@ -61,7 +61,7 @@ function QuickRail({
     if (visible.length === 0 && recentItems.length === 0) return null
     return (
         <aside
-            className="rounded-xl p-4 border"
+            className="rounded-lg p-4 border"
             style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
         >
             {visible.length > 0 && (

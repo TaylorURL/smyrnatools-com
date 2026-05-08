@@ -15,7 +15,7 @@ function OverdueBanner({ count, title, dueLabel, onSubmit }) {
     // without us having to ship a separate dark-mode gradient.
     return (
         <div
-            className="flex items-center gap-3.5 rounded-xl px-4 py-3 border"
+            className="flex items-center gap-3.5 rounded-lg px-4 py-3 border"
             style={{
                 background:
                     'linear-gradient(90deg, color-mix(in srgb, #dc2626 14%, transparent), color-mix(in srgb, #f59e0b 14%, transparent))',

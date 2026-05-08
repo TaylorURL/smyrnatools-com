@@ -41,6 +41,11 @@ import ReportsSubmitView from './ReportsSubmitView'
 const _now = new Date()
 const currentMonthStartIso = new Date(_now.getFullYear(), _now.getMonth(), 1).toISOString().slice(0, 10)
 const currentMonthEndIso = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toISOString().slice(0, 10)
+/* Loss Reports defaults to the full calendar year — incidents are sparse
+ * and a month-only window almost always renders an empty list, forcing the
+ * user to widen the range manually on every visit. */
+const currentYearStartIso = new Date(_now.getFullYear(), 0, 1).toISOString().slice(0, 10)
+const currentYearEndIso = new Date(_now.getFullYear(), 11, 31).toISOString().slice(0, 10)
 
 const REPORTS_START_DATE = new Date('2025-07-20')
 
@@ -185,8 +190,8 @@ function ReportsView() {
     const [reviewDateFrom, setReviewDateFrom] = useState(currentMonthStartIso)
     const [reviewDateTo, setReviewDateTo] = useState(currentMonthEndIso)
     const [lossSort, setLossSort] = useState('newest')
-    const [lossDateFrom, setLossDateFrom] = useState(currentMonthStartIso)
-    const [lossDateTo, setLossDateTo] = useState(currentMonthEndIso)
+    const [lossDateFrom, setLossDateFrom] = useState(currentYearStartIso)
+    const [lossDateTo, setLossDateTo] = useState(currentYearEndIso)
     const [lossDumpLocation, setLossDumpLocation] = useState('all')
     const [lossReason, setLossReason] = useState('all')
 
@@ -1049,13 +1054,13 @@ function ReportsView() {
     const pillTabs = [
         ...(hasAnyAssigned ? [{ icon: 'fa-file-alt', key: 'all', label: 'My Reports' }] : []),
         ...(hasAnyReviewPermission ? [{ icon: 'fa-clipboard-check', key: 'review', label: 'Review' }] : []),
+        ...(hasLostLoadsPermission ? [{ icon: 'fa-truck', key: 'lost_loads', label: 'Loss Reports' }] : []),
         ...(hasOneOffReviewPermission?.qc_strength || hasQCStrengthPermission
             ? [{ icon: 'fa-flask', key: 'quality', label: 'Quality Reports' }]
             : []),
         ...(hasOneOffReviewPermission?.qc_strength || hasQCStrengthPermission
             ? [{ icon: 'fa-clipboard-list', key: 'quality_issues', label: 'Quality Issues' }]
-            : []),
-        ...(hasLostLoadsPermission ? [{ icon: 'fa-truck', key: 'lost_loads', label: 'Loss Reports' }] : [])
+            : [])
     ]
 
     const accent = preferences.accentColor || '#1e3a5f'
@@ -1068,7 +1073,7 @@ function ReportsView() {
             {[1, 2, 3, 4].map((i) => (
                 <div
                     key={i}
-                    className="flex-1 bg-white border border-border-light rounded-xl px-4 py-3.5 animate-pulse"
+                    className="flex-1 bg-bg-primary border border-border-light rounded-lg px-4 py-3.5 animate-pulse"
                 >
                     <div className="h-2.5 w-16 rounded bg-slate-200 mb-2" />
                     <div className="h-4 w-24 rounded bg-slate-200 mb-2.5" />
@@ -1078,7 +1083,7 @@ function ReportsView() {
         </div>
     )
     const fuseSkeleton = (
-        <div className="bg-white border border-border-light rounded-xl px-5 py-4 flex items-center gap-5 animate-pulse">
+        <div className="bg-bg-primary border border-border-light rounded-lg px-5 py-4 flex items-center gap-5 animate-pulse">
             <div className="hidden sm:block">
                 <div className="h-2.5 w-14 rounded bg-slate-200 mb-2" />
                 <div className="h-4 w-28 rounded bg-slate-200" />
@@ -1093,7 +1098,10 @@ function ReportsView() {
     const trackGridSkeleton = (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white rounded-xl border border-border-light overflow-hidden animate-pulse">
+                <div
+                    key={i}
+                    className="bg-bg-primary rounded-lg border border-border-light overflow-hidden animate-pulse"
+                >
                     <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border-light">
                         <div className="w-9 h-9 rounded-lg bg-slate-200" />
                         <div className="flex-1">
@@ -1116,7 +1124,7 @@ function ReportsView() {
         </div>
     )
     const listRowsSkeleton = (
-        <div className="bg-white rounded-xl border border-border-light overflow-hidden">
+        <div className="bg-bg-primary rounded-lg border border-border-light overflow-hidden">
             {[1, 2, 3, 4, 5].map((i) => (
                 <div
                     key={i}
@@ -1134,7 +1142,7 @@ function ReportsView() {
         </div>
     )
     const railSkeleton = (
-        <aside className="bg-white border border-border-light rounded-xl p-4 animate-pulse">
+        <aside className="bg-bg-primary border border-border-light rounded-lg p-4 animate-pulse">
             <div className="flex items-center gap-2 mb-3">
                 <div className="w-4 h-4 rounded bg-slate-200" />
                 <div className="h-3.5 w-28 rounded bg-slate-200" />
@@ -1192,7 +1200,7 @@ function ReportsView() {
                 onRefresh={triggerRefresh}
             />
 
-            <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4">
+            <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-5">
                 {showBootSkeleton && renderV2Skeleton('grid')}
                 {showAllSkeleton && renderV2Skeleton('grid')}
                 {showReviewSkeleton && renderV2Skeleton('list')}
@@ -1253,7 +1261,7 @@ function ReportsView() {
                                 </div>
                                 {isSelectedWeekFuture ? (
                                     <div
-                                        className="rounded-xl border py-12 px-4 text-center text-sm"
+                                        className="rounded-lg border py-12 px-4 text-center text-sm"
                                         style={{
                                             background: 'var(--bg-primary)',
                                             borderColor: 'var(--border-light)',
@@ -1322,7 +1330,7 @@ function ReportsView() {
                                 (reviewDateTo ? 1 : 0)
                             }
                         >
-                            <div className="bg-white border border-border-light rounded-xl px-3 py-2.5">
+                            <div className="bg-bg-primary border border-border-light rounded-lg px-3 py-2.5">
                                 <ReviewFilterBar
                                     statusFilter={reviewStatusFilter}
                                     onStatusFilterChange={setReviewStatusFilter}
@@ -1395,7 +1403,7 @@ function ReportsView() {
                                     (lossDateTo ? 1 : 0)
                                 }
                             >
-                                <div className="bg-white border border-border-light rounded-xl px-3 py-2.5">
+                                <div className="bg-bg-primary border border-border-light rounded-lg px-3 py-2.5">
                                     <LossFilterBar
                                         dumpLocationFilter={lossDumpLocation}
                                         onDumpLocationFilterChange={setLossDumpLocation}
@@ -1490,7 +1498,7 @@ function ReportsView() {
                                     (qcDateTo ? 1 : 0)
                                 }
                             >
-                                <div className="bg-white border border-border-light rounded-xl px-3 py-2.5">
+                                <div className="bg-bg-primary border border-border-light rounded-lg px-3 py-2.5">
                                     <QcFilterBar
                                         qcTypeFilter={qcTypeFilter}
                                         onQcTypeFilterChange={setQcTypeFilter}
@@ -1921,7 +1929,7 @@ function MyReportsSummaryBar({
     const daysHint = isPast ? 'cutoff passed' : isFuture ? 'until opens' : `to ${cutoffLabel}`
     return (
         <div
-            className="shrink-0 flex items-center gap-2 overflow-x-auto px-3 py-2 rounded-xl border"
+            className="shrink-0 flex items-center gap-2 overflow-x-auto px-3 py-2 rounded-lg border"
             style={{
                 background: urgent ? 'linear-gradient(90deg, #fee2e240, #fef3c740)' : 'var(--bg-primary)',
                 borderColor: urgent ? '#fbbf24' : 'var(--border-light)'

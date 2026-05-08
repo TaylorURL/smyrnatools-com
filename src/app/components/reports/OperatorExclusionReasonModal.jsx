@@ -7,7 +7,7 @@ function OperatorExclusionReasonModal({ onConfirm, onCancel }) {
     const [selectedReason, setSelectedReason] = useState('')
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white rounded-2xl p-5 sm:p-8 max-w-md w-full shadow-2xl">
+            <div className="bg-bg-primary rounded-2xl p-5 sm:p-8 max-w-md w-full shadow-2xl">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 flex items-center justify-center rounded-full bg-amber-100 text-amber-600">
                         <i className="fas fa-users-slash"></i>
@@ -24,10 +24,10 @@ function OperatorExclusionReasonModal({ onConfirm, onCancel }) {
                     {Object.entries(OPERATOR_EXCLUSION_REASONS).map(([key, label]) => (
                         <label
                             key={key}
-                            className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                            className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
                                 selectedReason === key
                                     ? 'border-sky-500 bg-sky-50'
-                                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-slate-50'
+                                    : 'border-gray-200 bg-bg-primary hover:border-gray-300 hover:bg-slate-50'
                             }`}
                         >
                             <input

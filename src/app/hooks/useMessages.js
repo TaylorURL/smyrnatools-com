@@ -15,6 +15,10 @@ export function useMessages(userId) {
     const [allMessages, setAllMessages] = useState([])
     const [loading, setLoading] = useState(true)
     const [resolvedUserId, setResolvedUserId] = useState(null)
+    /** Map of otherUserId → { pinned, muted }. Drives the sidebar's Pinned
+     *  section + thread-level mute / pin toggles. Loaded once per session
+     *  and updated optimistically on every toggle. */
+    const [conversationFlags, setConversationFlags] = useState({})
     const hasLoadedRef = useRef(false)
     const refreshSeqRef = useRef(0)
 
@@ -23,6 +27,23 @@ export function useMessages(userId) {
         if (!userId) return
         MessageService.resolveId(userId).then((id) => setResolvedUserId(id))
     }, [userId])
+
+    // Load pin/mute flags whenever the resolved user ID lands.
+    useEffect(() => {
+        if (!resolvedUserId) return
+        let cancelled = false
+        MessageService.getConversationFlags(resolvedUserId).then((rows) => {
+            if (cancelled) return
+            const map = {}
+            rows.forEach((row) => {
+                map[row.otherUserId] = { muted: row.muted, pinned: row.pinned }
+            })
+            setConversationFlags(map)
+        })
+        return () => {
+            cancelled = true
+        }
+    }, [resolvedUserId])
 
     /** Full refresh — used on initial load and as a fallback. */
     const refresh = useCallback(async () => {
@@ -276,6 +297,60 @@ export function useMessages(userId) {
         [userId, resolvedUserId]
     )
 
+    /**
+     * Optimistically flip a single flag (`pinned` or `muted`) on a
+     * conversation, then persist. On persistence failure the optimistic
+     * value remains — the row is re-fetched on next mount via the load
+     * effect above so the UI eventually reconciles.
+     */
+    const setConversationFlag = useCallback(
+        async (otherUserId, patch) => {
+            if (!resolvedUserId || !otherUserId) return
+            setConversationFlags((prev) => {
+                const current = prev[otherUserId] || { muted: false, pinned: false }
+                return { ...prev, [otherUserId]: { ...current, ...patch } }
+            })
+            await MessageService.setConversationFlag(resolvedUserId, otherUserId, patch)
+        },
+        [resolvedUserId]
+    )
+
+    const togglePin = useCallback(
+        (otherUserId) => {
+            const current = conversationFlags[otherUserId]
+            return setConversationFlag(otherUserId, { pinned: !current?.pinned })
+        },
+        [conversationFlags, setConversationFlag]
+    )
+
+    const toggleMute = useCallback(
+        (otherUserId) => {
+            const current = conversationFlags[otherUserId]
+            return setConversationFlag(otherUserId, { muted: !current?.muted })
+        },
+        [conversationFlags, setConversationFlag]
+    )
+
+    /** Quick-access lookup sets — derived once per flag-state change. */
+    const pinnedSet = useMemo(
+        () =>
+            new Set(
+                Object.entries(conversationFlags)
+                    .filter(([, v]) => v.pinned)
+                    .map(([k]) => k)
+            ),
+        [conversationFlags]
+    )
+    const mutedSet = useMemo(
+        () =>
+            new Set(
+                Object.entries(conversationFlags)
+                    .filter(([, v]) => v.muted)
+                    .map(([k]) => k)
+            ),
+        [conversationFlags]
+    )
+
     return {
         conversations,
         deleteMessage,
@@ -284,9 +359,13 @@ export function useMessages(userId) {
         markAllRead,
         markAsRead,
         markConversationRead,
+        mutedSet,
+        pinnedSet,
         refresh,
         resolvedUserId,
         sendMessage,
+        toggleMute,
+        togglePin,
         unreadCount
     }
 }

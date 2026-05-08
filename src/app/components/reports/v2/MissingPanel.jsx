@@ -26,7 +26,7 @@ const computeMissingDue = (weekIso) => {
  */
 function MissingPanel({ missing = [], getUserName, onNudge, weekRangeLabel }) {
     return (
-        <aside className="bg-white border border-gray-200 rounded-xl p-4">
+        <aside className="bg-bg-primary border border-gray-200 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-1">
                 <i className="fas fa-exclamation-circle text-[13px] text-red-600" />
                 <span className="font-bold text-[14px]" style={{ fontFamily: 'var(--font-heading)' }}>
@@ -81,7 +81,7 @@ function MissingPanel({ missing = [], getUserName, onNudge, weekRangeLabel }) {
                                 <button
                                     type="button"
                                     onClick={() => onNudge?.(item)}
-                                    className="px-2.5 py-1 text-[10.5px] font-semibold rounded-md border border-gray-200 bg-white text-slate-700 hover:bg-slate-50 shrink-0 mt-0.5 inline-flex items-center gap-1"
+                                    className="px-2.5 py-1 text-[10.5px] font-semibold rounded-md border border-gray-200 bg-bg-primary text-slate-700 hover:bg-slate-50 shrink-0 mt-0.5 inline-flex items-center gap-1"
                                 >
                                     <i className="fas fa-paper-plane text-[9px]" /> Nudge
                                 </button>

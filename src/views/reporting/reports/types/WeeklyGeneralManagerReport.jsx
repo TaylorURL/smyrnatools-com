@@ -577,7 +577,7 @@ export function GeneralManagerSubmitPlugin({ form, setForm, plants = [], readOnl
     return (
         <>
             {aiLoading && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 mb-6">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 mb-6">
                     <div className="flex items-center justify-center gap-2 p-4 text-sm text-slate-500">
                         <i className="fas fa-circle-notch fa-spin"></i>
                         <span>Generating AI Analysis...</span>
@@ -597,7 +597,7 @@ export function GeneralManagerSubmitPlugin({ form, setForm, plants = [], readOnl
                 </div>
             )}
             {aiAnalysis && !aiLoading && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 mb-6">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 mb-6">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-accent text-base">
                             <i className="fas fa-robot"></i>
@@ -613,7 +613,7 @@ export function GeneralManagerSubmitPlugin({ form, setForm, plants = [], readOnl
                     </div>
                     <div className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">{aiAnalysis}</div>
                     <button
-                        className="mt-3 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 cursor-pointer hover:bg-slate-100"
+                        className="mt-3 rounded-md border border-slate-300 bg-bg-primary px-3 py-1.5 text-xs text-slate-600 cursor-pointer hover:bg-slate-100"
                         onClick={handleRegenerateAI}
                     >
                         <i className="fas fa-sync-alt mr-1.5"></i>
@@ -621,7 +621,7 @@ export function GeneralManagerSubmitPlugin({ form, setForm, plants = [], readOnl
                     </button>
                 </div>
             )}
-            <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
+            <div className="rounded-lg border border-gray-200 bg-bg-primary p-6 mb-6">
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                     <div className="text-lg font-semibold text-slate-800 m-0">Per-Plant Summary</div>
                 </div>
@@ -645,13 +645,13 @@ export function GeneralManagerSubmitPlugin({ form, setForm, plants = [], readOnl
                                 yardage: `total_yardage_${code}`
                             }
                             return (
-                                <div key={code} className="rounded-xl border border-gray-200 bg-white p-4 mb-4">
+                                <div key={code} className="rounded-lg border border-gray-200 bg-bg-primary p-4 mb-4">
                                     <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                                         <div className="text-lg font-semibold text-slate-800 m-0">
                                             {p.plant_name} ({code})
                                         </div>
                                     </div>
-                                    <table className="w-full border-collapse mt-3 rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                    <table className="w-full border-collapse mt-3 rounded-lg overflow-hidden border border-gray-200 bg-bg-primary">
                                         <thead>
                                             <tr>
                                                 {['Metric', 'Last Week', 'This Week', 'Variance'].map((h) => (
@@ -916,7 +916,7 @@ export function GeneralManagerSubmitPlugin({ form, setForm, plants = [], readOnl
                             const r = effReports[effIdx]
                             const insights = ReportService.getPlantProductionInsights(r.rows || [])
                             return (
-                                <div className="rounded-xl border border-gray-200 bg-white p-4">
+                                <div className="rounded-lg border border-gray-200 bg-bg-primary p-4">
                                     <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                                         <div className="text-lg font-semibold text-slate-800 m-0">
                                             {r.plant_name} ({r.plant_code}){r.report_date ? ` - ${r.report_date}` : ''}
@@ -993,9 +993,9 @@ export function GeneralManagerSubmitPlugin({ form, setForm, plants = [], readOnl
                             )
                         })()}
                         <div className="text-lg font-semibold text-slate-800">Aggregate Production</div>
-                        <div className="rounded-xl border border-gray-200 bg-white p-4">
+                        <div className="rounded-lg border border-gray-200 bg-bg-primary p-4">
                             {aggReport ? (
-                                <table className="w-full border-collapse mt-4 rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                <table className="w-full border-collapse mt-4 rounded-lg overflow-hidden border border-gray-200 bg-bg-primary">
                                     <thead>
                                         <tr>
                                             {['Material', 'Last Week', 'This Week', 'Variance'].map((h) => (
@@ -1049,7 +1049,7 @@ export function GeneralManagerReviewPlugin({ form: _form, plants = [], weekIso }
     const { report: rmiReport, loading } = useReportForWeek(weekIso, 'ready_mix_instructor')
     return (
         <>
-            <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
+            <div className="rounded-lg border border-gray-200 bg-bg-primary p-6 mb-6">
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                     <div className="text-lg font-semibold text-slate-800 m-0">General Manager Report</div>
                 </div>

@@ -58,7 +58,7 @@ function ThirdPartyLabDetailModal({ report, getUserName, onClose, onReviewed }) 
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-none sm:rounded-2xl shadow-xl border-0 sm:border border-slate-200 w-full sm:max-w-2xl min-h-screen sm:min-h-0 sm:my-8"
+                className="bg-bg-primary rounded-none sm:rounded-2xl shadow-xl border-0 sm:border border-slate-200 w-full sm:max-w-2xl min-h-screen sm:min-h-0 sm:my-8"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}

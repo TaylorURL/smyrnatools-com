@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 
 import { GeocodeService } from '../../services/GeocodeService'
+import { RoutingService } from '../../services/RoutingService'
 
-/* Concrete trucks average ~40 mph (~64 km/h) across the mixed urban / highway
- * legs of a typical Smyrna pour. We convert haversine-km to drive-time
- * minutes via this assumption, then add a 25% slack factor so a plant that
- * tests as a 60-min haul on flat distance doesn't sneak in once routing
- * detours and city traffic are factored in. */
+/* Fallback math when the OSRM router is unreachable. Concrete trucks
+ * average ~40 mph (~64 km/h) across the mixed urban/highway legs of a
+ * typical Smyrna pour. Haversine-km × this factor + 25% routing slack
+ * gives a defensible estimate, but it's a straight-line guess — same
+ * 3-digit ZIP region plants can sit on opposite sides of the metro and
+ * read as equidistant. The OSRM lookup above is the primary signal;
+ * this only kicks in when the routing call fails. */
 const KM_PER_MIN = 64 / 60
 const ROUTING_SLACK = 1.25
 
@@ -24,13 +27,24 @@ const haversineKm = (a, b) => {
     return earthRadiusKm * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
 }
 
+const haversineMinutes = (a, b) => {
+    const km = haversineKm(a, b)
+    if (km == null) return null
+    return Math.round((km / KM_PER_MIN) * ROUTING_SLACK)
+}
+
 /**
  * Geocodes the job address and every plant address via `GeocodeService`,
- * then returns an estimated one-way drive-time (in minutes) per plant code.
+ * then asks `RoutingService` (OSRM's free public demo server) for
+ * actual road-network driving minutes per plant. Falls back to a
+ * haversine-based estimate when OSRM is unreachable so the recommender
+ * always has SOME signal — but the OSRM number is far less ambiguous
+ * for plants that share a 3-digit ZIP prefix but live on opposite sides
+ * of the metro.
  *
- * Results stream in incrementally as each plant resolves, so the booking
- * recommender can re-rank against partial data without waiting for the
- * slowest geocode.
+ * Results stream in incrementally as each plant resolves, so the
+ * booking recommender can re-rank against partial data without waiting
+ * for the slowest lookup.
  *
  * @param {object} args
  * @param {string} args.jobAddress - Free-form job address typed by dispatch.
@@ -68,9 +82,13 @@ export default function useAddressDistances({ jobAddress, plants }) {
                 const plantCoord = await GeocodeService.geocode(plantAddress)
                 if (cancelled) return
                 if (!plantCoord) continue
-                const km = haversineKm(jobCoord, plantCoord)
-                if (km == null) continue
-                const minutes = Math.round((km / KM_PER_MIN) * ROUTING_SLACK)
+                /* Real road-network minutes via OSRM first, then fall
+                 * back to the haversine estimate when the router fails
+                 * (rate limit, transient network error, etc.). */
+                const routedMinutes = await RoutingService.getDrivingMinutes(plantCoord, jobCoord)
+                if (cancelled) return
+                const minutes = Number.isFinite(routedMinutes) ? routedMinutes : haversineMinutes(jobCoord, plantCoord)
+                if (!Number.isFinite(minutes)) continue
                 setMinutesByPlantCode((prev) => ({ ...prev, [plantCode]: minutes }))
             }
             if (!cancelled) setIsLoading(false)

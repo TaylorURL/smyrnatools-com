@@ -263,7 +263,7 @@ export default function DashboardView() {
                 regionDisplayName={regionDisplayName}
             />
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
-                <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 lg:px-6 flex gap-4">
+                <div className="w-full px-3 sm:px-4 lg:px-6 flex gap-4">
                     {!isMobile && (
                         <DashboardScrollSpyNav
                             accent={accentColor}

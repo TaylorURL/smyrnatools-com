@@ -255,45 +255,163 @@ export function DemandSkeleton() {
     )
 }
 
-export function RealtimeSkeleton() {
+/** Statistics tab — controls bar, KPI strip, horizontal section tabs, then a
+ *  left rail + main content split that mirrors the real layout. Sub-pages
+ *  expect a single panel + bar chart so the placeholder shows that shape. */
+export function StatisticsSkeleton() {
     return (
-        <div className="flex flex-col flex-1 min-h-0 overflow-auto px-4 py-3">
-            <div className="flex items-center gap-3 mb-3">
-                <Bar className="h-4 w-24" />
-                <Bar className="h-3 w-20" />
-                <Bar className="h-3 w-24" />
+        <div className="flex-1 min-h-0 overflow-auto px-3 sm:px-4 md:px-6 py-4 flex flex-col gap-4">
+            <div className="flex items-center flex-wrap gap-2">
+                <Bar className="h-7 w-24" />
+                <Bar className="h-7 w-24" />
+                <Bar className="h-7 w-32" />
                 <div className="flex-1" />
                 <Bar className="h-7 w-28" />
                 <Bar className="h-7 w-24" />
             </div>
             <StatGroupSkeleton cols={6} />
-            <PanelShell>
-                <TableHeaderRow widths={['10%', '10%', '24%', '10%', '10%', '24%', '12%']} />
-                <TableBodyRows count={6} widths={['10%', '10%', '24%', '10%', '10%', '24%', '12%']} />
-            </PanelShell>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                <div className="lg:col-span-2">
-                    <PanelShell>
-                        <TableHeaderRow widths={['18%', '14%', '14%', '14%', '20%']} />
-                        <TableBodyRows count={6} widths={['18%', '14%', '14%', '14%', '20%']} />
+            <div className="flex flex-wrap gap-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                    <Bar key={i} className="h-7 w-28" />
+                ))}
+            </div>
+            <div className="flex gap-4 items-start">
+                <div
+                    className="hidden md:flex flex-col gap-2 shrink-0 rounded p-3"
+                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)', width: 200 }}
+                >
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <Bar key={i} className="h-3 w-32" />
+                    ))}
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col gap-3">
+                    <div className="flex items-baseline gap-2">
+                        <Bar className="h-4 w-32" />
+                        <Bar className="h-3 w-48" />
+                    </div>
+                    <PanelShell title={false} className="mb-0">
+                        <div className="px-3 py-3 flex flex-col gap-2.5">
+                            <Bar className="h-3 w-1/3" />
+                            <Bar className="h-3 w-2/3" />
+                            <Bar className="h-3 w-1/2" />
+                        </div>
+                    </PanelShell>
+                    <PanelShell title={false} className="mb-0">
+                        <div className="px-3 py-3" style={{ height: 280 }}>
+                            <div className="flex items-end gap-2 h-full">
+                                {Array.from({ length: 12 }).map((_, i) => (
+                                    <Bar key={i} className="flex-1" style={{ height: `${30 + ((i * 17) % 60)}%` }} />
+                                ))}
+                            </div>
+                        </div>
+                    </PanelShell>
+                    <PanelShell title={false} className="mb-0">
+                        <TableHeaderRow widths={['20%', '15%', '15%', '15%', '20%', '15%']} />
+                        <TableBodyRows count={6} widths={['20%', '15%', '15%', '15%', '20%', '15%']} />
                     </PanelShell>
                 </div>
-                <PanelShell>
-                    {Array.from({ length: 8 }).map((_, i) => (
+            </div>
+        </div>
+    )
+}
+
+/** Call List tab — 4-stat strip on top, 2-column body matching the real
+ *  layout: left = dormant list (search + sort + rows), right = detail panel
+ *  (header + KPI strip + 2x2 outcome grid + textarea + history). */
+export function CallListSkeleton() {
+    return (
+        <div className="flex-1 min-h-0 flex flex-col gap-3 px-3 sm:px-4 lg:px-6 py-4 sm:py-5 overflow-hidden">
+            <StatGroupSkeleton cols={4} />
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3">
+                <section className="lg:col-span-5 flex flex-col gap-2 min-h-0">
+                    <div className="flex items-center gap-2">
+                        <Bar className="h-4 w-44" />
+                        <div className="flex-1" />
+                        <Bar className="h-6 w-20" />
+                    </div>
+                    <div
+                        className="flex-1 min-h-0 flex flex-col rounded overflow-hidden"
+                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    >
                         <div
-                            key={i}
                             className="flex items-center gap-2 px-3 py-2"
                             style={{ borderBottom: '1px solid var(--border-light)' }}
                         >
-                            <Bar className="h-2.5 w-10 shrink-0" />
-                            <Bar className="h-2.5 w-14 shrink-0" />
-                            <div className="flex-1">
+                            <Bar className="h-7 flex-1" />
+                            <Bar className="h-7 w-32" />
+                        </div>
+                        {Array.from({ length: 10 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="flex items-center gap-2.5 px-3 py-2"
+                                style={{ borderBottom: '1px solid var(--border-light)' }}
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <Bar className="h-3 w-2/3 mb-1.5" />
+                                    <Bar className="h-2.5 w-1/2" />
+                                </div>
+                                <Bar className="h-5 w-12 rounded-full" />
+                            </div>
+                        ))}
+                    </div>
+                </section>
+                <section className="lg:col-span-7 flex flex-col gap-2 min-h-0">
+                    <div className="flex items-center gap-2">
+                        <Bar className="h-4 w-20" />
+                    </div>
+                    <div
+                        className="flex-1 min-h-0 rounded flex flex-col"
+                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    >
+                        <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                            <div className="flex items-center gap-2">
+                                <Bar className="h-4 w-44" />
+                                <div className="flex-1" />
+                                <Bar className="h-3 w-32" />
+                            </div>
+                            <Bar className="h-3 w-32 mt-1.5" />
+                        </div>
+                        <div
+                            className="px-4 py-2 flex items-center gap-3"
+                            style={{ borderBottom: '1px solid var(--border-light)' }}
+                        >
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <Bar key={i} className="h-3 w-20" />
+                            ))}
+                        </div>
+                        <div
+                            className="px-4 py-3 flex flex-col gap-2.5"
+                            style={{ borderBottom: '1px solid var(--border-light)' }}
+                        >
+                            <div className="grid grid-cols-2 gap-2">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <Bar key={i} className="h-9" />
+                                ))}
+                            </div>
+                            <Bar className="h-14 rounded-md" />
+                            <div className="flex justify-end">
+                                <Bar className="h-7 w-24" />
+                            </div>
+                        </div>
+                        <div className="px-4 py-1.5" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                            <Bar className="h-2.5 w-32" />
+                        </div>
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="px-3 py-2 flex flex-col gap-1.5"
+                                style={{ borderBottom: '1px solid var(--border-light)' }}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Bar className="h-4 w-16 rounded-full" />
+                                    <div className="flex-1" />
+                                    <Bar className="h-2.5 w-24" />
+                                </div>
                                 <Bar className="h-2.5 w-3/4" />
                             </div>
-                            <Bar className="h-2.5 w-10 shrink-0" />
-                        </div>
-                    ))}
-                </PanelShell>
+                        ))}
+                    </div>
+                </section>
             </div>
         </div>
     )
@@ -307,8 +425,10 @@ export function PlanTabSkeleton({ mode }) {
             return <FlowSkeleton />
         case 'demand':
             return <DemandSkeleton />
-        case 'realtime':
-            return <RealtimeSkeleton />
+        case 'statistics':
+            return <StatisticsSkeleton />
+        case 'call-list':
+            return <CallListSkeleton />
         case 'dashboard':
         default:
             return <DashboardSkeleton />

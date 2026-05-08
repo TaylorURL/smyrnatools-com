@@ -100,7 +100,7 @@ function PageHeader({ accentColor, dueDate, onBack, plantCode, status, statusCol
 
 function LoadingShell({ accentColor, label, onBack, title }) {
     return (
-        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="flex h-full w-full flex-col overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
             <PageHeader accentColor={accentColor} label={label} onBack={onBack} title={title} />
             <div
                 className="flex-1 flex items-center justify-center gap-2 text-[12.5px]"
@@ -181,16 +181,19 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
 
     const handleDownload = useCallback(() => {
         try {
+            // Plant + completion date + submitter are all printed as fillable
+            // fields on the PDF itself, so we no longer pass plantCode/dueDate
+            // through here — the worker writes them in by hand at the plant
+            // they're actually working at.
             downloadMaintenanceFormPdf(formObj, {
-                dueDate: dueDate || '',
-                frequency: formObj?.frequency || '',
-                plantCode: plantCode || ''
+                accentColor,
+                frequency: formObj?.frequency || ''
             })
             setDownloadedAt(new Date())
         } catch (err) {
             setError(err?.message || 'Failed to generate PDF.')
         }
-    }, [formObj, dueDate, plantCode])
+    }, [accentColor, formObj])
 
     const handleFile = useCallback((file) => {
         if (!file) return
@@ -241,7 +244,7 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
     }, [pdfFile, formObj, dueDate, item, plantCode, submitterNotes, onSubmitted])
 
     return (
-        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="flex h-full w-full flex-col overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
             <PageHeader
                 accentColor={accentColor}
                 dueDate={formatMaintenanceDateShort(dueDate || item?.due_date)}
@@ -424,7 +427,7 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
     )
 
     return (
-        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="flex h-full w-full flex-col overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
             <PageHeader
                 accentColor={accentColor}
                 dueDate={formatMaintenanceDateShort(submission?.due_date || item?.due_date)}
@@ -519,7 +522,7 @@ function ViewOnlyMode({ accentColor, formObj, item, onBack, submission }) {
         [submission?.scanned_pdf_url]
     )
     return (
-        <div className="flex min-h-screen w-full flex-col" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="flex h-full w-full flex-col overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
             <PageHeader
                 accentColor={accentColor}
                 dueDate={formatMaintenanceDateShort(submission?.due_date || item?.due_date)}

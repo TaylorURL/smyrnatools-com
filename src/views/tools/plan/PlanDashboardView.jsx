@@ -1,17 +1,13 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
+import PlanDashboardActivityFeed from '../../../app/components/plan/PlanDashboardActivityFeed'
 import { PlanDashboardAtAGlance } from '../../../app/components/plan/PlanDashboardAtAGlance'
+import PlanDashboardClockInBoard from '../../../app/components/plan/PlanDashboardClockInBoard'
 import { PlanInsightsList, PlanYardageByPlantList } from '../../../app/components/plan/PlanDashboardLists'
-import {
-    DASHBOARD_NAV_SECTIONS,
-    PlanDashboardSideNav,
-    YOUR_SECTION_LABELS
-} from '../../../app/components/plan/PlanDashboardSideNav'
 import { PlanChecklistRow, PlanFlowSummary } from '../../../app/components/plan/PlanDashboardYourScope'
 import PlanFlowPreview from '../../../app/components/plan/PlanFlowPreview'
 import PlanNotesSection from '../../../app/components/plan/PlanNotesSection'
 import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
-import { usePlanScrollSpy } from '../../../app/hooks/usePlanScrollSpy'
 import {
     computeDashboardJobCoverage,
     computeDashboardPullUpRows,
@@ -23,6 +19,25 @@ import {
     sumPlanYardage,
     writePlanMeta
 } from '../../../utils/PlanDashboardUtility'
+
+/** Display labels for the contextual "Your X" panel header — flips with
+ *  the user's scope kind (plant / district / region / dispatch). */
+const YOUR_SECTION_LABELS = {
+    dispatch: 'Your Dispatch',
+    district: 'Your District',
+    plant: 'Your Plant',
+    region: 'Your Region'
+}
+
+/** Smooth scroll to a section by id within the dashboard's scroll container.
+ *  Replaces the previous scrollspy-driven `jumpTo` so the dashboard no
+ *  longer needs the scrollspy hook with the side-nav gone. */
+const scrollSectionIntoView = (containerRef, id) => {
+    const root = containerRef.current
+    if (!root) return
+    const el = root.querySelector(`#${id}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const Card = (props) => <SharedPanel {...props} />
 
@@ -60,7 +75,8 @@ const useYourScope = (yourPlantScope) => {
 /**
  * PlanDashboardView — 3-column daily-plan dashboard.
  *
- * Left nav: sticky scrollspy with anchors to each content section.
+ * Left: realtime activity feed of trucks loaded + jobs completed, derived
+ * from `detailByOrderId` so it updates as `useDetailOrders` polls.
  * Center: stats, personal (plant-manager) dispatch reminders, Special
  * Attention + QC Attention job lists (persisted via plan metadata),
  * insights, yardage breakdown, timeline preview, and notes.
@@ -70,6 +86,7 @@ function PlanDashboardView({
     accentColor,
     assignments,
     canEdit = true,
+    detailByOrderId,
     earliestClockIn,
     getTravelTime,
     mixerCountsByPlant,
@@ -243,19 +260,7 @@ function PlanDashboardView({
         : `No inbound activity to your ${scopeNoun} today`
 
     const hasInsights = planInsights.warnings.length + planInsights.suggestions.length > 0
-    const [activeSection, jumpTo] = usePlanScrollSpy({
-        deps: [
-            hasYourScope,
-            planInsights.warnings.length,
-            planInsights.suggestions.length,
-            stats.length,
-            validAssignmentCount,
-            specialJobs.length,
-            qcJobs.length
-        ],
-        scrollContainerRef,
-        sections: DASHBOARD_NAV_SECTIONS
-    })
+    const jumpTo = useCallback((id) => scrollSectionIntoView(scrollContainerRef, id), [])
 
     const senderCount = new Set((assignments || []).filter((a) => a.fromPlant).map((a) => a.fromPlant)).size
     const receiverCount = new Set((assignments || []).filter((a) => a.toPlant).map((a) => a.toPlant)).size
@@ -266,19 +271,11 @@ function PlanDashboardView({
 
     return (
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-            <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 lg:px-6 flex gap-4">
-                <PlanDashboardSideNav
-                    accent={accentColor}
-                    activeId={activeSection}
-                    compactionCount={pullUpRecommendations.length}
-                    hasInsights={hasInsights}
-                    hasYourScope={hasYourScope}
-                    onJump={jumpTo}
-                    openWindowsCount={suggestedSlotRecommendations.length}
-                    sections={DASHBOARD_NAV_SECTIONS}
-                    specialCount={specialJobs.length}
-                    qcCount={qcJobs.length}
-                    yourSectionLabel={yourSectionLabel}
+            <div className="w-full px-3 sm:px-4 lg:px-6 flex gap-4">
+                <PlanDashboardActivityFeed
+                    detailByOrderId={detailByOrderId}
+                    plantNameByCode={plantNameByCode}
+                    plantProduction={plantProduction}
                 />
 
                 <div className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
@@ -482,6 +479,22 @@ function PlanDashboardView({
                                         : `Nothing being sent outside your ${scopeNoun} today.`}
                                 </div>
                             )}
+                            {/* Operator clock-in roster — for plant scope it's
+                             * a single detailed card; for district/region
+                             * scope it grids one card per plant in scope so
+                             * the manager sees clock-ins + leave-offs across
+                             * their whole coverage area in one place. */}
+                            <div className="mt-4">
+                                <PlanDashboardClockInBoard
+                                    accentColor={accentColor}
+                                    kind={yourSectionKind}
+                                    planDate={planDate}
+                                    plantNameByCode={plantNameByCode}
+                                    plantProduction={plantProduction}
+                                    scopePlantCodes={scopePlantCodes}
+                                    stats={stats}
+                                />
+                            </div>
                         </Card>
                     )}
 

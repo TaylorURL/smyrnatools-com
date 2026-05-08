@@ -1,5 +1,5 @@
 {
-  "version": "40.0.36",
+  "version": "41.0.0",
   "projectName": "smyrnatools.com",
   "branch": "core",
   "provider": "claude-code",
