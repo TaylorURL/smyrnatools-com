@@ -452,16 +452,21 @@ function PlanFlowMapView({
                       ]
             const isInvolved = selectedCode === a.fromPlant || selectedCode === a.toPlant
             const opacityScale = isInvolved ? 1 : selectedCode ? 0.35 : 0.85
+            // Glossy white-on-slate routing: deep slate base for body,
+            // a bright near-white dashed overlay that marches along the
+            // route on a 1.6s loop. Reads like a premium GPS app —
+            // high-contrast on light and dark tiles alike, neutral
+            // against whatever accent the user has set.
             const baseStyle = {
                 className: 'help-route-base',
-                color: '#0e7490',
-                opacity: 0.6 * opacityScale,
-                weight: isInvolved ? 6 : 5
+                color: '#0f172a',
+                opacity: 0.62 * opacityScale,
+                weight: isInvolved ? 7 : 6
             }
             const flowStyle = {
                 className: 'help-route-flow',
-                color: '#67e8f9',
-                dashArray: '14 22',
+                color: '#ffffff',
+                dashArray: '12 24',
                 lineCap: 'round',
                 opacity: opacityScale,
                 weight: isInvolved ? 4 : 3
@@ -565,26 +570,28 @@ function PlanFlowMapView({
                     background: rgba(255,255,255,0.85) !important;
                     font-size: 10px !important;
                 }
-                /* Help-route lines — a soft cyan base under a brighter
-                 * dashed overlay whose dashes march along the route on
-                 * a continuous loop. Reads as energy/flow without
-                 * stealing attention from the accent-coloured plants. */
+                /* Help-route lines — a deep slate base under a glossy
+                 * white dashed overlay that marches along the route on
+                 * a continuous loop. Reads like premium GPS routing,
+                 * neutral against any accent the user has set. */
                 .help-route-base {
                     stroke-linecap: round;
-                    filter: drop-shadow(0 0 4px rgba(8, 145, 178, 0.45));
+                    filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.55));
                 }
                 .help-route-flow {
-                    animation: help-route-flow 1.4s linear infinite;
-                    filter: drop-shadow(0 0 6px rgba(103, 232, 249, 0.7));
+                    animation: help-route-flow 1.6s linear infinite;
+                    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9))
+                            drop-shadow(0 0 14px rgba(148, 163, 184, 0.55));
                 }
                 @keyframes help-route-flow {
                     to { stroke-dashoffset: -36; }
                 }
                 html.dark .help-route-base {
-                    filter: drop-shadow(0 0 6px rgba(8, 145, 178, 0.6));
+                    filter: drop-shadow(0 0 5px rgba(15, 23, 42, 0.85));
                 }
                 html.dark .help-route-flow {
-                    filter: drop-shadow(0 0 8px rgba(103, 232, 249, 0.85));
+                    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 1))
+                            drop-shadow(0 0 18px rgba(186, 230, 253, 0.7));
                 }
             `}</style>
 

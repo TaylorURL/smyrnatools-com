@@ -330,20 +330,22 @@ export function PlanFlowPreview({
                           [fromPos.lat, fromPos.lng],
                           [toPos.lat, toPos.lng]
                       ]
+            // Match the Planner's glossy white-on-slate routing,
+            // scaled thinner for the dashboard card.
             const baseStyle = {
                 className: 'help-route-base',
-                color: '#0e7490',
+                color: '#0f172a',
                 interactive: false,
                 opacity: 0.55,
-                weight: 4
+                weight: 5
             }
             const flowStyle = {
                 className: 'help-route-flow',
-                color: '#67e8f9',
-                dashArray: '12 18',
+                color: '#ffffff',
+                dashArray: '10 20',
                 interactive: false,
                 lineCap: 'round',
-                opacity: 0.95,
+                opacity: 1,
                 weight: 2.5
             }
 
@@ -403,25 +405,27 @@ export function PlanFlowPreview({
                     font-size: 9px !important;
                     padding: 0 4px !important;
                 }
-                /* Help-route lines — same cyan/teal flowing-dash effect
-                 * as the Planner tab, scaled smaller for the dashboard
+                /* Help-route lines — same glossy white-on-slate flow as
+                 * the Planner tab, scaled smaller for the dashboard
                  * card. The dashes march continuously along the route. */
                 .help-route-base {
                     stroke-linecap: round;
-                    filter: drop-shadow(0 0 3px rgba(8, 145, 178, 0.45));
+                    filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.55));
                 }
                 .help-route-flow {
-                    animation: help-route-flow 1.4s linear infinite;
-                    filter: drop-shadow(0 0 4px rgba(103, 232, 249, 0.65));
+                    animation: help-route-flow 1.6s linear infinite;
+                    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9))
+                            drop-shadow(0 0 9px rgba(148, 163, 184, 0.5));
                 }
                 @keyframes help-route-flow {
                     to { stroke-dashoffset: -30; }
                 }
                 html.dark .help-route-base {
-                    filter: drop-shadow(0 0 4px rgba(8, 145, 178, 0.6));
+                    filter: drop-shadow(0 0 4px rgba(15, 23, 42, 0.85));
                 }
                 html.dark .help-route-flow {
-                    filter: drop-shadow(0 0 6px rgba(103, 232, 249, 0.85));
+                    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1))
+                            drop-shadow(0 0 12px rgba(186, 230, 253, 0.7));
                 }
             `}</style>
 

@@ -2,6 +2,21 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.4] - 2026-05-11
+
+- Rebuild PlanFlowPreview as a real Leaflet map with OSM tiles, replacing the old SVG canvas layout with geocoded plant markers positioned at real-world coordinates
+- Delete PlanFlowPreviewEdges and PlanFlowPreviewNode in favor of Leaflet-native markers and polylines rendered directly on the map surface
+- Add OSRM-routed flow lines between plants with animated cyan/teal dashed overlay matching the full Planner tab's visual style
+- Geocode plants missing coordinates via GeocodingUtility with region-aware state hints and cache-first lookups
+- Auto-fit map bounds to plant positions on first load with responsive height tiers for narrow, tablet, and wide viewports
+- Add dark mode support for map tiles and route glow effects via CSS filters and theme-aware drop shadows
+- Add usePlantToPlantDistances hook for computing driving distances between plant pairs
+- Extend BookOrderUtility with new planning logic and expand BookOrderView with additional UI controls
+- Add seed SQL for Freeport plant coordinates to override inaccurate OSM geocoding fallback
+- Pass plants array through from PlanDashboardView to PlanFlowPreview for coordinate-based rendering
+- Update PlanFlowMapView with expanded map integration
+- Add operator shortage badge rendering using getMissingOperators from PlanUtility on preview markers
+
 ## [41.0.3] - 2026-05-11
 
 - Add interactive Plan Flow Map view powered by Leaflet with real-world plant/job positioning, driving route rendering via OSRM, animated truck markers, and load-count flow lines
