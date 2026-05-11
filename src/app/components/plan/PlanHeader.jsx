@@ -12,11 +12,11 @@ import { PlanTabSwitcher } from './PlanTabSwitcher'
  *      realtime tab). On the Statistics tab the stepper is grayed out
  *      because the tab owns its own date range + custom-tab picker.
  *   3. `PlanActionButtons` — refresh / copy-plan / settings cog.
- *   4. `PlanTabSwitcher` — desktop-only tab toggle.
+ *   4. `PlanTabSwitcher` — desktop ladder, or a compact two-tab toggle
+ *      (Dashboard + Schedule) on mobile.
  *
  * Wraps on narrow viewports so the action buttons never clip off the
- * right edge. Mobile users get the whole thing without the tab switcher;
- * the parent component handles forcing them onto the Schedule tab.
+ * right edge.
  */
 export function PlanHeader({
     accentColor,
@@ -71,7 +71,12 @@ export function PlanHeader({
                 scheduleLastSyncedAt={scheduleLastSyncedAt}
                 showSettings={showSettings}
             />
-            {!isMobile && <PlanTabSwitcher accentColor={accentColor} onChange={onChangeViewMode} viewMode={viewMode} />}
+            <PlanTabSwitcher
+                accentColor={accentColor}
+                isMobile={isMobile}
+                onChange={onChangeViewMode}
+                viewMode={viewMode}
+            />
         </div>
     )
 }

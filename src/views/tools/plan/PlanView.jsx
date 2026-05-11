@@ -41,11 +41,14 @@ function PlanView() {
     const isDark = preferences.themeMode === 'dark'
     const isMobile = useIsMobile()
 
-    /* Mobile users are routed to the Schedule tab regardless of `viewMode`
-     * because Planner / Dashboard / etc. depend on wide layouts (zoomable
-     * canvas, sticky scrollspy) that don't fit a phone. */
+    /* Mobile users get a focused two-tab Plan surface — Dashboard
+     * (manager "Your Plant / District / Region" view + clock-ins) and
+     * Schedule (the full daily order list in card mode). Any other tab
+     * (Planner, Demand, Statistics, etc.) falls back to Dashboard
+     * because their wide layouts don't fit a phone. */
+    const MOBILE_VIEW_MODES = new Set(['dashboard', 'schedule'])
     const [viewMode, setViewModeRaw] = useState('dashboard')
-    const effectiveViewMode = isMobile ? 'schedule' : viewMode
+    const effectiveViewMode = isMobile && !MOBILE_VIEW_MODES.has(viewMode) ? 'dashboard' : viewMode
     const { planDate, setPlanDate } = usePlanDate(effectiveViewMode)
 
     /* Schedule tab's "maximize" toggle lives here so it survives the data
@@ -253,7 +256,7 @@ function PlanView() {
                                 getTravelTime={getTravelTime}
                                 mixerCountsByPlant={mixerCountsByPlant}
                                 notes={notes}
-                                onSwitchToPlanner={() => setViewMode('flow')}
+                                onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
                                 planDate={planDate}
                                 planInsights={planInsights}
                                 plantNameByCode={plantNameByCode}

@@ -2,6 +2,13 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.5] - 2026-05-11
+
+- Restyle plan flow route lines from cyan/teal to glossy white-on-slate in both PlanFlowPreview and PlanFlowMapView for a premium GPS-like appearance
+- Update route base color from teal (#0e7490) to deep slate (#0f172a) and flow overlay from cyan (#67e8f9) to white (#ffffff)
+- Adjust dash patterns, line weights, and animation timing (1.4s to 1.6s) for smoother route flow animation
+- Rework drop-shadow filters on route lines for better contrast in both light and dark modes, using layered white/slate glows instead of cyan
+
 ## [41.0.4] - 2026-05-11
 
 - Rebuild PlanFlowPreview as a real Leaflet map with OSM tiles, replacing the old SVG canvas layout with geocoded plant markers positioned at real-world coordinates

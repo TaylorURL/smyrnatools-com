@@ -2,6 +2,14 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.6] - 2026-05-11
+
+- Show PlanTabSwitcher on mobile as a compact two-tab toggle (Dashboard + Schedule) instead of hiding it entirely
+- Add mobile-specific short labels to Dashboard and Schedule tabs for a tighter fit on narrow screens
+- Allow mobile users to access the Plan Dashboard tab instead of forcing them straight to Schedule
+- Fall back to Dashboard (instead of Schedule) when a mobile user lands on a wide-layout-only tab like Planner, Demand, or Statistics
+- Hide the "switch to Planner" action on mobile since the Planner tab isn't available at narrow widths
+
 ## [41.0.5] - 2026-05-11
 
 - Restyle plan flow route lines from cyan/teal to glossy white-on-slate in both PlanFlowPreview and PlanFlowMapView for a premium GPS-like appearance
