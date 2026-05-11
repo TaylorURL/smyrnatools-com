@@ -178,34 +178,33 @@ class ReportServiceImpl {
             const eod = parseTime(row.eod_in_yard)
             const loads = Number(row.loads)
             let hours = null
-            if (start !== null && punchOut !== null) {
-                hours = (punchOut - start) / 60
+            // Wrap past midnight so overnight shifts read as real elapsed
+            // time rather than a 12-hour negative.
+            const totalMinutes = ReportUtility.diffMinutesWrapping(start, punchOut)
+            if (totalMinutes !== null) {
+                hours = totalMinutes / 60
                 if (hours > 0) totalHours += hours
             }
             if (!isNaN(loads)) totalLoads += loads
-            if (start !== null && firstLoad !== null) {
-                const elapsed = firstLoad - start
-                if (!isNaN(elapsed)) {
-                    totalElapsedStart += elapsed
-                    countElapsedStart++
-                    if (elapsed > 15)
-                        warnings.push({
-                            message: `Start to 1st Load is ${elapsed} min (> 15 min)`,
-                            row: rows.indexOf(row)
-                        })
-                }
+            const elapsedStart = ReportUtility.diffMinutesWrapping(start, firstLoad)
+            if (elapsedStart !== null) {
+                totalElapsedStart += elapsedStart
+                countElapsedStart++
+                if (elapsedStart > 15)
+                    warnings.push({
+                        message: `Start to 1st Load is ${elapsedStart} min (> 15 min)`,
+                        row: rows.indexOf(row)
+                    })
             }
-            if (eod !== null && punchOut !== null) {
-                const elapsed = punchOut - eod
-                if (!isNaN(elapsed)) {
-                    totalElapsedEnd += elapsed
-                    countElapsedEnd++
-                    if (elapsed > 20)
-                        warnings.push({
-                            message: `EOD to Punch Out is ${elapsed} min (> 20 min)`,
-                            row: rows.indexOf(row)
-                        })
-                }
+            const elapsedEnd = ReportUtility.diffMinutesWrapping(eod, punchOut)
+            if (elapsedEnd !== null) {
+                totalElapsedEnd += elapsedEnd
+                countElapsedEnd++
+                if (elapsedEnd > 20)
+                    warnings.push({
+                        message: `EOD to Punch Out is ${elapsedEnd} min (> 20 min)`,
+                        row: rows.indexOf(row)
+                    })
             }
             if (!isNaN(loads) && hours && hours > 0) {
                 loadsPerHourSum += loads / hours

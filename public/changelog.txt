@@ -2,6 +2,12 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.1] - 2026-05-08
+
+- Replace plain text input with AddressAutocomplete in PlanSettingsAddressesPanel so plant addresses get Nominatim suggestion lookup and geocode cache pre-warming
+- Add configurable inputClassName prop to AddressAutocomplete, extracting the default classes into a constant so consumers can override input styling
+- Update PlanSettingsAddressesPanel help text to describe the autocomplete workflow and its effect on route drawing and drive-time math
+
 ## [41.0.0] - 2026-05-08
 
 - Rebuild AddressAutocomplete dropdown as a portal so it renders above scroll containers instead of getting clipped, with live repositioning on scroll/resize and loading/empty-state feedback

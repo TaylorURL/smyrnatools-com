@@ -9,7 +9,8 @@ import { PlanTabSwitcher } from './PlanTabSwitcher'
  *
  *   1. Title.
  *   2. `PlanDateNav` — date stepper (or read-only "today" pill on the
- *      realtime tab).
+ *      realtime tab). On the Statistics tab the stepper is grayed out
+ *      because the tab owns its own date range + custom-tab picker.
  *   3. `PlanActionButtons` — refresh / copy-plan / settings cog.
  *   4. `PlanTabSwitcher` — desktop-only tab toggle.
  *
@@ -35,6 +36,9 @@ export function PlanHeader({
     showSettings,
     viewMode
 }) {
+    /** Statistics manages its own from/to range + range-mode tab — the
+     *  Plan-wide single-day stepper would conflict, so it's locked here. */
+    const isStatisticsTab = viewMode === 'statistics'
     return (
         <div
             className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5"
@@ -45,6 +49,10 @@ export function PlanHeader({
             </h1>
             <PlanDateNav
                 accentColor={accentColor}
+                disabled={isStatisticsTab}
+                disabledReason={
+                    isStatisticsTab ? 'Statistics uses its own date range — pick the window inside the tab' : undefined
+                }
                 isDark={isDark}
                 isRealtime={isRealtime}
                 onChange={onChangeDate}

@@ -196,8 +196,11 @@ function MiniCalendar({ onClose, onSelect, planDate }) {
 
 /** Compact prev / picker / next cluster used on every non-realtime tab.
  *  Uses neutral CSS-variable tones so it stays legible in dark mode (the
- *  previous accent-tinted styling washed out against the dark surface). */
-function DateStepper({ onChange, planDate }) {
+ *  previous accent-tinted styling washed out against the dark surface).
+ *  When `disabled`, all controls render with reduced opacity, no hover
+ *  affordance, and clicks are swallowed so the surrounding tab can own
+ *  the date scope (e.g. Statistics' built-in range + custom-tab picker). */
+function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
     const [open, setOpen] = useState(false)
     const containerRef = useRef(null)
 
@@ -217,6 +220,15 @@ function DateStepper({ onChange, planDate }) {
         }
     }, [open])
 
+    // Force-close any lingering popover the moment the stepper goes
+    // disabled — prevents the calendar from sitting open on a tab swap.
+    useEffect(() => {
+        if (disabled && open) setOpen(false)
+    }, [disabled, open])
+
+    const buttonCursor = disabled ? 'not-allowed' : 'pointer'
+    const wrapperTitle = disabled ? disabledReason : undefined
+
     return (
         <div
             ref={containerRef}
@@ -224,27 +236,33 @@ function DateStepper({ onChange, planDate }) {
             style={{
                 background: 'var(--bg-secondary)',
                 border: '1px solid var(--border-light)',
-                color: 'var(--text-primary)'
+                color: 'var(--text-primary)',
+                cursor: disabled ? 'not-allowed' : 'default',
+                opacity: disabled ? 0.55 : 1
             }}
+            title={wrapperTitle}
+            aria-disabled={disabled}
         >
             <button
                 type="button"
-                onClick={() => onChange(offsetDateSkipSunday(planDate, -1))}
-                className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center"
-                style={{ color: 'var(--text-secondary)' }}
-                title="Previous day"
+                onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, -1))}
+                disabled={disabled}
+                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center"
+                style={{ color: 'var(--text-secondary)', cursor: buttonCursor }}
+                title={disabled ? disabledReason : 'Previous day'}
                 aria-label="Previous day"
             >
                 <i className="fas fa-chevron-left text-xs" />
             </button>
             <button
                 type="button"
-                onClick={() => setOpen((v) => !v)}
-                className="border-none bg-transparent cursor-pointer px-2 py-0.5 rounded font-semibold text-sm inline-flex items-center gap-1.5"
-                style={{ color: 'var(--text-primary)' }}
-                title="Click to pick a date"
-                aria-haspopup="dialog"
-                aria-expanded={open}
+                onClick={() => !disabled && setOpen((v) => !v)}
+                disabled={disabled}
+                className="border-none bg-transparent px-2 py-0.5 rounded font-semibold text-sm inline-flex items-center gap-1.5"
+                style={{ color: 'var(--text-primary)', cursor: buttonCursor }}
+                title={disabled ? disabledReason : 'Click to pick a date'}
+                aria-haspopup={disabled ? undefined : 'dialog'}
+                aria-expanded={!disabled && open}
             >
                 {new Date(planDate + 'T00:00:00').toLocaleDateString('en-US', {
                     day: 'numeric',
@@ -255,32 +273,39 @@ function DateStepper({ onChange, planDate }) {
             </button>
             <button
                 type="button"
-                onClick={() => onChange(offsetDateSkipSunday(planDate, 1))}
-                className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center"
-                style={{ color: 'var(--text-secondary)' }}
-                title="Next day"
+                onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, 1))}
+                disabled={disabled}
+                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center"
+                style={{ color: 'var(--text-secondary)', cursor: buttonCursor }}
+                title={disabled ? disabledReason : 'Next day'}
                 aria-label="Next day"
             >
                 <i className="fas fa-chevron-right text-xs" />
             </button>
-            {open && <MiniCalendar onClose={() => setOpen(false)} onSelect={onChange} planDate={planDate} />}
+            {open && !disabled && (
+                <MiniCalendar onClose={() => setOpen(false)} onSelect={onChange} planDate={planDate} />
+            )}
         </div>
     )
 }
 
 /** "Tomorrow" shortcut button — highlights when planDate matches tomorrow
  *  (Sunday-skipped to Monday) so it acts like a tab/toggle, not just a
- *  one-shot action. */
-function TomorrowButton({ accentColor, isDark, onChange, planDate }) {
+ *  one-shot action. Disabled state mirrors the stepper above. */
+function TomorrowButton({ accentColor, disabled = false, disabledReason, isDark, onChange, planDate }) {
     const tomorrowTarget = skipSundayDate(getTomorrowDate(), 1)
     const isTomorrow = planDate === tomorrowTarget
     return (
         <button
-            onClick={() => onChange(tomorrowTarget)}
-            className="border-none rounded-lg cursor-pointer text-xs font-semibold px-2.5 py-1.5"
+            onClick={() => !disabled && onChange(tomorrowTarget)}
+            disabled={disabled}
+            title={disabled ? disabledReason : undefined}
+            className="border-none rounded-lg text-xs font-semibold px-2.5 py-1.5"
             style={{
                 background: isTomorrow ? `${accentColor}${isDark ? '30' : '15'}` : 'var(--bg-tertiary)',
-                color: isTomorrow ? accentColor : 'var(--text-secondary)'
+                color: isTomorrow ? accentColor : 'var(--text-secondary)',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                opacity: disabled ? 0.55 : 1
             }}
         >
             Tomorrow
@@ -292,16 +317,25 @@ function TomorrowButton({ accentColor, isDark, onChange, planDate }) {
  * Date controls in the Plan header. Realtime tab gets a read-only pill;
  * every other tab gets a prev/picker/next stepper plus a "Tomorrow"
  * shortcut. All paths route through `skipSundayDate` so the user can
- * never land on a closed-plant Sunday.
+ * never land on a closed-plant Sunday. Pass `disabled` (with an optional
+ * `disabledReason` tooltip) when a tab owns its own date scope and the
+ * Plan-wide date should sit inert — currently used by the Statistics tab.
  */
-export function PlanDateNav({ accentColor, isDark, isRealtime, onChange, planDate }) {
+export function PlanDateNav({ accentColor, disabled = false, disabledReason, isDark, isRealtime, onChange, planDate }) {
     if (isRealtime) {
         return <RealtimeDatePill accentColor={accentColor} isDark={isDark} planDate={planDate} />
     }
     return (
         <>
-            <DateStepper onChange={onChange} planDate={planDate} />
-            <TomorrowButton accentColor={accentColor} isDark={isDark} onChange={onChange} planDate={planDate} />
+            <DateStepper disabled={disabled} disabledReason={disabledReason} onChange={onChange} planDate={planDate} />
+            <TomorrowButton
+                accentColor={accentColor}
+                disabled={disabled}
+                disabledReason={disabledReason}
+                isDark={isDark}
+                onChange={onChange}
+                planDate={planDate}
+            />
         </>
     )
 }

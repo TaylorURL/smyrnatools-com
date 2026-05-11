@@ -177,9 +177,12 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
                 const first = minutes(r.first_load)
                 const eod = minutes(r.eod_in_yard)
                 const punch = minutes(r.punch_out)
-                const dStart = start !== null && first !== null ? first - start : null
-                const dEnd = eod !== null && punch !== null ? punch - eod : null
-                const hours = start !== null && punch !== null ? (punch - start) / 60 : null
+                // Wrap past midnight so overnight shifts (start 23:00 →
+                // punch 11:00) resolve to a positive 12 h, not −12 h.
+                const dStart = ReportUtility.diffMinutesWrapping(start, first)
+                const dEnd = ReportUtility.diffMinutesWrapping(eod, punch)
+                const totalMinutes = ReportUtility.diffMinutesWrapping(start, punch)
+                const hours = totalMinutes != null ? totalMinutes / 60 : null
                 const lph = r.loads && hours && hours > 0 ? r.loads / hours : null
                 return { dEnd, dStart, hours, key: r.name || `idx:${idx}`, lph, r }
             })

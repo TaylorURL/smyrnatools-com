@@ -289,6 +289,19 @@ const ReportUtility = {
         if (!Number.isFinite(h) || !Number.isFinite(m)) return null
         return h * 60 + m
     },
+    /**
+     * Minute delta between two `parseTimeToMinutes` values, wrapping past
+     * midnight. Returns `null` if either input is non-finite. End-before-
+     * start is interpreted as an overnight shift — e.g. start 23:00 →
+     * punch 11:00 resolves to 720 minutes (12 h), not −720. If a user
+     * genuinely typoed the times the wrapped value lands in the >14h
+     * range and the existing "excessive hours" rule flags it.
+     */
+    diffMinutesWrapping(startMin, endMin) {
+        if (!Number.isFinite(startMin) || !Number.isFinite(endMin)) return null
+        const delta = endMin - startMin
+        return delta >= 0 ? delta : delta + 1440
+    },
     async validatePlantProduction(form, operatorOptions) {
         if (!form || typeof form !== 'object') return 'Invalid form'
         if (!form.plant) return 'Please select a plant before submitting.'
@@ -308,19 +321,20 @@ const ReportUtility = {
             if (!r.eod_in_yard || eod === null)
                 return `${label}: EOD In Yard time is required and must be a valid time.`
             if (!r.punch_out || punch === null) return `${label}: Punch Out time is required and must be a valid time.`
-            if (first - start < 0) return `${label}: 1st Load time must be after Start Time.`
-            if (punch - eod < 0) return `${label}: Punch Out time must be after EOD In Yard.`
-            if (start !== null && punch !== null && punch - start <= 0)
-                return `${label}: Total hours must be greater than 0.`
+            // Wrap past midnight so overnight shifts (e.g. start 23:00 →
+            // punch 11:00) read as the real elapsed duration. A typoed
+            // pair just lands in the >14h "excessive hours" tier below.
+            const dStart = this.diffMinutesWrapping(start, first)
+            const dEnd = this.diffMinutesWrapping(eod, punch)
+            const totalMinutes = this.diffMinutesWrapping(start, punch)
+            if (totalMinutes != null && totalMinutes <= 0) return `${label}: Total hours must be greater than 0.`
             const loadsVal = r.loads
             if (loadsVal === undefined || loadsVal === null || String(loadsVal) === '')
                 return `${label}: Total Loads is required.`
             const loadsNum = Number(loadsVal)
             if (!Number.isFinite(loadsNum) || loadsNum < 0 || !Number.isInteger(loadsNum))
                 return `${label}: Total Loads must be a non-negative whole number.`
-            const dStart = start !== null && first !== null ? first - start : null
-            const dEnd = eod !== null && punch !== null ? punch - eod : null
-            const hours = start !== null && punch !== null ? (punch - start) / 60 : null
+            const hours = totalMinutes != null ? totalMinutes / 60 : null
             const startDelayed = dStart !== null && dStart > 15
             const endDelayed = dEnd !== null && dEnd > 20
             const lowLoads = loadsNum < 3

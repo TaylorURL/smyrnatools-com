@@ -33,10 +33,13 @@ const formatLongDate = (iso) => {
     return d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', weekday: 'long', year: 'numeric' })
 }
 
+// Wraps past midnight so overnight shifts produce positive elapsed
+// minutes instead of negatives — `laterStr` is the later wall-clock time,
+// `earlierStr` is the earlier one; the helper handles the day-rollover.
 const minutesBetween = (laterStr, earlierStr) => {
-    const a = ReportUtility.parseTimeToMinutes(laterStr)
-    const b = ReportUtility.parseTimeToMinutes(earlierStr)
-    return a !== null && b !== null ? a - b : null
+    const earlier = ReportUtility.parseTimeToMinutes(earlierStr)
+    const later = ReportUtility.parseTimeToMinutes(laterStr)
+    return ReportUtility.diffMinutesWrapping(earlier, later)
 }
 
 /** Per-row warning analyzer — returns { tags, isAlert } so the table can
@@ -47,7 +50,8 @@ const analyzeRow = (row) => {
     const dEnd = minutesBetween(row.punch_out, row.eod_in_yard)
     const startMin = ReportUtility.parseTimeToMinutes(row.start_time)
     const punchOutMin = ReportUtility.parseTimeToMinutes(row.punch_out)
-    const hours = startMin !== null && punchOutMin !== null ? (punchOutMin - startMin) / 60 : null
+    const totalMinutes = ReportUtility.diffMinutesWrapping(startMin, punchOutMin)
+    const hours = totalMinutes !== null ? totalMinutes / 60 : null
     const loadsValue = Number(row.loads)
     const loads = Number.isFinite(loadsValue) ? loadsValue : null
     const tags = []
