@@ -154,6 +154,13 @@ export const estimateRequiredTrucks = ({ yardage, loadSize, spacingMin, tailMin,
  * push a plant past it. */
 export const MAX_CONCURRENT_LAUNCHES_PER_PLANT = 3
 
+/* Maximum drive-time (minutes) a lender plant can sit from the plant
+ * that's short on trucks and still be considered viable help. Anything
+ * beyond a one-hour drive eats too much of the lender's shift to make
+ * dispatching their trucks practical, so those plants are filtered out
+ * of the help-availability list entirely. */
+export const MAX_HELP_TRAVEL_MIN_FROM_PLANT = 60
+
 /** Count of non-excluded orders at `plant` whose `startTime` matches
  *  `startMin` exactly. Used by every slot scanner to enforce the
  *  per-plant launch cap above. Cancelled / test orders are skipped so
@@ -1027,11 +1034,14 @@ export const findRecommendedStartTime = ({
 /** Other plants that could lend trucks to `excludePlantCode` during the
  *  request window. "Help" in dispatch parlance means a plant sends one or
  *  more trucks to another plant for a pour. We list every plant with at
- *  least one free truck during the window, sorted by drive time from the
- *  job address (proxy for proximity to the suggesting plant — plants close
- *  to the job tend to be close to the suggesting plant since the job is
- *  what made it the suggestion). Returns empty when no plant has spare
- *  capacity, so the UI can render a "no help available" notice. */
+ *  least one free truck during the window AND within
+ *  `MAX_HELP_TRAVEL_MIN_FROM_PLANT` driving minutes of the short plant —
+ *  anything further isn't a realistic lender. Sorted by drive time from
+ *  the job address (proxy for proximity to the pour site). Plants whose
+ *  plant-to-plant distance hasn't streamed in yet are kept so the list
+ *  doesn't briefly collapse to empty while OSRM resolves; once a known
+ *  distance exceeds the cap they're dropped. Returns empty when no plant
+ *  qualifies, so the UI can render a "no help available" notice. */
 export const findHelpAvailability = ({
     excludePlantCode,
     mixerCountsByPlant,
@@ -1039,7 +1049,8 @@ export const findHelpAvailability = ({
     plants,
     plantProduction,
     request,
-    travelMinByPlantCode
+    travelMinByPlantCode,
+    travelMinFromShortPlantByPlantCode
 }) => {
     if (!Array.isArray(plants) || !request) return []
     const requestStart = request.startMin
@@ -1048,6 +1059,10 @@ export const findHelpAvailability = ({
     for (const plant of plants) {
         const plantCode = plant?.plantCode || plant?.plant_code
         if (!plantCode || plantCode === excludePlantCode) continue
+        const travelMinFromShortPlant = travelMinFromShortPlantByPlantCode?.[plantCode]
+        if (Number.isFinite(travelMinFromShortPlant) && travelMinFromShortPlant > MAX_HELP_TRAVEL_MIN_FROM_PLANT) {
+            continue
+        }
         const plantOrders = plantProduction?.[plantCode]?.orders || []
         const adjustedPool = adjustPoolForDate(mixerCountsByPlant?.[plantCode] || 0, planDate)
         if (adjustedPool <= 0) continue
@@ -1059,16 +1074,134 @@ export const findHelpAvailability = ({
             free,
             plantCode,
             plantName: plant?.plantName || plant?.plant_name || plantCode,
-            travelMinFromJob: Number.isFinite(travelMin) ? travelMin : null
+            travelMinFromJob: Number.isFinite(travelMin) ? travelMin : null,
+            travelMinFromShortPlant: Number.isFinite(travelMinFromShortPlant) ? travelMinFromShortPlant : null
         })
     }
+    /* Primary sort: drive time from the SHORT plant — the plant the
+     * truck has to be ferried to. That's the realistic dispatch cost.
+     * Plants without a known plant-to-plant time fall back to the
+     * plant-to-job distance, then to free-truck count. */
     result.sort((a, b) => {
-        const aTravel = a.travelMinFromJob ?? Number.POSITIVE_INFINITY
-        const bTravel = b.travelMinFromJob ?? Number.POSITIVE_INFINITY
-        if (aTravel !== bTravel) return aTravel - bTravel
+        const aFromPlant = a.travelMinFromShortPlant ?? Number.POSITIVE_INFINITY
+        const bFromPlant = b.travelMinFromShortPlant ?? Number.POSITIVE_INFINITY
+        if (aFromPlant !== bFromPlant) return aFromPlant - bFromPlant
+        const aFromJob = a.travelMinFromJob ?? Number.POSITIVE_INFINITY
+        const bFromJob = b.travelMinFromJob ?? Number.POSITIVE_INFINITY
+        if (aFromJob !== bFromJob) return aFromJob - bFromJob
         return b.free - a.free
     })
     return result.slice(0, 4)
+}
+
+/** Scans candidate start times on the SHORT plant looking for a slot
+ *  where the short plant's own free trucks plus help available from
+ *  lender plants within `MAX_HELP_TRAVEL_MIN_FROM_PLANT` minutes
+ *  together cover the full truck requirement. Surfaces these when help
+ *  at the originally-typed time can't close the gap, so the recommender
+ *  can point at a time that DOES work instead of just saying "no help
+ *  available". Same sort cascade as `findAlternateStartTimes`: preferred
+ *  size-window first, proximity to the typed time, then earliest. */
+export const findHelpCoverableSlots = ({
+    count = 3,
+    mixerCountsByPlant,
+    planDate,
+    plant,
+    plantProduction,
+    plants,
+    request,
+    restFloorMin,
+    travelMinFromShortPlantByPlantCode
+}) => {
+    if (!plant || !request || !Array.isArray(plants)) return []
+    const shortPlantCode = plant?.plantCode || plant?.plant_code
+    if (!shortPlantCode) return []
+    const orders = plantProduction?.[shortPlantCode]?.orders || []
+    const adjustedPool = adjustPoolForDate(mixerCountsByPlant?.[shortPlantCode] || 0, planDate)
+    if (adjustedPool <= 0) return []
+    const { startMin: requestStart, trucksNeeded } = request
+    if (trucksNeeded <= 0) return []
+
+    /* Pre-filter the lender pool once — every candidate slot draws from
+     * the same plants. A lender qualifies when its plant-to-plant drive
+     * time from the short plant is known and ≤ the 1-hour cap. */
+    const eligibleLenders = []
+    for (const lender of plants) {
+        const lenderCode = lender?.plantCode || lender?.plant_code
+        if (!lenderCode || lenderCode === shortPlantCode) continue
+        const distFromShort = travelMinFromShortPlantByPlantCode?.[lenderCode]
+        if (!Number.isFinite(distFromShort) || distFromShort > MAX_HELP_TRAVEL_MIN_FROM_PLANT) continue
+        eligibleLenders.push(lenderCode)
+    }
+    if (eligibleLenders.length === 0) return []
+
+    const lockWindowMin = computeLockWindowMin(request)
+    const scanFloor = computeScanFloor(orders, restFloorMin, request)
+
+    const candidates = []
+    for (let start = scanFloor; start + lockWindowMin <= ALTERNATE_SCAN_END_MIN; start += ALTERNATE_SCAN_STEP_MIN) {
+        if (Math.abs(start - requestStart) < ALTERNATE_MIN_GAP_MIN) continue
+        const end = start + lockWindowMin
+        if (!respectsShiftLimit(start, projectedBackAtYardMin(start, request.durationMin), scanFloor)) continue
+        if (countOrdersAtSameStart(orders, start) >= MAX_CONCURRENT_LAUNCHES_PER_PLANT) continue
+
+        const ownBusy = computeConcurrentTrucks(orders, start, end)
+        const ownFree = Math.max(0, adjustedPool - ownBusy)
+
+        let helpFree = 0
+        let helpPlantCount = 0
+        for (const lenderCode of eligibleLenders) {
+            const lenderOrders = plantProduction?.[lenderCode]?.orders || []
+            const lenderPool = adjustPoolForDate(mixerCountsByPlant?.[lenderCode] || 0, planDate)
+            if (lenderPool <= 0) continue
+            const lenderBusy = computeConcurrentTrucks(lenderOrders, start, end)
+            const lenderFree = Math.max(0, lenderPool - lenderBusy)
+            if (lenderFree > 0) helpPlantCount++
+            helpFree += lenderFree
+        }
+
+        const totalFree = ownFree + helpFree
+        if (totalFree < trucksNeeded) continue
+
+        candidates.push({
+            helpFree,
+            helpPlantCount,
+            isolationMin: computeIsolationMin(start, end, orders),
+            ownFree,
+            preferred: isPreferredStartWindow(request.yardage, start),
+            shortBy: Math.max(0, trucksNeeded - ownFree),
+            startMin: start,
+            totalFree
+        })
+    }
+
+    if (candidates.length === 0) return []
+
+    candidates.sort((a, b) => {
+        if (a.preferred !== b.preferred) return a.preferred ? -1 : 1
+        const aDist = Math.abs(a.startMin - requestStart)
+        const bDist = Math.abs(b.startMin - requestStart)
+        if (aDist !== bDist) return aDist - bDist
+        return a.startMin - b.startMin
+    })
+
+    /* Spread the surfaced slots so we don't dump three candidates that
+     * all sit inside the same hour — same diverse-pick walk as
+     * `findAlternateStartTimes` uses. */
+    const DIVERSE_SPREAD_MIN = 120
+    const picked = []
+    for (const candidate of candidates) {
+        if (picked.length >= count) break
+        const tooClose = picked.some((p) => Math.abs(p.startMin - candidate.startMin) < DIVERSE_SPREAD_MIN)
+        if (!tooClose) picked.push(candidate)
+    }
+    if (picked.length < count) {
+        for (const candidate of candidates) {
+            if (picked.length >= count) break
+            if (!picked.includes(candidate)) picked.push(candidate)
+        }
+    }
+    return picked.sort((a, b) => a.startMin - b.startMin)
 }
 
 /** Bundles the "closest plant is short" diagnosis: how many trucks short,
@@ -1084,7 +1217,8 @@ export const computeBookingConflict = ({
     ranked,
     request,
     restFloorByPlant,
-    travelMinByPlantCode
+    travelMinByPlantCode,
+    travelMinFromShortPlantByPlantCode
 }) => {
     const top = ranked?.[0]
     if (!top || !request) return null
@@ -1126,18 +1260,38 @@ export const computeBookingConflict = ({
     const effectiveShortBy = sizeWindowAdvice?.suggestedSlot
         ? (sizeWindowAdvice.suggestedSlot.shortBy ?? 0)
         : top.trucksNeeded - top.free
+    const helpAvailability = findHelpAvailability({
+        excludePlantCode: top.plantCode,
+        mixerCountsByPlant,
+        planDate,
+        plantProduction,
+        plants,
+        request: effectiveRequest,
+        travelMinByPlantCode,
+        travelMinFromShortPlantByPlantCode
+    })
+    /* When in-the-hour help can't cover the shortage at the requested
+     * time, scan for slots where it CAN — gives the dispatcher a
+     * "shift to this time and pull help" path instead of a dead end. */
+    const helpFleetTotal = helpAvailability.reduce((sum, h) => sum + (h?.free || 0), 0)
+    const helpCoversAtRequestedTime = helpFleetTotal >= effectiveShortBy
+    const helpCoverableSlots = helpCoversAtRequestedTime
+        ? []
+        : findHelpCoverableSlots({
+              mixerCountsByPlant,
+              plant,
+              planDate,
+              plantProduction,
+              plants,
+              request: effectiveRequest,
+              restFloorMin,
+              travelMinFromShortPlantByPlantCode
+          })
     return {
         alternateTimes,
         effectiveStartMin,
-        helpAvailability: findHelpAvailability({
-            excludePlantCode: top.plantCode,
-            mixerCountsByPlant,
-            planDate,
-            plantProduction,
-            plants,
-            request: effectiveRequest,
-            travelMinByPlantCode
-        }),
+        helpAvailability,
+        helpCoverableSlots,
         /* `launchSlotFull` propagates from `scorePlantForBooking` so the
          * panel can lead with "too many simultaneous launches" instead
          * of the misleading "1 truck short" framing when the real

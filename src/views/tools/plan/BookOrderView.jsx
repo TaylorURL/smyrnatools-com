@@ -4,6 +4,7 @@ import AddressAutocomplete from '../../../app/components/common/AddressAutocompl
 import { PlantBadge } from '../../../app/components/plan/PlanScheduleBadges'
 import useAddressDistances from '../../../app/hooks/useAddressDistances'
 import useAdjacentDayPlantProduction from '../../../app/hooks/useAdjacentDayPlantProduction'
+import usePlantToPlantDistances from '../../../app/hooks/usePlantToPlantDistances'
 import useYesterdayOperatorRestFloor from '../../../app/hooks/useYesterdayOperatorRestFloor'
 import { formatOrderAddress } from '../../../utils/AddressUtility'
 import {
@@ -74,17 +75,24 @@ function SameDayAdvice({ accentColor }) {
  * Embedded Google Maps preview of the driving route from the
  * recommended plant to the job address. Reuses the same iframe URL
  * shape `JobMapModal` uses on the Schedule tab so the dispatcher gets
- * the familiar layout. Renders nothing when either address is missing.
+ * the familiar layout. Only renders once the job address has actually
+ * geocoded and produced a real OSRM travel time (`travelMin` finite) —
+ * that's our "address is correct and working" signal, so a typo or
+ * unverified address never paints a map. `dirflg=d` pins the embed to
+ * driving routes only — no transit / walking / cycling alternatives.
  */
 function RoutePreview({ jobAddress, plantAddress, plantName, travelMin }) {
     const trimmedJob = (jobAddress || '').trim()
     const trimmedPlant = (plantAddress || '').trim()
     if (!trimmedJob || !trimmedPlant) return null
+    if (!Number.isFinite(travelMin)) return null
     const plantQuery = encodeURIComponent(trimmedPlant)
     const jobQuery = encodeURIComponent(trimmedJob)
     /* `output=embed` is the documented embed-in-iframe form; saddr →
-     * daddr asks Google Maps to render the route between the two. */
-    const mapSrc = `https://www.google.com/maps?saddr=${plantQuery}&daddr=${jobQuery}&output=embed`
+     * daddr asks Google Maps to render the route between the two.
+     * `dirflg=d` forces driving directions — without it Google may
+     * surface transit / walking tabs for the same OD pair. */
+    const mapSrc = `https://www.google.com/maps?saddr=${plantQuery}&daddr=${jobQuery}&dirflg=d&output=embed`
     const externalUrl = `https://www.google.com/maps/dir/?api=1&origin=${plantQuery}&destination=${jobQuery}&travelmode=driving`
     return (
         <div
@@ -127,6 +135,39 @@ function RoutePreview({ jobAddress, plantAddress, plantName, travelMin }) {
                 referrerPolicy="no-referrer-when-downgrade"
             />
         </div>
+    )
+}
+
+/** Single help-plant pill — used by both the required and backup
+ *  sub-groups in the "pull help" recommendation. Renders the plant
+ *  name, lend count (or "backup" tag), and travel time from the job.
+ *  Backup pills are dimmed so they read as secondary to required
+ *  lenders even when they sit in the same flex row. */
+function HelpPlantPill({ help, shortBy }) {
+    const tooltip = help.isBackup
+        ? `${help.plantName} — backup option, ${help.free} free if you need more than the required plants can spare`
+        : `${help.plantName} must lend ${help.lendCount} of the ${shortBy} trucks needed to cover this booking (${help.free} total free)`
+    return (
+        <span
+            className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px]"
+            style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-light)',
+                color: 'var(--text-primary)',
+                opacity: help.isBackup ? 0.65 : 1
+            }}
+            title={tooltip}
+        >
+            <i
+                className="fas fa-truck-arrow-right text-[10px]"
+                style={{ color: help.isBackup ? 'var(--text-tertiary)' : '#16a34a' }}
+            />
+            <span className="font-semibold">{help.plantName}</span>
+            <span style={{ color: 'var(--text-tertiary)' }}>
+                {help.isBackup ? ' · backup' : ` · lend ${help.lendCount}`}
+                {Number.isFinite(help.travelMinFromJob) ? ` · ${help.travelMinFromJob} min` : ''}
+            </span>
+        </span>
     )
 }
 
@@ -789,6 +830,7 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
     const {
         alternateTimes,
         helpAvailability,
+        helpCoverableSlots,
         launchSlotFull,
         moveCandidates,
         plantCode,
@@ -816,11 +858,13 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
      * fix a physical loading-bay constraint; size-window mismatch then
      * also routes to shift. After those, the standard cascade: help,
      * clean time shift, reschedule, partial help, no-fix. */
+    const hasHelpCoverableSlot = (helpCoverableSlots || []).length > 0
     let primary
     if (launchSlotFull) primary = 'shift'
     else if (sizeWindowAdvice && sizeWindowAdvice.suggestedSlot) primary = 'shift'
     else if (helpCovers) primary = 'help'
     else if (hasFittingAlternate) primary = 'shift'
+    else if (hasHelpCoverableSlot) primary = 'help-coverable'
     else if (movesCover) primary = 'reschedule'
     else if (helpFleetTotal > 0) primary = 'help'
     else primary = 'none'
@@ -881,6 +925,14 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
                     subtitle: `${plantName} can pour cleanly here without help — ${shiftTarget.free} truck${shiftTarget.free === 1 ? '' : 's'} free at ${formatMinutesAsClock(shiftTarget.startMin)}.`,
                     title: `Shift to ${formatMinutesAsClock(shiftTarget.startMin)} on ${plantName}`
                 }
+            case 'help-coverable': {
+                const target = helpCoverableSlots[0]
+                const targetLabel = formatMinutesAsClock(target.startMin)
+                return {
+                    subtitle: `Nearby plants cover only ${helpFleetTotal} of the ${shortBy} truck${shortBy === 1 ? '' : 's'} short at ${requestedTimeLabel}. Shift to ${targetLabel} where ${plantName} (${target.ownFree} truck${target.ownFree === 1 ? '' : 's'} free) plus ${target.helpPlantCount} plant${target.helpPlantCount === 1 ? '' : 's'} within an hour (${target.helpFree} truck${target.helpFree === 1 ? '' : 's'} lent) can fully cover the pour.`,
+                    title: `Shift to ${targetLabel} on ${plantName} — help within an hour can cover there`
+                }
+            }
             case 'reschedule':
                 return {
                     subtitle: `Move one or two of ${plantName}'s overlapping orders to clear ${shortBy} truck${shortBy === 1 ? '' : 's'} for this booking.`,
@@ -915,6 +967,13 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
     const showHelpSection = !isLaunchCapShift && (helpAvailability || []).length > 0
     const showAlternatesSection = hasFittingAlternate && !isForcedShift
     const showMoveSection = (moveCandidates || []).length > 0 && !helpCovers && !isForcedShift
+    /* Help-coverable times only surface when help at the typed time
+     * can't close the gap AND no cleaner alternative (own-plant
+     * fitting alternate) is already being recommended — otherwise the
+     * panel gets noisy and the dispatcher has too many overlapping
+     * suggestions. */
+    const showHelpCoverableSection =
+        !helpCovers && !hasFittingAlternate && (helpCoverableSlots || []).length > 0 && !isLaunchCapShift
 
     /* Trim + annotate the help section so a 2-truck shortage doesn't
      * read as "9 plants × 14 free trucks each". Walks plants in
@@ -942,8 +1001,19 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
         return out
     })()
 
+    /* Split the help rows into the plants the dispatcher MUST pull from
+     * to fully cover the shortage vs. the optional backup plant we
+     * surface in case one of the required lenders can't deliver. The
+     * two groups render under separate labels so the difference between
+     * "you have to call these" and "nice-to-have if needed" is obvious
+     * at a glance. */
+    const requiredHelpRows = helpRowsForDisplay.filter((h) => !h.isBackup)
+    const backupHelpRows = helpRowsForDisplay.filter((h) => h.isBackup)
+    const requiredLendTotal = requiredHelpRows.reduce((sum, h) => sum + (h.lendCount || 0), 0)
+
     const sections = [
         showHelpSection && 'help',
+        showHelpCoverableSection && 'help-coverable',
         showAlternatesSection && 'shift',
         showMoveSection && 'reschedule'
     ].filter(Boolean)
@@ -986,8 +1056,16 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
             {sections.map((section) => {
                 if (section === 'help') {
                     const isPrimary = primary === 'help'
+                    /* Required sub-group caption depends on whether help
+                     * actually closes the gap: when it does, the dispatcher
+                     * MUST pull every plant listed to cover the shortage;
+                     * when it can't, the same plants are still the best
+                     * partial coverage available, framed as "suggested". */
+                    const requiredCaption = helpCovers
+                        ? `Must pull · ${requiredLendTotal} truck${requiredLendTotal === 1 ? '' : 's'} to cover shortage`
+                        : `Suggested · pulls ${requiredLendTotal} of ${shortBy} truck${shortBy === 1 ? '' : 's'} needed`
                     return (
-                        <div key="help" className="flex flex-col gap-1.5">
+                        <div key="help" className="flex flex-col gap-2">
                             <div
                                 className="text-[10.5px] font-semibold uppercase tracking-wider flex items-center gap-1.5"
                                 style={{ color: isPrimary ? '#15803d' : 'var(--text-tertiary)' }}
@@ -995,33 +1073,80 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
                                 {isPrimary && <i className="fas fa-circle-check text-[10px]" />}
                                 {isPrimary ? 'Recommended · pull help' : 'Help from nearby plants'}
                             </div>
+
+                            {requiredHelpRows.length > 0 && (
+                                <div className="flex flex-col gap-1">
+                                    <div
+                                        className="text-[10px] font-semibold uppercase tracking-wider"
+                                        style={{ color: helpCovers ? '#15803d' : '#b45309' }}
+                                    >
+                                        {requiredCaption}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {requiredHelpRows.map((help) => (
+                                            <HelpPlantPill key={help.plantCode} help={help} shortBy={shortBy} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {backupHelpRows.length > 0 && (
+                                <div className="flex flex-col gap-1">
+                                    <div
+                                        className="text-[10px] font-semibold uppercase tracking-wider"
+                                        style={{ color: 'var(--text-tertiary)' }}
+                                    >
+                                        Optional backup · only if a required plant can&apos;t deliver
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {backupHelpRows.map((help) => (
+                                            <HelpPlantPill key={help.plantCode} help={help} shortBy={shortBy} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )
+                }
+
+                if (section === 'help-coverable') {
+                    /* "Not enough help at the typed time — but at these
+                     * times, plants within an hour CAN cover the gap."
+                     * Each pill spells out the own-plant free, the help
+                     * free, and how many lender plants contributed so
+                     * the dispatcher can see the math at a glance. */
+                    return (
+                        <div key="help-coverable" className="flex flex-col gap-1.5">
+                            <div
+                                className="text-[10.5px] font-semibold uppercase tracking-wider"
+                                style={{ color: '#15803d' }}
+                            >
+                                Shift here · nearby plants can cover the gap
+                            </div>
                             <div className="flex flex-wrap gap-2">
-                                {helpRowsForDisplay.map((help) => {
-                                    const tooltip = help.isBackup
-                                        ? `${help.plantName} — backup option, ${help.free} free if you need more than the closer plants can spare`
-                                        : `${help.plantName} could lend ${help.lendCount} of the ${shortBy} trucks needed (${help.free} total free)`
+                                {helpCoverableSlots.map((slot) => {
+                                    const tooltip = `${plantName} can run ${slot.ownFree} truck${slot.ownFree === 1 ? '' : 's'} at ${formatMinutesAsClock(slot.startMin)} and pull ${slot.helpFree} more from ${slot.helpPlantCount} plant${slot.helpPlantCount === 1 ? '' : 's'} within an hour — total ${slot.totalFree} of the ${shortBy + slot.ownFree} truck${shortBy + slot.ownFree === 1 ? '' : 's'} needed.`
                                     return (
                                         <span
-                                            key={help.plantCode}
+                                            key={slot.startMin}
                                             className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px]"
                                             style={{
                                                 background: 'var(--bg-primary)',
                                                 border: '1px solid var(--border-light)',
-                                                color: 'var(--text-primary)',
-                                                opacity: help.isBackup ? 0.65 : 1
+                                                color: 'var(--text-primary)'
                                             }}
                                             title={tooltip}
                                         >
                                             <i
-                                                className="fas fa-truck-arrow-right text-[10px]"
-                                                style={{ color: help.isBackup ? 'var(--text-tertiary)' : '#16a34a' }}
+                                                className="fas fa-clock-rotate-left text-[10px]"
+                                                style={{ color: '#16a34a' }}
                                             />
-                                            <span className="font-semibold">{help.plantName}</span>
+                                            <span className="font-mono tabular-nums font-semibold">
+                                                {formatMinutesAsClock(slot.startMin)}
+                                            </span>
                                             <span style={{ color: 'var(--text-tertiary)' }}>
-                                                {help.isBackup ? ' · backup' : ` · lend ${help.lendCount}`}
-                                                {Number.isFinite(help.travelMinFromJob)
-                                                    ? ` · ${help.travelMinFromJob} min`
-                                                    : ''}
+                                                · {slot.ownFree} here + {slot.helpFree} from {slot.helpPlantCount} plant
+                                                {slot.helpPlantCount === 1 ? '' : 's'}
                                             </span>
                                         </span>
                                     )
@@ -1334,6 +1459,17 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
      * still inside their mandatory rest window. */
     const restFloorByPlant = useYesterdayOperatorRestFloor(planDate)
 
+    /* Plant-to-plant drive times from whichever plant ends up short on
+     * trucks. Used by `findHelpAvailability` to exclude lender plants
+     * that sit further than `MAX_HELP_TRAVEL_MIN_FROM_PLANT` (60 min) of
+     * driving from the short plant — dispatching a truck across that
+     * much road eats too much of the lender's shift to be realistic. */
+    const shortPlantCode = ranked?.[0]?.plantCode || null
+    const { minutesByPlantCode: travelMinFromShortPlantByPlantCode } = usePlantToPlantDistances({
+        fromPlantCode: shortPlantCode,
+        plants: submitted ? plants : null
+    })
+
     /* Surface time-shift / order-move / help-available suggestions only
      * when the closest plant (now always #1) genuinely can't cover the
      * requested window. travelMinByPlantCode lets the help section sort
@@ -1349,9 +1485,20 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                 ranked,
                 request,
                 restFloorByPlant,
-                travelMinByPlantCode
+                travelMinByPlantCode,
+                travelMinFromShortPlantByPlantCode
             }),
-        [mixerCountsByPlant, planDate, plantProduction, plants, ranked, request, restFloorByPlant, travelMinByPlantCode]
+        [
+            mixerCountsByPlant,
+            planDate,
+            plantProduction,
+            plants,
+            ranked,
+            request,
+            restFloorByPlant,
+            travelMinByPlantCode,
+            travelMinFromShortPlantByPlantCode
+        ]
     )
 
     /* The system's preferred start time for this booking on the closest

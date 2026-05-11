@@ -2,6 +2,18 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.3] - 2026-05-11
+
+- Add interactive Plan Flow Map view powered by Leaflet with real-world plant/job positioning, driving route rendering via OSRM, animated truck markers, and load-count flow lines
+- Add GeocodingUtility with multi-strategy Nominatim fallback, negative-cache TTL, state-context disambiguation, and per-variant caching
+- Add RoutingUtility for OSRM driving-route lookups with localStorage caching, rate-limited request queue, and polyline interpolation helpers
+- Add latitude/longitude columns to the plants table with a partial index on non-null coordinates
+- Extend Plant model to carry optional latitude/longitude fields from the database
+- Update ReportService.fetchPlantsSorted to select latitude/longitude and bump cache key to v2 so existing sessions pick up the new fields
+- Seed authoritative coordinates for plant 455 (Huntsville, TX) to override OSM's inaccurate city-centre fallback
+- Fix asset stats Total counts to exclude Retired/Terminated assets so fleet KPI headlines reflect operational counts only
+- Apply the same retired-exclusion logic to trailer type counts for consistent fleet reporting
+
 ## [41.0.2] - 2026-05-11
 
 - Add midnight-wrapping support to efficiency report time calculations so overnight shifts produce correct positive durations instead of negative values

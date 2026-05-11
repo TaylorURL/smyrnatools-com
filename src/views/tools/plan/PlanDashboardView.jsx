@@ -533,6 +533,7 @@ function PlanDashboardView({
                             assignments={assignments}
                             onOpenPlanner={onSwitchToPlanner}
                             plantProduction={plantProduction}
+                            plants={plants}
                         />
                     </Card>
 

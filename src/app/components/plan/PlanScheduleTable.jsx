@@ -10,15 +10,7 @@ import { timeToMinutes } from '../../../utils/PlanUtility'
 import OrderInfoModal from '../schedule/OrderInfoModal'
 import OrderTicketsModal from '../schedule/OrderTicketsModal'
 import PlanScheduleOrderRow from './PlanScheduleOrderRow'
-import {
-    ClockInRow,
-    HelpRow,
-    PullUpRow,
-    ReturnRow,
-    SendHomeRow,
-    SlotRow,
-    TradeoffRow
-} from './PlanScheduleSyntheticRows'
+import { ClockInRow, HelpRow, PullUpRow, ReturnRow, SendHomeRow, TradeoffRow } from './PlanScheduleSyntheticRows'
 
 const TABLE_HEADERS = [
     'Start',
@@ -178,20 +170,12 @@ function buildTableRows({
             time: row.time
         })
     })
-    filteredSuggestedSlotRows.forEach((row, i) => {
-        if (slotConsumed.has(i)) return
-        rows.push({
-            durationMin: row.durationMin,
-            kind: 'slot',
-            label: row.label,
-            minTrucks: row.minTrucks,
-            plantCode: row.plantCode,
-            sizeKey: row.key,
-            slotKey: `${row.key}-${row.plantCode}-${row.time}`,
-            time: row.time,
-            truckRange: row.truckRange
-        })
-    })
+    // Standalone open-window slot rows used to render here. They've been
+    // pulled per dispatcher feedback — the open-window content still surfaces
+    // inline on the `tradeoff` row (when a matching send-home exists) so the
+    // dispatcher sees the booking suggestion in context instead of as its
+    // own noisy line item. `filteredSuggestedSlotRows` is still consumed
+    // above for that merging, so the upstream computation stays put.
     filteredPullUpRows.forEach((row, i) => {
         rows.push({
             kind: 'pullUp',
@@ -461,8 +445,6 @@ export default function PlanScheduleTable({
                                     )
                                 case 'tradeoff':
                                     return <TradeoffRow key={`tradeoff-${row.tradeoffKey}`} {...sharedProps} />
-                                case 'slot':
-                                    return <SlotRow key={`slot-${row.slotKey}`} {...sharedProps} />
                                 case 'pullUp':
                                     return <PullUpRow key={`pull-up-${row.pullUpKey}`} {...sharedProps} />
                                 case 'clockIn':

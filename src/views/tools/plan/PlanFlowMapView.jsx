@@ -413,7 +413,12 @@ function PlanFlowMapView({
         }
     }, [assignments, geocodedPlants])
 
-    /* ── Render route polylines ─────────────────────────────────── */
+    /* ── Render route polylines ───────────────────────────────────
+     * Each route is drawn as TWO stacked polylines: a soft cyan "base"
+     * underneath, and a brighter dashed overlay on top whose dash offset
+     * is animated via CSS so the whole line reads as energy flowing
+     * from plant to plant. Both polylines for a route live in a
+     * sub-LayerGroup so add / update / remove stay one-line. */
     useEffect(() => {
         const layer = routeLayerRef.current
         if (!layer) return
@@ -426,10 +431,9 @@ function PlanFlowMapView({
             wanted.set(key, a)
         })
 
-        // Drop polylines that are no longer in the assignment set.
         Object.keys(polylinesByEdgeRef.current).forEach((k) => {
             if (!wanted.has(k)) {
-                layer.removeLayer(polylinesByEdgeRef.current[k])
+                layer.removeLayer(polylinesByEdgeRef.current[k].group)
                 delete polylinesByEdgeRef.current[k]
             }
         })
@@ -447,12 +451,22 @@ function PlanFlowMapView({
                           [to.lat, to.lng]
                       ]
             const isInvolved = selectedCode === a.fromPlant || selectedCode === a.toPlant
-            const styling = {
-                color: accentColor,
-                dashArray: route ? null : '6 6',
-                opacity: isInvolved ? 0.9 : selectedCode ? 0.25 : 0.65,
+            const opacityScale = isInvolved ? 1 : selectedCode ? 0.35 : 0.85
+            const baseStyle = {
+                className: 'help-route-base',
+                color: '#0e7490',
+                opacity: 0.6 * opacityScale,
+                weight: isInvolved ? 6 : 5
+            }
+            const flowStyle = {
+                className: 'help-route-flow',
+                color: '#67e8f9',
+                dashArray: '14 22',
+                lineCap: 'round',
+                opacity: opacityScale,
                 weight: isInvolved ? 4 : 3
             }
+
             const ops = parseInt(a.driverCount, 10) || 0
             const timeLabel = a.time || ''
             const tipContent =
@@ -464,18 +478,24 @@ function PlanFlowMapView({
 
             const existing = polylinesByEdgeRef.current[key]
             if (existing) {
-                existing.setLatLngs(coords)
-                existing.setStyle(styling)
-                existing.unbindTooltip()
-                existing.bindTooltip(tipContent, { sticky: true })
+                existing.base.setLatLngs(coords)
+                existing.base.setStyle(baseStyle)
+                existing.flow.setLatLngs(coords)
+                existing.flow.setStyle(flowStyle)
+                existing.flow.unbindTooltip()
+                existing.flow.bindTooltip(tipContent, { sticky: true })
             } else {
-                const polyline = L.polyline(coords, styling)
-                polyline.bindTooltip(tipContent, { sticky: true })
-                polyline.addTo(layer)
-                polylinesByEdgeRef.current[key] = polyline
+                const group = L.layerGroup()
+                const base = L.polyline(coords, baseStyle)
+                const flow = L.polyline(coords, flowStyle)
+                flow.bindTooltip(tipContent, { sticky: true })
+                base.addTo(group)
+                flow.addTo(group)
+                group.addTo(layer)
+                polylinesByEdgeRef.current[key] = { base, flow, group }
             }
         })
-    }, [accentColor, assignments, geocodedPlants, routesByEdgeKey, selectedCode])
+    }, [assignments, geocodedPlants, routesByEdgeKey, selectedCode])
 
     /* ── Resize observer so Leaflet re-measures on tab swaps ────── */
     useEffect(() => {
@@ -544,6 +564,27 @@ function PlanFlowMapView({
                 .leaflet-control-attribution {
                     background: rgba(255,255,255,0.85) !important;
                     font-size: 10px !important;
+                }
+                /* Help-route lines — a soft cyan base under a brighter
+                 * dashed overlay whose dashes march along the route on
+                 * a continuous loop. Reads as energy/flow without
+                 * stealing attention from the accent-coloured plants. */
+                .help-route-base {
+                    stroke-linecap: round;
+                    filter: drop-shadow(0 0 4px rgba(8, 145, 178, 0.45));
+                }
+                .help-route-flow {
+                    animation: help-route-flow 1.4s linear infinite;
+                    filter: drop-shadow(0 0 6px rgba(103, 232, 249, 0.7));
+                }
+                @keyframes help-route-flow {
+                    to { stroke-dashoffset: -36; }
+                }
+                html.dark .help-route-base {
+                    filter: drop-shadow(0 0 6px rgba(8, 145, 178, 0.6));
+                }
+                html.dark .help-route-flow {
+                    filter: drop-shadow(0 0 8px rgba(103, 232, 249, 0.85));
                 }
             `}</style>
 
