@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         Smyrna Dispatch Sync
 // @namespace    smyrna-tools
-// @version      2.9.0
-// @description  Syncs today + next 7 days of DailyOrder, per-plant DetailOrderAnalysis, and per-plant DetailDriver reports to Supabase storage every 5 minutes, and backfills any missing files for the current year
+// @version      2.11.0
+// @description  Syncs today + next 7 days of DailyOrder, per-plant DetailOrderAnalysis, and per-plant DetailDriver reports to Supabase storage every 5 minutes, backfills missing files for the current year, and auto re-authenticates when the dispatch session expires
 // @match        http://srm-c03.aujs.local:8181/*
+// @match        http://srm-h.aujs.local:8181/*
 // @grant        GM_xmlhttpRequest
 // @connect      srm-c03.aujs.local
+// @connect      srm-h.aujs.local
 // @connect      db.smyrnatools.com
 // @run-at       document-start
 // ==/UserScript==
@@ -27,8 +29,24 @@
     // ever starts dropping requests.
     const WORKER_CONCURRENCY = 10
 
-    const API_BASE = 'http://srm-c03.aujs.local:8484'
+    // The dispatch UI runs on :8181 and the API on :8484 on the SAME box.
+    // Hostname differs between deployments (srm-c03, srm-h, etc.), so we
+    // pull it from the page we're sitting on instead of hardcoding it —
+    // that way the script auto-targets the right backend on every server.
+    const DISPATCH_HOST = (typeof window !== 'undefined' && window.location && window.location.hostname) || 'srm-h.aujs.local'
+    const API_BASE = `http://${DISPATCH_HOST}:8484`
+    const UI_ORIGIN = `http://${DISPATCH_HOST}:8181`
     const FORM_ID = '1001000'
+
+    // Dispatch server auth. The seat_token / connection_id pair is bound to
+    // a user account on the server side via POST /token (OAuth2-style
+    // client_credentials grant). Seats expire after ~12h of inactivity,
+    // which is why we keep credentials here — when the API starts rejecting
+    // calls with 401/403, the script re-runs /token with these creds and a
+    // freshly minted seat_token, then resumes sync without any human touch.
+    const DATABASE = 'SmyrnaTX'
+    const LOGIN_CLIENT_ID = 'tbtaylor'
+    const LOGIN_CLIENT_SECRET = 'Taylor20'
 
     // Plants we care about. DailyOrder takes a comma-joined list in one call;
     // DetailOrderAnalysis only accepts a single plant per request, so we fan out.
@@ -150,7 +168,7 @@
     // ============================================================
     // STATE
     // ============================================================
-    let seatToken = null // captured from the UI's own API calls
+    let seatToken = null // captured from the UI's own API calls, or minted by reauthenticate()
     // The dispatch UI does not send an Authorization header — only seat_token.
     // We still capture Authorization in case a future server build requires it,
     // but the sync flow does NOT gate on it.
@@ -158,6 +176,21 @@
     let lastSync = null
     let syncing = false
     let earlyKickScheduled = false
+    // Singleton promise so parallel workers that all hit 401 share one /token
+    // round-trip instead of stampeding the server with a fresh login each.
+    let reauthInFlight = null
+    let lastReauthFailureAt = 0
+    // Minimum gap between FAILED reauth attempts. Successful reauths don't
+    // count — if a fresh seat just got minted and the very next call still
+    // 401s (e.g. server-side cache lag), we want to be free to mint another
+    // one immediately. Only back off when /token itself is rejecting us
+    // (bad creds, server down) so we don't storm the login endpoint.
+    const REAUTH_FAILURE_BACKOFF_MS = 15_000
+    // Last-resort recovery: if /token keeps rejecting us, reload the page so
+    // the dispatch UI's own bootstrap allocates a fresh seat (which our
+    // interceptor will catch) and — on /security/login — auto-fill creds.
+    const RELOAD_SENTINEL_KEY = 'smyrna_sync_last_reload_at'
+    const RELOAD_COOLDOWN_MS = 5 * 60 * 1000
 
     // Kicks an immediate sync the first time we capture a seat_token, so the
     // user doesn't have to wait the next 5-minute tick after install.
@@ -176,6 +209,26 @@
 
     const log = (...args) => console.log('[Smyrna Sync]', ...args)
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+    // RFC4122 v4 UUID. Prefers crypto.randomUUID when present (modern browsers),
+    // falls back to crypto.getRandomValues, then Math.random as a last resort
+    // (Tampermonkey on legacy WebViews / file:// pages occasionally lacks the
+    // newer APIs).
+    function randomUuid() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID()
+        }
+        const bytes = new Uint8Array(16)
+        if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+            crypto.getRandomValues(bytes)
+        } else {
+            for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256)
+        }
+        bytes[6] = (bytes[6] & 0x0f) | 0x40
+        bytes[8] = (bytes[8] & 0x3f) | 0x80
+        const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0'))
+        return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`
+    }
 
     // ============================================================
     // TOKEN INTERCEPTION
@@ -258,15 +311,322 @@
             database: '',
             form_id: FORM_ID,
             seat_token: seatToken,
-            Origin: 'http://srm-c03.aujs.local:8181',
-            Referer: 'http://srm-c03.aujs.local:8181/',
+            Origin: UI_ORIGIN,
+            Referer: `${UI_ORIGIN}/`,
             ...extra
         }
         if (authToken) headers.Authorization = authToken
         return headers
     }
 
-    function apiPost(path, bodyObj) {
+    // Status codes that mean "your seat is dead, log back in." We treat 401
+    // and 403 the same — both have been seen across different IIS / Web API
+    // builds of the dispatch server for an expired or unbound seat. The
+    // dispatch server ALSO frequently 302s an unauthenticated request to
+    // /security/login and serves the login HTML with a 200, so the body
+    // sniffers below catch that case too.
+    function isAuthFailureStatus(status) {
+        return status === 401 || status === 403
+    }
+
+    // Heuristics for "this 2xx response is actually the login page in
+    // disguise." When the seat dies, the dispatch server transparently
+    // redirects API calls to /security/login and returns the login HTML
+    // with a 200 status. GM_xmlhttpRequest follows the redirect for us,
+    // so by the time we see the response the status looks healthy but
+    // the body is HTML form markup instead of the JSON / report we asked
+    // for. Detecting that here is what makes the auto-reauth actually
+    // trigger in production — pure 401 sniffing isn't enough.
+    function isLoginPageBody(body) {
+        if (!body || typeof body !== 'string') return false
+        const sample = body.slice(0, 4096).toLowerCase()
+        if (!sample.includes('<')) return false
+        return (
+            sample.includes('/security/login') ||
+            sample.includes('name="client_id"') ||
+            sample.includes("name='client_id'") ||
+            sample.includes('type="password"') ||
+            sample.includes("type='password'") ||
+            sample.includes('grant_type=client_credentials')
+        )
+    }
+
+    function isLoginPageRedirect(res) {
+        const finalUrl = res && (res.finalUrl || res.responseURL)
+        if (!finalUrl || typeof finalUrl !== 'string') return false
+        return /\/security\/login(\b|\/|\?)/i.test(finalUrl) || /\/login(\b|\/|\?)/i.test(finalUrl)
+    }
+
+    // Builds an Error that withReauthRetry will treat as a 401 even when
+    // the wire status was 200. Keeping a single factory means the retry
+    // logic only has to check `err.status`.
+    function makeAuthFailureError(path, res, reason) {
+        const err = new Error(`${path} auth-failure (${reason}); status=${res && res.status}`)
+        err.status = 401
+        err.authFailureReason = reason
+        return err
+    }
+
+    // Re-runs the OAuth2 client_credentials grant the dispatch UI uses on
+    // its login page. Mints a fresh seat_token + connection_id, POSTs them
+    // to /token along with the hardcoded service-account credentials, and
+    // — on success — replaces the module-level seatToken so all subsequent
+    // GM_xmlhttpRequest calls carry a live seat.
+    function reauthenticate() {
+        if (reauthInFlight) return reauthInFlight
+        const sinceLastFailure = Date.now() - lastReauthFailureAt
+        if (lastReauthFailureAt > 0 && sinceLastFailure < REAUTH_FAILURE_BACKOFF_MS) {
+            return Promise.reject(
+                new Error(`Reauth backoff (last failure ${Math.round(sinceLastFailure / 1000)}s ago)`)
+            )
+        }
+        reauthInFlight = doReauthenticate()
+            .then(() => {
+                lastReauthFailureAt = 0
+            })
+            .catch((err) => {
+                lastReauthFailureAt = Date.now()
+                throw err
+            })
+            .finally(() => {
+                reauthInFlight = null
+            })
+        return reauthInFlight
+    }
+
+    // Posts /token with the given seat + freshly minted connection_id.
+    // Resolves on 2xx, rejects with an Error whose message includes status
+    // + body so the caller can decide whether to try another strategy.
+    function postTokenWith(seat) {
+        const conn = randomUuid()
+        const body = [
+            `client_id=${encodeURIComponent(LOGIN_CLIENT_ID)}`,
+            `client_secret=${encodeURIComponent(LOGIN_CLIENT_SECRET)}`,
+            'grant_type=client_credentials'
+        ].join('&')
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: `${API_BASE}/token`,
+                headers: {
+                    Accept: 'application/json, text/plain, */*',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    Origin: UI_ORIGIN,
+                    Referer: `${UI_ORIGIN}/`,
+                    database: DATABASE,
+                    connection_id: conn,
+                    seat_token: seat
+                },
+                data: body,
+                onload: (res) => {
+                    if (res.status >= 200 && res.status < 300) {
+                        try {
+                            const parsed = JSON.parse(res.responseText)
+                            if (parsed && parsed.access_token) authToken = `Bearer ${parsed.access_token}`
+                        } catch {
+                            // /token returned 2xx but non-JSON — still safe to use this seat
+                        }
+                        resolve()
+                    } else {
+                        reject(new Error(`${res.status} ${res.responseText}`))
+                    }
+                },
+                onerror: (e) => reject(new Error(`network error: ${e && e.error}`))
+            })
+        })
+    }
+
+    // Multi-strategy reauth. The dispatch server is picky about which
+    // seat_tokens it accepts on /token (it rejects fresh UUIDs with
+    // "Invalid seat token provided"), so we try the captured seat first,
+    // then a fresh UUID as a long-shot, then fall back to reloading the
+    // page to let the dispatch UI's own bootstrap allocate a seat — and,
+    // on /security/login, auto-fill the credentials and submit.
+    async function doReauthenticate() {
+        log('Re-authenticating with dispatch server...')
+        updateBadge('reauth')
+
+        // Strategy 1: reuse the seat the UI is already using. This is the
+        // happy path — POST /token rebinds that seat to our credentials
+        // and we're back in business.
+        if (seatToken) {
+            try {
+                const captured = seatToken
+                await postTokenWith(captured)
+                seatToken = captured
+                log('Re-auth OK with captured seat')
+                return
+            } catch (err) {
+                log(`Reauth with captured seat failed: ${err.message}`)
+            }
+        }
+
+        // Strategy 2: try a freshly minted UUID. Usually rejected, but
+        // cheap to try — covers the case where the server's policy has
+        // been relaxed or we lost the captured seat somehow.
+        try {
+            const fresh = randomUuid()
+            await postTokenWith(fresh)
+            seatToken = fresh
+            log('Re-auth OK with fresh seat')
+            return
+        } catch (err) {
+            log(`Reauth with fresh seat failed: ${err.message}`)
+        }
+
+        // Strategy 3: reload the page. The dispatch UI's bootstrap
+        // allocates a seat the server knows about; our interceptor catches
+        // it and the next /token call succeeds. On /security/login, the
+        // auto-login routine that runs after reload fills credentials and
+        // submits the form for us.
+        if (triggerReloadForReauth()) {
+            throw new Error('Reauth failed — page reload queued')
+        }
+        throw new Error('Reauth failed and reload cooldown is active')
+    }
+
+    function triggerReloadForReauth() {
+        let lastReload = 0
+        try {
+            lastReload = Number(localStorage.getItem(RELOAD_SENTINEL_KEY) || '0')
+        } catch {
+            // localStorage unavailable (private mode, etc.) — just allow the reload
+        }
+        const sinceMs = Date.now() - lastReload
+        if (lastReload > 0 && sinceMs < RELOAD_COOLDOWN_MS) {
+            const sinceMin = Math.round(sinceMs / 60000)
+            log(`Skipping reload — last reload was ${sinceMin}min ago, cooldown is ${RELOAD_COOLDOWN_MS / 60000}min`)
+            return false
+        }
+        log('Reloading page to bootstrap a fresh seat...')
+        try {
+            localStorage.setItem(RELOAD_SENTINEL_KEY, String(Date.now()))
+        } catch {
+            // ignore
+        }
+        // Small delay so the log line flushes and any pending console output
+        // makes it to the screen before the page tears down.
+        setTimeout(() => window.location.reload(), 1500)
+        return true
+    }
+
+    // ============================================================
+    // AUTO-LOGIN ON /security/login
+    // After a reload-for-reauth, we usually land on the dispatch UI's
+    // login page. The page doesn't fire any captureable XHRs until a user
+    // submits the form, so the script would otherwise stall here forever.
+    // We fill the credentials and click submit ourselves.
+    // ============================================================
+    function isOnLoginPage() {
+        const path = (window.location && window.location.pathname) || ''
+        return /security\/login/i.test(path) || /\/login(\b|\/|$)/i.test(path)
+    }
+
+    // Sets an input's value in a way that survives Angular / React change
+    // detection. Setting `.value` directly bypasses the framework's
+    // internal binding; using the native prototype setter + dispatching
+    // input/change events triggers it properly.
+    function setNativeInputValue(input, value) {
+        const proto = Object.getPrototypeOf(input)
+        const desc = proto && Object.getOwnPropertyDescriptor(proto, 'value')
+        if (desc && desc.set) desc.set.call(input, value)
+        else input.value = value
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+        input.dispatchEvent(new Event('change', { bubbles: true }))
+    }
+
+    function findLoginFormParts() {
+        const inputs = Array.from(document.querySelectorAll('input'))
+        const visible = (el) => el && el.offsetParent !== null && !el.disabled
+        const passInput = inputs.find((i) => i.type === 'password' && visible(i))
+        if (!passInput) return null
+        const userInput = inputs.find(
+            (i) =>
+                i !== passInput &&
+                visible(i) &&
+                (i.type === 'text' || i.type === 'email' || i.type === '' || i.type === 'tel')
+        )
+        if (!userInput) return null
+        const form = passInput.closest('form') || userInput.closest('form')
+        const submitBtn =
+            (form && (form.querySelector('button[type="submit"]') || form.querySelector('input[type="submit"]'))) ||
+            document.querySelector('button[type="submit"], input[type="submit"]') ||
+            (form && form.querySelector('button'))
+        return { userInput, passInput, submitBtn, form }
+    }
+
+    function tryAutoLogin() {
+        const parts = findLoginFormParts()
+        if (!parts) return false
+        log('Auto-filling login form (tbtaylor / Taylor20)')
+        setNativeInputValue(parts.userInput, LOGIN_CLIENT_ID)
+        setNativeInputValue(parts.passInput, LOGIN_CLIENT_SECRET)
+        // Give the framework a tick to register the values before we submit.
+        setTimeout(() => {
+            if (parts.submitBtn) {
+                parts.submitBtn.click()
+                log('Login submit button clicked')
+            } else if (parts.form) {
+                if (typeof parts.form.requestSubmit === 'function') parts.form.requestSubmit()
+                else parts.form.submit()
+                log('Login form submitted')
+            } else {
+                log('No submit button or form found — credentials filled, manual submit needed')
+            }
+        }, 150)
+        return true
+    }
+
+    function watchForLoginPageAndAutoSubmit() {
+        if (!isOnLoginPage()) return
+        log('On login page — will auto-fill credentials when the form renders')
+        let attempted = false
+        const attemptNow = () => {
+            if (attempted) return
+            if (tryAutoLogin()) attempted = true
+        }
+        attemptNow()
+        if (attempted) return
+        const observer = new MutationObserver(attemptNow)
+        observer.observe(document.documentElement, { childList: true, subtree: true })
+        // Stop watching after 60s. If the form never showed up by then,
+        // something is wrong with the page and a human needs to look.
+        setTimeout(() => {
+            observer.disconnect()
+            if (!attempted) log('Auto-login gave up — no login form detected after 60s')
+        }, 60_000)
+    }
+
+    // Wraps a thunk that performs one GM_xmlhttpRequest. If the first run
+    // surfaces an auth-failure status, we re-authenticate exactly once and
+    // retry the thunk. A second 401/403 propagates so the caller surfaces
+    // it instead of looping forever. Captures the seatToken in use at call
+    // time so concurrent workers that all see a 401 don't each force a
+    // separate reauth — if one of them already refreshed the seat by the
+    // time we land here, we just retry with the new seat.
+    async function withReauthRetry(thunk) {
+        const seatBefore = seatToken
+        try {
+            return await thunk()
+        } catch (err) {
+            if (!isAuthFailureStatus(err && err.status)) throw err
+            const reason = err.authFailureReason || `status ${err.status}`
+            if (seatBefore !== seatToken) {
+                log(`Auth fail (${reason}) — seat already refreshed by another worker, retrying`)
+                return thunk()
+            }
+            log(`Auth fail (${reason}) — triggering reauth`)
+            try {
+                await reauthenticate()
+            } catch (reauthErr) {
+                log(`Reauth failed: ${reauthErr.message}`)
+                throw reauthErr
+            }
+            return thunk()
+        }
+    }
+
+    function apiPostRaw(path, bodyObj) {
         return new Promise((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'POST',
@@ -274,39 +634,71 @@
                 headers: buildDispatchHeaders({ 'Content-Type': 'application/json' }),
                 data: JSON.stringify(bodyObj),
                 onload: (res) => {
+                    if (isAuthFailureStatus(res.status)) {
+                        const err = new Error(`${path} returned ${res.status}: ${res.responseText}`)
+                        err.status = res.status
+                        return reject(err)
+                    }
+                    if (isLoginPageRedirect(res)) {
+                        return reject(makeAuthFailureError(path, res, 'redirected-to-login'))
+                    }
                     if (res.status >= 200 && res.status < 300) {
                         try {
-                            resolve(JSON.parse(res.responseText))
+                            return resolve(JSON.parse(res.responseText))
                         } catch (e) {
-                            reject(new Error(`Bad JSON from ${path}: ${e.message}`))
+                            // Common failure mode: server returned the login
+                            // HTML with status 200 instead of JSON. Treat as
+                            // an auth failure so reauth fires.
+                            if (isLoginPageBody(res.responseText)) {
+                                return reject(makeAuthFailureError(path, res, 'login-html-as-json'))
+                            }
+                            return reject(new Error(`Bad JSON from ${path}: ${e.message}`))
                         }
-                    } else {
-                        reject(new Error(`${path} returned ${res.status}: ${res.responseText}`))
                     }
+                    const err = new Error(`${path} returned ${res.status}: ${res.responseText}`)
+                    err.status = res.status
+                    reject(err)
                 },
                 onerror: reject
             })
         })
     }
 
-    function apiGetHtml(path) {
+    function apiGetHtmlRaw(path) {
         return new Promise((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: `${API_BASE}${path}`,
                 headers: buildDispatchHeaders(),
                 onload: (res) => {
-                    if (res.status >= 200 && res.status < 300) resolve(res.responseText)
-                    else {
+                    if (isAuthFailureStatus(res.status)) {
                         const err = new Error(`${path} returned ${res.status}`)
                         err.status = res.status
-                        reject(err)
+                        return reject(err)
                     }
+                    if (isLoginPageRedirect(res)) {
+                        return reject(makeAuthFailureError(path, res, 'redirected-to-login'))
+                    }
+                    if (res.status >= 200 && res.status < 300) {
+                        // The report static-file endpoint serves the login
+                        // HTML with status 200 when the seat is dead — we
+                        // detect that and treat it as an auth failure.
+                        if (isLoginPageBody(res.responseText)) {
+                            return reject(makeAuthFailureError(path, res, 'login-html-body'))
+                        }
+                        return resolve(res.responseText)
+                    }
+                    const err = new Error(`${path} returned ${res.status}`)
+                    err.status = res.status
+                    reject(err)
                 },
                 onerror: reject
             })
         })
     }
+
+    const apiPost = (path, bodyObj) => withReauthRetry(() => apiPostRaw(path, bodyObj))
+    const apiGetHtml = (path) => withReauthRetry(() => apiGetHtmlRaw(path))
 
     // Poll the static report URL until it exists. Report generation is async -
     // POST returns a reqId immediately but the file takes a few seconds to render,
@@ -547,10 +939,17 @@
             log('Already syncing, skipping tick')
             return
         }
+        // No seat yet? Mint one ourselves instead of stalling forever waiting
+        // for the UI to make a call. This also covers the case where the user
+        // is sitting on /security/login — the UI fires zero requests there.
         if (!seatToken) {
-            log('Waiting for seat_token to be captured from the UI...')
-            updateBadge('waiting')
-            return
+            try {
+                await reauthenticate()
+            } catch (err) {
+                log('Cold-start reauth failed:', err.message)
+                updateBadge('error', `Auth failed: ${err.message}`)
+                return
+            }
         }
         syncing = true
 
@@ -639,6 +1038,9 @@
         } else if (state === 'waiting') {
             badge.style.background = '#666'
             badge.textContent = `SYNC waiting for token...`
+        } else if (state === 'reauth') {
+            badge.style.background = '#4a5fb0'
+            badge.textContent = `SYNC re-authenticating...`
         } else if (state === 'ok') {
             badge.style.background = '#2d7a2d'
             badge.textContent = `SYNC OK ${ts}`
@@ -659,8 +1061,21 @@
     // KICKOFF
     // ============================================================
     log(
-        `Smyrna Dispatch Sync v2.9.0 loaded - ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, completeness check + retry on truncated reports, current-year backfill`
+        `Smyrna Dispatch Sync v2.11.0 loaded - host ${DISPATCH_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, completeness check + retry on truncated reports, current-year backfill, multi-strategy auto re-auth (captured seat → fresh seat → page reload + auto-login)`
     )
+
+    // Run the login-page auto-submit as soon as the DOM is available.
+    // The userscript runs at document-start, so on a fresh load the body
+    // may not exist yet — schedule it once DOMContentLoaded fires.
+    function whenDomReady(fn) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fn, { once: true })
+        } else {
+            fn()
+        }
+    }
+    whenDomReady(watchForLoginPageAndAutoSubmit)
+
     setTimeout(() => {
         updateBadge('waiting')
         setTimeout(runSync, 10000) // first run after 10s (gives UI time to make a call so we capture token)
