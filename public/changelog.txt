@@ -2,6 +2,15 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.2] - 2026-05-11
+
+- Add midnight-wrapping support to efficiency report time calculations so overnight shifts produce correct positive durations instead of negative values
+- Add `diffMinutesWrapping` helper to ReportUtility that treats end-before-start as a day rollover (e.g. 23:00 to 11:00 = 12h)
+- Update ReportService, EfficiencyExport, and WeeklyEfficiencyReport to use the new wrapping helper for all time-delta math
+- Update efficiency report validation to allow overnight shift times instead of rejecting them as invalid
+- Add disabled state to PlanDateNav stepper and Tomorrow button with reduced opacity, locked controls, and tooltip support
+- Disable the Plan date stepper on the Statistics tab since that tab manages its own date range and custom-tab picker
+
 ## [41.0.1] - 2026-05-08
 
 - Replace plain text input with AddressAutocomplete in PlanSettingsAddressesPanel so plant addresses get Nominatim suggestion lookup and geocode cache pre-warming

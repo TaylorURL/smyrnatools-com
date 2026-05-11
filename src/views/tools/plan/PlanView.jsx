@@ -20,7 +20,7 @@ import BookOrderView from './BookOrderView'
 import CallListView from './CallListView'
 import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
-import PlanFlowView from './PlanFlowView'
+import PlanFlowMapView from './PlanFlowMapView'
 import PlanScheduleView from './PlanScheduleView'
 import PlanStatisticsView from './PlanStatisticsView'
 
@@ -132,8 +132,7 @@ function PlanView() {
         removeTravelTime,
         setNewTravelTime,
         setShowSettings,
-        showSettings,
-        updateAssignment
+        showSettings
     } = usePlanActions({
         assignments,
         getTravelTime,
@@ -271,21 +270,19 @@ function PlanView() {
                         )}
 
                         {effectiveViewMode === 'flow' && (
-                            <PlanFlowView
+                            <PlanFlowMapView
                                 accentColor={accentColor}
                                 assignments={assignments}
                                 calcClockIn={calcClockIn}
                                 canEdit={canEdit}
                                 getTravelTime={getTravelTime}
                                 mixerCountsByPlant={mixerCountsByPlant}
-                                onSwitchToPlanner={() => setViewMode('dashboard')}
                                 planDate={planDate}
                                 plantProduction={plantProduction}
                                 plants={plants}
                                 setAssignments={setAssignments}
                                 setPlantProduction={setPlantProduction}
                                 stats={stats}
-                                updateAssignment={updateAssignment}
                             />
                         )}
 

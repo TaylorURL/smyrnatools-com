@@ -286,13 +286,22 @@ class ReportServiceImpl {
         }
         return counts
     }
-    /** Fetches all plants sorted by code with a 10-minute cache. */
+    /** Fetches all plants sorted by code with a 10-minute cache. The
+     *  Plan → Planner tab consumes `latitude` / `longitude` from these
+     *  rows to anchor each plant marker to its real location on the
+     *  map, so include them in the select — otherwise plants with
+     *  authoritative DB coords silently fall back to geocoding (or fail
+     *  outright when their address isn't in OSM). */
     async fetchPlantsSorted() {
-        const cacheKey = 'plants:all'
+        // Cache key bumped to `:v2` because the select now includes
+        // `latitude` / `longitude` — old v1 entries were missing those
+        // fields and would silently strip them for everyone with a warm
+        // in-flight cache when this lands.
+        const cacheKey = 'plants:all:v2'
         const cached = CacheUtility.get(cacheKey)
         if (cached) return cached
         const { data, error } = await Database.from('plants')
-            .select('plant_code,plant_name,plant_address')
+            .select('plant_code,plant_name,plant_address,latitude,longitude')
             .order('plant_code', { ascending: true })
         const plants = !error && Array.isArray(data) ? sortPlants(data) : []
         CacheUtility.set(cacheKey, plants, TTL_MED)

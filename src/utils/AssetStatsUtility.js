@@ -115,11 +115,14 @@ const AssetStatsUtility = {
 
     /**
      * Counts items grouped by status (Active, In Shop, Retired, Spare).
-     * Includes a Total key with the full array length.
+     * `Total` excludes Retired / Terminated so fleet headlines reflect
+     * the operational asset count, not historical artifacts. The Retired
+     * bucket is still surfaced separately for views that want it.
      */
     getStatusCounts(items, statusField = 'status') {
         if (!Array.isArray(items)) return {}
-        const counts = { Active: 0, 'In Shop': 0, Retired: 0, Spare: 0, Total: items.length }
+        const operationalItems = items.filter((item) => !RETIRED_STATUSES.includes(item?.[statusField]))
+        const counts = { Active: 0, 'In Shop': 0, Retired: 0, Spare: 0, Total: operationalItems.length }
         items.forEach((item) => {
             const status = item[statusField] || 'Unknown'
             if (VALID_STATUSES.includes(status)) counts[status]++
@@ -127,12 +130,15 @@ const AssetStatsUtility = {
         return counts
     },
 
-    /** Trailer-specific: counts by trailer type (Cement / End Dump) */
+    /** Trailer-specific: counts by trailer type (Cement / End Dump).
+     *  `Total` excludes retired/terminated trailers so fleet KPIs read
+     *  the same way the mixer/tractor counts do. */
     getTrailerStatusCounts(trailers) {
         if (!Array.isArray(trailers)) return {}
-        const counts = { Total: trailers.length }
+        const operational = trailers.filter((t) => !RETIRED_STATUSES.includes(t?.status))
+        const counts = { Total: operational.length }
         ;['Cement', 'End Dump'].forEach((type) => {
-            counts[type] = trailers.filter((t) => t.trailerType === type).length
+            counts[type] = operational.filter((t) => t.trailerType === type).length
         })
         return counts
     },
