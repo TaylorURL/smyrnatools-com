@@ -356,7 +356,7 @@ export async function exportEfficiencyReport({
     const headerRow = r
     r++
 
-    const tableStartRow = r
+    const _tableStartRow = r
     if (includedRows.length === 0) {
         ws.mergeCells(r, FIRST_COL, r, LAST_DATA_COL)
         const emptyCell = ws.getCell(r, FIRST_COL)

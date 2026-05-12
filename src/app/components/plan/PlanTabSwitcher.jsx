@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 /** Every Plan tab in the order they appear in the desktop switcher. */

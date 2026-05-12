@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useRef, useState } from 'react'
 
 import ConfirmationModal from '../../../app/components/reports/ConfirmationModal'

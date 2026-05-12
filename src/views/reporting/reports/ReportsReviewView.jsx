@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useRef, useState } from 'react'
 
 import { OPERATOR_EXCLUSION_REASONS } from '../../../app/constants/reportConstants'

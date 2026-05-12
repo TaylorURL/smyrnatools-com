@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
 import PlantDropdownModal from '../common/PlantDropdownModal'

@@ -55,24 +55,34 @@ function scheduleDrain() {
 }
 
 const ErrorReporterUtility = {
-    /**
-     * No-op: the beacon auto-initializes from its <script data-project="…"> tag.
-     * Accepted for backwards compatibility with older call sites.
-     */
-    init() {},
+    
+    
+/** No-op: the beacon handlers are installed for the page's lifetime. */
+destroy() {},
 
-    /** Manually report an error. Delegates to the beacon once it's available. */
-    reportError(error, metadata) {
-        runOrDefer((beacon) => beacon.reportError?.(error, metadata))
-    },
+    
+    
 
-    /** Force-flush queued errors. */
-    flush() {
+
+/** Force-flush queued errors. */
+flush() {
         runOrDefer((beacon) => beacon.flush?.())
     },
 
-    /** No-op: the beacon handlers are installed for the page's lifetime. */
-    destroy() {}
+    
+    
+
+/**
+     * No-op: the beacon auto-initializes from its <script data-project="…"> tag.
+     * Accepted for backwards compatibility with older call sites.
+     */
+init() {},
+
+    
+    /** Manually report an error. Delegates to the beacon once it's available. */
+reportError(error, metadata) {
+        runOrDefer((beacon) => beacon.reportError?.(error, metadata))
+    }
 }
 
 /**

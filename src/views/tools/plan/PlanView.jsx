@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useState, useTransition } from 'react'
 
 import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'

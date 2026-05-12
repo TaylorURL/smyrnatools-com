@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import EmbeddedViewModal from '../../../app/components/dashboard/EmbeddedViewModal'

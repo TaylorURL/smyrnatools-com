@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useRef, useState } from 'react'
 
 import { usePreferences } from '../../../app/context/PreferencesContext'
@@ -87,14 +88,14 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
 
             const mergedAttachments = isEditing ? [...(initialData.attachments || []), ...uploadedFiles] : uploadedFiles
             const payloadData = {
-                lab_company_name: labCompanyName.trim(),
+                attachments: mergedAttachments,
                 customer: customer.trim(),
-                order_no: orderNo.trim(),
-                ticket_no: ticketNo.trim(),
-                truck_no: truckNo.trim(),
-                report_date: reportDate,
+                lab_company_name: labCompanyName.trim(),
                 lab_issue: labIssue.trim(),
-                attachments: mergedAttachments
+                order_no: orderNo.trim(),
+                report_date: reportDate,
+                ticket_no: ticketNo.trim(),
+                truck_no: truckNo.trim()
             }
             setUploadProgress('')
             let data
@@ -109,14 +110,14 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
             } else {
                 const { monday, saturday } = getCurrentWeekBounds()
                 const row = {
-                    user_id: user?.id,
-                    report_name: 'third_party_lab',
-                    week: monday.toISOString(),
-                    report_date_range_start: monday.toISOString(),
-                    report_date_range_end: saturday.toISOString(),
-                    data: payloadData,
                     completed: true,
-                    submitted_at: new Date().toISOString()
+                    data: payloadData,
+                    report_date_range_end: saturday.toISOString(),
+                    report_date_range_start: monday.toISOString(),
+                    report_name: 'third_party_lab',
+                    submitted_at: new Date().toISOString(),
+                    user_id: user?.id,
+                    week: monday.toISOString()
                 }
                 const { data: inserted, error: dbError } = await Database.from(TABLE).insert(row).select().single()
                 if (dbError) throw new Error(dbError.message)

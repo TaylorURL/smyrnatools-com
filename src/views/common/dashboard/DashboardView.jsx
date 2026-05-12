@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -94,7 +95,7 @@ export default function DashboardView() {
         allOperatorsFullRef,
         dataReady,
         error,
-        lightDutyOperators,
+        lightDutyOperators: _lightDutyOperators,
         loading,
         pendingStartOperators,
         trainingOperators

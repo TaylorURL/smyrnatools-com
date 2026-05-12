@@ -14,8 +14,8 @@ export function usePlanInsights({
     mixerCountsByPlant,
     plants,
     getTravelTime,
-    travelTimes,
-    shiftSpanHours: shiftSpanOverride
+    travelTimes: _travelTimes,
+    shiftSpanHours: _shiftSpanOverride
 }) {
     const getStats = () => {
         const statsMap = Object.fromEntries(
@@ -56,7 +56,7 @@ export function usePlanInsights({
             }
         })
         return earliest
-    }, [assignments, travelTimes])
+    }, [assignments, calcClockIn])
 
     const latestTime = useMemo(() => {
         let latest = null
@@ -184,7 +184,7 @@ export function usePlanInsights({
         })
 
         return { suggestions, warnings }
-    }, [assignments, mixerCountsByPlant, travelTimes, shiftSpanHours])
+    }, [assignments, getTravelTime, mixerCountsByPlant, shiftSpanHours])
 
     return {
         earliestClockIn,

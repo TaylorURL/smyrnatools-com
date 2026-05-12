@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react'
 
 import VersionPopup from '../../../app/components/common/VersionPopup'

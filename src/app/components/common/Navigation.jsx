@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import SrmLogo from '../../../assets/images/srm-logo.svg'
@@ -29,10 +30,10 @@ const ICONS = {
     List: 'fa-list',
     Logout: 'fa-sign-out-alt',
     Maintenance: 'fa-wrench',
-    NRMCA: 'fa-certificate',
     Managers: 'fa-user-tie',
     Mixers: 'fa-truck',
     MyAccount: 'fa-user',
+    NRMCA: 'fa-certificate',
     Operators: 'fa-users',
     People: 'fa-users',
     'Pickup Trucks': 'fa-truck-pickup',

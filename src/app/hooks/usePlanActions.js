@@ -193,7 +193,7 @@ export function usePlanActions({
             ;[next[idx], next[targetIdx]] = [next[targetIdx], next[idx]]
             return next
         })
-    }, [])
+    }, [setAssignments])
 
     // Template management
     const loadTemplates = useCallback(async () => {
@@ -213,7 +213,7 @@ export function usePlanActions({
         setAssignments(ensureUniqueIds(template.assignments || [createEmptyAssignment()]))
         setNotes(template.notes || '')
         setShowTemplateModal(false)
-    }, [])
+    }, [setAssignments, setNotes])
 
     const deleteTemplate = useCallback(
         async (templateId) => {

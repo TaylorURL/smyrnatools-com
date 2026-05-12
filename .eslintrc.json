@@ -36,6 +36,7 @@
                 "varsIgnorePattern": "^_"
             }
         ],
+        "react/forbid-dom-props": ["error", { "forbid": ["style"] }],
         "react/prop-types": "off",
         "react/react-in-jsx-scope": "off",
         "no-empty": "off",
@@ -44,6 +45,15 @@
         "security/detect-object-injection": "off"
     },
     "overrides": [
+        {
+            "files": [
+                "src/views/**/*.jsx",
+                "src/app/components/**/*.jsx"
+            ],
+            "rules": {
+                "max-lines": ["error", { "max": 350, "skipBlankLines": true, "skipComments": true }]
+            }
+        },
         {
             "files": ["src/front/components/**/*.{js,jsx}"],
             "rules": {

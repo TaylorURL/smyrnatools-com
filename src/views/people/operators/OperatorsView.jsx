@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import PhoneLink from '../../../app/components/common/PhoneLink'

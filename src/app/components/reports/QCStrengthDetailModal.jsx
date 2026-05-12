@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
 import { usePreferences } from '../../../app/context/PreferencesContext'
@@ -15,11 +16,11 @@ function QCStrengthDetailModal({ report, getUserName, onClose, onReviewed }) {
     const submitterName = getUserName?.(report?.userId) || 'Unknown'
     const submittedDate = report?.submittedAt
         ? new Date(report.submittedAt).toLocaleDateString(undefined, {
-              month: 'long',
               day: 'numeric',
-              year: 'numeric',
               hour: 'numeric',
-              minute: '2-digit'
+              minute: '2-digit',
+              month: 'long',
+              year: 'numeric'
           })
         : ''
 

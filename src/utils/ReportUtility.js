@@ -4,7 +4,21 @@
  * operator exclusion detection, and AI-assisted plant production validation.
  */
 const ReportUtility = {
-    buildHoursReceivedByWeek(allReports, targetPlantCode) {
+    /**
+     * Returns the Central Time UTC offset (in minutes) that applies for `date`.
+     * Uses US DST rules (2nd Sun of March → 1st Sun of November), avoiding any
+     * IANA-database dependency. CDT = -300, CST = -360.
+     */
+_centralOffsetMinutes(date) {
+        const year = date.getUTCFullYear()
+        const march1 = new Date(Date.UTC(year, 2, 1))
+        const dstStart = new Date(Date.UTC(year, 2, 1 + ((7 - march1.getUTCDay()) % 7) + 7, 8))
+        const nov1 = new Date(Date.UTC(year, 10, 1))
+        const dstEnd = new Date(Date.UTC(year, 10, 1 + ((7 - nov1.getUTCDay()) % 7), 7))
+        return date >= dstStart && date < dstEnd ? -300 : -360
+    },
+    
+buildHoursReceivedByWeek(allReports, targetPlantCode) {
         const hoursReceivedByWeek = {}
         const plantCodeStr = String(targetPlantCode || '')
         if (!allReports || !Array.isArray(allReports) || !plantCodeStr) {
@@ -29,7 +43,8 @@ const ReportUtility = {
         })
         return hoursReceivedByWeek
     },
-    calculateAdjustedYph(reportData, hoursReceived = 0) {
+    
+calculateAdjustedYph(reportData, hoursReceived = 0) {
         const yards = parseFloat(
             reportData?.total_yards_delivered || reportData?.yardage || reportData?.['Yardage'] || 0
         )
@@ -45,12 +60,14 @@ const ReportUtility = {
         const adjustedYph = adjustedHours > 0 ? yards / adjustedHours : rawYph
         return { adjustedYph, hoursReceived, hoursSent, rawYph }
     },
-    calculateHoursReceivedForWeek(allReports, targetWeekStr, targetPlantCode) {
+    
+calculateHoursReceivedForWeek(allReports, targetWeekStr, targetPlantCode) {
         const normalizedTargetWeek = this.normalizeWeekStr(targetWeekStr)
         const hoursReceivedByWeek = this.buildHoursReceivedByWeek(allReports, targetPlantCode)
         return hoursReceivedByWeek[normalizedTargetWeek] || 0
     },
-    calculateHoursSent(reportData) {
+    
+calculateHoursSent(reportData) {
         let totalHoursSent = 0
         const operatorsSentToHelp = reportData?.operators_sent_to_help || []
         if (Array.isArray(operatorsSentToHelp)) {
@@ -64,7 +81,9 @@ const ReportUtility = {
         }
         return totalHoursSent
     },
-    computeMyReportStatus({ completed, hasSavedData, weekIso, today }) {
+    
+    
+computeMyReportStatus({ completed, hasSavedData, weekIso, today }) {
         const now = today instanceof Date ? today : new Date()
         const cutoff = this.getLateCutoff(weekIso)
         let statusText = ''
@@ -89,66 +108,55 @@ const ReportUtility = {
         }
         return { buttonLabel, statusClass, statusText }
     },
-    /**
-     * Reports for a given week are due by 7:00 AM Central on the FOLLOWING Monday.
-     * Returns the cutoff as a UTC Date so callers can compare with `Date.now()`.
-     * `null` if `weekIso` doesn't resolve to a Monday.
-     *
-     * Why: business policy — late status begins at Mon 07:00 CST, not Saturday EOD.
-     * How to apply: use this anywhere the app decides "is this overdue?" or renders
-     * a deadline countdown / cutoff label.
+    
+    
+
+/**
+     * Minute delta between two `parseTimeToMinutes` values, wrapping past
+     * midnight. Returns `null` if either input is non-finite. End-before-
+     * start is interpreted as an overnight shift — e.g. start 23:00 →
+     * punch 11:00 resolves to 720 minutes (12 h), not −720. If a user
+     * genuinely typoed the times the wrapped value lands in the >14h
+     * range and the existing "excessive hours" rule flags it.
      */
-    getLateCutoff(weekIso) {
-        const { monday } = this.getWeekDatesFromIso(weekIso)
-        if (!monday) return null
-        const nextMonday = new Date(monday)
-        nextMonday.setDate(monday.getDate() + 7)
-        const y = nextMonday.getFullYear()
-        const m = nextMonday.getMonth()
-        const d = nextMonday.getDate()
-        // Probe a midday UTC moment to determine whether Central is on DST that day,
-        // then assemble the cutoff at 07:00 wall-clock Central.
-        const probeUtc = new Date(Date.UTC(y, m, d, 12, 0, 0))
-        const offsetMinutes = ReportUtility._centralOffsetMinutes(probeUtc)
-        return new Date(Date.UTC(y, m, d, 7 - offsetMinutes / 60, 0, 0))
+diffMinutesWrapping(startMin, endMin) {
+        if (!Number.isFinite(startMin) || !Number.isFinite(endMin)) return null
+        const delta = endMin - startMin
+        return delta >= 0 ? delta : delta + 1440
     },
-    /** Display label for the weekly cutoff — surfaced in the UI alongside countdowns. */
-    getLateCutoffLabel() {
-        return 'Mon · 7:00 AM CST'
-    },
-    /**
-     * Returns the Central Time UTC offset (in minutes) that applies for `date`.
-     * Uses US DST rules (2nd Sun of March → 1st Sun of November), avoiding any
-     * IANA-database dependency. CDT = -300, CST = -360.
-     */
-    _centralOffsetMinutes(date) {
-        const year = date.getUTCFullYear()
-        const march1 = new Date(Date.UTC(year, 2, 1))
-        const dstStart = new Date(Date.UTC(year, 2, 1 + ((7 - march1.getUTCDay()) % 7) + 7, 8))
-        const nov1 = new Date(Date.UTC(year, 10, 1))
-        const dstEnd = new Date(Date.UTC(year, 10, 1 + ((7 - nov1.getUTCDay()) % 7), 7))
-        return date >= dstStart && date < dstEnd ? -300 : -360
-    },
-    formatDate(dateInput, locale) {
+    
+    
+
+
+formatDate(dateInput, locale) {
         if (!dateInput) return ''
         const d = new Date(dateInput)
         if (isNaN(d.getTime())) return ''
         return d.toLocaleDateString(locale)
     },
-    formatDateMMDDYY(date) {
+    
+
+
+formatDateMMDDYY(date) {
         if (!(date instanceof Date) || isNaN(date.getTime())) return ''
         const mm = date.getMonth() + 1
         const dd = date.getDate()
         const yy = date.getFullYear().toString().slice(-2)
         return `${mm}-${dd}-${yy}`
     },
-    formatDateTime(dt, locale) {
+    
+
+
+formatDateTime(dt, locale) {
         if (!dt) return ''
         const date = new Date(dt)
         if (isNaN(date.getTime())) return ''
         return date.toLocaleString(locale)
     },
-    formatVerboseDate(dateInput, locale) {
+    
+
+
+formatVerboseDate(dateInput, locale) {
         if (!dateInput) return ''
         let d
         if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
@@ -160,12 +168,18 @@ const ReportUtility = {
         if (isNaN(d.getTime())) return ''
         return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', weekday: 'short', year: 'numeric' })
     },
-    getExcludedOperators(rows, operatorOptions) {
+    
+
+
+getExcludedOperators(rows, operatorOptions) {
         const r = Array.isArray(rows) ? rows : []
         const opts = Array.isArray(operatorOptions) ? operatorOptions : []
         return opts.filter((opt) => !r.some((row) => row.name === opt.value)).map((opt) => opt.value)
     },
-    getFullYphMetrics(reportData, hoursReceived = 0) {
+    
+
+
+getFullYphMetrics(reportData, hoursReceived = 0) {
         const { rawYph, adjustedYph, hoursSent } = this.calculateAdjustedYph(reportData, hoursReceived)
         const rawGradeInfo = this.getYphGradeAndLabel(rawYph)
         const adjustedGradeInfo = this.getYphGradeAndLabel(adjustedYph)
@@ -180,7 +194,10 @@ const ReportUtility = {
             rawLabel: rawGradeInfo.label
         }
     },
-    getLastNWeekIsos(n, fromDate) {
+    
+
+
+getLastNWeekIsos(n, fromDate) {
         const weeks = []
         const base = fromDate instanceof Date ? fromDate : new Date()
         const currentMonday = this.mondayOf(base)
@@ -192,14 +209,47 @@ const ReportUtility = {
         }
         return weeks
     },
-    getMondayISO(dateInput) {
+    
+
+/**
+     * Reports for a given week are due by 7:00 AM Central on the FOLLOWING Monday.
+     * Returns the cutoff as a UTC Date so callers can compare with `Date.now()`.
+     * `null` if `weekIso` doesn't resolve to a Monday.
+     *
+     * Why: business policy — late status begins at Mon 07:00 CST, not Saturday EOD.
+     * How to apply: use this anywhere the app decides "is this overdue?" or renders
+     * a deadline countdown / cutoff label.
+     */
+getLateCutoff(weekIso) {
+        const { monday } = this.getWeekDatesFromIso(weekIso)
+        if (!monday) return null
+        const nextMonday = new Date(monday)
+        nextMonday.setDate(monday.getDate() + 7)
+        const y = nextMonday.getFullYear()
+        const m = nextMonday.getMonth()
+        const d = nextMonday.getDate()
+        // Probe a midday UTC moment to determine whether Central is on DST that day,
+        // then assemble the cutoff at 07:00 wall-clock Central.
+        const probeUtc = new Date(Date.UTC(y, m, d, 12, 0, 0))
+        const offsetMinutes = ReportUtility._centralOffsetMinutes(probeUtc)
+        return new Date(Date.UTC(y, m, d, 7 - offsetMinutes / 60, 0, 0))
+    },
+    
+/** Display label for the weekly cutoff — surfaced in the UI alongside countdowns. */
+getLateCutoffLabel() {
+        return 'Mon · 7:00 AM CST'
+    },
+    
+getMondayISO(dateInput) {
         const monday = this.mondayOf(dateInput || new Date())
         return monday ? monday.toISOString().slice(0, 10) : ''
     },
-    getTodayISODate() {
+    
+getTodayISODate() {
         return new Date().toISOString().slice(0, 10)
     },
-    getTotalWeeksSince(startDate, todayDate) {
+    
+getTotalWeeksSince(startDate, todayDate) {
         const today = todayDate instanceof Date ? todayDate : new Date()
         const currentMonday = this.mondayOf(today)
         const startMonday = this.mondayOf(startDate)
@@ -208,14 +258,16 @@ const ReportUtility = {
         const weeks = Math.floor(diffMs / 604800000) + 1
         return Math.max(weeks, 0)
     },
-    getTruckNumberForOperator(row, mixers) {
+    
+getTruckNumberForOperator(row, mixers) {
         if (row && row.truck_number) return row.truck_number
         if (!row || !row.name) return ''
         const mixer = (mixers || []).find((m) => m.assigned_operator === row.name)
         if (mixer && mixer.truck_number) return mixer.truck_number
         return ''
     },
-    getWeekBadge(weekIso, today = new Date()) {
+    
+getWeekBadge(weekIso, today = new Date()) {
         const currentMonday = this.mondayOf(today)
         if (!currentMonday) return ''
         const weekMonday = new Date(weekIso)
@@ -226,7 +278,8 @@ const ReportUtility = {
         if (diffWeeks > 1) return 'Older'
         return ''
     },
-    getWeekDatesFromIso(weekIso) {
+    
+getWeekDatesFromIso(weekIso) {
         if (!weekIso) return { monday: null, saturday: null }
         const monday = new Date(weekIso)
         if (isNaN(monday.getTime())) return { monday: null, saturday: null }
@@ -237,7 +290,8 @@ const ReportUtility = {
         saturday.setHours(0, 0, 0, 0)
         return { monday, saturday }
     },
-    getWeekVerbose(weekIso, locale) {
+    
+getWeekVerbose(weekIso, locale) {
         if (!weekIso) return ''
         const { monday, saturday } = this.getWeekDatesFromIso(weekIso)
         if (!monday || !saturday) return ''
@@ -250,7 +304,8 @@ const ReportUtility = {
         })
         return `${left}  \u2013 ${right}`
     },
-    getYphGradeAndLabel(yph) {
+    
+getYphGradeAndLabel(yph) {
         let grade = 'poor'
         let label = 'Poor'
         if (yph >= 6) {
@@ -265,7 +320,8 @@ const ReportUtility = {
         }
         return { grade, label }
     },
-    mondayOf(dateInput) {
+    
+mondayOf(dateInput) {
         const d = dateInput instanceof Date ? new Date(dateInput) : new Date(dateInput)
         if (isNaN(d.getTime())) return null
         const day = d.getDay()
@@ -274,13 +330,15 @@ const ReportUtility = {
         monday.setHours(0, 0, 0, 0)
         return monday
     },
-    normalizeWeekStr(weekStr) {
+    
+normalizeWeekStr(weekStr) {
         if (!weekStr) return ''
         const datePart = weekStr.split('T')[0]
         const [y, m, d] = datePart.split('-').map(Number)
         if (!y || !m || !d) return datePart
         return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     },
+    
     parseTimeToMinutes(timeStr) {
         if (!timeStr || typeof timeStr !== 'string') return null
         const parts = timeStr.split(':').map(Number)
@@ -288,19 +346,6 @@ const ReportUtility = {
         const [h, m] = parts
         if (!Number.isFinite(h) || !Number.isFinite(m)) return null
         return h * 60 + m
-    },
-    /**
-     * Minute delta between two `parseTimeToMinutes` values, wrapping past
-     * midnight. Returns `null` if either input is non-finite. End-before-
-     * start is interpreted as an overnight shift — e.g. start 23:00 →
-     * punch 11:00 resolves to 720 minutes (12 h), not −720. If a user
-     * genuinely typoed the times the wrapped value lands in the >14h
-     * range and the existing "excessive hours" rule flags it.
-     */
-    diffMinutesWrapping(startMin, endMin) {
-        if (!Number.isFinite(startMin) || !Number.isFinite(endMin)) return null
-        const delta = endMin - startMin
-        return delta >= 0 ? delta : delta + 1440
     },
     async validatePlantProduction(form, operatorOptions) {
         if (!form || typeof form !== 'object') return 'Invalid form'

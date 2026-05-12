@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
 import { computeClockInRows, formatMinutesClock, getEffectiveBase, PLAN_META_KEY } from '../../../utils/PlanUtility'

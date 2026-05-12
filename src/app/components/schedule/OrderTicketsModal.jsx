@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo } from 'react'
 
 import { parseDurationMinutes, timeToMinutes } from '../../../utils/PlanUtility'

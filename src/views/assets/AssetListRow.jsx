@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React from 'react'
 
 import StatusHistoryBar from '../../app/components/common/StatusHistoryBar'
@@ -116,7 +117,7 @@ export default function AssetListRow({
         if (col.type === 'truckNumber') {
             const val = col.getValue ? col.getValue(item) : item[col.key]
             return (
-                <td key={col.key} style={{ ...cellBold, width: col.width, fontFamily: 'ui-monospace, monospace' }}>
+                <td key={col.key} style={{ ...cellBold, fontFamily: 'ui-monospace, monospace', width: col.width }}>
                     {val ? (
                         <div className="flex items-center gap-1">
                             <span className="tabular-nums">{val}</span>

@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import SrmLogo from '../../../assets/images/srm-logo.svg'

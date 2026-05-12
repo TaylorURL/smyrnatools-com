@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -13,39 +14,39 @@ import MaintenanceFormView from './MaintenanceFormView'
 const STATUS_CONFIG = {
     due_soon: {
         badge: 'Due Soon',
-        color: '#b45309',
-        darkColor: '#fbbf24',
+        barColor: '#f59e0b',
         bg: 'rgba(245,158,11,0.1)',
+        color: '#b45309',
         darkBg: 'rgba(251,191,36,0.2)',
-        icon: 'fa-clock',
-        barColor: '#f59e0b'
+        darkColor: '#fbbf24',
+        icon: 'fa-clock'
     },
     never_serviced: {
         badge: 'Never',
-        color: '#64748b',
-        darkColor: '#94a3b8',
+        barColor: '#94a3b8',
         bg: 'rgba(100,116,139,0.1)',
+        color: '#64748b',
         darkBg: 'rgba(148,163,184,0.15)',
-        icon: 'fa-minus-circle',
-        barColor: '#94a3b8'
+        darkColor: '#94a3b8',
+        icon: 'fa-minus-circle'
     },
     ok: {
         badge: 'OK',
-        color: '#15803d',
-        darkColor: '#4ade80',
+        barColor: '#22c55e',
         bg: 'rgba(22,163,74,0.1)',
+        color: '#15803d',
         darkBg: 'rgba(34,197,94,0.2)',
-        icon: 'fa-check-circle',
-        barColor: '#22c55e'
+        darkColor: '#4ade80',
+        icon: 'fa-check-circle'
     },
     overdue: {
         badge: 'Overdue',
-        color: '#dc2626',
-        darkColor: '#f87171',
+        barColor: '#ef4444',
         bg: 'rgba(239,68,68,0.1)',
+        color: '#dc2626',
         darkBg: 'rgba(239,68,68,0.2)',
-        icon: 'fa-exclamation-triangle',
-        barColor: '#ef4444'
+        darkColor: '#f87171',
+        icon: 'fa-exclamation-triangle'
     }
 }
 
@@ -249,7 +250,7 @@ function ProgressBar({ item, isDark }) {
     )
 }
 
-function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, accentColor }) {
+function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark: _isDark, accentColor }) {
     const year = calendarDate.getFullYear()
     const month = calendarDate.getMonth()
     const days = useMemo(() => getCalendarDays(year, month), [year, month])
@@ -337,10 +338,10 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
                             key={i}
                             className="relative flex flex-col items-center justify-center py-1.5 text-xs rounded-md"
                             style={{
+                                backgroundColor: isToday ? accentColor : 'transparent',
                                 color: cell.outside ? 'var(--text-secondary)' : 'var(--text-primary)',
                                 opacity: cell.outside ? 0.35 : 1,
-                                backgroundColor: isToday ? accentColor : 'transparent',
-                                ...(isToday ? { color: '#fff', fontWeight: 700, borderRadius: '6px' } : {})
+                                ...(isToday ? { borderRadius: '6px', color: '#fff', fontWeight: 700 } : {})
                             }}
                         >
                             {cell.day}
@@ -384,7 +385,7 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
     )
 }
 
-function RecentActivity({ entries, isDark }) {
+function RecentActivity({ entries, isDark: _isDark }) {
     if (!entries.length) {
         return <p className="text-[10.5px] italic m-0 text-text-tertiary">No recent activity</p>
     }
@@ -471,7 +472,7 @@ const EMPTY_FORM = {
     service_interval_days: 90
 }
 
-function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accentColor, isDark }) {
+function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accentColor, isDark: _isDark }) {
     const [form, setForm] = useState(EMPTY_FORM)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
@@ -1322,7 +1323,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                         {[
                             { label: 'Manufacturer', value: equipment.manufacturer },
                             { label: 'Model', value: equipment.model },
-                            { label: 'Serial Number', value: equipment.serial_number, mono: true },
+                            { label: 'Serial Number', mono: true, value: equipment.serial_number },
                             {
                                 label: 'Service Interval',
                                 mono: true,
@@ -1563,7 +1564,7 @@ export default function MaintenanceLogView({
     // ── Sorting ─────────────────────────────────────────────────
     const sorted = useMemo(() => {
         if (!sortKey) {
-            const priority = { overdue: 0, due_soon: 1, never_serviced: 2, ok: 3 }
+            const priority = { due_soon: 1, never_serviced: 2, ok: 3, overdue: 0 }
             return [...filtered].sort((a, b) => (priority[a.service_status] ?? 3) - (priority[b.service_status] ?? 3))
         }
         const dir = sortDir === 'asc' ? 1 : -1
@@ -1587,7 +1588,7 @@ export default function MaintenanceLogView({
                     vb = b.next_service_date || ''
                     break
                 case 'Status': {
-                    const p = { overdue: 0, due_soon: 1, never_serviced: 2, ok: 3 }
+                    const p = { due_soon: 1, never_serviced: 2, ok: 3, overdue: 0 }
                     return ((p[a.service_status] ?? 3) - (p[b.service_status] ?? 3)) * dir
                 }
                 default:

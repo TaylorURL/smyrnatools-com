@@ -149,22 +149,16 @@ const reportTypes = [
 /** One-off report types (not weekly recurring). */
 const oneOffReportTypes = [
     {
-        name: 'lost_load',
-        title: 'Lost Load Report',
+        description: 'Report lost or spilled loads with details',
         icon: 'fa-truck',
         iconBg: 'bg-red-500',
-        description: 'Report lost or spilled loads with details',
+        name: 'lost_load',
         permission: 'reports.lostloads',
-        reviewPermission: 'reports.review.lost_load'
+        reviewPermission: 'reports.review.lost_load',
+        title: 'Lost Load Report'
     },
     {
-        name: 'qc_strength',
-        title: 'Quality Control Strength Report',
-        icon: 'fa-flask',
-        iconBg: 'bg-violet-600',
         description: 'Concrete cylinder strength testing and sample data',
-        permission: 'reports.qc_strength',
-        reviewPermission: 'reports.review.qc_strength',
         fields: [
             // Identification
             { label: 'Order No.', name: 'order_no', required: false, type: 'text' },
@@ -199,29 +193,29 @@ const oneOffReportTypes = [
                 label: 'Technician',
                 name: 'technician',
                 required: false,
-                type: 'role_select',
-                roleName: 'Quality Control Technician'
+                roleName: 'Quality Control Technician',
+                type: 'role_select'
             },
             {
                 label: 'Initial Curing Conditions',
                 name: 'initial_curing_conditions',
+                options: ['Moisture Caps', 'Moisture Caps & Cooler', 'Cooler', 'Curing Tank'],
                 required: false,
-                type: 'select',
-                options: ['Moisture Caps', 'Moisture Caps & Cooler', 'Cooler', 'Curing Tank']
+                type: 'select'
             },
             { label: 'Picked Up and Handled By', name: 'picked_up_handled_by', required: false, type: 'text' },
             // Notes
             { label: 'Notes', name: 'notes', required: false, type: 'textarea' }
-        ]
-    },
-    {
-        name: 'third_party_lab',
-        title: 'Third Party Lab Report',
-        icon: 'fa-vial',
-        iconBg: 'bg-rose-600',
-        description: 'Report issues with third party lab results',
+        ],
+        icon: 'fa-flask',
+        iconBg: 'bg-violet-600',
+        name: 'qc_strength',
         permission: 'reports.qc_strength',
         reviewPermission: 'reports.review.qc_strength',
+        title: 'Quality Control Strength Report'
+    },
+    {
+        description: 'Report issues with third party lab results',
         fields: [
             { label: 'Lab Company Name', name: 'lab_company_name', required: false, type: 'text' },
             { label: 'Customer', name: 'customer', required: false, type: 'text' },
@@ -231,7 +225,13 @@ const oneOffReportTypes = [
             { label: 'Date', name: 'report_date', required: false, type: 'date' },
             { label: 'What did the lab do wrong?', name: 'lab_issue', required: false, type: 'textarea' },
             { label: 'Attachments', name: 'attachments', required: false, type: 'file_upload' }
-        ]
+        ],
+        icon: 'fa-vial',
+        iconBg: 'bg-rose-600',
+        name: 'third_party_lab',
+        permission: 'reports.qc_strength',
+        reviewPermission: 'reports.review.qc_strength',
+        title: 'Third Party Lab Report'
     }
 ]
 const oneOffReportTypeMap = Object.fromEntries(oneOffReportTypes.map((rt) => [rt.name, rt]))

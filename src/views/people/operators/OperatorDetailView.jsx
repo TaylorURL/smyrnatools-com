@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -194,15 +195,15 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
         setMessage('')
         try {
             const userObj = await UserService.getCurrentUser()
-            const userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
+            const _userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
             const updatedOperator = {
                 ...operator,
                 plant_code: newPlantCode
             }
             await OperatorService.updateOperator({
                 ...updatedOperator,
-                employee_id: operator.employeeId,
-                employeeId: operator.employeeId
+                employeeId: operator.employeeId,
+                employee_id: operator.employeeId
             })
             setAssignedPlant(newPlantCode)
             setMessage(`Successfully transferred to ${newRegion.regionName}`)
@@ -264,8 +265,8 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
             }
             await OperatorService.updateOperator({
                 ...updateObj,
-                employee_id: operatorId,
-                employeeId: operatorId
+                employeeId: operatorId,
+                employee_id: operatorId
             })
             setMessage('Changes saved successfully!')
             fetchData()

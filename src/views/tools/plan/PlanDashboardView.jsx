@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import PlanDashboardActivityFeed from '../../../app/components/plan/PlanDashboardActivityFeed'
@@ -111,7 +112,7 @@ function PlanDashboardView({
         scopePlantCodes,
         scopePlantSet,
         yourSectionKind,
-        yourSectionLabel,
+        yourSectionLabel: _yourSectionLabel,
         yourSectionTitle
     } = useYourScope(yourPlantScope)
 
@@ -126,11 +127,11 @@ function PlanDashboardView({
         () => computeDashboardJobCoverage({ assignments, planDate, plantProduction, stats }),
         [plantProduction, stats, assignments, planDate]
     )
-    const pullUpRecommendations = useMemo(
+    const _pullUpRecommendations = useMemo(
         () => computeDashboardPullUpRows({ assignments, planDate, plantProduction, stats }),
         [plantProduction, stats, assignments, planDate]
     )
-    const suggestedSlotRecommendations = useMemo(
+    const _suggestedSlotRecommendations = useMemo(
         () => computeDashboardSuggestedSlots({ assignments, planDate, plantProduction, stats }),
         [plantProduction, stats, assignments, planDate]
     )
@@ -193,14 +194,14 @@ function PlanDashboardView({
         [setPlantProduction]
     )
 
-    const addSpecialJob = (job) => updateJobList('specialJobs', (list) => [...list, job])
-    const saveSpecialJob = (job) =>
+    const _addSpecialJob = (job) => updateJobList('specialJobs', (list) => [...list, job])
+    const _saveSpecialJob = (job) =>
         updateJobList('specialJobs', (list) => list.map((entry) => (entry.id === job.id ? job : entry)))
-    const deleteSpecialJob = (id) => updateJobList('specialJobs', (list) => list.filter((entry) => entry.id !== id))
-    const addQcJob = (job) => updateJobList('qcJobs', (list) => [...list, job])
-    const saveQcJob = (job) =>
+    const _deleteSpecialJob = (id) => updateJobList('specialJobs', (list) => list.filter((entry) => entry.id !== id))
+    const _addQcJob = (job) => updateJobList('qcJobs', (list) => [...list, job])
+    const _saveQcJob = (job) =>
         updateJobList('qcJobs', (list) => list.map((entry) => (entry.id === job.id ? job : entry)))
-    const deleteQcJob = (id) => updateJobList('qcJobs', (list) => list.filter((entry) => entry.id !== id))
+    const _deleteQcJob = (id) => updateJobList('qcJobs', (list) => list.filter((entry) => entry.id !== id))
 
     /* ── Scope-aware summary (Plant / District / Region) ────────────
        Outbound/Inbound include intra-scope moves so managers see every

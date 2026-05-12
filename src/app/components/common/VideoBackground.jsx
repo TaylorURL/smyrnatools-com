@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { memo, useRef, useState } from 'react'
 
 import vid1 from '../../../assets/videos/1.mp4'

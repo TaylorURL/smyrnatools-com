@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 import {
     Area,

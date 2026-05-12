@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useMemo } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
@@ -15,11 +16,11 @@ import { Panel, Stat, StatGroup } from '../ui/Panel'
  * ────────────────────────────────────────────────────────────────────────── */
 
 const TIER = {
-    excellent: { color: '#16a34a', label: 'Excellent' },
-    onTrack: { color: '#0ea5e9', label: 'On track' },
-    watch: { color: '#d97706', label: 'Watch' },
     bad: { color: '#dc2626', label: 'Needs attention' },
-    none: { color: 'var(--text-tertiary)', label: 'No data' }
+    excellent: { color: '#16a34a', label: 'Excellent' },
+    none: { color: 'var(--text-tertiary)', label: 'No data' },
+    onTrack: { color: '#0ea5e9', label: 'On track' },
+    watch: { color: '#d97706', label: 'Watch' }
 }
 
 const tierFor = (score) => {
@@ -274,8 +275,8 @@ function PlantScoreboard({ accent, perPlant, plantNameByCode, selectedPlant, onP
                                 onClick={onPlantClick ? () => onPlantClick(row.code) : undefined}
                                 className={onPlantClick ? 'cursor-pointer transition-colors' : ''}
                                 style={{
-                                    borderTop: '1px solid var(--border-light)',
-                                    background: isActive ? `${accent}10` : 'transparent'
+                                    background: isActive ? `${accent}10` : 'transparent',
+                                    borderTop: '1px solid var(--border-light)'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!onPlantClick || isActive) return
@@ -436,7 +437,7 @@ function ScoreCanvas({ accent, trend }) {
                         stroke={accent}
                         strokeOpacity={0.35}
                         strokeWidth={1}
-                        dot={{ r: 1.5, fill: accent, fillOpacity: 0.6, stroke: 'none' }}
+                        dot={{ fill: accent, fillOpacity: 0.6, r: 1.5, stroke: 'none' }}
                         activeDot={{ r: 3 }}
                         isAnimationActive={false}
                     />

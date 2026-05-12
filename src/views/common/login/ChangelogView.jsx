@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useState } from 'react'
 
 import { useAccentColor } from '../../../app/hooks/useAccentColor'

@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useRef, useState } from 'react'
 
 import { usePreferences } from '../../../context/PreferencesContext'
