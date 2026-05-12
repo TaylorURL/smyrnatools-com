@@ -4,35 +4,23 @@
 
 ## [41.0.12] - 2026-05-12
 
-- Consolidated all asset services (Mixer, Tractor, Trailer, Equipment, PickupTruck) into BaseAssetService, moving shared
-  CRUD, history, comments, issues, verification, and fetchWithDetails logic into a single config-driven base class
+- Consolidated all asset services (Mixer, Tractor, Trailer, Equipment, PickupTruck) into BaseAssetService, moving shared CRUD, history, comments, issues, verification, and fetchWithDetails logic into a single config-driven base class
 - Created createAssetComment factory to deduplicate comment model construction across asset types
-- Added shared PlantPickerField component and usePlantPicker hook to standardize plant selection across all asset Add
-  views
-- Relocated useAssetData, useAssetFilters, and useAssetVerification hooks from views/assets/ to app/hooks/ for proper
-  centralization
+- Added shared PlantPickerField component and usePlantPicker hook to standardize plant selection across all asset Add views
+- Relocated useAssetData, useAssetFilters, and useAssetVerification hooks from views/assets/ to app/hooks/ for proper centralization
 - Relocated useReportData and useReportVariance hooks from views/reporting/ to app/hooks/
-- Moved List views (ListView, ListAddView, ListDetailView) from views/tools/list/ to views/reporting/list/ and updated
-  navigation to group List under Reporting instead of Tools
-- Deleted 16 thin wrapper files (CommentModal, HistoryView, IssueModal) for every asset type and operators, inlining the
-  shared sections directly in detail views
-- Refactored HistoryViewSection, IssueModalSection, CommentModalSection, RecapModalSection, and TopSection to be more
-  concise and remove inline styles in favor of Tailwind classes
-- Converted inline style attributes to Tailwind across dozens of components: OrderInfoModal, OrderTicketsModal,
-  TruckCoverageHoverCard, Navigation, NotificationsModal, OnlineUsersModal, SendAssetMessageModal,
-  VerificationRequirementsModal, and many plan/dashboard/report components
-- Simplified all asset Add views (MixerAddView, TractorAddView, TrailerAddView, EquipmentAddView, PickupTrucksAddView)
-  by extracting shared plant picker logic
+- Moved List views (ListView, ListAddView, ListDetailView) from views/tools/list/ to views/reporting/list/ and updated navigation to group List under Reporting instead of Tools
+- Deleted 16 thin wrapper files (CommentModal, HistoryView, IssueModal) for every asset type and operators, inlining the shared sections directly in detail views
+- Refactored HistoryViewSection, IssueModalSection, CommentModalSection, RecapModalSection, and TopSection to be more concise and remove inline styles in favor of Tailwind classes
+- Converted inline style attributes to Tailwind across dozens of components: OrderInfoModal, OrderTicketsModal, TruckCoverageHoverCard, Navigation, NotificationsModal, OnlineUsersModal, SendAssetMessageModal, VerificationRequirementsModal, and many plan/dashboard/report components
+- Simplified all asset Add views (MixerAddView, TractorAddView, TrailerAddView, EquipmentAddView, PickupTrucksAddView) by extracting shared plant picker logic
 - Refactored MyAccountView and NotificationsView with significant line reduction through cleaner patterns
 - Refactored MaintenanceLogView, MaintenanceCreateFormView, and MaintenanceFormView for reduced complexity
 - Simplified BookOrderView with cleaner component structure and reduced nesting
-- Refactored all weekly report types (PlantManager, DistrictManager, Efficiency, SafetyManager, ReadyMixInstructor,
-  AggregateProduction, QualityControl) to be more concise
+- Refactored all weekly report types (PlantManager, DistrictManager, Efficiency, SafetyManager, ReadyMixInstructor, AggregateProduction, QualityControl) to be more concise
 - Refactored ReportsView, ReportsSubmitView, ReportsReviewView, NRMCAView, QualityIssuesView, and QualityIssueModal
-- Cleaned up PlanStatisticsPages, PlanStatisticsTables, PlanStatisticsSatisfactionPage, PlanScheduleFilterDrawer,
-  PlanFlowSidePanel, PlanFlowRouteEditor, and PlanDemandPerPlantTable
-- Reformatted edge function code (auth-service, equipment-service, mixer-service, tractor-service, trailer-service,
-  pickup-truck-service, plant-service, region-service, call-list-service, dispatch-import) for consistent style
+- Cleaned up PlanStatisticsPages, PlanStatisticsTables, PlanStatisticsSatisfactionPage, PlanScheduleFilterDrawer, PlanFlowSidePanel, PlanFlowRouteEditor, and PlanDemandPerPlantTable
+- Reformatted edge function code (auth-service, equipment-service, mixer-service, tractor-service, trailer-service, pickup-truck-service, plant-service, region-service, call-list-service, dispatch-import) for consistent style
 - Reformatted SQL migration files for consistent whitespace and alignment
 - Removed stale .claude plan, skill files, worktree refs, and reports mockup HTML
 - Net reduction of ~6,600 lines across 215 files
