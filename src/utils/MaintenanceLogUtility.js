@@ -3,39 +3,39 @@
 export const STATUS_CONFIG = {
     due_soon: {
         badge: 'Due Soon',
-        color: '#b45309',
-        darkColor: '#fbbf24',
+        barColor: '#f59e0b',
         bg: 'rgba(245,158,11,0.1)',
+        color: '#b45309',
         darkBg: 'rgba(251,191,36,0.2)',
-        icon: 'fa-clock',
-        barColor: '#f59e0b'
+        darkColor: '#fbbf24',
+        icon: 'fa-clock'
     },
     never_serviced: {
         badge: 'Never',
-        color: '#64748b',
-        darkColor: '#94a3b8',
+        barColor: '#94a3b8',
         bg: 'rgba(100,116,139,0.1)',
+        color: '#64748b',
         darkBg: 'rgba(148,163,184,0.15)',
-        icon: 'fa-minus-circle',
-        barColor: '#94a3b8'
+        darkColor: '#94a3b8',
+        icon: 'fa-minus-circle'
     },
     ok: {
         badge: 'OK',
-        color: '#15803d',
-        darkColor: '#4ade80',
+        barColor: '#22c55e',
         bg: 'rgba(22,163,74,0.1)',
+        color: '#15803d',
         darkBg: 'rgba(34,197,94,0.2)',
-        icon: 'fa-check-circle',
-        barColor: '#22c55e'
+        darkColor: '#4ade80',
+        icon: 'fa-check-circle'
     },
     overdue: {
         badge: 'Overdue',
-        color: '#dc2626',
-        darkColor: '#f87171',
+        barColor: '#ef4444',
         bg: 'rgba(239,68,68,0.1)',
+        color: '#dc2626',
         darkBg: 'rgba(239,68,68,0.2)',
-        icon: 'fa-exclamation-triangle',
-        barColor: '#ef4444'
+        darkColor: '#f87171',
+        icon: 'fa-exclamation-triangle'
     }
 }
 
@@ -153,4 +153,4 @@ export function toDateKey(year, month, day) {
 }
 
 /** Status-priority sort value — lower = more urgent */
-export const STATUS_PRIORITY = { overdue: 0, due_soon: 1, never_serviced: 2, ok: 3 }
+export const STATUS_PRIORITY = { due_soon: 1, never_serviced: 2, ok: 3, overdue: 0 }

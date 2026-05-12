@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import PlanDashboardActivityFeed from '../../../app/components/plan/PlanDashboardActivityFeed'

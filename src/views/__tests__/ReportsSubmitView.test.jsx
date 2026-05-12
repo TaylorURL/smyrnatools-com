@@ -1,6 +1,6 @@
-import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import React from 'react'
 
 // --- Mocks ---
 
@@ -38,7 +38,7 @@ jest.mock('../../app/hooks/useSubmitForm', () => ({
         carouselIndex: 0,
         clearRows: jest.fn(),
         excludedOperators: [],
-        form: { yardage: '', total_hours: '' },
+        form: { total_hours: '', yardage: '' },
         handleChange: jest.fn(),
         hasUnsavedChanges: false,
         initializeRows: jest.fn(),

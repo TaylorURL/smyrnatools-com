@@ -51,20 +51,33 @@ const base = createAssetService({
 /** Tractor CRUD, history, comments, issues, and verification service. */
 export const TractorService = {
     ...base,
-    getAllTractors() { return base._base.getAll() },
-    fetchTractors() { return this.getAllTractors() },
-    fetchTractorById(id) { return base._base.fetchById(id) },
-    getTractorHistory(tractorId, limit = null) { return base._base.getHistory(tractorId, limit) },
     createTractor(tractor, userId) { return base._base.create(tractor, userId) },
-    updateTractor(tractorId, tractor, userId, prevTractorState = null) {
-        return base._base.update(tractorId, tractor, userId, prevTractorState)
-    },
-    verifyTractor(tractorId, userId) { return base._base.verify(tractorId, userId) },
     deleteTractor(id) { return base._base.delete(id) },
-    getTractorsByOperator(operatorId) { return base._base.getByOperator(operatorId) },
-    searchTractorsByVin(query) { return base._base.searchByVin(query) },
-    /** VIN search with enrichment + safe count defaults for downstream consumers. */
-    async searchTractorsByVinProcessed(query) {
+    fetchTractorById(id) { return base._base.fetchById(id) },
+    /** Batch-corrects null operator fields by setting affected tractors to Spare. */
+cleanupNullOperators(tractors = null) {
+        return CleanupUtility.cleanupNullOperators(
+            tractors,
+            (id, updates, userId) => this.updateTractor(id, updates, userId),
+            () => this.getAllTractors()
+        )
+    },
+    
+fetchTractors() { return this.getAllTractors() },
+    
+fetchTractorsWithDetails(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
+    
+getAllTractors() { return base._base.getAll() },
+    
+getTractorHistory(tractorId, limit = null) { return base._base.getHistory(tractorId, limit) },
+    
+getTractorsByOperator(operatorId) { return base._base.getByOperator(operatorId) },
+    
+searchTractorsByVin(query) { return base._base.searchByVin(query) },
+    
+    
+/** VIN search with enrichment + safe count defaults for downstream consumers. */
+async searchTractorsByVinProcessed(query) {
         const rows = await this.searchTractorsByVin(query)
         return rows.map((t) => {
             t.isVerified = () => VerifiedUtility.isVerified(t.updatedLast, t.updatedAt, t.updatedBy)
@@ -73,13 +86,13 @@ export const TractorService = {
             return t
         })
     },
-    fetchTractorsWithDetails(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
-    /** Batch-corrects null operator fields by setting affected tractors to Spare. */
-    cleanupNullOperators(tractors = null) {
-        return CleanupUtility.cleanupNullOperators(
-            tractors,
-            (id, updates, userId) => this.updateTractor(id, updates, userId),
-            () => this.getAllTractors()
-        )
-    }
+    
+
+
+updateTractor(tractorId, tractor, userId, prevTractorState = null) {
+        return base._base.update(tractorId, tractor, userId, prevTractorState)
+    },
+    
+    
+verifyTractor(tractorId, userId) { return base._base.verify(tractorId, userId) }
 }

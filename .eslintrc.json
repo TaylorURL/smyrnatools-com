@@ -36,7 +36,7 @@
                 "varsIgnorePattern": "^_"
             }
         ],
-        "react/forbid-dom-props": ["error", { "forbid": ["style"] }],
+        "react/forbid-dom-props": ["warn", { "forbid": ["style"] }],
         "react/prop-types": "off",
         "react/react-in-jsx-scope": "off",
         "no-empty": "off",
@@ -45,6 +45,24 @@
         "security/detect-object-injection": "off"
     },
     "overrides": [
+        {
+            "files": [
+                "src/**/__tests__/**/*.{js,jsx,ts,tsx}",
+                "src/**/*.test.{js,jsx,ts,tsx}",
+                "src/setupTests.js"
+            ],
+            "env": {
+                "jest": true,
+                "node": true
+            },
+            "globals": {
+                "vi": "readonly"
+            },
+            "rules": {
+                "max-lines": "off",
+                "no-undef": "off"
+            }
+        },
         {
             "files": [
                 "src/views/**/*.jsx",

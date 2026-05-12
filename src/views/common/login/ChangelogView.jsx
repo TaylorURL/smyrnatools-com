@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-import changelogText from '../../../../CHANGELOG.md'
+import changelogText from '../../../../CHANGELOG.md?raw'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 
 const GITHUB_URL = 'https://github.com/bradley-t-t'

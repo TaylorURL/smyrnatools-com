@@ -93,10 +93,10 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
                             key={i}
                             className="relative flex flex-col items-center justify-center py-1.5 text-xs rounded-md"
                             style={{
+                                backgroundColor: isToday ? accentColor : 'transparent',
                                 color: cell.outside ? 'var(--text-secondary)' : 'var(--text-primary)',
                                 opacity: cell.outside ? 0.35 : 1,
-                                backgroundColor: isToday ? accentColor : 'transparent',
-                                ...(isToday ? { color: '#fff', fontWeight: 700, borderRadius: '6px' } : {})
+                                ...(isToday ? { borderRadius: '6px', color: '#fff', fontWeight: 700 } : {})
                             }}
                         >
                             {cell.day}

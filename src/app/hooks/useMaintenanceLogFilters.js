@@ -105,5 +105,5 @@ export function useMaintenanceLogFilters({ equipment, searchText, selectedPlant,
         [sortKey]
     )
 
-    return { filtered, sorted, sortKey, sortDir, handleHeaderClick }
+    return { filtered, handleHeaderClick, sortDir, sortKey, sorted }
 }

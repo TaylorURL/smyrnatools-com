@@ -142,7 +142,7 @@ export function MaintenanceEquipmentDetail({ equipment, onClose, onLogService, o
                         {[
                             { label: 'Manufacturer', value: equipment.manufacturer },
                             { label: 'Model', value: equipment.model },
-                            { label: 'Serial Number', value: equipment.serial_number, mono: true },
+                            { label: 'Serial Number', mono: true, value: equipment.serial_number },
                             {
                                 label: 'Service Interval',
                                 mono: true,

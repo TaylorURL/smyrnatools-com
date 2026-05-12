@@ -33,12 +33,12 @@ const base = createAssetService({
 /** Heavy equipment CRUD, history, comments, issues, and verification service. */
 export const EquipmentService = {
     ...base,
-    getAllEquipments() { return base._base.getAll() },
-    fetchEquipmentById(id) { return base._base.fetchById(id) },
-    getEquipmentHistory(equipmentId, limit = null) { return base._base.getHistory(equipmentId, limit) },
     createEquipment(equipment, userId) { return base._base.create(equipment, userId) },
-    updateEquipment(equipmentId, equipment, userId) { return base._base.update(equipmentId, equipment, userId) },
     deleteEquipment(id) { return base._base.delete(id) },
+    fetchEquipmentById(id) { return base._base.fetchById(id) },
     fetchEquipmentsWithDetails(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
+    getAllEquipments() { return base._base.getAll() },
+    getEquipmentHistory(equipmentId, limit = null) { return base._base.getHistory(equipmentId, limit) },
+    updateEquipment(equipmentId, equipment, userId) { return base._base.update(equipmentId, equipment, userId) },
     verifyEquipment(equipmentId, userId) { return base._base.verify(equipmentId, userId) }
 }

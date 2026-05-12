@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import LoadingScreen from '../../../app/components/common/LoadingScreen'

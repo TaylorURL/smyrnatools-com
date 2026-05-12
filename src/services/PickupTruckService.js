@@ -20,15 +20,32 @@ const base = createAssetService({
 /** Pickup truck CRUD, comments, issues, history, and verification service. */
 export const PickupTruckService = {
     ...base,
-    getAll() { return base._base.getAll() },
-    fetchAll(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
-    getById(id) { return base._base.fetchById(id) },
     create(pickup, userId) { return base._base.create(pickup, userId) },
-    update(id, pickup, userId) { return base._base.update(id, pickup, userId) },
-    remove(id) { return base._base.delete(id) },
-    searchByVin(query) { return base._base.searchByVin(query) },
+    fetchAll(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
+    fetchHistory(pickupId, limit = null) { return base._base.getHistory(pickupId, limit) },
+    getAll() { return base._base.getAll() },
+    getById(id) { return base._base.fetchById(id) },
+    
+getDuplicateAssigned(pickups) {
+        return getDuplicateFieldValues(pickups, (p) => {
+            const key = String(p.assigned || '').trim().toLowerCase()
+            return key || null
+        })
+    },
+    
+
+getDuplicateVINs(pickups) {
+        return getDuplicateFieldValues(pickups, (p) => {
+            const key = String(p.vin || '').trim().toUpperCase().replace(/\s+/g, '')
+            return key || null
+        })
+    },
+    
+    
+remove(id) { return base._base.delete(id) },
+    
     /** Pickup-specific search by assigned-person name (not in the generic BaseAssetService API). */
-    async searchByAssigned(query) {
+async searchByAssigned(query) {
         if (!query?.trim()) throw new Error('Search query is required')
         const json = await apiPostOrThrow(
             `${SERVICE_PREFIX}/search-by-assigned`,
@@ -37,11 +54,15 @@ export const PickupTruckService = {
         )
         return (json?.data ?? []).map(PickupTruck.fromApiFormat)
     },
+    
+searchByVin(query) { return base._base.searchByVin(query) },
+    
+update(id, pickup, userId) { return base._base.update(id, pickup, userId) },
     /**
      * Verifies via the `/update` endpoint with a fresh `updatedLast` timestamp
      * -- the pickup-truck service has no dedicated `/verify` route.
      */
-    async verify(pickupId, userId) {
+async verify(pickupId, userId) {
         const id = resolveEntityId(pickupId)
         ValidationUtility.requireUUID(id, 'Pickup Truck ID is required')
         const resolvedUserId = await requireUserId(userId)
@@ -51,18 +72,5 @@ export const PickupTruckService = {
             'Failed to verify pickup truck'
         )
         return PickupTruck.fromApiFormat(json?.data)
-    },
-    getDuplicateVINs(pickups) {
-        return getDuplicateFieldValues(pickups, (p) => {
-            const key = String(p.vin || '').trim().toUpperCase().replace(/\s+/g, '')
-            return key || null
-        })
-    },
-    getDuplicateAssigned(pickups) {
-        return getDuplicateFieldValues(pickups, (p) => {
-            const key = String(p.assigned || '').trim().toLowerCase()
-            return key || null
-        })
-    },
-    fetchHistory(pickupId, limit = null) { return base._base.getHistory(pickupId, limit) }
+    }
 }

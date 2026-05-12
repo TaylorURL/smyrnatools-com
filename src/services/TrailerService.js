@@ -16,20 +16,26 @@ const base = createAssetService({
 /** Trailer CRUD, comments, issues, and history service. */
 export const TrailerService = {
     ...base,
-    fetchTrailers() { return base._base.getAll() },
+    
+createTrailer(trailer, userId) { return base._base.create(trailer, userId) },
+    
+    
+deleteTrailer(id) { return base._base.delete(id) },
     /** Fetches a single trailer by ID. Accepts string IDs or `{ id }` / `{ trailerId }` objects. */
-    fetchTrailerById(trailerId) {
+fetchTrailerById(trailerId) {
         if (!trailerId) throw new Error('Trailer ID is required')
         const resolved = typeof trailerId === 'object' ? trailerId.id || trailerId.trailerId || '' : trailerId
         return base._base.fetchById(resolved)
     },
-    createTrailer(trailer, userId) { return base._base.create(trailer, userId) },
+    
+    fetchTrailers() { return base._base.getAll() },
+    
+fetchTrailersWithDetails(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
+    
+getTrailerHistory(trailerId, limit = null) { return base._base.getHistory(trailerId, limit) },
     /** Updates a trailer record. Coerces plain objects to Trailer instances for serialization. */
-    updateTrailer(trailerId, updatedTrailer, userId, _oldTrailer) {
+updateTrailer(trailerId, updatedTrailer, userId, _oldTrailer) {
         const trailer = updatedTrailer instanceof Trailer ? updatedTrailer : Trailer.ensureInstance(updatedTrailer)
         return base._base.update(trailerId, trailer, userId)
-    },
-    deleteTrailer(id) { return base._base.delete(id) },
-    fetchTrailersWithDetails(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
-    getTrailerHistory(trailerId, limit = null) { return base._base.getHistory(trailerId, limit) }
+    }
 }

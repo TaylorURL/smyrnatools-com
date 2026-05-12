@@ -13,9 +13,9 @@ beforeAll(() => {
     jest.resetModules()
 
     jest.doMock('../../utils/APIUtility', () => ({
+        APIUtility: { post: jest.fn() },
         __esModule: true,
-        default: { post: jest.fn() },
-        APIUtility: { post: jest.fn() }
+        default: { post: jest.fn() }
     }))
 
     const dbModule = require('../DatabaseService')

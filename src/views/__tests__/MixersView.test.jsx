@@ -1,5 +1,5 @@
-import React from 'react'
 import { render, screen } from '@testing-library/react'
+import React from 'react'
 
 // --- Mocks ---
 
@@ -94,9 +94,9 @@ jest.mock('../../app/hooks/useAssetVerification', () => ({
 jest.mock('../../app/context/PreferencesContext', () => ({
     usePreferences: () => ({
         preferences: { accentColor: '#1e3a5f', defaultViewMode: null, selectedRegion: null },
+        resetMixerFilters: jest.fn(),
         saveLastViewedFilters: jest.fn(),
         updateMixerFilter: jest.fn(),
-        resetMixerFilters: jest.fn(),
         updateOperatorFilter: jest.fn()
     })
 }))
