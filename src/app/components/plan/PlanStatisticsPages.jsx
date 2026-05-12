@@ -18,7 +18,7 @@ import { BigPoursTable, ComparisonRow, PlantScorecardTable, RankedList } from '.
 export function RefreshingHint({ when }) {
     if (!when) return null
     return (
-        <span className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
             <i className="fas fa-spinner fa-spin text-[10px]" />
             Refreshing…
         </span>
@@ -29,10 +29,7 @@ export function RefreshingHint({ when }) {
  *  blank box and lets the user tell "loading" apart from "no data". */
 export function EmptySection({ icon = 'fa-circle-info', loading, message }) {
     return (
-        <div
-            className="flex items-center justify-center gap-2 py-8 text-[12px]"
-            style={{ color: 'var(--text-tertiary)' }}
-        >
+        <div className="flex items-center justify-center gap-2 py-8 text-[12px] text-text-tertiary">
             <i className={`fas ${loading ? 'fa-spinner fa-spin' : icon} text-[14px]`} />
             <span>{message}</span>
         </div>
@@ -122,10 +119,7 @@ export function ComparisonPanel({ currentSummary, previousSummary }) {
 
     return (
         <Panel title="Period comparison" innerClassName="p-0">
-            <div
-                className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-3 py-2 text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
                 <span>Metric</span>
                 <span>Current</span>
                 <span>Previous</span>
@@ -157,7 +151,7 @@ function PlantYardageHero({ accentColor, knownPlantRows, knownPlantSummary, load
                 loading ? (
                     <RefreshingHint when />
                 ) : (
-                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                    <span className="text-[11px] text-text-tertiary">
                         {knownPlantSummary.activeCount} plant
                         {knownPlantSummary.activeCount === 1 ? '' : 's'} · {fmtInt(knownPlantSummary.totalYardage)} yd³
                         total
@@ -198,8 +192,7 @@ function ViewDetails({ onSelect, section, label = 'View details' }) {
         <button
             type="button"
             onClick={() => onSelect(section)}
-            className="text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer bg-transparent border-none p-0"
-            style={{ color: 'var(--text-secondary)' }}
+            className="text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-text-secondary"
         >
             {label}
             <i className="fas fa-arrow-right text-[9px]" />
@@ -223,34 +216,18 @@ function MiniRankedList({ accent, items, labelKey, max, primaryFmt, secondaryFmt
                         className="grid grid-cols-[20px_1fr_80px_auto] gap-2 items-center px-3 py-2 text-[12px]"
                         style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
                     >
-                        <span className="font-mono tabular-nums text-right" style={{ color: 'var(--text-tertiary)' }}>
-                            {idx + 1}
-                        </span>
-                        <span className="truncate" style={{ color: 'var(--text-primary)' }}>
-                            {item[labelKey]}
-                        </span>
-                        <div
-                            className="h-1.5 rounded-full overflow-hidden"
-                            style={{ background: 'var(--bg-tertiary)' }}
-                        >
+                        <span className="font-mono tabular-nums text-right text-text-tertiary">{idx + 1}</span>
+                        <span className="truncate text-text-primary">{item[labelKey]}</span>
+                        <div className="h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
                             <div className="h-full" style={{ background: accent, width: `${Math.max(2, pct)}%` }} />
                         </div>
                         <div className="text-right shrink-0 flex items-baseline gap-1.5">
-                            <span
-                                className="font-mono tabular-nums font-semibold"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
                                 {primaryFmt ? primaryFmt(item) : fmtInt(value)}
                             </span>
-                            {valueLabel && (
-                                <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                                    {valueLabel}
-                                </span>
-                            )}
+                            {valueLabel && <span className="text-[10px] text-text-tertiary">{valueLabel}</span>}
                             {secondaryFmt && (
-                                <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                                    {secondaryFmt(item)}
-                                </span>
+                                <span className="text-[10px] text-text-tertiary">{secondaryFmt(item)}</span>
                             )}
                         </div>
                     </div>
@@ -277,40 +254,24 @@ function SatisfactionSummary({ aggregate, loading, onSelect }) {
                 <div className="px-4 py-3 flex flex-col gap-2">
                     <div className="flex items-baseline gap-3">
                         <span
-                            className="font-mono tabular-nums font-bold leading-none"
-                            style={{ color: 'var(--text-primary)', fontSize: 32 }}
+                            className="font-mono tabular-nums font-bold leading-none text-text-primary"
+                            style={{ fontSize: 32 }}
                         >
                             {Math.round(aggregate.score * 100)}%
                         </span>
-                        <span
-                            className="text-[11px] uppercase tracking-wider"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <span className="text-[11px] uppercase tracking-wider text-text-tertiary">
                             good-service rate
                         </span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-[12px]">
-                        <div
-                            className="rounded p-2 flex flex-col"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                        >
-                            <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                                Good
-                            </span>
-                            <span
-                                className="font-mono tabular-nums font-semibold"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                        <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
+                            <span className="text-[10px] text-text-tertiary">Good</span>
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
                                 {fmtInt(aggregate.goodService)}
                             </span>
                         </div>
-                        <div
-                            className="rounded p-2 flex flex-col"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                        >
-                            <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                                Bad
-                            </span>
+                        <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
+                            <span className="text-[10px] text-text-tertiary">Bad</span>
                             <span
                                 className="font-mono tabular-nums font-semibold"
                                 style={{ color: aggregate.badService > 0 ? '#dc2626' : 'var(--text-primary)' }}
@@ -318,22 +279,14 @@ function SatisfactionSummary({ aggregate, loading, onSelect }) {
                                 {fmtInt(aggregate.badService)}
                             </span>
                         </div>
-                        <div
-                            className="rounded p-2 flex flex-col"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                        >
-                            <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                                Scored
-                            </span>
-                            <span
-                                className="font-mono tabular-nums font-semibold"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                        <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
+                            <span className="text-[10px] text-text-tertiary">Scored</span>
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
                                 {fmtInt(aggregate.samples)}
                             </span>
                         </div>
                     </div>
-                    <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                    <span className="text-[10.5px] text-text-tertiary">
                         Bad = late &gt; 15 min OR pace dropped below schedule.
                     </span>
                 </div>
@@ -435,20 +388,15 @@ function BigPoursPreview({ accent, currentSummary, loading, onSelect, plantNameB
                                 style={{ background: plantBadgeColor(pour.plantCode, accent) }}
                             />
                             <div className="flex-1 min-w-0">
-                                <div className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                                    {pour.customer}
-                                </div>
-                                <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                                <div className="font-semibold truncate text-text-primary">{pour.customer}</div>
+                                <div className="text-[11px] text-text-secondary">
                                     <span className="font-mono tabular-nums">{pour.plantCode}</span>
                                     {plantNameByCode?.[pour.plantCode] && <> · {plantNameByCode[pour.plantCode]}</>}
                                     {' · '}
                                     {pour.planDate}
                                 </div>
                             </div>
-                            <span
-                                className="font-mono tabular-nums font-semibold"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
                                 {fmtInt(pour.yardage)} yd³
                             </span>
                         </div>
@@ -494,15 +442,7 @@ export function PlanStatisticsOverviewPage({
         return (
             <div className="flex flex-col gap-4 animate-pulse">
                 {[260, 220, 180, 180].map((h, i) => (
-                    <div
-                        key={i}
-                        className="rounded"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            height: h
-                        }}
-                    />
+                    <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
                 ))}
             </div>
         )
@@ -528,7 +468,7 @@ export function PlanStatisticsOverviewPage({
                     loading ? (
                         <RefreshingHint when />
                     ) : trendComparison ? (
-                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[11px] text-text-tertiary">
                             Dotted = {comparison === 'lastYear' ? 'last year' : 'previous period'}
                         </span>
                     ) : (
@@ -682,15 +622,7 @@ export function PlanStatisticsYardagePage({
         return (
             <div className="flex flex-col gap-4 animate-pulse">
                 {[260, 240, 200].map((h, i) => (
-                    <div
-                        key={i}
-                        className="rounded"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            height: h
-                        }}
-                    />
+                    <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
                 ))}
             </div>
         )
@@ -722,7 +654,7 @@ export function PlanStatisticsYardagePage({
                     loading ? (
                         <RefreshingHint when />
                     ) : trendComparison ? (
-                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[11px] text-text-tertiary">
                             Dotted = {comparison === 'lastYear' ? 'last year' : 'previous period'}
                         </span>
                     ) : null
@@ -776,15 +708,7 @@ export function PlanStatisticsPlantsPage({
         return (
             <div className="flex flex-col gap-4 animate-pulse">
                 {[260, 280, 200].map((h, i) => (
-                    <div
-                        key={i}
-                        className="rounded"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            height: h
-                        }}
-                    />
+                    <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
                 ))}
             </div>
         )
@@ -816,7 +740,7 @@ export function PlanStatisticsPlantsPage({
                     loading ? (
                         <RefreshingHint when />
                     ) : (
-                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[11px] text-text-tertiary">
                             {knownPlantSummary.activeCount} active ·{' '}
                             {knownPlantSummary.topShare
                                 ? `top: ${knownPlantSummary.topShare.code} (${(knownPlantSummary.topShare.share * 100).toFixed(0)}%)`
@@ -867,15 +791,7 @@ export function PlanStatisticsCustomersPage({
             <div className="flex flex-col gap-4 animate-pulse">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {[0, 1].map((i) => (
-                        <div
-                            key={i}
-                            className="rounded"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)',
-                                height: 260
-                            }}
-                        />
+                        <div key={i} className="rounded bg-bg-secondary border border-border-light h-[260px]" />
                     ))}
                 </div>
             </div>
@@ -900,7 +816,7 @@ export function PlanStatisticsCustomersPage({
                     loading ? (
                         <RefreshingHint when />
                     ) : currentSummary.topCustomerShare ? (
-                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[11px] text-text-tertiary">
                             Top {(currentSummary.topCustomerShare.share * 100).toFixed(0)}%
                         </span>
                     ) : null
@@ -955,16 +871,7 @@ export function PlanStatisticsBigPoursPage({
 }) {
     const isEmpty = isEmptyAfterLoad(loading, currentDays)
     if (loading && currentDays.length === 0) {
-        return (
-            <div
-                className="rounded animate-pulse"
-                style={{
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-light)',
-                    height: 320
-                }}
-            />
-        )
+        return <div className="rounded animate-pulse bg-bg-secondary border border-border-light h-[320px]" />
     }
     if (isEmpty) {
         return (
@@ -984,7 +891,7 @@ export function PlanStatisticsBigPoursPage({
                 loading ? (
                     <RefreshingHint when />
                 ) : (
-                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                    <span className="text-[11px] text-text-tertiary">
                         {currentSummary.bigPours.length} · &gt;{BIG_POUR_YARDAGE_THRESHOLD} yd³ · &lt;
                         {BIG_POUR_SPACING_THRESHOLD_MIN}m spacing
                     </span>

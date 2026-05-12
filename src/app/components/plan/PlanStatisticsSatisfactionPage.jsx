@@ -73,7 +73,7 @@ function DeltaPill({ delta, suffix = 'pp' }) {
 function RefreshingHint({ when }) {
     if (!when) return null
     return (
-        <span className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
             <i className="fas fa-spinner fa-spin text-[10px]" />
             Refreshing…
         </span>
@@ -84,10 +84,7 @@ function RefreshingHint({ when }) {
  *  panel's dataset is empty — explicit messaging beats a blank box. */
 function EmptySection({ icon = 'fa-circle-info', loading, message }) {
     return (
-        <div
-            className="flex items-center justify-center gap-2 py-8 text-[12px]"
-            style={{ color: 'var(--text-tertiary)' }}
-        >
+        <div className="flex items-center justify-center gap-2 py-8 text-[12px] text-text-tertiary">
             <i className={`fas ${loading ? 'fa-spinner fa-spin' : icon} text-[14px]`} />
             <span>{message}</span>
         </div>
@@ -115,7 +112,7 @@ function Hero({ aggregate, loading, plantNameByCode, previousAggregate, range, s
                 loading ? (
                     <RefreshingHint when />
                 ) : (
-                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                    <span className="text-[11px] text-text-tertiary">
                         {scopeLabel} · {fmtRange(range.start, range.end)}
                     </span>
                 )
@@ -124,22 +121,19 @@ function Hero({ aggregate, loading, plantNameByCode, previousAggregate, range, s
         >
             <div className="px-4 py-3 flex flex-wrap items-baseline gap-x-4 gap-y-2">
                 <span
-                    className="font-mono tabular-nums font-semibold leading-none"
-                    style={{ color: 'var(--text-primary)', fontSize: 38 }}
+                    className="font-mono tabular-nums font-semibold leading-none text-text-primary"
+                    style={{ fontSize: 38 }}
                 >
                     {fmtScore(score)}
                 </span>
                 <ScorePill score={score} />
                 {delta != null && (
-                    <span
-                        className="inline-flex items-center gap-1.5 text-[11px]"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
+                    <span className="inline-flex items-center gap-1.5 text-[11px] text-text-secondary">
                         vs comparison <DeltaPill delta={delta} />
                     </span>
                 )}
                 <div className="flex-1" />
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                <span className="text-[11px] text-text-tertiary">
                     Per-order verdict: good unless late &gt; 15 min OR pace dropped below schedule
                 </span>
             </div>
@@ -244,9 +238,9 @@ function PlantScoreboard({ accent, perPlant, plantNameByCode, selectedPlant, onP
     const trajColor = (t) => (t === 'improving' ? '#16a34a' : t === 'declining' ? '#dc2626' : 'var(--text-tertiary)')
     return (
         <div className="overflow-x-auto">
-            <table className="w-full text-[12px]" style={{ borderCollapse: 'collapse' }}>
+            <table className="w-full text-[12px] border-collapse">
                 <thead>
-                    <tr style={{ color: 'var(--text-tertiary)' }}>
+                    <tr className="text-text-tertiary">
                         <th className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2">
                             Plant
                         </th>
@@ -298,28 +292,22 @@ function PlantScoreboard({ accent, perPlant, plantNameByCode, selectedPlant, onP
                                             className="inline-block w-2 h-2 rounded-full shrink-0"
                                             style={{ background: plantBadgeColor(row.code, accent) }}
                                         />
-                                        <span
-                                            className="font-mono tabular-nums font-semibold"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <span className="font-mono tabular-nums font-semibold text-text-primary">
                                             {row.code}
                                         </span>
                                         {plantNameByCode?.[row.code] && (
-                                            <span className="truncate" style={{ color: 'var(--text-secondary)' }}>
+                                            <span className="truncate text-text-secondary">
                                                 {plantNameByCode[row.code]}
                                             </span>
                                         )}
                                     </div>
                                 </td>
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums font-semibold"
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
+                                <td className="px-2 py-2 text-right font-mono tabular-nums font-semibold text-text-primary">
                                     {fmtScore(row.score)}
                                 </td>
                                 <td className="px-2 py-2 text-right">
                                     {row.delta == null ? (
-                                        <span style={{ color: 'var(--text-tertiary)' }}>—</span>
+                                        <span className="text-text-tertiary">—</span>
                                     ) : (
                                         <span
                                             className="inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums"
@@ -331,10 +319,7 @@ function PlantScoreboard({ accent, perPlant, plantNameByCode, selectedPlant, onP
                                         </span>
                                     )}
                                 </td>
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums"
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                     {fmtInt(row.goodService)}
                                 </td>
                                 <td
@@ -343,16 +328,10 @@ function PlantScoreboard({ accent, perPlant, plantNameByCode, selectedPlant, onP
                                 >
                                     {fmtInt(row.badService)}
                                 </td>
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
                                     {fmtInt(row.samples)}
                                 </td>
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
                                     {fmtInt(row.yardage)}
                                 </td>
                                 <td className="px-3 py-2 text-right">
@@ -380,7 +359,7 @@ function ScoreCanvas({ accent, trend }) {
     }
     const maxSamples = Math.max(...labelled.map((p) => p.samples || 0), 1)
     return (
-        <div style={{ height: 260 }}>
+        <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={labelled} margin={{ bottom: 4, left: 0, right: 12, top: 12 }}>
                     <defs>
@@ -497,11 +476,8 @@ function Weekday({ accent, data }) {
                 const opacity = bucket.score == null ? 0.25 : 0.35 + (bucket.score / 100) * 0.55
                 return (
                     <div key={bucket.label} className="flex flex-col items-center gap-1 flex-1 min-w-0">
-                        <div className="flex flex-col items-center justify-end" style={{ height: 100 }}>
-                            <span
-                                className="text-[10.5px] font-bold tabular-nums leading-none"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                        <div className="flex flex-col items-center justify-end h-[100px]">
+                            <span className="text-[10.5px] font-bold tabular-nums leading-none text-text-primary">
                                 {bucket.score == null ? '—' : `${bucket.score}%`}
                             </span>
                             <div
@@ -514,11 +490,9 @@ function Weekday({ accent, data }) {
                                 className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
                                 style={{ background: tier.color }}
                             />
-                            <span className="text-[10.5px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                                {bucket.label}
-                            </span>
+                            <span className="text-[10.5px] font-semibold text-text-secondary">{bucket.label}</span>
                         </div>
-                        <span className="text-[9.5px] tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[9.5px] tabular-nums text-text-tertiary">
                             {bucket.samples ? `${fmtInt(bucket.samples)} ord` : ''}
                         </span>
                     </div>
@@ -539,34 +513,20 @@ function WorstOrdersList({ orders, plantNameByCode }) {
                     className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-3 py-2 text-[12px]"
                     style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
                 >
-                    <span
-                        className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold"
-                        style={{ background: '#dc26261f', color: '#dc2626' }}
-                    >
-                        <span
-                            className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
-                            style={{ background: '#dc2626' }}
-                        />
+                    <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold bg-[#dc26261f] text-red-600">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0 bg-red-600" />
                         Bad
                     </span>
                     <div className="min-w-0">
-                        <div className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                            {row.customer}
-                        </div>
-                        <div
-                            className="text-[11px] flex items-center gap-2 flex-wrap"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
+                        <div className="font-semibold truncate text-text-primary">{row.customer}</div>
+                        <div className="text-[11px] flex items-center gap-2 flex-wrap text-text-secondary">
                             <span className="font-mono tabular-nums">{row.plantCode}</span>
                             {plantNameByCode?.[row.plantCode] && <span>· {plantNameByCode[row.plantCode]}</span>}
                             <span>· {fmtDate(row.planDate)}</span>
                             {row.productCode && <span>· {row.productCode}</span>}
                         </div>
                     </div>
-                    <div
-                        className="text-right font-mono tabular-nums font-semibold"
-                        style={{ color: 'var(--text-primary)' }}
-                    >
+                    <div className="text-right font-mono tabular-nums font-semibold text-text-primary">
                         {fmtInt(row.yardage)} yd³
                     </div>
                 </div>
@@ -584,20 +544,12 @@ function WorstCustomersList({ customers }) {
                     className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-3 py-2 text-[12px]"
                     style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
                 >
-                    <span
-                        className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums"
-                        style={{ background: '#dc26261f', color: '#dc2626' }}
-                    >
+                    <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums bg-[#dc26261f] text-red-600">
                         {row.badOrders} bad
                     </span>
                     <div className="min-w-0">
-                        <div className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                            {row.customer}
-                        </div>
-                        <div
-                            className="text-[11px] flex items-center gap-2 flex-wrap"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
+                        <div className="font-semibold truncate text-text-primary">{row.customer}</div>
+                        <div className="text-[11px] flex items-center gap-2 flex-wrap text-text-secondary">
                             <span>
                                 {fmtInt(row.badOrders)} of {fmtInt(row.samples)} scored
                             </span>
@@ -648,15 +600,7 @@ export function PlanStatisticsSatisfactionPage({
         return (
             <div className="flex flex-col gap-4 animate-pulse">
                 {[120, 90, 220, 240, 200, 200].map((h, i) => (
-                    <div
-                        key={i}
-                        className="rounded"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            height: h
-                        }}
-                    />
+                    <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
                 ))}
             </div>
         )
@@ -693,7 +637,7 @@ export function PlanStatisticsSatisfactionPage({
                     loading ? (
                         <RefreshingHint when />
                     ) : (
-                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[11px] text-text-tertiary">
                             {perPlant.length} plant{perPlant.length === 1 ? '' : 's'} · click a row to focus
                         </span>
                     )
@@ -721,7 +665,7 @@ export function PlanStatisticsSatisfactionPage({
                     loading ? (
                         <RefreshingHint when />
                     ) : (
-                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[11px] text-text-tertiary">
                             bold = 7-day rolling · faint = daily · area = order volume
                         </span>
                     )
@@ -749,7 +693,7 @@ export function PlanStatisticsSatisfactionPage({
                         loading ? (
                             <RefreshingHint when />
                         ) : (
-                            <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                            <span className="text-[11px] text-text-tertiary">
                                 {worstOrders.length} bad order{worstOrders.length === 1 ? '' : 's'}
                             </span>
                         )
@@ -774,7 +718,7 @@ export function PlanStatisticsSatisfactionPage({
                         loading ? (
                             <RefreshingHint when />
                         ) : (
-                            <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                            <span className="text-[11px] text-text-tertiary">
                                 {worstCustomers.length} customer{worstCustomers.length === 1 ? '' : 's'}
                             </span>
                         )

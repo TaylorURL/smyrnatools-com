@@ -54,10 +54,7 @@ function CardHeader({ icon, label, sub, title, right }) {
     return (
         <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 min-w-0">
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                >
+                <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                     <i className={`fas ${icon} text-[11px]`} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -66,14 +63,8 @@ function CardHeader({ icon, label, sub, title, right }) {
                             {label}
                         </div>
                     )}
-                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                        {title}
-                    </div>
-                    {sub && (
-                        <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                            {sub}
-                        </div>
-                    )}
+                    <div className="text-[12.5px] font-semibold leading-tight text-text-primary">{title}</div>
+                    {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
                 </div>
             </div>
             {right && <div className="shrink-0">{right}</div>}
@@ -102,10 +93,7 @@ function StatusPill({ status, size = 'sm' }) {
 
 function StatTile({ accent, hint, label, value }) {
     return (
-        <div
-            className="rounded p-2.5 flex flex-col gap-0.5"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded p-2.5 flex flex-col gap-0.5 bg-bg-secondary border border-border-light">
             <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                 {label}
             </span>
@@ -115,11 +103,7 @@ function StatTile({ accent, hint, label, value }) {
             >
                 {value}
             </span>
-            {hint && (
-                <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {hint}
-                </span>
-            )}
+            {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
         </div>
     )
 }
@@ -131,17 +115,14 @@ function StatusFilterChips({ activeStatus, counts, onChange }) {
             <button
                 type="button"
                 onClick={() => onChange('all')}
-                className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wider cursor-pointer border-none"
+                className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wider cursor-pointer border-none border border-border-light"
                 style={{
                     background: activeStatus === 'all' ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-                    border: '1px solid var(--border-light)',
                     color: activeStatus === 'all' ? 'var(--text-primary)' : 'var(--text-secondary)'
                 }}
             >
                 All
-                <span className="ml-1 tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
-                    {counts.total}
-                </span>
+                <span className="ml-1 tabular-nums text-text-tertiary">{counts.total}</span>
             </button>
             {STATUS_ORDER.map((status) => {
                 const def = STATUS_DEFS[status]
@@ -160,9 +141,7 @@ function StatusFilterChips({ activeStatus, counts, onChange }) {
                     >
                         <i className={`fas ${def.icon} text-[9px]`} />
                         {def.label}
-                        <span className="ml-1 tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
-                            {counts[status] || 0}
-                        </span>
+                        <span className="ml-1 tabular-nums text-text-tertiary">{counts[status] || 0}</span>
                     </button>
                 )
             })}
@@ -222,12 +201,7 @@ function StatsSidebar({ accentColor, issues, onRefresh, refreshing }) {
                         type="button"
                         onClick={onRefresh}
                         disabled={refreshing}
-                        className="inline-flex items-center gap-1 rounded text-[10.5px] font-semibold cursor-pointer border-none px-2 py-1"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-secondary)'
-                        }}
+                        className="inline-flex items-center gap-1 rounded text-[10.5px] font-semibold cursor-pointer border-none px-2 py-1 bg-bg-secondary border border-border-light text-text-secondary"
                         title="Refresh"
                     >
                         <i
@@ -246,7 +220,7 @@ function StatsSidebar({ accentColor, issues, onRefresh, refreshing }) {
                     />
                 ))}
             </div>
-            <div className="h-px" style={{ background: 'var(--border-light)' }} />
+            <div className="h-px bg-[var(--border-light)]" />
             <div className="grid grid-cols-1 gap-2">
                 <StatTile
                     accent={accentColor}
@@ -416,30 +390,17 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                         {/* Table card */}
                         <div className="rounded overflow-hidden" style={CARD_STYLE}>
                             {loading ? (
-                                <div
-                                    className="flex items-center justify-center gap-2 py-8 text-[12px]"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                >
+                                <div className="flex items-center justify-center gap-2 py-8 text-[12px] text-text-tertiary">
                                     <i className="fas fa-circle-notch fa-spin text-[11px]" />
                                     Loading issues…
                                 </div>
                             ) : error ? (
-                                <div
-                                    className="m-3 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                                    style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
-                                >
+                                <div className="m-3 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
                                     <i className="fas fa-exclamation-circle text-[11px]" />
                                     {error}
                                 </div>
                             ) : visibleIssues.length === 0 ? (
-                                <div
-                                    className="m-3 rounded p-6 text-center"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px dashed var(--border-medium)',
-                                        color: 'var(--text-tertiary)'
-                                    }}
-                                >
+                                <div className="m-3 rounded p-6 text-center bg-bg-secondary border border-border-medium text-text-tertiary">
                                     <i className="fas fa-flask text-[20px] block mb-1" />
                                     <div className="text-[12px]">
                                         {issues.length === 0
@@ -449,7 +410,7 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
-                                    <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                                    <table className="w-full border-collapse">
                                         <thead>
                                             <tr>
                                                 {[
@@ -463,13 +424,8 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                                 ].map((h, i) => (
                                                     <th
                                                         key={h}
-                                                        className={`${SECTION_LABEL_CLASS} px-3 py-2 whitespace-nowrap`}
-                                                        style={{
-                                                            background: 'var(--bg-tertiary)',
-                                                            color: 'var(--text-tertiary)',
-                                                            borderBottom: '1px solid var(--border-light)',
-                                                            textAlign: i === 6 ? 'right' : 'left'
-                                                        }}
+                                                        className={`${SECTION_LABEL_CLASS} px-3 py-2 whitespace-nowrap bg-bg-tertiary text-text-tertiary border-b border-border-light`}
+                                                        style={{ textAlign: i === 6 ? 'right' : 'left' }}
                                                     >
                                                         {h}
                                                     </th>
@@ -483,26 +439,16 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                                     <tr
                                                         key={issue.id}
                                                         onClick={() => openEdit(issue)}
-                                                        className="cursor-pointer"
-                                                        style={{
-                                                            borderTop: '1px solid var(--border-light)',
-                                                            color: 'var(--text-primary)'
-                                                        }}
+                                                        className="cursor-pointer border-t border-border-light text-text-primary"
                                                     >
                                                         <td className="px-3 py-2 align-top">
-                                                            <div
-                                                                className="text-[12.5px] font-semibold leading-tight"
-                                                                style={{ color: 'var(--text-primary)' }}
-                                                            >
+                                                            <div className="text-[12.5px] font-semibold leading-tight text-text-primary">
                                                                 {issue.title || 'Untitled'}
                                                             </div>
                                                             {issue.description && (
                                                                 <div
-                                                                    className="text-[11px] mt-0.5 leading-snug truncate"
-                                                                    style={{
-                                                                        color: 'var(--text-tertiary)',
-                                                                        maxWidth: 380
-                                                                    }}
+                                                                    className="text-[11px] mt-0.5 leading-snug truncate text-text-tertiary"
+                                                                    style={{ maxWidth: 380 }}
                                                                     title={issue.description}
                                                                 >
                                                                     {issue.description}
@@ -512,18 +458,13 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                                         <td className="px-3 py-2 align-top whitespace-nowrap">
                                                             {issue.plant_code ? (
                                                                 <span
-                                                                    className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums"
-                                                                    style={{
-                                                                        background: 'var(--bg-tertiary)',
-                                                                        border: '1px solid var(--border-light)',
-                                                                        color: 'var(--text-secondary)'
-                                                                    }}
+                                                                    className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums bg-bg-tertiary border border-border-light text-text-secondary"
                                                                     title={getPlantName(issue.plant_code, plants)}
                                                                 >
                                                                     {issue.plant_code}
                                                                 </span>
                                                             ) : (
-                                                                <span style={{ color: 'var(--text-tertiary)' }}>—</span>
+                                                                <span className="text-text-tertiary">—</span>
                                                             )}
                                                         </td>
                                                         <td className="px-3 py-2 align-top whitespace-nowrap">
@@ -535,22 +476,16 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                                                     {sev.label}
                                                                 </span>
                                                             ) : (
-                                                                <span style={{ color: 'var(--text-tertiary)' }}>—</span>
+                                                                <span className="text-text-tertiary">—</span>
                                                             )}
                                                         </td>
                                                         <td className="px-3 py-2 align-top whitespace-nowrap">
                                                             <StatusPill status={issue.status} />
                                                         </td>
-                                                        <td
-                                                            className="px-3 py-2 align-top whitespace-nowrap text-[12px] tabular-nums"
-                                                            style={{ color: 'var(--text-secondary)' }}
-                                                        >
+                                                        <td className="px-3 py-2 align-top whitespace-nowrap text-[12px] tabular-nums text-text-secondary">
                                                             {formatDate(issue.opened_at)}
                                                         </td>
-                                                        <td
-                                                            className="px-3 py-2 align-top whitespace-nowrap text-[12px] tabular-nums"
-                                                            style={{ color: 'var(--text-secondary)' }}
-                                                        >
+                                                        <td className="px-3 py-2 align-top whitespace-nowrap text-[12px] tabular-nums text-text-secondary">
                                                             {formatDate(issue.closed_at)}
                                                         </td>
                                                         <td

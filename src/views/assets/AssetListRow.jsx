@@ -74,8 +74,7 @@ export default function AssetListRow({
             type="button"
             onClick={(e) => handleCopy(e, text)}
             title={title}
-            className="inline-flex items-center bg-transparent border-none cursor-pointer text-[10px] p-0.5"
-            style={{ color: 'var(--text-tertiary)' }}
+            className="inline-flex items-center bg-transparent border-none cursor-pointer text-[10px] p-0.5 text-text-tertiary"
         >
             <i className="fas fa-copy" />
         </button>
@@ -166,12 +165,7 @@ export default function AssetListRow({
                                         onOperatorComment?.(operator)
                                     }}
                                     title="Operator comments"
-                                    className="relative inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-secondary)'
-                                    }}
+                                    className="relative inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary"
                                 >
                                     <i className="fas fa-comment text-[8px]" />
                                     <span>Comments</span>
@@ -188,12 +182,7 @@ export default function AssetListRow({
                                         onOperatorHistory?.(operator)
                                     }}
                                     title="Operator history"
-                                    className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-secondary)'
-                                    }}
+                                    className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary"
                                 >
                                     <i className="fas fa-history text-[8px]" />
                                     <span>History</span>
@@ -201,9 +190,7 @@ export default function AssetListRow({
                             </div>
                         </div>
                     ) : (
-                        <span className="italic" style={{ color: 'var(--text-tertiary)' }}>
-                            —
-                        </span>
+                        <span className="italic text-text-tertiary">—</span>
                     )}
                 </td>
             )
@@ -216,7 +203,7 @@ export default function AssetListRow({
             return (
                 <td key={col.key} style={style}>
                     {showNAForRetired ? (
-                        <span style={{ color: 'var(--text-tertiary)' }}>N/A</span>
+                        <span className="text-text-tertiary">N/A</span>
                     ) : (
                         <div className="flex items-center gap-px">
                             {Array.from({ length: 5 }).map((_, i) => (
@@ -250,13 +237,7 @@ export default function AssetListRow({
             return (
                 <td key={col.key} style={style}>
                     {item.status === 'Retired' ? (
-                        <span
-                            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5"
-                            style={{
-                                background: 'var(--bg-tertiary)',
-                                color: 'var(--text-tertiary)'
-                            }}
-                        >
+                        <span className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-bg-tertiary text-text-tertiary">
                             N/A
                         </span>
                     ) : (

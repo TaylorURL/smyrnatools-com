@@ -28,18 +28,10 @@ const buildDisplayName = (user) => {
 function HistoryList({ currentUserId, entries, isLoading, onDelete }) {
     const [deletingId, setDeletingId] = useState(null)
     if (isLoading) {
-        return (
-            <div className="text-xs italic px-3 py-4 text-center" style={{ color: 'var(--text-tertiary)' }}>
-                Loading history…
-            </div>
-        )
+        return <div className="text-xs italic px-3 py-4 text-center text-text-tertiary">Loading history…</div>
     }
     if (!entries?.length) {
-        return (
-            <div className="text-xs italic px-3 py-4 text-center" style={{ color: 'var(--text-tertiary)' }}>
-                No calls logged yet.
-            </div>
-        )
+        return <div className="text-xs italic px-3 py-4 text-center text-text-tertiary">No calls logged yet.</div>
     }
     const handleDelete = async (entry) => {
         if (!onDelete) return
@@ -80,15 +72,10 @@ function HistoryList({ currentUserId, entries, isLoading, onDelete }) {
                                     </span>
                                 )
                             })()}
-                            <span
-                                className="inline-flex items-center gap-1.5"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
+                            <span className="inline-flex items-center gap-1.5 text-text-tertiary">
                                 <span>{DateUtility.formatDateTime(entry.created_at)}</span>
                                 {entry.created_by_name && (
-                                    <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                                        · {entry.created_by_name}
-                                    </span>
+                                    <span className="font-semibold text-text-secondary">· {entry.created_by_name}</span>
                                 )}
                                 {canDelete && (
                                     <button
@@ -96,8 +83,7 @@ function HistoryList({ currentUserId, entries, isLoading, onDelete }) {
                                         onClick={() => handleDelete(entry)}
                                         disabled={deletingId === entry.id}
                                         title="Delete this entry"
-                                        className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded border-none cursor-pointer disabled:opacity-40"
-                                        style={{ background: 'transparent', color: 'var(--text-tertiary)' }}
+                                        className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded border-none cursor-pointer disabled:opacity-40 bg-transparent text-text-tertiary"
                                     >
                                         <i className="fas fa-trash text-[10px]" />
                                     </button>
@@ -105,9 +91,7 @@ function HistoryList({ currentUserId, entries, isLoading, onDelete }) {
                             </span>
                         </div>
                         {entry.comment && (
-                            <div className="text-[12px] whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>
-                                {entry.comment}
-                            </div>
+                            <div className="text-[12px] whitespace-pre-wrap text-text-secondary">{entry.comment}</div>
                         )}
                     </li>
                 )
@@ -133,10 +117,7 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
 
     if (!row) {
         return (
-            <div
-                className="flex flex-col items-center justify-center text-center gap-2 p-10"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+            <div className="flex flex-col items-center justify-center text-center gap-2 p-10 text-text-tertiary">
                 <i className="fas fa-headset text-2xl" />
                 <div className="text-[12.5px]">Select a customer from the list to log a call.</div>
             </div>
@@ -164,40 +145,31 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
 
     return (
         <div className="flex flex-col">
-            <div className="px-4 py-2.5 flex flex-col gap-1" style={{ borderBottom: '1px solid var(--border-light)' }}>
+            <div className="px-4 py-2.5 flex flex-col gap-1 border-b border-border-light">
                 <div className="flex items-baseline gap-2 flex-wrap">
-                    <h3
-                        className="text-[16px] font-bold m-0 truncate"
-                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                    >
+                    <h3 className="text-[16px] font-bold m-0 truncate text-text-primary font-heading">
                         {row.customer_name || row.customer_num}
                     </h3>
-                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                        #{row.customer_num}
-                    </span>
+                    <span className="text-[11px] text-text-tertiary">#{row.customer_num}</span>
                     <div className="flex-1" />
                     {row.phone ? (
                         <a
                             href={`tel:${row.phone}`}
-                            className="text-[12px] font-semibold inline-flex items-center gap-1.5"
-                            style={{ color: 'var(--text-primary)' }}
+                            className="text-[12px] font-semibold inline-flex items-center gap-1.5 text-text-primary"
                         >
-                            <i className="fas fa-phone text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                            <i className="fas fa-phone text-[10px] text-text-tertiary" />
                             {formatCallListPhone(row.phone)}
                         </a>
                     ) : (
-                        <span
-                            className="text-[11.5px] inline-flex items-center gap-1.5"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <span className="text-[11.5px] inline-flex items-center gap-1.5 text-text-tertiary">
                             <i className="fas fa-phone-slash text-[10px]" />
                             no phone
                         </span>
                     )}
                 </div>
                 {row.contact_name && (
-                    <div className="text-[11.5px] truncate" style={{ color: 'var(--text-secondary)' }}>
-                        <i className="fas fa-user mr-1.5 text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                    <div className="text-[11.5px] truncate text-text-secondary">
+                        <i className="fas fa-user mr-1.5 text-[10px] text-text-tertiary" />
                         {row.contact_name}
                     </div>
                 )}
@@ -205,25 +177,19 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
 
             {/* Compact KPI strip — replaces the 4-card StatGroup so the action
              *  area surfaces in the same vertical real estate. */}
-            <div
-                className="px-4 py-2 flex items-center flex-wrap gap-x-3 gap-y-1 text-[11.5px]"
-                style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}
-            >
+            <div className="px-4 py-2 flex items-center flex-wrap gap-x-3 gap-y-1 text-[11.5px] border-b border-border-light text-text-secondary">
                 <span className="inline-flex items-baseline gap-1" title={DateUtility.formatDate(row.last_pour_date)}>
-                    <span className="font-bold text-[13px]" style={{ color: tone, fontFamily: 'var(--font-heading)' }}>
+                    <span className="font-bold text-[13px] font-heading" style={{ color: tone }}>
                         {row.days_since_last_pour}d
                     </span>
-                    <span style={{ color: 'var(--text-tertiary)' }}>dormant</span>
+                    <span className="text-text-tertiary">dormant</span>
                 </span>
                 <span className="opacity-40">·</span>
                 <span className="inline-flex items-baseline gap-1" title="Pour days in the last 365 days">
-                    <span
-                        className="font-bold text-[13px]"
-                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                    >
+                    <span className="font-bold text-[13px] text-text-primary font-heading">
                         {row.pour_days_last_year}
                     </span>
-                    <span style={{ color: 'var(--text-tertiary)' }}>pours/yr</span>
+                    <span className="text-text-tertiary">pours/yr</span>
                 </span>
                 <span className="opacity-40">·</span>
                 <span
@@ -234,13 +200,10 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
                             : 'No calls logged yet'
                     }
                 >
-                    <span
-                        className="font-bold text-[13px]"
-                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                    >
+                    <span className="font-bold text-[13px] text-text-primary font-heading">
                         {row.call_count_last_30 || 0}
                     </span>
-                    <span style={{ color: 'var(--text-tertiary)' }}>calls/30d</span>
+                    <span className="text-text-tertiary">calls/30d</span>
                 </span>
                 {row.last_call_outcome && (
                     <>
@@ -249,7 +212,7 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
                             className="inline-flex items-center gap-1"
                             title={row.last_call_by_name ? `Logged by ${row.last_call_by_name}` : undefined}
                         >
-                            <span style={{ color: 'var(--text-tertiary)' }}>last:</span>
+                            <span className="text-text-tertiary">last:</span>
                             <span
                                 className="font-bold uppercase tracking-wider text-[10px]"
                                 style={{ color: CALL_OUTCOME_COLORS[row.last_call_outcome] || 'var(--text-secondary)' }}
@@ -261,7 +224,7 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
                 )}
             </div>
 
-            <div className="px-4 py-3 flex flex-col gap-2.5" style={{ borderBottom: '1px solid var(--border-light)' }}>
+            <div className="px-4 py-3 flex flex-col gap-2.5 border-b border-border-light">
                 <div className="grid grid-cols-2 gap-2">
                     {CALL_OUTCOME_BUTTONS.map(({ color, icon, key, label }) => {
                         const busy = submitting === key
@@ -290,21 +253,14 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="Optional comment — saved with the outcome above, or click Save Note for a comment-only entry."
                         rows={2}
-                        className="w-full rounded-md p-2 text-[12px] resize-y outline-none"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="w-full rounded-md p-2 text-[12px] resize-y outline-none bg-bg-secondary border border-border-light text-text-primary"
                     />
                     <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[10.5px] text-text-tertiary">
                             {currentUserName ? (
                                 <>
                                     Logging as{' '}
-                                    <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                                        {currentUserName}
-                                    </span>
+                                    <span className="font-semibold text-text-secondary">{currentUserName}</span>
                                 </>
                             ) : (
                                 'Logging as your account'
@@ -314,12 +270,7 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
                             type="button"
                             onClick={() => submit('note')}
                             disabled={!comment.trim() || submitting === 'note'}
-                            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold cursor-pointer disabled:opacity-40 transition-colors"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold cursor-pointer disabled:opacity-40 transition-colors bg-bg-secondary border border-border-light text-text-primary"
                         >
                             <i className="fas fa-note-sticky" />
                             Save Note
@@ -329,10 +280,7 @@ export default function CallListDetail({ history, isLoadingHistory, isSaving, on
             </div>
 
             <div className="flex flex-col">
-                <div
-                    className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em]"
-                    style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-text-tertiary border-b border-border-light">
                     Call & Comment History
                 </div>
                 <HistoryList

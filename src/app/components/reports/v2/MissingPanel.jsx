@@ -29,9 +29,7 @@ function MissingPanel({ missing = [], getUserName, onNudge, weekRangeLabel }) {
         <aside className="bg-bg-primary border border-gray-200 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-1">
                 <i className="fas fa-exclamation-circle text-[13px] text-red-600" />
-                <span className="font-bold text-[14px]" style={{ fontFamily: 'var(--font-heading)' }}>
-                    Missing
-                </span>
+                <span className="font-bold text-[14px] font-heading">Missing</span>
                 <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
                     {missing.length}
                 </span>

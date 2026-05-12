@@ -59,9 +59,7 @@ function WeekRibbon({ weeks, activeIso, onPick }) {
                         >
                             {wk.label}
                         </div>
-                        <div className="font-bold text-[15px] mt-0.5" style={{ fontFamily: 'var(--font-heading)' }}>
-                            {wk.range}
-                        </div>
+                        <div className="font-bold text-[15px] mt-0.5 font-heading">{wk.range}</div>
                         <div
                             className="flex items-center gap-1.5 mt-1.5 text-[11px] font-semibold"
                             style={{ color: tone.fg }}

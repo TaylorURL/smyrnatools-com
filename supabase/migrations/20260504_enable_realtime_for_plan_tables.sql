@@ -11,12 +11,13 @@
 -- migration is a no-op (Postgres has no `ADD TABLE IF NOT EXISTS` syntax,
 -- so we look up `pg_publication_tables` ourselves).
 
-DO $$
+DO
+$$
 DECLARE
-    rel record;
+rel record;
 BEGIN
-    FOR rel IN
-        SELECT unnest(ARRAY['dispatch_data', 'plans', 'plant_travel_times']) AS tablename
+FOR rel IN
+SELECT unnest(ARRAY['dispatch_data', 'plans', 'plant_travel_times']) AS tablename
     LOOP
         IF NOT EXISTS (
             SELECT 1
@@ -26,9 +27,10 @@ BEGIN
               AND tablename = rel.tablename
         ) THEN
             EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', rel.tablename);
-            RAISE NOTICE 'Added public.% to supabase_realtime publication', rel.tablename;
-        ELSE
+RAISE
+NOTICE 'Added public.% to supabase_realtime publication', rel.tablename;
+ELSE
             RAISE NOTICE 'public.% already in supabase_realtime publication — skipped', rel.tablename;
-        END IF;
-    END LOOP;
+END IF;
+END LOOP;
 END $$;

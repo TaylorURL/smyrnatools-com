@@ -48,7 +48,12 @@ async function requireAuthenticated(req: Request, headers: any, body?: any): Pro
         expiryDate.setDate(expiryDate.getDate() - SESSION_EXPIRY_DAYS)
         if (lastActive < expiryDate) return errorResponse('Session expired', headers, 401)
     }
-    admin.from(SESSIONS_TABLE).update({ last_active: new Date().toISOString() }).eq('id', sessionId).then(() => {}).catch(() => {})
+    admin
+        .from(SESSIONS_TABLE)
+        .update({ last_active: new Date().toISOString() })
+        .eq('id', sessionId)
+        .then(() => {})
+        .catch(() => {})
     return userId
 }
 

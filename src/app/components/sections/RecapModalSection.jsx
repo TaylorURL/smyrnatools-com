@@ -529,13 +529,8 @@ function RecapModalSection({
 
     const tab = !controlled ? (
         <div
-            className={`fixed left-0 top-1/2 -translate-y-1/2 z-30 flex items-center gap-1.5 px-2 py-1.5 cursor-pointer transition-all duration-300 hover:pl-3 ${isTabVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}
-            style={{
-                background: accentColor,
-                borderBottomRightRadius: 4,
-                borderTopRightRadius: 4,
-                color: '#fff'
-            }}
+            className={`fixed left-0 top-1/2 -translate-y-1/2 z-30 flex items-center gap-1.5 px-2 py-1.5 cursor-pointer transition-all duration-300 hover:pl-3 ${isTabVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'} text-white`}
+            style={{ background: accentColor, borderBottomRightRadius: 4, borderTopRightRadius: 4 }}
             onClick={handleToggle}
         >
             <i className="fa-solid fa-clock-rotate-left text-[11px]" />
@@ -570,13 +565,8 @@ function RecapModalSection({
                   : 'var(--text-primary)'
         return (
             <div
-                className="flex items-center gap-2 px-3 py-2"
-                style={{
-                    background: 'var(--bg-primary)',
-                    borderRight: last ? 'none' : '1px solid var(--border-light)',
-                    flex: 1,
-                    minWidth: 0
-                }}
+                className="flex items-center gap-2 px-3 py-2 bg-bg-primary flex-1 min-w-0"
+                style={{ borderRight: last ? 'none' : '1px solid var(--border-light)' }}
             >
                 <div
                     className="flex h-6 w-6 items-center justify-center rounded shrink-0"
@@ -591,10 +581,7 @@ function RecapModalSection({
                     >
                         {value === 0 ? '0' : `${value > 0 ? '+' : ''}${value}`}
                     </span>
-                    <span
-                        className="text-[9.5px] font-semibold uppercase tracking-wider leading-tight"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
+                    <span className="text-[9.5px] font-semibold uppercase tracking-wider leading-tight text-text-tertiary">
                         {label}
                     </span>
                 </div>
@@ -619,44 +606,33 @@ function RecapModalSection({
 
     const modal = isOpen ? (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
             onClick={() => setIsOpen(false)}
         >
             <div
-                className="rounded w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                className="rounded w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden bg-bg-primary border border-border-light"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div
-                    className="flex items-center justify-between gap-2.5 px-3 py-2 shrink-0"
-                    style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between gap-2.5 px-3 py-2 shrink-0 bg-bg-primary border-b border-border-light">
                     <div className="flex items-center gap-2 min-w-0">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fa-solid fa-clock-rotate-left text-[11px]" />
                         </div>
                         <div className="min-w-0">
-                            <div
-                                className="text-[9.5px] font-semibold uppercase tracking-wider"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <div className="text-[9.5px] font-semibold uppercase tracking-wider text-text-secondary">
                                 {displayTitle}
                             </div>
-                            <div className="text-[10.5px] truncate" style={{ color: 'var(--text-tertiary)' }}>
-                                {displaySubtitle}
-                            </div>
+                            <div className="text-[10.5px] truncate text-text-tertiary">{displaySubtitle}</div>
                         </div>
                     </div>
                     <button
                         type="button"
                         onClick={() => setIsOpen(false)}
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer"
-                        style={{ color: 'var(--text-secondary)' }}
+                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer text-text-secondary"
                         aria-label="Close"
                     >
                         <i className="fa-solid fa-xmark text-[11px]" />
@@ -664,34 +640,22 @@ function RecapModalSection({
                 </div>
 
                 {/* Filters toolbar */}
-                <div
-                    className="px-3 py-2 shrink-0 flex flex-col gap-2"
-                    style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="px-3 py-2 shrink-0 flex flex-col gap-2 bg-bg-secondary border-b border-border-light">
                     {/* Search */}
                     <div className="relative">
-                        <i
-                            className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px]"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        />
+                        <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary" />
                         <input
                             type="text"
                             placeholder="Search by name…"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-7 pr-7 py-1.5 text-[12.5px] rounded outline-none"
-                            style={{
-                                background: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="w-full pl-7 pr-7 py-1.5 text-[12.5px] rounded outline-none bg-bg-primary border border-border-light text-text-primary"
                         />
                         {searchQuery && (
                             <button
                                 type="button"
                                 onClick={() => setSearchQuery('')}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer"
-                                style={{ color: 'var(--text-tertiary)' }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer text-text-tertiary"
                             >
                                 <i className="fa-solid fa-xmark text-[10px]" />
                             </button>
@@ -710,7 +674,7 @@ function RecapModalSection({
                                 />
                             ))}
                         </div>
-                        <span className="w-px h-4" style={{ background: 'var(--border-light)' }} />
+                        <span className="w-px h-4 bg-[var(--border-light)]" />
                         <div className="flex items-center gap-1">
                             {TYPE_OPTIONS.map((t) => (
                                 <FilterPill
@@ -723,16 +687,11 @@ function RecapModalSection({
                         </div>
                         {availableFields.length > 1 && (
                             <>
-                                <span className="w-px h-4" style={{ background: 'var(--border-light)' }} />
+                                <span className="w-px h-4 bg-[var(--border-light)]" />
                                 <select
                                     value={fieldFilter}
                                     onChange={(e) => setFieldFilter(e.target.value)}
-                                    className="rounded text-[11px] cursor-pointer font-medium px-2 py-1 outline-none"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-primary)'
-                                    }}
+                                    className="rounded text-[11px] cursor-pointer font-medium px-2 py-1 outline-none bg-bg-primary border border-border-light text-text-primary"
                                 >
                                     <option value="all">All fields</option>
                                     {availableFields.map((f) => (
@@ -746,10 +705,7 @@ function RecapModalSection({
                     </div>
 
                     {/* Metrics row */}
-                    <div
-                        className="grid grid-cols-4 rounded overflow-hidden"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
+                    <div className="grid grid-cols-4 rounded overflow-hidden bg-bg-primary border border-border-light">
                         <MetricCell
                             value={changeMetrics.operatorsNet}
                             label="Operators"
@@ -787,11 +743,8 @@ function RecapModalSection({
                 </div>
 
                 {/* Results count */}
-                <div
-                    className="px-3 py-1.5 flex items-center justify-between shrink-0"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
-                    <span className="text-[10.5px] font-mono tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="px-3 py-1.5 flex items-center justify-between shrink-0 border-b border-border-light">
+                    <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
                         {filteredHistory.length} asset{filteredHistory.length !== 1 ? 's' : ''} · {filteredTotal} change
                         {filteredTotal !== 1 ? 's' : ''}
                     </span>
@@ -815,22 +768,14 @@ function RecapModalSection({
                 <div className="flex-1 min-h-0 overflow-y-auto">
                     <div className="px-3 py-2">
                         {isLoading ? (
-                            <div
-                                className="flex flex-col items-center justify-center py-12"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
+                            <div className="flex flex-col items-center justify-center py-12 text-text-tertiary">
                                 <i className="fa-solid fa-spinner fa-spin text-lg mb-2" />
                                 <span className="text-[12px]">Loading history…</span>
                             </div>
                         ) : filteredHistory.length === 0 ? (
-                            <div
-                                className="flex flex-col items-center justify-center py-12"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
+                            <div className="flex flex-col items-center justify-center py-12 text-text-tertiary">
                                 <i className="fa-solid fa-filter-circle-xmark text-2xl mb-2" />
-                                <p className="text-[12.5px] font-semibold m-0" style={{ color: 'var(--text-primary)' }}>
-                                    No changes found
-                                </p>
+                                <p className="text-[12.5px] font-semibold m-0 text-text-primary">No changes found</p>
                                 <p className="text-[11px] mt-0.5 m-0">Try adjusting your filters</p>
                             </div>
                         ) : (
@@ -847,17 +792,12 @@ function RecapModalSection({
                                     return (
                                         <div
                                             key={assetKey || groupIndex}
-                                            className="rounded overflow-hidden"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)'
-                                            }}
+                                            className="rounded overflow-hidden bg-bg-primary border border-border-light"
                                         >
                                             <button
                                                 type="button"
                                                 onClick={() => toggleAssetExpanded(assetKey)}
-                                                className="flex w-full items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary border-none text-left"
-                                                style={{ background: 'transparent' }}
+                                                className="flex w-full items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary border-none text-left bg-transparent"
                                             >
                                                 <div
                                                     className="flex h-6 w-6 items-center justify-center rounded shrink-0"
@@ -867,43 +807,27 @@ function RecapModalSection({
                                                 </div>
                                                 {isTerminated ? (
                                                     <span className="flex items-center gap-1.5 flex-1 min-w-0">
-                                                        <span
-                                                            className="line-through text-[12px] truncate"
-                                                            style={{ color: 'var(--text-secondary)' }}
-                                                        >
+                                                        <span className="line-through text-[12px] truncate text-text-secondary">
                                                             {group.name}
                                                         </span>
-                                                        <span
-                                                            className="px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider rounded shrink-0"
-                                                            style={{ background: '#fee2e2', color: '#b91c1c' }}
-                                                        >
+                                                        <span className="px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider rounded shrink-0 bg-red-100 text-red-700">
                                                             Terminated
                                                         </span>
                                                     </span>
                                                 ) : (
-                                                    <span
-                                                        className="flex-1 text-[12px] font-semibold truncate"
-                                                        style={{ color: 'var(--text-primary)' }}
-                                                    >
+                                                    <span className="flex-1 text-[12px] font-semibold truncate text-text-primary">
                                                         {group.name}
                                                     </span>
                                                 )}
-                                                <span
-                                                    className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
-                                                    style={{
-                                                        background: 'var(--bg-tertiary)',
-                                                        color: 'var(--text-secondary)'
-                                                    }}
-                                                >
+                                                <span className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-bg-tertiary text-text-secondary">
                                                     {changes.length}
                                                 </span>
                                                 <i
-                                                    className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                    className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} text-text-tertiary`}
                                                 />
                                             </button>
                                             {isExpanded && (
-                                                <div style={{ borderTop: '1px solid var(--border-light)' }}>
+                                                <div className="border-t border-border-light">
                                                     {changes.map((entry, index) => (
                                                         <div
                                                             key={entry.id || index}
@@ -915,61 +839,31 @@ function RecapModalSection({
                                                                         : 'none'
                                                             }}
                                                         >
-                                                            <div
-                                                                className="flex h-6 w-6 items-center justify-center rounded shrink-0 mt-0.5"
-                                                                style={{
-                                                                    background: 'var(--bg-tertiary)',
-                                                                    color: 'var(--text-secondary)'
-                                                                }}
-                                                            >
+                                                            <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 mt-0.5 bg-bg-tertiary text-text-secondary">
                                                                 <i
                                                                     className={`${getChangeIcon(entry.field_name)} text-[10px]`}
                                                                 />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center justify-between gap-2">
-                                                                    <span
-                                                                        className="text-[11px] font-semibold uppercase tracking-wider"
-                                                                        style={{ color: 'var(--text-secondary)' }}
-                                                                    >
+                                                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
                                                                         {formatFieldName(entry.field_name)}
                                                                     </span>
-                                                                    <span
-                                                                        className="text-[10px] font-mono tabular-nums shrink-0"
-                                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                                    >
+                                                                    <span className="text-[10px] font-mono tabular-nums shrink-0 text-text-tertiary">
                                                                         {formatDate(entry.changed_at)}
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5 mt-0.5 text-[11px]">
-                                                                    <span
-                                                                        className="px-1.5 py-0.5 rounded truncate max-w-[130px] font-mono tabular-nums"
-                                                                        style={{
-                                                                            background: '#fee2e2',
-                                                                            color: '#b91c1c'
-                                                                        }}
-                                                                    >
+                                                                    <span className="px-1.5 py-0.5 rounded truncate max-w-[130px] font-mono tabular-nums bg-red-100 text-red-700">
                                                                         {formatValue(entry.old_value, entry.field_name)}
                                                                     </span>
-                                                                    <i
-                                                                        className="fa-solid fa-arrow-right text-[8px] shrink-0"
-                                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                                    />
-                                                                    <span
-                                                                        className="px-1.5 py-0.5 rounded truncate max-w-[130px] font-mono tabular-nums"
-                                                                        style={{
-                                                                            background: '#dcfce7',
-                                                                            color: '#166534'
-                                                                        }}
-                                                                    >
+                                                                    <i className="fa-solid fa-arrow-right text-[8px] shrink-0 text-text-tertiary" />
+                                                                    <span className="px-1.5 py-0.5 rounded truncate max-w-[130px] font-mono tabular-nums bg-green-100 text-[#166534]">
                                                                         {formatValue(entry.new_value, entry.field_name)}
                                                                     </span>
                                                                 </div>
                                                                 {entry.changed_by && userNames[entry.changed_by] && (
-                                                                    <div
-                                                                        className="flex items-center gap-1 mt-0.5 text-[10px]"
-                                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                                    >
+                                                                    <div className="flex items-center gap-1 mt-0.5 text-[10px] text-text-tertiary">
                                                                         <i className="fa-solid fa-user-pen text-[8px]" />
                                                                         <span>{userNames[entry.changed_by]}</span>
                                                                     </div>

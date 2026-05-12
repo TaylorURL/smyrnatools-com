@@ -175,8 +175,8 @@ function PlanView() {
 
     return (
         <div
-            className="global-dashboard-container dashboard-container global-flush-top flush-top plan-view"
-            style={{ display: 'flex', flexDirection: 'column', inset: 0, overflow: 'hidden', position: 'absolute' }}
+            className="global-dashboard-container dashboard-container global-flush-top flush-top plan-view flex flex-col overflow-hidden absolute"
+            style={{ inset: 0 }}
         >
             <PlanHeader
                 accentColor={accentColor}
@@ -196,10 +196,7 @@ function PlanView() {
                 showSettings={showSettings}
                 viewMode={viewMode}
             />
-            <div
-                className="w-full max-w-full overflow-x-hidden"
-                style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
-            >
+            <div className="w-full max-w-full overflow-x-hidden flex flex-1 flex-col min-h-0 overflow-hidden">
                 {/* Show the skeleton through the WHOLE bootstrap, not just
                     the plants-list fetch. We hold until:
                       • plants list loads (`isLoading`)

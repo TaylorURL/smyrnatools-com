@@ -1,15 +1,6 @@
 import React from 'react'
 
 import { SERVICE_BADGE_BASE } from '../../../utils/PlanScheduleUtility'
-
-/** Format a minute-of-day count back into "HH:MM", wrapping past midnight. */
-const minuteOfDayToHhmm = (mins) => {
-    if (!Number.isFinite(mins)) return ''
-    const wrapped = ((mins % 1440) + 1440) % 1440
-    const h = Math.floor(wrapped / 60)
-    const m = Math.floor(wrapped % 60)
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-}
 import {
     BIG_POUR_MIN_TRUCKS,
     getEffectiveMinTrucks,
@@ -20,6 +11,15 @@ import {
     plantBadgeColor,
     trucksToHitBigPourGoal
 } from '../../../utils/PlanUtility'
+
+/** Format a minute-of-day count back into "HH:MM", wrapping past midnight. */
+const minuteOfDayToHhmm = (mins) => {
+    if (!Number.isFinite(mins)) return ''
+    const wrapped = ((mins % 1440) + 1440) % 1440
+    const h = Math.floor(wrapped / 60)
+    const m = Math.floor(wrapped % 60)
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
 
 /** Inline service-quality badge for a single order row. Rendered alongside
  *  the existing `OrderStatusBadge` so dispatchers see "how this pour went"
@@ -179,11 +179,8 @@ export function BigPourBadge({ order, travelOverrides }) {
     if (understaffed) tooltipLines.push(`Short by ${shortfall} truck${shortfall === 1 ? '' : 's'}`)
     return (
         <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
-            style={{
-                background: understaffed ? '#dc2626' : isBigPour ? '#4f46e5' : '#d97706',
-                color: '#fff'
-            }}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap text-white"
+            style={{ background: understaffed ? '#dc2626' : isBigPour ? '#4f46e5' : '#d97706' }}
             title={tooltipLines.join('\n')}
         >
             <i
@@ -261,15 +258,8 @@ export function PlantBadge({ code, fallback, name }) {
             style={{ background: bg, color: fg }}
         >
             <span
-                className="inline-flex items-center justify-center rounded-full font-bold"
-                style={{
-                    background: 'rgba(255,255,255,0.22)',
-                    color: fg,
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 10.5,
-                    height: 18,
-                    minWidth: 34
-                }}
+                className="inline-flex items-center justify-center rounded-full font-bold bg-[rgba(255,255,255,0.22)] font-heading h-[18px]"
+                style={{ color: fg, fontSize: 10.5, minWidth: 34 }}
             >
                 {code}
             </span>
@@ -281,16 +271,9 @@ export function PlantBadge({ code, fallback, name }) {
 /** Compact "label + value" chip used inside the OrderCard footer. */
 export function KeyValue({ label, value }) {
     return (
-        <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded"
-            style={{ background: 'var(--bg-secondary)' }}
-        >
-            <span className="text-[9.5px] uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                {label}
-            </span>
-            <span className="font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {value}
-            </span>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-bg-secondary">
+            <span className="text-[9.5px] uppercase tracking-wider text-text-tertiary">{label}</span>
+            <span className="font-mono font-semibold text-text-primary">{value}</span>
         </span>
     )
 }

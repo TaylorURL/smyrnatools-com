@@ -10,8 +10,7 @@ export function MaintenanceTabSwitcher({ accentColor, activeTab, isMobile, onCha
     if (!Array.isArray(tabs) || tabs.length <= 1) return null
     return (
         <div
-            className="flex items-center rounded-lg p-0.5 overflow-x-auto"
-            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
+            className="flex items-center rounded-lg p-0.5 overflow-x-auto bg-bg-tertiary border border-border-light"
             role="tablist"
             aria-label="Maintenance sections"
         >
@@ -34,11 +33,8 @@ export function MaintenanceTabSwitcher({ accentColor, activeTab, isMobile, onCha
                         {!isMobile && <span>{label}</span>}
                         {badge != null && badge > 0 && (
                             <span
-                                className="font-mono tabular-nums rounded px-1 text-[9.5px] font-bold uppercase tracking-wider"
-                                style={{
-                                    background: isActive ? 'rgba(255,255,255,0.25)' : '#dc2626',
-                                    color: '#fff'
-                                }}
+                                className="font-mono tabular-nums rounded px-1 text-[9.5px] font-bold uppercase tracking-wider text-white"
+                                style={{ background: isActive ? 'rgba(255,255,255,0.25)' : '#dc2626' }}
                             >
                                 {badge}
                             </span>

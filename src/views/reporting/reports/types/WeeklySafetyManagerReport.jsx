@@ -80,14 +80,8 @@ function CardHeader({ icon, iconBg, iconColor, label, sub, title, right }) {
                             {label}
                         </div>
                     )}
-                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                        {title}
-                    </div>
-                    {sub && (
-                        <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                            {sub}
-                        </div>
-                    )}
+                    <div className="text-[12.5px] font-semibold leading-tight text-text-primary">{title}</div>
+                    {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
                 </div>
             </div>
             {right && <div className="shrink-0">{right}</div>}
@@ -120,33 +114,22 @@ function TagPicker({ disabled, onChange, options, placeholder, value }) {
                 style={CARD_STYLE}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div
-                    className="flex items-center justify-between px-3 py-2.5"
-                    style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between px-3 py-2.5 bg-bg-secondary border-b border-border-light">
                     <div>
                         <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                             Categories
                         </div>
-                        <div className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            Select Issue Categories
-                        </div>
+                        <div className="text-[12.5px] font-semibold text-text-primary">Select Issue Categories</div>
                     </div>
                     <button
                         type="button"
                         onClick={() => setOpen(false)}
-                        className="rounded border-none cursor-pointer"
-                        style={{
-                            background: 'var(--bg-tertiary)',
-                            color: 'var(--text-secondary)',
-                            height: 24,
-                            width: 24
-                        }}
+                        className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6"
                     >
                         <i className="fas fa-times text-[10px]" />
                     </button>
                 </div>
-                <div className="flex gap-1.5 p-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                <div className="flex gap-1.5 p-2 border-b border-border-light">
                     <button
                         type="button"
                         onClick={selectAll}
@@ -164,16 +147,15 @@ function TagPicker({ disabled, onChange, options, placeholder, value }) {
                         <i className="fas fa-times text-[10px]" /> Clear
                     </button>
                 </div>
-                <div className="p-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                <div className="p-2 border-b border-border-light">
                     <div className="flex items-center gap-2 rounded px-2 py-1.5" style={FIELD_STYLE}>
-                        <i className="fas fa-search text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                        <i className="fas fa-search text-[10px] text-text-tertiary" />
                         <input
                             type="text"
                             placeholder="Search tags…"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            className="flex-1 border-none bg-transparent text-[12.5px] outline-none"
-                            style={{ color: 'var(--text-primary)' }}
+                            className="flex-1 border-none bg-transparent text-[12.5px] outline-none text-text-primary"
                         />
                     </div>
                 </div>
@@ -195,25 +177,20 @@ function TagPicker({ disabled, onChange, options, placeholder, value }) {
                                 }}
                             >
                                 <div
-                                    className="flex items-center justify-center rounded text-[9px] text-white"
+                                    className="flex items-center justify-center rounded text-[9px] text-white h-[18px] w-[18px]"
                                     style={{
                                         background: isSelected ? 'var(--accent, #1e3a5f)' : 'var(--bg-tertiary)',
                                         border: isSelected
                                             ? `1px solid var(--accent, #1e3a5f)`
-                                            : '1px solid var(--border-light)',
-                                        height: 18,
-                                        width: 18
+                                            : '1px solid var(--border-light)'
                                     }}
                                 >
                                     {isSelected && <i className="fas fa-check" />}
                                 </div>
                                 <i className={tagStyle.icon} style={{ color: tagStyle.color, fontSize: 11 }} />
                                 <span
-                                    className="text-[12px]"
-                                    style={{
-                                        color: 'var(--text-primary)',
-                                        fontWeight: isSelected ? 600 : 400
-                                    }}
+                                    className="text-[12px] text-text-primary"
+                                    style={{ fontWeight: isSelected ? 600 : 400 }}
                                 >
                                     {opt}
                                 </span>
@@ -221,21 +198,17 @@ function TagPicker({ disabled, onChange, options, placeholder, value }) {
                         )
                     })}
                     {filtered.length === 0 && (
-                        <div className="p-6 text-center text-[12px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <div className="p-6 text-center text-[12px] text-text-tertiary">
                             <i className="fas fa-search block text-[16px] mb-1" />
                             <span>No matching tags</span>
                         </div>
                     )}
                 </div>
-                <div
-                    className="p-2"
-                    style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
-                >
+                <div className="p-2 bg-bg-secondary border-t border-border-light">
                     <button
                         type="button"
                         onClick={() => setOpen(false)}
-                        className="w-full rounded text-[12px] font-bold uppercase tracking-wider text-white py-2 cursor-pointer border-none"
-                        style={{ background: 'var(--accent, #1e3a5f)' }}
+                        className="w-full rounded text-[12px] font-bold uppercase tracking-wider text-white py-2 cursor-pointer border-none bg-[var(--accent, #1e3a5f)]"
                     >
                         Done · {value.length} selected
                     </button>
@@ -255,12 +228,12 @@ function TagPicker({ disabled, onChange, options, placeholder, value }) {
                 style={FIELD_STYLE}
             >
                 <span className="flex items-center gap-1.5">
-                    <i className="fas fa-tags text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                    <i className="fas fa-tags text-[10px] text-text-tertiary" />
                     {value.length
                         ? `${value.length} tag${value.length > 1 ? 's' : ''} selected`
                         : placeholder || 'Select tags'}
                 </span>
-                <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
+                <i className="fas fa-chevron-down text-[9px] text-text-tertiary" />
             </button>
             {typeof document !== 'undefined' && ReactDOM.createPortal(modalContent, document.body)}
         </div>
@@ -283,22 +256,9 @@ function IssueChip({ children, color = 'var(--text-secondary)', icon, tint = 'va
 
 function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
     return (
-        <div
-            className="flex items-center justify-between gap-2 px-2.5 py-2 flex-wrap"
-            style={{
-                background: 'var(--bg-tertiary)',
-                borderBottom: '1px solid var(--border-light)'
-            }}
-        >
+        <div className="flex items-center justify-between gap-2 px-2.5 py-2 flex-wrap bg-bg-tertiary border-b border-border-light">
             <div className="flex items-center gap-2 flex-wrap">
-                <div
-                    className="flex items-center justify-center rounded text-[10.5px] font-bold tabular-nums text-white"
-                    style={{
-                        background: 'var(--accent, #1e3a5f)',
-                        height: 22,
-                        width: 22
-                    }}
-                >
+                <div className="flex items-center justify-center rounded text-[10.5px] font-bold tabular-nums text-white bg-[var(--accent, #1e3a5f)] h-[22px] w-[22px]">
                     {idx + 1}
                 </div>
                 {issue.plant && (
@@ -326,13 +286,7 @@ function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
                     type="button"
                     onClick={onRemove}
                     title="Remove issue"
-                    className="flex items-center justify-center rounded border-none cursor-pointer"
-                    style={{
-                        background: 'rgba(220, 38, 38, 0.12)',
-                        color: '#b91c1c',
-                        height: 24,
-                        width: 24
-                    }}
+                    className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-red-700 h-6 w-6"
                 >
                     <i className="fas fa-trash-alt text-[10px]" />
                 </button>
@@ -378,23 +332,17 @@ function TagsDisplay({ onRemoveTag, readOnly, tags }) {
 
 function FieldLabel({ children, icon, required }) {
     return (
-        <label className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5`} style={{ color: 'var(--text-tertiary)' }}>
+        <label className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5 text-text-tertiary`}>
             {icon && <i className={`fas ${icon} text-[10px]`} />}
             {children}
-            {required && <span style={{ color: '#dc2626' }}>*</span>}
+            {required && <span className="text-red-600">*</span>}
         </label>
     )
 }
 
 function SafetyEmptyState({ success }) {
     return (
-        <div
-            className="flex flex-col items-center justify-center gap-1.5 py-8 px-4 rounded"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px dashed var(--border-medium)'
-            }}
-        >
+        <div className="flex flex-col items-center justify-center gap-1.5 py-8 px-4 rounded bg-bg-secondary border border-border-medium">
             <i
                 className={`fas ${success ? 'fa-circle-check' : 'fa-shield-alt'} text-[22px]`}
                 style={{ color: success ? '#16a34a' : 'var(--text-tertiary)' }}
@@ -402,7 +350,7 @@ function SafetyEmptyState({ success }) {
             <div className="text-[12.5px] font-semibold" style={{ color: success ? '#15803d' : 'var(--text-primary)' }}>
                 {success ? 'All Clear' : 'No Issues Reported'}
             </div>
-            <div className="text-[11.5px]" style={{ color: 'var(--text-tertiary)' }}>
+            <div className="text-[11.5px] text-text-tertiary">
                 {success
                     ? 'No safety issues were reported during this reporting period.'
                     : 'Click Add Issue to document any safety incidents.'}
@@ -545,8 +493,7 @@ export function SafetyManagerSubmitPlugin({ form, plants, readOnly, setForm }) {
                         <button
                             type="button"
                             onClick={addIssue}
-                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none"
-                            style={{ background: 'var(--accent, #1e3a5f)' }}
+                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none bg-[var(--accent, #1e3a5f)]"
                         >
                             <i className="fas fa-plus text-[10px]" />
                             Add Issue
@@ -565,11 +512,7 @@ export function SafetyManagerSubmitPlugin({ form, plants, readOnly, setForm }) {
                         return (
                             <div
                                 key={issue.id}
-                                className="rounded overflow-hidden"
-                                style={{
-                                    background: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-light)'
-                                }}
+                                className="rounded overflow-hidden bg-bg-secondary border border-border-light"
                             >
                                 <IssueCardHeader
                                     issue={issue}
@@ -600,10 +543,7 @@ export function SafetyManagerSubmitPlugin({ form, plants, readOnly, setForm }) {
                                                             : `Plant ${issue.plant}`
                                                         : 'Select Plant…'}
                                                 </span>
-                                                <i
-                                                    className="fas fa-chevron-down text-[9px]"
-                                                    style={{ color: 'var(--text-tertiary)' }}
-                                                />
+                                                <i className="fas fa-chevron-down text-[9px] text-text-tertiary" />
                                             </button>
                                         </div>
                                         <div className="flex flex-col gap-1">
@@ -668,33 +608,26 @@ export function SafetyManagerSubmitPlugin({ form, plants, readOnly, setForm }) {
                                             }
                                         />
                                         <span
-                                            className="relative rounded-full transition-colors shrink-0"
+                                            className="relative rounded-full transition-colors shrink-0 w-[30px] h-4"
                                             style={{
-                                                width: 30,
-                                                height: 16,
                                                 background: issue.affectsEfficiency
                                                     ? 'var(--accent, #1e3a5f)'
                                                     : 'var(--border-medium)'
                                             }}
                                         >
                                             <span
-                                                className="absolute rounded-full bg-bg-primary transition-all"
+                                                className="absolute rounded-full bg-bg-primary transition-all w-3 h-3"
                                                 style={{
-                                                    width: 12,
-                                                    height: 12,
                                                     top: 2,
                                                     left: issue.affectsEfficiency ? 16 : 2,
                                                     boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
                                                 }}
                                             />
                                         </span>
-                                        <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                                        <span className="text-[12px] text-text-secondary">
                                             Should affect plant&apos;s efficiency
                                             {(!issue.plant || issue.plant === 'All') && (
-                                                <span
-                                                    className="ml-1 text-[10.5px]"
-                                                    style={{ color: 'var(--text-tertiary)' }}
-                                                >
+                                                <span className="ml-1 text-[10.5px] text-text-tertiary">
                                                     (select a specific plant first)
                                                 </span>
                                             )}
@@ -768,10 +701,7 @@ export function SafetyManagerReviewPlugin({ form }) {
                 title="Issues & Incidents"
                 sub={`${issues.length} issue${issues.length > 1 ? 's' : ''} reported for this period.`}
                 right={
-                    <span
-                        className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums"
-                        style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
-                    >
+                    <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums bg-[rgba(220,_38,_38,_0.12)] text-red-700">
                         <i className="fas fa-clipboard-list text-[9px]" />
                         {issues.length} Incident{issues.length > 1 ? 's' : ''}
                     </span>
@@ -783,37 +713,21 @@ export function SafetyManagerReviewPlugin({ form }) {
                     return (
                         <div
                             key={issue.id || idx}
-                            className="rounded overflow-hidden"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)'
-                            }}
+                            className="rounded overflow-hidden bg-bg-secondary border border-border-light"
                         >
                             <IssueCardHeader issue={issue} idx={idx} readOnly />
                             <div className="flex flex-col gap-2 p-2.5">
                                 {tags.length > 0 && <TagsDisplay tags={tags} readOnly />}
-                                <div
-                                    className="rounded p-2.5"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
+                                <div className="rounded p-2.5 bg-bg-primary border border-border-light">
                                     <div
-                                        className={`${SECTION_LABEL_CLASS} mb-1 flex items-center gap-1.5`}
-                                        style={{ color: 'var(--text-tertiary)' }}
+                                        className={`${SECTION_LABEL_CLASS} mb-1 flex items-center gap-1.5 text-text-tertiary`}
                                     >
                                         <i className="fas fa-file-alt text-[10px]" />
                                         Description
                                     </div>
-                                    <div
-                                        className="text-[12.5px] leading-relaxed"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                    <div className="text-[12.5px] leading-relaxed text-text-primary">
                                         {issue.description || (
-                                            <span className="italic" style={{ color: 'var(--text-tertiary)' }}>
-                                                No description provided.
-                                            </span>
+                                            <span className="italic text-text-tertiary">No description provided.</span>
                                         )}
                                     </div>
                                 </div>

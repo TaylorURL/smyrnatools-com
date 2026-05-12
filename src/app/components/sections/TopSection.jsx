@@ -87,18 +87,10 @@ const Badge = ({ children, onClick, onPillClick, accentColor }) => {
 /** Search input — flat, single-row, matches Plan-tab filter styling. */
 const SearchInput = ({ value, onChange, onClear, placeholder, className = '' }) => (
     <div className={`relative ${className}`} role="search">
-        <i
-            className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px]"
-            style={{ color: 'var(--text-tertiary)' }}
-        />
+        <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-text-tertiary" />
         <input
             type="text"
-            className="w-full text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-primary)'
-            }}
+            className="w-full text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7 bg-bg-secondary border border-border-light text-text-primary"
             placeholder={placeholder}
             value={value || ''}
             onChange={(e) => onChange?.(e.target.value)}
@@ -106,8 +98,7 @@ const SearchInput = ({ value, onChange, onClear, placeholder, className = '' }) 
         />
         {value && onClear && (
             <button
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none"
-                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none bg-bg-tertiary text-text-secondary"
                 onClick={onClear}
                 type="button"
                 aria-label="Clear search"
@@ -142,8 +133,7 @@ const ActionButton = ({ icon, label, onClick, variant = 'subtle', accentColor })
 /** Two-button list/grid view toggle — flat, no slate-100 frame. */
 const ViewToggle = ({ viewMode, onChange, accentColor }) => (
     <div
-        className="inline-flex items-center rounded overflow-hidden"
-        style={{ border: '1px solid var(--border-light)' }}
+        className="inline-flex items-center rounded overflow-hidden border border-border-light"
         role="group"
         aria-label="View mode"
     >
@@ -172,13 +162,8 @@ const ViewToggle = ({ viewMode, onChange, accentColor }) => (
 /** Standard select — uses native browser chrome with var(--bg-secondary) styling. */
 const FilterSelect = ({ value, options, onChange, ariaLabel, className = '' }) => (
     <select
-        className={`text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 ${className}`}
-        style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-light)',
-            color: 'var(--text-primary)',
-            minWidth: 130
-        }}
+        className={`text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 ${className} bg-bg-secondary border border-border-light text-text-primary`}
+        style={{ minWidth: 130 }}
         value={value || ''}
         onChange={(e) => onChange?.(e.target.value)}
         aria-label={ariaLabel}
@@ -198,12 +183,7 @@ const FilterSelect = ({ value, options, onChange, ariaLabel, className = '' }) =
 const ResetButton = ({ onClick }) => (
     <button
         type="button"
-        className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none"
-        style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-light)',
-            color: 'var(--text-secondary)'
-        }}
+        className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none bg-bg-secondary border border-border-light text-text-secondary"
         onClick={onClick}
         aria-label="Reset filters"
         title="Reset filters"
@@ -214,14 +194,7 @@ const ResetButton = ({ onClick }) => (
 
 /** List column header row — bg-tertiary, 10.5px uppercase tracked-wider, mono sort caret. */
 const ListHeader = ({ labels, colWidths, sortKey, sortDirection, onHeaderClick, accentColor }) => (
-    <div
-        className="flex items-center -mx-4 px-4 mt-3 -mb-3"
-        style={{
-            background: 'var(--bg-tertiary)',
-            borderTop: '1px solid var(--border-light)',
-            borderBottom: '1px solid var(--border-light)'
-        }}
-    >
+    <div className="flex items-center -mx-4 px-4 mt-3 -mb-3 bg-bg-tertiary border-t border-border-light border-b border-border-light">
         {labels.map((label, index) => {
             const colWidth = colWidths[index] || 'auto'
             const isFlex = colWidth === 'flex' || colWidth === 'auto'
@@ -282,9 +255,7 @@ const MobileViewToggle = ({ viewMode, onChange, accentColor }) => (
 
 const MobileFilterItem = ({ label, children, fullWidth = false }) => (
     <div className={`flex flex-col gap-1.5 ${fullWidth ? 'col-span-2' : ''}`}>
-        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-            {label}
-        </span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</span>
         {children}
     </div>
 )
@@ -406,20 +377,19 @@ function TopSection({
     const skeletonContent = (
         <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
-                <div className="h-5 w-40 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                <div className="h-5 w-40 rounded animate-pulse bg-bg-tertiary" />
                 <div className="flex items-center gap-2">
-                    <div className="h-7 w-20 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                    <div className="h-7 w-20 rounded animate-pulse bg-bg-tertiary" />
                 </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
                 <div
-                    className={`${isMobile ? 'flex-1 h-8' : 'h-8 min-w-[220px] max-w-[420px] flex-[0_1_auto]'} rounded animate-pulse`}
-                    style={{ background: 'var(--bg-tertiary)' }}
+                    className={`${isMobile ? 'flex-1 h-8' : 'h-8 min-w-[220px] max-w-[420px] flex-[0_1_auto]'} rounded animate-pulse bg-bg-tertiary`}
                 />
                 <div className="flex items-center gap-2 ml-auto">
-                    <div className="h-7 w-16 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
-                    <div className="h-7 w-28 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
-                    <div className="h-7 w-32 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                    <div className="h-7 w-16 rounded animate-pulse bg-bg-tertiary" />
+                    <div className="h-7 w-28 rounded animate-pulse bg-bg-tertiary" />
+                    <div className="h-7 w-32 rounded animate-pulse bg-bg-tertiary" />
                 </div>
             </div>
             {customBottomSkeleton}
@@ -442,12 +412,7 @@ function TopSection({
                             <div
                                 className={`flex items-center gap-2 min-w-0${revealControls ? ' animate-reveal-left' : ''}`}
                             >
-                                <h1
-                                    className="text-[16px] font-bold m-0 truncate"
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
-                                    {title}
-                                </h1>
+                                <h1 className="text-[16px] font-bold m-0 truncate text-text-primary">{title}</h1>
                                 {badge && (
                                     <Badge onClick={onBadgeClick} onPillClick={onPillClick} accentColor={accentColor}>
                                         {badge}
@@ -502,10 +467,7 @@ function TopSection({
                             </button>
                         </div>
                         {showMobileFilters && (
-                            <div
-                                className="rounded p-3"
-                                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                            >
+                            <div className="rounded p-3 bg-bg-secondary border border-border-light">
                                 <div className="grid grid-cols-2 gap-2.5">
                                     {viewMode && !hideViewModeToggle && (
                                         <MobileFilterItem label="View Mode" fullWidth>
@@ -520,20 +482,12 @@ function TopSection({
                                         <MobileFilterItem label="Plant">
                                             <button
                                                 type="button"
-                                                className="flex items-center justify-between w-full rounded text-[12px] py-2 px-2 cursor-pointer"
-                                                style={{
-                                                    background: 'var(--bg-primary)',
-                                                    border: '1px solid var(--border-light)',
-                                                    color: 'var(--text-primary)'
-                                                }}
+                                                className="flex items-center justify-between w-full rounded text-[12px] py-2 px-2 cursor-pointer bg-bg-primary border border-border-light text-text-primary"
                                                 onClick={() => setIsPlantModalOpen(true)}
                                                 aria-label="Filter by plant"
                                             >
                                                 <span className="truncate">{plantDisplayText}</span>
-                                                <i
-                                                    className="fas fa-chevron-down text-[10px]"
-                                                    style={{ color: 'var(--text-tertiary)' }}
-                                                />
+                                                <i className="fas fa-chevron-down text-[10px] text-text-tertiary" />
                                             </button>
                                         </MobileFilterItem>
                                     )}
@@ -575,12 +529,7 @@ function TopSection({
                                         <MobileFilterItem fullWidth>
                                             <button
                                                 type="button"
-                                                className="flex items-center justify-center gap-2 w-full rounded text-[12px] font-semibold py-2 cursor-pointer"
-                                                style={{
-                                                    background: 'var(--bg-primary)',
-                                                    border: '1px solid var(--border-light)',
-                                                    color: 'var(--text-secondary)'
-                                                }}
+                                                className="flex items-center justify-center gap-2 w-full rounded text-[12px] font-semibold py-2 cursor-pointer bg-bg-primary border border-border-light text-text-secondary"
                                                 onClick={onReset}
                                             >
                                                 <i className="fas fa-undo" />
@@ -623,10 +572,7 @@ function TopSection({
                         <div
                             className={`flex items-center gap-3 min-w-0${revealControls ? ' animate-reveal-left' : ''}`}
                         >
-                            <h1
-                                className="text-[18px] font-bold tracking-tight m-0 truncate"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                            <h1 className="text-[18px] font-bold tracking-tight m-0 truncate text-text-primary">
                                 {title}
                             </h1>
                             {badge && (

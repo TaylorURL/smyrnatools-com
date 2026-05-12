@@ -49,14 +49,9 @@ const useTrimmedHourlyRows = (rows, hasActivity) =>
  *  set has no rows worth charting. */
 export function PlanDemandEmptyState() {
     return (
-        <div
-            className="flex flex-col items-center justify-center py-10 gap-2 text-center"
-            style={{ color: 'var(--text-tertiary)' }}
-        >
+        <div className="flex flex-col items-center justify-center py-10 gap-2 text-center text-text-tertiary">
             <i className="fas fa-chart-column text-[28px] opacity-50" />
-            <div className="text-[13px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                No demand to chart yet
-            </div>
+            <div className="text-[13px] font-semibold text-text-secondary">No demand to chart yet</div>
             <div className="text-[11.5px] max-w-[320px]">
                 Once orders with truck counts land in the plan, demand charts for every plant will render here.
             </div>
@@ -67,7 +62,7 @@ export function PlanDemandEmptyState() {
 export function HourlyTrucksLineChart({ accent, rows }) {
     const trimmed = useTrimmedHourlyRows(rows, (row) => row.total > 0)
     return (
-        <div style={{ height: 320, width: '100%' }}>
+        <div className="h-[320px] w-full">
             <ResponsiveContainer>
                 <LineChart data={trimmed} margin={{ bottom: 4, left: 0, right: 12, top: 12 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
@@ -95,7 +90,7 @@ export function HourlyTrucksLineChart({ accent, rows }) {
 
 export function ByPlantBarChart({ accent, rows }) {
     return (
-        <div style={{ height: 320, width: '100%' }}>
+        <div className="h-[320px] w-full">
             <ResponsiveContainer>
                 <BarChart data={rows} margin={{ bottom: 4, left: 0, right: 12, top: 12 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
@@ -121,7 +116,7 @@ export function StackedHourlyAreaChart({ plantColor, plants, rows }) {
     const hasAnyActivity = (row) => plants.some((plant) => (row[plant.code] || 0) > 0)
     const trimmed = useTrimmedHourlyRows(rows, hasAnyActivity)
     return (
-        <div style={{ height: 360, width: '100%' }}>
+        <div className="h-[360px] w-full">
             <ResponsiveContainer>
                 <AreaChart data={trimmed} margin={{ bottom: 4, left: 0, right: 12, top: 12 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
@@ -157,7 +152,7 @@ export function YardageSharePieChart({ plantColor, plants, total }) {
     )
     if (rows.length === 0) return <PlanDemandEmptyState />
     return (
-        <div style={{ height: 360, width: '100%' }}>
+        <div className="h-[360px] w-full">
             <ResponsiveContainer>
                 <PieChart>
                     <Pie
@@ -196,7 +191,7 @@ export function CumulativeYardageChart({ accent, rows }) {
         return rows.slice(Math.max(0, firstActive - 1))
     }, [rows])
     return (
-        <div style={{ height: 320, width: '100%' }}>
+        <div className="h-[320px] w-full">
             <ResponsiveContainer>
                 <AreaChart data={trimmed} margin={{ bottom: 4, left: 0, right: 12, top: 12 }}>
                     <defs>
@@ -230,7 +225,7 @@ export function CumulativeYardageChart({ accent, rows }) {
 export function CapacityVsPeakChart({ accent, rows }) {
     if (rows.length === 0) return <PlanDemandEmptyState />
     return (
-        <div style={{ height: 360, width: '100%' }}>
+        <div className="h-[360px] w-full">
             <ResponsiveContainer>
                 <BarChart data={rows} margin={{ bottom: 4, left: 0, right: 12, top: 12 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
@@ -294,7 +289,7 @@ export function ProductMixPieChart({ rows, total }) {
     if (rows.length === 0) return <PlanDemandEmptyState />
     const data = rows.slice(0, PRODUCT_MIX_MAX_SLICES)
     return (
-        <div style={{ height: 360, width: '100%' }}>
+        <div className="h-[360px] w-full">
             <ResponsiveContainer>
                 <PieChart>
                     <Pie

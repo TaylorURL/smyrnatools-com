@@ -7,27 +7,15 @@ import React from 'react'
  */
 export function Stat({ hint, label, value, valueColor }) {
     return (
-        <div
-            className="px-3 py-2.5 flex flex-col gap-0.5"
-            style={{
-                background: 'var(--bg-primary)',
-                borderRight: '1px solid var(--border-light)'
-            }}
-        >
-            <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                {label}
-            </span>
+        <div className="px-3 py-2.5 flex flex-col gap-0.5 bg-bg-primary border-r border-border-light">
+            <span className="text-[11px] text-text-secondary">{label}</span>
             <span
                 className="font-semibold text-[20px] leading-tight font-mono"
                 style={{ color: valueColor || 'var(--text-primary)' }}
             >
                 {value}
             </span>
-            {hint && (
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {hint}
-                </span>
-            )}
+            {hint && <span className="text-[11px] text-text-tertiary">{hint}</span>}
         </div>
     )
 }
@@ -49,10 +37,7 @@ export function StatGroup({ children, columns = 6, className = '' }) {
             8: 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-8'
         }[columns] || 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
     return (
-        <div
-            className={`grid ${colClass} rounded overflow-hidden ${className}`}
-            style={{ border: '1px solid var(--border-light)' }}
-        >
+        <div className={`grid ${colClass} rounded overflow-hidden ${className} border border-border-light`}>
             {children}
         </div>
     )
@@ -70,23 +55,13 @@ export function Panel({ children, id, right, title, className = '', innerClassNa
             {(title || right) && (
                 <div className="flex items-center flex-wrap gap-x-2 gap-y-1.5">
                     {title && (
-                        <h3
-                            className="text-[14px] font-semibold m-0 min-w-0 truncate"
-                            style={{ color: 'var(--text-primary)' }}
-                        >
-                            {title}
-                        </h3>
+                        <h3 className="text-[14px] font-semibold m-0 min-w-0 truncate text-text-primary">{title}</h3>
                     )}
                     <div className="flex-1" />
                     {right}
                 </div>
             )}
-            <div
-                className={`rounded ${innerClassName}`}
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
-                {children}
-            </div>
+            <div className={`rounded ${innerClassName} bg-bg-primary border border-border-light`}>{children}</div>
         </section>
     )
 }

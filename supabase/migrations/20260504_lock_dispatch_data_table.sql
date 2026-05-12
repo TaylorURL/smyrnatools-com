@@ -11,27 +11,30 @@
 
 alter table public.dispatch_data enable row level security;
 
-do $$
+do
+$$
 declare
-    policy_name text;
+policy_name text;
 begin
-    for policy_name in
-        select policyname
-        from pg_policies
-        where schemaname = 'public'
-          and tablename = 'dispatch_data'
-    loop
+for policy_name in
+select policyname
+from pg_policies
+where schemaname = 'public'
+  and tablename = 'dispatch_data' loop
         execute format('drop policy if exists %I on public.dispatch_data', policy_name);
-    end loop;
+end loop;
 end
 $$;
 
 revoke all on public.dispatch_data from anon;
 revoke all on public.dispatch_data from authenticated;
 
-grant all on public.dispatch_data to service_role;
+grant
+all
+on public.dispatch_data to service_role;
 
-create policy "dispatch_data_service_role_all"
+create
+policy "dispatch_data_service_role_all"
 on public.dispatch_data
 as permissive
 for all

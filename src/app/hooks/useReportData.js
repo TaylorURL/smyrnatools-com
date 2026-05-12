@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-import { Database } from '../../../../../services/DatabaseService'
-import { ReportUtility } from '../../../../../utils/ReportUtility'
+import { Database } from '../../services/DatabaseService'
+import { ReportUtility } from '../../utils/ReportUtility'
 
 const EMPTY_ARRAY = []
 function toMondayIso(dateInput) {

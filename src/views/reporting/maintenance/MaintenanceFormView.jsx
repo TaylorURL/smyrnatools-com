@@ -35,14 +35,8 @@ function CardHeader({ accent, icon, label, sub, title, right }) {
                             {label}
                         </div>
                     )}
-                    <div className="text-[13px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                        {title}
-                    </div>
-                    {sub && (
-                        <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                            {sub}
-                        </div>
-                    )}
+                    <div className="text-[13px] font-bold leading-tight text-text-primary">{title}</div>
+                    {sub && <div className="text-[11px] mt-0.5 text-text-tertiary">{sub}</div>}
                 </div>
             </div>
             {right && <div className="shrink-0">{right}</div>}
@@ -52,22 +46,19 @@ function CardHeader({ accent, icon, label, sub, title, right }) {
 
 function PageHeader({ accentColor, dueDate, onBack, plantCode, status, statusColor, title, label }) {
     return (
-        <div
-            className="sticky top-0 z-40 flex items-center gap-2.5 px-3 sm:px-4 py-2"
-            style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-        >
+        <div className="sticky top-0 z-40 flex items-center gap-2.5 px-3 sm:px-4 py-2 bg-bg-primary border-b border-border-light">
             <button
                 type="button"
                 onClick={onBack}
                 aria-label="Back"
-                className="flex h-7 w-7 items-center justify-center rounded border-none cursor-pointer"
-                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                className="flex h-7 w-7 items-center justify-center rounded border-none cursor-pointer bg-bg-tertiary"
+                style={{ color: accentColor }}
             >
                 <i className="fas fa-arrow-left text-[11px]" />
             </button>
             <div
-                className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                style={{ color: accentColor }}
             >
                 <i className="fas fa-file-pdf text-[11px]" />
             </div>
@@ -75,10 +66,10 @@ function PageHeader({ accentColor, dueDate, onBack, plantCode, status, statusCol
                 <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                     {label}
                 </div>
-                <div className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                <div className="text-[12.5px] font-semibold truncate text-text-primary">
                     {title || 'Maintenance Form'}
                 </div>
-                <div className="text-[10.5px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="text-[10.5px] truncate text-text-tertiary">
                     {[plantCode && `Plant ${plantCode}`, dueDate && `Due ${dueDate}`].filter(Boolean).join('  ·  ')}
                 </div>
             </div>
@@ -100,12 +91,9 @@ function PageHeader({ accentColor, dueDate, onBack, plantCode, status, statusCol
 
 function LoadingShell({ accentColor, label, onBack, title }) {
     return (
-        <div className="flex h-full w-full flex-col overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="flex h-full w-full flex-col overflow-y-auto bg-bg-secondary">
             <PageHeader accentColor={accentColor} label={label} onBack={onBack} title={title} />
-            <div
-                className="flex-1 flex items-center justify-center gap-2 text-[12.5px]"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+            <div className="flex-1 flex items-center justify-center gap-2 text-[12.5px] text-text-tertiary">
                 <i className="fas fa-circle-notch fa-spin text-[12px]" />
                 Loading…
             </div>
@@ -127,38 +115,27 @@ function StatusForSubmission(submission) {
 function PdfEmbed({ url }) {
     if (!url) {
         return (
-            <div
-                className="rounded p-6 text-center text-[12px]"
-                style={{
-                    background: 'var(--bg-secondary)',
-                    border: '1px dashed var(--border-medium)',
-                    color: 'var(--text-tertiary)'
-                }}
-            >
+            <div className="rounded p-6 text-center text-[12px] bg-bg-secondary border border-border-medium text-text-tertiary">
                 <i className="fas fa-file-pdf text-[18px] block mb-1" />
                 No scanned PDF was attached to this submission.
             </div>
         )
     }
     return (
-        <div className="rounded overflow-hidden" style={{ border: '1px solid var(--border-light)' }}>
+        <div className="rounded overflow-hidden border border-border-light">
             <iframe
                 title="Submitted maintenance form"
                 src={url}
-                className="w-full"
-                style={{ background: 'var(--bg-secondary)', height: '70vh', minHeight: 480, border: 'none' }}
+                className="w-full bg-bg-secondary h-[70vh]"
+                style={{ minHeight: 480, border: 'none' }}
             />
-            <div
-                className="flex items-center justify-between px-3 py-2 text-[11px]"
-                style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
-            >
-                <span style={{ color: 'var(--text-tertiary)' }}>Embedded scan — open in a new tab for full view</span>
+            <div className="flex items-center justify-between px-3 py-2 text-[11px] bg-bg-secondary border-t border-border-light">
+                <span className="text-text-tertiary">Embedded scan — open in a new tab for full view</span>
                 <a
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 font-semibold"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="inline-flex items-center gap-1 font-semibold text-text-secondary"
                 >
                     Open <i className="fas fa-external-link-alt text-[10px]" />
                 </a>
@@ -244,7 +221,7 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
     }, [pdfFile, formObj, dueDate, item, plantCode, submitterNotes, onSubmitted])
 
     return (
-        <div className="flex h-full w-full flex-col overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="flex h-full w-full flex-col overflow-y-auto bg-bg-secondary">
             <PageHeader
                 accentColor={accentColor}
                 dueDate={formatMaintenanceDateShort(dueDate || item?.due_date)}
@@ -265,7 +242,7 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
                         sub="Print the PDF, hand-fill every required field, then scan the completed sheet."
                         right={
                             downloadedAt && (
-                                <span className="text-[10.5px]" style={{ color: '#16a34a' }}>
+                                <span className="text-[10.5px] text-green-600">
                                     <i className="fas fa-check mr-1 text-[9px]" />
                                     Downloaded
                                 </span>
@@ -308,7 +285,7 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
                             <div className="flex flex-col items-center gap-1">
                                 <i className="fas fa-file-circle-check text-[22px]" style={{ color: accentColor }} />
                                 <div className="text-[12.5px] font-semibold">{pdfFile.name}</div>
-                                <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                <div className="text-[11px] text-text-tertiary">
                                     {(pdfFile.size / 1024).toFixed(0)} KB · click to replace
                                 </div>
                             </div>
@@ -316,9 +293,7 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
                             <div className="flex flex-col items-center gap-1">
                                 <i className="fas fa-cloud-arrow-up text-[22px]" />
                                 <div className="text-[12.5px] font-semibold">Click to browse or drag a PDF here</div>
-                                <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                    PDF only · single file
-                                </div>
+                                <div className="text-[11px] text-text-tertiary">PDF only · single file</div>
                             </div>
                         )}
                     </button>
@@ -349,23 +324,13 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
                         style={FIELD_STYLE}
                     />
                     {error && (
-                        <div
-                            className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
-                        >
+                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>
                     )}
                     {success && (
-                        <div
-                            className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                            style={{
-                                background: 'rgba(22, 163, 74, 0.12)',
-                                border: '1px solid rgba(22, 163, 74, 0.45)',
-                                color: '#15803d'
-                            }}
-                        >
+                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-[rgba(22,_163,_74,_0.12)] border border-[rgba(22,_163,_74,_0.45)] text-green-700">
                             <i className="fas fa-check-circle text-[11px]" />
                             Submitted for review.
                         </div>
@@ -427,7 +392,7 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
     )
 
     return (
-        <div className="flex h-full w-full flex-col overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="flex h-full w-full flex-col overflow-y-auto bg-bg-secondary">
             <PageHeader
                 accentColor={accentColor}
                 dueDate={formatMaintenanceDateShort(submission?.due_date || item?.due_date)}
@@ -450,17 +415,8 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
                     />
                     <PdfEmbed url={pdfUrl} />
                     {submission?.submitter_notes && (
-                        <div
-                            className="mt-2 rounded p-2.5 text-[12px]"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }}
-                        >
-                            <div className={`${SECTION_LABEL_CLASS} mb-1`} style={{ color: 'var(--text-tertiary)' }}>
-                                Submitter notes
-                            </div>
+                        <div className="mt-2 rounded p-2.5 text-[12px] bg-bg-secondary border border-border-light text-text-primary">
+                            <div className={`${SECTION_LABEL_CLASS} mb-1 text-text-tertiary`}>Submitter notes</div>
                             {submission.submitter_notes}
                         </div>
                     )}
@@ -477,10 +433,7 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
                         style={FIELD_STYLE}
                     />
                     {error && (
-                        <div
-                            className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
-                        >
+                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>
@@ -490,8 +443,7 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
                             type="button"
                             onClick={() => handleReview('approved')}
                             disabled={submitting}
-                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-3 py-1.5 border-none cursor-pointer disabled:opacity-50"
-                            style={{ background: '#16a34a' }}
+                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-3 py-1.5 border-none cursor-pointer disabled:opacity-50 bg-green-600"
                         >
                             <i className="fas fa-check text-[10px]" />
                             Approve
@@ -500,8 +452,7 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
                             type="button"
                             onClick={() => handleReview('rejected')}
                             disabled={submitting}
-                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-3 py-1.5 border-none cursor-pointer disabled:opacity-50"
-                            style={{ background: '#dc2626' }}
+                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-3 py-1.5 border-none cursor-pointer disabled:opacity-50 bg-red-600"
                         >
                             <i className="fas fa-times text-[10px]" />
                             Reject
@@ -522,7 +473,7 @@ function ViewOnlyMode({ accentColor, formObj, item, onBack, submission }) {
         [submission?.scanned_pdf_url]
     )
     return (
-        <div className="flex h-full w-full flex-col overflow-y-auto" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="flex h-full w-full flex-col overflow-y-auto bg-bg-secondary">
             <PageHeader
                 accentColor={accentColor}
                 dueDate={formatMaintenanceDateShort(submission?.due_date || item?.due_date)}
@@ -556,7 +507,7 @@ function ViewOnlyMode({ accentColor, formObj, item, onBack, submission }) {
                             label="Notes"
                             title="Submitter notes"
                         />
-                        <div className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                        <div className="text-[12.5px] leading-relaxed text-text-primary">
                             {submission.submitter_notes}
                         </div>
                     </div>
@@ -569,9 +520,7 @@ function ViewOnlyMode({ accentColor, formObj, item, onBack, submission }) {
                             label="Review"
                             title="Reviewer notes"
                         />
-                        <div className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-                            {submission.review_notes}
-                        </div>
+                        <div className="text-[12.5px] leading-relaxed text-text-primary">{submission.review_notes}</div>
                     </div>
                 )}
             </div>

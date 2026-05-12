@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
+import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
+import HistoryViewSection from '../../../app/components/sections/HistoryViewSection'
+import IssueModalSection from '../../../app/components/sections/IssueModalSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import Trailer from '../../../app/models/trailers/Trailer'
 import { Database } from '../../../services/DatabaseService'
@@ -10,9 +13,6 @@ import { TractorService } from '../../../services/TractorService'
 import { TrailerService } from '../../../services/TrailerService'
 import { UserService } from '../../../services/UserService'
 import TractorSelectModal from './TractorSelectModal'
-import TrailerCommentModal from './TrailerCommentModal'
-import TrailerHistoryView from './TrailerHistoryView'
-import TrailerIssueModal from './TrailerIssueModal'
 
 /**
  * Full detail/edit view for a single trailer. Handles tractor assignment/
@@ -489,17 +489,21 @@ ${
     return (
         <>
             {showComments && (
-                <TrailerCommentModal
-                    trailerId={trailer.id}
-                    trailerNumber={trailer?.trailerNumber}
+                <CommentModalSection
+                    itemId={trailer.id}
+                    itemNumber={trailer?.trailerNumber}
+                    itemType="Trailer"
                     onClose={() => setShowComments(false)}
+                    service={TrailerService}
                 />
             )}
             {showIssues && (
-                <TrailerIssueModal
-                    trailerId={trailer.id}
-                    trailerNumber={trailer?.trailerNumber}
+                <IssueModalSection
+                    itemId={trailer.id}
+                    itemNumber={trailer?.trailerNumber}
+                    itemType="Trailer"
                     onClose={() => setShowIssues(false)}
+                    service={TrailerService}
                 />
             )}
             {showPlantModal && (
@@ -562,7 +566,7 @@ ${
                     trailerId={trailerId}
                 />
             )}
-            {showHistory && <TrailerHistoryView trailer={trailer} onClose={() => setShowHistory(false)} />}
+            {showHistory && <HistoryViewSection item={trailer} onClose={() => setShowHistory(false)} type="trailer" />}
             <DetailViewSection
                 title={`Trailer #${trailer.trailerNumber || 'Not Assigned'}`}
                 onClose={handleBackClick}
@@ -602,23 +606,21 @@ ${
                         {canEditTrailer && (
                             <>
                                 <button
-                                    className="global-button-secondary"
+                                    className="global-button-secondary flex-1 justify-center"
                                     onClick={async () => {
                                         await handleSave()
                                         setHasUnsavedChanges(false)
                                     }}
                                     disabled={isSaving}
-                                    style={{ flex: 1, justifyContent: 'center' }}
                                 >
                                     <i className="fas fa-save"></i>
                                     <span>{isSaving ? 'Saving...' : 'Save'}</span>
                                 </button>
                                 {canDeleteTrailer && (
                                     <button
-                                        className="global-button-secondary"
+                                        className="global-button-secondary flex-1 justify-center"
                                         onClick={() => setShowDeleteConfirmation(true)}
                                         disabled={isSaving}
-                                        style={{ flex: 1, justifyContent: 'center' }}
                                     >
                                         <i className="fas fa-trash-alt"></i>
                                         <span>Delete</span>
@@ -671,13 +673,7 @@ ${
                                         : {}
                                 }
                             >
-                                <span
-                                    style={{
-                                        display: 'block',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }}
-                                >
+                                <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
                                     {plantDisplayText}
                                 </span>
                             </button>
@@ -716,7 +712,7 @@ ${
                                     disabled={!canEditTrailer}
                                     style={!canEditTrailer ? { cursor: 'not-allowed', opacity: 0.8 } : {}}
                                 >
-                                    <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
                                         {assignedTractor ? getTractorName(assignedTractor) : 'None (Click to select)'}
                                     </span>
                                 </button>

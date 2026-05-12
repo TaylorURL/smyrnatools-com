@@ -19,24 +19,14 @@ function Field({ hint, label, mono, value, wide }) {
     if (!text) return null
     return (
         <div className={`flex flex-col gap-0.5 min-w-0 ${wide ? 'sm:col-span-2' : ''}`}>
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                {label}
-            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</span>
             <span
-                className={`text-[13px] leading-snug ${mono ? 'font-mono' : ''}`}
-                style={{
-                    color: 'var(--text-primary)',
-                    overflowWrap: 'anywhere',
-                    wordBreak: 'break-word'
-                }}
+                className={`text-[13px] leading-snug ${mono ? 'font-mono' : ''} text-text-primary`}
+                style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                 title={text}
             >
                 {text}
-                {hint && (
-                    <span className="ml-2 text-[11px] font-normal" style={{ color: 'var(--text-tertiary)' }}>
-                        {hint}
-                    </span>
-                )}
+                {hint && <span className="ml-2 text-[11px] font-normal text-text-tertiary">{hint}</span>}
             </span>
         </div>
     )
@@ -48,21 +38,10 @@ function Section({ children, icon, title }) {
     const validChildren = React.Children.toArray(children).filter(Boolean)
     if (validChildren.length === 0) return null
     return (
-        <div
-            className="rounded-xl"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="px-3 py-2 flex items-center gap-2 border-b rounded-t-xl"
-                style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
-            >
-                <i className={`fas ${icon} text-[10.5px]`} style={{ color: 'var(--text-tertiary)' }} />
-                <span
-                    className="text-[10.5px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
-                    {title}
-                </span>
+        <div className="rounded-xl bg-bg-primary border border-border-light">
+            <div className="px-3 py-2 flex items-center gap-2 border-b rounded-t-xl bg-bg-secondary border-border-light">
+                <i className={`fas ${icon} text-[10.5px] text-text-tertiary`} />
+                <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-secondary">{title}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-2.5 px-3 py-3">{validChildren}</div>
         </div>
@@ -72,10 +51,7 @@ function Section({ children, icon, title }) {
 /** Hero metric tile — large value over a compact label, optional hint. */
 function HeroMetric({ accent, hint, icon, label, value }) {
     return (
-        <div
-            className="rounded-lg px-3 py-2 flex items-start gap-2.5 min-w-0 flex-1"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded-lg px-3 py-2 flex items-start gap-2.5 min-w-0 flex-1 bg-bg-primary border border-border-light">
             <div
                 className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
                 style={{ background: `${accent}15`, color: accent }}
@@ -83,25 +59,16 @@ function HeroMetric({ accent, hint, icon, label, value }) {
                 <i className={`fas ${icon} text-[12px]`} />
             </div>
             <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</div>
                 <div
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
-                    {label}
-                </div>
-                <div
-                    className="text-[15px] font-bold font-mono leading-tight mt-0.5 truncate"
-                    style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+                    className="text-[15px] font-bold font-mono leading-tight mt-0.5 truncate text-text-primary"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}
                     title={value}
                 >
                     {value || '—'}
                 </div>
                 {hint && (
-                    <div
-                        className="text-[10.5px] mt-0.5 truncate"
-                        style={{ color: 'var(--text-tertiary)' }}
-                        title={hint}
-                    >
+                    <div className="text-[10.5px] mt-0.5 truncate text-text-tertiary" title={hint}>
                         {hint}
                     </div>
                 )}
@@ -149,10 +116,7 @@ function HeaderAction({ accent, disabled, icon, label, onClick, title }) {
 /** One row in the Suggestions tab. */
 function Suggestion({ body, color = '#0ea5e9', icon, title }) {
     return (
-        <div
-            className="rounded-xl px-3 py-3 flex items-start gap-3"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded-xl px-3 py-3 flex items-start gap-3 bg-bg-primary border border-border-light">
             <div
                 className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
                 style={{ background: `${color}1f`, color }}
@@ -160,12 +124,10 @@ function Suggestion({ body, color = '#0ea5e9', icon, title }) {
                 <i className={`fas ${icon} text-[12px]`} />
             </div>
             <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                    {title}
-                </div>
+                <div className="text-[13px] font-bold leading-tight text-text-primary">{title}</div>
                 <div
-                    className="text-[12px] mt-0.5 leading-snug"
-                    style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}
+                    className="text-[12px] mt-0.5 leading-snug text-text-secondary"
+                    style={{ overflowWrap: 'anywhere' }}
                 >
                     {body}
                 </div>
@@ -176,19 +138,10 @@ function Suggestion({ body, color = '#0ea5e9', icon, title }) {
 
 function EmptyTab({ hint, icon, title }) {
     return (
-        <div
-            className="rounded-xl px-5 py-8 text-center flex flex-col items-center gap-2"
-            style={{ background: 'var(--bg-primary)', border: '1px dashed var(--border-medium)' }}
-        >
-            <i className={`fas ${icon} text-[24px]`} style={{ color: 'var(--text-tertiary)' }} />
-            <div className="text-[13px] font-bold" style={{ color: 'var(--text-secondary)' }}>
-                {title}
-            </div>
-            {hint && (
-                <div className="text-[12px] leading-snug max-w-md" style={{ color: 'var(--text-tertiary)' }}>
-                    {hint}
-                </div>
-            )}
+        <div className="rounded-xl px-5 py-8 text-center flex flex-col items-center gap-2 bg-bg-primary border border-border-medium">
+            <i className={`fas ${icon} text-[24px] text-text-tertiary`} />
+            <div className="text-[13px] font-bold text-text-secondary">{title}</div>
+            {hint && <div className="text-[12px] leading-snug max-w-md text-text-tertiary">{hint}</div>}
         </div>
     )
 }
@@ -318,15 +271,12 @@ function OrderInfoModal({
             role="dialog"
             aria-modal="true"
             onClick={onClose}
-            className="fixed inset-0 flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.55)', zIndex: 2147483000 }}
+            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] z-[2147483000]"
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="rounded-2xl flex flex-col w-full overflow-hidden"
+                className="rounded-2xl flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light"
                 style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-light)',
                     boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.35))',
                     maxHeight: '92vh',
                     maxWidth: 880
@@ -334,40 +284,25 @@ function OrderInfoModal({
             >
                 {/* Header — plant-color stripe on the left, identification +
                     status pills + quick actions on the right. */}
-                <div className="flex items-stretch border-b" style={{ borderColor: 'var(--border-light)' }}>
-                    <div style={{ background: stripeColor, flexShrink: 0, width: 6 }} />
+                <div className="flex items-stretch border-b border-border-light">
+                    <div className="w-1.5" style={{ background: stripeColor, flexShrink: 0 }} />
                     <div className="flex-1 min-w-0 px-5 py-3 flex items-start gap-3">
                         <div
-                            className="rounded-lg flex items-center justify-center shrink-0 font-bold tabular-nums"
-                            style={{
-                                background: stripeColor,
-                                color: '#fff',
-                                fontFamily: 'var(--font-heading)',
-                                fontSize: 13,
-                                height: 38,
-                                width: 44
-                            }}
+                            className="rounded-lg flex items-center justify-center shrink-0 font-bold tabular-nums text-white font-heading h-[38px] w-11"
+                            style={{ background: stripeColor, fontSize: 13 }}
                             title={`Plant ${homePlantCode}${plantName ? ` — ${plantName}` : ''}`}
                         >
                             {homePlantCode || '—'}
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-baseline gap-2 flex-wrap">
-                                <span
-                                    className="text-[15px] font-bold leading-tight"
-                                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                                >
+                                <span className="text-[15px] font-bold leading-tight text-text-primary font-heading">
                                     Order {orderNumLabel}
                                 </span>
-                                {plantName && (
-                                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                                        {plantName}
-                                    </span>
-                                )}
+                                {plantName && <span className="text-[11px] text-text-tertiary">{plantName}</span>}
                             </div>
                             <div
-                                className="text-[12.5px] font-semibold mt-0.5 truncate uppercase tracking-wide"
-                                style={{ color: 'var(--text-secondary)' }}
+                                className="text-[12.5px] font-semibold mt-0.5 truncate uppercase tracking-wide text-text-secondary"
                                 title={customerLabel}
                             >
                                 {customerLabel || '—'}
@@ -404,8 +339,7 @@ function OrderInfoModal({
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="w-8 h-8 rounded-md flex items-center justify-center bg-transparent border-0 cursor-pointer"
-                                style={{ color: 'var(--text-secondary)' }}
+                                className="w-8 h-8 rounded-md flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-secondary"
                                 aria-label="Close"
                                 title="Close (Esc)"
                             >
@@ -417,10 +351,7 @@ function OrderInfoModal({
 
                 {/* Hero metrics — at-a-glance answers to "how big, how many,
                     when, where" without scrolling. */}
-                <div
-                    className="px-5 py-3 flex items-stretch gap-2 flex-wrap border-b"
-                    style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
-                >
+                <div className="px-5 py-3 flex items-stretch gap-2 flex-wrap border-b bg-bg-secondary border-border-light">
                     <HeroMetric
                         accent={accentColor}
                         icon="fa-cubes"
@@ -458,10 +389,7 @@ function OrderInfoModal({
                 </div>
 
                 {/* Tabs */}
-                <div
-                    className="flex items-center gap-1 px-5 py-2 border-b overflow-x-auto"
-                    style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
-                >
+                <div className="flex items-center gap-1 px-5 py-2 border-b overflow-x-auto bg-bg-secondary border-border-light">
                     {TABS.map((t) => {
                         const active = tab === t.id
                         return (
@@ -479,11 +407,10 @@ function OrderInfoModal({
                                 {t.label}
                                 {t.id === 'suggestions' && suggestions.length > 0 && (
                                     <span
-                                        className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
+                                        className="inline-flex items-center justify-center rounded-full text-[10px] font-bold h-4"
                                         style={{
                                             background: active ? 'rgba(255,255,255,0.3)' : 'var(--bg-tertiary)',
                                             color: active ? '#fff' : 'var(--text-secondary)',
-                                            height: 16,
                                             minWidth: 16,
                                             padding: '0 4px'
                                         }}
@@ -496,10 +423,7 @@ function OrderInfoModal({
                     })}
                 </div>
 
-                <div
-                    className="flex-1 overflow-auto px-5 py-4 flex flex-col gap-3"
-                    style={{ background: 'var(--bg-secondary)' }}
-                >
+                <div className="flex-1 overflow-auto px-5 py-4 flex flex-col gap-3 bg-bg-secondary">
                     {tab === 'details' && (
                         <>
                             <Section icon="fa-hashtag" title="Identification">
@@ -519,9 +443,8 @@ function OrderInfoModal({
                                     value={
                                         order.phone ? (
                                             <a
+                                                className="text-inherit hover:underline"
                                                 href={`tel:${String(order.phone).replace(/\D/g, '')}`}
-                                                style={{ color: 'inherit' }}
-                                                className="hover:underline"
                                             >
                                                 {order.phone}
                                             </a>
@@ -552,10 +475,7 @@ function OrderInfoModal({
 
                     {tab === 'plan' &&
                         (coverage ? (
-                            <div
-                                className="rounded-xl"
-                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                            >
+                            <div className="rounded-xl bg-bg-primary border border-border-light">
                                 <TruckCoveragePanelBody accentColor={accentColor} {...coverage} />
                             </div>
                         ) : (

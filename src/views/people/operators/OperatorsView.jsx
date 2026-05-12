@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import PhoneLink from '../../../app/components/common/PhoneLink'
 import StatusHistoryBar from '../../../app/components/common/StatusHistoryBar'
 import { exportOperatorRatingsSheet } from '../../../app/components/modules/export/operators/OperatorRatingsExport'
+import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import GridViewModeSection from '../../../app/components/sections/GridViewModeSection'
 import HistoryViewSection from '../../../app/components/sections/HistoryViewSection'
 import ListViewModeSection from '../../../app/components/sections/ListViewModeSection'
@@ -16,7 +17,6 @@ import { PlantService } from '../../../services/PlantService'
 import { TractorService } from '../../../services/TractorService'
 import OperatorAddView from './OperatorAddView'
 import OperatorCard from './OperatorCard'
-import OperatorCommentModal from './OperatorCommentModal'
 import OperatorDetailView from './OperatorDetailView'
 
 /**
@@ -827,13 +827,15 @@ function OperatorsView({
                             />
                         )}
                         {showCommentModal && modalOperatorId && (
-                            <OperatorCommentModal
-                                operatorId={modalOperatorId}
-                                operatorName={modalOperatorName}
+                            <CommentModalSection
+                                itemId={modalOperatorId}
+                                itemNumber={modalOperatorName}
+                                itemType="Operator"
                                 onClose={() => {
                                     setShowCommentModal(false)
                                     fetchOperators(regionPlantCodes)
                                 }}
+                                service={OperatorService}
                             />
                         )}
                     </>

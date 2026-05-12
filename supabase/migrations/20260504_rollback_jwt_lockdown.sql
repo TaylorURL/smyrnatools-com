@@ -7,48 +7,48 @@
 -- PostgREST will accept. Restoring the previous "anon can read
 -- everything" posture so the app works again.
 
-do $$
+do
+$$
 declare
-    t record;
-    policy_name text;
+t record;
+    policy_name
+text;
 begin
-    for t in
-        select tablename
-        from pg_tables
-        where schemaname = 'public'
-    loop
+for t in
+select tablename
+from pg_tables
+where schemaname = 'public' loop
         for policy_name in
-            select policyname
-            from pg_policies
-            where schemaname = 'public'
-              and tablename = t.tablename
-        loop
+select policyname
+from pg_policies
+where schemaname = 'public'
+  and tablename = t.tablename loop
             execute format('drop policy if exists %I on public.%I', policy_name, t.tablename);
-        end loop;
+end loop;
 
-        execute format('grant all on public.%I to anon', t.tablename);
-        execute format('grant all on public.%I to authenticated', t.tablename);
-        execute format('grant all on public.%I to service_role', t.tablename);
+execute format('grant all on public.%I to anon', t.tablename);
+execute format('grant all on public.%I to authenticated', t.tablename);
+execute format('grant all on public.%I to service_role', t.tablename);
 
-        execute format(
-            'create policy "allow_all" on public.%I as permissive for all to public using (true) with check (true)',
-            t.tablename
+execute format(
+        'create policy "allow_all" on public.%I as permissive for all to public using (true) with check (true)',
+        t.tablename
         );
-    end loop;
+end loop;
 end
 $$;
 
-do $$
+do
+$$
 declare
-    s record;
+s record;
 begin
-    for s in
-        select sequence_name
-        from information_schema.sequences
-        where sequence_schema = 'public'
-    loop
+for s in
+select sequence_name
+from information_schema.sequences
+where sequence_schema = 'public' loop
         execute format('grant usage, select on sequence public.%I to anon, authenticated, service_role', s.sequence_name);
-    end loop;
+end loop;
 end
 $$;
 

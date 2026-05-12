@@ -25,7 +25,7 @@ export function PlanSettingsRoutesPanel({
     const directedRoutes = filterDirectedRoutes(travelTimes)
     return (
         <>
-            <div className="px-5 py-4" style={{ background: 'var(--bg-secondary)' }}>
+            <div className="px-5 py-4 bg-bg-secondary">
                 <SectionLabel>Add Route</SectionLabel>
                 <div className="flex items-center gap-2">
                     <PlantSelect
@@ -35,7 +35,7 @@ export function PlanSettingsRoutesPanel({
                         placeholder="From"
                         className="min-w-[80px]"
                     />
-                    <i className="fas fa-arrow-right text-[10px]" style={{ color: 'var(--text-secondary)' }} />
+                    <i className="fas fa-arrow-right text-[10px] text-text-secondary" />
                     <PlantSelect
                         value={newTravelTime.to}
                         onChange={(e) => setNewTravelTime({ ...newTravelTime, to: e.target.value })}
@@ -48,12 +48,7 @@ export function PlanSettingsRoutesPanel({
                         placeholder="min"
                         value={newTravelTime.minutes}
                         onChange={(e) => setNewTravelTime({ ...newTravelTime, minutes: e.target.value })}
-                        className="border rounded-lg text-sm outline-none py-1.5 px-2 text-center w-[60px]"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            borderColor: 'var(--border-medium)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="border rounded-lg text-sm outline-none py-1.5 px-2 text-center w-[60px] bg-bg-primary border-border-medium text-text-primary"
                     />
                     <button
                         onClick={addTravelTime}
@@ -67,9 +62,7 @@ export function PlanSettingsRoutesPanel({
             <div className="px-5 py-4 max-h-[300px] overflow-y-auto">
                 <SectionLabel>Saved Routes</SectionLabel>
                 {directedRoutes.length === 0 ? (
-                    <div className="text-xs py-4 text-center" style={{ color: 'var(--text-secondary)' }}>
-                        No travel times configured yet
-                    </div>
+                    <div className="text-xs py-4 text-center text-text-secondary">No travel times configured yet</div>
                 ) : (
                     <div className="flex flex-col gap-1.5">
                         {directedRoutes.map(([key, minutes]) => (
@@ -90,30 +83,18 @@ export function PlanSettingsRoutesPanel({
 
 function SectionLabel({ children }) {
     return (
-        <div
-            className="text-[11px] font-semibold uppercase tracking-wider mb-2.5"
-            style={{ color: 'var(--text-secondary)' }}
-        >
-            {children}
-        </div>
+        <div className="text-[11px] font-semibold uppercase tracking-wider mb-2.5 text-text-secondary">{children}</div>
     )
 }
 
 function RouteRow({ accentColor, minutes, onRemove, routeKey }) {
     const [from, to] = routeKey.split('->')
     return (
-        <div
-            className="flex items-center justify-between rounded-lg px-3 py-2"
-            style={{ background: 'var(--bg-tertiary)' }}
-        >
+        <div className="flex items-center justify-between rounded-lg px-3 py-2 bg-bg-tertiary">
             <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {from}
-                </span>
-                <i className="fas fa-arrows-left-right text-[9px]" style={{ color: 'var(--text-secondary)' }} />
-                <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {to}
-                </span>
+                <span className="text-xs font-semibold text-text-primary">{from}</span>
+                <i className="fas fa-arrows-left-right text-[9px] text-text-secondary" />
+                <span className="text-xs font-semibold text-text-primary">{to}</span>
             </div>
             <div className="flex items-center gap-2">
                 <span className="text-xs font-bold" style={{ color: accentColor }}>
@@ -121,8 +102,7 @@ function RouteRow({ accentColor, minutes, onRemove, routeKey }) {
                 </span>
                 <button
                     onClick={onRemove}
-                    className="bg-transparent border-none cursor-pointer p-1 rounded"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="bg-transparent border-none cursor-pointer p-1 rounded text-text-secondary"
                 >
                     <i className="fas fa-trash text-[10px]" />
                 </button>

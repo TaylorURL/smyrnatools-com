@@ -17,30 +17,21 @@ const SEARCH_INPUT_CLASS = 'text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7'
 function SearchInput({ onChange, onClear, placeholder, value }) {
     return (
         <div className="relative flex-1 min-w-[180px] max-w-[340px]" role="search">
-            <i
-                className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px]"
-                style={{ color: 'var(--text-tertiary)' }}
-            />
+            <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-text-tertiary" />
             <input
                 type="text"
                 aria-label="Search"
                 placeholder={placeholder}
                 value={value || ''}
                 onChange={(event) => onChange?.(event.target.value)}
-                className={`w-full ${SEARCH_INPUT_CLASS}`}
-                style={{
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-light)',
-                    color: 'var(--text-primary)'
-                }}
+                className={`w-full ${SEARCH_INPUT_CLASS} bg-bg-secondary border border-border-light text-text-primary`}
             />
             {value && onClear && (
                 <button
                     type="button"
                     onClick={onClear}
                     aria-label="Clear search"
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none bg-bg-tertiary text-text-secondary"
                 >
                     <i className="fas fa-times" />
                 </button>
@@ -56,12 +47,7 @@ function FilterSelect({ ariaLabel, onChange, options, value }) {
             value={value || options[0]}
             onChange={(event) => onChange?.(event.target.value)}
             aria-label={ariaLabel}
-            className="text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-primary)'
-            }}
+            className="text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 bg-bg-secondary border border-border-light text-text-primary"
         >
             {options.map((opt) => (
                 <option key={opt} value={opt}>
@@ -80,12 +66,7 @@ function ResetButton({ onClick }) {
             onClick={onClick}
             aria-label="Reset filters"
             title="Reset filters"
-            className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-secondary)'
-            }}
+            className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none bg-bg-secondary border border-border-light text-text-secondary"
         >
             <i className="fas fa-undo" />
         </button>
@@ -167,8 +148,7 @@ export function MaintenanceFilterBar({
     return (
         <>
             <div
-                className="shrink-0 flex items-center flex-wrap gap-x-2 gap-y-2 border-b px-3 sm:px-4 py-2"
-                style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+                className="shrink-0 flex items-center flex-wrap gap-x-2 gap-y-2 border-b px-3 sm:px-4 py-2 bg-bg-primary border-border-light"
                 role="region"
                 aria-label="Search and filters"
             >

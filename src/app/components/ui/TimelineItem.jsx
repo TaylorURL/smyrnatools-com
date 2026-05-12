@@ -12,14 +12,9 @@ export default function TimelineItem({ dotColor, dotClassName, isLast, children 
                         boxShadow: '0 0 0 2px var(--bg-primary), 0 0 0 3px var(--border-light)'
                     }}
                 />
-                {!isLast && <div className="w-px flex-1 -mt-0.5" style={{ background: 'var(--border-light)' }} />}
+                {!isLast && <div className="w-px flex-1 -mt-0.5 bg-[var(--border-light)]" />}
             </div>
-            <div
-                className="flex-1 rounded p-2.5"
-                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-            >
-                {children}
-            </div>
+            <div className="flex-1 rounded p-2.5 bg-bg-secondary border border-border-light">{children}</div>
         </div>
     )
 }
@@ -28,14 +23,9 @@ export default function TimelineItem({ dotColor, dotClassName, isLast, children 
 export function TimelineHeader({ label, isCurrent, badge }) {
     return (
         <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                {label}
-            </span>
+            <span className="text-[12.5px] font-semibold leading-tight text-text-primary">{label}</span>
             {isCurrent && (
-                <span
-                    className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                    style={{ background: '#16a34a', color: '#fff' }}
-                >
+                <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-green-600 text-white">
                     Current
                 </span>
             )}
@@ -51,30 +41,15 @@ export function TimelineMeta({ children }) {
 
 /** Muted date label for timeline entries. */
 export function TimelineDate({ date }) {
-    return (
-        <span className="text-[11px] tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
-            {date}
-        </span>
-    )
+    return <span className="text-[11px] tabular-nums text-text-tertiary">{date}</span>
 }
 
 /** Accent-colored duration label for timeline entries. */
 export function TimelineDuration({ text }) {
-    return (
-        <span className="text-[11px] font-semibold" style={{ color: 'var(--accent, #1e3a5f)' }}>
-            {text}
-        </span>
-    )
+    return <span className="text-[11px] font-semibold text-[var(--accent, #1e3a5f)]">{text}</span>
 }
 
 /** Section heading inside a timeline tab. */
 export function TimelineSectionTitle({ title }) {
-    return (
-        <h3
-            className="m-0 mb-1 text-[9.5px] font-bold uppercase tracking-wider"
-            style={{ color: 'var(--text-secondary)' }}
-        >
-            {title}
-        </h3>
-    )
+    return <h3 className="m-0 mb-1 text-[9.5px] font-bold uppercase tracking-wider text-text-secondary">{title}</h3>
 }

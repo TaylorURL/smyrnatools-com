@@ -15,7 +15,7 @@ export function PlanInsightsList({ warnings, suggestions }) {
                         className="flex items-baseline gap-2 text-[12.5px] py-1"
                         style={{ borderLeft: '2px solid #f59e0b', paddingLeft: 10 }}
                     >
-                        <span style={{ color: 'var(--text-primary)' }}>{warning.message}</span>
+                        <span className="text-text-primary">{warning.message}</span>
                     </div>
                 ))}
                 {suggestions.map((suggestion, i) => (
@@ -24,7 +24,7 @@ export function PlanInsightsList({ warnings, suggestions }) {
                         className="flex items-baseline gap-2 text-[12.5px] py-1"
                         style={{ borderLeft: '2px solid var(--border-medium)', paddingLeft: 10 }}
                     >
-                        <span style={{ color: 'var(--text-secondary)' }}>{suggestion.message}</span>
+                        <span className="text-text-secondary">{suggestion.message}</span>
                     </div>
                 ))}
             </div>
@@ -49,17 +49,9 @@ export function PlanYardageByPlantList({ accentColor, plantProduction, stats, to
                     const pct = totalYardage > 0 ? (row.yardage / totalYardage) * 100 : 0
                     return (
                         <div key={row.code} className="flex items-center gap-3">
-                            <div
-                                className="w-12 font-bold text-[13px]"
-                                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                            >
-                                {row.code}
-                            </div>
+                            <div className="w-12 font-bold text-[13px] text-text-primary font-heading">{row.code}</div>
                             <div className="flex-1 min-w-0">
-                                <div
-                                    className="h-2 rounded-full overflow-hidden"
-                                    style={{ background: 'var(--bg-tertiary)' }}
-                                >
+                                <div className="h-2 rounded-full overflow-hidden bg-bg-tertiary">
                                     <div
                                         className="h-full rounded-full transition-all"
                                         style={{
@@ -69,12 +61,12 @@ export function PlanYardageByPlantList({ accentColor, plantProduction, stats, to
                                     />
                                 </div>
                             </div>
-                            <div className="w-24 text-right text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                                <b style={{ color: 'var(--text-primary)' }}>{row.yardage.toLocaleString()} yd</b>
+                            <div className="w-24 text-right text-[12px] text-text-secondary">
+                                <b className="text-text-primary">{row.yardage.toLocaleString()} yd</b>
                                 {totalYardage > 0 && (
                                     <>
                                         {' '}
-                                        <span style={{ color: 'var(--text-tertiary)' }}>({Math.round(pct)}%)</span>
+                                        <span className="text-text-tertiary">({Math.round(pct)}%)</span>
                                     </>
                                 )}
                             </div>

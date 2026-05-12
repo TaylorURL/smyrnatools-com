@@ -17,9 +17,7 @@ export default function DashboardScheduleSection({ schedule }) {
     if (loading) {
         return (
             <Panel id="schedule" title="Today's schedule">
-                <div className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
-                    Loading dispatch data…
-                </div>
+                <div className="text-[12.5px] text-text-secondary">Loading dispatch data…</div>
             </Panel>
         )
     }
@@ -45,7 +43,7 @@ export default function DashboardScheduleSection({ schedule }) {
             title="Today's schedule"
             innerClassName="p-3"
             right={
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                <span className="text-[11px] text-text-tertiary">
                     {[dateLabel, headerSummary].filter(Boolean).join(' · ')}
                 </span>
             }
@@ -53,46 +51,19 @@ export default function DashboardScheduleSection({ schedule }) {
             <div className="flex flex-col gap-3">
                 {hasAnyData && plantRows.length > 0 && (
                     <div className="flex flex-col gap-2">
-                        <table
-                            className="w-full border-collapse rounded overflow-hidden"
-                            style={{ border: '1px solid var(--border-light)' }}
-                        >
+                        <table className="w-full border-collapse rounded overflow-hidden border border-border-light">
                             <thead>
-                                <tr style={{ background: 'var(--bg-secondary)' }}>
-                                    <th
-                                        className="px-3 py-2 text-left text-[11px] font-semibold"
-                                        style={{
-                                            borderBottom: '1px solid var(--border-light)',
-                                            color: 'var(--text-secondary)'
-                                        }}
-                                    >
+                                <tr className="bg-bg-secondary">
+                                    <th className="px-3 py-2 text-left text-[11px] font-semibold border-b border-border-light text-text-secondary">
                                         Plant
                                     </th>
-                                    <th
-                                        className="px-3 py-2 text-right text-[11px] font-semibold"
-                                        style={{
-                                            borderBottom: '1px solid var(--border-light)',
-                                            color: 'var(--text-secondary)'
-                                        }}
-                                    >
+                                    <th className="px-3 py-2 text-right text-[11px] font-semibold border-b border-border-light text-text-secondary">
                                         Orders
                                     </th>
-                                    <th
-                                        className="px-3 py-2 text-right text-[11px] font-semibold"
-                                        style={{
-                                            borderBottom: '1px solid var(--border-light)',
-                                            color: 'var(--text-secondary)'
-                                        }}
-                                    >
+                                    <th className="px-3 py-2 text-right text-[11px] font-semibold border-b border-border-light text-text-secondary">
                                         Yardage
                                     </th>
-                                    <th
-                                        className="px-3 py-2 text-right text-[11px] font-semibold"
-                                        style={{
-                                            borderBottom: '1px solid var(--border-light)',
-                                            color: 'var(--text-secondary)'
-                                        }}
-                                    >
+                                    <th className="px-3 py-2 text-right text-[11px] font-semibold border-b border-border-light text-text-secondary">
                                         First job
                                     </th>
                                 </tr>
@@ -101,49 +72,45 @@ export default function DashboardScheduleSection({ schedule }) {
                                 {visibleRows.map((row, i) => (
                                     <tr key={row.code} className="transition-colors hover:bg-bg-tertiary">
                                         <td
-                                            className="px-3 py-2 text-[12.5px] font-mono tabular-nums"
+                                            className="px-3 py-2 text-[12.5px] font-mono tabular-nums text-text-primary"
                                             style={{
                                                 borderBottom:
                                                     i < visibleRows.length - 1
                                                         ? '1px solid var(--border-light)'
-                                                        : 'none',
-                                                color: 'var(--text-primary)'
+                                                        : 'none'
                                             }}
                                         >
                                             {row.code}
                                         </td>
                                         <td
-                                            className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
+                                            className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold text-text-primary"
                                             style={{
                                                 borderBottom:
                                                     i < visibleRows.length - 1
                                                         ? '1px solid var(--border-light)'
-                                                        : 'none',
-                                                color: 'var(--text-primary)'
+                                                        : 'none'
                                             }}
                                         >
                                             {row.orderCount}
                                         </td>
                                         <td
-                                            className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
+                                            className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold text-text-primary"
                                             style={{
                                                 borderBottom:
                                                     i < visibleRows.length - 1
                                                         ? '1px solid var(--border-light)'
-                                                        : 'none',
-                                                color: 'var(--text-primary)'
+                                                        : 'none'
                                             }}
                                         >
                                             {row.yardage.toLocaleString()}
                                         </td>
                                         <td
-                                            className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px]"
+                                            className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] text-text-secondary"
                                             style={{
                                                 borderBottom:
                                                     i < visibleRows.length - 1
                                                         ? '1px solid var(--border-light)'
-                                                        : 'none',
-                                                color: 'var(--text-secondary)'
+                                                        : 'none'
                                             }}
                                         >
                                             {row.firstJobTime || '—'}
@@ -156,8 +123,7 @@ export default function DashboardScheduleSection({ schedule }) {
                             <button
                                 type="button"
                                 onClick={() => setExpanded((prev) => !prev)}
-                                className="self-start text-[12px] font-semibold px-0 py-1 bg-transparent border-none cursor-pointer hover:underline"
-                                style={{ color: 'var(--text-secondary)' }}
+                                className="self-start text-[12px] font-semibold px-0 py-1 bg-transparent border-none cursor-pointer hover:underline text-text-secondary"
                             >
                                 {expanded ? 'Show less' : `Show more (${hiddenCount})`}
                             </button>
@@ -166,9 +132,7 @@ export default function DashboardScheduleSection({ schedule }) {
                 )}
 
                 {!hasAnyData && (
-                    <div className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
-                        No dispatch data for today yet.
-                    </div>
+                    <div className="text-[12.5px] text-text-secondary">No dispatch data for today yet.</div>
                 )}
             </div>
         </Panel>

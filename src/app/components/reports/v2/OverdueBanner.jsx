@@ -22,10 +22,7 @@ function OverdueBanner({ count, title, dueLabel, onSubmit }) {
                 borderColor: 'color-mix(in srgb, #dc2626 35%, transparent)'
             }}
         >
-            <div
-                className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 text-white"
-                style={{ background: '#dc2626' }}
-            >
+            <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 text-white bg-red-600">
                 <i className="fas fa-triangle-exclamation text-[13px]" />
             </div>
             <div className="flex-1 min-w-0">
@@ -41,8 +38,7 @@ function OverdueBanner({ count, title, dueLabel, onSubmit }) {
                 <button
                     type="button"
                     onClick={onSubmit}
-                    className="font-bold text-xs px-3.5 py-2 rounded-lg shrink-0 inline-flex items-center gap-1.5 border-none cursor-pointer hover:opacity-90 text-white"
-                    style={{ background: '#dc2626' }}
+                    className="font-bold text-xs px-3.5 py-2 rounded-lg shrink-0 inline-flex items-center gap-1.5 border-none cursor-pointer hover:opacity-90 text-white bg-red-600"
                 >
                     <i className="fas fa-paper-plane text-[10px]" /> Submit now
                 </button>

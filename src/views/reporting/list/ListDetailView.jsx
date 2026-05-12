@@ -320,20 +320,18 @@ function ListDetailView({ itemId, onClose }) {
                     canEditList && (
                         <>
                             <button
-                                className="global-button-secondary"
+                                className="global-button-secondary flex-1 justify-center"
                                 onClick={handleSubmit}
                                 disabled={!hasUnsavedChanges || !canEditList}
-                                style={{ flex: 1, justifyContent: 'center' }}
                             >
                                 <i className="fas fa-save"></i>
                                 <span>Save</span>
                             </button>
                             {canDeleteList && (
                                 <button
-                                    className="global-button-secondary"
+                                    className="global-button-secondary flex-1 justify-center"
                                     onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={!canEditList}
-                                    style={{ flex: 1, justifyContent: 'center' }}
                                 >
                                     <i className="fas fa-trash-alt"></i>
                                     <span>Delete</span>
@@ -361,11 +359,9 @@ function ListDetailView({ itemId, onClose }) {
                                         type="button"
                                         onClick={handleImproveDescription}
                                         disabled={isImprovingDescription}
-                                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 bg-bg-secondary text-[var(--accent)]"
                                         style={{
-                                            backgroundColor: 'var(--bg-secondary)',
                                             border: 'none',
-                                            color: 'var(--accent)',
                                             cursor: isImprovingDescription ? 'not-allowed' : 'pointer'
                                         }}
                                         title="AI will improve and add ready-mix context to your description"

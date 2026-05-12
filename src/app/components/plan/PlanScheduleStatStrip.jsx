@@ -24,12 +24,8 @@ export default function PlanScheduleStatStrip({
 }) {
     return (
         <div
-            className="rounded-xl flex flex-wrap"
-            style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                boxShadow: 'var(--shadow-sm)'
-            }}
+            className="rounded-xl flex flex-wrap bg-bg-primary border border-border-light"
+            style={{ boxShadow: 'var(--shadow-sm)' }}
         >
             <PlanScheduleStat
                 first
@@ -78,14 +74,10 @@ export default function PlanScheduleStatStrip({
                         <span className="inline-flex items-center gap-1.5">
                             {customerSatisfaction.isLive && (
                                 <span
-                                    className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5"
-                                    style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#dc2626' }}
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[rgba(220,_38,_38,_0.12)] text-red-600"
                                     title="Live — score updates as orders complete throughout the day"
                                 >
-                                    <span
-                                        className="inline-block w-1.5 h-1.5 rounded-full"
-                                        style={{ background: '#dc2626' }}
-                                    />
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600" />
                                     LIVE
                                 </span>
                             )}

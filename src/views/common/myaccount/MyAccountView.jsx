@@ -68,34 +68,21 @@ const FieldStyle = {
 }
 
 function Card({ children, className = '' }) {
-    return (
-        <div
-            className={`rounded-lg ${className}`}
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            {children}
-        </div>
-    )
+    return <div className={`rounded-lg ${className} bg-bg-primary border border-border-light`}>{children}</div>
 }
 
 function CardHeader({ icon, title, description, accentColor }) {
     return (
-        <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--border-light)' }}>
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
             <div
-                className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 bg-bg-tertiary"
+                style={{ color: accentColor }}
             >
                 <i className={`fas ${icon} text-[16px]`} />
             </div>
             <div className="min-w-0">
-                <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {title}
-                </div>
-                {description && (
-                    <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        {description}
-                    </div>
-                )}
+                <div className="text-[14px] font-semibold text-text-primary">{title}</div>
+                {description && <div className="text-[12px] mt-0.5 text-text-tertiary">{description}</div>}
             </div>
         </div>
     )
@@ -143,22 +130,12 @@ function Toggle({ accentColor, checked, onChange, ariaLabel }) {
             aria-checked={checked}
             aria-label={ariaLabel}
             onClick={onChange}
-            className="relative inline-flex shrink-0 rounded-full transition-colors"
-            style={{
-                background: checked ? accentColor : 'var(--bg-tertiary)',
-                border: '1px solid var(--border-light)',
-                height: 24,
-                width: 44
-            }}
+            className="relative inline-flex shrink-0 rounded-full transition-colors border border-border-light h-6 w-11"
+            style={{ background: checked ? accentColor : 'var(--bg-tertiary)' }}
         >
             <span
-                className="absolute top-1/2 -translate-y-1/2 rounded-full transition-all bg-white"
-                style={{
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
-                    height: 18,
-                    left: checked ? 22 : 2,
-                    width: 18
-                }}
+                className="absolute top-1/2 -translate-y-1/2 rounded-full transition-all bg-white h-[18px] w-[18px]"
+                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.2)', left: checked ? 22 : 2 }}
             />
         </button>
     )
@@ -188,28 +165,21 @@ function StartPageDropdown({ value, accentColor, onChange }) {
             >
                 <span className="flex items-center gap-3">
                     <span
-                        className="flex h-9 w-9 items-center justify-center rounded-lg"
-                        style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-bg-tertiary"
+                        style={{ color: accentColor }}
                     >
                         <i className={`fas ${selected.icon} text-[14px]`} />
                     </span>
-                    <span className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        {selected.id}
-                    </span>
+                    <span className="text-[14px] font-semibold text-text-primary">{selected.id}</span>
                 </span>
                 <i
-                    className={`fas fa-chevron-down text-[11px] transition-transform ${open ? 'rotate-180' : ''}`}
-                    style={{ color: 'var(--text-tertiary)' }}
+                    className={`fas fa-chevron-down text-[11px] transition-transform ${open ? 'rotate-180' : ''} text-text-tertiary`}
                 />
             </button>
             {open && (
                 <div
-                    className="absolute left-0 right-0 z-50 mt-1.5 max-h-72 overflow-y-auto rounded-lg py-1.5"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-light)',
-                        boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.18))'
-                    }}
+                    className="absolute left-0 right-0 z-50 mt-1.5 max-h-72 overflow-y-auto rounded-lg py-1.5 bg-bg-primary border border-border-light"
+                    style={{ boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.18))' }}
                 >
                     {START_PAGE_OPTIONS.map(({ icon, id }) => {
                         const isActive = id === value
@@ -221,10 +191,9 @@ function StartPageDropdown({ value, accentColor, onChange }) {
                                     onChange(id)
                                     setOpen(false)
                                 }}
-                                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-bg-tertiary"
+                                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-bg-tertiary text-text-primary"
                                 style={{
                                     background: isActive ? `${accentColor}14` : 'transparent',
-                                    color: 'var(--text-primary)',
                                     fontWeight: isActive ? 600 : 500
                                 }}
                             >
@@ -266,23 +235,11 @@ function CockpitHeader({
     unreadMessageCount = 0
 }) {
     return (
-        <div
-            className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5"
-            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-        >
-            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0" style={{ color: 'var(--text-primary)' }}>
-                Account
-            </h1>
+        <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5 bg-bg-primary border-border-light">
+            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0 text-text-primary">Account</h1>
             {regionLabel && (
-                <span
-                    className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-primary)'
-                    }}
-                >
-                    <i className="fas fa-location-dot text-[10px]" style={{ color: '#16a34a' }} />
+                <span className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full bg-bg-secondary border border-border-light text-text-primary">
+                    <i className="fas fa-location-dot text-[10px] text-green-600" />
                     <span className="truncate">{regionLabel}</span>
                 </span>
             )}
@@ -297,21 +254,14 @@ function CockpitHeader({
                                 ? `${unreadMessageCount} unread message${unreadMessageCount === 1 ? '' : 's'}`
                                 : 'Open messages'
                         }
-                        className="relative flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                        className="relative flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95 bg-bg-tertiary text-text-secondary"
                     >
                         <i className="fas fa-comments" />
                         {!isMobile && <span>Messages</span>}
                         {unreadMessageCount > 0 && (
                             <span
-                                className="absolute font-mono tabular-nums rounded-full text-[9.5px] font-bold uppercase tracking-wider min-w-[16px] h-[16px] flex items-center justify-center px-1"
-                                style={{
-                                    background: '#dc2626',
-                                    border: '1.5px solid var(--bg-primary)',
-                                    color: '#fff',
-                                    right: -4,
-                                    top: -4
-                                }}
+                                className="absolute font-mono tabular-nums rounded-full text-[9.5px] font-bold uppercase tracking-wider min-w-[16px] h-[16px] flex items-center justify-center px-1 bg-red-600 text-white"
+                                style={{ border: '1.5px solid var(--bg-primary)', right: -4, top: -4 }}
                             >
                                 {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
                             </span>
@@ -322,16 +272,14 @@ function CockpitHeader({
                     type="button"
                     onClick={onSignOut}
                     title="Sign out"
-                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95"
-                    style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#dc2626' }}
+                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95 bg-[rgba(220,_38,_38,_0.12)] text-red-600"
                 >
                     <i className="fas fa-arrow-right-from-bracket" />
                     {!isMobile && <span>Sign out</span>}
                 </button>
             </div>
             <div
-                className="flex items-center rounded-lg p-0.5 overflow-x-auto"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
+                className="flex items-center rounded-lg p-0.5 overflow-x-auto bg-bg-tertiary border border-border-light"
                 role="tablist"
             >
                 {tabs.map(({ icon, id, label }) => {
@@ -363,24 +311,15 @@ function CockpitHeader({
 /** Single cell in the at-a-glance stat strip. Flat label / mono value / hint. */
 function StatCell({ hint, label, value, valueColor }) {
     return (
-        <div
-            className="px-3 py-2.5 flex flex-col gap-0.5"
-            style={{ background: 'var(--bg-primary)', borderRight: '1px solid var(--border-light)' }}
-        >
-            <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                {label}
-            </span>
+        <div className="px-3 py-2.5 flex flex-col gap-0.5 bg-bg-primary border-r border-border-light">
+            <span className="text-[11px] text-text-secondary">{label}</span>
             <span
                 className="font-semibold text-[20px] leading-tight font-mono tabular-nums"
                 style={{ color: valueColor || 'var(--text-primary)' }}
             >
                 {value}
             </span>
-            {hint && (
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {hint}
-                </span>
-            )}
+            {hint && <span className="text-[11px] text-text-tertiary">{hint}</span>}
         </div>
     )
 }
@@ -449,10 +388,7 @@ function AccountStatStrip({ additionalPlants, joinedAt, plantCode, regionName, r
     const additionalCount = additionalPlants?.length || 0
     return (
         <section className="scroll-mt-4" id="overview">
-            <div
-                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden"
-                style={{ border: '1px solid var(--border-light)' }}
-            >
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden border border-border-light">
                 <StatCell label="Account age" value={formatAccountAge(joinedAt)} hint={formatJoinedDate(joinedAt)} />
                 <StatCell
                     label="Sessions"
@@ -488,13 +424,10 @@ function AccountStatStrip({ additionalPlants, joinedAt, plantCode, regionName, r
 function AccountSideNav({ accentColor, activeId, onJump, sections }) {
     return (
         <aside
-            className="hidden lg:block sticky top-0 self-start py-5 pr-3 overflow-y-auto"
-            style={{ maxHeight: '100vh', width: 200 }}
+            className="hidden lg:block sticky top-0 self-start py-5 pr-3 overflow-y-auto w-[200px]"
+            style={{ maxHeight: '100vh' }}
         >
-            <div
-                className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+            <div className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2 text-text-tertiary">
                 Sections
             </div>
             <nav className="flex flex-col">
@@ -513,8 +446,8 @@ function AccountSideNav({ accentColor, activeId, onJump, sections }) {
                             }}
                         >
                             <i
-                                className={`fas ${icon} text-[12px]`}
-                                style={{ color: isActive ? accentColor : 'var(--text-tertiary)', width: 14 }}
+                                className={`fas ${icon} text-[12px] w-3.5`}
+                                style={{ color: isActive ? accentColor : 'var(--text-tertiary)' }}
                             />
                             <span className="flex-1 truncate">{label}</span>
                         </button>
@@ -552,17 +485,11 @@ function AccountAtAGlance({ additionalPlants, email, joinedAt, plantCode, region
         { label: 'Role', value: userRole || '—' }
     ]
     return (
-        <aside className="hidden xl:block sticky top-0 self-start py-5 pl-4" style={{ width: 240 }}>
-            <div
-                className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+        <aside className="hidden xl:block sticky top-0 self-start py-5 pl-4 w-60">
+            <div className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2 text-text-tertiary">
                 At a glance
             </div>
-            <div
-                className="rounded p-3 flex flex-col"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
+            <div className="rounded p-3 flex flex-col bg-bg-primary border border-border-light">
                 {rows.map((row, idx) => (
                     <div
                         key={row.label}
@@ -571,10 +498,7 @@ function AccountAtAGlance({ additionalPlants, email, joinedAt, plantCode, region
                             borderBottom: idx < rows.length - 1 ? '1px dashed var(--border-light)' : 'none'
                         }}
                     >
-                        <span
-                            className="text-[10px] font-semibold uppercase tracking-[0.05em]"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.05em] text-text-tertiary">
                             {row.label}
                         </span>
                         <span
@@ -585,11 +509,7 @@ function AccountAtAGlance({ additionalPlants, email, joinedAt, plantCode, region
                             {row.value}
                         </span>
                         {row.hint && (
-                            <span
-                                className="text-[11px] truncate"
-                                style={{ color: 'var(--text-secondary)' }}
-                                title={row.hint}
-                            >
+                            <span className="text-[11px] truncate text-text-secondary" title={row.hint}>
                                 {row.hint}
                             </span>
                         )}
@@ -1023,15 +943,8 @@ function MyAccountView({ userId, onSelectView }) {
 
     return (
         <div
-            className="global-dashboard-container dashboard-container global-flush-top flush-top"
-            style={{
-                background: 'var(--bg-secondary)',
-                display: 'flex',
-                flexDirection: 'column',
-                inset: 0,
-                overflow: 'hidden',
-                position: 'absolute'
-            }}
+            className="global-dashboard-container dashboard-container global-flush-top flush-top bg-bg-secondary flex flex-col overflow-hidden absolute"
+            style={{ inset: 0 }}
         >
             <CockpitHeader
                 accentColor={accentColor}
@@ -1206,10 +1119,7 @@ function ProfileTab({
         <>
             <section id="identity" className="scroll-mt-4">
                 <Card>
-                    <div
-                        className="flex items-center gap-4 px-5 py-4"
-                        style={{ borderBottom: '1px solid var(--border-light)' }}
-                    >
+                    <div className="flex items-center gap-4 px-5 py-4 border-b border-border-light">
                         <div
                             className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg text-[18px] font-bold text-white"
                             style={{ background: accentColor }}
@@ -1217,15 +1127,10 @@ function ProfileTab({
                             {initials || <i className="fas fa-user text-[18px]" />}
                         </div>
                         <div className="min-w-0 flex-1">
-                            <div
-                                className="text-[16px] font-semibold truncate"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                            <div className="text-[16px] font-semibold truncate text-text-primary">
                                 {firstName || lastName ? `${firstName || ''} ${lastName || ''}`.trim() : 'My Account'}
                             </div>
-                            <div className="text-[12px] truncate mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                                {email || 'No email'}
-                            </div>
+                            <div className="text-[12px] truncate mt-0.5 text-text-tertiary">{email || 'No email'}</div>
                             {userRole && (
                                 <span
                                     className="mt-2 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider"
@@ -1287,18 +1192,10 @@ function ProfileTab({
                     <div className="px-5">
                         <DetailRow icon="fa-envelope" label="Email" value={email || 'Not set'} />
                         {userRole && <DetailRow icon="fa-user-tag" label="Role" value={userRole} />}
-                        <div
-                            className="flex items-center justify-between py-3.5"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <div className="flex items-center justify-between py-3.5 border-b border-border-light">
                             <div className="flex items-center gap-3">
-                                <i
-                                    className="fas fa-globe text-[13px] w-5 text-center"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                />
-                                <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                                    Region
-                                </span>
+                                <i className="fas fa-globe text-[13px] w-5 text-center text-text-tertiary" />
+                                <span className="text-[13px] text-text-secondary">Region</span>
                             </div>
                             <div className="relative">
                                 <select
@@ -1318,10 +1215,7 @@ function ProfileTab({
                                     ))}
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                    <i
-                                        className="fas fa-chevron-down text-[10px]"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    />
+                                    <i className="fas fa-chevron-down text-[10px] text-text-tertiary" />
                                 </div>
                             </div>
                         </div>
@@ -1329,13 +1223,8 @@ function ProfileTab({
                         {additionalPlants.length > 0 && (
                             <div className="py-3.5">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <i
-                                        className="fas fa-building text-[13px] w-5 text-center"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    />
-                                    <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                                        Additional Plants
-                                    </span>
+                                    <i className="fas fa-building text-[13px] w-5 text-center text-text-tertiary" />
+                                    <span className="text-[13px] text-text-secondary">Additional Plants</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2 ml-8">
                                     {additionalPlants.map((code) => (
@@ -1362,20 +1251,12 @@ function ProfileTab({
 
 function DetailRow({ icon, label, mono, value }) {
     return (
-        <div
-            className="flex items-center justify-between py-3.5"
-            style={{ borderBottom: '1px solid var(--border-light)' }}
-        >
+        <div className="flex items-center justify-between py-3.5 border-b border-border-light">
             <div className="flex items-center gap-3">
-                <i className={`fas ${icon} text-[13px] w-5 text-center`} style={{ color: 'var(--text-tertiary)' }} />
-                <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                    {label}
-                </span>
+                <i className={`fas ${icon} text-[13px] w-5 text-center text-text-tertiary`} />
+                <span className="text-[13px] text-text-secondary">{label}</span>
             </div>
-            <span
-                className={`text-[14px] font-semibold ${mono ? 'font-mono tabular-nums' : ''}`}
-                style={{ color: 'var(--text-primary)' }}
-            >
+            <span className={`text-[14px] font-semibold ${mono ? 'font-mono tabular-nums' : ''} text-text-primary`}>
                 {value}
             </span>
         </div>
@@ -1403,28 +1284,18 @@ function SecurityTab({ accentColor, formatSessionTime, onOpenPasswordModal, onRe
 
             <section id="sessions" className="scroll-mt-4">
                 <Card>
-                    <div
-                        className="flex items-center gap-3 px-5 py-4"
-                        style={{ borderBottom: '1px solid var(--border-light)' }}
-                    >
+                    <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
                         <div
-                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-laptop text-[16px]" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                Active Sessions
-                            </div>
-                            <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                                Manage your login sessions
-                            </div>
+                            <div className="text-[14px] font-semibold text-text-primary">Active Sessions</div>
+                            <div className="text-[12px] mt-0.5 text-text-tertiary">Manage your login sessions</div>
                         </div>
-                        <span
-                            className="font-mono tabular-nums rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wider"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                        >
+                        <span className="font-mono tabular-nums rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wider bg-bg-tertiary text-text-secondary">
                             {sessions.length}
                         </span>
                     </div>
@@ -1456,28 +1327,16 @@ function SecurityTab({ accentColor, formatSessionTime, onOpenPasswordModal, onRe
                                         </div>
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <span
-                                                    className="text-[14px] font-semibold truncate"
-                                                    style={{ color: 'var(--text-primary)' }}
-                                                >
+                                                <span className="text-[14px] font-semibold truncate text-text-primary">
                                                     {session.browser}
                                                 </span>
                                                 {session.isCurrent && (
-                                                    <span
-                                                        className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                                                        style={{
-                                                            background: 'rgba(22, 163, 74, 0.15)',
-                                                            color: '#16a34a'
-                                                        }}
-                                                    >
+                                                    <span className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[rgba(22,_163,_74,_0.15)] text-green-600">
                                                         Current
                                                     </span>
                                                 )}
                                             </div>
-                                            <div
-                                                className="text-[12px] mt-0.5 font-mono tabular-nums"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            >
+                                            <div className="text-[12px] mt-0.5 font-mono tabular-nums text-text-tertiary">
                                                 {session.os} · {session.device} ·{' '}
                                                 {formatSessionTime(session.lastActive)}
                                             </div>
@@ -1491,10 +1350,7 @@ function SecurityTab({ accentColor, formatSessionTime, onOpenPasswordModal, onRe
                                 </div>
                             ))
                         ) : (
-                            <div
-                                className="flex flex-col items-center justify-center py-12"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
+                            <div className="flex flex-col items-center justify-center py-12 text-text-tertiary">
                                 <i className="fas fa-laptop text-3xl mb-3" />
                                 <span className="text-[14px]">No active sessions found</span>
                             </div>
@@ -1590,35 +1446,22 @@ function PreferencesTab({
                                         className="absolute inset-0 h-10 w-10 cursor-pointer opacity-0"
                                         aria-label="Custom accent color"
                                     />
-                                    <div
-                                        className="flex h-10 w-10 items-center justify-center rounded-lg"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px dashed var(--border-light)',
-                                            color: 'var(--text-tertiary)'
-                                        }}
-                                    >
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-bg-secondary border border-border-light text-text-tertiary">
                                         <i className="fas fa-eyedropper text-[13px]" />
                                     </div>
                                 </div>
                             </div>
-                            <p className="mt-2.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                            <p className="mt-2.5 text-[11px] text-text-tertiary">
                                 Very light colors will be clamped for readability (max {MAX_BRIGHTNESS_HEX})
                             </p>
                             <div className="mt-3 flex flex-wrap items-center gap-2.5">
                                 <div className="flex items-center gap-3 rounded-lg px-3 py-2" style={FieldStyle}>
                                     <div className="h-7 w-7 rounded-md" style={{ background: accentColor }} />
                                     <div>
-                                        <div
-                                            className="text-[10.5px] font-semibold uppercase tracking-wider"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
+                                        <div className="text-[10.5px] font-semibold uppercase tracking-wider text-text-tertiary">
                                             Current
                                         </div>
-                                        <div
-                                            className="font-mono text-[14px] font-semibold tabular-nums"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <div className="font-mono text-[14px] font-semibold tabular-nums text-text-primary">
                                             {(preferences.accentColor || '#2A3163').toUpperCase()}
                                         </div>
                                     </div>
@@ -1690,10 +1533,8 @@ function PreferencesTab({
                                 style={FieldStyle}
                             >
                                 <div className="min-w-0">
-                                    <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                        Enable Tutorials
-                                    </div>
-                                    <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                                    <div className="text-[14px] font-semibold text-text-primary">Enable Tutorials</div>
+                                    <div className="text-[12px] mt-0.5 text-text-secondary">
                                         Show helpful tips and guides throughout the app
                                     </div>
                                 </div>
@@ -1737,10 +1578,7 @@ function PreferencesTab({
 
 function SegmentedControl({ accentColor, options, value, onChange }) {
     return (
-        <div
-            className="inline-flex items-center rounded-lg p-1 gap-1"
-            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="inline-flex items-center rounded-lg p-1 gap-1 bg-bg-tertiary border border-border-light">
             {options.map((opt) => {
                 const active = value === opt.value
                 return (
@@ -1785,43 +1623,22 @@ function NotificationsTab({
                         />
                         <div className="px-5 py-5 flex flex-col gap-4">
                             <div className="flex items-center gap-3 flex-wrap">
-                                <div
-                                    className="flex items-center gap-2 rounded-lg px-3 py-2"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
+                                <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-bg-secondary border border-border-light">
                                     <span
                                         className="font-mono tabular-nums text-[18px] font-bold"
                                         style={{ color: unreadMessageCount > 0 ? '#dc2626' : 'var(--text-primary)' }}
                                     >
                                         {unreadMessageCount}
                                     </span>
-                                    <span
-                                        className="text-[11px] font-semibold uppercase tracking-wider"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
                                         Unread
                                     </span>
                                 </div>
-                                <div
-                                    className="flex items-center gap-2 rounded-lg px-3 py-2"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
-                                    <span
-                                        className="font-mono tabular-nums text-[18px] font-bold"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-bg-secondary border border-border-light">
+                                    <span className="font-mono tabular-nums text-[18px] font-bold text-text-primary">
                                         {conversationCount}
                                     </span>
-                                    <span
-                                        className="text-[11px] font-semibold uppercase tracking-wider"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
                                         Conversation{conversationCount === 1 ? '' : 's'}
                                     </span>
                                 </div>
@@ -1835,7 +1652,7 @@ function NotificationsTab({
                                 </PrimaryButton>
                             </div>
                             {conversationCount === 0 && (
-                                <p className="m-0 text-[12.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                                <p className="m-0 text-[12.5px] text-text-tertiary">
                                     Nothing here yet. New messages from teammates will land in your inbox.
                                 </p>
                             )}
@@ -1856,21 +1673,12 @@ function NotificationsTab({
                         <div className="flex items-start justify-between gap-4 rounded-lg px-4 py-4" style={FieldStyle}>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                    <i
-                                        className="fas fa-comment-dots text-[13px]"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    />
-                                    <span
-                                        className="text-[14px] font-semibold"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                    <i className="fas fa-comment-dots text-[13px] text-text-tertiary" />
+                                    <span className="text-[14px] font-semibold text-text-primary">
                                         Asset Comment Emails
                                     </span>
                                 </div>
-                                <p
-                                    className="mt-1 text-[12.5px] leading-relaxed"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <p className="mt-1 text-[12.5px] leading-relaxed text-text-secondary">
                                     Receive an email when someone comments on an asset assigned to your plant. Applies
                                     to Plant Managers and District Managers only.
                                 </p>
@@ -1908,34 +1716,26 @@ function PasswordModal({
         !loading && currentPassword && newPassword && newPassword === confirmPassword && newPassword.length >= 8
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
             onClick={onClose}
         >
             <div
-                className="w-full max-w-lg rounded-lg overflow-hidden"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                className="w-full max-w-lg rounded-lg overflow-hidden bg-bg-primary border border-border-light"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div
-                    className="flex items-center justify-between px-5 py-4"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border-light">
                     <div className="flex items-center gap-3">
                         <div
-                            className="flex h-10 w-10 items-center justify-center rounded-lg"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-10 w-10 items-center justify-center rounded-lg bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-key text-[16px]" />
                         </div>
-                        <span className="text-[16px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            Change Password
-                        </span>
+                        <span className="text-[16px] font-semibold text-text-primary">Change Password</span>
                     </div>
                     <button
                         onClick={onClose}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-bg-tertiary"
-                        style={{ color: 'var(--text-secondary)' }}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-bg-tertiary text-text-secondary"
                         aria-label="Close"
                     >
                         <i className="fas fa-times text-[14px]" />
@@ -1943,14 +1743,7 @@ function PasswordModal({
                 </div>
                 <form onSubmit={onSubmit} className="px-5 py-5 flex flex-col gap-4">
                     {passwordError && (
-                        <div
-                            className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium"
-                            style={{
-                                background: 'rgba(220, 38, 38, 0.12)',
-                                border: '1px solid rgba(220, 38, 38, 0.35)',
-                                color: '#dc2626'
-                            }}
-                        >
+                        <div className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium bg-[rgba(220,_38,_38,_0.12)] border border-[rgba(220,_38,_38,_0.35)] text-red-600">
                             <i className="fas fa-exclamation-circle text-[13px]" />
                             <span>{passwordError}</span>
                         </div>
@@ -1982,9 +1775,7 @@ function PasswordModal({
                             className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                             style={FieldStyle}
                         />
-                        <p className="mt-1.5 text-[11.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                            Must be at least 8 characters
-                        </p>
+                        <p className="mt-1.5 text-[11.5px] text-text-tertiary">Must be at least 8 characters</p>
                     </div>
                     <div>
                         <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
@@ -2023,21 +1814,11 @@ function AccountSkeleton() {
     )
     return (
         <div
-            className="global-dashboard-container dashboard-container global-flush-top flush-top"
-            style={{
-                background: 'var(--bg-secondary)',
-                display: 'flex',
-                flexDirection: 'column',
-                inset: 0,
-                overflow: 'hidden',
-                position: 'absolute'
-            }}
+            className="global-dashboard-container dashboard-container global-flush-top flush-top bg-bg-secondary flex flex-col overflow-hidden absolute"
+            style={{ inset: 0 }}
         >
             {/* Slim header */}
-            <div
-                className="shrink-0 flex items-center gap-3 px-3 sm:px-4 py-2.5"
-                style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-            >
+            <div className="shrink-0 flex items-center gap-3 px-3 sm:px-4 py-2.5 bg-bg-primary border-b border-border-light">
                 <Bar className="h-6 w-24" />
                 <Bar className="h-6 w-40 rounded-md" />
                 <div className="flex-1" />
@@ -2049,7 +1830,7 @@ function AccountSkeleton() {
             <div className="flex-1 overflow-hidden">
                 <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 lg:px-6 flex gap-4 h-full">
                     {/* Side nav skeleton */}
-                    <div className="hidden lg:flex flex-col gap-1.5 py-5" style={{ width: 200 }}>
+                    <div className="hidden lg:flex flex-col gap-1.5 py-5 w-[200px]">
                         <Bar className="h-3 w-16 mb-2" />
                         {[1, 2, 3, 4, 5].map((i) => (
                             <div key={i} className="flex items-center gap-2 px-2 py-1.5">
@@ -2062,18 +1843,12 @@ function AccountSkeleton() {
                     {/* Main */}
                     <div className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-4">
                         {/* Stat strip */}
-                        <div
-                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden"
-                            style={{ border: '1px solid var(--border-light)' }}
-                        >
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden border border-border-light">
                             {[1, 2, 3, 4, 5, 6].map((i) => (
                                 <div
                                     key={i}
-                                    className="px-3 py-2.5 flex flex-col gap-1.5"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        borderRight: i < 6 ? '1px solid var(--border-light)' : 'none'
-                                    }}
+                                    className="px-3 py-2.5 flex flex-col gap-1.5 bg-bg-primary"
+                                    style={{ borderRight: i < 6 ? '1px solid var(--border-light)' : 'none' }}
                                 >
                                     <Bar className="h-2.5 w-16" />
                                     <Bar className="h-5 w-12" />
@@ -2083,18 +1858,8 @@ function AccountSkeleton() {
                         </div>
                         {/* Cards */}
                         {[1, 2, 3].map((i) => (
-                            <div
-                                key={i}
-                                className="rounded-lg"
-                                style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)'
-                                }}
-                            >
-                                <div
-                                    className="px-5 py-4 flex items-center gap-3"
-                                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                                >
+                            <div key={i} className="rounded-lg bg-bg-primary border border-border-light">
+                                <div className="px-5 py-4 flex items-center gap-3 border-b border-border-light">
                                     <Bar className="h-10 w-10" />
                                     <div className="flex-1 flex flex-col gap-1.5">
                                         <Bar className="h-3.5 w-40" />
@@ -2110,12 +1875,9 @@ function AccountSkeleton() {
                     </div>
 
                     {/* At-a-glance rail skeleton */}
-                    <div className="hidden xl:block py-5" style={{ width: 240 }}>
+                    <div className="hidden xl:block py-5 w-60">
                         <Bar className="h-3 w-20 mb-2 ml-2" />
-                        <div
-                            className="rounded p-3 flex flex-col gap-2"
-                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                        >
+                        <div className="rounded p-3 flex flex-col gap-2 bg-bg-primary border border-border-light">
                             {[1, 2, 3, 4, 5, 6].map((i) => (
                                 <div
                                     key={i}

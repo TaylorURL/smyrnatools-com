@@ -3,34 +3,191 @@ import {
     apiPostRequireSuccess,
     fetchAllCountsFromTable,
     fetchAllOpenIssueCountsFromTable,
-    resolveUserIdOrAnonymous
+    fetchWithDetailsBase,
+    normalizeSeverity,
+    requireUserId,
+    resolveEntityId,
+    resolveUserIdOrAnonymous,
+    toSnakeCase,
+    uppercaseVin as uppercaseVinHelper
 } from '../utils/BaseAssetUtility'
 import { ValidationUtility } from '../utils/ValidationUtility'
 
+/** Identity function used as the default row parser when none is configured. */
+const identity = (row) => row
+
 /**
- * Base class for asset services that share common patterns for comments,
- * issues, history, and bulk count operations. Each concrete service provides
- * a config object specifying its table names, column names, and entity label.
+ * Base service for fleet assets (mixers, tractors, trailers, equipment, pickup trucks).
+ *
+ * Provides the shared CRUD/history/comments/issues/verify pipeline. Concrete
+ * services compose this by passing a config object — they only need to expose
+ * their domain-typed method names (getAllMixers, fetchTractorById, etc.) as
+ * thin delegations to the corresponding generic methods here.
+ *
+ * @param {Object} config
+ * @param {string} config.servicePrefix          - API route prefix (e.g. '/mixer-service')
+ * @param {string} config.entityName             - Human-readable name for errors (e.g. 'Mixer')
+ * @param {string} config.entityKey              - JSON payload key for the entity body (e.g. 'mixer')
+ * @param {string} config.entityIdParam          - Payload key for entity ID in subresource calls (e.g. 'mixerId')
+ * @param {string} config.idColumn               - DB column for entity FK (e.g. 'mixer_id')
+ * @param {string} config.commentsTable          - DB table for comments
+ * @param {string} config.issuesTable            - DB table for maintenance issues
+ * @param {string} [config.historyTable]         - DB table for history rows (used by fetchWithDetails)
+ * @param {Function} [config.parseRow]           - Maps a raw API row to a domain model instance
+ * @param {Function} [config.parseHistoryRow]    - Maps a raw history row to a domain model instance
+ * @param {Function} [config.commentModelFn]     - Maps a raw comment row to a model instance
+ * @param {Function} [config.enrichFn]           - Post-parse enrichment (e.g. attaches isVerified())
+ * @param {boolean}  [config.uppercaseVin=false] - Uppercase entity.vin on create/update
+ * @param {boolean}  [config.clearOperatorOnPlantChange=false] - Null assignedOperator when plant changes
+ * @param {string[]} [config.allowedHistoryFields] - Whitelist for createHistoryEntry (snake_case)
  */
 class BaseAssetService {
-    /**
-     * @param {Object} config
-     * @param {string} config.servicePrefix     - API route prefix (e.g. '/mixer-service')
-     * @param {string} config.commentsTable      - database table for comments (e.g. 'mixers_comments')
-     * @param {string} config.issuesTable        - database table for issues (e.g. 'mixers_maintenance')
-     * @param {string} config.idColumn           - Column name for entity FK (e.g. 'mixer_id')
-     * @param {string} config.entityIdParam      - API payload key for entity ID (e.g. 'mixerId')
-     * @param {string} config.entityName         - Human-readable name for error messages (e.g. 'Mixer')
-     * @param {Function} [config.commentModelFn] - Optional function to map raw comment rows to model instances
-     */
     constructor(config) {
         this.servicePrefix = config.servicePrefix
+        this.entityName = config.entityName
+        this.entityKey = config.entityKey || null
+        this.entityIdParam = config.entityIdParam
+        this.idColumn = config.idColumn
         this.commentsTable = config.commentsTable
         this.issuesTable = config.issuesTable
-        this.idColumn = config.idColumn
-        this.entityIdParam = config.entityIdParam
-        this.entityName = config.entityName
+        this.historyTable = config.historyTable || null
+        this.parseRow = config.parseRow || identity
+        this.parseHistoryRow = config.parseHistoryRow || identity
         this.commentModelFn = config.commentModelFn || null
+        this.enrichFn = config.enrichFn || null
+        this.uppercaseVin = !!config.uppercaseVin
+        this.clearOperatorOnPlantChange = !!config.clearOperatorOnPlantChange
+        this.allowedHistoryFields = config.allowedHistoryFields || null
+    }
+
+    // ── Row parsing helpers ───────────────────────────────────────────
+
+    /** Parses and (optionally) enriches a single row. Returns null for falsy input. */
+    _hydrate(row) {
+        if (!row) return null
+        const parsed = this.parseRow(row)
+        return this.enrichFn ? this.enrichFn(parsed) : parsed
+    }
+
+    _hydrateList(rows) {
+        return (rows ?? []).map((row) => this._hydrate(row))
+    }
+
+    // ── Core CRUD ─────────────────────────────────────────────────────
+
+    /** Fetches all entities (no enrichment by default — call sites that need it should map themselves). */
+    async getAll() {
+        const json = await apiPostOrThrow(
+            `${this.servicePrefix}/fetch-all`,
+            {},
+            `Failed to fetch ${this.entityName.toLowerCase()}s`
+        )
+        return (json?.data ?? []).map((row) => this.parseRow(row))
+    }
+
+    /** Fetches one entity by ID, with enrichment applied. */
+    async fetchById(id) {
+        const resolvedId = resolveEntityId(id)
+        ValidationUtility.requireUUID(resolvedId, `Invalid ${this.entityName} ID`)
+        const json = await apiPostOrThrow(
+            `${this.servicePrefix}/fetch-by-id`,
+            { id: resolvedId },
+            `Failed to fetch ${this.entityName.toLowerCase()}`
+        )
+        return this._hydrate(json?.data)
+    }
+
+    /** Creates a new entity. Strips any provided id, normalizes VIN, resolves user. */
+    async create(entity, userId) {
+        const resolvedUserId = await requireUserId(userId, 'Authentication required')
+        if (entity?.id) delete entity.id
+        if (this.uppercaseVin) uppercaseVinHelper(entity)
+        const payload = { [this.entityKey]: entity, userId: resolvedUserId }
+        const json = await apiPostOrThrow(
+            `${this.servicePrefix}/create`,
+            payload,
+            `Failed to create ${this.entityName.toLowerCase()}`
+        )
+        return this.parseRow(json?.data)
+    }
+
+    /**
+     * Updates an entity. Optionally normalizes VIN and clears the operator
+     * assignment when the plant changes (prevents cross-plant operator orphans).
+     */
+    async update(idOrEntity, entity, userId, prevState = null) {
+        const id = resolveEntityId(idOrEntity)
+        ValidationUtility.requireUUID(id, `${this.entityName} ID is required`)
+        const resolvedUserId = await requireUserId(userId)
+        if (this.uppercaseVin) uppercaseVinHelper(entity)
+        if (this.clearOperatorOnPlantChange && prevState?.assignedPlant !== entity?.assignedPlant) {
+            entity.assignedOperator = null
+        }
+        const payload = { id, [this.entityKey]: entity, userId: resolvedUserId }
+        const json = await apiPostOrThrow(
+            `${this.servicePrefix}/update`,
+            payload,
+            `Failed to update ${this.entityName.toLowerCase()}`
+        )
+        return this.parseRow(json?.data)
+    }
+
+    /** Soft-deletes an entity by ID. */
+    async delete(id) {
+        ValidationUtility.requireUUID(id, `${this.entityName} ID is required`)
+        return apiPostRequireSuccess(
+            `${this.servicePrefix}/delete`,
+            { id },
+            `Failed to delete ${this.entityName.toLowerCase()}`
+        )
+    }
+
+    /** Verifies an entity by stamping updatedLast / updatedBy / updatedAt server-side. */
+    async verify(id, userId) {
+        const resolvedId = resolveEntityId(id)
+        ValidationUtility.requireUUID(resolvedId, `${this.entityName} ID is required`)
+        const resolvedUserId = await requireUserId(userId)
+        const json = await apiPostOrThrow(
+            `${this.servicePrefix}/verify`,
+            { id: resolvedId, userId: resolvedUserId },
+            `Failed to verify ${this.entityName.toLowerCase()}`
+        )
+        return this._hydrate(json?.data)
+    }
+
+    // ── Search & filter ───────────────────────────────────────────────
+
+    /** VIN search — uppercases the query and returns parsed (un-enriched) rows. */
+    async searchByVin(query) {
+        if (!query?.trim()) throw new Error('Search query is required')
+        const json = await apiPostOrThrow(
+            `${this.servicePrefix}/search-by-vin`,
+            { query: query.trim().toUpperCase() },
+            `Failed to search ${this.entityName.toLowerCase()}s by VIN`
+        )
+        return (json?.data ?? []).map((row) => this.parseRow(row))
+    }
+
+    /** Returns all entities currently assigned to the given operator UUID. */
+    async getByOperator(operatorId) {
+        ValidationUtility.requireUUID(operatorId, 'Operator ID is required')
+        const json = await apiPostOrThrow(
+            `${this.servicePrefix}/fetch-by-operator`,
+            { operatorId },
+            `Failed to fetch ${this.entityName.toLowerCase()}s by operator`
+        )
+        return (json?.data ?? []).map((row) => this.parseRow(row))
+    }
+
+    /** Fetches all entities enriched with comment/issue counts and status history. */
+    async fetchWithDetails(regionCodes = null) {
+        return fetchWithDetailsBase({
+            enrichFn: this.enrichFn || undefined,
+            fetchAllFn: () => this.getAll(),
+            historyTableName: this.historyTable,
+            idColumnName: this.idColumn,
+            regionCodes
+        })
     }
 
     // ── Comments ──────────────────────────────────────────────────────
@@ -81,6 +238,22 @@ class BaseAssetService {
         return json?.data ?? []
     }
 
+    async addIssue(entityId, issue, severity, createdBy = null) {
+        ValidationUtility.requireUUID(entityId, `${this.entityName} ID is required`)
+        if (!issue?.trim()) throw new Error('Issue description is required')
+        const json = await apiPostOrThrow(
+            `${this.servicePrefix}/add-issue`,
+            {
+                [this.entityIdParam]: entityId,
+                issue: issue.trim(),
+                severity: normalizeSeverity(severity),
+                userId: createdBy
+            },
+            'Failed to add issue'
+        )
+        return json?.data
+    }
+
     async completeIssue(issueId) {
         ValidationUtility.requireUUID(issueId, 'Issue ID is required')
         return apiPostRequireSuccess(`${this.servicePrefix}/complete-issue`, { issueId }, 'Failed to complete issue')
@@ -91,7 +264,7 @@ class BaseAssetService {
         return apiPostRequireSuccess(`${this.servicePrefix}/delete-issue`, { issueId }, 'Failed to delete issue')
     }
 
-    // ── Bulk Counts ───────────────────────────────────────────────────
+    // ── Bulk counts ───────────────────────────────────────────────────
 
     async fetchAllCommentsCounts(entityIds) {
         return fetchAllCountsFromTable(this.commentsTable, this.idColumn, entityIds)
@@ -104,19 +277,38 @@ class BaseAssetService {
     // ── History ───────────────────────────────────────────────────────
 
     /**
-     * Records a field-level change in the entity's history audit trail.
-     * Uppercases VIN values automatically.
+     * Fetches change history for one entity, optionally limited. History rows
+     * pass through `parseHistoryRow` for domain-model hydration.
+     */
+    async getHistory(entityId, limit = null) {
+        ValidationUtility.requireUUID(entityId, `${this.entityName} ID is required`)
+        const payload = { [this.entityIdParam]: entityId }
+        if (limit && Number.isInteger(limit) && limit > 0) payload.limit = limit
+        const json = await apiPostOrThrow(
+            `${this.servicePrefix}/fetch-history`,
+            payload,
+            `Failed to fetch ${this.entityName.toLowerCase()} history`
+        )
+        return (json?.data ?? []).map((row) => this.parseHistoryRow(row))
+    }
+
+    /**
+     * Records a field-level change in the entity's history audit trail. When
+     * `allowedHistoryFields` is configured, fields outside the whitelist are
+     * silently dropped. VIN values are auto-uppercased.
      */
     async createHistoryEntry(entityId, fieldName, oldValue, newValue, changedBy) {
         ValidationUtility.requireUUID(entityId, `${this.entityName} ID is required`)
         if (!fieldName) throw new Error('Field name required')
+        const snake = toSnakeCase(fieldName)
+        if (this.allowedHistoryFields && !this.allowedHistoryFields.includes(snake)) return null
         const userId = await resolveUserIdOrAnonymous(changedBy)
-        const finalNewValue = fieldName === 'vin' ? (newValue || '').toUpperCase() : newValue
+        const finalNewValue = snake === 'vin' ? (newValue || '').toUpperCase() : newValue
         const json = await apiPostOrThrow(
             `${this.servicePrefix}/add-history`,
             {
                 changedBy: userId,
-                fieldName,
+                fieldName: snake,
                 [this.entityIdParam]: entityId,
                 newValue: finalNewValue,
                 oldValue
@@ -126,7 +318,7 @@ class BaseAssetService {
         return json?.data
     }
 
-    /** Fetches the most recent history entry date for an entity. */
+    /** Returns the timestamp of the most recent history entry, or null. */
     async getLatestHistoryDate(entityId) {
         if (!entityId) return null
         const json = await apiPostOrThrow(

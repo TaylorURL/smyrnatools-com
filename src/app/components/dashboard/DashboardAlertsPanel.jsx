@@ -19,20 +19,15 @@ function AlertRow({ id, message, metric, onClick }) {
         >
             {id && (
                 <span
-                    className="font-mono text-[11.5px] font-semibold shrink-0"
-                    style={{ color: 'var(--text-primary)', minWidth: 56 }}
+                    className="font-mono text-[11.5px] font-semibold shrink-0 text-text-primary"
+                    style={{ minWidth: 56 }}
                 >
                     {id}
                 </span>
             )}
-            <span className="text-[12.5px] flex-1 min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>
-                {message}
-            </span>
+            <span className="text-[12.5px] flex-1 min-w-0 truncate text-text-secondary">{message}</span>
             {metric != null && (
-                <span
-                    className="font-mono text-[12px] tabular-nums font-semibold shrink-0"
-                    style={{ color: 'var(--text-primary)' }}
-                >
+                <span className="font-mono text-[12px] tabular-nums font-semibold shrink-0 text-text-primary">
                     {metric}
                 </span>
             )}
@@ -118,9 +113,7 @@ export default function DashboardAlertsPanel({ plantNotifications, setEmbeddedVi
     if (totalCount === 0) {
         return (
             <Panel id="alerts" title="Alerts">
-                <div className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
-                    No active alerts.
-                </div>
+                <div className="text-[12.5px] text-text-secondary">No active alerts.</div>
             </Panel>
         )
     }
@@ -145,8 +138,7 @@ export default function DashboardAlertsPanel({ plantNotifications, setEmbeddedVi
                     <button
                         type="button"
                         onClick={() => setExpanded((prev) => !prev)}
-                        className="self-start text-[12px] font-semibold mt-1 px-0 py-1 bg-transparent border-none cursor-pointer hover:underline"
-                        style={{ color: 'var(--text-secondary)' }}
+                        className="self-start text-[12px] font-semibold mt-1 px-0 py-1 bg-transparent border-none cursor-pointer hover:underline text-text-secondary"
                     >
                         {expanded ? 'Show less' : `View more (${hiddenCount})`}
                     </button>

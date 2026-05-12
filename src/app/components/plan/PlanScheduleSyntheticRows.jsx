@@ -47,7 +47,7 @@ export function ReturnRow({ accentColor, animationDelayMs, plantNameByCode, row 
                 <>
                     {row.count} {truckWord} back from <b>{orderTag}</b>
                     {row.order.customer ? ` · ${clean(row.order.customer)}` : ''}
-                    {rangeLabel && <span style={{ color: 'var(--text-tertiary)' }}> · trickled in {rangeLabel}</span>}
+                    {rangeLabel && <span className="text-text-tertiary"> · trickled in {rangeLabel}</span>}
                 </>
             }
             time={row.time}
@@ -65,22 +65,21 @@ export function TradeoffRow({ accentColor, animationDelayMs, plantNameByCode, ro
             accentColor="#d97706"
             chips={
                 <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[11px]">
-                    <span className="inline-flex items-center gap-1 font-semibold" style={{ color: '#0369a1' }}>
+                    <span className="inline-flex items-center gap-1 font-semibold text-[#0369a1]">
                         <i className="fas fa-calendar-plus text-[9px]" />
                         Book:
                     </span>
                     {row.slots.map((slot) => (
                         <span
                             key={slot.key}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-semibold text-[10.5px]"
-                            style={{ background: 'rgba(14, 165, 233, 0.12)', color: '#0369a1' }}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-semibold text-[10.5px] bg-[rgba(14,_165,_233,_0.12)] text-[#0369a1]"
                             title={`${slot.minTrucks}+ trucks idle for ~${Math.round((slot.durationMin / 60) * 10) / 10}h starting ${formatMinutesClock(slot.time)}`}
                         >
                             {slot.label}
                         </span>
                     ))}
-                    <span style={{ color: 'var(--text-tertiary)' }}>or</span>
-                    <span className="inline-flex items-center gap-1 font-semibold" style={{ color: '#64748b' }}>
+                    <span className="text-text-tertiary">or</span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-slate-500">
                         <i className="fas fa-house-user text-[9px]" />
                         Send {freeCount} home
                     </span>
@@ -173,7 +172,7 @@ export function PullUpRow({ accentColor, animationDelayMs, plantNameByCode, row 
                     )}{' '}
                     instead of waiting until <b>{formatMinutesClock(row.originalStartMin)}</b>. Notify customer by{' '}
                     <b>{formatMinutesClock(row.notifyByMin)}</b>.
-                    <span style={{ color: 'var(--text-tertiary)' }}>
+                    <span className="text-text-tertiary">
                         {' '}
                         · When working the phones, start with the latest-scheduled customers first.
                     </span>
@@ -270,13 +269,13 @@ export function HelpRow({ accentColor, animationDelayMs, plantNameByCode, row })
     const plantCell = isOutbound ? (
         <div className="flex items-center gap-1.5">
             <PlantBadge code={row.fromPlant} fallback={accentColor} name={fromName} />
-            <i className="fas fa-arrow-right text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
+            <i className="fas fa-arrow-right text-[9px] text-text-tertiary" />
             <PlantBadge code={row.toPlant} fallback={accentColor} name={toName} />
         </div>
     ) : (
         <div className="flex items-center gap-1.5">
             <PlantBadge code={row.toPlant} fallback={accentColor} name={toName} />
-            <i className="fas fa-arrow-right text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
+            <i className="fas fa-arrow-right text-[9px] text-text-tertiary" />
             <PlantBadge code={homePlant} fallback={accentColor} name={homeName} />
         </div>
     )

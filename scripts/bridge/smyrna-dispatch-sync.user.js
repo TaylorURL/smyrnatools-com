@@ -33,7 +33,8 @@
     // Hostname differs between deployments (srm-c03, srm-h, etc.), so we
     // pull it from the page we're sitting on instead of hardcoding it —
     // that way the script auto-targets the right backend on every server.
-    const DISPATCH_HOST = (typeof window !== 'undefined' && window.location && window.location.hostname) || 'srm-h.aujs.local'
+    const DISPATCH_HOST =
+        (typeof window !== 'undefined' && window.location && window.location.hostname) || 'srm-h.aujs.local'
     const API_BASE = `http://${DISPATCH_HOST}:8484`
     const UI_ORIGIN = `http://${DISPATCH_HOST}:8181`
     const FORM_ID = '1001000'

@@ -23,7 +23,7 @@ function AllocationBar({ percent }) {
     const color = pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#dc2626'
     return (
         <div className="flex items-center gap-2 min-w-[120px]">
-            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+            <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
                 <div className="h-full rounded-full" style={{ background: color, width: `${pct}%` }} />
             </div>
             <span
@@ -45,16 +45,13 @@ function FleetRow({ active, dotColor, isTotal, label, shop, spare, stationary, t
                 isTotal ? { background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-medium)' } : undefined
             }
         >
-            <td className="px-3 py-2 text-[12.5px]" style={{ color: 'var(--text-primary)' }}>
+            <td className="px-3 py-2 text-[12.5px] text-text-primary">
                 <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: dotColor }} />
                     <span>{label}</span>
                 </div>
             </td>
-            <td
-                className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
-                style={{ color: 'var(--text-primary)' }}
-            >
+            <td className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold text-text-primary">
                 {total ?? '—'}
             </td>
             <td
@@ -81,7 +78,7 @@ function FleetRow({ active, dotColor, isTotal, label, shop, spare, stationary, t
             >
                 {stationary ?? '—'}
             </td>
-            <td className="px-3 py-2" style={{ width: 220 }}>
+            <td className="px-3 py-2 w-[220px]">
                 <AllocationBar percent={allocation} />
             </td>
         </tr>
@@ -130,60 +127,35 @@ export default function FleetOverviewSection({ accentColor: _accentColor, displa
             id="fleet"
             title="Fleet"
             innerClassName=""
-            right={
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                    Active, spare, in-shop by asset type
-                </span>
-            }
+            right={<span className="text-[11px] text-text-tertiary">Active, spare, in-shop by asset type</span>}
         >
             <table className="w-full border-collapse">
                 <thead>
-                    <tr style={{ background: 'var(--bg-secondary)' }}>
-                        <th
-                            className="px-3 py-2 text-left text-[11px] font-semibold"
-                            style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                        >
+                    <tr className="bg-bg-secondary">
+                        <th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary border-b border-border-light">
                             Asset type
                         </th>
-                        <th
-                            className="px-3 py-2 text-right text-[11px] font-semibold"
-                            style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
                             Total
                         </th>
-                        <th
-                            className="px-3 py-2 text-right text-[11px] font-semibold"
-                            style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
                             Active
                         </th>
-                        <th
-                            className="px-3 py-2 text-right text-[11px] font-semibold"
-                            style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
                             Spare
                         </th>
-                        <th
-                            className="px-3 py-2 text-right text-[11px] font-semibold"
-                            style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
                             In shop
                         </th>
-                        <th
-                            className="px-3 py-2 text-right text-[11px] font-semibold"
-                            style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
                             Stationary
                         </th>
-                        <th
-                            className="px-3 py-2 text-left text-[11px] font-semibold"
-                            style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary border-b border-border-light">
                             Allocation
                         </th>
                     </tr>
                 </thead>
-                <tbody style={{ borderColor: 'var(--border-light)' }}>
+                <tbody className="border-border-light">
                     {!isAggregate && (
                         <FleetRow
                             active={m.activeOperators ?? m.active}

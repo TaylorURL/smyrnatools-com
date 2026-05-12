@@ -32,7 +32,7 @@ export function DeltaHint({ base, current, previous }) {
     if (!Number.isFinite(previous) || pct == null) return base ?? null
     return (
         <span className="inline-flex items-center gap-1.5">
-            <span style={{ color: 'var(--text-tertiary)' }}>{base}</span>
+            <span className="text-text-tertiary">{base}</span>
             <span
                 className="inline-flex items-center gap-0.5 rounded px-1.5 py-px text-[10px] font-semibold tabular-nums"
                 style={{
@@ -70,7 +70,7 @@ export function TrendChart({ data, accent, comparisonData }) {
         return sum / productive.length
     }, [data])
     return (
-        <div style={{ height: 240 }}>
+        <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={merged} margin={{ bottom: 4, left: 0, right: 12, top: 12 }}>
                     <CartesianGrid stroke="var(--border-light)" strokeDasharray="3 3" />
@@ -153,7 +153,7 @@ export function ByPlantChart({ accent, plantNameByCode, rows }) {
     )
     if (trimmed.length === 0) {
         return (
-            <div className="text-[12px] py-6 text-center" style={{ color: 'var(--text-tertiary)' }}>
+            <div className="text-[12px] py-6 text-center text-text-tertiary">
                 No plant production data in the selected range.
             </div>
         )
@@ -214,7 +214,7 @@ export function DayOfWeekChart({ accent, plans }) {
         return buckets
     }, [plans])
     return (
-        <div style={{ height: 220 }}>
+        <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ bottom: 4, left: 0, right: 8, top: 12 }}>
                     <CartesianGrid stroke="var(--border-light)" strokeDasharray="3 3" />

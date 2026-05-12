@@ -5,13 +5,8 @@ export function PlanFlowEmptyPanel({ accentColor }) {
     return (
         <div className="flex flex-col items-center justify-center text-center p-6 flex-1">
             <i className="fas fa-arrow-pointer text-3xl mb-3 opacity-60" style={{ color: accentColor }} />
-            <div
-                className="font-bold text-[15px] mb-1"
-                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-            >
-                Pick a plant
-            </div>
-            <div className="text-[12px] max-w-[240px]" style={{ color: 'var(--text-secondary)' }}>
+            <div className="font-bold text-[15px] mb-1 text-text-primary font-heading">Pick a plant</div>
+            <div className="text-[12px] max-w-[240px] text-text-secondary">
                 Click a node to inspect it, edit its routes, or send trucks to another plant.
             </div>
         </div>
@@ -45,36 +40,23 @@ export function PlanFlowPlantOverview({
         <div className="p-5 flex flex-col gap-4">
             <div className="flex items-center gap-3">
                 <div
-                    className="flex items-center justify-center rounded-xl"
-                    style={{
-                        background: accentColor,
-                        color: '#fff',
-                        fontFamily: 'var(--font-heading)',
-                        fontSize: 16,
-                        fontWeight: 700,
-                        height: 44,
-                        width: 44
-                    }}
+                    className="flex items-center justify-center rounded-xl text-white font-heading font-bold h-11 w-11"
+                    style={{ background: accentColor, fontSize: 16 }}
                 >
                     {selected.code}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div
-                        className="font-bold text-[18px]"
-                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                    >
-                        Plant {selected.code}
-                    </div>
-                    <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="font-bold text-[18px] text-text-primary font-heading">Plant {selected.code}</div>
+                    <div className="text-[11px] text-text-secondary">
                         {baseCount} base
                         {hasMissing && (
                             <>
                                 {' '}
-                                <span style={{ color: '#dc2626' }}>-{missingOperators} missing</span>
+                                <span className="text-red-600">-{missingOperators} missing</span>
                             </>
                         )}{' '}
-                        · <span style={{ color: '#dc2626' }}>-{selected.send || 0} sent</span> ·{' '}
-                        <span style={{ color: '#16a34a' }}>+{selected.recv || 0} recv</span>
+                        · <span className="text-red-600">-{selected.send || 0} sent</span> ·{' '}
+                        <span className="text-green-600">+{selected.recv || 0} recv</span>
                     </div>
                 </div>
             </div>
@@ -176,7 +158,7 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
                     >
                         Missing operators
                     </div>
-                    <div className="text-[10.5px] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="text-[10.5px] leading-snug text-text-secondary">
                         {hasMissing
                             ? `Plant runs on ${remaining} active mixer${remaining === 1 ? '' : 's'} today (${baseCount} assigned − ${missingOperators} out).`
                             : 'Note anyone out sick / vacation to subtract from this plant’s pool.'}
@@ -188,14 +170,7 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
                     type="button"
                     onClick={() => onChange(Math.max(0, missingOperators - 1))}
                     disabled={missingOperators === 0}
-                    className="border-none rounded-md cursor-pointer text-[13px] font-bold flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-medium)',
-                        color: 'var(--text-primary)',
-                        height: 32,
-                        width: 32
-                    }}
+                    className="border-none rounded-md cursor-pointer text-[13px] font-bold flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed bg-bg-primary border border-border-medium text-text-primary h-8 w-8"
                     title="Subtract one missing operator"
                 >
                     −
@@ -209,25 +184,13 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
                         const next = Math.max(0, parseInt(event.target.value, 10) || 0)
                         onChange(next)
                     }}
-                    className="flex-1 px-2 py-1.5 rounded-md text-sm font-mono text-center border"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        borderColor: 'var(--border-medium)',
-                        color: 'var(--text-primary)'
-                    }}
+                    className="flex-1 px-2 py-1.5 rounded-md text-sm font-mono text-center border bg-bg-primary border-border-medium text-text-primary"
                 />
                 <button
                     type="button"
                     onClick={() => onChange(Math.min(baseCount || missingOperators + 1, missingOperators + 1))}
                     disabled={baseCount > 0 && missingOperators >= baseCount}
-                    className="border-none rounded-md cursor-pointer text-[13px] font-bold flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-medium)',
-                        color: 'var(--text-primary)',
-                        height: 32,
-                        width: 32
-                    }}
+                    className="border-none rounded-md cursor-pointer text-[13px] font-bold flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed bg-bg-primary border border-border-medium text-text-primary h-8 w-8"
                     title="Add one missing operator"
                 >
                     +
@@ -236,12 +199,7 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
                     <button
                         type="button"
                         onClick={() => onChange(0)}
-                        className="border-none rounded-md cursor-pointer text-[11px] font-semibold px-2.5 py-1.5"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border-medium)',
-                            color: 'var(--text-secondary)'
-                        }}
+                        className="border-none rounded-md cursor-pointer text-[11px] font-semibold px-2.5 py-1.5 bg-bg-primary border border-border-medium text-text-secondary"
                         title="Clear — everyone is in"
                     >
                         Reset
@@ -255,10 +213,7 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
 function Section({ children, count, icon, title }) {
     return (
         <div>
-            <div
-                className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-2"
-                style={{ color: 'var(--text-secondary)' }}
-            >
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-2 text-text-secondary">
                 <i className={`fas ${icon} text-[9px]`} />
                 {title} ({count})
             </div>
@@ -269,10 +224,7 @@ function Section({ children, count, icon, title }) {
 
 function EmptyHint({ children }) {
     return (
-        <div
-            className="text-[12px] italic px-3 py-4 text-center rounded-lg"
-            style={{ background: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}
-        >
+        <div className="text-[12px] italic px-3 py-4 text-center rounded-lg bg-bg-secondary text-text-tertiary">
             {children}
         </div>
     )
@@ -281,35 +233,22 @@ function EmptyHint({ children }) {
 function RouteRow({ accentColor, assignment, canEdit, clockIn, onDelete, onEdit, travel }) {
     const ops = parseInt(assignment.driverCount, 10) || 0
     return (
-        <div
-            className="rounded-lg p-2.5 flex items-center gap-2.5"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="flex items-center gap-1 font-bold text-[12px]"
-                style={{ color: accentColor, fontFamily: 'var(--font-heading)' }}
-            >
+        <div className="rounded-lg p-2.5 flex items-center gap-2.5 bg-bg-secondary border border-border-light">
+            <div className="flex items-center gap-1 font-bold text-[12px] font-heading" style={{ color: accentColor }}>
                 <span>{assignment.fromPlant}</span>
                 <i className="fas fa-arrow-right text-[9px]" />
                 <span>{assignment.toPlant}</span>
             </div>
             <div className="flex-1" />
             <div className="text-right">
-                <div
-                    className="text-[13px] font-bold leading-none"
-                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                >
+                <div className="text-[13px] font-bold leading-none text-text-primary font-heading">
                     {assignment.time || '—'}
                 </div>
-                <div className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+                <div className="text-[10px] text-text-secondary">
                     {ops} op{ops === 1 ? '' : 's'}
                     {travel != null && <> · {travel}m</>}
                 </div>
-                {clockIn && (
-                    <div className="text-[10px] font-semibold" style={{ color: '#16a34a' }}>
-                        clock {clockIn}
-                    </div>
-                )}
+                {clockIn && <div className="text-[10px] font-semibold text-green-600">clock {clockIn}</div>}
                 {assignment.leaveTime && (
                     <div className="text-[10px] font-semibold" style={{ color: accentColor }}>
                         leave {assignment.leaveTime}
@@ -320,16 +259,14 @@ function RouteRow({ accentColor, assignment, canEdit, clockIn, onDelete, onEdit,
                 <div className="flex flex-col gap-1">
                     <button
                         onClick={onEdit}
-                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer"
-                        style={{ color: 'var(--text-secondary)' }}
+                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-secondary"
                         title="Edit"
                     >
                         <i className="fas fa-pen text-[10px]" />
                     </button>
                     <button
                         onClick={onDelete}
-                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer"
-                        style={{ color: '#dc2626' }}
+                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-red-600"
                         title="Delete"
                     >
                         <i className="fas fa-trash text-[10px]" />
@@ -342,17 +279,9 @@ function RouteRow({ accentColor, assignment, canEdit, clockIn, onDelete, onEdit,
 
 function StatTile({ color, label, value }) {
     return (
-        <div
-            className="rounded-lg px-3 py-2"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
-            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
-                {label}
-            </div>
-            <div
-                className="font-bold text-[18px]"
-                style={{ color: color || 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-            >
+        <div className="rounded-lg px-3 py-2 bg-bg-secondary border border-border-light">
+            <div className="text-[9px] font-bold uppercase tracking-wider text-text-secondary">{label}</div>
+            <div className="font-bold text-[18px] font-heading" style={{ color: color || 'var(--text-primary)' }}>
                 {value}
             </div>
         </div>

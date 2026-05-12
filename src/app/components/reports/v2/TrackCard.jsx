@@ -82,27 +82,14 @@ function TrackCard({ item, history = [], onStart, onContinue, onView, plantLabel
             : `${plantLabel ? plantLabel + ' · ' : ''}due Mon 7:00 AM CST`)
     const isViewMode = status === 'submitted'
     return (
-        <article
-            className="rounded-lg overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-px hover:shadow-md border"
-            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-        >
-            <div
-                className="flex items-center gap-3 px-4 py-3.5 border-b"
-                style={{ borderColor: 'var(--border-light)' }}
-            >
+        <article className="rounded-lg overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-px hover:shadow-md border bg-bg-primary border-border-light">
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border-light">
                 <div className={`w-9 h-9 rounded-lg ${iconBg} text-white flex items-center justify-center shrink-0`}>
                     <i className={`fas ${icon} text-[13px]`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div
-                        className="font-semibold text-[14px] truncate"
-                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                    >
-                        {title}
-                    </div>
-                    <div className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
-                        {contextLine}
-                    </div>
+                    <div className="font-semibold text-[14px] truncate text-text-primary font-heading">{title}</div>
+                    <div className="text-[11px] mt-0.5 truncate text-text-secondary">{contextLine}</div>
                 </div>
                 <span
                     className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${statusCfg.badge}`}
@@ -112,10 +99,7 @@ function TrackCard({ item, history = [], onStart, onContinue, onView, plantLabel
             </div>
             {history.length > 0 && (
                 <div className="flex items-center gap-1 px-4 py-2.5">
-                    <span
-                        className="text-[10px] font-semibold uppercase tracking-[.05em] mr-1.5"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
+                    <span className="text-[10px] font-semibold uppercase tracking-[.05em] mr-1.5 text-text-secondary">
                         {history.length}wk
                     </span>
                     {history.map((seg, idx) => (

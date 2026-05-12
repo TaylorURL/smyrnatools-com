@@ -2,18 +2,38 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.11] - 2026-05-12
+
+- Delete PlanActivityBanner, PlanFlowEdges, PlanFlowNode, PlanFlowToolbar, and all plan timeline components (
+  MiniTimelineHeader, MiniTimelineRow, TimelineDayColumn, TimelinePlantLabels, TimelineSnapshotBar)
+- Delete PlanPlantProductionEditor and PlanRealtimeTables plan components
+- Delete CollapsibleTable, DashboardCards, and ImagePreviewModal UI components
+- Remove unused role-related code from RoleModal
+- Delete useLiveClock, useMaintenanceImages, usePlanFlowCanvas, usePlanMiniTimelineRows, usePlanTimelineData, and
+  useRecentLoadedTickets hooks
+- Delete PlanRealtimeUtility entirely
+- Strip dead helper functions from BaseAssetUtility, DistrictUtility, ExportUtility, GeocodingUtility, and
+  RoutingUtility
+- Gut MaintenanceUtility down to a minimal implementation, removing the bulk of its logic
+- Remove unused schedule helpers from PlanScheduleUtility and PlanUtility
+- Trim unused dashboard and history constants from dashboardConstants and historyConstants
+- Remove unused imports and dead code from WeeklyAggregateProductionReport and PlanView
+- Remove marquee-scroll animation keyframes and related custom utilities from tailwind.config.js
+
 ## [41.0.10] - 2026-05-12
 
 - Remove DashboardSidebar, KeyMetricsStrip, PeopleSection, and DashboardSharedComponents from the dashboard module
 - Remove PlanFlowView and PlanRealtimeView from the plan tools
-- Remove PlanAssignmentDetails, PlanDashboardJobs, PlanMiniTimeline, PlanPlantCard, PlanScheduleFilterField, PlanScheduleSideRail, PlanTemplatesModal, and TimelineView plan components
+- Remove PlanAssignmentDetails, PlanDashboardJobs, PlanMiniTimeline, PlanPlantCard, PlanScheduleFilterField,
+  PlanScheduleSideRail, PlanTemplatesModal, and TimelineView plan components
 - Remove MaintenanceFormReview common component and useMaintenanceDraft hook
 - Remove EmptyState UI component
 - Remove useTodaysRecentJobsByTruck and strip down useDashboardEffects hook
 - Gut usePlantNotifications down to a minimal implementation, removing alert/people/shop notification logic
 - Strip PlanDashboardLists down to a minimal export
 - Simplify PlanStatisticsCharts by removing the tonnage-by-mixer chart and its data pipeline
-- Remove the sanitized mutation helpers (sanitizedInsert, sanitizedUpdate, sanitizedDelete) and table/column allowlists from DatabaseService
+- Remove the sanitized mutation helpers (sanitizedInsert, sanitizedUpdate, sanitizedDelete) and table/column allowlists
+  from DatabaseService
 - Remove unused report-related helper functions and simplify ReportComponents
 - Trim useReportData by removing dead helper functions
 - Remove the status-color badge helper from AssetCard
@@ -21,48 +41,72 @@
 - Add BookOrderLogService for CRUD operations against the book order log edge function
 - Add book-order-log-service edge function for insert, update, and delete operations on plan_book_order_logs
 - Add migration to create plan_book_order_logs table with RLS policies and indexes
-- Enhance GeocodeService with Census and Photon geocoding providers, progressive address trimming, and a chained fallback strategy
-- Add shift-cap, partial-coverage, slot-packing, and preferred-window improvements to the book order scheduling logic via changelog
+- Enhance GeocodeService with Census and Photon geocoding providers, progressive address trimming, and a chained
+  fallback strategy
+- Add shift-cap, partial-coverage, slot-packing, and preferred-window improvements to the book order scheduling logic
+  via changelog
 
 ## [41.0.9] - 2026-05-12
 
-- Fix shift-cap anchor bug in best-effort slot scanner — use the day's earliest existing load-out instead of midnight, so legitimate morning starts no longer get rejected by the 14-hour shift check
-- Allow partial-coverage same-day slots to surface instead of pushing dispatchers days out when full coverage isn't available — they can split the booking or pull from beyond the 1-hour radius
-- Simplify lender free-truck math by dropping the over-conservative "implicit borrow" subtraction that was zeroing out visible help at nearby plants
-- Add isolation-based slot packing so candidates that land trucks back at yard right before the next existing pour beat slots with idle gaps
-- Add a "better same-day time" best-effort path in the conflict panel cascade — tighter cluster against existing pours now takes priority over help-covers-at-typed-time
-- Distinguish long pours from short pours in slot sorting: long pours prefer earliest start to minimize business-hour overlap, short pours honor the dispatcher's typed time among equivalent candidates
-- Rework preferred-window check to require the entire pour (start and end) inside the 05:00-12:00 window, not just the start time
-- Surface partial-coverage slots in the conflict panel with actionable guidance — shows how many trucks the dispatcher is still short and suggests splitting, pulling from farther out, or shrinking the pour
-- Return covered and networkShortBy fields from best-effort results so the UI can differentiate full-coverage from partial-coverage recommendations
+- Fix shift-cap anchor bug in best-effort slot scanner — use the day's earliest existing load-out instead of midnight,
+  so legitimate morning starts no longer get rejected by the 14-hour shift check
+- Allow partial-coverage same-day slots to surface instead of pushing dispatchers days out when full coverage isn't
+  available — they can split the booking or pull from beyond the 1-hour radius
+- Simplify lender free-truck math by dropping the over-conservative "implicit borrow" subtraction that was zeroing out
+  visible help at nearby plants
+- Add isolation-based slot packing so candidates that land trucks back at yard right before the next existing pour beat
+  slots with idle gaps
+- Add a "better same-day time" best-effort path in the conflict panel cascade — tighter cluster against existing pours
+  now takes priority over help-covers-at-typed-time
+- Distinguish long pours from short pours in slot sorting: long pours prefer earliest start to minimize business-hour
+  overlap, short pours honor the dispatcher's typed time among equivalent candidates
+- Rework preferred-window check to require the entire pour (start and end) inside the 05:00-12:00 window, not just the
+  start time
+- Surface partial-coverage slots in the conflict panel with actionable guidance — shows how many trucks the dispatcher
+  is still short and suggests splitting, pulling from farther out, or shrinking the pour
+- Return covered and networkShortBy fields from best-effort results so the UI can differentiate full-coverage from
+  partial-coverage recommendations
 
 ## [41.0.8] - 2026-05-12
 
-- Rewrite GeocodeService to chain three free providers (Census, Photon, Nominatim) instead of relying on Nominatim alone, with progressive address trimming (strip unit/suite, strip ZIP) to maximize hit rate on messy addresses
-- Add a Census Geocoder edge function proxy (geocode-service) to work around CORS restrictions on the US Census Bureau endpoint
+- Rewrite GeocodeService to chain three free providers (Census, Photon, Nominatim) instead of relying on Nominatim
+  alone, with progressive address trimming (strip unit/suite, strip ZIP) to maximize hit rate on messy addresses
+- Add a Census Geocoder edge function proxy (geocode-service) to work around CORS restrictions on the US Census Bureau
+  endpoint
 - Add Photon (komoot) as the primary autocomplete provider for typeahead suggestions, with Texas proximity bias
 - Deduplicate concurrent geocode calls for the same address via an in-flight promise map
 - Switch per-host rate limiting so each provider tracks its own request spacing independently
 - Bump geocode cache version to v2 to avoid stale single-provider entries
-- Lower autocomplete debounce from 350ms to 250ms and minimum query length from 4 to 3 characters, increase suggestion limit from 5 to 8
-- Expand adjacent-day plant production lookahead from 4 days to 10 days so the conflict panel can recommend the soonest viable day further out
-- Replace size-based preferred booking windows (big-pour graveyard vs small-pour daylight) with a single unified preferred window for all pour sizes
-- Refactor BookOrderView into a leaner shell by extracting ranking, slot-scanning, and conflict logic into BookOrderUtility
+- Lower autocomplete debounce from 350ms to 250ms and minimum query length from 4 to 3 characters, increase suggestion
+  limit from 5 to 8
+- Expand adjacent-day plant production lookahead from 4 days to 10 days so the conflict panel can recommend the soonest
+  viable day further out
+- Replace size-based preferred booking windows (big-pour graveyard vs small-pour daylight) with a single unified
+  preferred window for all pour sizes
+- Refactor BookOrderView into a leaner shell by extracting ranking, slot-scanning, and conflict logic into
+  BookOrderUtility
 - Add 30-minute slot granularity throughout alternate-time and move scanners, dropping unused 15-minute step support
-- Introduce operator rest-floor and shift-limit checks to prevent recommending starts that violate the 10-hour rest reset or 14-hour shift cap
+- Introduce operator rest-floor and shift-limit checks to prevent recommending starts that violate the 10-hour rest
+  reset or 14-hour shift cap
 
 ## [41.0.7] - 2026-05-11
 
-- Add multi-strategy auto re-authentication to the dispatch sync userscript when the session expires (reuse captured seat, try fresh seat, fall back to page reload with auto-login)
-- Auto-detect the dispatch server hostname from the current page instead of hardcoding srm-c03, allowing the script to work across multiple dispatch servers (srm-c03, srm-h)
-- Add auto-login on the /security/login page — detects the login form, fills credentials, and submits automatically after a reload-for-reauth
-- Wrap all dispatch API calls (apiPost, apiGetHtml) in a withReauthRetry layer that transparently re-authenticates on 401/403 and retries the request
-- Detect stealth auth failures where the server returns the login page HTML with a 200 status instead of the expected JSON or report content
+- Add multi-strategy auto re-authentication to the dispatch sync userscript when the session expires (reuse captured
+  seat, try fresh seat, fall back to page reload with auto-login)
+- Auto-detect the dispatch server hostname from the current page instead of hardcoding srm-c03, allowing the script to
+  work across multiple dispatch servers (srm-c03, srm-h)
+- Add auto-login on the /security/login page — detects the login form, fills credentials, and submits automatically
+  after a reload-for-reauth
+- Wrap all dispatch API calls (apiPost, apiGetHtml) in a withReauthRetry layer that transparently re-authenticates on
+  401/403 and retries the request
+- Detect stealth auth failures where the server returns the login page HTML with a 200 status instead of the expected
+  JSON or report content
 - Add reauth failure backoff and page-reload cooldown to prevent stampeding the login endpoint or reload-looping
 - Mint a seat token on cold start instead of stalling indefinitely when no UI call has been intercepted yet
 - Add a "re-authenticating" badge state so the sync status indicator reflects ongoing reauth attempts
 - Show PlanTabSwitcher on mobile as a compact two-tab toggle (Dashboard + Schedule) instead of hiding it entirely
-- Allow mobile users to access the Plan Dashboard tab and fall back to Dashboard instead of Schedule when landing on a wide-layout-only tab
+- Allow mobile users to access the Plan Dashboard tab and fall back to Dashboard instead of Schedule when landing on a
+  wide-layout-only tab
 - Hide the "switch to Planner" action on mobile since the Planner tab is unavailable at narrow widths
 
 ## [41.0.6] - 2026-05-11
@@ -70,23 +114,31 @@
 - Show PlanTabSwitcher on mobile as a compact two-tab toggle (Dashboard + Schedule) instead of hiding it entirely
 - Add mobile-specific short labels to Dashboard and Schedule tabs for a tighter fit on narrow screens
 - Allow mobile users to access the Plan Dashboard tab instead of forcing them straight to Schedule
-- Fall back to Dashboard (instead of Schedule) when a mobile user lands on a wide-layout-only tab like Planner, Demand, or Statistics
+- Fall back to Dashboard (instead of Schedule) when a mobile user lands on a wide-layout-only tab like Planner, Demand,
+  or Statistics
 - Hide the "switch to Planner" action on mobile since the Planner tab isn't available at narrow widths
 
 ## [41.0.5] - 2026-05-11
 
-- Restyle plan flow route lines from cyan/teal to glossy white-on-slate in both PlanFlowPreview and PlanFlowMapView for a premium GPS-like appearance
-- Update route base color from teal (#0e7490) to deep slate (#0f172a) and flow overlay from cyan (#67e8f9) to white (#ffffff)
+- Restyle plan flow route lines from cyan/teal to glossy white-on-slate in both PlanFlowPreview and PlanFlowMapView for
+  a premium GPS-like appearance
+- Update route base color from teal (#0e7490) to deep slate (#0f172a) and flow overlay from cyan (#67e8f9) to white (
+  #ffffff)
 - Adjust dash patterns, line weights, and animation timing (1.4s to 1.6s) for smoother route flow animation
-- Rework drop-shadow filters on route lines for better contrast in both light and dark modes, using layered white/slate glows instead of cyan
+- Rework drop-shadow filters on route lines for better contrast in both light and dark modes, using layered white/slate
+  glows instead of cyan
 
 ## [41.0.4] - 2026-05-11
 
-- Rebuild PlanFlowPreview as a real Leaflet map with OSM tiles, replacing the old SVG canvas layout with geocoded plant markers positioned at real-world coordinates
-- Delete PlanFlowPreviewEdges and PlanFlowPreviewNode in favor of Leaflet-native markers and polylines rendered directly on the map surface
-- Add OSRM-routed flow lines between plants with animated cyan/teal dashed overlay matching the full Planner tab's visual style
+- Rebuild PlanFlowPreview as a real Leaflet map with OSM tiles, replacing the old SVG canvas layout with geocoded plant
+  markers positioned at real-world coordinates
+- Delete PlanFlowPreviewEdges and PlanFlowPreviewNode in favor of Leaflet-native markers and polylines rendered directly
+  on the map surface
+- Add OSRM-routed flow lines between plants with animated cyan/teal dashed overlay matching the full Planner tab's
+  visual style
 - Geocode plants missing coordinates via GeocodingUtility with region-aware state hints and cache-first lookups
-- Auto-fit map bounds to plant positions on first load with responsive height tiers for narrow, tablet, and wide viewports
+- Auto-fit map bounds to plant positions on first load with responsive height tiers for narrow, tablet, and wide
+  viewports
 - Add dark mode support for map tiles and route glow effects via CSS filters and theme-aware drop shadows
 - Add usePlantToPlantDistances hook for computing driving distances between plant pairs
 - Extend BookOrderUtility with new planning logic and expand BookOrderView with additional UI controls
@@ -97,37 +149,51 @@
 
 ## [41.0.3] - 2026-05-11
 
-- Add interactive Plan Flow Map view powered by Leaflet with real-world plant/job positioning, driving route rendering via OSRM, animated truck markers, and load-count flow lines
-- Add GeocodingUtility with multi-strategy Nominatim fallback, negative-cache TTL, state-context disambiguation, and per-variant caching
-- Add RoutingUtility for OSRM driving-route lookups with localStorage caching, rate-limited request queue, and polyline interpolation helpers
+- Add interactive Plan Flow Map view powered by Leaflet with real-world plant/job positioning, driving route rendering
+  via OSRM, animated truck markers, and load-count flow lines
+- Add GeocodingUtility with multi-strategy Nominatim fallback, negative-cache TTL, state-context disambiguation, and
+  per-variant caching
+- Add RoutingUtility for OSRM driving-route lookups with localStorage caching, rate-limited request queue, and polyline
+  interpolation helpers
 - Add latitude/longitude columns to the plants table with a partial index on non-null coordinates
 - Extend Plant model to carry optional latitude/longitude fields from the database
-- Update ReportService.fetchPlantsSorted to select latitude/longitude and bump cache key to v2 so existing sessions pick up the new fields
+- Update ReportService.fetchPlantsSorted to select latitude/longitude and bump cache key to v2 so existing sessions pick
+  up the new fields
 - Seed authoritative coordinates for plant 455 (Huntsville, TX) to override OSM's inaccurate city-centre fallback
-- Fix asset stats Total counts to exclude Retired/Terminated assets so fleet KPI headlines reflect operational counts only
+- Fix asset stats Total counts to exclude Retired/Terminated assets so fleet KPI headlines reflect operational counts
+  only
 - Apply the same retired-exclusion logic to trailer type counts for consistent fleet reporting
 
 ## [41.0.2] - 2026-05-11
 
-- Add midnight-wrapping support to efficiency report time calculations so overnight shifts produce correct positive durations instead of negative values
-- Add `diffMinutesWrapping` helper to ReportUtility that treats end-before-start as a day rollover (e.g. 23:00 to 11:00 = 12h)
-- Update ReportService, EfficiencyExport, and WeeklyEfficiencyReport to use the new wrapping helper for all time-delta math
+- Add midnight-wrapping support to efficiency report time calculations so overnight shifts produce correct positive
+  durations instead of negative values
+- Add `diffMinutesWrapping` helper to ReportUtility that treats end-before-start as a day rollover (e.g. 23:00 to 11:
+  00 = 12h)
+- Update ReportService, EfficiencyExport, and WeeklyEfficiencyReport to use the new wrapping helper for all time-delta
+  math
 - Update efficiency report validation to allow overnight shift times instead of rejecting them as invalid
-- Add disabled state to PlanDateNav stepper and Tomorrow button with reduced opacity, locked controls, and tooltip support
+- Add disabled state to PlanDateNav stepper and Tomorrow button with reduced opacity, locked controls, and tooltip
+  support
 - Disable the Plan date stepper on the Statistics tab since that tab manages its own date range and custom-tab picker
 
 ## [41.0.1] - 2026-05-08
 
-- Replace plain text input with AddressAutocomplete in PlanSettingsAddressesPanel so plant addresses get Nominatim suggestion lookup and geocode cache pre-warming
-- Add configurable inputClassName prop to AddressAutocomplete, extracting the default classes into a constant so consumers can override input styling
-- Update PlanSettingsAddressesPanel help text to describe the autocomplete workflow and its effect on route drawing and drive-time math
+- Replace plain text input with AddressAutocomplete in PlanSettingsAddressesPanel so plant addresses get Nominatim
+  suggestion lookup and geocode cache pre-warming
+- Add configurable inputClassName prop to AddressAutocomplete, extracting the default classes into a constant so
+  consumers can override input styling
+- Update PlanSettingsAddressesPanel help text to describe the autocomplete workflow and its effect on route drawing and
+  drive-time math
 
 ## [41.0.0] - 2026-05-08
 
-- Rebuild AddressAutocomplete dropdown as a portal so it renders above scroll containers instead of getting clipped, with live repositioning on scroll/resize and loading/empty-state feedback
+- Rebuild AddressAutocomplete dropdown as a portal so it renders above scroll containers instead of getting clipped,
+  with live repositioning on scroll/resize and loading/empty-state feedback
 - Add PhoneLink component that wraps phone numbers in tappable `tel:` links for Avaya/mobile dialer handoff
 - Add dedicated StatisticsSkeleton and CallListSkeleton loading states to replace the generic RealtimeSkeleton
-- Extract maintenance UI into shared components: MaintenanceFilterBar, MaintenanceFormAtoms, MaintenanceFormsRail, MaintenanceHeader, and MaintenanceTabSwitcher
+- Extract maintenance UI into shared components: MaintenanceFilterBar, MaintenanceFormAtoms, MaintenanceFormsRail,
+  MaintenanceHeader, and MaintenanceTabSwitcher
 - Add PlanActivityBanner component for surfacing plan activity alerts
 - Add PlanDashboardActivityFeed and PlanDashboardClockInBoard components, replacing the old PlanDashboardSideNav
 - Expand PlanDateNav with richer navigation controls and layout updates
@@ -152,7 +218,9 @@
 - Update usePlanStatistics hook with revised computation logic
 - Refactor PlanUtility and PlanStatisticsUtility with updated helper functions
 - Update GeocodeService with revised geocoding logic
-- Standardize report modals (ConfirmationModal, ErrorModal, OperatorExclusionReasonModal, QCStrengthDetailModal, QCStrengthReportModal, ThirdPartyLabDetailModal, ThirdPartyLabReportModal) and report v2 components (MissingPanel, MyOneOffRail, OverdueBanner, QuickRail, TrackCard, WeekRibbon) with minor style/import updates
+- Standardize report modals (ConfirmationModal, ErrorModal, OperatorExclusionReasonModal, QCStrengthDetailModal,
+  QCStrengthReportModal, ThirdPartyLabDetailModal, ThirdPartyLabReportModal) and report v2 components (MissingPanel,
+  MyOneOffRail, OverdueBanner, QuickRail, TrackCard, WeekRibbon) with minor style/import updates
 - Update ReportsEmptyState, SubmitHeader, ReportsView, ReportsReviewView, and ReportsSubmitView with small refinements
 - Update WeeklyGeneralManagerReport and WeeklySafetyManagerReport with layout and data tweaks
 - Update shared ReportComponents with revised rendering
@@ -166,17 +234,26 @@
 
 ## [40.0.36] - 2026-05-08
 
-- Add cross-day suggestion support to Find-a-Spot — when the selected day can't fill 3 viable slots, the recommender now scans the next 2-4 non-Sunday days via a new useAdjacentDayPlantProduction hook
-- Honor the dispatcher's typed start time when it already passes all rules (fits, preferred window, rest floor) instead of nudging it to an earlier slot for no operational reason
-- Add "tighter-pack" hint to recommended start time — when the chosen slot expands the shift envelope past the existing first-load-out, surface the alternative as a non-binding suggestion
-- Introduce size-window advice on booking conflicts — warns when a pour is outside its size-appropriate window (graveyard for big pours >= 150 yd, 06:00-14:00 for smaller) and pivots conflict metrics to the suggested slot
-- Separate booking-specific big-pour threshold (150 yd) from the global scheduling threshold so dispatch graveyard rules can diverge from analytics labeling
+- Add cross-day suggestion support to Find-a-Spot — when the selected day can't fill 3 viable slots, the recommender now
+  scans the next 2-4 non-Sunday days via a new useAdjacentDayPlantProduction hook
+- Honor the dispatcher's typed start time when it already passes all rules (fits, preferred window, rest floor) instead
+  of nudging it to an earlier slot for no operational reason
+- Add "tighter-pack" hint to recommended start time — when the chosen slot expands the shift envelope past the existing
+  first-load-out, surface the alternative as a non-binding suggestion
+- Introduce size-window advice on booking conflicts — warns when a pour is outside its size-appropriate window (
+  graveyard for big pours >= 150 yd, 06:00-14:00 for smaller) and pivots conflict metrics to the suggested slot
+- Separate booking-specific big-pour threshold (150 yd) from the global scheduling threshold so dispatch graveyard rules
+  can diverge from analytics labeling
 - Widen the small/medium pour preferred window from 07:00-12:00 to 06:00-14:00 to give dispatchers more runway
-- Prefer "push back" move candidates over "pull up" moves — dispatchers mentally push small jobs later when a big pour anchors the morning; suggesting earlier moves conflicts with rest windows
+- Prefer "push back" move candidates over "pull up" moves — dispatchers mentally push small jobs later when a big pour
+  anchors the morning; suggesting earlier moves conflicts with rest windows
 - Add direction metadata (after/before/overlap) to move candidates for sorting clarity
-- Apply loading-plant reassignment to dashboard schedule so per-plant yardage totals match the Schedule tab once tickets start loading
-- Add pool-after-dispatch column to schedule preview rows showing remaining truck availability at each order's start time with color-coded pills (green/amber/red)
-- Add animated FadeIn wrapper component with entrance/exit transitions and staggered delay timings for smoother recommendation panel state changes
+- Apply loading-plant reassignment to dashboard schedule so per-plant yardage totals match the Schedule tab once tickets
+  start loading
+- Add pool-after-dispatch column to schedule preview rows showing remaining truck availability at each order's start
+  time with color-coded pills (green/amber/red)
+- Add animated FadeIn wrapper component with entrance/exit transitions and staggered delay timings for smoother
+  recommendation panel state changes
 - Add decorative schedule preview that cycles through plants with scheduled orders while the form is idle
 - Auto-snap plan date to tomorrow (Sunday-skipped to Monday) when entering the Find-a-Spot tab
 - Rename Reset button to Clear with eraser icon, visible whenever any form field has a value
@@ -184,37 +261,55 @@
 
 ## [40.0.35] - 2026-05-07
 
-- Add animated fade/slide transitions to BookOrderView recommendation panels using a FadeIn wrapper component with entrance and exit states
-- Add decorative schedule preview that cycles through plants with scheduled orders while the form is idle, giving the right-hand pane ambient motion
-- Auto-snap plan date to tomorrow (Sunday-skipped to Monday) when entering the Find-a-Spot tab so dispatchers start on a useful forward-looking date
-- Show the Clear button whenever any form field has a value, not only after submission, and rename it from "Reset" to "Clear" with an eraser icon
-- Refactor recommendation panel rendering from nested conditionals into a flat FadeIn-based layout with staggered delay timings for smoother state transitions
+- Add animated fade/slide transitions to BookOrderView recommendation panels using a FadeIn wrapper component with
+  entrance and exit states
+- Add decorative schedule preview that cycles through plants with scheduled orders while the form is idle, giving the
+  right-hand pane ambient motion
+- Auto-snap plan date to tomorrow (Sunday-skipped to Monday) when entering the Find-a-Spot tab so dispatchers start on a
+  useful forward-looking date
+- Show the Clear button whenever any form field has a value, not only after submission, and rename it from "Reset" to "
+  Clear" with an eraser icon
+- Refactor recommendation panel rendering from nested conditionals into a flat FadeIn-based layout with staggered delay
+  timings for smoother state transitions
 
 ## [40.0.34] - 2026-05-07
 
-- Add DOT 10-hour rest window enforcement to booking suggestions — alternate times, move candidates, and recommended start times now respect per-plant operator rest floors derived from yesterday's actual dispatch tickets
+- Add DOT 10-hour rest window enforcement to booking suggestions — alternate times, move candidates, and recommended
+  start times now respect per-plant operator rest floors derived from yesterday's actual dispatch tickets
 - Add useYesterdayOperatorRestFloor hook to fetch prior-day tickets and compute earliest legal first-load-out per plant
-- Add useTodaysRecentJobsByTruck hook to surface each truck's most recent load from today's dispatch data, refreshing every 60 seconds
-- Change alternate time scan granularity from 15-minute to 30-minute steps to match dispatcher scheduling conventions (half-hour boundaries)
+- Add useTodaysRecentJobsByTruck hook to surface each truck's most recent load from today's dispatch data, refreshing
+  every 60 seconds
+- Change alternate time scan granularity from 15-minute to 30-minute steps to match dispatcher scheduling conventions (
+  half-hour boundaries)
 - Add 14-hour shift cap filtering to alternate time, move candidate, and recommended start time scanners
-- Compute a dynamic scan floor per plant based on rest window or existing first-load-out instead of always starting at minute zero
-- Improve move candidate reschedule ranking: prefer size-appropriate windows, tightest clustering, proximity to original time, then earliest
-- Refactor GeocodeService to decouple search requests from the queued geocode promise chain — searches no longer serialize behind pending geocodes, preventing multi-second suggestion backlogs on rapid keystrokes
-- Add shared _waitForRateLimit method in GeocodeService so both geocode and search honor Nominatim's 1 req/sec budget independently
-- Redesign BookOrderView schedule preview to match the Schedule tab's table layout with sticky themed headers, plant badges, and full order detail columns (plant, order number, customer, location, product)
+- Compute a dynamic scan floor per plant based on rest window or existing first-load-out instead of always starting at
+  minute zero
+- Improve move candidate reschedule ranking: prefer size-appropriate windows, tightest clustering, proximity to original
+  time, then earliest
+- Refactor GeocodeService to decouple search requests from the queued geocode promise chain — searches no longer
+  serialize behind pending geocodes, preventing multi-second suggestion backlogs on rapid keystrokes
+- Add shared _waitForRateLimit method in GeocodeService so both geocode and search honor Nominatim's 1 req/sec budget
+  independently
+- Redesign BookOrderView schedule preview to match the Schedule tab's table layout with sticky themed headers, plant
+  badges, and full order detail columns (plant, order number, customer, location, product)
 - Add "Recent Job" column to the schedule preview showing each truck's latest load-out from today's dispatch data
-- Display formatted address and product info in schedule preview rows using AddressUtility and PlanScheduleUtility helpers
+- Display formatted address and product info in schedule preview rows using AddressUtility and PlanScheduleUtility
+  helpers
 
 ## [40.0.33] - 2026-05-07
 
-- Replace inline style colors on plan schedule badges (danger, warning, info, neutral) with themed utility classes for proper dark mode support
+- Replace inline style colors on plan schedule badges (danger, warning, info, neutral) with themed utility classes for
+  proper dark mode support
 - Use status-badge-danger class for bad-address pills in PlanScheduleOrderCard and PlanScheduleOrderRow
 - Use status-badge-warning class for overbooked trucks pill in PlanScheduleOrderRow
 - Map OrderStatusBadge kinds (sameDay, cancelled, test) to themed badge classes via STATUS_BADGE_TONE_CLASS lookup
-- Switch ListView container and activity log backgrounds from hardcoded bg-slate-100 to theme-aware bg-bg-secondary/bg-bg-tertiary
+- Switch ListView container and activity log backgrounds from hardcoded bg-slate-100 to theme-aware
+  bg-bg-secondary/bg-bg-tertiary
 - Add a subtle bordered pill style to the plant code badge in task list item rows
-- Redesign the bulk action toolbar on mobile: full-width bottom sheet with safe-area padding, icon-above-label button layout, and larger touch targets
-- Show button labels on mobile bulk actions instead of icon-only, using a stacked flex-col layout with min-height for consistency
+- Redesign the bulk action toolbar on mobile: full-width bottom sheet with safe-area padding, icon-above-label button
+  layout, and larger touch targets
+- Show button labels on mobile bulk actions instead of icon-only, using a stacked flex-col layout with min-height for
+  consistency
 - Center-align bulk status and priority dropdown menus on mobile with constrained width
 - Increase tap target size for status and priority dropdown options on mobile
 
@@ -226,34 +321,48 @@
 - Make the bulk action toolbar mobile-responsive: compact padding, icon-only buttons, and smaller text on small screens
 - Add aria-labels to all bulk action toolbar buttons
 - Use theme-aware background on the bulk action toolbar via var(--bg-primary)
-- Remove the Extra Diligence section (Special Attention + QC Attention), pull-up compaction recommendations, and open windows suggestions from the Plan Dashboard
+- Remove the Extra Diligence section (Special Attention + QC Attention), pull-up compaction recommendations, and open
+  windows suggestions from the Plan Dashboard
 - Remove unused PlanDashboardJobsSection, PlanCompactionList, and PlanOpenWindowsList imports from PlanDashboardView
 
 ## [40.0.31] - 2026-05-07
 
-- Add "Book An Order" tab to the Plan view with a full BookOrderView for dispatchers to evaluate plant recommendations based on capacity, proximity, and load balance
-- Create GeocodeService backed by Nominatim (OpenStreetMap) with localStorage caching, rate-limited request queuing, and address search for autocomplete
-- Add AddressAutocomplete component with debounced Nominatim lookup, keyboard navigation, and geocode cache pre-warming on selection
-- Add useAddressDistances hook that geocodes the job and plant addresses to compute haversine-based one-way drive-time estimates per plant
-- Expand BookOrderUtility with live travel-time proximity scoring, a closest-plant-wins ranking strategy, alternate start-time suggestions with preferred time windows, isolation penalties, and conflict detection for overlapping orders
+- Add "Book An Order" tab to the Plan view with a full BookOrderView for dispatchers to evaluate plant recommendations
+  based on capacity, proximity, and load balance
+- Create GeocodeService backed by Nominatim (OpenStreetMap) with localStorage caching, rate-limited request queuing, and
+  address search for autocomplete
+- Add AddressAutocomplete component with debounced Nominatim lookup, keyboard navigation, and geocode cache pre-warming
+  on selection
+- Add useAddressDistances hook that geocodes the job and plant addresses to compute haversine-based one-way drive-time
+  estimates per plant
+- Expand BookOrderUtility with live travel-time proximity scoring, a closest-plant-wins ranking strategy, alternate
+  start-time suggestions with preferred time windows, isolation penalties, and conflict detection for overlapping orders
 - Add hard cutoff filtering to drop plants beyond 60 minutes travel time from recommendations
 - Rename "Good Service" badge label to "Good Experience" in PlanScheduleBadges
 
 ## [40.0.30] - 2026-05-07
 
-- Add "Book An Order" tab to the Plan view with a new BookOrderView for dispatchers to evaluate plant recommendations based on capacity, proximity, and load balance
-- Create BookOrderUtility with address parsing, proximity scoring, truck estimation, pour duration calculation, and plant ranking logic
-- Redesign MyAccountView with larger typography, bigger icons, rounded-lg cards, wider max-width, roomy padding, full-rounded toggles, and improved dark-mode-friendly color treatments using rgba backgrounds
+- Add "Book An Order" tab to the Plan view with a new BookOrderView for dispatchers to evaluate plant recommendations
+  based on capacity, proximity, and load balance
+- Create BookOrderUtility with address parsing, proximity scoring, truck estimation, pour duration calculation, and
+  plant ranking logic
+- Redesign MyAccountView with larger typography, bigger icons, rounded-lg cards, wider max-width, roomy padding,
+  full-rounded toggles, and improved dark-mode-friendly color treatments using rgba backgrounds
 - Rename "Good Service" badge label to "Good Experience" in PlanScheduleBadges
 - Add parser support for new fields in the dispatch-import edge function
 
 ## [40.0.29] - 2026-05-06
 
-- Add Call List tab to the Plan view for cold-calling dormant customers — full feature including roster list, detail panel with KPI stats, call outcome logging, comment history, and delete support
-- Create CallListService, useCallList hook, and CallListUtility with dormancy scoring, phone formatting, relative date helpers, and outcome color/label constants
-- Add call-list-service edge function with roster, history, log-call, and delete-log endpoints backed by a new customer_call_log table
-- Add customer_call_log migration with RLS policies, indexes, and a trigger to auto-populate created_by_name from the users table
-- Redesign plan dispatch copy text into structured per-plant briefings with per-truck staggered arrive/leave times grouped by send/receive
+- Add Call List tab to the Plan view for cold-calling dormant customers — full feature including roster list, detail
+  panel with KPI stats, call outcome logging, comment history, and delete support
+- Create CallListService, useCallList hook, and CallListUtility with dormancy scoring, phone formatting, relative date
+  helpers, and outcome color/label constants
+- Add call-list-service edge function with roster, history, log-call, and delete-log endpoints backed by a new
+  customer_call_log table
+- Add customer_call_log migration with RLS policies, indexes, and a trigger to auto-populate created_by_name from the
+  users table
+- Redesign plan dispatch copy text into structured per-plant briefings with per-truck staggered arrive/leave times
+  grouped by send/receive
 - Replace duration-over-plan pace metric with actual yd/hr vs requested yd/hr comparison for service quality evaluation
 - Skip slow-pace check for small pours (3 or fewer trucks or under 30 yards) to avoid false "Poor Service" verdicts
 - Show actual vs requested yd/hr in the service badge tooltip
@@ -264,38 +373,54 @@
 
 ## [40.0.28] - 2026-05-06
 
-- Redesign plan dispatch copy text into a structured per-plant briefing with per-truck staggered arrive/leave times, grouped by send/receive, with a plain-English summary header
+- Redesign plan dispatch copy text into a structured per-plant briefing with per-truck staggered arrive/leave times,
+  grouped by send/receive, with a plain-English summary header
 - Replace duration-over-plan pace metric with actual yd/hr vs requested yd/hr comparison for service quality evaluation
-- Skip slow-pace check for small pours (3 or fewer trucks or under 30 yards) to eliminate false "Poor Service" verdicts on customer-paced jobs
+- Skip slow-pace check for small pours (3 or fewer trucks or under 30 yards) to eliminate false "Poor Service" verdicts
+  on customer-paced jobs
 - Show actual vs requested yd/hr in the service badge tooltip instead of generic "ran X min over plan"
-- Pass active plant filter into useDashboardSchedule so schedule section totals respect the dashboard's region/plant selection
+- Pass active plant filter into useDashboardSchedule so schedule section totals respect the dashboard's region/plant
+  selection
 - Filter plan yardage and movement assignments by active plant set so dashboard stats reflect only the visible scope
-- Skip Monday-to-Saturday day-over-day yardage comparison (half-crew Saturday is misleading) — hide the badge on Mondays instead
-- Apply structural toolbar filters (plant, product, min yards) to adjacent-day and week yardage totals so comparisons match the user's current view slice
+- Skip Monday-to-Saturday day-over-day yardage comparison (half-crew Saturday is misleading) — hide the badge on Mondays
+  instead
+- Apply structural toolbar filters (plant, product, min yards) to adjacent-day and week yardage totals so comparisons
+  match the user's current view slice
 
 ## [40.0.27] - 2026-05-06
 
-- Exclude cancelled (17:00) and test (18:00) sentinel orders from per-plant yardage and first-job-time totals in both the dispatch data service and dashboard schedule hook
+- Exclude cancelled (17:00) and test (18:00) sentinel orders from per-plant yardage and first-job-time totals in both
+  the dispatch data service and dashboard schedule hook
 - Add `summarizePlantSchedule` helper in useDashboardSchedule to recompute plant rollups from filtered real orders only
-- Add `plantBlockYardage` helper in PlanDashboardUtility to re-derive plant totals from real orders, falling back to precomputed `totalYardage` when the orders array is absent
-- Update `sumPlanYardage` and `countPlantsWithYardage` to use the filtered helper so the dashboard never inflates planned yardage with sentinel rows
-- Reshape DashboardScheduleSection from six separate stats (plan yardage, dispatch yardage, orders, routes, operators moving, first job) into a streamlined header summary showing order count and yardage inline
+- Add `plantBlockYardage` helper in PlanDashboardUtility to re-derive plant totals from real orders, falling back to
+  precomputed `totalYardage` when the orders array is absent
+- Update `sumPlanYardage` and `countPlantsWithYardage` to use the filtered helper so the dashboard never inflates
+  planned yardage with sentinel rows
+- Reshape DashboardScheduleSection from six separate stats (plan yardage, dispatch yardage, orders, routes, operators
+  moving, first job) into a streamlined header summary showing order count and yardage inline
 - Drop plants with zero real production from the schedule rollup so empty rows no longer appear in the per-plant table
-- Remove the Reports section entirely from the dashboard — delete DashboardReportsSection component, useDashboardReports hook, and the "Reports" entry from the scroll-spy nav
+- Remove the Reports section entirely from the dashboard — delete DashboardReportsSection component, useDashboardReports
+  hook, and the "Reports" entry from the scroll-spy nav
 
 ## [40.0.26] - 2026-05-05
 
-- Exclude cancelled (17:00) and test (18:00) sentinel orders from per-plant yardage and first-job-time totals across the dispatch and dashboard layers
-- Add `plantBlockYardage` helper in PlanDashboardUtility that re-derives plant totals from real orders, falling back to the precomputed `totalYardage` only when the orders array is absent
-- Update `sumPlanYardage` and `countPlantsWithYardage` to use the filtered helper so the dashboard never inflates the day's planned yardage with sentinel rows
-- Reshape DashboardScheduleSection from separate "Plan yardage" + "Dispatch yardage" stats into a single "Yardage" stat with a hint that surfaces the plan-vs-dispatch variance (e.g. "Plan +5 yd vs dispatch") and amber color when they diverge
+- Exclude cancelled (17:00) and test (18:00) sentinel orders from per-plant yardage and first-job-time totals across the
+  dispatch and dashboard layers
+- Add `plantBlockYardage` helper in PlanDashboardUtility that re-derives plant totals from real orders, falling back to
+  the precomputed `totalYardage` only when the orders array is absent
+- Update `sumPlanYardage` and `countPlantsWithYardage` to use the filtered helper so the dashboard never inflates the
+  day's planned yardage with sentinel rows
+- Reshape DashboardScheduleSection from separate "Plan yardage" + "Dispatch yardage" stats into a single "Yardage" stat
+  with a hint that surfaces the plan-vs-dispatch variance (e.g. "Plan +5 yd vs dispatch") and amber color when they
+  diverge
 - Drop plants with zero real production from the schedule rollup so empty rows no longer show up in the per-plant table
 
 ## [40.0.25] - 2026-05-05
 
 - Add 14-hour DOT driver shift limit badge to plan schedule orders in both table and card views
 - Compute projected back-at-yard time per order using load, slump, travel, pour, and return segments
-- Show red "Limit Exceeded" badge with detailed tooltip breaking down each time segment when an operator would exceed the 14h cap
+- Show red "Limit Exceeded" badge with detailed tooltip breaking down each time segment when an operator would exceed
+  the 14h cap
 - Add getFirstLoadOutMinutes utility to anchor the shift window against the earliest valid start time of the day
 - Memoize firstLoadOutMin at the table and view level to avoid redundant recomputation per row/card
 - Remove unused fmtFloat import from PlanStatisticsTables
@@ -310,7 +435,8 @@
 
 ## [40.0.23] - 2026-05-05
 
-- Add DashboardScheduleSection showing today's plan/dispatch rollup with headline stats and a per-plant activity table with expand/collapse
+- Add DashboardScheduleSection showing today's plan/dispatch rollup with headline stats and a per-plant activity table
+  with expand/collapse
 - Add DashboardReportsSection showing weekly submission counts, overdue totals, and top overdue report types and users
 - Add useDashboardSchedule hook for fetching and computing schedule data
 - Add useDashboardReports hook for fetching and computing report rollup data
@@ -322,12 +448,15 @@
 ## [40.0.22] - 2026-05-05
 
 - Redesign dashboard layout with a three-column structure: scroll-spy nav, main content, and an "at a glance" sidebar
-- Add DashboardAtAGlance component showing fleet totals, allocation, verification, and alert counts in a sticky right rail
+- Add DashboardAtAGlance component showing fleet totals, allocation, verification, and alert counts in a sticky right
+  rail
 - Add DashboardScrollSpyNav for section-aware left-rail navigation within the dashboard
-- Add DashboardAlertsPanel with collapsible alert rows for shop bottlenecks, long-term shop assets, and operator pipeline status
+- Add DashboardAlertsPanel with collapsible alert rows for shop bottlenecks, long-term shop assets, and operator
+  pipeline status
 - Redesign DashboardHeader to a slim flat bar with inline region pill, plant filter button, and refresh control
 - Refactor FleetOverviewSection into a compact flat-table layout with per-category count rows and allocation bars
-- Refactor DashboardPeopleSection to use flat two-column tables with count rows instead of stat chips and deployment bars
+- Refactor DashboardPeopleSection to use flat two-column tables with count rows instead of stat chips and deployment
+  bars
 - Refactor KeyMetricsStrip to a simpler stat-group layout with individual StatItem cells
 - Rebuild DashboardSkeleton to match the new three-column layout structure
 - Simplify DashboardView orchestration to wire up the new panel components and scroll-spy navigation
@@ -340,10 +469,13 @@
 
 ## [40.0.21] - 2026-05-05
 
-- Implement JWT-based session authentication for edge functions with a shared jwt.ts helper for token signing and verification
-- Add RLS global lockdown migration enforcing session-based access control across all tables instead of Supabase default auth
+- Implement JWT-based session authentication for edge functions with a shared jwt.ts helper for token signing and
+  verification
+- Add RLS global lockdown migration enforcing session-based access control across all tables instead of Supabase default
+  auth
 - Lock down dispatch_data table and dispatch_reports storage bucket with dedicated RLS migration policies
-- Create dispatch-data-service edge function to handle dispatch data mutations server-side instead of direct client access
+- Create dispatch-data-service edge function to handle dispatch data mutations server-side instead of direct client
+  access
 - Refactor AuthContext to use JWT session tokens, adding token refresh logic and authenticated request helpers
 - Add JWT_SECRET constant to auth constants
 - Refactor DatabaseService to remove direct mutation methods, restricting the client to read-only operations
@@ -352,29 +484,38 @@
 - Update auth-service edge function to issue and validate JWT session tokens
 - Update auth-context edge function to use the new JWT verification flow
 - Update email-service to use verified JWT context for sender identity
-- Refactor dispatch-import parsers to coalesce header/context columns on conflict and deduplicate source_reports across upsert passes
+- Refactor dispatch-import parsers to coalesce header/context columns on conflict and deduplicate source_reports across
+  upsert passes
 - Add order ticket count display to OrderTicketsModal
-- Remove dead code: MaintenanceFormViewOnly, PlanAssignmentCard, PlanScheduleCompactToolbar, ImageAttachment, YearSelector, useDashboardChat, useDashboardSchedule, useMaintenanceForm, DetailOrderBucketService, ScheduleBucketService, DailyOrderParser, DetailDriverParser, DetailOrderParser, and PickupTrucksCard
+- Remove dead code: MaintenanceFormViewOnly, PlanAssignmentCard, PlanScheduleCompactToolbar, ImageAttachment,
+  YearSelector, useDashboardChat, useDashboardSchedule, useMaintenanceForm, DetailOrderBucketService,
+  ScheduleBucketService, DailyOrderParser, DetailDriverParser, DetailOrderParser, and PickupTrucksCard
 - Reorganize repo scripts: move bridge and email templates into scripts/ directory
 
 ## [40.0.20] - 2026-05-04
 
-- Replace dispatch_upsert_data RPC with conditional-merge logic so DetailDriver estimate quantities never overwrite confirmed values from DetailOrderAnalysis
+- Replace dispatch_upsert_data RPC with conditional-merge logic so DetailDriver estimate quantities never overwrite
+  confirmed values from DetailOrderAnalysis
 - Union and deduplicate source_reports across upsert passes instead of replacing them
-- Coalesce all header/context columns on conflict so each import pass fills in its own fields without nulling values from earlier passes
+- Coalesce all header/context columns on conflict so each import pass fills in its own fields without nulling values
+  from earlier passes
 
 ## [40.0.19] - 2026-05-04
 
-- Redesign PlanScheduleFilterDrawer as a compact single-row toolbar with status pills, toggle switches, and a plant modal instead of the old grid of dropdowns
-- Add district-level multi-select to PlantDropdownModal with "tap to toggle all plants in district" rows and a Clear button in the footer
+- Redesign PlanScheduleFilterDrawer as a compact single-row toolbar with status pills, toggle switches, and a plant
+  modal instead of the old grid of dropdowns
+- Add district-level multi-select to PlantDropdownModal with "tap to toggle all plants in district" rows and a Clear
+  button in the footer
 - Fix PlantDropdownModal stale state by re-seeding local selections from props each time the modal opens
-- Expand OrderInfoModal with richer dispatch detail display (ticket-level rows, plant badges, yardage breakdowns, driver info)
+- Expand OrderInfoModal with richer dispatch detail display (ticket-level rows, plant badges, yardage breakdowns, driver
+  info)
 - Add PlanScheduleStatStrip changes to reflect new filter structure
 - Add new columns and expandable extra-row support to PlanScheduleTable
 - Wire up realtime subscription for plan tables via new enable_realtime migration
 - Add usePlanStatistics hook for aggregated plan statistics data fetching
 - Extend PlanStatisticsTables with additional stat breakdowns and new page support in PlanStatisticsPages
-- Refactor PlanScheduleView to support multi-plant filtering, single-plant maximized mode with operator roster copy, cancelled/test order visibility toggles, and extras row expansion
+- Refactor PlanScheduleView to support multi-plant filtering, single-plant maximized mode with operator roster copy,
+  cancelled/test order visibility toggles, and extras row expansion
 - Update useScheduleSync to handle new filter and sync requirements
 - Extend useDetailOrders with additional query parameters and data shaping
 - Add new methods to DispatchDataService for fetching dispatch detail and summary data
@@ -388,60 +529,78 @@
 
 ## [40.0.18] - 2026-05-04
 
-- Remove the entire Leaderboards feature — deleted the view, all leaderboard components (EfficiencyInfoCard, HelpDetailsModal, LeaderboardCategorySelector, LeaderboardItem), the useLeaderboardData hook, and leaderboardConstants
+- Remove the entire Leaderboards feature — deleted the view, all leaderboard components (EfficiencyInfoCard,
+  HelpDetailsModal, LeaderboardCategorySelector, LeaderboardItem), the useLeaderboardData hook, and leaderboardConstants
 - Remove the "Realtime" tab from the Plan tab switcher and update the tab comment accordingly
 - Simplify PlanView by removing the Realtime mode import, state handling, and rendering logic
 - Remove the leaderboards link from MyAccountView
 
 ## [40.0.17] - 2026-05-02
 
-- Suppress "Needs Help" badge on past days and completed orders in the Plan Schedule — once a pour is finished or the day has passed, the warning is just noise
+- Suppress "Needs Help" badge on past days and completed orders in the Plan Schedule — once a pour is finished or the
+  day has passed, the warning is just noise
 - Reuse the evaluated service result in PlanScheduleOrderRow instead of computing it twice
 - Thread isPastDay prop from PlanScheduleView through PlanScheduleTable to PlanScheduleOrderRow
-- Add bucket-wide reconcile mode to dispatch-import edge function — lists all date HTMLs in the bucket and prunes dispatch_data rows for dates no longer present
-- Add dispatch_reconcile_with_bucket SQL function with safety guards: rejects empty bucket lists and aborts when the supplied date count is less than 50% of distinct DB dates
-- Scope dispatch_sync_delete_orphans to only remove rows whose source_reports are a subset of the reports actually parsed in the current run, so partial imports no longer silently wipe rows from unrelated reports
-- Add p_run_reports parameter to dispatch_sync_delete_orphans with a backwards-compatible default, plus a fallback in the edge function for the old 2-arg signature
+- Add bucket-wide reconcile mode to dispatch-import edge function — lists all date HTMLs in the bucket and prunes
+  dispatch_data rows for dates no longer present
+- Add dispatch_reconcile_with_bucket SQL function with safety guards: rejects empty bucket lists and aborts when the
+  supplied date count is less than 50% of distinct DB dates
+- Scope dispatch_sync_delete_orphans to only remove rows whose source_reports are a subset of the reports actually
+  parsed in the current run, so partial imports no longer silently wipe rows from unrelated reports
+- Add p_run_reports parameter to dispatch_sync_delete_orphans with a backwards-compatible default, plus a fallback in
+  the edge function for the old 2-arg signature
 
 ## [40.0.16] - 2026-05-01
 
-- Expand Weekly Safety Manager Report incident tags from 8 to 14 categories (added DOT Recordable, Property Damage, Medical, First Aid, Backing / Chute Incident, and Spill)
+- Expand Weekly Safety Manager Report incident tags from 8 to 14 categories (added DOT Recordable, Property Damage,
+  Medical, First Aid, Backing / Chute Incident, and Spill)
 - Add color themes and icons for each new tag category in the TAG_COLORS map
 
 ## [40.0.15] - 2026-05-01
 
-- Deduplicate DetailDriver downloads by grouping plant files with identical eTag/size, parsing each unique blob once instead of downloading all 14 plant slots
-- Add orphan cleanup to dispatch-import: after a full run, delete any dispatch_data rows for the date that weren't part of the freshly-parsed set
-- Add dispatch_sync_delete_orphans Postgres function that removes stale rows by diffing the live (order_id, ticket_num) tuples against what was just upserted
+- Deduplicate DetailDriver downloads by grouping plant files with identical eTag/size, parsing each unique blob once
+  instead of downloading all 14 plant slots
+- Add orphan cleanup to dispatch-import: after a full run, delete any dispatch_data rows for the date that weren't part
+  of the freshly-parsed set
+- Add dispatch_sync_delete_orphans Postgres function that removes stale rows by diffing the live (order_id, ticket_num)
+  tuples against what was just upserted
 - Track all upserted (order_id, ticket_num) keys during import via a touchedKeys set for the sync-delete pass
 - Skip orphan deletion on partial runs (filtered plants or subset of report types) to avoid wiping valid data
 - Add rowsDeleted counter to the import result payload
 
 ## [40.0.14] - 2026-05-01
 
-- Lift schedule filter/sort/view state from PlanScheduleView up into PlanView so dispatcher filters survive the loading-skeleton swap on every date change
+- Lift schedule filter/sort/view state from PlanScheduleView up into PlanView so dispatcher filters survive the
+  loading-skeleton swap on every date change
 - Add scheduleFilters state and updateScheduleFilter callback in PlanView, passed down as controlled props
-- Replace local useState calls in PlanScheduleView with parent-controlled filter state and derived setters via setFilterValue helper
+- Replace local useState calls in PlanScheduleView with parent-controlled filter state and derived setters via
+  setFilterValue helper
 - Add DEFAULT_FILTERS sentinel for standalone rendering of PlanScheduleView
 - Keep mapOrder as the only schedule-local state since it should reset across date changes
 
 ## [40.0.13] - 2026-05-01
 
-- Add OrderInfoModal — a tabbed "View order" modal (Details, Plan, Suggestions) accessible via right-click context menu on schedule order rows
-- Move truck coverage detail from hover side-panel into the new Order Info modal's Plan tab, removing the per-row hover card and its associated state management
+- Add OrderInfoModal — a tabbed "View order" modal (Details, Plan, Suggestions) accessible via right-click context menu
+  on schedule order rows
+- Move truck coverage detail from hover side-panel into the new Order Info modal's Plan tab, removing the per-row hover
+  card and its associated state management
 - Remove the Dispatcher column from the schedule table and reduce synthetic row colspan accordingly
-- Strip hover-enter/leave props and coverage payload building from PlanScheduleOrderRow, simplifying the TrucksCell significantly
+- Strip hover-enter/leave props and coverage payload building from PlanScheduleOrderRow, simplifying the TrucksCell
+  significantly
 - Extract buildOrderCoveragePayload helper into PlanScheduleUtility for reuse by the modal
 - Add average yardage reference line (red dashed) to the TrendChart in PlanStatisticsCharts
 - Add changelog entries summarizing the v40.0.12 release
 
 ## [40.0.12] - 2026-05-01
 
-- Add compact sticky toolbar for maximized schedule view with inline search, filters, sort, view-mode toggle, and exit button
+- Add compact sticky toolbar for maximized schedule view with inline search, filters, sort, view-mode toggle, and exit
+  button
 - Move Documents, List, and ListDetail views from productivity/ to tools/ directory and update lazy imports in App.js
 - Move LeaderboardsView from productivity/ to leaderboards/ directory
-- Rename service quality labels from "Late Start" / "Slow Pour" to "Late" / "Poor Service" and "Late + Slow" to "Late, Poor Service"
-- Refactor truck coverage hover card out of individual order rows into a table-level slide-in side panel, passing payload upstream on hover instead of rendering per-row portals
+- Rename service quality labels from "Late Start" / "Slow Pour" to "Late" / "Poor Service" and "Late + Slow" to "Late,
+  Poor Service"
+- Refactor truck coverage hover card out of individual order rows into a table-level slide-in side panel, passing
+  payload upstream on hover instead of rendering per-row portals
 - Make order addresses uppercase with wider tracking in both card and table row views
 - Overhaul Plan Statistics pages and satisfaction page with significant layout and data presentation improvements
 - Expand usePlanStatistics hook with additional computed metrics and data processing
@@ -463,72 +622,112 @@
 
 ## [40.0.10] - 2026-04-30
 
-- Restructure Plan Statistics into multi-page layout with left-rail sidebar navigation and dedicated sub-pages for Overview, Yardage, Plants, Customers & Products, Big Pours, and Customer Satisfaction
+- Restructure Plan Statistics into multi-page layout with left-rail sidebar navigation and dedicated sub-pages for
+  Overview, Yardage, Plants, Customers & Products, Big Pours, and Customer Satisfaction
 - Add PlanStatisticsSidebar with section definitions, desktop vertical rail, and mobile horizontal tab scroller
-- Add PlanStatisticsSatisfactionPage with primary score card, comparison tile, per-day trend line chart, and per-plant satisfaction ranking bar chart
-- Rename PlanStatisticsPanels to PlanStatisticsPages and split into focused page components (Overview, Yardage, Plants, Customers, Big Pours) with a shared PlantYardageHero
+- Add PlanStatisticsSatisfactionPage with primary score card, comparison tile, per-day trend line chart, and per-plant
+  satisfaction ranking bar chart
+- Rename PlanStatisticsPanels to PlanStatisticsPages and split into focused page components (Overview, Yardage, Plants,
+  Customers, Big Pours) with a shared PlantYardageHero
 - Remove satisfaction chart from Overview page — satisfaction now lives on its own dedicated sub-page
-- Expand usePlanStatistics hook with per-day satisfaction trend, per-plant satisfaction ranking, previous-period satisfaction aggregate, and working-day count
-- Add usePlanTravelPairs hook — extracts travel-pair generation from useCloserPlantLookup to eliminate circular dependencies between the travel and closer-plant hooks
+- Expand usePlanStatistics hook with per-day satisfaction trend, per-plant satisfaction ranking, previous-period
+  satisfaction aggregate, and working-day count
+- Add usePlanTravelPairs hook — extracts travel-pair generation from useCloserPlantLookup to eliminate circular
+  dependencies between the travel and closer-plant hooks
 - Simplify useCloserPlantLookup to consume getLiveTravelMinutes as input instead of managing its own travel pairs
-- Add TrafficService availability check to useLiveTravelTimes — skips prefetch when the service has latched unavailable to prevent console noise
-- Refactor PlanScheduleView to chain usePlanTravelPairs, useLiveTravelTimes, and useCloserPlantLookup in a linear pipeline with no stub callbacks
-- Expand DispatchDataService with DetailDriver-aware ticket processing — estimate-only tickets are capped against scheduled yardage so estimated loads never exceed the order total
-- Fix dispatch_upsert_data quantity merge — replace CASE with GREATEST so any positive yardage wins regardless of which report supplied it, preventing DetailOrderAnalysis from overwriting real quantities with 0
-- Add backfill migration to recover tickets stuck at 0/null quantity using available load_size estimates for the last 14 days
+- Add TrafficService availability check to useLiveTravelTimes — skips prefetch when the service has latched unavailable
+  to prevent console noise
+- Refactor PlanScheduleView to chain usePlanTravelPairs, useLiveTravelTimes, and useCloserPlantLookup in a linear
+  pipeline with no stub callbacks
+- Expand DispatchDataService with DetailDriver-aware ticket processing — estimate-only tickets are capped against
+  scheduled yardage so estimated loads never exceed the order total
+- Fix dispatch_upsert_data quantity merge — replace CASE with GREATEST so any positive yardage wins regardless of which
+  report supplied it, preventing DetailOrderAnalysis from overwriting real quantities with 0
+- Add backfill migration to recover tickets stuck at 0/null quantity using available load_size estimates for the last 14
+  days
 - Add CLAUDE.md rules for SQL delivery (always both inline and file) and simple-import-sort compliance
 
 ## [40.0.9] - 2026-04-30
 
-- Decompose Plan views into focused components and hooks — extract 60+ files from monolithic PlanScheduleView, PlanFlowView, PlanStatisticsView, PlanDashboardView, PlanDemandView, PlanRealtimeView, and PlanView into dedicated components and hooks
-- Extract plan business logic into dedicated utilities — PlanScheduleUtility, PlanStatisticsUtility, PlanDemandUtility, PlanDashboardUtility, PlanFlowUtility, PlanRealtimeUtility, PlanRuntimeUtility, PlanCopyUtility, PlanStatisticsFormatUtility
-- Add MarkdownView component and MarkdownUtility for rendering AI-formatted plan notes with headings, lists, tables, blockquotes, and inline formatting
-- Add dispatch-import edge function with HTML report parsers for ingesting DailyOrder, DetailOrderAnalysis, and DetailDriver reports from storage into structured database tables
+- Decompose Plan views into focused components and hooks — extract 60+ files from monolithic PlanScheduleView,
+  PlanFlowView, PlanStatisticsView, PlanDashboardView, PlanDemandView, PlanRealtimeView, and PlanView into dedicated
+  components and hooks
+- Extract plan business logic into dedicated utilities — PlanScheduleUtility, PlanStatisticsUtility, PlanDemandUtility,
+  PlanDashboardUtility, PlanFlowUtility, PlanRealtimeUtility, PlanRuntimeUtility, PlanCopyUtility,
+  PlanStatisticsFormatUtility
+- Add MarkdownView component and MarkdownUtility for rendering AI-formatted plan notes with headings, lists, tables,
+  blockquotes, and inline formatting
+- Add dispatch-import edge function with HTML report parsers for ingesting DailyOrder, DetailOrderAnalysis, and
+  DetailDriver reports from storage into structured database tables
 - Add database migrations for dispatch report tables and a cron job to trigger periodic imports
 - Add DispatchDataService for querying parsed dispatch report data from the frontend
 - Add DetailDriverParser utility for extracting per-driver ticket data from DetailDriver HTML reports
-- Bump Dispatch Sync bridge to v2.9 — add DetailDriver report syncing per plant, increase worker concurrency from 6 to 10, reverse backfill order to prioritize most recent dates first, and add backfillEnabled flag to skip historic backfill for DetailOrderAnalysis
+- Bump Dispatch Sync bridge to v2.9 — add DetailDriver report syncing per plant, increase worker concurrency from 6 to
+  10, reverse backfill order to prioritize most recent dates first, and add backfillEnabled flag to skip historic
+  backfill for DetailOrderAnalysis
 - Add useCloserPlantLookup hook for identifying the nearest plant to a given address using travel time data
 - Add useLiveClock and useLiveMinuteOfDay hooks for real-time clock state in plan components
 - Add useLiveTravelTimes hook for streaming travel time estimates between plants
 - Move PlanFlowLayoutUtility from views directory to src/utils/ to match project conventions
-- Refactor useDetailOrders, useScheduleSync, useDashboardSchedule, and DetailOrderBucketService to support the new parsed dispatch data pipeline
+- Refactor useDetailOrders, useScheduleSync, useDashboardSchedule, and DetailOrderBucketService to support the new
+  parsed dispatch data pipeline
 - Update DailyOrderParser with refinements to support the dispatch-import edge function's parsing needs
 
 ## [40.0.8] - 2026-04-30
 
-- Decompose Plan views into focused components and hooks — extract 60+ files from monolithic PlanScheduleView, PlanFlowView, PlanStatisticsView, PlanDashboardView, PlanDemandView, PlanRealtimeView, and PlanView into dedicated components under src/app/components/plan/ and hooks under src/app/hooks/
-- Extract plan business logic into dedicated utilities — PlanScheduleUtility, PlanStatisticsUtility, PlanDemandUtility, PlanDashboardUtility, PlanFlowUtility, PlanRealtimeUtility, PlanRuntimeUtility, PlanCopyUtility, PlanStatisticsFormatUtility
-- Add MarkdownView component and MarkdownUtility for rendering AI-formatted plan notes with headings, lists, tables, blockquotes, and inline formatting
-- Add dispatch-import edge function with HTML report parsers for ingesting DailyOrder, DetailOrderAnalysis, and DetailDriver reports from storage into structured database tables
-- Add database migrations for dispatch report tables (daily_order_reports, detail_order_reports, detail_driver_reports) and a cron job to trigger periodic imports
+- Decompose Plan views into focused components and hooks — extract 60+ files from monolithic PlanScheduleView,
+  PlanFlowView, PlanStatisticsView, PlanDashboardView, PlanDemandView, PlanRealtimeView, and PlanView into dedicated
+  components under src/app/components/plan/ and hooks under src/app/hooks/
+- Extract plan business logic into dedicated utilities — PlanScheduleUtility, PlanStatisticsUtility, PlanDemandUtility,
+  PlanDashboardUtility, PlanFlowUtility, PlanRealtimeUtility, PlanRuntimeUtility, PlanCopyUtility,
+  PlanStatisticsFormatUtility
+- Add MarkdownView component and MarkdownUtility for rendering AI-formatted plan notes with headings, lists, tables,
+  blockquotes, and inline formatting
+- Add dispatch-import edge function with HTML report parsers for ingesting DailyOrder, DetailOrderAnalysis, and
+  DetailDriver reports from storage into structured database tables
+- Add database migrations for dispatch report tables (daily_order_reports, detail_order_reports, detail_driver_reports)
+  and a cron job to trigger periodic imports
 - Add DispatchDataService for querying parsed dispatch report data from the frontend
 - Add DetailDriverParser utility for extracting per-driver ticket data from DetailDriver HTML reports
-- Bump Dispatch Sync bridge to v2.9 — add DetailDriver report syncing per plant, increase worker concurrency from 6 to 10, reverse backfill order to prioritize most recent dates first, and add backfillEnabled flag to skip historic backfill for DetailOrderAnalysis
+- Bump Dispatch Sync bridge to v2.9 — add DetailDriver report syncing per plant, increase worker concurrency from 6 to
+  10, reverse backfill order to prioritize most recent dates first, and add backfillEnabled flag to skip historic
+  backfill for DetailOrderAnalysis
 - Add useCloserPlantLookup hook for identifying the nearest plant to a given address using travel time data
 - Add useLiveClock and useLiveMinuteOfDay hooks for real-time clock state in plan components
 - Add useLiveTravelTimes hook for streaming travel time estimates between plants
 - Move PlanFlowLayoutUtility from views directory to src/utils/ to match project conventions
-- Refactor useDetailOrders, useScheduleSync, useDashboardSchedule, and DetailOrderBucketService to support the new parsed dispatch data pipeline
+- Refactor useDetailOrders, useScheduleSync, useDashboardSchedule, and DetailOrderBucketService to support the new
+  parsed dispatch data pipeline
 - Update DailyOrderParser with refinements to support the dispatch-import edge function's parsing needs
 
 ## [40.0.7] - 2026-04-30
 
-- Add AddressUtility with shared address normalization — title-casing, stray punctuation cleanup, and abbreviation preservation across schedule table, job map modal, and ticket modal
-- Add PourSizeBadge component for reusable small/medium/large pour-size indicators with colored dot and optional truck-range suffix
-- Reorder OrderTicketsModal columns to lead with Plant, Order #, Ticket #, Truck #, Driver before times and yards, and display the order number on each ticket row
-- Overhaul DetailOrderParser product detection — replace surcharge-exclusion with positive concrete-identification via numeric PSI code pattern, add additive filtering (fiber, ice, pump, etc.), and add hard non-yardage description blocklist
-- Scope DetailOrderParser position lookups per FastReport page and per DOM range to prevent cross-page and cross-ticket coordinate collisions in ticket fields
-- Tighten left-tolerance on ticket time lookups and add field-format validators (cleanTime, cleanIdentifier) so cancelled/voided tickets never bleed product codes into time/truck columns
-- Add per-order customer service badges to the schedule — Good Service, Late Start, Slow Pour, Ongoing, and Awaiting Truck — using shared pace/on-time scoring from PlanUtility
+- Add AddressUtility with shared address normalization — title-casing, stray punctuation cleanup, and abbreviation
+  preservation across schedule table, job map modal, and ticket modal
+- Add PourSizeBadge component for reusable small/medium/large pour-size indicators with colored dot and optional
+  truck-range suffix
+- Reorder OrderTicketsModal columns to lead with Plant, Order #, Ticket #, Truck #, Driver before times and yards, and
+  display the order number on each ticket row
+- Overhaul DetailOrderParser product detection — replace surcharge-exclusion with positive concrete-identification via
+  numeric PSI code pattern, add additive filtering (fiber, ice, pump, etc.), and add hard non-yardage description
+  blocklist
+- Scope DetailOrderParser position lookups per FastReport page and per DOM range to prevent cross-page and cross-ticket
+  coordinate collisions in ticket fields
+- Tighten left-tolerance on ticket time lookups and add field-format validators (cleanTime, cleanIdentifier) so
+  cancelled/voided tickets never bleed product codes into time/truck columns
+- Add per-order customer service badges to the schedule — Good Service, Late Start, Slow Pour, Ongoing, and Awaiting
+  Truck — using shared pace/on-time scoring from PlanUtility
 - Add Customer Satisfaction day-score badge to the schedule toolbar with tiered color coding
 - Restrict same-day order badge (15:00 sentinel) to only display when viewing today's schedule
 - Replace per-size slot row color palette with unified neutral styling plus inline PourSizeBadge
 - Use shared AddressUtility for schedule address rendering and map modal plant addresses
 - Add Year period option to Statistics view with calendar-aligned start/end and year-over-year comparison
-- Add per-plant filter dropdown to Statistics view — scopes every chart, table, and KPI to a single plant without re-fetching
-- Add Customer Satisfaction panel to Statistics view with period-aggregate score, per-day trend line, and good/bad service counts fetched from detail-order ticket data
-- Fix floating-point display artifacts in Statistics by snapping yardage/loads totals to one decimal at both per-day and aggregate levels
+- Add per-plant filter dropdown to Statistics view — scopes every chart, table, and KPI to a single plant without
+  re-fetching
+- Add Customer Satisfaction panel to Statistics view with period-aggregate score, per-day trend line, and good/bad
+  service counts fetched from detail-order ticket data
+- Fix floating-point display artifacts in Statistics by snapping yardage/loads totals to one decimal at both per-day and
+  aggregate levels
 - Clamp yards-per-load ratio at fleet max (10 yd) so summary-only fallback yardage never produces impossible values
 - Filter ghost plant codes (sentinels/stale entries) from Statistics scorecard using the authoritative plant directory
 - Replace hero "Demand by hour" chart in Statistics with "Yardage by plant" bar chart as the primary visual
@@ -537,13 +736,20 @@
 
 ## [40.0.6] - 2026-04-29
 
-- Add OrderTicketsModal for drilling into individual tickets from the schedule via a right-click context menu on order rows
-- Expand DetailOrderParser to extract full per-ticket data: ticket number, truck, driver, ticket time, loaded time, loading plant, and quantity
-- Add cross-plant ticket support by fetching Baytown 404 and Conroe 409 alongside their sibling plants, with ticket deduplication across plant files
-- Introduce per-plant loaded yardage breakdown on the schedule's LoadedCell via a portaled hover popover showing each plant's contribution
-- Replace fixed-interval polling in useDetailOrders with Supabase realtime subscription on the dispatch-reports storage bucket, plus a cold-start retry ladder
-- Improve surcharge detection in DetailOrderParser to check product descriptions in addition to codes, preventing fuel/freight/admin lines from inflating loaded yardage
-- Harden the bridge userscript (v2.7.0) with HTML completeness validation — retries truncated reports missing the closing </html> tag and enforces a 5 KB minimum file size
+- Add OrderTicketsModal for drilling into individual tickets from the schedule via a right-click context menu on order
+  rows
+- Expand DetailOrderParser to extract full per-ticket data: ticket number, truck, driver, ticket time, loaded time,
+  loading plant, and quantity
+- Add cross-plant ticket support by fetching Baytown 404 and Conroe 409 alongside their sibling plants, with ticket
+  deduplication across plant files
+- Introduce per-plant loaded yardage breakdown on the schedule's LoadedCell via a portaled hover popover showing each
+  plant's contribution
+- Replace fixed-interval polling in useDetailOrders with Supabase realtime subscription on the dispatch-reports storage
+  bucket, plus a cold-start retry ladder
+- Improve surcharge detection in DetailOrderParser to check product descriptions in addition to codes, preventing
+  fuel/freight/admin lines from inflating loaded yardage
+- Harden the bridge userscript (v2.7.0) with HTML completeness validation — retries truncated reports missing the
+  closing </html> tag and enforces a 5 KB minimum file size
 - Reorder imports in PlanView, PlanFlowPreview, MyAccountView, and DocumentsView to fix linting violations
 - Apply consistent code formatting across all edge functions, shared helpers, ESLint config, Tailwind config, and CSS
 

@@ -2,22 +2,42 @@
 -- the get_call_list_roster() function that aggregates dormant customers
 -- (poured in past year, but not in past 30 days) for dispatcher cold-calls.
 
-create extension if not exists "pgcrypto";
+create
+extension if not exists "pgcrypto";
 
-create table if not exists public.customer_call_log (
-    id              uuid primary key default gen_random_uuid(),
-    customer_num    text not null,
-    customer_name   text,
-    contact_name    text,
-    phone           text,
-    outcome         text not null check (
-        outcome in ('no_answer', 'booked', 'not_interested', 'will_book_again', 'note')
+create table if not exists public.customer_call_log
+(
+    id
+    uuid
+    primary
+    key
+    default
+    gen_random_uuid
+(
+),
+    customer_num text not null,
+    customer_name text,
+    contact_name text,
+    phone text,
+    outcome text not null check
+(
+    outcome
+    in
+(
+    'no_answer',
+    'booked',
+    'not_interested',
+    'will_book_again',
+    'note'
+)
     ),
-    comment         text,
-    created_by      uuid,
+    comment text,
+    created_by uuid,
     created_by_name text,
-    created_at      timestamptz not null default now()
-);
+    created_at timestamptz not null default now
+(
+)
+    );
 
 create index if not exists idx_customer_call_log_customer
     on public.customer_call_log (customer_num);
@@ -27,8 +47,10 @@ create index if not exists idx_customer_call_log_created_at
 
 alter table public.customer_call_log enable row level security;
 
-drop policy if exists "customer_call_log_all" on public.customer_call_log;
-create policy "customer_call_log_all"
+drop
+policy if exists "customer_call_log_all" on public.customer_call_log;
+create
+policy "customer_call_log_all"
     on public.customer_call_log
     for all
     using (true)
@@ -37,7 +59,8 @@ create policy "customer_call_log_all"
 -- Aggregator: one row per dormant customer, joined with their most recent
 -- call log entry. Filters to customers who poured in the last 365 days but
 -- whose last pour was at least 30 days ago.
-create or replace function public.get_call_list_roster()
+create
+or replace function public.get_call_list_roster()
 returns table (
     customer_num         text,
     customer_name        text,
@@ -95,25 +118,29 @@ as $$
         where l.created_at >= (current_date - interval '30 days')
         group by l.customer_num
     )
-    select
-        p.customer_num,
-        coalesce(lc.customer_name, '')                    as customer_name,
-        nullif(lc.contact_name, '')                       as contact_name,
-        nullif(lc.phone, '')                              as phone,
-        p.last_pour_date,
-        p.pour_days_last_year::integer,
-        (current_date - p.last_pour_date)::integer        as days_since_last_pour,
-        ll.last_call_at,
-        ll.last_call_outcome,
-        ll.last_call_by_name,
-        ll.last_call_comment,
-        coalesce(c30.call_count_last_30, 0)               as call_count_last_30
-    from pour_summary p
-    left join latest_contact lc on lc.customer_num = p.customer_num
-    left join last_log       ll on ll.customer_num = p.customer_num
-    left join calls_30      c30 on c30.customer_num = p.customer_num
-    where p.last_pour_date <= (current_date - interval '30 days')
-    order by p.last_pour_date asc, lc.customer_name asc;
+select p.customer_num,
+       coalesce(lc.customer_name, '')      as customer_name,
+       nullif(lc.contact_name, '')         as contact_name,
+       nullif(lc.phone, '')                as phone,
+       p.last_pour_date,
+       p.pour_days_last_year::integer, (current_date - p.last_pour_date)::integer        as days_since_last_pour, ll.last_call_at,
+       ll.last_call_outcome,
+       ll.last_call_by_name,
+       ll.last_call_comment,
+       coalesce(c30.call_count_last_30, 0) as call_count_last_30
+from pour_summary p
+         left join latest_contact lc on lc.customer_num = p.customer_num
+         left join last_log ll on ll.customer_num = p.customer_num
+         left join calls_30 c30 on c30.customer_num = p.customer_num
+where p.last_pour_date <= (current_date - interval '30 days')
+order by p.last_pour_date asc, lc.customer_name asc;
 $$;
 
-grant execute on function public.get_call_list_roster() to anon, authenticated, service_role;
+grant
+execute
+on
+function
+public
+.
+get_call_list_roster
+() to anon, authenticated, service_role;

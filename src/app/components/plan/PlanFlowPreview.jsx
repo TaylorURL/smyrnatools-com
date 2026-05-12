@@ -429,13 +429,10 @@ export function PlanFlowPreview({
                 }
             `}</style>
 
-            <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
+            <div className="h-full w-full" ref={containerRef} />
 
             {!hasNodes && (
-                <div
-                    className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-                >
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none bg-bg-secondary text-text-secondary">
                     <i className="fas fa-map-location-dot text-2xl mb-2 opacity-50" />
                     <span className="text-[12px]">Add plants or routes to see the flow</span>
                 </div>

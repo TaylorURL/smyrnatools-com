@@ -45,8 +45,7 @@ function LostLoadDetailModal({ report, getUserName, onClose }) {
     const reasonExplanation = reasonParts.length > 1 ? reasonParts.slice(1).join(': ') : null
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[rgba(0,0,0,0.5)]"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div className="rounded-2xl shadow-2xl w-full max-w-md flex flex-col bg-bg-primary max-h-[90vh]">

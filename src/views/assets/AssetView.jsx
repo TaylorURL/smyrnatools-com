@@ -6,15 +6,15 @@ import ListViewModeSection from '../../app/components/sections/ListViewModeSecti
 import TopSection from '../../app/components/sections/TopSection'
 import AssetListSkeleton from '../../app/components/ui/AssetListSkeleton'
 import { usePreferences } from '../../app/context/PreferencesContext'
+import useAssetData from '../../app/hooks/useAssetData'
+import useAssetFilters from '../../app/hooks/useAssetFilters'
+import useAssetVerification from '../../app/hooks/useAssetVerification'
 import { Database } from '../../services/DatabaseService'
 import { PlantService } from '../../services/PlantService'
 import AssetStatsUtility from '../../utils/AssetStatsUtility'
 import AssetGridCard from './AssetGridCard'
 import AssetListRow from './AssetListRow'
 import AssetModals from './AssetModals'
-import useAssetData from './hooks/useAssetData'
-import useAssetFilters from './hooks/useAssetFilters'
-import useAssetVerification from './hooks/useAssetVerification'
 
 /**
  * Unified asset list/grid view driven by a config object.
@@ -463,19 +463,11 @@ function AssetView({
         if (!hasFiltered && !hasPotential) {
             return (
                 <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                    <div
-                        className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
-                        style={{ backgroundColor: 'var(--bg-hover)' }}
-                    >
-                        <i
-                            className={`fas ${config.emptyState.icon} text-3xl`}
-                            style={{ color: 'var(--text-secondary)' }}
-                        />
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-bg-hover">
+                        <i className={`fas ${config.emptyState.icon} text-3xl text-text-secondary`} />
                     </div>
-                    <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                        {config.emptyState.title}
-                    </h3>
-                    <p className="text-sm mb-6 max-w-md" style={{ color: 'var(--text-secondary)' }}>
+                    <h3 className="text-xl font-bold mb-2 text-text-primary">{config.emptyState.title}</h3>
+                    <p className="text-sm mb-6 max-w-md text-text-secondary">
                         {filters.searchText ||
                         filters.selectedPlant ||
                         (filters.statusFilter && filters.statusFilter !== 'All Statuses')
@@ -586,23 +578,17 @@ function AssetView({
 
         const potentialContent = hasPotential ? (
             <>
-                <div
-                    className="flex items-center gap-3 px-4 py-3 mt-4 rounded-lg"
-                    style={{ backgroundColor: 'var(--bg-hover)' }}
-                >
-                    <i className="fas fa-filter text-xs" style={{ color: 'var(--text-secondary)' }} />
-                    <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                <div className="flex items-center gap-3 px-4 py-3 mt-4 rounded-lg bg-bg-hover">
+                    <i className="fas fa-filter text-xs text-text-secondary" />
+                    <span className="text-sm font-semibold text-text-primary">
                         {hasFiltered ? 'Potential Matches' : 'Results Outside Current Filters'}
                     </span>
-                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="text-xs text-text-secondary">
                         {hasFiltered
                             ? '(hidden by active filters)'
                             : 'No exact filter matches — showing results that match your search'}
                     </span>
-                    <span
-                        className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-                    >
+                    <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-bg-secondary text-text-secondary">
                         {filteredResult.potentialMatches.length}
                     </span>
                 </div>
@@ -724,13 +710,8 @@ function AssetView({
         if (!config.extraTypeFilter) return undefined
         return (
             <select
-                className="text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7"
-                style={{
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-light)',
-                    color: 'var(--text-primary)',
-                    minWidth: 130
-                }}
+                className="text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 bg-bg-secondary border border-border-light text-text-primary"
+                style={{ minWidth: 130 }}
                 value={filters.extraTypeFilter}
                 onChange={(e) => {
                     filters.setExtraTypeFilter(e.target.value)

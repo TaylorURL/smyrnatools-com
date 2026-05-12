@@ -126,44 +126,29 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service })
     return ReactDOM.createPortal(
         <div
             onClick={handleBackdropClick}
-            className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+            className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="flex flex-col max-h-[90vh] max-w-[560px] w-full overflow-hidden rounded"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                className="flex flex-col max-h-[90vh] max-w-[560px] w-full overflow-hidden rounded bg-bg-primary border border-border-light"
             >
-                <div
-                    className="flex items-center justify-between px-4 py-3"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                            className="w-7 h-7 rounded flex items-center justify-center shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                        >
+                        <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-secondary">
                             <i className="fas fa-comments text-[12px]" />
                         </div>
                         <div className="min-w-0">
-                            <div
-                                className="text-[10px] font-semibold uppercase tracking-wider"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                                 {itemType} · {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
                             </div>
-                            <div
-                                className="text-[14px] font-semibold font-mono tabular-nums truncate"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                            <div className="text-[14px] font-semibold font-mono tabular-nums truncate text-text-primary">
                                 {itemNumber || itemId}
                             </div>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-7 h-7 flex items-center justify-center rounded transition-colors"
-                        style={{ background: 'transparent', color: 'var(--text-secondary)' }}
+                        className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
@@ -175,22 +160,14 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service })
                     <ErrorMessage message={error} onDismiss={() => setError(null)} />
 
                     <form onSubmit={handleAddComment} className="mb-3">
-                        <div
-                            className="rounded p-2.5"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                        >
+                        <div className="rounded p-2.5 bg-bg-secondary border border-border-light">
                             <textarea
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
                                 placeholder="Write a comment..."
                                 disabled={isSubmitting}
                                 rows="2"
-                                className="w-full rounded outline-none p-2 resize-none text-[12px]"
-                                style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-primary)'
-                                }}
+                                className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary"
                             />
                             <div className="flex justify-end mt-2">
                                 <button
@@ -215,62 +192,40 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service })
                             <LoadingScreen message="Loading comments..." inline={true} />
                         </div>
                     ) : comments.length === 0 ? (
-                        <div
-                            className="flex flex-col items-center py-8 px-4 text-center"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <div className="flex flex-col items-center py-8 px-4 text-center text-text-tertiary">
                             <i className="fas fa-comment-dots text-2xl mb-2" />
-                            <p className="text-[12px] m-0 font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                                No comments yet
-                            </p>
+                            <p className="text-[12px] m-0 font-semibold text-text-secondary">No comments yet</p>
                             <p className="text-[10.5px] mt-1 mb-0">Be the first to add a comment</p>
                         </div>
                     ) : (
-                        <div
-                            className="rounded overflow-hidden"
-                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                        >
+                        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
                             {sortedComments.map((comment) => {
                                 const authorName = getAuthorName(comment)
                                 return (
                                     <div
                                         key={comment.id}
-                                        className="flex items-start gap-2.5 px-3 py-2.5"
-                                        style={{ borderBottom: '1px solid var(--border-light)' }}
+                                        className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light"
                                     >
-                                        <div
-                                            className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold"
-                                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                                        >
+                                        <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold bg-bg-tertiary text-text-secondary">
                                             {getInitials(authorName)}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-0.5">
-                                                <span
-                                                    className="text-[12px] font-semibold"
-                                                    style={{ color: 'var(--text-primary)' }}
-                                                >
+                                                <span className="text-[12px] font-semibold text-text-primary">
                                                     {authorName}
                                                 </span>
-                                                <span
-                                                    className="text-[10.5px] font-mono tabular-nums"
-                                                    style={{ color: 'var(--text-tertiary)' }}
-                                                >
+                                                <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
                                                     {formatDate(comment.createdAt || comment.created_at)}
                                                 </span>
                                             </div>
-                                            <p
-                                                className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap break-words"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
+                                            <p className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap break-words text-text-secondary">
                                                 {comment.text}
                                             </p>
                                         </div>
                                         <button
                                             onClick={() => handleDeleteComment(comment.id)}
                                             title="Delete"
-                                            className="w-6 h-6 flex items-center justify-center shrink-0 rounded transition-colors"
-                                            style={{ background: 'transparent', color: 'var(--text-tertiary)' }}
+                                            className="w-6 h-6 flex items-center justify-center shrink-0 rounded transition-colors bg-transparent text-text-tertiary"
                                             onMouseEnter={(e) => {
                                                 e.currentTarget.style.background = 'var(--bg-tertiary)'
                                                 e.currentTarget.style.color = '#dc2626'

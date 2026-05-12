@@ -12,14 +12,9 @@ function SectionHeader({ accentColor, count, icon, isOpen, label, onToggle, tone
             type="button"
             onClick={onToggle}
             aria-expanded={isOpen}
-            className="w-full flex items-center gap-2 px-3 py-2 cursor-pointer border-none transition-colors hover:bg-bg-tertiary"
-            style={{
-                background: 'var(--bg-secondary)',
-                borderBottom: '1px solid var(--border-light)',
-                color: 'var(--text-primary)'
-            }}
+            className="w-full flex items-center gap-2 px-3 py-2 cursor-pointer border-none transition-colors hover:bg-bg-tertiary bg-bg-secondary border-b border-border-light text-text-primary"
         >
-            <i className={`fas ${icon} text-[11px]`} style={{ color: accent, textAlign: 'center', width: 14 }} />
+            <i className={`fas ${icon} text-[11px] text-center w-3.5`} style={{ color: accent }} />
             <span className="text-[10.5px] font-bold uppercase tracking-wider flex-1 text-left">{label}</span>
             <span
                 className="text-[10.5px] font-mono tabular-nums rounded px-1.5 py-0.5"
@@ -30,10 +25,7 @@ function SectionHeader({ accentColor, count, icon, isOpen, label, onToggle, tone
             >
                 {count}
             </span>
-            <i
-                className={`fas fa-chevron-${isOpen ? 'down' : 'right'} text-[9px]`}
-                style={{ color: 'var(--text-tertiary)' }}
-            />
+            <i className={`fas fa-chevron-${isOpen ? 'down' : 'right'} text-[9px] text-text-tertiary`} />
         </button>
     )
 }
@@ -63,10 +55,9 @@ function ItemRow({ accentColor, isActive, item, onClick, onDelete, statusKey }) 
                     onClick?.(item)
                 }
             }}
-            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary"
+            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary border-b border-border-light"
             style={{
                 background: isActive ? `${accentColor}14` : 'transparent',
-                borderBottom: '1px solid var(--border-light)',
                 borderLeft: `3px solid ${isActive ? accentColor : 'transparent'}`
             }}
         >
@@ -78,15 +69,12 @@ function ItemRow({ accentColor, isActive, item, onClick, onDelete, statusKey }) 
                 >
                     {title}
                 </div>
-                <div
-                    className="flex items-center gap-1.5 mt-0.5 text-[10.5px] flex-wrap"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
+                <div className="flex items-center gap-1.5 mt-0.5 text-[10.5px] flex-wrap text-text-secondary">
                     <PlantChip code={item.plant_code} />
                     {dateLabel && <span className="font-mono tabular-nums">{dateLabel}</span>}
                     {submitter && (
                         <>
-                            <span style={{ color: 'var(--text-tertiary)' }}>·</span>
+                            <span className="text-text-tertiary">·</span>
                             <span className="truncate max-w-[140px]">{submitter}</span>
                         </>
                     )}
@@ -101,8 +89,7 @@ function ItemRow({ accentColor, isActive, item, onClick, onDelete, statusKey }) 
                             event.stopPropagation()
                             onDelete(event, item.id)
                         }}
-                        className="w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none bg-transparent cursor-pointer"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className="w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none bg-transparent cursor-pointer text-text-tertiary"
                         title="Delete submission"
                     >
                         <i className="fas fa-trash-alt text-[9px]" />
@@ -116,14 +103,7 @@ function ItemRow({ accentColor, isActive, item, onClick, onDelete, statusKey }) 
 /** Inline empty state shown when a section has no rows. */
 function SectionEmpty({ message }) {
     return (
-        <div
-            className="px-3 py-3 text-[11px]"
-            style={{
-                background: 'var(--bg-primary)',
-                borderBottom: '1px solid var(--border-light)',
-                color: 'var(--text-tertiary)'
-            }}
-        >
+        <div className="px-3 py-3 text-[11px] bg-bg-primary border-b border-border-light text-text-tertiary">
             {message}
         </div>
     )
@@ -132,13 +112,13 @@ function SectionEmpty({ message }) {
 /** Skeleton row for the loading state — keeps the rail's layout stable. */
 function SkeletonRow() {
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
-            <div className="w-6 h-6 rounded animate-pulse shrink-0" style={{ background: 'var(--bg-tertiary)' }} />
+        <div className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light">
+            <div className="w-6 h-6 rounded animate-pulse shrink-0 bg-bg-tertiary" />
             <div className="flex-1 min-w-0">
-                <div className="h-3 w-32 rounded animate-pulse mb-1" style={{ background: 'var(--bg-tertiary)' }} />
-                <div className="h-2.5 w-44 rounded animate-pulse" style={{ background: 'var(--bg-secondary)' }} />
+                <div className="h-3 w-32 rounded animate-pulse mb-1 bg-bg-tertiary" />
+                <div className="h-2.5 w-44 rounded animate-pulse bg-bg-secondary" />
             </div>
-            <div className="h-4 w-12 rounded animate-pulse shrink-0" style={{ background: 'var(--bg-tertiary)' }} />
+            <div className="h-4 w-12 rounded animate-pulse shrink-0 bg-bg-tertiary" />
         </div>
     )
 }
@@ -215,14 +195,7 @@ export function MaintenanceFormsRail({
     if (formLoading) {
         return (
             <div className="flex flex-col">
-                <div
-                    className="px-3 py-2 text-[10.5px] font-bold uppercase tracking-wider"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        borderBottom: '1px solid var(--border-light)',
-                        color: 'var(--text-tertiary)'
-                    }}
-                >
+                <div className="px-3 py-2 text-[10.5px] font-bold uppercase tracking-wider bg-bg-secondary border-b border-border-light text-text-tertiary">
                     Loading forms…
                 </div>
                 {Array.from({ length: 6 }, (_, i) => (

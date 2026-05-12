@@ -7,18 +7,35 @@
 -- per the project's custom-session auth model (CLAUDE.md); access control
 -- runs in the edge function layer.
 
-create extension if not exists "pgcrypto";
+create
+extension if not exists "pgcrypto";
 
-create table if not exists public.users_pinned_conversations (
-    id              uuid primary key default gen_random_uuid(),
-    user_id         uuid not null,
-    other_user_id   uuid not null,
-    pinned          boolean not null default false,
-    muted           boolean not null default false,
-    created_at      timestamptz not null default now(),
-    updated_at      timestamptz not null default now(),
-    unique (user_id, other_user_id)
-);
+create table if not exists public.users_pinned_conversations
+(
+    id
+    uuid
+    primary
+    key
+    default
+    gen_random_uuid
+(
+),
+    user_id uuid not null,
+    other_user_id uuid not null,
+    pinned boolean not null default false,
+    muted boolean not null default false,
+    created_at timestamptz not null default now
+(
+),
+    updated_at timestamptz not null default now
+(
+),
+    unique
+(
+    user_id,
+    other_user_id
+)
+    );
 
 create index if not exists idx_users_pinned_conversations_user_id
     on public.users_pinned_conversations (user_id);
@@ -33,25 +50,30 @@ create index if not exists idx_users_pinned_conversations_muted
 
 alter table public.users_pinned_conversations enable row level security;
 
-drop policy if exists "users_pinned_conversations_all" on public.users_pinned_conversations;
-create policy "users_pinned_conversations_all"
+drop
+policy if exists "users_pinned_conversations_all" on public.users_pinned_conversations;
+create
+policy "users_pinned_conversations_all"
     on public.users_pinned_conversations
     for all
     using (true)
     with check (true);
 
-create or replace function public.touch_users_pinned_conversations_updated_at()
+create
+or replace function public.touch_users_pinned_conversations_updated_at()
 returns trigger
 language plpgsql
 as $$
 begin
-    new.updated_at := now();
-    return new;
+    new.updated_at
+:= now();
+return new;
 end;
 $$;
 
 drop trigger if exists trg_users_pinned_conversations_updated_at on public.users_pinned_conversations;
 create trigger trg_users_pinned_conversations_updated_at
-    before update on public.users_pinned_conversations
+    before update
+    on public.users_pinned_conversations
     for each row
     execute function public.touch_users_pinned_conversations_updated_at();

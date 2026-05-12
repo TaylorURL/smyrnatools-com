@@ -29,11 +29,7 @@ export default function PlanScheduleLoadedCell({ detail, homePlantCode, total })
     }, [detail])
 
     if (!total && !loaded) {
-        return (
-            <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
-                —
-            </td>
-        )
+        return <td className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-tertiary">—</td>
     }
 
     const loadedDisplay = trimYards(loaded)
@@ -71,47 +67,34 @@ export default function PlanScheduleLoadedCell({ detail, homePlantCode, total })
                           zIndex: 9999
                       }}
                   >
-                      <div
-                          className="text-[11px] font-bold uppercase tracking-wider mb-1.5"
-                          style={{ color: 'var(--text-secondary)' }}
-                      >
+                      <div className="text-[11px] font-bold uppercase tracking-wider mb-1.5 text-text-secondary">
                           Loaded {loadedDisplay} of {total} yd
                       </div>
                       {breakdownRows.length > 0 ? (
                           <div className="flex flex-col gap-1">
                               {breakdownRows.map(([plantId, v]) => (
                                   <div key={plantId} className="flex items-center justify-between gap-3 text-[12.5px]">
-                                      <span
-                                          className="font-mono font-semibold"
-                                          style={{ color: 'var(--text-primary)' }}
-                                      >
+                                      <span className="font-mono font-semibold text-text-primary">
                                           {plantId}
                                           {plantId === homePlantCode && (
-                                              <span
-                                                  className="ml-1.5 text-[9.5px] font-bold uppercase tracking-wider"
-                                                  style={{ color: 'var(--text-tertiary)' }}
-                                              >
+                                              <span className="ml-1.5 text-[9.5px] font-bold uppercase tracking-wider text-text-tertiary">
                                                   home
                                               </span>
                                           )}
                                       </span>
-                                      <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
+                                      <span className="font-mono text-text-primary">
                                           {trimYards(v.loadedYardage)} yd
-                                          <span className="ml-1.5" style={{ color: 'var(--text-tertiary)' }}>
-                                              · {v.ticketCount} tkt
-                                          </span>
+                                          <span className="ml-1.5 text-text-tertiary">· {v.ticketCount} tkt</span>
                                       </span>
                                   </div>
                               ))}
                           </div>
                       ) : loaded > 0 ? (
-                          <div className="text-[12.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                          <div className="text-[12.5px] text-text-tertiary">
                               Plant breakdown unavailable — refresh the page if this persists.
                           </div>
                       ) : (
-                          <div className="text-[12.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                              No tickets loaded yet.
-                          </div>
+                          <div className="text-[12.5px] text-text-tertiary">No tickets loaded yet.</div>
                       )}
                   </div>,
                   document.body
@@ -138,11 +121,9 @@ export default function PlanScheduleLoadedCell({ detail, homePlantCode, total })
                     gridTemplateColumns: 'minmax(2.25em, auto) auto minmax(2.25em, auto)'
                 }}
             >
-                <span className="font-bold" style={{ textAlign: 'right' }}>
-                    {loadedDisplay}
-                </span>
-                <span style={{ color: 'var(--text-tertiary)' }}>/</span>
-                <span style={{ color: 'var(--text-tertiary)', textAlign: 'left' }}>{total || '—'}</span>
+                <span className="font-bold text-right">{loadedDisplay}</span>
+                <span className="text-text-tertiary">/</span>
+                <span className="text-text-tertiary text-left">{total || '—'}</span>
             </span>
             {popover}
         </td>

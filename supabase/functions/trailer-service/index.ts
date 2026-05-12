@@ -197,16 +197,14 @@ Deno.serve(async (req) => {
                 const { data, error } = await supabase.from(MAIN_TABLE).insert([apiData]).select().maybeSingle()
                 if (error) return errorResponse('Operation failed', headers, 400)
                 if (data?.id)
-                    await supabase
-                        .from(HISTORY_TABLE)
-                        .insert({
-                            [ID_KEY]: data.id,
-                            field_name: 'created',
-                            old_value: null,
-                            new_value: 'Trailer created',
-                            changed_at: now,
-                            changed_by: userId
-                        })
+                    await supabase.from(HISTORY_TABLE).insert({
+                        [ID_KEY]: data.id,
+                        field_name: 'created',
+                        old_value: null,
+                        new_value: 'Trailer created',
+                        changed_at: now,
+                        changed_by: userId
+                    })
                 return jsonResponse({ data }, headers)
             }
             case 'update': {

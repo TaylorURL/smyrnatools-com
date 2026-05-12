@@ -158,32 +158,21 @@ function HistoryViewSection({ item, type, onClose }) {
     const renderAISummary = () => {
         if (aiSummaryLoading) {
             return (
-                <div
-                    className="flex flex-col items-center justify-center gap-1.5 py-10 px-4"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
-                    <i className="fas fa-robot text-[20px] animate-pulse" style={{ color: 'var(--text-secondary)' }} />
-                    <p className="m-0 text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        Analyzing history…
-                    </p>
+                <div className="flex flex-col items-center justify-center gap-1.5 py-10 px-4 text-text-tertiary">
+                    <i className="fas fa-robot text-[20px] animate-pulse text-text-secondary" />
+                    <p className="m-0 text-[12.5px] font-semibold text-text-primary">Analyzing history…</p>
                     <p className="m-0 text-[11px]">This may take a moment.</p>
                 </div>
             )
         }
         if (aiSummaryError) {
             return (
-                <div
-                    className="flex flex-col items-center justify-center gap-1.5 py-10 px-4"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
-                    <i className="fas fa-exclamation-triangle text-[20px]" style={{ color: '#dc2626' }} />
-                    <p className="m-0 text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        Failed to generate analysis.
-                    </p>
+                <div className="flex flex-col items-center justify-center gap-1.5 py-10 px-4 text-text-tertiary">
+                    <i className="fas fa-exclamation-triangle text-[20px] text-red-600" />
+                    <p className="m-0 text-[12.5px] font-semibold text-text-primary">Failed to generate analysis.</p>
                     <button
                         onClick={handleRegenerateAISummary}
-                        className="mt-1 inline-flex items-center gap-1.5 rounded text-[10.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none"
-                        style={{ background: 'var(--accent, #1e3a5f)' }}
+                        className="mt-1 inline-flex items-center gap-1.5 rounded text-[10.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none bg-[var(--accent, #1e3a5f)]"
                     >
                         <i className="fas fa-sync-alt text-[10px]" />
                         Try Again
@@ -193,72 +182,44 @@ function HistoryViewSection({ item, type, onClose }) {
         }
         if (!aiSummary) {
             return (
-                <div
-                    className="flex flex-col items-center justify-center gap-1.5 py-10 px-4"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
+                <div className="flex flex-col items-center justify-center gap-1.5 py-10 px-4 text-text-tertiary">
                     <i className="fas fa-robot text-[20px]" />
                     <p className="m-0 text-[12px]">No analysis available.</p>
                 </div>
             )
         }
         const StatCell = ({ value, label }) => (
-            <div className="px-3 py-2.5 flex flex-col gap-0.5" style={{ borderRight: '1px solid var(--border-light)' }}>
-                <span
-                    className="text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
-                    {label}
-                </span>
-                <span
-                    className="text-[18px] font-semibold leading-tight font-mono tabular-nums"
-                    style={{ color: 'var(--text-primary)' }}
-                >
+            <div className="px-3 py-2.5 flex flex-col gap-0.5 border-r border-border-light">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">{label}</span>
+                <span className="text-[18px] font-semibold leading-tight font-mono tabular-nums text-text-primary">
                     {value}
                 </span>
             </div>
         )
         return (
             <div className="flex flex-col gap-3">
-                <div
-                    className="rounded p-3"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                >
+                <div className="rounded p-3 bg-bg-primary border border-border-light">
                     <div className="flex items-center gap-2 mb-2">
-                        <div
-                            className="w-7 h-7 rounded flex items-center justify-center"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                        >
+                        <div className="w-7 h-7 rounded flex items-center justify-center bg-bg-tertiary text-text-secondary">
                             <i className="fas fa-robot text-[12px]" />
                         </div>
                         <div>
-                            <div
-                                className="text-[10px] font-semibold uppercase tracking-wider"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                                 Analysis · {history.length} entries
                             </div>
                         </div>
                     </div>
-                    <div
-                        className="text-[12px] leading-relaxed whitespace-pre-wrap"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
+                    <div className="text-[12px] leading-relaxed whitespace-pre-wrap text-text-secondary">
                         {aiDisplayText}
                         {!isTypingComplete && (
-                            <span
-                                className="inline-block w-0.5 h-3 ml-0.5 animate-pulse align-text-bottom"
-                                style={{ background: 'var(--text-tertiary)' }}
-                            />
+                            <span className="inline-block w-0.5 h-3 ml-0.5 animate-pulse align-text-bottom bg-[var(--text-tertiary)]" />
                         )}
                     </div>
                 </div>
                 {isTypingComplete && (
                     <div
-                        className="grid rounded overflow-hidden"
+                        className="grid rounded overflow-hidden bg-bg-primary border border-border-light"
                         style={{
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border-light)',
                             gridTemplateColumns: ASSET_TYPES_WITH_OPERATORS.includes(type)
                                 ? 'repeat(4, minmax(0, 1fr))'
                                 : 'repeat(3, minmax(0, 1fr))'
@@ -275,12 +236,7 @@ function HistoryViewSection({ item, type, onClose }) {
                 {isTypingComplete && (
                     <button
                         onClick={handleRegenerateAISummary}
-                        className="w-full py-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider inline-flex items-center justify-center gap-1.5 transition-colors"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="w-full py-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider inline-flex items-center justify-center gap-1.5 transition-colors bg-bg-secondary border border-border-light text-text-primary"
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-secondary)')}
                     >
@@ -462,20 +418,11 @@ function HistoryViewSection({ item, type, onClose }) {
         }
         return (
             <div className="flex flex-col gap-2.5">
-                <div
-                    className="rounded p-3"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                >
-                    <div
-                        className="text-[9.5px] font-bold uppercase tracking-wider mb-2"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
+                <div className="rounded p-3 bg-bg-primary border border-border-light">
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider mb-2 text-text-secondary">
                         Asset Status Distribution
                     </div>
-                    <div
-                        className="flex h-2 rounded-full overflow-hidden mb-2"
-                        style={{ background: 'var(--bg-tertiary)' }}
-                    >
+                    <div className="flex h-2 rounded-full overflow-hidden mb-2 bg-bg-tertiary">
                         {statusPercentages.map(
                             (sp, idx) =>
                                 parseFloat(sp.percentage) > 0 && (
@@ -494,17 +441,11 @@ function HistoryViewSection({ item, type, onClose }) {
                         {statusPercentages.map((sp, idx) => (
                             <span key={idx} className="inline-flex items-center gap-1.5">
                                 <span
-                                    className="inline-block rounded-sm shrink-0"
-                                    style={{
-                                        background: HistoryUtility.getStatusColor(sp.status),
-                                        height: 8,
-                                        width: 8
-                                    }}
+                                    className="inline-block rounded-sm shrink-0 h-2 w-2"
+                                    style={{ background: HistoryUtility.getStatusColor(sp.status) }}
                                 />
-                                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                    {sp.status}
-                                </span>
-                                <span className="font-mono tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
+                                <span className="font-semibold text-text-primary">{sp.status}</span>
+                                <span className="font-mono tabular-nums text-text-tertiary">
                                     {sp.days}d · {sp.percentage}%
                                 </span>
                             </span>
@@ -660,10 +601,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                         }}
                                     />
                                     {index < combinedTimeline.length - 1 && (
-                                        <div
-                                            className="w-px flex-1 -mt-0.5"
-                                            style={{ background: 'var(--border-light)' }}
-                                        />
+                                        <div className="w-px flex-1 -mt-0.5 bg-[var(--border-light)]" />
                                     )}
                                 </div>
                                 <div
@@ -700,46 +638,25 @@ function HistoryViewSection({ item, type, onClose }) {
                                                     {issue.severity}
                                                 </span>
                                                 {entry.isCompleted && (
-                                                    <span
-                                                        className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                                                        style={{
-                                                            background: 'rgba(22, 163, 74, 0.15)',
-                                                            color: '#15803d'
-                                                        }}
-                                                    >
+                                                    <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[rgba(22,_163,_74,_0.15)] text-green-700">
                                                         Resolved
                                                     </span>
                                                 )}
                                             </div>
-                                            <div
-                                                className="text-[12.5px] leading-snug"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
+                                            <div className="text-[12.5px] leading-snug text-text-primary">
                                                 {issue.issue}
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => onDeleteIssue(issue.id)}
                                             title="Delete issue"
-                                            className="rounded border-none cursor-pointer flex items-center justify-center"
-                                            style={{
-                                                background: 'rgba(220, 38, 38, 0.12)',
-                                                color: '#b91c1c',
-                                                height: 22,
-                                                width: 22
-                                            }}
+                                            className="rounded border-none cursor-pointer flex items-center justify-center bg-[rgba(220,_38,_38,_0.12)] text-red-700 h-[22px] w-[22px]"
                                         >
                                             <i className="fas fa-trash text-[10px]" />
                                         </button>
                                     </div>
-                                    <div
-                                        className="flex items-center justify-between mt-1.5 pt-1.5 flex-wrap gap-2"
-                                        style={{ borderTop: '1px solid var(--border-light)' }}
-                                    >
-                                        <div
-                                            className="flex items-center gap-2.5 text-[11px]"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
+                                    <div className="flex items-center justify-between mt-1.5 pt-1.5 flex-wrap gap-2 border-t border-border-light">
+                                        <div className="flex items-center gap-2.5 text-[11px] text-text-tertiary">
                                             <span>
                                                 <i className="fas fa-user mr-1 text-[9px]" />
                                                 {getCreatorName(issue)}
@@ -750,10 +667,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                             </span>
                                         </div>
                                         {entry.isCompleted && entry.completedDate && (
-                                            <span
-                                                className="text-[11px] font-semibold tabular-nums"
-                                                style={{ color: '#15803d' }}
-                                            >
+                                            <span className="text-[11px] font-semibold tabular-nums text-green-700">
                                                 <i className="fas fa-check mr-1 text-[9px]" />
                                                 {HistoryUtility.formatHistoryDate(issue.time_completed)}
                                             </span>
@@ -762,11 +676,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                             <button
                                                 onClick={() => onCompleteIssue(issue.id)}
                                                 title="Mark as resolved"
-                                                className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider rounded px-2 py-0.5 cursor-pointer border-none"
-                                                style={{
-                                                    background: 'rgba(22, 163, 74, 0.12)',
-                                                    color: '#15803d'
-                                                }}
+                                                className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider rounded px-2 py-0.5 cursor-pointer border-none bg-[rgba(22,_163,_74,_0.12)] text-green-700"
                                             >
                                                 <i className="fas fa-check text-[9px]" />
                                                 Mark Resolved
@@ -895,32 +805,15 @@ function HistoryViewSection({ item, type, onClose }) {
                 <TimelineSectionTitle title="Position Distribution" />
                 <div className="flex flex-col gap-1.5">
                     {chartData.map((data, index) => (
-                        <div
-                            key={index}
-                            className="rounded p-2"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)'
-                            }}
-                        >
+                        <div key={index} className="rounded p-2 bg-bg-secondary border border-border-light">
                             <div className="flex items-center justify-between mb-1">
-                                <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                    {data.position}
-                                </span>
-                                <span
-                                    className="text-[11px] font-mono tabular-nums"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                >
+                                <span className="text-[12px] font-semibold text-text-primary">{data.position}</span>
+                                <span className="text-[11px] font-mono tabular-nums text-text-tertiary">
                                     {data.count} {data.count === 1 ? 'time' : 'times'} ·{' '}
-                                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                                        {data.percentage}%
-                                    </span>
+                                    <span className="text-text-primary font-semibold">{data.percentage}%</span>
                                 </span>
                             </div>
-                            <div
-                                className="h-1.5 rounded-full overflow-hidden"
-                                style={{ background: 'var(--bg-tertiary)' }}
-                            >
+                            <div className="h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
                                 <div
                                     className="h-full rounded-full"
                                     style={{
@@ -1192,23 +1085,13 @@ function HistoryViewSection({ item, type, onClose }) {
                                     return (
                                         <div
                                             key={entry.id ?? index}
-                                            className="rounded p-2.5"
-                                            style={{
-                                                background: 'var(--bg-secondary)',
-                                                border: '1px solid var(--border-light)'
-                                            }}
+                                            className="rounded p-2.5 bg-bg-secondary border border-border-light"
                                         >
                                             <div className="flex justify-between items-center mb-1.5">
-                                                <div
-                                                    className="text-[12.5px] font-semibold capitalize"
-                                                    style={{ color: 'var(--text-primary)' }}
-                                                >
+                                                <div className="text-[12.5px] font-semibold capitalize text-text-primary">
                                                     {HistoryUtility.formatFieldName(fieldName, type)}
                                                 </div>
-                                                <div
-                                                    className="text-[11px] tabular-nums"
-                                                    style={{ color: 'var(--text-tertiary)' }}
-                                                >
+                                                <div className="text-[11px] tabular-nums text-text-tertiary">
                                                     {HistoryUtility.formatHistoryTimestamp(
                                                         entry.changedAt ?? entry.changed_at
                                                     )}
@@ -1216,32 +1099,20 @@ function HistoryViewSection({ item, type, onClose }) {
                                             </div>
                                             {isCreatedEntry ? (
                                                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                    <span
-                                                        className="text-[12px] font-semibold"
-                                                        style={{ color: '#15803d' }}
-                                                    >
+                                                    <span className="text-[12px] font-semibold text-green-700">
                                                         {formatValue(fieldName, entry.newValue ?? entry.new_value)}
                                                     </span>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
-                                                    <span
-                                                        className="text-[12px]"
-                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                    >
+                                                    <span className="text-[12px] text-text-tertiary">
                                                         <span className="text-[9.5px] font-bold uppercase tracking-wider mr-1">
                                                             From
                                                         </span>
                                                         {formatValue(fieldName, entry.oldValue ?? entry.old_value)}
                                                     </span>
-                                                    <i
-                                                        className="fas fa-arrow-right text-[10px]"
-                                                        style={{ color: 'var(--accent, #1e3a5f)' }}
-                                                    />
-                                                    <span
-                                                        className="text-[12px] font-semibold"
-                                                        style={{ color: 'var(--text-primary)' }}
-                                                    >
+                                                    <i className="fas fa-arrow-right text-[10px] text-[var(--accent, #1e3a5f)]" />
+                                                    <span className="text-[12px] font-semibold text-text-primary">
                                                         <span className="text-[9.5px] font-bold uppercase tracking-wider mr-1">
                                                             To
                                                         </span>
@@ -1249,7 +1120,7 @@ function HistoryViewSection({ item, type, onClose }) {
                                                     </span>
                                                 </div>
                                             )}
-                                            <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                            <div className="text-[11px] text-text-tertiary">
                                                 <UserLabel userId={entry.changedBy ?? entry.changed_by} showIcon />
                                             </div>
                                         </div>
@@ -1258,13 +1129,11 @@ function HistoryViewSection({ item, type, onClose }) {
                             )}
                         </div>
                         <div
-                            className="min-w-0 transition-all duration-500 ease-in-out"
+                            className="min-w-0 transition-all duration-500 ease-in-out border-border-light overflow-hidden"
                             style={{
-                                borderColor: 'var(--border-light)',
                                 borderLeftWidth: analysisVisible ? '1px' : '0px',
                                 flex: analysisVisible ? '2' : '0',
                                 opacity: analysisVisible ? 1 : 0,
-                                overflow: 'hidden',
                                 paddingLeft: analysisVisible ? '1.25rem' : '0px'
                             }}
                         >
@@ -1328,43 +1197,22 @@ function HistoryViewSection({ item, type, onClose }) {
     ]
     if (typeof document === 'undefined' || !document.body) return null
     return ReactDOM.createPortal(
-        <div
-            className="fixed inset-0 flex items-center justify-center z-[2000] p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
-        >
-            <div
-                className="flex flex-col max-w-[900px] w-full max-h-[85vh] rounded overflow-hidden"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
-                <div
-                    className="flex justify-between items-center px-4 py-3"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
+        <div className="fixed inset-0 flex items-center justify-center z-[2000] p-4 bg-[rgba(15,_23,_42,_0.65)]">
+            <div className="flex flex-col max-w-[900px] w-full max-h-[85vh] rounded overflow-hidden bg-bg-primary border border-border-light">
+                <div className="flex justify-between items-center px-4 py-3 border-b border-border-light">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                            className="w-7 h-7 rounded flex items-center justify-center shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                        >
+                        <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-secondary">
                             <i className="fas fa-history text-[12px]" />
                         </div>
                         <div className="min-w-0">
-                            <div
-                                className="text-[10px] font-semibold uppercase tracking-wider"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                                 Change History
                             </div>
-                            <h2
-                                className="text-[14px] font-semibold m-0 truncate"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
-                                {itemName}
-                            </h2>
+                            <h2 className="text-[14px] font-semibold m-0 truncate text-text-primary">{itemName}</h2>
                         </div>
                     </div>
                     <button
-                        className="w-7 h-7 flex items-center justify-center rounded transition-colors"
-                        style={{ background: 'transparent', color: 'var(--text-secondary)' }}
+                        className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                         onClick={onClose}
@@ -1372,13 +1220,7 @@ function HistoryViewSection({ item, type, onClose }) {
                         <i className="fas fa-times text-[12px]" />
                     </button>
                 </div>
-                <div
-                    className="flex gap-1.5 px-4 py-2 overflow-x-auto shrink-0"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        borderBottom: '1px solid var(--border-light)'
-                    }}
-                >
+                <div className="flex gap-1.5 px-4 py-2 overflow-x-auto shrink-0 bg-bg-secondary border-b border-border-light">
                     {tabs
                         .filter((t) => t.show)
                         .map((tab) => (
@@ -1390,27 +1232,12 @@ function HistoryViewSection({ item, type, onClose }) {
                             />
                         ))}
                 </div>
-                <div
-                    ref={scrollContainerRef}
-                    className="flex-1 overflow-y-auto px-4 py-3 min-h-0"
-                    style={{ background: 'var(--bg-primary)' }}
-                >
+                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-3 min-h-0 bg-bg-primary">
                     {renderContent()}
                 </div>
-                <div
-                    className="px-4 py-2.5 flex justify-end"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        borderTop: '1px solid var(--border-light)'
-                    }}
-                >
+                <div className="px-4 py-2.5 flex justify-end bg-bg-secondary border-t border-border-light">
                     <button
-                        className="rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider transition-colors"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider transition-colors bg-bg-primary border border-border-light text-text-primary"
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-primary)')}
                         onClick={onClose}

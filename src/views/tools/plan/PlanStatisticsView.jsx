@@ -253,12 +253,8 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
                     />
                     <div className="flex-1 min-w-0 flex flex-col gap-3">
                         <div className="flex items-baseline gap-2">
-                            <h2 className="text-[15px] font-bold m-0" style={{ color: 'var(--text-primary)' }}>
-                                {sectionMeta.label}
-                            </h2>
-                            <span className="text-[11.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                                {sectionMeta.description}
-                            </span>
+                            <h2 className="text-[15px] font-bold m-0 text-text-primary">{sectionMeta.label}</h2>
+                            <span className="text-[11.5px] text-text-tertiary">{sectionMeta.description}</span>
                         </div>
 
                         {renderActiveSection()}

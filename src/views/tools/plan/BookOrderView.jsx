@@ -54,24 +54,16 @@ const formatMinutesAsClock = (mins) => {
  *  suggestions that don't apply. */
 function SameDayAdvice({ accentColor }) {
     return (
-        <div
-            className="rounded-lg p-4 flex items-start gap-3"
-            style={{
-                background: 'rgba(22, 163, 74, 0.08)',
-                border: '1px solid rgba(22, 163, 74, 0.35)'
-            }}
-        >
+        <div className="rounded-lg p-4 flex items-start gap-3 bg-[rgba(22,_163,_74,_0.08)] border border-[rgba(22,_163,_74,_0.35)]">
             <div
-                className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                style={{ background: accentColor, color: '#fff' }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 text-white"
+                style={{ background: accentColor }}
             >
                 <i className="fas fa-clock text-[16px]" />
             </div>
             <div className="min-w-0">
-                <div className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
-                    Book this at 15:00
-                </div>
-                <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                <div className="text-[15px] font-bold text-text-primary">Book this at 15:00</div>
+                <div className="text-[12px] mt-0.5 text-text-secondary">
                     Same-day bookings run at 15:00 — no plant analysis needed.
                 </div>
             </div>
@@ -103,32 +95,20 @@ function RoutePreview({ jobAddress, plantAddress, plantName, travelMin }) {
     const mapSrc = `https://www.google.com/maps?saddr=${plantQuery}&daddr=${jobQuery}&dirflg=d&output=embed`
     const externalUrl = `https://www.google.com/maps/dir/?api=1&origin=${plantQuery}&destination=${jobQuery}&travelmode=driving`
     return (
-        <div
-            className="rounded-lg overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="px-4 py-2.5 flex items-center gap-2"
-                style={{ borderBottom: '1px solid var(--border-light)' }}
-            >
-                <i className="fas fa-route text-[11px]" style={{ color: 'var(--text-tertiary)' }} />
-                <div
-                    className="text-[10.5px] font-semibold uppercase tracking-wider"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
+        <div className="rounded-lg overflow-hidden bg-bg-primary border border-border-light">
+            <div className="px-4 py-2.5 flex items-center gap-2 border-b border-border-light">
+                <i className="fas fa-route text-[11px] text-text-tertiary" />
+                <div className="text-[10.5px] font-semibold uppercase tracking-wider text-text-tertiary">
                     Route from {plantName || 'plant'} to job
                 </div>
                 {Number.isFinite(travelMin) && (
-                    <span className="text-[11px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
-                        · {travelMin} min
-                    </span>
+                    <span className="text-[11px] font-mono tabular-nums text-text-secondary">· {travelMin} min</span>
                 )}
                 <a
                     href={externalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto inline-flex items-center gap-1 text-[11px] hover:underline"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    className="ml-auto inline-flex items-center gap-1 text-[11px] hover:underline text-text-tertiary"
                     title="Open this route in Google Maps"
                 >
                     Open in Maps
@@ -136,9 +116,10 @@ function RoutePreview({ jobAddress, plantAddress, plantName, travelMin }) {
                 </a>
             </div>
             <iframe
+                className="block h-[280px] w-full"
                 src={mapSrc}
                 title={`Route from ${plantName || 'plant'} to ${trimmedJob}`}
-                style={{ border: 0, display: 'block', height: 280, width: '100%' }}
+                style={{ border: 0 }}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
             />
@@ -236,13 +217,8 @@ const SCHEDULE_PREVIEW_HEADERS = ['Start', 'Plant', 'Order', 'Customer', 'Locati
  *  the same on either side of the seam. */
 const SchedulePreviewHeaderCell = ({ label }) => (
     <th
-        className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
-        style={{
-            background: 'var(--bg-tertiary)',
-            borderBottom: '1px solid var(--border-light)',
-            boxShadow: '0 1px 0 0 var(--border-light)',
-            color: 'var(--text-secondary)'
-        }}
+        className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap bg-bg-tertiary border-b border-border-light text-text-secondary"
+        style={{ boxShadow: '0 1px 0 0 var(--border-light)' }}
     >
         {label}
     </th>
@@ -336,24 +312,15 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantCode, pla
     }, [newOrder?.startMin, newOrder?.yardage, newOrder?.trucksNeeded])
 
     return (
-        <div
-            className="rounded-xl overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="px-4 py-2.5 flex items-center gap-2"
-                style={{ borderBottom: '1px solid var(--border-light)' }}
-            >
-                <i className="fas fa-table-list text-[11px]" style={{ color: 'var(--text-tertiary)' }} />
-                <div
-                    className="text-[10.5px] font-semibold uppercase tracking-wider"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
+        <div className="rounded-xl overflow-hidden bg-bg-primary border border-border-light">
+            <div className="px-4 py-2.5 flex items-center gap-2 border-b border-border-light">
+                <i className="fas fa-table-list text-[11px] text-text-tertiary" />
+                <div className="text-[10.5px] font-semibold uppercase tracking-wider text-text-tertiary">
                     {plantName} — schedule preview
                 </div>
             </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
+                <table className="w-full text-[12.5px] border-collapse">
                     <thead>
                         <tr>
                             {SCHEDULE_PREVIEW_HEADERS.map((label) => (
@@ -366,8 +333,7 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantCode, pla
                             <tr>
                                 <td
                                     colSpan={SCHEDULE_PREVIEW_HEADERS.length}
-                                    className="px-3 py-3 text-center italic"
-                                    style={{ color: 'var(--text-tertiary)' }}
+                                    className="px-3 py-3 text-center italic text-text-tertiary"
                                 >
                                     No existing orders today
                                 </td>
@@ -378,17 +344,13 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantCode, pla
                                 return (
                                     <tr
                                         key="__new"
-                                        className={`transition-all duration-700 ease-out ${animated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
+                                        className={`transition-all duration-700 ease-out ${animated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'} border-t border-border-light`}
                                         style={{
                                             background: `${accentColor}1f`,
-                                            borderTop: '1px solid var(--border-light)',
                                             boxShadow: `inset 3px 0 0 0 ${accentColor}`
                                         }}
                                     >
-                                        <td
-                                            className="px-3 py-2 font-mono font-bold whitespace-nowrap"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <td className="px-3 py-2 font-mono font-bold whitespace-nowrap text-text-primary">
                                             {formatMinutesAsClock(row.startMin)}
                                         </td>
                                         <td className="px-3 py-2 whitespace-nowrap">
@@ -406,28 +368,12 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantCode, pla
                                         >
                                             New booking
                                         </td>
-                                        <td
-                                            className="px-3 py-2 max-w-[220px]"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
-                                            —
-                                        </td>
-                                        <td
-                                            className="px-3 py-2 whitespace-nowrap"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
-                                            —
-                                        </td>
-                                        <td
-                                            className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <td className="px-3 py-2 max-w-[220px] text-text-tertiary">—</td>
+                                        <td className="px-3 py-2 whitespace-nowrap text-text-tertiary">—</td>
+                                        <td className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap text-text-primary">
                                             {row.order.yardage}
                                         </td>
-                                        <td
-                                            className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <td className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap text-text-primary">
                                             {(() => {
                                                 const trucks = row.order.trucksNeeded
                                                 if (!Number.isFinite(poolForPlant) || poolForPlant <= 0) return trucks
@@ -463,16 +409,10 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantCode, pla
                             return (
                                 <tr
                                     key={o.orderId || `${o.orderNum}-${row.startMin}`}
-                                    className="animate-slide-in-row"
-                                    style={{
-                                        animationDelay: `${idx * 35}ms`,
-                                        borderTop: '1px solid var(--border-light)'
-                                    }}
+                                    className="animate-slide-in-row border-t border-border-light"
+                                    style={{ animationDelay: `${idx * 35}ms` }}
                                 >
-                                    <td
-                                        className="px-3 py-2 font-mono font-bold whitespace-nowrap"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                    <td className="px-3 py-2 font-mono font-bold whitespace-nowrap text-text-primary">
                                         {formatHhmm(o.startTime) || '—'}
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap">
@@ -482,55 +422,34 @@ function SchedulePreview({ accentColor, existingOrders, newOrder, plantCode, pla
                                             name={plantName}
                                         />
                                     </td>
-                                    <td
-                                        className="px-3 py-2 whitespace-nowrap font-semibold"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                    <td className="px-3 py-2 whitespace-nowrap font-semibold text-text-primary">
                                         {o.orderNum ? `#${o.orderNum}` : '—'}
                                     </td>
-                                    <td
-                                        className="px-3 py-2 max-w-[220px]"
-                                        style={{ color: 'var(--text-primary)' }}
-                                        title={customer}
-                                    >
+                                    <td className="px-3 py-2 max-w-[220px] text-text-primary" title={customer}>
                                         <span className="font-semibold truncate inline-block max-w-full align-middle">
                                             {customer}
                                         </span>
                                     </td>
-                                    <td
-                                        className="px-3 py-2 max-w-[220px]"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                        title={address}
-                                    >
+                                    <td className="px-3 py-2 max-w-[220px] text-text-secondary" title={address}>
                                         <span className="truncate inline-block max-w-full align-middle text-[11.5px] uppercase tracking-wide">
                                             {address || '—'}
                                         </span>
                                     </td>
                                     <td
-                                        className="px-3 py-2 whitespace-nowrap"
-                                        style={{ color: 'var(--text-primary)' }}
+                                        className="px-3 py-2 whitespace-nowrap text-text-primary"
                                         title={description || undefined}
                                     >
                                         <span className="font-mono font-semibold">{productCode || '—'}</span>
                                         {description && (
-                                            <span
-                                                className="ml-1 max-w-[160px] truncate inline-block align-middle"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            >
+                                            <span className="ml-1 max-w-[160px] truncate inline-block align-middle text-text-tertiary">
                                                 {description}
                                             </span>
                                         )}
                                     </td>
-                                    <td
-                                        className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                    <td className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap text-text-primary">
                                         {Number.isFinite(yards) && yards > 0 ? yards : '—'}
                                     </td>
-                                    <td
-                                        className="px-3 py-2 font-mono text-right whitespace-nowrap"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                    <td className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-secondary">
                                         {(() => {
                                             const trucks = parseFloat(o.truckCount)
                                             if (!Number.isFinite(trucks) || trucks <= 0) return '—'
@@ -594,20 +513,16 @@ const buildShiftReason = ({ recommendedSlot, request }) => {
  *  replaying the stored inputs against the current algorithm. */
 function RecentActivityPanel({ accentColor, logs, onRefresh, onToggle, open }) {
     return (
-        <div
-            className="rounded-lg flex flex-col"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded-lg flex flex-col bg-bg-primary border border-border-light">
             <button
                 type="button"
                 onClick={onToggle}
-                className="flex items-center justify-between gap-3 px-4 py-3 text-left bg-transparent border-0 cursor-pointer"
-                style={{ color: 'var(--text-primary)' }}
+                className="flex items-center justify-between gap-3 px-4 py-3 text-left bg-transparent border-0 cursor-pointer text-text-primary"
             >
                 <span className="flex items-center gap-2">
                     <i className="fas fa-clock-rotate-left text-[12px]" style={{ color: accentColor }} />
                     <span className="text-[13px] font-semibold">Recent activity</span>
-                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                    <span className="text-[11px] text-text-tertiary">
                         {logs.length === 0 ? 'no entries yet' : `${logs.length} entr${logs.length === 1 ? 'y' : 'ies'}`}
                     </span>
                 </span>
@@ -617,8 +532,7 @@ function RecentActivityPanel({ accentColor, logs, onRefresh, onToggle, open }) {
                             event.stopPropagation()
                             onRefresh()
                         }}
-                        className="text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded"
-                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                        className="text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded bg-bg-secondary text-text-secondary"
                         role="button"
                         tabIndex={0}
                         onKeyDown={(event) => {
@@ -631,16 +545,13 @@ function RecentActivityPanel({ accentColor, logs, onRefresh, onToggle, open }) {
                         <i className="fas fa-arrows-rotate text-[10px]" />
                         Refresh
                     </span>
-                    <i
-                        className={`fas ${open ? 'fa-chevron-up' : 'fa-chevron-down'} text-[10px]`}
-                        style={{ color: 'var(--text-tertiary)' }}
-                    />
+                    <i className={`fas ${open ? 'fa-chevron-up' : 'fa-chevron-down'} text-[10px] text-text-tertiary`} />
                 </span>
             </button>
             {open && (
-                <div className="flex flex-col" style={{ borderTop: '1px solid var(--border-light)' }}>
+                <div className="flex flex-col border-t border-border-light">
                     {logs.length === 0 && (
-                        <div className="px-4 py-3 text-[12px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <div className="px-4 py-3 text-[12px] text-text-tertiary">
                             No bookings have been run through Find a Spot yet on this account. Submit the form above and
                             a row will land here with the full decision context for diagnostics.
                         </div>
@@ -659,7 +570,15 @@ function RecentActivityRow({ entry }) {
     const [copied, setCopied] = useState(false)
     const createdLabel = formatLogTimestamp(entry?.created_at)
     const recDateLabel = entry?.recommended_date || entry?.plan_date || ''
-    const recTimeLabel = entry?.recommended_start_time || entry?.requested_start_time || ''
+    /* Always lead with the time the system SUGGESTED — that's the
+     * "what did Find a Spot tell the dispatcher" question this log
+     * answers. When no recommendation was captured, fall back to the
+     * typed time (rare, mostly for legacy rows pre-cascade-fix). */
+    const suggestedTimeLabel = entry?.recommended_start_time || ''
+    const requestedTimeLabel = entry?.requested_start_time || ''
+    const recTimeLabel = suggestedTimeLabel || requestedTimeLabel || ''
+    const suggestedDiffersFromTyped =
+        !!suggestedTimeLabel && !!requestedTimeLabel && suggestedTimeLabel !== requestedTimeLabel
     const recPlantLabel = entry?.recommended_plant_name || entry?.recommended_plant_code || '—'
     const submitterLabel = entry?.submitter_name || entry?.user_id || 'unknown user'
     const handleCopy = useCallback(
@@ -677,23 +596,29 @@ function RecentActivityRow({ entry }) {
         [entry]
     )
     return (
-        <div className="flex flex-col" style={{ borderTop: '1px solid var(--border-light)' }}>
-            <div className="flex items-start gap-3 px-4 py-2" style={{ color: 'var(--text-primary)' }}>
+        <div className="flex flex-col border-t border-border-light">
+            <div className="flex items-start gap-3 px-4 py-2 text-text-primary">
                 <button
                     type="button"
                     onClick={() => setExpanded((value) => !value)}
-                    className="flex-1 min-w-0 flex items-start gap-3 text-left bg-transparent border-0 cursor-pointer"
-                    style={{ color: 'var(--text-primary)' }}
+                    className="flex-1 min-w-0 flex items-start gap-3 text-left bg-transparent border-0 cursor-pointer text-text-primary"
                 >
                     <i
-                        className={`fas ${expanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[10px] mt-1`}
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className={`fas ${expanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[10px] mt-1 text-text-tertiary`}
                     />
                     <span className="flex-1 min-w-0 flex flex-col gap-0.5">
                         <span className="text-[12px] font-semibold truncate">
+                            <span className="text-[9.5px] font-bold uppercase tracking-wider mr-1 text-text-tertiary">
+                                Suggested
+                            </span>
                             {recDateLabel} {recTimeLabel} · {recPlantLabel}
+                            {suggestedDiffersFromTyped && (
+                                <span className="ml-2 text-[10.5px] font-normal text-text-tertiary">
+                                    (dispatcher typed {requestedTimeLabel})
+                                </span>
+                            )}
                         </span>
-                        <span className="text-[11px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[11px] truncate text-text-tertiary">
                             <i className="fas fa-user text-[9px] mr-1" />
                             {submitterLabel} · {createdLabel} · {entry?.estimated_trucks ?? '?'} trucks ·{' '}
                             {entry?.yardage ?? '?'} yd · {entry?.job_address || 'no address'}
@@ -715,13 +640,20 @@ function RecentActivityRow({ entry }) {
                 </button>
             </div>
             {expanded && (
-                <div className="px-4 py-3 flex flex-col gap-2" style={{ background: 'var(--bg-secondary)' }}>
+                <div className="px-4 py-3 flex flex-col gap-2 bg-bg-secondary">
                     <RecentActivityField label="Submitted by" value={submitterLabel} />
                     <RecentActivityField label="Submitted at" value={createdLabel} />
+                    <RecentActivityField
+                        label="Suggested time"
+                        value={
+                            suggestedTimeLabel ? `${recDateLabel ? `${recDateLabel} ` : ''}${suggestedTimeLabel}` : '—'
+                        }
+                    />
+                    <RecentActivityField label="Suggested plant" value={recPlantLabel} />
+                    <RecentActivityField label="Dispatcher typed" value={requestedTimeLabel || '—'} />
+                    <RecentActivityField label="Recommendation kind" value={entry?.recommendation_kind} />
                     <RecentActivityField label="Recommendation title" value={entry?.recommendation_title} />
                     <RecentActivityField label="Recommendation subtitle" value={entry?.recommendation_subtitle} />
-                    <RecentActivityField label="Recommendation kind" value={entry?.recommendation_kind} />
-                    <RecentActivityField label="Requested time" value={entry?.requested_start_time} />
                     <RecentActivityField label="Pour method" value={entry?.pour_method} />
                     <RecentActivityField label="Spacing (min)" value={entry?.truck_spacing_min} />
                     <RecentActivityField
@@ -775,19 +707,10 @@ function RecentActivityField({ label, mono, value }) {
     if (value === null || value === undefined || value === '') return null
     return (
         <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">{label}</span>
             <span
-                className="text-[10px] font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
-                {label}
-            </span>
-            <span
-                className={`text-[11.5px] ${mono ? 'font-mono whitespace-pre-wrap break-all' : ''}`}
-                style={{
-                    color: 'var(--text-primary)',
-                    maxHeight: mono ? 240 : undefined,
-                    overflowY: mono ? 'auto' : 'visible'
-                }}
+                className={`text-[11.5px] ${mono ? 'font-mono whitespace-pre-wrap break-all' : ''} text-text-primary`}
+                style={{ maxHeight: mono ? 240 : undefined, overflowY: mono ? 'auto' : 'visible' }}
             >
                 {String(value)}
             </span>
@@ -843,45 +766,36 @@ function RecommendationAdvice({ accentColor, recommendedSlot, request, top }) {
         >
             <div className="flex items-start gap-3">
                 <div
-                    className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                    style={{ background: accentColor, color: '#fff' }}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 text-white"
+                    style={{ background: accentColor }}
                 >
                     <i className={`fas ${tone.icon} text-[16px]`} />
                 </div>
                 <div className="min-w-0">
-                    <div className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                    <div className="text-[15px] font-bold text-text-primary">
                         Book at {top.plantName} at {recommendedTime}{' '}
-                        <span className="text-[12px] font-normal" style={{ color: 'var(--text-tertiary)' }}>
-                            #{top.plantCode}
-                        </span>
+                        <span className="text-[12px] font-normal text-text-tertiary">#{top.plantCode}</span>
                     </div>
-                    <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="text-[12px] mt-0.5 text-text-secondary">
                         {distanceLabel} · {freeLabel} at {recommendedTime}
                     </div>
                 </div>
             </div>
             {isShifted ? (
-                <div className="text-[13px] leading-snug" style={{ color: 'var(--text-primary)' }}>
+                <div className="text-[13px] leading-snug text-text-primary">
                     The customer is requesting <strong>{requestedTime}</strong>, but <strong>{recommendedTime}</strong>{' '}
                     is recommended — {buildShiftReason({ recommendedSlot, request })} {top.plantName} can still cover
                     the {trucksNeededLabel} for this {request.yardage}-yd pour at the recommended slot.
                 </div>
             ) : (
-                <div className="text-[13px] leading-snug" style={{ color: 'var(--text-primary)' }}>
+                <div className="text-[13px] leading-snug text-text-primary">
                     You&apos;re set. {top.plantName} is the closest plant and has the {trucksNeededLabel} this{' '}
                     {request.yardage}-yd pour needs at {recommendedTime}. Proceed with the booking.
                 </div>
             )}
             {recommendedSlot?.tighterAlternative && (
-                <div
-                    className="rounded-md p-3 flex items-start gap-2.5 text-[12.5px] leading-snug"
-                    style={{
-                        background: 'rgba(217, 119, 6, 0.08)',
-                        border: '1px solid rgba(217, 119, 6, 0.30)',
-                        color: 'var(--text-primary)'
-                    }}
-                >
-                    <i className="fas fa-circle-info text-[12px] mt-0.5 shrink-0" style={{ color: '#b45309' }} />
+                <div className="rounded-md p-3 flex items-start gap-2.5 text-[12.5px] leading-snug bg-[rgba(217,_119,_6,_0.08)] border border-[rgba(217,_119,_6,_0.30)] text-text-primary">
+                    <i className="fas fa-circle-info text-[12px] mt-0.5 shrink-0 text-[#b45309]" />
                     <div>
                         <strong>Heads up:</strong> {recommendedTime} starts the day{' '}
                         {Math.round(
@@ -1041,10 +955,7 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
      * dispatcher gets a single concrete "book at HH:MM on Plant"
      * recommendation and acts on it. */
     return (
-        <div
-            className="rounded-lg p-4 flex flex-col gap-3"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded-lg p-4 flex flex-col gap-3 bg-bg-primary border border-border-light">
             <div className="flex items-start gap-3">
                 <div
                     className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
@@ -1053,17 +964,13 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
                     <i className={`fas ${headlineTone.icon} text-[16px]`} />
                 </div>
                 <div className="min-w-0">
-                    <div className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                    <div className="text-[15px] font-bold text-text-primary">
                         {headlineTitle}
                         {plantCode && (
-                            <span className="text-[12px] font-normal ml-2" style={{ color: 'var(--text-tertiary)' }}>
-                                #{plantCode}
-                            </span>
+                            <span className="text-[12px] font-normal ml-2 text-text-tertiary">#{plantCode}</span>
                         )}
                     </div>
-                    <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                        {headlineSubtitle}
-                    </div>
+                    <div className="text-[12px] mt-0.5 text-text-secondary">{headlineSubtitle}</div>
                 </div>
             </div>
         </div>
@@ -1344,11 +1251,50 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
         ].join('|')
         if (loggedFormKeyRef.current === formKey) return
         loggedFormKeyRef.current = formKey
+        /* Replicate the BookingConflictPanel cascade so the logged
+         * recommendation matches the headline the dispatcher actually
+         * saw. Without this, a 'shift' path (fitting alternate or
+         * size-window shift) would silently fall through to
+         * `request.startMin` — logging the typed time instead of the
+         * time the panel said to book. */
         const recPlantCode = conflict?.plantCode || top?.plantCode || null
-        const recStartMin =
-            conflict?.bestEffortSlot?.slot?.startMin ?? recommendedSlot?.startMin ?? request?.startMin ?? null
         const recDate = conflict?.bestEffortSlot?.dateStr || planDate || null
-        const recKind = conflict ? 'conflict' : 'happy-path'
+        let recKind = 'happy-path'
+        let recStartMin = null
+        if (!conflict) {
+            recStartMin = recommendedSlot?.startMin ?? request?.startMin ?? null
+        } else {
+            const helpFleetTotal = (conflict.helpAvailability || []).reduce((sum, h) => sum + (h?.free || 0), 0)
+            const helpCovers = helpFleetTotal >= (conflict.shortBy ?? 0)
+            const fittingAlternate = (conflict.alternateTimes || []).find((s) => s?.fits) || null
+            const hasFittingAlternate = !!fittingAlternate
+            const hasBestEffort = !!conflict.bestEffortSlot
+            const bestEffortStartMin = conflict.bestEffortSlot?.slot?.startMin
+            const bestEffortFindsBetterSameDayTime =
+                hasBestEffort &&
+                conflict.bestEffortSlot.isSameDay &&
+                Number.isFinite(bestEffortStartMin) &&
+                bestEffortStartMin !== request?.startMin
+            if (conflict.launchSlotFull) {
+                recKind = 'launch-cap-shift'
+                recStartMin = hasFittingAlternate ? fittingAlternate.startMin : (request?.startMin ?? null)
+            } else if (bestEffortFindsBetterSameDayTime) {
+                recKind = 'best-effort'
+                recStartMin = bestEffortStartMin ?? null
+            } else if (helpCovers) {
+                recKind = 'help'
+                recStartMin = request?.startMin ?? null
+            } else if (hasFittingAlternate) {
+                recKind = 'shift'
+                recStartMin = fittingAlternate.startMin
+            } else if (hasBestEffort) {
+                recKind = 'best-effort'
+                recStartMin = bestEffortStartMin ?? null
+            } else {
+                recKind = 'none'
+                recStartMin = request?.startMin ?? null
+            }
+        }
         const payload = {
             context: {
                 conflict: conflict || null,
@@ -1386,31 +1332,21 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
         <div className="flex-1 min-h-0 flex flex-col gap-4 px-3 sm:px-4 lg:px-6 py-4 sm:py-5 overflow-y-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Form */}
-                <section
-                    className="lg:col-span-4 rounded-lg flex flex-col"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                >
-                    <div
-                        className="flex items-center gap-3 px-5 py-4"
-                        style={{ borderBottom: '1px solid var(--border-light)' }}
-                    >
+                <section className="lg:col-span-4 rounded-lg flex flex-col bg-bg-primary border border-border-light">
+                    <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
                         <div
-                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-clipboard-list text-[16px]" />
                         </div>
                         <div>
-                            <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                Find a Spot
-                            </div>
-                            <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                            <div className="text-[14px] font-semibold text-text-primary">Find a Spot</div>
+                            <div className="text-[12px] mt-0.5 text-text-tertiary">
                                 Booking-assist tool — surfaces the best plant + time for an order. It does not place the
                                 booking; the dispatcher still books manually.
                                 {planDateLabel && (
-                                    <span className="block mt-1" style={{ color: 'var(--text-secondary)' }}>
-                                        Looking at {planDateLabel}
-                                    </span>
+                                    <span className="block mt-1 text-text-secondary">Looking at {planDateLabel}</span>
                                 )}
                             </div>
                         </div>
@@ -1431,13 +1367,9 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                 className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                                 style={FIELD_STYLE}
                             />
-                            {dateError && (
-                                <p className="mt-1.5 text-[11px]" style={{ color: '#dc2626' }}>
-                                    {dateError}
-                                </p>
-                            )}
+                            {dateError && <p className="mt-1.5 text-[11px] text-red-600">{dateError}</p>}
                             {!dateError && planDateIsSunday && (
-                                <p className="mt-1.5 text-[11px]" style={{ color: '#dc2626' }}>
+                                <p className="mt-1.5 text-[11px] text-red-600">
                                     Plants are closed on Sundays — pick a weekday or Saturday.
                                 </p>
                             )}
@@ -1479,12 +1411,12 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                     style={FIELD_STYLE}
                                 />
                                 {startTimeMalformed && (
-                                    <p className="mt-1.5 text-[11px]" style={{ color: '#dc2626' }}>
+                                    <p className="mt-1.5 text-[11px] text-red-600">
                                         Use 24-hour HH:MM (e.g. 09:00, 14:30, 23:15).
                                     </p>
                                 )}
                                 {!startTimeMalformed && startTimeIsPast && (
-                                    <p className="mt-1.5 text-[11px]" style={{ color: '#dc2626' }}>
+                                    <p className="mt-1.5 text-[11px] text-red-600">
                                         Start time has already passed today — pick a later time or change the date.
                                     </p>
                                 )}
@@ -1509,12 +1441,9 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                         </option>
                                     ))}
                                 </select>
-                                <i
-                                    className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                />
+                                <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none text-text-tertiary" />
                             </div>
-                            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                            <p className="mt-1.5 text-[11px] text-text-tertiary">
                                 Helps the system determine how many trucks this pour will need.
                             </p>
                         </div>
@@ -1544,7 +1473,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                     className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                                     style={FIELD_STYLE}
                                 />
-                                <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                                <p className="mt-1.5 text-[11px] text-text-tertiary">
                                     Minutes between truck arrivals on a multi-load pour. Anything under 10 min snaps to
                                     6 — that&apos;s the tightest spacing a loading bay can sustain.
                                 </p>
@@ -1562,7 +1491,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                 required
                                 fieldStyle={FIELD_STYLE}
                             />
-                            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                            <p className="mt-1.5 text-[11px] text-text-tertiary">
                                 Start typing — pick a suggestion to verify the address. Drive time runs against the
                                 verified location.
                             </p>
@@ -1570,53 +1499,35 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
 
                         {request &&
                             (request.exceedsShiftLimit ? (
-                                <div
-                                    className="rounded-lg px-3 py-2.5 text-[12px] flex flex-col gap-1.5"
-                                    style={{
-                                        background: 'rgba(220, 38, 38, 0.08)',
-                                        border: '1px solid rgba(220, 38, 38, 0.35)',
-                                        color: '#b91c1c'
-                                    }}
-                                >
+                                <div className="rounded-lg px-3 py-2.5 text-[12px] flex flex-col gap-1.5 bg-[rgba(220,_38,_38,_0.08)] border border-[rgba(220,_38,_38,_0.35)] text-red-700">
                                     <div className="flex items-center gap-1.5 font-semibold">
                                         <i className="fas fa-triangle-exclamation text-[11px]" />
                                         Pour exceeds the 14-hour shift limit
                                     </div>
-                                    <div className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
+                                    <div className="text-[11.5px] text-text-secondary">
                                         At {request.spacingMin}-min spacing, this {request.yardage}-yd pour runs about{' '}
                                         {(request.projectedShiftMin / 60).toFixed(1)}h from first load-out to back-at-
                                         yard — over the 14h driver-shift cap.
                                     </div>
-                                    <div className="text-[11px]" style={{ color: '#b45309' }}>
+                                    <div className="text-[11px] text-[#b45309]">
                                         Drop the spacing below it or shrink the yardage so the pour fits a single 14h
                                         shift.
                                     </div>
                                 </div>
                             ) : (
-                                <div
-                                    className="rounded-lg px-3 py-2.5 text-[12px] flex flex-col gap-1"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
-                                    <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
+                                <div className="rounded-lg px-3 py-2.5 text-[12px] flex flex-col gap-1 bg-bg-secondary border border-border-light">
+                                    <div className="flex justify-between text-text-secondary">
                                         <span>Estimated trucks</span>
-                                        <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                            {request.trucksNeeded}
-                                        </span>
+                                        <span className="font-semibold text-text-primary">{request.trucksNeeded}</span>
                                     </div>
-                                    <div className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
+                                    <div className="flex justify-between text-text-secondary">
                                         <span>Pour window</span>
-                                        <span
-                                            className="font-semibold tabular-nums"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <span className="font-semibold tabular-nums text-text-primary">
                                             {formatMinutesAsClock(request.startMin)}–
                                             {formatMinutesAsClock(request.startMin + request.durationMin)}
                                         </span>
                                     </div>
-                                    <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                                    <div className="text-[10.5px] mt-1 text-text-tertiary">
                                         Assumes {DEFAULT_LOAD_SIZE_YARDS}-yd loads, {request.spacingMin}-min spacing.
                                     </div>
                                 </div>
@@ -1641,12 +1552,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                 <button
                                     type="button"
                                     onClick={handleReset}
-                                    className="inline-flex items-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider px-3.5 py-2.5"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-secondary)'
-                                    }}
+                                    className="inline-flex items-center gap-2 rounded-lg text-[12px] font-semibold uppercase tracking-wider px-3.5 py-2.5 bg-bg-secondary border border-border-light text-text-secondary"
                                     title="Clear every field on the form"
                                 >
                                     <i className="fas fa-eraser text-[12px]" />
@@ -1693,29 +1599,16 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                         return (
                             <>
                                 <FadeIn show={showExceedsShift}>
-                                    <div
-                                        className="rounded-lg p-5 flex flex-col gap-3"
-                                        style={{
-                                            background: 'rgba(220, 38, 38, 0.08)',
-                                            border: '1px solid rgba(220, 38, 38, 0.35)',
-                                            color: 'var(--text-primary)'
-                                        }}
-                                    >
+                                    <div className="rounded-lg p-5 flex flex-col gap-3 bg-[rgba(220,_38,_38,_0.08)] border border-[rgba(220,_38,_38,_0.35)] text-text-primary">
                                         <div className="flex items-start gap-3">
-                                            <div
-                                                className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
-                                                style={{ background: '#dc2626', color: '#fff' }}
-                                            >
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 bg-red-600 text-white">
                                                 <i className="fas fa-triangle-exclamation text-[16px]" />
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-[15px] font-bold" style={{ color: '#b91c1c' }}>
+                                                <div className="text-[15px] font-bold text-red-700">
                                                     Pour exceeds the 14-hour shift limit
                                                 </div>
-                                                <div
-                                                    className="text-[12.5px] mt-1 leading-snug"
-                                                    style={{ color: 'var(--text-secondary)' }}
-                                                >
+                                                <div className="text-[12.5px] mt-1 leading-snug text-text-secondary">
                                                     At {request?.spacingMin}-min spacing, this {request?.yardage}-yd
                                                     pour would run about{' '}
                                                     <strong>
@@ -1730,18 +1623,8 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                                 </div>
                                             </div>
                                         </div>
-                                        <div
-                                            className="rounded-md p-3 text-[12px]"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)',
-                                                color: 'var(--text-secondary)'
-                                            }}
-                                        >
-                                            <div
-                                                className="text-[10.5px] font-bold uppercase tracking-wider mb-1.5"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            >
+                                        <div className="rounded-md p-3 text-[12px] bg-bg-primary border border-border-light text-text-secondary">
+                                            <div className="text-[10.5px] font-bold uppercase tracking-wider mb-1.5 text-text-tertiary">
                                                 Either of these brings the pour under 14 hours:
                                             </div>
                                             <ul className="list-disc pl-4 space-y-0.5">
@@ -1762,19 +1645,9 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                 </FadeIn>
 
                                 <FadeIn show={showIdle}>
-                                    <div
-                                        className="rounded-lg p-8 text-center flex flex-col items-center gap-2"
-                                        style={{
-                                            background: 'var(--bg-primary)',
-                                            border: '1px dashed var(--border-light)',
-                                            color: 'var(--text-tertiary)'
-                                        }}
-                                    >
+                                    <div className="rounded-lg p-8 text-center flex flex-col items-center gap-2 bg-bg-primary border border-border-light text-text-tertiary">
                                         <i className="fas fa-route text-3xl mb-2" />
-                                        <div
-                                            className="text-[14px] font-semibold"
-                                            style={{ color: 'var(--text-secondary)' }}
-                                        >
+                                        <div className="text-[14px] font-semibold text-text-secondary">
                                             Fill the form to see a booking recommendation
                                         </div>
                                         <div className="text-[12px]">
@@ -1785,14 +1658,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                 </FadeIn>
 
                                 <FadeIn show={showSunday}>
-                                    <div
-                                        className="rounded-lg p-6 text-center"
-                                        style={{
-                                            background: 'rgba(220, 38, 38, 0.08)',
-                                            border: '1px solid rgba(220, 38, 38, 0.35)',
-                                            color: '#b91c1c'
-                                        }}
-                                    >
+                                    <div className="rounded-lg p-6 text-center bg-[rgba(220,_38,_38,_0.08)] border border-[rgba(220,_38,_38,_0.35)] text-red-700">
                                         <i className="fas fa-ban text-2xl mb-2" />
                                         <div className="text-[14px] font-semibold">Plants are closed on Sundays.</div>
                                         <div className="text-[12px] mt-1">
@@ -1806,14 +1672,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                 </FadeIn>
 
                                 <FadeIn show={showLoading}>
-                                    <div
-                                        className="rounded-lg px-4 py-2.5 flex items-center gap-2 text-[12px]"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-secondary)'
-                                        }}
-                                    >
+                                    <div className="rounded-lg px-4 py-2.5 flex items-center gap-2 text-[12px] bg-bg-secondary border border-border-light text-text-secondary">
                                         <i className="fas fa-route fa-spin text-[11px]" />
                                         Calculating drive times — plants further than {TRAVEL_MIN_HORIZON} min will be
                                         hidden.
@@ -1821,14 +1680,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                 </FadeIn>
 
                                 <FadeIn show={showNoPlants}>
-                                    <div
-                                        className="rounded-lg p-6 text-center"
-                                        style={{
-                                            background: 'rgba(217, 119, 6, 0.1)',
-                                            border: '1px solid rgba(217, 119, 6, 0.35)',
-                                            color: '#b45309'
-                                        }}
-                                    >
+                                    <div className="rounded-lg p-6 text-center bg-[rgba(217,_119,_6,_0.1)] border border-[rgba(217,_119,_6,_0.35)] text-[#b45309]">
                                         <i className="fas fa-triangle-exclamation text-2xl mb-2" />
                                         <div className="text-[14px] font-semibold">
                                             No plants within {TRAVEL_MIN_HORIZON} minutes.

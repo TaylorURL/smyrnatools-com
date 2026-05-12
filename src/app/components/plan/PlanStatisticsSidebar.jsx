@@ -51,14 +51,8 @@ export const PLAN_STATS_SECTIONS = [
  */
 export function PlanStatisticsSidebar({ accentColor, activeSection, onSelect }) {
     return (
-        <aside
-            className="hidden md:flex shrink-0 flex-col gap-0.5 sticky top-0 self-start py-2 pr-1"
-            style={{ width: 220 }}
-        >
-            <div
-                className="text-[10px] font-bold uppercase tracking-[0.08em] px-3 py-2"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+        <aside className="hidden md:flex shrink-0 flex-col gap-0.5 sticky top-0 self-start py-2 pr-1 w-[220px]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.08em] px-3 py-2 text-text-tertiary">
                 Statistics
             </div>
             {PLAN_STATS_SECTIONS.map((section) => {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
+import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import Database from '../../../services/DatabaseService'
@@ -10,7 +11,6 @@ import { PlantService } from '../../../services/PlantService'
 import { TractorService } from '../../../services/TractorService'
 import { UserService } from '../../../services/UserService'
 import GrammarUtility from '../../../utils/GrammarUtility'
-import OperatorCommentModal from './OperatorCommentModal'
 import OperatorHistoryView from './OperatorHistoryView'
 
 const SELECT_CLASS =
@@ -381,10 +381,12 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                     )}
                     {showHistory && <OperatorHistoryView operator={operator} onClose={() => setShowHistory(false)} />}
                     {showComments && operator && (
-                        <OperatorCommentModal
-                            operatorId={operatorId}
-                            operatorName={operator.name}
+                        <CommentModalSection
+                            itemId={operatorId}
+                            itemNumber={operator.name}
+                            itemType="Operator"
                             onClose={() => setShowComments(false)}
+                            service={OperatorService}
                         />
                     )}
                 </>

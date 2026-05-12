@@ -19,13 +19,10 @@ export const DASHBOARD_NAV_SECTIONS = [
 export function DashboardScrollSpyNav({ accent, activeId, alertCount = 0, onJump, peopleCount = 0, sections }) {
     return (
         <aside
-            className="hidden lg:block sticky top-0 self-start py-5 pr-3 overflow-y-auto"
-            style={{ maxHeight: '100vh', width: 200 }}
+            className="hidden lg:block sticky top-0 self-start py-5 pr-3 overflow-y-auto w-[200px]"
+            style={{ maxHeight: '100vh' }}
         >
-            <div
-                className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+            <div className="text-[10px] font-bold uppercase tracking-[0.08em] px-2 pb-2 text-text-tertiary">
                 Sections
             </div>
             <nav className="flex flex-col">
@@ -47,12 +44,7 @@ export function DashboardScrollSpyNav({ accent, activeId, alertCount = 0, onJump
                         >
                             <span className="flex-1 truncate">{section.label}</span>
                             {badge != null && badge > 0 && (
-                                <span
-                                    className="text-[11px] font-mono tabular-nums"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                >
-                                    {badge}
-                                </span>
+                                <span className="text-[11px] font-mono tabular-nums text-text-tertiary">{badge}</span>
                             )}
                         </button>
                     )

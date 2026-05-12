@@ -557,21 +557,19 @@ Deno.serve(async (req) => {
                 const { userId, sessionId, browser, os, device, userAgent } = await req.json()
                 if (!userId || !sessionId) return errorResponse('userId and sessionId are required', headers, 400)
                 const now = nowISO()
-                const { error } = await supabase
-                    .from('users_sessions')
-                    .upsert(
-                        {
-                            id: sessionId,
-                            user_id: userId,
-                            browser: browser || null,
-                            os: os || null,
-                            device: device || null,
-                            user_agent: userAgent || null,
-                            created_at: now,
-                            last_active: now
-                        },
-                        { onConflict: 'id' }
-                    )
+                const { error } = await supabase.from('users_sessions').upsert(
+                    {
+                        id: sessionId,
+                        user_id: userId,
+                        browser: browser || null,
+                        os: os || null,
+                        device: device || null,
+                        user_agent: userAgent || null,
+                        created_at: now,
+                        last_active: now
+                    },
+                    { onConflict: 'id' }
+                )
                 if (error) return errorResponse('Failed to create session', headers, 500)
                 const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
                 if (!jwtSecret) return errorResponse('Server JWT secret missing', headers, 500)

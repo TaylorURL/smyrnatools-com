@@ -67,7 +67,7 @@ function SkeletonTaskRow({ compact }) {
                         <div className="w-4/5 rounded bg-slate-200 animate-pulse" style={{ height: titleH }} />
                         <div className="w-2/5 rounded bg-slate-200 animate-pulse" style={{ height: subtitleH }} />
                     </div>
-                    <div className="w-20 shrink-0 rounded-full bg-slate-200 animate-pulse" style={{ height: '20px' }} />
+                    <div className="w-20 shrink-0 rounded-full bg-slate-200 animate-pulse h-5" />
                 </div>
                 <div className="flex items-center flex-wrap" style={{ gap: compact ? '0.5rem' : '0.75rem' }}>
                     <div className="w-14 rounded bg-slate-200 animate-pulse" style={{ height: metaH }} />

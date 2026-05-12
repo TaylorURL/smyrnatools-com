@@ -49,12 +49,10 @@ export function PlanTimeOfDayBar({ grandTotal, totals }) {
     return (
         <div className="flex flex-col gap-1.5">
             <div className="flex items-baseline justify-between text-[10px] font-semibold uppercase tracking-wider">
-                <span style={{ color: 'var(--text-tertiary)' }}>Time of day</span>
-                <span style={{ color: 'var(--text-secondary)' }}>
-                    {Math.round(grandTotal).toLocaleString()} yd total
-                </span>
+                <span className="text-text-tertiary">Time of day</span>
+                <span className="text-text-secondary">{Math.round(grandTotal).toLocaleString()} yd total</span>
             </div>
-            <div className="flex h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+            <div className="flex h-2 rounded-full overflow-hidden bg-bg-tertiary">
                 {TIME_OF_DAY_SECTIONS.map((section) => {
                     const value = totals[section.key] || 0
                     const pct = (value / grandTotal) * 100
@@ -75,14 +73,12 @@ export function PlanTimeOfDayBar({ grandTotal, totals }) {
                     return (
                         <span key={section.key} className="flex items-center gap-1.5">
                             <span
-                                className="inline-block rounded-sm shrink-0"
-                                style={{ background: section.color, height: 8, width: 8 }}
+                                className="inline-block rounded-sm shrink-0 h-2 w-2"
+                                style={{ background: section.color }}
                             />
-                            <span style={{ color: 'var(--text-secondary)' }}>{section.label}</span>
-                            <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
-                                {value.toLocaleString()} yd
-                            </span>
-                            <span style={{ color: 'var(--text-tertiary)' }}>
+                            <span className="text-text-secondary">{section.label}</span>
+                            <span className="font-mono text-text-primary">{value.toLocaleString()} yd</span>
+                            <span className="text-text-tertiary">
                                 · {pct.toFixed(0)}% · {section.hint}
                             </span>
                         </span>

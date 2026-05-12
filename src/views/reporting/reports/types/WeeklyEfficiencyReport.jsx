@@ -13,14 +13,8 @@ const FIELD_STYLE = {
     border: '1px solid var(--border-light)',
     color: 'var(--text-primary)'
 }
-const TH_BASE = `${SECTION_LABEL_CLASS} px-3 py-2 text-left whitespace-nowrap`
-const TH_STYLE = {
-    background: 'var(--bg-tertiary)',
-    color: 'var(--text-tertiary)',
-    borderBottom: '1px solid var(--border-light)'
-}
-const TD_BASE = 'px-3 py-2 text-[12px] align-middle'
-const TD_STYLE = { color: 'var(--text-primary)' }
+const TH_BASE = `${SECTION_LABEL_CLASS} px-3 py-2 text-left whitespace-nowrap bg-bg-tertiary text-text-tertiary border-b border-border-light`
+const TD_BASE = 'px-3 py-2 text-[12px] align-middle text-text-primary'
 
 const getRows = (form) => (Array.isArray(form.rows) ? form.rows : [])
 
@@ -48,10 +42,7 @@ function CardHeader({ icon, label, sub, title, right }) {
     return (
         <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 min-w-0">
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                >
+                <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                     <i className={`fas ${icon} text-[11px]`} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -60,14 +51,8 @@ function CardHeader({ icon, label, sub, title, right }) {
                             {label}
                         </div>
                     )}
-                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                        {title}
-                    </div>
-                    {sub && (
-                        <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                            {sub}
-                        </div>
-                    )}
+                    <div className="text-[12.5px] font-semibold leading-tight text-text-primary">{title}</div>
+                    {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
                 </div>
             </div>
             {right && <div className="shrink-0">{right}</div>}
@@ -79,16 +64,11 @@ function CardHeader({ icon, label, sub, title, right }) {
  *  District / Plant Manager `StatPill` primitive. */
 function StatTile({ label, value }) {
     return (
-        <div
-            className="rounded p-2.5 flex flex-col gap-0.5"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded p-2.5 flex flex-col gap-0.5 bg-bg-secondary border border-border-light">
             <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                 {label}
             </span>
-            <span className="text-[15px] font-bold leading-tight tabular-nums" style={{ color: 'var(--text-primary)' }}>
-                {value}
-            </span>
+            <span className="text-[15px] font-bold leading-tight tabular-nums text-text-primary">{value}</span>
         </div>
     )
 }
@@ -100,12 +80,7 @@ function WarningsBar({ messages }) {
             {messages.map((msg, i) => (
                 <div
                     key={i}
-                    className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium"
-                    style={{
-                        background: 'rgba(217, 119, 6, 0.12)',
-                        border: '1px solid rgba(217, 119, 6, 0.35)',
-                        color: '#92400e'
-                    }}
+                    className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium bg-[rgba(217,_119,_6,_0.12)] border border-[rgba(217,_119,_6,_0.35)] text-[#92400e]"
                 >
                     <i className="fas fa-triangle-exclamation text-[10px]" />
                     <span>{msg}</span>
@@ -128,10 +103,9 @@ function Toolbar({ filterText, setFilterText, sortKey, sortDir, setSort }) {
             type="button"
             onClick={onClick}
             title={title}
-            className="inline-flex items-center gap-1 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none"
+            className="inline-flex items-center gap-1 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none border border-border-light"
             style={{
                 background: active ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
                 color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
             }}
         >
@@ -219,14 +193,13 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
     const commentsColIndex = headers.length - 1
     return (
         <div className="overflow-x-auto rounded" style={CARD_STYLE}>
-            <table className="w-full min-w-[1400px]" style={{ borderCollapse: 'collapse' }}>
+            <table className="w-full min-w-[1400px] border-collapse">
                 <thead>
                     <tr>
                         {headers.map((h, i) => (
                             <th
                                 key={i}
                                 className={`${TH_BASE} ${i >= rightAlignFromIndex && i !== commentsColIndex ? 'text-right' : ''}`}
-                                style={TH_STYLE}
                             >
                                 {h}
                             </th>
@@ -242,7 +215,7 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
                         const needsComment = warnStart || warnEnd || lowLoads || longHours
                         const hasComment = r.comments?.trim()
                         const missingRequiredComment = needsComment && !hasComment
-                        const rowStyle = { ...TD_STYLE, borderTop: '1px solid var(--border-light)' }
+                        const rowStyle = { borderTop: '1px solid var(--border-light)' }
                         const mutedStyle = { ...rowStyle, color: 'var(--text-secondary)' }
                         return (
                             <tr key={key}>
@@ -324,10 +297,7 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
                                     }}
                                 >
                                     {hasComment ? (
-                                        <div
-                                            className="text-[12px] italic whitespace-pre-wrap break-words"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <div className="text-[12px] italic whitespace-pre-wrap break-words text-text-primary">
                                             {r.comments}
                                         </div>
                                     ) : missingRequiredComment ? (
@@ -381,12 +351,7 @@ function EfficiencyPluginBody({ form, operatorOptions, sidebarStats = false, pla
             type="button"
             onClick={handleExport}
             disabled={isExporting || !rows.length}
-            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none disabled:cursor-not-allowed disabled:opacity-60"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-primary)'
-            }}
+            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none disabled:cursor-not-allowed disabled:opacity-60 bg-bg-secondary border border-border-light text-text-primary"
             title="Download this report as an Excel spreadsheet"
         >
             <i className={`fas ${isExporting ? 'fa-spinner fa-spin' : 'fa-file-excel'} text-[11px]`} />

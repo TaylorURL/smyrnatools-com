@@ -56,12 +56,10 @@ const buildPlantBreakdowns = ({ clockInRows, effectiveBaseByCode, plantCodes, pl
 function KeyStat({ accent, label, value }) {
     return (
         <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-[9.5px] uppercase tracking-wider truncate" style={{ color: 'var(--text-tertiary)' }}>
-                {label}
-            </span>
+            <span className="text-[9.5px] uppercase tracking-wider truncate text-text-tertiary">{label}</span>
             <span
-                className="text-[14px] font-bold leading-tight font-mono"
-                style={{ color: accent || 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
+                className="text-[14px] font-bold leading-tight font-mono font-heading"
+                style={{ color: accent || 'var(--text-primary)' }}
             >
                 {value}
             </span>
@@ -75,30 +73,17 @@ function KeyStat({ accent, label, value }) {
 function ClockInPlantCard({ accentColor, breakdown }) {
     const { base, code, earliestClockIn, firstJob, leaveOffCount, name, needed, slots, totalYardage } = breakdown
     return (
-        <div
-            className="rounded-lg overflow-hidden flex flex-col"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="flex items-center gap-2 px-3 py-2"
-                style={{ borderBottom: '1px solid var(--border-light)' }}
-            >
+        <div className="rounded-lg overflow-hidden flex flex-col bg-bg-secondary border border-border-light">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-border-light">
                 <div
-                    className="w-8 h-8 rounded flex items-center justify-center shrink-0 font-mono font-bold"
-                    style={{
-                        background: `${accentColor}29`,
-                        color: accentColor,
-                        fontFamily: 'var(--font-heading)',
-                        fontSize: 11
-                    }}
+                    className="w-8 h-8 rounded flex items-center justify-center shrink-0 font-mono font-bold font-heading"
+                    style={{ background: `${accentColor}29`, color: accentColor, fontSize: 11 }}
                 >
                     {code}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                        {name || code}
-                    </div>
-                    <div className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-[12.5px] font-semibold truncate text-text-primary">{name || code}</div>
+                    <div className="text-[10.5px] text-text-tertiary">
                         {firstJob ? `First job ${firstJob}` : 'No production'}
                         {totalYardage > 0 ? ` · ${totalYardage.toLocaleString()} yd` : ''}
                     </div>
@@ -113,7 +98,7 @@ function ClockInPlantCard({ accentColor, breakdown }) {
                     </span>
                 )}
             </div>
-            <div className="grid grid-cols-3 gap-2 px-3 py-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
+            <div className="grid grid-cols-3 gap-2 px-3 py-2 border-b border-border-light">
                 <KeyStat
                     label="Earliest clock-in"
                     value={earliestClockIn || '—'}
@@ -128,7 +113,7 @@ function ClockInPlantCard({ accentColor, breakdown }) {
             </div>
             <div className="px-3 py-2 flex flex-col gap-1">
                 {needed === 0 ? (
-                    <div className="text-[11.5px] italic text-center py-2" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-[11.5px] italic text-center py-2 text-text-tertiary">
                         {base === 0 ? 'No operators on roster.' : 'No operators needed today.'}
                     </div>
                 ) : (
@@ -137,29 +122,17 @@ function ClockInPlantCard({ accentColor, breakdown }) {
                         .map((slot) => (
                             <div
                                 key={`${code}-op-${slot.index}`}
-                                className="flex items-center justify-between gap-2 text-[11.5px] px-2 py-1 rounded"
-                                style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-primary)'
-                                }}
+                                className="flex items-center justify-between gap-2 text-[11.5px] px-2 py-1 rounded bg-bg-primary border border-border-light text-text-primary"
                             >
                                 <span className="font-semibold">Operator {slot.index}</span>
-                                <span className="font-mono font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
+                                <span className="font-mono font-bold font-heading">
                                     {formatMinutesClock(slot.time)}
                                 </span>
                             </div>
                         ))
                 )}
                 {leaveOffCount > 0 && (
-                    <div
-                        className="text-[11.5px] italic mt-1 px-2 py-1.5 rounded"
-                        style={{
-                            background: 'transparent',
-                            border: '1px dashed var(--border-light)',
-                            color: 'var(--text-tertiary)'
-                        }}
-                    >
+                    <div className="text-[11.5px] italic mt-1 px-2 py-1.5 rounded bg-transparent border border-border-light text-text-tertiary">
                         The rest of the operators should be scheduled off.
                     </div>
                 )}
@@ -235,10 +208,7 @@ export default function PlanDashboardClockInBoard({
 
     return (
         <div className="flex flex-col gap-2">
-            <div
-                className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5"
-                style={{ color: 'var(--text-secondary)' }}
-            >
+            <div className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 text-text-secondary">
                 <i className="fas fa-user-clock text-[10px]" />
                 Operator clock-ins · who to leave off
             </div>

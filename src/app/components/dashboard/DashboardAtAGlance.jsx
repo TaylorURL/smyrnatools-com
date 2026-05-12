@@ -26,23 +26,20 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
     if (loading) {
         return (
             <aside
-                className="hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto"
-                style={{ maxHeight: '100vh', width: 240 }}
+                className="hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto w-60"
+                style={{ maxHeight: '100vh' }}
             >
-                <div className="h-3 w-32 mb-2 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                <div className="h-3 w-32 mb-2 rounded animate-pulse bg-bg-tertiary" />
                 <div className="flex flex-col">
                     {SKELETON_ROW_LABELS.map((label, i) => (
                         <div
                             key={label}
-                            className="flex items-baseline justify-between py-1.5 border-b"
-                            style={{ borderColor: 'var(--border-light)' }}
+                            className="flex items-baseline justify-between py-1.5 border-b border-border-light"
                         >
-                            <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                                {label}
-                            </span>
+                            <span className="text-[12px] text-text-secondary">{label}</span>
                             <span
-                                className="h-3 w-12 rounded animate-pulse"
-                                style={{ animationDelay: `${i * 40}ms`, background: 'var(--bg-tertiary)' }}
+                                className="h-3 w-12 rounded animate-pulse bg-bg-tertiary"
+                                style={{ animationDelay: `${i * 40}ms` }}
                             />
                         </div>
                     ))}
@@ -99,22 +96,17 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
 
     return (
         <aside
-            className="hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto"
-            style={{ maxHeight: '100vh', width: 240 }}
+            className="hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto w-60"
+            style={{ maxHeight: '100vh' }}
         >
-            <div className="text-[12px] mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                {dateLabel}
-            </div>
+            <div className="text-[12px] mb-1 text-text-tertiary">{dateLabel}</div>
             <div className="flex flex-col">
                 {rows.map((row) => (
                     <div
                         key={row.label}
-                        className="flex items-baseline justify-between py-1.5 border-b"
-                        style={{ borderColor: 'var(--border-light)' }}
+                        className="flex items-baseline justify-between py-1.5 border-b border-border-light"
                     >
-                        <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                            {row.label}
-                        </span>
+                        <span className="text-[12px] text-text-secondary">{row.label}</span>
                         <span
                             className="text-[13px] font-semibold font-mono tabular-nums"
                             style={{ color: row.color || 'var(--text-primary)' }}

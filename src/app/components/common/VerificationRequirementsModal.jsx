@@ -354,24 +354,17 @@ export default function VerificationRequirementsModal({
         <>
             {ReactDOM.createPortal(
                 <div
-                    className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
-                    style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+                    className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
                     role="dialog"
                     aria-modal="true"
                 >
-                    <div
-                        className="flex w-full max-w-[600px] flex-col overflow-hidden rounded max-h-[90vh]"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
+                    <div className="flex w-full max-w-[600px] flex-col overflow-hidden rounded max-h-[90vh] bg-bg-primary border border-border-light">
                         {/* Header */}
-                        <div
-                            className="flex items-center justify-between gap-2.5 px-3 py-2 shrink-0"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <div className="flex items-center justify-between gap-2.5 px-3 py-2 shrink-0 border-b border-border-light">
                             <div className="flex items-center gap-2.5 min-w-0">
                                 <div
-                                    className="flex h-7 w-7 items-center justify-center rounded shrink-0"
-                                    style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                                    className="flex h-7 w-7 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                                    style={{ color: accentColor }}
                                 >
                                     <i className="fas fa-clipboard-check text-[12px]" />
                                 </div>
@@ -379,14 +372,13 @@ export default function VerificationRequirementsModal({
                                     <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                                         Verification Checklist
                                     </div>
-                                    <div className="text-[11px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                                    <div className="text-[11px] truncate text-text-tertiary">
                                         Review requirements before verifying this {itemType?.toLowerCase()}
                                     </div>
                                 </div>
                             </div>
                             <button
-                                className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary"
-                                style={{ color: 'var(--text-secondary)' }}
+                                className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary text-text-secondary"
                                 onClick={onClose}
                                 title="Close"
                                 aria-label="Close"
@@ -396,10 +388,7 @@ export default function VerificationRequirementsModal({
                         </div>
 
                         {/* Body */}
-                        <div
-                            className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2"
-                            style={{ background: 'var(--bg-secondary)' }}
-                        >
+                        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2 bg-bg-secondary">
                             {/* Checklist section */}
                             {sectionsReady.checklist && (
                                 <Section
@@ -445,11 +434,7 @@ export default function VerificationRequirementsModal({
                                                 {vin && !vinOk && (
                                                     <div className="mt-1">
                                                         {vinInfo.reasons.map((r) => (
-                                                            <div
-                                                                key={r}
-                                                                className="text-[10.5px]"
-                                                                style={{ color: '#dc2626' }}
-                                                            >
+                                                            <div key={r} className="text-[10.5px] text-red-600">
                                                                 {r}
                                                             </div>
                                                         ))}
@@ -613,10 +598,7 @@ export default function VerificationRequirementsModal({
                                                                     </button>
                                                                 ))}
                                                             </div>
-                                                            <span
-                                                                className="text-[11px]"
-                                                                style={{ color: 'var(--text-secondary)' }}
-                                                            >
+                                                            <span className="text-[11px] text-text-secondary">
                                                                 {operatorRating > 0
                                                                     ? `${operatorRating}/5 · ${ratingLabels[operatorRating]}`
                                                                     : 'Not yet rated'}
@@ -670,15 +652,9 @@ export default function VerificationRequirementsModal({
                                             />
                                         </div>
                                     ) : (
-                                        <div
-                                            className="flex flex-col items-center justify-center py-6 px-3 text-center"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
+                                        <div className="flex flex-col items-center justify-center py-6 px-3 text-center text-text-tertiary">
                                             <i className="fas fa-exclamation-triangle text-2xl mb-2" />
-                                            <div
-                                                className="text-[12px] font-semibold"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
+                                            <div className="text-[12px] font-semibold text-text-primary">
                                                 Unable to load operator information
                                             </div>
                                             <div className="text-[11px] mt-0.5">
@@ -715,10 +691,7 @@ export default function VerificationRequirementsModal({
                                     {isLoadingIssues ? (
                                         <LoadingScreen message="Loading issues..." inline={true} />
                                     ) : openIssues.length === 0 ? (
-                                        <div
-                                            className="flex flex-col items-center justify-center py-6"
-                                            style={{ color: '#16a34a' }}
-                                        >
+                                        <div className="flex flex-col items-center justify-center py-6 text-green-600">
                                             <i className="fas fa-check-circle text-2xl mb-1.5" />
                                             <span className="text-[12px] font-semibold">
                                                 No open maintenance issues
@@ -748,17 +721,11 @@ export default function VerificationRequirementsModal({
                                                                 >
                                                                     {issue.severity}
                                                                 </span>
-                                                                <span
-                                                                    className="flex items-center gap-1 text-[10.5px]"
-                                                                    style={{ color: 'var(--text-secondary)' }}
-                                                                >
+                                                                <span className="flex items-center gap-1 text-[10.5px] text-text-secondary">
                                                                     <i className="fas fa-user text-[9px]" />
                                                                     {userNames[issue.created_by] || 'Unknown'}
                                                                 </span>
-                                                                <span
-                                                                    className="text-[10.5px] font-mono tabular-nums"
-                                                                    style={{ color: 'var(--text-tertiary)' }}
-                                                                >
+                                                                <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
                                                                     {formatDate(issue.time_created)}
                                                                 </span>
                                                                 <div className="ml-auto flex gap-1">
@@ -780,10 +747,7 @@ export default function VerificationRequirementsModal({
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <div
-                                                                className="text-[12px] leading-snug"
-                                                                style={{ color: 'var(--text-primary)' }}
-                                                            >
+                                                            <div className="text-[12px] leading-snug text-text-primary">
                                                                 {issue.issue}
                                                             </div>
                                                         </div>
@@ -821,10 +785,7 @@ export default function VerificationRequirementsModal({
                                     {isLoadingComments ? (
                                         <LoadingScreen message="Loading comments..." inline={true} />
                                     ) : comments.length === 0 ? (
-                                        <div
-                                            className="flex flex-col items-center justify-center py-6"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
+                                        <div className="flex flex-col items-center justify-center py-6 text-text-tertiary">
                                             <i className="fas fa-info-circle text-2xl mb-1.5" />
                                             <span className="text-[12px]">No comments</span>
                                         </div>
@@ -833,10 +794,7 @@ export default function VerificationRequirementsModal({
                                             {comments.map((comment) => (
                                                 <div key={comment.id} className="rounded p-2.5" style={FIELD_STYLE}>
                                                     <div className="mb-1.5 flex items-center justify-between gap-2">
-                                                        <span
-                                                            className="text-[10.5px] font-mono tabular-nums"
-                                                            style={{ color: 'var(--text-tertiary)' }}
-                                                        >
+                                                        <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
                                                             {formatDate(comment.createdAt)}
                                                         </span>
                                                         <IconButton
@@ -847,17 +805,11 @@ export default function VerificationRequirementsModal({
                                                             title="Delete comment"
                                                         />
                                                     </div>
-                                                    <div
-                                                        className="text-[12px] leading-snug"
-                                                        style={{ color: 'var(--text-primary)' }}
-                                                    >
+                                                    <div className="text-[12px] leading-snug text-text-primary">
                                                         {comment.text}
                                                     </div>
                                                     {comment.author && userNames[comment.author] && (
-                                                        <div
-                                                            className="mt-1.5 flex items-center gap-1 text-[10.5px]"
-                                                            style={{ color: 'var(--text-secondary)' }}
-                                                        >
+                                                        <div className="mt-1.5 flex items-center gap-1 text-[10.5px] text-text-secondary">
                                                             <i className="fas fa-user text-[9px]" />
                                                             {userNames[comment.author]}
                                                         </div>
@@ -880,21 +832,10 @@ export default function VerificationRequirementsModal({
                         )}
 
                         {/* Footer */}
-                        <div
-                            className="flex gap-2 px-3 py-2 shrink-0"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                borderTop: '1px solid var(--border-light)'
-                            }}
-                        >
+                        <div className="flex gap-2 px-3 py-2 shrink-0 bg-bg-secondary border-t border-border-light">
                             <button
                                 onClick={onClose}
-                                className="flex-1 rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider cursor-pointer transition-colors hover:brightness-95"
-                                style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-secondary)'
-                                }}
+                                className="flex-1 rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider cursor-pointer transition-colors hover:brightness-95 bg-bg-primary border border-border-light text-text-secondary"
                             >
                                 Cancel
                             </button>
@@ -938,20 +879,16 @@ export default function VerificationRequirementsModal({
 
 function Section({ accentColor, children, expanded, icon, onToggle, pill, title }) {
     return (
-        <div
-            className="rounded overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
             <button
                 type="button"
                 onClick={onToggle}
-                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left cursor-pointer border-none transition-colors hover:bg-bg-tertiary"
-                style={{ background: 'transparent' }}
+                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left cursor-pointer border-none transition-colors hover:bg-bg-tertiary bg-transparent"
             >
                 <div className="flex items-center gap-2 min-w-0">
                     <div
-                        className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                        style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                        className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                        style={{ color: accentColor }}
                     >
                         <i className={`fas ${icon} text-[11px]`} />
                     </div>
@@ -960,22 +897,9 @@ function Section({ accentColor, children, expanded, icon, onToggle, pill, title 
                     </span>
                     {pill}
                 </div>
-                <i
-                    className={`fas fa-chevron-${expanded ? 'up' : 'down'} text-[10px]`}
-                    style={{ color: 'var(--text-tertiary)' }}
-                />
+                <i className={`fas fa-chevron-${expanded ? 'up' : 'down'} text-[10px] text-text-tertiary`} />
             </button>
-            {expanded && (
-                <div
-                    className="px-3 py-2.5"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        borderTop: '1px solid var(--border-light)'
-                    }}
-                >
-                    {children}
-                </div>
-            )}
+            {expanded && <div className="px-3 py-2.5 bg-bg-primary border-t border-border-light">{children}</div>}
         </div>
     )
 }
@@ -993,10 +917,7 @@ function FieldLabel({ children, required }) {
         <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
             {children}
             {required && (
-                <span
-                    className="ml-1.5 inline-flex items-center rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white"
-                    style={{ background: '#dc2626' }}
-                >
+                <span className="ml-1.5 inline-flex items-center rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white bg-red-600">
                     Required
                 </span>
             )}
@@ -1021,16 +942,12 @@ function SimpleField({ label, onChange, placeholder, required, value }) {
 }
 
 function Hint({ children }) {
-    return (
-        <p className="mt-1 text-[10.5px] leading-snug" style={{ color: 'var(--text-tertiary)' }}>
-            {children}
-        </p>
-    )
+    return <p className="mt-1 text-[10.5px] leading-snug text-text-tertiary">{children}</p>
 }
 
 function RequiredHint({ children }) {
     return (
-        <div className="mt-1 flex items-center gap-1 text-[10.5px]" style={{ color: '#dc2626' }}>
+        <div className="mt-1 flex items-center gap-1 text-[10.5px] text-red-600">
             <i className="fas fa-exclamation-circle text-[10px]" />
             {children}
         </div>
@@ -1068,18 +985,12 @@ function OperatorRow({ label, last, mono, required, value }) {
                     {label}
                 </div>
                 {required && (
-                    <span
-                        className="mt-1 inline-flex items-center rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white"
-                        style={{ background: '#dc2626' }}
-                    >
+                    <span className="mt-1 inline-flex items-center rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white bg-red-600">
                         Required
                     </span>
                 )}
             </div>
-            <div
-                className={`flex-1 min-w-0 text-[12.5px] ${mono ? 'font-mono tabular-nums' : ''}`}
-                style={{ color: 'var(--text-primary)' }}
-            >
+            <div className={`flex-1 min-w-0 text-[12.5px] ${mono ? 'font-mono tabular-nums' : ''} text-text-primary`}>
                 {value}
             </div>
         </div>

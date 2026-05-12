@@ -2,7 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import VerificationRequirementsModal from '../../../app/components/common/VerificationRequirementsModal'
+import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
+import HistoryViewSection from '../../../app/components/sections/HistoryViewSection'
+import IssueModalSection from '../../../app/components/sections/IssueModalSection'
 import VerificationCardSection from '../../../app/components/sections/VerificationCardSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { Mixer } from '../../../app/models/mixers/Mixer'
@@ -14,9 +17,6 @@ import { UserService } from '../../../services/UserService'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import { DateUtility } from '../../../utils/DateUtility'
 import { ValidationUtility } from '../../../utils/ValidationUtility'
-import MixerCommentModal from './MixerCommentModal'
-import MixerHistoryView from './MixerHistoryView'
-import MixerIssueModal from './MixerIssueModal'
 import OperatorSelectModal from './OperatorSelectModal'
 
 /**
@@ -682,19 +682,23 @@ function MixerDetailView({ mixerId, onClose }) {
     ]
     return (
         <>
-            {showHistory && <MixerHistoryView mixer={mixer} onClose={() => setShowHistory(false)} />}
+            {showHistory && <HistoryViewSection item={mixer} onClose={() => setShowHistory(false)} type="mixer" />}
             {showComments && (
-                <MixerCommentModal
-                    mixerId={mixerId}
-                    mixerNumber={mixer?.truckNumber}
+                <CommentModalSection
+                    itemId={mixerId}
+                    itemNumber={mixer?.truckNumber}
+                    itemType="Mixer"
                     onClose={() => setShowComments(false)}
+                    service={MixerService}
                 />
             )}
             {showIssues && (
-                <MixerIssueModal
-                    mixerId={mixerId}
-                    mixerNumber={mixer?.truckNumber}
+                <IssueModalSection
+                    itemId={mixerId}
+                    itemNumber={mixer?.truckNumber}
+                    itemType="Mixer"
                     onClose={() => setShowIssues(false)}
+                    service={MixerService}
                 />
             )}
             {showPlantModal && (
@@ -742,20 +746,18 @@ function MixerDetailView({ mixerId, onClose }) {
                     canEditMixer && (
                         <>
                             <button
-                                className="global-button-secondary"
+                                className="global-button-secondary flex-1 justify-center"
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                style={{ flex: 1, justifyContent: 'center' }}
                             >
                                 <i className="fas fa-save"></i>
                                 <span>{isSaving ? 'Saving...' : 'Save'}</span>
                             </button>
                             {canDeleteMixer && (
                                 <button
-                                    className="global-button-secondary"
+                                    className="global-button-secondary flex-1 justify-center"
                                     onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={isSaving}
-                                    style={{ flex: 1, justifyContent: 'center' }}
                                 >
                                     <i className="fas fa-trash-alt"></i>
                                     <span>Delete</span>
@@ -887,17 +889,8 @@ function MixerDetailView({ mixerId, onClose }) {
                             </select>
                             {isCleanlinessBlocking && (
                                 <div
-                                    style={{
-                                        alignItems: 'center',
-                                        background: 'var(--bg-hover)',
-                                        borderRadius: '6px',
-                                        color: 'var(--text-secondary)',
-                                        display: 'flex',
-                                        fontSize: '0.8125rem',
-                                        gap: '0.5rem',
-                                        marginTop: '0.5rem',
-                                        padding: '0.5rem 0.75rem'
-                                    }}
+                                    className="items-center bg-bg-hover rounded-md text-text-secondary flex text-[0.8125rem]"
+                                    style={{ gap: '0.5rem', marginTop: '0.5rem', padding: '0.5rem 0.75rem' }}
                                 >
                                     <i className="fas fa-exclamation-triangle"></i>
                                     <span>Cleanliness must be 3+ stars to set Active status</span>
@@ -941,8 +934,8 @@ function MixerDetailView({ mixerId, onClose }) {
                                     </select>
                                 </div>
                                 <div
-                                    className="down-in-yard-note"
-                                    style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px' }}
+                                    className="down-in-yard-note text-text-secondary text-xs"
+                                    style={{ marginTop: '4px' }}
                                 >
                                     {shopStatus === 'down_in_yard' &&
                                         'The shop has to come fix it where it is - it cannot move.'}
@@ -974,13 +967,7 @@ function MixerDetailView({ mixerId, onClose }) {
                                         : {}
                                 }
                             >
-                                <span
-                                    style={{
-                                        display: 'block',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }}
-                                >
+                                <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
                                     {plantDisplayText}
                                 </span>
                             </button>
@@ -1008,7 +995,7 @@ function MixerDetailView({ mixerId, onClose }) {
                                             : {}
                                     }
                                 >
-                                    <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
                                         {assignedOperator
                                             ? getOperatorName(assignedOperator)
                                             : 'None (Click to select)'}
@@ -1054,7 +1041,7 @@ function MixerDetailView({ mixerId, onClose }) {
                                     ) : (
                                         lastUnassignedOperatorId && (
                                             <button
-                                                className="undo-operator-button unassign-operator-button"
+                                                className="undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px]"
                                                 title="Undo Unassign"
                                                 onClick={async () => {
                                                     try {
@@ -1078,14 +1065,8 @@ function MixerDetailView({ mixerId, onClose }) {
                                                 }}
                                                 type="button"
                                                 style={{
-                                                    backgroundColor: 'var(--success)',
                                                     border: 'none',
-                                                    borderRadius: '4px',
                                                     boxSizing: 'border-box',
-                                                    color: 'var(--text-light)',
-                                                    cursor: 'pointer',
-                                                    fontSize: '1rem',
-                                                    height: '38px',
                                                     marginLeft: '8px',
                                                     minWidth: '140px',
                                                     padding: '0 16px'
@@ -1098,17 +1079,8 @@ function MixerDetailView({ mixerId, onClose }) {
                             </div>
                             {isCleanlinessBlocking && (
                                 <div
-                                    style={{
-                                        alignItems: 'center',
-                                        background: 'var(--bg-hover)',
-                                        borderRadius: '6px',
-                                        color: 'var(--text-secondary)',
-                                        display: 'flex',
-                                        fontSize: '0.8125rem',
-                                        gap: '0.5rem',
-                                        marginTop: '0.5rem',
-                                        padding: '0.5rem 0.75rem'
-                                    }}
+                                    className="items-center bg-bg-hover rounded-md text-text-secondary flex text-[0.8125rem]"
+                                    style={{ gap: '0.5rem', marginTop: '0.5rem', padding: '0.5rem 0.75rem' }}
                                 >
                                     <i className="fas fa-exclamation-triangle"></i>
                                     <span>Cleanliness must be 3+ stars to assign an operator</span>
@@ -1181,12 +1153,8 @@ function MixerDetailView({ mixerId, onClose }) {
                                 <div className="warning-text">Service overdue</div>
                             )}
                             <div
-                                style={{
-                                    color: 'var(--text-secondary)',
-                                    fontSize: '11px',
-                                    lineHeight: '1.4',
-                                    marginTop: '4px'
-                                }}
+                                className="text-text-secondary text-[11px]"
+                                style={{ lineHeight: '1.4', marginTop: '4px' }}
                             >
                                 Service will show as overdue if it has been more than 6 months since last serviced.
                                 Service is determined by hours on the asset - check hours of service.

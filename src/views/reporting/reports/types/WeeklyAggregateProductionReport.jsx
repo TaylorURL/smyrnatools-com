@@ -1,7 +1,8 @@
 import React from 'react'
 
+import { usePreviousWeekReport } from '../../../../app/hooks/useReportData'
+import { useReportVariance } from '../../../../app/hooks/useReportVariance'
 import { reportTypeMap } from '../../../../app/types/ReportTypes'
-import { usePreviousWeekReport, useReportVariance } from './shared'
 
 /* ── Plan-tab design tokens ───────────────────────────────────────────────
  *  Same vocabulary used by the District / Plant / Efficiency redesigns. */
@@ -14,22 +15,14 @@ const FIELD_STYLE = {
 }
 const FIELD_INPUT_CLASS =
     'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border tabular-nums disabled:opacity-90'
-const TH_BASE = `${SECTION_LABEL_CLASS} px-3 py-2 text-left whitespace-nowrap`
-const TH_STYLE = {
-    background: 'var(--bg-tertiary)',
-    color: 'var(--text-tertiary)',
-    borderBottom: '1px solid var(--border-light)'
-}
+const TH_BASE = `${SECTION_LABEL_CLASS} px-3 py-2 text-left whitespace-nowrap bg-bg-tertiary text-text-tertiary border-b border-border-light`
 
 /** Compact card header — same primitive as the other redesigned reports. */
 function CardHeader({ icon, label, sub, title, right }) {
     return (
         <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 min-w-0">
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                >
+                <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                     <i className={`fas ${icon} text-[11px]`} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -38,14 +31,8 @@ function CardHeader({ icon, label, sub, title, right }) {
                             {label}
                         </div>
                     )}
-                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                        {title}
-                    </div>
-                    {sub && (
-                        <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                            {sub}
-                        </div>
-                    )}
+                    <div className="text-[12.5px] font-semibold leading-tight text-text-primary">{title}</div>
+                    {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
                 </div>
             </div>
             {right && <div className="shrink-0">{right}</div>}
@@ -57,10 +44,7 @@ function CardHeader({ icon, label, sub, title, right }) {
 function VariancePill({ varianceStr }) {
     if (!varianceStr) {
         return (
-            <span
-                className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums"
-                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
-            >
+            <span className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums bg-bg-tertiary text-text-tertiary">
                 —
             </span>
         )
@@ -68,10 +52,7 @@ function VariancePill({ varianceStr }) {
     const n = parseFloat(varianceStr)
     if (!Number.isFinite(n) || n === 0) {
         return (
-            <span
-                className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums"
-                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
-            >
+            <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums bg-bg-tertiary text-text-tertiary">
                 <i className="fas fa-minus text-[9px]" />
                 {varianceStr}
             </span>
@@ -115,7 +96,7 @@ function AggregatePluginBody({ form, setForm, readOnly, weekIso }) {
                 sub="Enter this week's tonnage per material. Last week's value and the week-over-week variance are shown for reference."
             />
             <div className="overflow-x-auto rounded" style={CARD_STYLE}>
-                <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                <table className="w-full border-collapse">
                     <thead>
                         <tr>
                             {[
@@ -126,8 +107,7 @@ function AggregatePluginBody({ form, setForm, readOnly, weekIso }) {
                             ].map((h, i) => (
                                 <th
                                     key={i}
-                                    className={`${SECTION_LABEL_CLASS} px-3 py-2 whitespace-nowrap`}
-                                    style={{ ...TH_STYLE, textAlign: h.align }}
+                                    className={`${SECTION_LABEL_CLASS} px-3 py-2 whitespace-nowrap bg-bg-tertiary text-text-tertiary border-b border-border-light ${h.align === 'right' ? 'text-right' : 'text-left'}`}
                                 >
                                     {h.label}
                                 </th>
@@ -138,16 +118,19 @@ function AggregatePluginBody({ form, setForm, readOnly, weekIso }) {
                         {fields.map((f) => {
                             const lastValue = String(getLastWeekValue(f.name))
                             const variance = formatVariancePercent(f.name)
-                            const rowStyle = {
-                                borderTop: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }
+                            const rowStyle = { borderTop: '1px solid var(--border-light)' }
                             return (
                                 <tr key={f.name}>
-                                    <td className="px-3 py-1.5 text-[12px] font-semibold align-middle" style={rowStyle}>
+                                    <td
+                                        className="px-3 py-1.5 text-[12px] font-semibold align-middle text-text-primary"
+                                        style={rowStyle}
+                                    >
                                         {f.label}
                                     </td>
-                                    <td className="px-3 py-1.5 align-middle text-right" style={rowStyle}>
+                                    <td
+                                        className="px-3 py-1.5 align-middle text-right text-text-primary"
+                                        style={rowStyle}
+                                    >
                                         <input
                                             type="text"
                                             value={lastValue}
@@ -156,7 +139,10 @@ function AggregatePluginBody({ form, setForm, readOnly, weekIso }) {
                                             style={FIELD_STYLE}
                                         />
                                     </td>
-                                    <td className="px-3 py-1.5 align-middle text-right" style={rowStyle}>
+                                    <td
+                                        className="px-3 py-1.5 align-middle text-right text-text-primary"
+                                        style={rowStyle}
+                                    >
                                         <input
                                             type="number"
                                             value={form[f.name] ?? ''}
@@ -169,32 +155,26 @@ function AggregatePluginBody({ form, setForm, readOnly, weekIso }) {
                                             style={FIELD_STYLE}
                                         />
                                     </td>
-                                    <td className="px-3 py-1.5 align-middle text-right" style={rowStyle}>
+                                    <td
+                                        className="px-3 py-1.5 align-middle text-right text-text-primary"
+                                        style={rowStyle}
+                                    >
                                         <VariancePill varianceStr={variance} />
                                     </td>
                                 </tr>
                             )
                         })}
                         <tr style={{ borderTop: '2px solid var(--border-medium)' }}>
-                            <td
-                                className="px-3 py-2 text-[12px] font-bold uppercase tracking-wider"
-                                style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)' }}
-                            >
+                            <td className="px-3 py-2 text-[12px] font-bold uppercase tracking-wider text-text-secondary bg-bg-tertiary">
                                 Total
                             </td>
-                            <td
-                                className="px-3 py-2 text-right text-[13px] font-bold tabular-nums"
-                                style={{ color: 'var(--text-primary)', background: 'var(--bg-tertiary)' }}
-                            >
+                            <td className="px-3 py-2 text-right text-[13px] font-bold tabular-nums text-text-primary bg-bg-tertiary">
                                 {totals.last.toLocaleString()}
                             </td>
-                            <td
-                                className="px-3 py-2 text-right text-[13px] font-bold tabular-nums"
-                                style={{ color: 'var(--text-primary)', background: 'var(--bg-tertiary)' }}
-                            >
+                            <td className="px-3 py-2 text-right text-[13px] font-bold tabular-nums text-text-primary bg-bg-tertiary">
                                 {totals.curr.toLocaleString()}
                             </td>
-                            <td className="px-3 py-2 text-right" style={{ background: 'var(--bg-tertiary)' }}>
+                            <td className="px-3 py-2 text-right bg-bg-tertiary">
                                 <VariancePill varianceStr={totalVarianceStr} />
                             </td>
                         </tr>

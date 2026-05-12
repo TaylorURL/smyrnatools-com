@@ -242,15 +242,8 @@ export default function DashboardView() {
 
     return (
         <div
-            className="dashboard-full-width global-flush-top flush-top text-text-primary"
-            style={{
-                background: 'var(--bg-secondary)',
-                display: 'flex',
-                flexDirection: 'column',
-                inset: 0,
-                overflow: 'hidden',
-                position: 'absolute'
-            }}
+            className="dashboard-full-width global-flush-top flush-top text-text-primary bg-bg-secondary flex flex-col overflow-hidden absolute"
+            style={{ inset: 0 }}
         >
             <DashboardHeader
                 accentColor={accentColor}
@@ -262,7 +255,7 @@ export default function DashboardView() {
                 refreshing={refreshing}
                 regionDisplayName={regionDisplayName}
             />
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
                 <div className="w-full px-3 sm:px-4 lg:px-6 flex gap-4">
                     {!isMobile && (
                         <DashboardScrollSpyNav
@@ -277,13 +270,7 @@ export default function DashboardView() {
 
                     <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                         {error && (
-                            <div
-                                className="flex items-center justify-between rounded text-red-600 px-4 py-3"
-                                style={{
-                                    background: 'rgba(220,38,38,0.06)',
-                                    border: '1px solid rgba(220,38,38,0.3)'
-                                }}
-                            >
+                            <div className="flex items-center justify-between rounded text-red-600 px-4 py-3 bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.3)]">
                                 <span className="text-[13px] font-semibold">{error}</span>
                                 <button
                                     onClick={() => setRefreshKey((v) => v + 1)}

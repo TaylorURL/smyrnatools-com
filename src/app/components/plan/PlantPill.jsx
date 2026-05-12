@@ -20,15 +20,8 @@ export function PlantPill({ accentColor, code, name }) {
             style={{ background, color: foreground }}
         >
             <span
-                className="inline-flex items-center justify-center rounded-full font-bold"
-                style={{
-                    background: 'rgba(255,255,255,0.22)',
-                    color: foreground,
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 10.5,
-                    height: 18,
-                    minWidth: 34
-                }}
+                className="inline-flex items-center justify-center rounded-full font-bold bg-[rgba(255,255,255,0.22)] font-heading h-[18px]"
+                style={{ color: foreground, fontSize: 10.5, minWidth: 34 }}
             >
                 {code}
             </span>

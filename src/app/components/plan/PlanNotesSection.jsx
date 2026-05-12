@@ -42,25 +42,17 @@ function PlanNotesSection({
                     onChange={(e) => setNotes?.(e.target.value)}
                     placeholder="Anything special about today — weather, plant closures, special events, etc."
                     rows={5}
-                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none resize-y"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-primary)'
-                    }}
+                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none resize-y bg-bg-secondary border border-border-light text-text-primary"
                 />
             )}
 
             {mode === 'view' && !trimmed && <PlanNotesEmptyHint />}
 
             {mode === 'view' && trimmed && (
-                <div
-                    className="rounded-lg px-4 py-3.5"
-                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                >
+                <div className="rounded-lg px-4 py-3.5 bg-bg-secondary border border-border-light">
                     <MarkdownView source={displaySource} />
                     {error && (
-                        <div className="text-[11px] mt-2" style={{ color: '#b45309' }}>
+                        <div className="text-[11px] mt-2 text-[#b45309]">
                             <i className="fas fa-triangle-exclamation mr-1" />
                             {error}
                         </div>
@@ -81,7 +73,7 @@ function PlanNotesSection({
 
 function PlanNotesStatusBar({ accentColor, loading, mode }) {
     return (
-        <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+        <div className="flex items-center gap-2 text-[11px] text-text-tertiary">
             {mode === 'view' && loading && (
                 <>
                     <i className="fas fa-wand-magic-sparkles fa-fade text-[11px]" style={{ color: accentColor }} />
@@ -100,10 +92,7 @@ function PlanNotesStatusBar({ accentColor, loading, mode }) {
 
 function PlanNotesEmptyHint() {
     return (
-        <div
-            className="rounded-lg p-4 text-[12.5px] italic text-center"
-            style={{ background: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}
-        >
+        <div className="rounded-lg p-4 text-[12.5px] italic text-center bg-bg-secondary text-text-tertiary">
             No notes yet. Click <b>Edit</b> to add context for today&apos;s plan.
         </div>
     )

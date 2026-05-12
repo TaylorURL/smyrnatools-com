@@ -1246,13 +1246,7 @@ function ReportsView() {
                         )}
                         <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
                             <div className={RV_SPLIT_LEFT}>
-                                <div
-                                    className="text-[10px] font-bold uppercase tracking-[.08em]"
-                                    style={{
-                                        color: 'var(--text-secondary)',
-                                        fontFamily: 'var(--font-heading)'
-                                    }}
-                                >
+                                <div className="text-[10px] font-bold uppercase tracking-[.08em] text-text-secondary font-heading">
                                     {isSelectedWeekFuture
                                         ? `Next Week · ${selectedWeekRange}`
                                         : isSelectedWeekThis
@@ -1260,14 +1254,7 @@ function ReportsView() {
                                           : `${selectedWeekRange} · Archive`}
                                 </div>
                                 {isSelectedWeekFuture ? (
-                                    <div
-                                        className="rounded-lg border py-12 px-4 text-center text-sm"
-                                        style={{
-                                            background: 'var(--bg-primary)',
-                                            borderColor: 'var(--border-light)',
-                                            color: 'var(--text-secondary)'
-                                        }}
-                                    >
+                                    <div className="rounded-lg border py-12 px-4 text-center text-sm bg-bg-primary border-border-light text-text-secondary">
                                         Next week opens Monday — nothing to file yet.
                                     </div>
                                 ) : myItemsForSelectedWeek.length === 0 ? (
@@ -1350,10 +1337,7 @@ function ReportsView() {
                         </MobileFilterShell>
                         <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
                             <div className={RV_SPLIT_LEFT}>
-                                <div
-                                    className="text-xs font-bold uppercase tracking-[.06em] text-slate-500"
-                                    style={{ fontFamily: 'var(--font-heading)' }}
-                                >
+                                <div className="text-xs font-bold uppercase tracking-[.06em] text-slate-500 font-heading">
                                     Submitted · {selectedWeekRange}
                                 </div>
                                 <MergedReviewList
@@ -1473,16 +1457,14 @@ function ReportsView() {
                                     <button
                                         type="button"
                                         onClick={() => setShowLabReportModal(true)}
-                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
-                                        style={{ background: '#e11d48' }}
+                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider bg-[#e11d48]"
                                     >
                                         <i className="fas fa-vial text-[10px]" /> Submit Lab Report
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setShowQualityIssueModal(true)}
-                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
-                                        style={{ background: '#dc2626' }}
+                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider bg-red-600"
                                         title="Log a new quality dispute / follow-up. Tracked in the Quality Issues tab."
                                     >
                                         <i className="fas fa-clipboard-list text-[10px]" /> New Quality Issue
@@ -1516,52 +1498,24 @@ function ReportsView() {
                                 </div>
                             </MobileFilterShell>
                             {isLoadingQC ? (
-                                <div
-                                    className="rounded overflow-hidden"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
+                                <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
                                     {[1, 2, 3, 4, 5].map((i) => (
                                         <div
                                             key={i}
-                                            className="flex items-center gap-2.5 px-3 py-2"
-                                            style={{ borderBottom: '1px solid var(--border-light)' }}
+                                            className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light"
                                         >
-                                            <div
-                                                className="w-6 h-6 rounded animate-pulse shrink-0"
-                                                style={{ background: 'var(--bg-tertiary)' }}
-                                            />
+                                            <div className="w-6 h-6 rounded animate-pulse shrink-0 bg-bg-tertiary" />
                                             <div className="flex-1 min-w-0">
-                                                <div
-                                                    className="h-3 w-44 rounded animate-pulse mb-1"
-                                                    style={{ background: 'var(--bg-tertiary)' }}
-                                                />
-                                                <div
-                                                    className="h-2.5 w-56 rounded animate-pulse"
-                                                    style={{ background: 'var(--bg-secondary)' }}
-                                                />
+                                                <div className="h-3 w-44 rounded animate-pulse mb-1 bg-bg-tertiary" />
+                                                <div className="h-2.5 w-56 rounded animate-pulse bg-bg-secondary" />
                                             </div>
-                                            <div
-                                                className="h-4 w-16 rounded animate-pulse shrink-0"
-                                                style={{ background: 'var(--bg-tertiary)' }}
-                                            />
+                                            <div className="h-4 w-16 rounded animate-pulse shrink-0 bg-bg-tertiary" />
                                         </div>
                                     ))}
                                 </div>
                             ) : qcReports.length === 0 ? (
-                                <div
-                                    className="rounded overflow-hidden"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
-                                    <div
-                                        className="flex flex-col items-center justify-center py-10 px-4"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    >
+                                <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+                                    <div className="flex flex-col items-center justify-center py-10 px-4 text-text-tertiary">
                                         <i className="fas fa-flask text-2xl mb-2" />
                                         <div className="text-[12px]">No quality reports submitted yet</div>
                                     </div>
@@ -1569,48 +1523,24 @@ function ReportsView() {
                             ) : (
                                 <div>
                                     <div className="flex items-center gap-2 mb-2 px-1">
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider"
-                                            style={{ color: 'var(--text-secondary)' }}
-                                        >
+                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                                             Quality Reports
                                         </span>
-                                        <span
-                                            className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono tabular-nums"
-                                            style={{
-                                                background: 'var(--bg-tertiary)',
-                                                color: 'var(--text-secondary)'
-                                            }}
-                                        >
+                                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono tabular-nums bg-bg-tertiary text-text-secondary">
                                             {qcHasActiveFilters
                                                 ? `${visibleQcReports.length} / ${qcReports.length}`
                                                 : qcReports.length}
                                         </span>
                                     </div>
                                     {visibleQcReports.length === 0 ? (
-                                        <div
-                                            className="rounded overflow-hidden"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)'
-                                            }}
-                                        >
-                                            <div
-                                                className="flex flex-col items-center justify-center py-10 px-4"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            >
+                                        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+                                            <div className="flex flex-col items-center justify-center py-10 px-4 text-text-tertiary">
                                                 <i className="fas fa-filter text-2xl mb-2" />
                                                 <div className="text-[12px]">No reports match your filters</div>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div
-                                            className="rounded overflow-hidden"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)'
-                                            }}
-                                        >
+                                        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
                                             {visibleQcReports.map((report) => {
                                                 const submittedLabel = report.submittedAt
                                                     ? new Date(report.submittedAt).toLocaleDateString(undefined, {
@@ -1646,8 +1576,7 @@ function ReportsView() {
                                                 return (
                                                     <div
                                                         key={report.id}
-                                                        className="flex items-center px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary"
-                                                        style={{ borderBottom: '1px solid var(--border-light)' }}
+                                                        className="flex items-center px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary border-b border-border-light"
                                                         onClick={() =>
                                                             isLabReport
                                                                 ? setSelectedLabReport(report)
@@ -1665,24 +1594,14 @@ function ReportsView() {
                                                                 <i className={`fas ${iconClass} text-[11px]`} />
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <span
-                                                                    className="text-[12px] font-semibold block truncate"
-                                                                    style={{ color: 'var(--text-primary)' }}
-                                                                >
+                                                                <span className="text-[12px] font-semibold block truncate text-text-primary">
                                                                     {title}
                                                                 </span>
-                                                                <div
-                                                                    className="flex items-center gap-1.5 mt-0.5 text-[10.5px]"
-                                                                    style={{ color: 'var(--text-secondary)' }}
-                                                                >
+                                                                <div className="flex items-center gap-1.5 mt-0.5 text-[10.5px] text-text-secondary">
                                                                     <span className="truncate">{submitterName}</span>
                                                                     {submittedLabel && (
                                                                         <>
-                                                                            <span
-                                                                                style={{
-                                                                                    color: 'var(--text-tertiary)'
-                                                                                }}
-                                                                            >
+                                                                            <span className="text-text-tertiary">
                                                                                 ·
                                                                             </span>
                                                                             <span className="font-mono tabular-nums">
@@ -1720,16 +1639,12 @@ function ReportsView() {
                                                                 e.stopPropagation()
                                                                 handleDeleteQCReport(report)
                                                             }}
-                                                            className="w-6 h-6 flex items-center justify-center rounded shrink-0 ml-1.5 hidden sm:flex transition-colors hover:bg-bg-tertiary"
-                                                            style={{ color: 'var(--text-tertiary)' }}
+                                                            className="w-6 h-6 flex items-center justify-center rounded shrink-0 ml-1.5 hidden sm:flex transition-colors hover:bg-bg-tertiary text-text-tertiary"
                                                             title="Delete"
                                                         >
                                                             <i className="fas fa-trash-alt text-[10px]" />
                                                         </button>
-                                                        <i
-                                                            className="fas fa-chevron-right text-[10px] ml-2 sm:hidden"
-                                                            style={{ color: 'var(--text-tertiary)' }}
-                                                        />
+                                                        <i className="fas fa-chevron-right text-[10px] ml-2 sm:hidden text-text-tertiary" />
                                                     </div>
                                                 )
                                             })}
@@ -1884,26 +1799,14 @@ function SummaryCell({ accent, color, hint, icon, label, value, valueColor, warn
                 <i className={`fas ${icon} text-[11px]`} />
             </div>
             <div className="flex flex-col leading-tight">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-text-secondary">{label}</span>
                 <span
-                    className="text-[9px] font-bold uppercase tracking-wider"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
-                    {label}
-                </span>
-                <span
-                    className="text-[14px] font-bold font-mono tabular-nums"
-                    style={{
-                        color: valueColor || 'var(--text-primary)',
-                        fontFamily: 'var(--font-heading)'
-                    }}
+                    className="text-[14px] font-bold font-mono tabular-nums font-heading"
+                    style={{ color: valueColor || 'var(--text-primary)' }}
                 >
                     {value}
                 </span>
-                {hint && (
-                    <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>
-                        {hint}
-                    </span>
-                )}
+                {hint && <span className="text-[10px] text-text-secondary">{hint}</span>}
             </div>
         </div>
     )
@@ -1935,10 +1838,7 @@ function MyReportsSummaryBar({
                 borderColor: urgent ? '#fbbf24' : 'var(--border-light)'
             }}
         >
-            <span
-                className="text-[9px] font-semibold uppercase tracking-wider shrink-0 mr-1"
-                style={{ color: 'var(--text-secondary)' }}
-            >
+            <span className="text-[9px] font-semibold uppercase tracking-wider shrink-0 mr-1 text-text-secondary">
                 {weekLabel}
                 {weekRange ? ` · ${weekRange}` : ''}
             </span>
@@ -1989,10 +1889,7 @@ function MyReportsSummaryBar({
             <div className="flex-1" />
 
             {allDone && !isPast && (
-                <div
-                    className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold"
-                    style={{ background: '#16a34a14', color: '#16a34a' }}
-                >
+                <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-[#16a34a14] text-green-600">
                     <i className="fas fa-check-circle text-[12px]" />
                     All caught up
                 </div>

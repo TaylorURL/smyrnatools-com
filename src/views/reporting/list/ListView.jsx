@@ -540,7 +540,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                 </button>
                             ))}
                         </div>
-                        <div className="h-5 w-px" style={{ background: 'var(--border-light)' }} />
+                        <div className="h-5 w-px bg-[var(--border-light)]" />
                         {statusFilter ? (
                             <button
                                 onClick={clearStatusFilter}
@@ -563,13 +563,12 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                     }}
                                     className={`flex items-center rounded cursor-pointer font-medium transition-all duration-150 ${
                                         isMobile ? 'text-[11px] gap-1 px-2 py-[5px]' : 'text-xs gap-1.5 px-2.5 py-1.5'
-                                    }`}
+                                    } text-text-secondary`}
                                     style={{
                                         background: statusDropdownOpen ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
                                         border: statusDropdownOpen
                                             ? `1px solid ${accentColor}50`
-                                            : '1px solid var(--border-light)',
-                                        color: 'var(--text-secondary)'
+                                            : '1px solid var(--border-light)'
                                     }}
                                 >
                                     <i className="fas fa-filter text-[9px] opacity-60" />
@@ -579,13 +578,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                     />
                                 </button>
                                 {statusDropdownOpen && (
-                                    <div
-                                        className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-filter-fade"
-                                        style={{
-                                            background: 'var(--bg-primary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
-                                    >
+                                    <div className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-filter-fade bg-bg-primary border border-border-light">
                                         <div className="p-1.5">
                                             {STATUS_OPTIONS.map((opt) => {
                                                 const key = Object.keys(STATUS_MAP).find((k) => STATUS_MAP[k] === opt)
@@ -597,11 +590,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                             handleStatusFilterChange(opt)
                                                             setStatusDropdownOpen(false)
                                                         }}
-                                                        className="flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
-                                                        style={{
-                                                            background: 'transparent',
-                                                            color: 'var(--text-primary)'
-                                                        }}
+                                                        className="flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none bg-transparent text-text-primary"
                                                         onMouseEnter={(e) =>
                                                             (e.currentTarget.style.background = 'var(--bg-secondary)')
                                                         }
@@ -646,13 +635,12 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                     }}
                                     className={`flex items-center rounded cursor-pointer font-medium transition-all duration-150 ${
                                         isMobile ? 'text-[11px] gap-1 px-2 py-[5px]' : 'text-xs gap-1.5 px-2.5 py-1.5'
-                                    }`}
+                                    } text-text-secondary`}
                                     style={{
                                         background: roleDropdownOpen ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
                                         border: roleDropdownOpen
                                             ? `1px solid ${accentColor}50`
-                                            : '1px solid var(--border-light)',
-                                        color: 'var(--text-secondary)'
+                                            : '1px solid var(--border-light)'
                                     }}
                                 >
                                     <i className="fas fa-user text-[9px] opacity-60" />
@@ -662,13 +650,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                     />
                                 </button>
                                 {roleDropdownOpen && (
-                                    <div
-                                        className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-filter-fade"
-                                        style={{
-                                            background: 'var(--bg-primary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
-                                    >
+                                    <div className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-filter-fade bg-bg-primary border border-border-light">
                                         <div className="p-1.5">
                                             {ROLE_OPTIONS.map((opt) => (
                                                 <button
@@ -677,8 +659,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                         handleRoleFilterChange(opt)
                                                         setRoleDropdownOpen(false)
                                                     }}
-                                                    className="flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none"
-                                                    style={{ background: 'transparent', color: 'var(--text-primary)' }}
+                                                    className="flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none bg-transparent text-text-primary"
                                                     onMouseEnter={(e) =>
                                                         (e.currentTarget.style.background = 'var(--bg-secondary)')
                                                     }
@@ -686,13 +667,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                         (e.currentTarget.style.background = 'transparent')
                                                     }
                                                 >
-                                                    <span
-                                                        className="flex items-center justify-center h-5 w-5 rounded-md text-[9px]"
-                                                        style={{
-                                                            background: 'var(--bg-tertiary)',
-                                                            color: 'var(--text-secondary)'
-                                                        }}
-                                                    >
+                                                    <span className="flex items-center justify-center h-5 w-5 rounded-md text-[9px] bg-bg-tertiary text-text-secondary">
                                                         <i className="fas fa-user" />
                                                     </span>
                                                     {opt}
@@ -828,8 +803,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                     }
                                                     className={`flex border-b border-border-light cursor-pointer transition-all duration-200 ${
                                                         isMobile ? 'gap-3 px-4 py-3' : 'gap-4 px-6 py-4'
-                                                    }`}
-                                                    style={{ background: 'var(--bg-primary)' }}
+                                                    } bg-bg-primary`}
                                                     onMouseEnter={(e) =>
                                                         (e.currentTarget.style.background = 'var(--bg-secondary)')
                                                     }
@@ -918,10 +892,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                 className={`fas ${group.icon} text-[10px]`}
                                                 style={{ color: accentColor }}
                                             />
-                                            <span
-                                                className="text-[10.5px] font-bold uppercase tracking-wider"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
+                                            <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-secondary">
                                                 {group.label}
                                             </span>
                                             <span
@@ -997,9 +968,8 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                         )}
                                                         <div className="flex flex-1 min-w-0 items-baseline gap-2">
                                                             <span
-                                                                className="text-[12px] font-semibold truncate"
+                                                                className="text-[12px] font-semibold truncate text-text-primary"
                                                                 style={{
-                                                                    color: 'var(--text-primary)',
                                                                     textDecoration: item.completed
                                                                         ? 'line-through'
                                                                         : 'none'
@@ -1010,8 +980,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                             </span>
                                                             {item.comments && !isMobile && (
                                                                 <span
-                                                                    className="text-[11px] truncate"
-                                                                    style={{ color: 'var(--text-tertiary)' }}
+                                                                    className="text-[11px] truncate text-text-tertiary"
                                                                     title={item.comments}
                                                                 >
                                                                     · {item.comments}
@@ -1019,12 +988,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                             )}
                                                         </div>
                                                         <span
-                                                            className="hidden md:inline-flex items-center gap-1 text-[11px] shrink-0 rounded px-1.5 py-0.5 border"
-                                                            style={{
-                                                                background: 'rgba(148,163,184,0.10)',
-                                                                borderColor: 'rgba(148,163,184,0.25)',
-                                                                color: 'var(--text-secondary)'
-                                                            }}
+                                                            className="hidden md:inline-flex items-center gap-1 text-[11px] shrink-0 rounded px-1.5 py-0.5 border bg-[rgba(148,163,184,0.10)] border-[rgba(148,163,184,0.25)] text-text-secondary"
                                                             title={ListService.getPlantName(item.plant_code)}
                                                         >
                                                             <i className="fas fa-building text-[9px] opacity-70" />
@@ -1048,10 +1012,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                             })}
                                                         </span>
                                                         {item.responsible_role && !isMobile && (
-                                                            <span
-                                                                className="hidden lg:inline-flex items-center gap-1 text-[11px] shrink-0"
-                                                                style={{ color: 'var(--text-secondary)' }}
-                                                            >
+                                                            <span className="hidden lg:inline-flex items-center gap-1 text-[11px] shrink-0 text-text-secondary">
                                                                 <i
                                                                     className={`fas ${ListService.getResponsibleRoleIcon(item.responsible_role)} text-[9px] opacity-70`}
                                                                 />
@@ -1062,10 +1023,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                                 </span>
                                                             </span>
                                                         )}
-                                                        <span
-                                                            className="hidden lg:inline-flex items-center gap-1 text-[11px] shrink-0"
-                                                            style={{ color: 'var(--text-tertiary)' }}
-                                                        >
+                                                        <span className="hidden lg:inline-flex items-center gap-1 text-[11px] shrink-0 text-text-tertiary">
                                                             <i className="fas fa-user text-[9px] opacity-70" />
                                                             {ListService.truncateText(
                                                                 ListService.getCreatorName(item.user_id),
@@ -1089,8 +1047,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                         isMobile
                             ? 'bottom-0 inset-x-0 flex flex-col border-t border-border-light shadow-[0_-8px_24px_rgba(0,0,0,0.15)] pb-[env(safe-area-inset-bottom)]'
                             : 'bottom-8 left-1/2 -translate-x-1/2 flex items-center flex-nowrap gap-4 justify-start px-6 py-4 border border-border-light rounded shadow-[0_8px_24px_rgba(0,0,0,0.15)]'
-                    }`}
-                    style={{ background: 'var(--bg-primary)' }}
+                    } bg-bg-primary`}
                 >
                     {isMobile && (
                         <div
@@ -1155,8 +1112,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                         isMobile
                                             ? 'left-1/2 -translate-x-1/2 w-[min(220px,90vw)]'
                                             : 'left-0 min-w-[180px]'
-                                    }`}
-                                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                                    } bg-bg-primary border border-border-light`}
                                 >
                                     <div className="p-1.5">
                                         {BULK_STATUS_OPTIONS.map((opt) => {
@@ -1169,8 +1125,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                         isMobile
                                                             ? 'gap-3 px-3 py-3 text-sm'
                                                             : 'gap-2.5 px-3 py-2 text-xs'
-                                                    }`}
-                                                    style={{ background: 'transparent', color: 'var(--text-primary)' }}
+                                                    } bg-transparent text-text-primary`}
                                                     onMouseEnter={(e) =>
                                                         (e.currentTarget.style.background = 'var(--bg-secondary)')
                                                     }
@@ -1226,8 +1181,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                         isMobile
                                             ? 'left-1/2 -translate-x-1/2 w-[min(220px,90vw)]'
                                             : 'left-0 min-w-[170px]'
-                                    }`}
-                                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                                    } bg-bg-primary border border-border-light`}
                                 >
                                     <div className="p-1.5">
                                         {ListService.getPriorityOptions().map((opt) => {
@@ -1240,8 +1194,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                                                         isMobile
                                                             ? 'gap-3 px-3 py-3 text-sm'
                                                             : 'gap-2.5 px-3 py-2 text-xs'
-                                                    }`}
-                                                    style={{ background: 'transparent', color: 'var(--text-primary)' }}
+                                                    } bg-transparent text-text-primary`}
                                                     onMouseEnter={(e) =>
                                                         (e.currentTarget.style.background = 'var(--bg-secondary)')
                                                     }

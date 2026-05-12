@@ -1,11 +1,12 @@
 import React from 'react'
 
+import { useReportForWeek } from '../../../../app/hooks/useReportData'
 import { reportTypeMap } from '../../../../app/types/ReportTypes'
 import { AIService } from '../../../../services/AIService'
 import { Database } from '../../../../services/DatabaseService'
 import { ReportService } from '../../../../services/ReportService'
 import { ReportUtility } from '../../../../utils/ReportUtility'
-import { RPT_INPUT, RPT_TEXTAREA, TD_STYLE, TH_STYLE, useReportForWeek } from './shared'
+import { RPT_INPUT, RPT_TEXTAREA, TD_STYLE, TH_STYLE } from './shared'
 import { ReadyMixInstructorReviewPlugin } from './WeeklyReadyMixInstructorReport'
 
 const VARIANCE_CLASSES = {

@@ -82,7 +82,12 @@ export async function verifyJwt(token: string, secret: string): Promise<JwtPaylo
  * re-mints via `refresh-token` every ~30 minutes so users never see an
  * expiration mid-session.
  */
-export async function mintSessionJwt(userId: string, sessionId: string, secret: string, ttlSeconds = 3600): Promise<string> {
+export async function mintSessionJwt(
+    userId: string,
+    sessionId: string,
+    secret: string,
+    ttlSeconds = 3600
+): Promise<string> {
     const now = Math.floor(Date.now() / 1000)
     return signJwt(
         {

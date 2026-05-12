@@ -16,11 +16,8 @@ function ConversationRow({ accentColor, conversation, displayName, onSelectConve
 
     return (
         <div
-            className="flex cursor-pointer items-center gap-2.5 px-3 py-2 transition-colors hover:bg-bg-tertiary"
-            style={{
-                background: hasUnread ? `${accentColor}0D` : 'transparent',
-                borderBottom: '1px solid var(--border-light)'
-            }}
+            className="flex cursor-pointer items-center gap-2.5 px-3 py-2 transition-colors hover:bg-bg-tertiary border-b border-border-light"
+            style={{ background: hasUnread ? `${accentColor}0D` : 'transparent' }}
             onClick={() => (onSelectConversation ? onSelectConversation(conversation.otherId) : onViewAll())}
         >
             <div className="relative shrink-0">
@@ -32,8 +29,8 @@ function ConversationRow({ accentColor, conversation, displayName, onSelectConve
                 </div>
                 {hasUnread && (
                     <div
-                        className="absolute -right-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded px-0.5 text-[9px] font-bold text-white font-mono tabular-nums"
-                        style={{ background: accentColor, border: '1px solid var(--bg-primary)' }}
+                        className="absolute -right-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded px-0.5 text-[9px] font-bold text-white font-mono tabular-nums border border-[var(--bg-primary)]"
+                        style={{ background: accentColor }}
                     >
                         {conversation.unread}
                     </div>
@@ -42,15 +39,11 @@ function ConversationRow({ accentColor, conversation, displayName, onSelectConve
             <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                     <span
-                        className={`truncate text-[12px] ${hasUnread ? 'font-semibold' : 'font-medium'}`}
-                        style={{ color: 'var(--text-primary)' }}
+                        className={`truncate text-[12px] ${hasUnread ? 'font-semibold' : 'font-medium'} text-text-primary`}
                     >
                         {displayName}
                     </span>
-                    <span
-                        className="shrink-0 text-[10px] font-mono tabular-nums"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
+                    <span className="shrink-0 text-[10px] font-mono tabular-nums text-text-tertiary">
                         {DateUtility.formatTimeAgo(latest?.createdAt)}
                     </span>
                 </div>
@@ -62,14 +55,9 @@ function ConversationRow({ accentColor, conversation, displayName, onSelectConve
                         {latest.subject}
                     </p>
                 )}
-                <p className="m-0 truncate text-[10.5px]" style={{ color: 'var(--text-secondary)' }}>
-                    {latest?.body}
-                </p>
+                <p className="m-0 truncate text-[10.5px] text-text-secondary">{latest?.body}</p>
             </div>
-            <div
-                className="flex shrink-0 items-center gap-1 font-mono tabular-nums text-[10px]"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+            <div className="flex shrink-0 items-center gap-1 font-mono tabular-nums text-[10px] text-text-tertiary">
                 <span>{conversation.messages.length}</span>
                 <i className="fas fa-chevron-right text-[8px]" />
             </div>
@@ -160,21 +148,15 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div
-                    className="flex shrink-0 items-center justify-between px-3 py-2"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex shrink-0 items-center justify-between px-3 py-2 border-b border-border-light">
                     <div className="flex items-center gap-2">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-6 w-6 items-center justify-center rounded bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-envelope text-[11px]" />
                         </div>
-                        <span
-                            className="text-[10px] font-semibold uppercase tracking-wider"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                             Messages
                         </span>
                         {unreadCount > 0 && (
@@ -198,8 +180,7 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                         )}
                         <button
                             onClick={onClose}
-                            className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary"
-                            style={{ color: 'var(--text-secondary)' }}
+                            className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary text-text-secondary"
                             aria-label="Close"
                         >
                             <i className="fas fa-times text-[11px]" />
@@ -208,53 +189,35 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg-primary)' }}>
+                <div className="flex-1 overflow-y-auto bg-bg-primary">
                     {loading ? (
                         <div>
                             {Array.from({ length: 4 }).map((_, i) => (
                                 <div
                                     key={i}
-                                    className="flex animate-pulse items-center gap-2.5 px-3 py-2"
-                                    style={{ borderBottom: '1px solid var(--border-light)' }}
+                                    className="flex animate-pulse items-center gap-2.5 px-3 py-2 border-b border-border-light"
                                 >
-                                    <div
-                                        className="h-7 w-7 shrink-0 rounded"
-                                        style={{ background: 'var(--bg-tertiary)' }}
-                                    />
+                                    <div className="h-7 w-7 shrink-0 rounded bg-bg-tertiary" />
                                     <div className="flex min-w-0 flex-1 flex-col gap-1">
                                         <div className="flex items-center justify-between gap-2">
                                             <div
-                                                className="h-3 rounded"
-                                                style={{
-                                                    background: 'var(--bg-tertiary)',
-                                                    width: `${60 + i * 10}%`
-                                                }}
+                                                className="h-3 rounded bg-bg-tertiary"
+                                                style={{ width: `${60 + i * 10}%` }}
                                             />
-                                            <div
-                                                className="h-2.5 w-10 shrink-0 rounded"
-                                                style={{ background: 'var(--bg-tertiary)' }}
-                                            />
+                                            <div className="h-2.5 w-10 shrink-0 rounded bg-bg-tertiary" />
                                         </div>
                                         <div
-                                            className="h-2.5 rounded"
-                                            style={{
-                                                background: 'var(--bg-secondary)',
-                                                width: `${80 - i * 8}%`
-                                            }}
+                                            className="h-2.5 rounded bg-bg-secondary"
+                                            style={{ width: `${80 - i * 8}%` }}
                                         />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : displayedConversations.length === 0 ? (
-                        <div
-                            className="flex flex-col items-center justify-center py-10"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <div className="flex flex-col items-center justify-center py-10 text-text-tertiary">
                             <i className="fas fa-envelope-open mb-2 text-2xl" />
-                            <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                No messages
-                            </span>
+                            <span className="text-[12px] font-semibold text-text-primary">No messages</span>
                             <span className="mt-0.5 text-[10.5px]">Your inbox is empty</span>
                         </div>
                     ) : (
@@ -311,7 +274,7 @@ function NotificationsModal({ isOpen, onClose, onViewAll, onSelectConversation, 
                 </div>
 
                 {/* Footer */}
-                <div className="shrink-0" style={{ borderTop: '1px solid var(--border-light)' }}>
+                <div className="shrink-0 border-t border-border-light">
                     <button
                         onClick={onViewAll}
                         className="flex w-full items-center justify-center gap-1.5 px-3 py-2 text-[10.5px] font-semibold uppercase tracking-wider transition-colors hover:bg-bg-tertiary"

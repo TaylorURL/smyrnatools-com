@@ -8,8 +8,7 @@ function RefreshButton({ isMobile, isSyncing, lastSyncedAt, onRefresh }) {
         <button
             onClick={() => onRefresh?.()}
             disabled={isSyncing}
-            className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-60"
-            style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+            className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-60 bg-bg-tertiary text-text-secondary"
             title={title}
         >
             <i className={`fas fa-rotate ${isSyncing ? 'fa-spin' : ''}`} />

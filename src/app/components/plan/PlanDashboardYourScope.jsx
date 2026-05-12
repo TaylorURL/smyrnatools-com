@@ -9,27 +9,19 @@ export function PlanFlowSummary({ color, label, routes, summary }) {
     return (
         <div className="flex flex-col">
             <div className="flex items-baseline gap-2 mb-0.5">
-                <span className="inline-block rounded-sm" style={{ background: color, height: 8, width: 8 }} />
-                <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                    {label}
-                </span>
+                <span className="inline-block rounded-sm h-2 w-2" style={{ background: color }} />
+                <span className="text-[11px] text-text-secondary">{label}</span>
             </div>
-            <div className="text-[13px] font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
-                {summary}
-            </div>
+            <div className="text-[13px] font-medium mb-1 text-text-primary">{summary}</div>
             {routes.length > 0 && (
-                <div className="flex flex-col gap-0.5 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                <div className="flex flex-col gap-0.5 text-[12px] text-text-secondary">
                     {routes.map((route, i) => (
                         <div key={`${label}-${i}`} className="flex items-baseline gap-2">
-                            <span className="font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                +{route.ops}
-                            </span>
+                            <span className="font-mono font-semibold text-text-primary">+{route.ops}</span>
                             <span>
                                 {route.prefix} {route.partner}
                             </span>
-                            <span className="font-mono" style={{ color: 'var(--text-tertiary)' }}>
-                                {route.time}
-                            </span>
+                            <span className="font-mono text-text-tertiary">{route.time}</span>
                         </div>
                     ))}
                 </div>
@@ -54,35 +46,27 @@ export function PlanChecklistRow({ accent, checked, onToggle, subtitle, text, ti
             }}
         >
             <div
-                className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+                className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-white"
                 style={{
                     background: checked ? accent : 'var(--bg-primary)',
-                    border: `1.5px solid ${checked ? accent : 'var(--border-medium)'}`,
-                    color: '#fff'
+                    border: `1.5px solid ${checked ? accent : 'var(--border-medium)'}`
                 }}
             >
                 {checked && <i className="fas fa-check text-[9px]" />}
             </div>
             <div className="flex-1 min-w-0">
                 <div
-                    className="text-[13px] font-semibold"
-                    style={{
-                        color: 'var(--text-primary)',
-                        textDecoration: checked ? 'line-through' : 'none'
-                    }}
+                    className="text-[13px] font-semibold text-text-primary"
+                    style={{ textDecoration: checked ? 'line-through' : 'none' }}
                 >
                     {text}
                 </div>
-                {subtitle && (
-                    <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                        {subtitle}
-                    </div>
-                )}
+                {subtitle && <div className="text-[11px] text-text-secondary">{subtitle}</div>}
             </div>
             {time && (
                 <div
-                    className="font-bold text-sm shrink-0 font-mono"
-                    style={{ color: checked ? 'var(--text-secondary)' : accent, fontFamily: 'var(--font-heading)' }}
+                    className="font-bold text-sm shrink-0 font-mono font-heading"
+                    style={{ color: checked ? 'var(--text-secondary)' : accent }}
                 >
                     {time}
                 </div>

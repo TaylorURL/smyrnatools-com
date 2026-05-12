@@ -28,12 +28,8 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, onChange, viewT
     return (
         <div className="sticky z-20 flex justify-center px-4 pb-3 pointer-events-none" style={{ top: '60px' }}>
             <div
-                className="pointer-events-auto w-full max-w-2xl rounded-lg flex items-center gap-3 px-3 py-2"
-                style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-light)',
-                    boxShadow: 'var(--shadow-sm)'
-                }}
+                className="pointer-events-auto w-full max-w-2xl rounded-lg flex items-center gap-3 px-3 py-2 bg-bg-primary border border-border-light"
+                style={{ boxShadow: 'var(--shadow-sm)' }}
             >
                 <button
                     type="button"

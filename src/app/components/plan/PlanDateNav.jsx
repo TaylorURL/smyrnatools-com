@@ -89,13 +89,8 @@ function MiniCalendar({ onClose, onSelect, planDate }) {
 
     return (
         <div
-            className="absolute top-full left-0 mt-1.5 z-20 rounded-lg p-2"
-            style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                boxShadow: 'var(--shadow-lg)',
-                minWidth: 240
-            }}
+            className="absolute top-full left-0 mt-1.5 z-20 rounded-lg p-2 bg-bg-primary border border-border-light"
+            style={{ boxShadow: 'var(--shadow-lg)', minWidth: 240 }}
             role="dialog"
             aria-label="Pick a date"
         >
@@ -103,21 +98,19 @@ function MiniCalendar({ onClose, onSelect, planDate }) {
                 <button
                     type="button"
                     onClick={() => stepMonth(-1)}
-                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary"
                     title="Previous month"
                     aria-label="Previous month"
                 >
                     <i className="fas fa-chevron-left text-[11px]" />
                 </button>
-                <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                <span className="text-[12.5px] font-semibold text-text-primary">
                     {monthLabel(view.year, view.month)}
                 </span>
                 <button
                     type="button"
                     onClick={() => stepMonth(1)}
-                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="border-none bg-transparent cursor-pointer p-1 rounded inline-flex items-center justify-center text-text-secondary"
                     title="Next month"
                     aria-label="Next month"
                 >
@@ -128,8 +121,7 @@ function MiniCalendar({ onClose, onSelect, planDate }) {
                 {WEEKDAY_LABELS.map((d, i) => (
                     <span
                         key={`wd-${i}`}
-                        className="text-[9.5px] font-bold uppercase text-center py-1"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className="text-[9.5px] font-bold uppercase text-center py-1 text-text-tertiary"
                     >
                         {d}
                     </span>
@@ -161,31 +153,18 @@ function MiniCalendar({ onClose, onSelect, planDate }) {
                     )
                 })}
             </div>
-            <div
-                className="flex justify-between gap-1 mt-2 pt-1.5"
-                style={{ borderTop: '1px solid var(--border-light)' }}
-            >
+            <div className="flex justify-between gap-1 mt-2 pt-1.5 border-t border-border-light">
                 <button
                     type="button"
                     onClick={() => pickDate(skipSundayDate(getTodayDate(), 1))}
-                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-primary)'
-                    }}
+                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary"
                 >
                     Today
                 </button>
                 <button
                     type="button"
                     onClick={() => pickDate(skipSundayDate(getTomorrowDate(), 1))}
-                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-primary)'
-                    }}
+                    className="text-[10.5px] font-semibold px-2 py-1 rounded border-none cursor-pointer bg-bg-secondary border border-border-light text-text-primary"
                 >
                     Tomorrow
                 </button>
@@ -232,14 +211,8 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
     return (
         <div
             ref={containerRef}
-            className="relative inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1.5 py-1"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-primary)',
-                cursor: disabled ? 'not-allowed' : 'default',
-                opacity: disabled ? 0.55 : 1
-            }}
+            className="relative inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1.5 py-1 bg-bg-secondary border border-border-light text-text-primary"
+            style={{ cursor: disabled ? 'not-allowed' : 'default', opacity: disabled ? 0.55 : 1 }}
             title={wrapperTitle}
             aria-disabled={disabled}
         >
@@ -247,8 +220,8 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                 type="button"
                 onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, -1))}
                 disabled={disabled}
-                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center"
-                style={{ color: 'var(--text-secondary)', cursor: buttonCursor }}
+                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center text-text-secondary"
+                style={{ cursor: buttonCursor }}
                 title={disabled ? disabledReason : 'Previous day'}
                 aria-label="Previous day"
             >
@@ -258,8 +231,8 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                 type="button"
                 onClick={() => !disabled && setOpen((v) => !v)}
                 disabled={disabled}
-                className="border-none bg-transparent px-2 py-0.5 rounded font-semibold text-sm inline-flex items-center gap-1.5"
-                style={{ color: 'var(--text-primary)', cursor: buttonCursor }}
+                className="border-none bg-transparent px-2 py-0.5 rounded font-semibold text-sm inline-flex items-center gap-1.5 text-text-primary"
+                style={{ cursor: buttonCursor }}
                 title={disabled ? disabledReason : 'Click to pick a date'}
                 aria-haspopup={disabled ? undefined : 'dialog'}
                 aria-expanded={!disabled && open}
@@ -269,14 +242,14 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                     month: 'short',
                     weekday: 'short'
                 })}
-                <i className="fas fa-caret-down text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                <i className="fas fa-caret-down text-[10px] text-text-tertiary" />
             </button>
             <button
                 type="button"
                 onClick={() => !disabled && onChange(offsetDateSkipSunday(planDate, 1))}
                 disabled={disabled}
-                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center"
-                style={{ color: 'var(--text-secondary)', cursor: buttonCursor }}
+                className="border-none bg-transparent p-1 rounded inline-flex items-center justify-center text-text-secondary"
+                style={{ cursor: buttonCursor }}
                 title={disabled ? disabledReason : 'Next day'}
                 aria-label="Next day"
             >

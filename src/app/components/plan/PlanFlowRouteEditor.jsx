@@ -124,15 +124,11 @@ export function PlanFlowRouteEditor({
             <div className="flex items-center gap-2">
                 <button
                     onClick={onCancel}
-                    className="border-none bg-transparent cursor-pointer flex items-center gap-1 text-xs font-semibold"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="border-none bg-transparent cursor-pointer flex items-center gap-1 text-xs font-semibold text-text-secondary"
                 >
                     <i className="fas fa-chevron-left text-[10px]" /> Back
                 </button>
-                <div
-                    className="font-bold text-[16px] ml-auto"
-                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                >
+                <div className="font-bold text-[16px] ml-auto text-text-primary font-heading">
                     {mode === 'edit' ? 'Edit Route' : 'New Route'}
                 </div>
             </div>
@@ -146,12 +142,7 @@ export function PlanFlowRouteEditor({
                         setDraft({ ...draft, toPlant: event.target.value })
                         setPickingDestination(false)
                     }}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm border"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        borderColor: 'var(--border-medium)',
-                        color: 'var(--text-primary)'
-                    }}
+                    className="flex-1 px-3 py-2 rounded-lg text-sm border bg-bg-primary border-border-medium text-text-primary"
                 >
                     <option value="">Select destination…</option>
                     {destinationOptions.map((plant) => (
@@ -181,12 +172,7 @@ export function PlanFlowRouteEditor({
                     min={1}
                     value={draft.driverCount}
                     onChange={(event) => handleCountChange(event.target.value)}
-                    className="w-full px-3 py-2 rounded-lg text-sm border font-mono"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        borderColor: 'var(--border-medium)',
-                        color: 'var(--text-primary)'
-                    }}
+                    className="w-full px-3 py-2 rounded-lg text-sm border font-mono bg-bg-primary border-border-medium text-text-primary"
                 />
             </LabeledField>
 
@@ -194,20 +180,14 @@ export function PlanFlowRouteEditor({
                 <LabeledField
                     label={
                         <>
-                            Loading for job{' '}
-                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>· optional</span>
+                            Loading for job <span className="text-text-tertiary font-medium">· optional</span>
                         </>
                     }
                 >
                     <select
                         value={draft.forOrderId || ''}
                         onChange={(event) => handleJobSelect(event.target.value)}
-                        className="w-full px-3 py-2 rounded-lg text-sm border"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            borderColor: 'var(--border-medium)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="w-full px-3 py-2 rounded-lg text-sm border bg-bg-primary border-border-medium text-text-primary"
                     >
                         <option value="">General help — no specific job</option>
                         {destinationJobs.map((job) => {
@@ -232,20 +212,14 @@ export function PlanFlowRouteEditor({
                 <LabeledField
                     label={
                         <>
-                            Return to{' '}
-                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>· after pouring</span>
+                            Return to <span className="text-text-tertiary font-medium">· after pouring</span>
                         </>
                     }
                 >
                     <select
                         value={draft.returnPlant || draft.fromPlant}
                         onChange={(event) => setDraft({ ...draft, returnPlant: event.target.value })}
-                        className="w-full px-3 py-2 rounded-lg text-sm border"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            borderColor: 'var(--border-medium)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="w-full px-3 py-2 rounded-lg text-sm border bg-bg-primary border-border-medium text-text-primary"
                     >
                         {returnPlantOptions.map((plant) => (
                             <option key={plant.plant_code} value={plant.plant_code}>
@@ -277,24 +251,14 @@ export function PlanFlowRouteEditor({
                 {onDelete && (
                     <button
                         onClick={onDelete}
-                        className="px-3 py-2.5 rounded-lg text-sm font-semibold cursor-pointer border"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            borderColor: 'var(--border-medium)',
-                            color: '#dc2626'
-                        }}
+                        className="px-3 py-2.5 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-red-600"
                     >
                         <i className="fas fa-trash mr-1" /> Delete
                     </button>
                 )}
                 <button
                     onClick={onCancel}
-                    className="px-3 py-2.5 rounded-lg text-sm font-semibold cursor-pointer border"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        borderColor: 'var(--border-medium)',
-                        color: 'var(--text-secondary)'
-                    }}
+                    className="px-3 py-2.5 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-text-secondary"
                 >
                     Cancel
                 </button>
@@ -313,20 +277,15 @@ export function PlanFlowRouteEditor({
 
 function FromToFlowSummary({ accentColor, draft }) {
     return (
-        <div
-            className="rounded-xl p-3 flex items-center justify-between gap-2"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded-xl p-3 flex items-center justify-between gap-2 bg-bg-secondary border border-border-light">
             <div
                 className="rounded-lg px-3 py-2 text-center flex-1"
                 style={{ background: `${accentColor}14`, color: accentColor }}
             >
                 <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">From</div>
-                <div className="font-bold text-lg" style={{ fontFamily: 'var(--font-heading)' }}>
-                    {draft.fromPlant || '—'}
-                </div>
+                <div className="font-bold text-lg font-heading">{draft.fromPlant || '—'}</div>
             </div>
-            <div style={{ color: 'var(--text-tertiary)' }}>
+            <div className="text-text-tertiary">
                 <i className="fas fa-arrow-right" />
             </div>
             <div
@@ -338,9 +297,7 @@ function FromToFlowSummary({ accentColor, draft }) {
                 }}
             >
                 <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">To</div>
-                <div className="font-bold text-lg" style={{ fontFamily: 'var(--font-heading)' }}>
-                    {draft.toPlant || 'Pick…'}
-                </div>
+                <div className="font-bold text-lg font-heading">{draft.toPlant || 'Pick…'}</div>
             </div>
         </div>
     )
@@ -349,16 +306,10 @@ function FromToFlowSummary({ accentColor, draft }) {
 function TimeModeToggle({ accentColor, isCustom, onModeChange }) {
     return (
         <div>
-            <div
-                className="text-[10px] font-bold uppercase tracking-wider mb-1.5"
-                style={{ color: 'var(--text-secondary)' }}
-            >
+            <div className="text-[10px] font-bold uppercase tracking-wider mb-1.5 text-text-secondary">
                 Operator times
             </div>
-            <div
-                className="inline-flex rounded-md overflow-hidden"
-                style={{ border: '1px solid var(--border-medium)' }}
-            >
+            <div className="inline-flex rounded-md overflow-hidden border border-border-medium">
                 {[TIME_MODE_STAGGER, TIME_MODE_CUSTOM].map((modeOption) => {
                     const active = (modeOption === TIME_MODE_CUSTOM) === isCustom
                     return (
@@ -390,18 +341,13 @@ function StaggerFields({ accentColor, draft, setDraft }) {
                         type="time"
                         value={draft.time || ''}
                         onChange={(event) => setDraft({ ...draft, time: event.target.value })}
-                        className="w-full px-3 py-2 rounded-lg text-sm border font-mono"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            borderColor: 'var(--border-medium)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="w-full px-3 py-2 rounded-lg text-sm border font-mono bg-bg-primary border-border-medium text-text-primary"
                     />
                 </LabeledField>
                 <LabeledField
                     label={
                         <>
-                            Leave time <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>· return</span>
+                            Leave time <span className="text-text-tertiary font-medium">· return</span>
                         </>
                     }
                 >
@@ -409,12 +355,7 @@ function StaggerFields({ accentColor, draft, setDraft }) {
                         type="time"
                         value={draft.leaveTime || ''}
                         onChange={(event) => setDraft({ ...draft, leaveTime: event.target.value })}
-                        className="w-full px-3 py-2 rounded-lg text-sm border font-mono"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            borderColor: 'var(--border-medium)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="w-full px-3 py-2 rounded-lg text-sm border font-mono bg-bg-primary border-border-medium text-text-primary"
                     />
                 </LabeledField>
             </div>
@@ -422,7 +363,7 @@ function StaggerFields({ accentColor, draft, setDraft }) {
                 label={
                     <>
                         Stagger{' '}
-                        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>
+                        <span className="text-text-tertiary font-medium">
                             · {draft.staggerMinutes || 0} min between operators
                         </span>
                     </>
@@ -438,7 +379,7 @@ function StaggerFields({ accentColor, draft, setDraft }) {
                     className="w-full"
                     style={{ accentColor }}
                 />
-                <div className="flex justify-between text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="flex justify-between text-[10px] text-text-tertiary">
                     <span>0m</span>
                     <span>15m</span>
                 </div>
@@ -450,10 +391,7 @@ function StaggerFields({ accentColor, draft, setDraft }) {
 function CustomTimeRows({ accentColor, draft, driverCount, onUpdate }) {
     return (
         <div className="flex flex-col gap-1.5">
-            <div
-                className="grid grid-cols-[24px_1fr_1fr] gap-2 text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+            <div className="grid grid-cols-[24px_1fr_1fr] gap-2 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
                 <span>#</span>
                 <span>Arrive</span>
                 <span>Leave</span>
@@ -472,23 +410,13 @@ function CustomTimeRows({ accentColor, draft, driverCount, onUpdate }) {
                             type="time"
                             value={rowTimes.time || ''}
                             onChange={(event) => onUpdate(index, 'time', event.target.value)}
-                            className="w-full px-2 py-1.5 rounded-md text-[12px] border font-mono"
-                            style={{
-                                background: 'var(--bg-primary)',
-                                borderColor: 'var(--border-medium)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="w-full px-2 py-1.5 rounded-md text-[12px] border font-mono bg-bg-primary border-border-medium text-text-primary"
                         />
                         <input
                             type="time"
                             value={rowTimes.leaveTime || ''}
                             onChange={(event) => onUpdate(index, 'leaveTime', event.target.value)}
-                            className="w-full px-2 py-1.5 rounded-md text-[12px] border font-mono"
-                            style={{
-                                background: 'var(--bg-primary)',
-                                borderColor: 'var(--border-medium)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="w-full px-2 py-1.5 rounded-md text-[12px] border font-mono bg-bg-primary border-border-medium text-text-primary"
                         />
                     </div>
                 )
@@ -499,10 +427,7 @@ function CustomTimeRows({ accentColor, draft, driverCount, onUpdate }) {
 
 function SummaryRow({ accentColor, clockIn, returnTime, travel }) {
     return (
-        <div
-            className="rounded-lg p-3 grid grid-cols-3 gap-2"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded-lg p-3 grid grid-cols-3 gap-2 bg-bg-secondary border border-border-light">
             <SummaryCell label="Travel" value={travel != null ? `${travel}m` : '—'} />
             <SummaryCell label="Clock-in" value={clockIn || '—'} color={clockIn ? '#16a34a' : 'var(--text-tertiary)'} />
             <SummaryCell
@@ -517,13 +442,8 @@ function SummaryRow({ accentColor, clockIn, returnTime, travel }) {
 function SummaryCell({ color, label, value }) {
     return (
         <div>
-            <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: 'var(--text-tertiary)' }}>
-                {label}
-            </div>
-            <div
-                className="font-bold text-base"
-                style={{ color: color || 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-            >
+            <div className="text-[9px] uppercase tracking-wider font-bold text-text-tertiary">{label}</div>
+            <div className="font-bold text-base font-heading" style={{ color: color || 'var(--text-primary)' }}>
                 {value}
             </div>
         </div>
@@ -533,9 +453,7 @@ function SummaryCell({ color, label, value }) {
 function LabeledField({ children, label }) {
     return (
         <div className="flex flex-col gap-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
-                {label}
-            </div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">{label}</div>
             {children}
         </div>
     )

@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { usePreferences } from '../../../../app/context/PreferencesContext'
+import { filterMaintenanceItemsByPlant, useAllowedPlantCodes } from '../../../../app/hooks/useReportData'
 import { PlanService } from '../../../../services/PlanService'
 import { PlantService } from '../../../../services/PlantService'
 import { getDistrictPlantCodes, getDistrictsForPlantCode } from '../../../../utils/DistrictUtility'
 import FormatUtility from '../../../../utils/FormatUtility'
 import { isExcludedOrder } from '../../../../utils/PlanUtility'
 import { ReportUtility } from '../../../../utils/ReportUtility'
-import { filterMaintenanceItemsByPlant, useAllowedPlantCodes } from './shared'
 
 const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
 const CARD_STYLE = { background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }
@@ -85,10 +85,7 @@ function useWeeklyYardageByPlant(weekIso, allowedCodes) {
 function CardHeader({ icon, label, sub, title }) {
     return (
         <div className="flex items-center gap-2 mb-2">
-            <div
-                className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-            >
+            <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                 <i className={`fas ${icon} text-[11px]`} />
             </div>
             <div className="min-w-0 flex-1">
@@ -97,14 +94,8 @@ function CardHeader({ icon, label, sub, title }) {
                         {label}
                     </div>
                 )}
-                <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                    {title}
-                </div>
-                {sub && (
-                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        {sub}
-                    </div>
-                )}
+                <div className="text-[12.5px] font-semibold leading-tight text-text-primary">{title}</div>
+                {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
             </div>
         </div>
     )
@@ -125,26 +116,15 @@ function DailyRecapSection({ form, handleChange, readOnly }) {
                     return (
                         <div
                             key={day.key}
-                            className="rounded p-2.5 flex flex-col gap-1.5"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                            className="rounded p-2.5 flex flex-col gap-1.5 bg-bg-secondary border border-border-light"
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
-                                    <i
-                                        className="fas fa-calendar-day text-[10px]"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    />
-                                    <span
-                                        className="text-[11.5px] font-semibold"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
-                                        {day.label}
-                                    </span>
-                                    {!readOnly && <span style={{ color: '#dc2626' }}>*</span>}
+                                    <i className="fas fa-calendar-day text-[10px] text-text-tertiary" />
+                                    <span className="text-[11.5px] font-semibold text-text-primary">{day.label}</span>
+                                    {!readOnly && <span className="text-red-600">*</span>}
                                 </div>
-                                <span className="text-[10px] tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
-                                    {value.length}
-                                </span>
+                                <span className="text-[10px] tabular-nums text-text-tertiary">{value.length}</span>
                             </div>
                             <textarea
                                 value={value}
@@ -153,12 +133,7 @@ function DailyRecapSection({ form, handleChange, readOnly }) {
                                 required={!readOnly}
                                 disabled={readOnly}
                                 rows={5}
-                                className="w-full rounded px-2 py-1.5 text-[12px] outline-none resize-y min-h-[88px] disabled:opacity-90"
-                                style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-primary)'
-                                }}
+                                className="w-full rounded px-2 py-1.5 text-[12px] outline-none resize-y min-h-[88px] disabled:opacity-90 bg-bg-primary border border-border-light text-text-primary"
                             />
                         </div>
                     )
@@ -171,18 +146,10 @@ function DailyRecapSection({ form, handleChange, readOnly }) {
 /** Inline pill stat — same compact style as the Plan-tab KPI badges. */
 function StatPill({ accent = 'var(--text-secondary)', icon, label, value }) {
     return (
-        <div
-            className="flex items-center gap-2 rounded px-2.5 py-1.5"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="flex items-center gap-2 rounded px-2.5 py-1.5 bg-bg-secondary border border-border-light">
             <i className={`fas ${icon} text-[11px]`} style={{ color: accent }} />
             <div className="flex items-baseline gap-1.5">
-                <span
-                    className="text-[15px] font-bold leading-none tabular-nums"
-                    style={{ color: 'var(--text-primary)' }}
-                >
-                    {value}
-                </span>
+                <span className="text-[15px] font-bold leading-none tabular-nums text-text-primary">{value}</span>
                 <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                     {label}
                 </span>
@@ -213,28 +180,21 @@ function MaintenanceItemsTable({ items, plants }) {
     if (items.length === 0) {
         return (
             <div className="rounded p-6 text-center flex flex-col items-center gap-1.5" style={CARD_STYLE}>
-                <i className="fas fa-clipboard-check text-[20px]" style={{ color: 'var(--text-tertiary)' }} />
-                <p className="text-[12px] m-0" style={{ color: 'var(--text-secondary)' }}>
-                    No maintenance items were completed this week.
-                </p>
+                <i className="fas fa-clipboard-check text-[20px] text-text-tertiary" />
+                <p className="text-[12px] m-0 text-text-secondary">No maintenance items were completed this week.</p>
             </div>
         )
     }
     return (
         <div className="rounded overflow-hidden" style={CARD_STYLE}>
             <div className="overflow-x-auto">
-                <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                <table className="w-full border-collapse">
                     <thead>
                         <tr>
                             {['Description', 'Plant', 'Deadline', 'Completed'].map((header) => (
                                 <th
                                     key={header}
-                                    className={`${SECTION_LABEL_CLASS} text-left px-3 py-2 whitespace-nowrap`}
-                                    style={{
-                                        background: 'var(--bg-tertiary)',
-                                        color: 'var(--text-tertiary)',
-                                        borderBottom: '1px solid var(--border-light)'
-                                    }}
+                                    className={`${SECTION_LABEL_CLASS} text-left px-3 py-2 whitespace-nowrap bg-bg-tertiary text-text-tertiary border-b border-border-light`}
                                 >
                                     {header}
                                 </th>
@@ -246,11 +206,9 @@ function MaintenanceItemsTable({ items, plants }) {
                             const { color, icon } = getItemIcon(item)
                             return (
                                 <tr
+                                    className="border-t border-border-light"
                                     key={item.id}
-                                    style={{
-                                        borderTop: '1px solid var(--border-light)',
-                                        background: item.isOverdue ? 'rgba(220, 38, 38, 0.04)' : undefined
-                                    }}
+                                    style={{ background: item.isOverdue ? 'rgba(220, 38, 38, 0.04)' : undefined }}
                                 >
                                     <td className="px-3 py-2 align-top">
                                         <div className="flex items-start gap-2">
@@ -259,8 +217,7 @@ function MaintenanceItemsTable({ items, plants }) {
                                                 style={{ color }}
                                             />
                                             <span
-                                                className="text-[12px] leading-snug"
-                                                style={{ color: 'var(--text-primary)' }}
+                                                className="text-[12px] leading-snug text-text-primary"
                                                 title={item.description}
                                             >
                                                 {truncateText(item.description, 80)}
@@ -269,28 +226,17 @@ function MaintenanceItemsTable({ items, plants }) {
                                     </td>
                                     <td className="px-3 py-2 align-top whitespace-nowrap">
                                         <span
-                                            className="inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-semibold"
-                                            style={{
-                                                background: 'var(--bg-tertiary)',
-                                                color: 'var(--text-secondary)',
-                                                border: '1px solid var(--border-light)'
-                                            }}
+                                            className="inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-semibold bg-bg-tertiary text-text-secondary border border-border-light"
                                             title={getPlantName(item.plant_code)}
                                         >
                                             {truncateText(getPlantName(item.plant_code), 25)}
                                         </span>
                                     </td>
-                                    <td
-                                        className="px-3 py-2 align-top whitespace-nowrap text-[12px] tabular-nums"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                    <td className="px-3 py-2 align-top whitespace-nowrap text-[12px] tabular-nums text-text-secondary">
                                         {item.deadline ? ReportUtility.formatDate(item.deadline) : '—'}
                                     </td>
                                     <td className="px-3 py-2 align-top whitespace-nowrap">
-                                        <span
-                                            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums"
-                                            style={{ background: 'rgba(22, 163, 74, 0.12)', color: '#15803d' }}
-                                        >
+                                        <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums bg-[rgba(22,_163,_74,_0.12)] text-green-700">
                                             <i className="fas fa-check text-[9px]" />
                                             {item.completed_at ? ReportUtility.formatDate(item.completed_at) : '—'}
                                         </span>
@@ -325,33 +271,23 @@ function DistrictYardageRail({ districtNames, loading, plants, weekIso, yardageB
         <div className="rounded p-3 flex flex-col gap-3" style={CARD_STYLE}>
             <CardHeader icon="fa-cubes" label="District yardage" title={districtLabel} sub={weekRange || 'This week'} />
 
-            <div
-                className="flex items-baseline justify-between rounded px-2.5 py-2"
-                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-            >
+            <div className="flex items-baseline justify-between rounded px-2.5 py-2 bg-bg-secondary border border-border-light">
                 <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                     Total
                 </span>
-                <span className="font-mono tabular-nums" style={{ color: 'var(--text-primary)' }}>
+                <span className="font-mono tabular-nums text-text-primary">
                     <span className="text-[18px] font-bold">{Math.round(total).toLocaleString()}</span>
-                    <span className="ml-1 text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                        yd
-                    </span>
+                    <span className="ml-1 text-[10.5px] text-text-tertiary">yd</span>
                 </span>
             </div>
 
             {loading && rows.length === 0 ? (
-                <div
-                    className="flex items-center justify-center gap-2 py-6 text-[11.5px]"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
+                <div className="flex items-center justify-center gap-2 py-6 text-[11.5px] text-text-tertiary">
                     <i className="fas fa-circle-notch fa-spin text-[11px]" />
                     Loading week…
                 </div>
             ) : rows.length === 0 ? (
-                <div className="text-[11.5px] text-center py-4" style={{ color: 'var(--text-tertiary)' }}>
-                    No district plants found.
-                </div>
+                <div className="text-[11.5px] text-center py-4 text-text-tertiary">No district plants found.</div>
             ) : (
                 <div className="flex flex-col gap-1.5">
                     {rows.map(([code, value]) => {
@@ -362,41 +298,24 @@ function DistrictYardageRail({ districtNames, loading, plants, weekIso, yardageB
                         return (
                             <div
                                 key={code}
-                                className="rounded px-2 py-1.5"
-                                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                                className="rounded px-2 py-1.5 bg-bg-secondary border border-border-light"
                                 title={name ? `${code} · ${name}` : code}
                             >
                                 <div className="flex items-baseline justify-between gap-2 mb-1">
                                     <div className="min-w-0 flex items-baseline gap-1.5">
-                                        <span
-                                            className="text-[12.5px] font-bold tabular-nums"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <span className="text-[12.5px] font-bold tabular-nums text-text-primary">
                                             {code}
                                         </span>
                                         {name && (
-                                            <span
-                                                className="text-[10.5px] truncate"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            >
-                                                {name}
-                                            </span>
+                                            <span className="text-[10.5px] truncate text-text-tertiary">{name}</span>
                                         )}
                                     </div>
-                                    <span
-                                        className="font-mono text-[12px] font-semibold tabular-nums shrink-0"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                    <span className="font-mono text-[12px] font-semibold tabular-nums shrink-0 text-text-primary">
                                         {valRounded.toLocaleString()}
-                                        <span className="ml-0.5 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                                            yd
-                                        </span>
+                                        <span className="ml-0.5 text-[10px] text-text-tertiary">yd</span>
                                     </span>
                                 </div>
-                                <div
-                                    className="h-1 rounded-full overflow-hidden"
-                                    style={{ background: 'var(--bg-tertiary)' }}
-                                >
+                                <div className="h-1 rounded-full overflow-hidden bg-bg-tertiary">
                                     <div
                                         className="h-full rounded-full"
                                         style={{

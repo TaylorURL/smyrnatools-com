@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { Database } from '../../../services/DatabaseService'
-import { OperatorService } from '../../../services/OperatorService'
-import { PlantService } from '../../../services/PlantService'
+import { Database } from '../../services/DatabaseService'
+import { OperatorService } from '../../services/OperatorService'
+import { PlantService } from '../../services/PlantService'
 
 /**
  * Centralizes all data fetching, realtime subscriptions, and region-scoped

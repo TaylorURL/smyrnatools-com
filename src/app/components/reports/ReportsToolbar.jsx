@@ -36,12 +36,7 @@ const RefreshButton = ({ isRefreshing, onClick }) => (
         type="button"
         onClick={onClick}
         disabled={isRefreshing}
-        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-        style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-light)',
-            color: 'var(--text-primary)'
-        }}
+        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary"
     >
         <i className={`fas fa-rotate ${isRefreshing ? 'fa-spin' : ''}`} />
         <span className="hidden sm:inline">{isRefreshing ? 'Syncing…' : 'Refresh'}</span>
@@ -56,10 +51,7 @@ const PillToggle = ({ options, value, onChange }) => {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
     return (
-        <div
-            className="inline-flex items-center rounded p-0.5 gap-0.5"
-            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="inline-flex items-center rounded p-0.5 gap-0.5 bg-bg-tertiary border border-border-light">
             {options.map((opt) => {
                 const active = value === opt.value
                 return (
@@ -83,27 +75,20 @@ const PillToggle = ({ options, value, onChange }) => {
 
 /** Compact date-range picker matching FlatSelect chrome. */
 const DateRange = ({ from, to, onFromChange, onToChange }) => (
-    <div
-        className="flex items-center gap-1 rounded px-2 py-1 w-full sm:w-auto"
-        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-    >
-        <i className="fas fa-calendar-alt text-[10px] shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+    <div className="flex items-center gap-1 rounded px-2 py-1 w-full sm:w-auto bg-bg-secondary border border-border-light">
+        <i className="fas fa-calendar-alt text-[10px] shrink-0 text-text-tertiary" />
         <input
             type="date"
             value={from}
             onChange={(e) => onFromChange(e.target.value)}
-            className="text-[12px] bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem]"
-            style={{ color: 'var(--text-primary)' }}
+            className="text-[12px] bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
         />
-        <span className="text-[10px] select-none mx-0.5" style={{ color: 'var(--text-tertiary)' }}>
-            –
-        </span>
+        <span className="text-[10px] select-none mx-0.5 text-text-tertiary">–</span>
         <input
             type="date"
             value={to}
             onChange={(e) => onToChange(e.target.value)}
-            className="text-[12px] bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem]"
-            style={{ color: 'var(--text-primary)' }}
+            className="text-[12px] bg-transparent focus:outline-none flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
         />
     </div>
 )
@@ -122,12 +107,7 @@ const ClearButton = ({ onClick }) => (
     <button
         type="button"
         onClick={onClick}
-        className="flex items-center gap-1 rounded text-[12px] font-semibold px-2 py-1.5 cursor-pointer transition-colors"
-        style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-light)',
-            color: 'var(--text-secondary)'
-        }}
+        className="flex items-center gap-1 rounded text-[12px] font-semibold px-2 py-1.5 cursor-pointer transition-colors bg-bg-secondary border border-border-light text-text-secondary"
     >
         <i className="fas fa-times text-[10px]" />
         Clear
@@ -196,10 +176,7 @@ export function ReportsActionBar({
     const safeTabs = Array.isArray(tabs) ? tabs : []
 
     return (
-        <div
-            className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2"
-            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-        >
+        <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2 bg-bg-primary border-border-light">
             {onRefresh && <RefreshButton isRefreshing={isRefreshing} onClick={onRefresh} />}
             {scopeLabel && (
                 <span
@@ -220,12 +197,7 @@ export function ReportsActionBar({
                         type="button"
                         onClick={onExport}
                         disabled={!canExport || isExporting}
-                        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary"
                         title="Export the current view to CSV"
                     >
                         <i className={`fas ${isExporting ? 'fa-spinner fa-spin' : 'fa-file-export'}`} />
@@ -234,10 +206,7 @@ export function ReportsActionBar({
                 )}
                 {rightChildren}
                 {safeTabs.length > 1 && (
-                    <div
-                        className="flex items-center rounded p-0.5 overflow-x-auto"
-                        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
-                    >
+                    <div className="flex items-center rounded p-0.5 overflow-x-auto bg-bg-tertiary border border-border-light">
                         {safeTabs.map(({ key, label, icon, badge }) => {
                             const isActive = activeTab === key
                             return (
@@ -255,11 +224,8 @@ export function ReportsActionBar({
                                     <span>{label}</span>
                                     {badge != null && badge !== 0 && (
                                         <span
-                                            className="font-mono tabular-nums rounded px-1 text-[9.5px] font-bold uppercase tracking-wider"
-                                            style={{
-                                                background: isActive ? 'rgba(255,255,255,0.25)' : '#dc2626',
-                                                color: '#fff'
-                                            }}
+                                            className="font-mono tabular-nums rounded px-1 text-[9.5px] font-bold uppercase tracking-wider text-white"
+                                            style={{ background: isActive ? 'rgba(255,255,255,0.25)' : '#dc2626' }}
                                         >
                                             {badge}
                                         </span>
@@ -432,12 +398,7 @@ export function LossFilterBar({
                     <button
                         type="button"
                         onClick={onExport}
-                        className="flex items-center justify-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer flex-1 sm:flex-none"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="flex items-center justify-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer flex-1 sm:flex-none bg-bg-secondary border border-border-light text-text-primary"
                     >
                         <i className="fas fa-file-export text-[10px]" />
                         Export
@@ -470,27 +431,16 @@ export function MobileFilterShell({ activeCount = 0, children, defaultOpen = fal
                 <button
                     type="button"
                     onClick={() => setOpen((v) => !v)}
-                    className="inline-flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-primary)'
-                    }}
+                    className="inline-flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 bg-bg-secondary border border-border-light text-text-primary"
                 >
                     <i className="fas fa-sliders text-[10px]" />
                     {label}
                     {activeCount > 0 && (
-                        <span
-                            className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold"
-                            style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)' }}
-                        >
+                        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold bg-[var(--text-primary)] text-[var(--bg-primary)]">
                             {activeCount}
                         </span>
                     )}
-                    <i
-                        className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`}
-                        style={{ color: 'var(--text-tertiary)' }}
-                    />
+                    <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px] text-text-tertiary`} />
                 </button>
             </div>
             <div className={`${open ? 'block' : 'hidden'} sm:block`}>{children}</div>

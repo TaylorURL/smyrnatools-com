@@ -23,22 +23,17 @@ export function PlanSettingsAddressesPanel({
 }) {
     return (
         <div className="px-5 py-4 max-h-[420px] overflow-y-auto flex flex-col gap-3">
-            <div
-                className="text-[11px] font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--text-secondary)' }}
-            >
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
                 Plant addresses
             </div>
-            <p className="text-[11.5px] -mt-1" style={{ color: 'var(--text-tertiary)' }}>
+            <p className="text-[11.5px] -mt-1 text-text-tertiary">
                 Start typing the plant&apos;s street address and pick a suggestion to verify it. The verified address
                 feeds the Schedule tab&apos;s plant → job → plant routes and the booking recommender&apos;s drive-time
                 math.
             </p>
             {error && <AddressErrorBanner message={error} />}
             {(plants || []).length === 0 ? (
-                <div className="text-xs py-4 text-center" style={{ color: 'var(--text-secondary)' }}>
-                    No plants in this region.
-                </div>
+                <div className="text-xs py-4 text-center text-text-secondary">No plants in this region.</div>
             ) : (
                 <div className="flex flex-col gap-2">
                     {(plants || []).map((plant) => (
@@ -69,15 +64,8 @@ export function PlanSettingsAddressesPanel({
 
 function AddressErrorBanner({ message }) {
     return (
-        <div
-            className="text-[11.5px] px-3 py-2 rounded-md border"
-            style={{
-                background: 'rgba(220, 38, 38, 0.12)',
-                borderColor: 'rgba(220, 38, 38, 0.4)',
-                color: 'var(--text-primary)'
-            }}
-        >
-            <i className="fas fa-triangle-exclamation mr-1" style={{ color: '#dc2626' }} /> {message}
+        <div className="text-[11.5px] px-3 py-2 rounded-md border bg-[rgba(220,_38,_38,_0.12)] border-[rgba(220,_38,_38,_0.4)] text-text-primary">
+            <i className="fas fa-triangle-exclamation mr-1 text-red-600" /> {message}
         </div>
     )
 }
@@ -90,17 +78,10 @@ function AddressRow({ accentColor, isDirty, isSaving, plant, value, wasJustSaved
      * with the verified lat/lng, so the routing service hits
      * localStorage on the next plant↔job route instead of re-fetching. */
     return (
-        <div className="rounded-lg px-3 py-2 flex items-center gap-2" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="rounded-lg px-3 py-2 flex items-center gap-2 bg-bg-secondary">
             <div
-                className="flex items-center justify-center rounded-md font-bold shrink-0"
-                style={{
-                    background: accentColor,
-                    color: '#fff',
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: 11,
-                    height: 26,
-                    minWidth: 36
-                }}
+                className="flex items-center justify-center rounded-md font-bold shrink-0 text-white font-heading h-[26px]"
+                style={{ background: accentColor, fontSize: 11, minWidth: 36 }}
                 title={plant.plant_name || ''}
             >
                 {code}

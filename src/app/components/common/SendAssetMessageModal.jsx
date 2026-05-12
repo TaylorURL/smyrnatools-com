@@ -103,27 +103,20 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose()
             }}
-            className="fixed inset-0 z-[2100] flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.6)' }}
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.6)]"
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-[460px] max-h-[85vh] flex flex-col overflow-hidden rounded-2xl"
-                style={{ background: 'var(--bg-secondary)', boxShadow: '0 16px 40px rgba(0, 0, 0, 0.25)' }}
+                className="w-full max-w-[460px] max-h-[85vh] flex flex-col overflow-hidden rounded-2xl bg-bg-secondary"
+                style={{ boxShadow: '0 16px 40px rgba(0, 0, 0, 0.25)' }}
             >
                 {/* Header */}
-                <div
-                    className="flex items-center justify-between px-5 py-4"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
-                    <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        Send {itemType}
-                    </span>
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border-light">
+                    <span className="text-base font-semibold text-text-primary">Send {itemType}</span>
                     <button
                         onClick={onClose}
                         aria-label="Close"
-                        className="flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer text-sm"
-                        style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer text-sm bg-bg-hover text-text-secondary"
                     >
                         <i className="fas fa-times" />
                     </button>
@@ -132,8 +125,8 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                 <div className="flex-1 overflow-y-auto px-5 py-4">
                     {sent ? (
                         <div className="flex flex-col items-center gap-3 py-6 text-center">
-                            <i className="fas fa-check-circle text-3xl" style={{ color: '#22c55e' }} />
-                            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                            <i className="fas fa-check-circle text-3xl text-green-500" />
+                            <span className="text-sm font-medium text-text-primary">
                                 Sent to {selectedManager?.firstName} {selectedManager?.lastName}
                             </span>
                             <button
@@ -147,56 +140,31 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                     ) : (
                         <>
                             {/* Asset info */}
-                            <div
-                                className="flex items-center gap-3 rounded-lg px-3.5 py-3 mb-4"
-                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                            >
-                                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                    {itemNumber || 'N/A'}
-                                </span>
-                                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                    {itemType}
-                                </span>
-                                <span
-                                    className="ml-auto text-[11px] font-semibold rounded px-2 py-0.5"
-                                    style={{
-                                        background: 'var(--bg-hover)',
-                                        color: 'var(--text-secondary)'
-                                    }}
-                                >
+                            <div className="flex items-center gap-3 rounded-lg px-3.5 py-3 mb-4 bg-bg-primary border border-border-light">
+                                <span className="text-sm font-semibold text-text-primary">{itemNumber || 'N/A'}</span>
+                                <span className="text-xs text-text-secondary">{itemType}</span>
+                                <span className="ml-auto text-[11px] font-semibold rounded px-2 py-0.5 bg-bg-hover text-text-secondary">
                                     {item.status || 'Unknown'}
                                 </span>
                             </div>
 
                             {/* Recipient */}
-                            <label
-                                className="block text-xs font-semibold mb-1.5"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
-                                Send to
-                            </label>
+                            <label className="block text-xs font-semibold mb-1.5 text-text-secondary">Send to</label>
                             {loading ? (
                                 <div
-                                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 mb-4 animate-pulse"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1.5px solid var(--border-light)'
-                                    }}
+                                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 mb-4 animate-pulse bg-bg-primary"
+                                    style={{ border: '1.5px solid var(--border-light)' }}
                                 >
-                                    <div className="h-3.5 rounded w-32" style={{ background: 'var(--bg-hover)' }} />
-                                    <div
-                                        className="ml-auto w-2.5 h-2.5 rounded"
-                                        style={{ background: 'var(--bg-hover)' }}
-                                    />
+                                    <div className="h-3.5 rounded w-32 bg-bg-hover" />
+                                    <div className="ml-auto w-2.5 h-2.5 rounded bg-bg-hover" />
                                 </div>
                             ) : (
                                 <div ref={dropdownRef} className="relative mb-4">
                                     <button
                                         type="button"
                                         onClick={() => setDropdownOpen((prev) => !prev)}
-                                        className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-left cursor-pointer"
+                                        className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-left cursor-pointer bg-bg-primary"
                                         style={{
-                                            background: 'var(--bg-primary)',
                                             border: dropdownOpen
                                                 ? `1.5px solid ${accentColor}`
                                                 : '1.5px solid var(--border-light)',
@@ -212,16 +180,10 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                     {getInitials(selectedManager)}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div
-                                                        className="font-medium text-sm"
-                                                        style={{ color: 'var(--text-primary)' }}
-                                                    >
+                                                    <div className="font-medium text-sm text-text-primary">
                                                         {selectedManager.firstName} {selectedManager.lastName}
                                                     </div>
-                                                    <div
-                                                        className="text-[11px]"
-                                                        style={{ color: 'var(--text-secondary)' }}
-                                                    >
+                                                    <div className="text-[11px] text-text-secondary">
                                                         {selectedManager.roleName}
                                                         {selectedManager.plantCode
                                                             ? ` · ${selectedManager.plantCode}`
@@ -233,9 +195,8 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                             <span>Select a recipient...</span>
                                         )}
                                         <i
-                                            className="fas fa-chevron-down ml-auto text-[10px]"
+                                            className="fas fa-chevron-down ml-auto text-[10px] text-text-secondary"
                                             style={{
-                                                color: 'var(--text-secondary)',
                                                 transform: dropdownOpen ? 'rotate(180deg)' : 'none',
                                                 transition: 'transform 0.15s'
                                             }}
@@ -244,47 +205,28 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
 
                                     {dropdownOpen && (
                                         <div
-                                            className="absolute left-0 right-0 mt-1 rounded-lg overflow-hidden flex flex-col z-10"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)',
-                                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                                                maxHeight: '260px'
-                                            }}
+                                            className="absolute left-0 right-0 mt-1 rounded-lg overflow-hidden flex flex-col z-10 bg-bg-primary border border-border-light"
+                                            style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: '260px' }}
                                         >
                                             {/* Search */}
-                                            <div
-                                                className="px-2.5 py-2"
-                                                style={{ borderBottom: '1px solid var(--border-light)' }}
-                                            >
+                                            <div className="px-2.5 py-2 border-b border-border-light">
                                                 <div className="relative">
-                                                    <i
-                                                        className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none"
-                                                        style={{ color: 'var(--text-secondary)' }}
-                                                    />
+                                                    <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none text-text-secondary" />
                                                     <input
                                                         type="text"
                                                         value={recipientSearch}
                                                         onChange={(e) => setRecipientSearch(e.target.value)}
                                                         placeholder="Search..."
                                                         autoFocus
-                                                        className="w-full text-[13px] rounded-md py-1.5 pl-7 pr-2.5 outline-none"
-                                                        style={{
-                                                            background: 'var(--bg-secondary)',
-                                                            border: '1px solid var(--border-light)',
-                                                            color: 'var(--text-primary)',
-                                                            fontFamily: 'inherit'
-                                                        }}
+                                                        className="w-full text-[13px] rounded-md py-1.5 pl-7 pr-2.5 outline-none bg-bg-secondary border border-border-light text-text-primary"
+                                                        style={{ fontFamily: 'inherit' }}
                                                     />
                                                 </div>
                                             </div>
 
                                             <div className="flex-1 overflow-y-auto">
                                                 {filteredManagers.length === 0 ? (
-                                                    <div
-                                                        className="text-center text-[13px] py-4"
-                                                        style={{ color: 'var(--text-secondary)' }}
-                                                    >
+                                                    <div className="text-center text-[13px] py-4 text-text-secondary">
                                                         {managers.length === 0 ? 'No team members found' : 'No matches'}
                                                     </div>
                                                 ) : (
@@ -330,16 +272,10 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                                     {getInitials(mgr)}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <div
-                                                                        className="text-[13px] font-medium"
-                                                                        style={{ color: 'var(--text-primary)' }}
-                                                                    >
+                                                                    <div className="text-[13px] font-medium text-text-primary">
                                                                         {mgr.firstName} {mgr.lastName}
                                                                     </div>
-                                                                    <div
-                                                                        className="text-[11px]"
-                                                                        style={{ color: 'var(--text-secondary)' }}
-                                                                    >
+                                                                    <div className="text-[11px] text-text-secondary">
                                                                         {mgr.roleName}
                                                                         {mgr.plantCode ? ` · ${mgr.plantCode}` : ''}
                                                                     </div>
@@ -361,10 +297,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                             )}
 
                             {/* Message */}
-                            <label
-                                className="block text-xs font-semibold mb-1.5"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <label className="block text-xs font-semibold mb-1.5 text-text-secondary">
                                 Message <span className="font-normal">(optional)</span>
                             </label>
                             <textarea
@@ -372,11 +305,9 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                 onChange={(e) => setCommentary(e.target.value)}
                                 placeholder="Add a note..."
                                 rows="3"
-                                className="w-full rounded-lg text-sm mb-4 outline-none resize-y"
+                                className="w-full rounded-lg text-sm mb-4 outline-none resize-y bg-bg-primary text-text-primary"
                                 style={{
-                                    background: 'var(--bg-primary)',
                                     border: '1.5px solid var(--border-light)',
-                                    color: 'var(--text-primary)',
                                     fontFamily: 'inherit',
                                     lineHeight: 1.5,
                                     padding: '0.625rem 0.75rem'

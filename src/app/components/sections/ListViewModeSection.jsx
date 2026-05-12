@@ -37,8 +37,7 @@ const RowIconButton = ({ icon, title, onClick }) => (
         type="button"
         onClick={onClick}
         title={title}
-        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent hover:brightness-90 transition-colors"
-        style={{ color: 'var(--text-tertiary)' }}
+        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent hover:brightness-90 transition-colors text-text-tertiary"
     >
         <i className={`fas ${icon}`} />
     </button>
@@ -97,7 +96,7 @@ function ListViewModeSection({
         return (
             <div className={wrapperClasses} style={{ WebkitOverflowScrolling: 'touch' }}>
                 <div className={containerClasses} style={containerStyle}>
-                    <div className="text-center py-6 px-4 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="text-center py-6 px-4 text-[12px] text-text-secondary">
                         No items match the current filters.
                     </div>
                 </div>
@@ -144,11 +143,7 @@ function ListViewModeSection({
 
     const renderStars = (rating) => {
         if (!rating) {
-            return (
-                <span className="text-[10px] italic" style={{ color: 'var(--text-tertiary)' }}>
-                    —
-                </span>
-            )
+            return <span className="text-[10px] italic text-text-tertiary">—</span>
         }
         const stars = []
         for (let i = 1; i <= 5; i++) {
@@ -176,12 +171,8 @@ function ListViewModeSection({
                             return (
                                 <tr
                                     key={item.id}
-                                    className="animate-slide-in-row cursor-pointer hover:[&>td]:bg-bg-tertiary"
-                                    style={{
-                                        animationDelay: `${getRowDelay(index)}ms`,
-                                        backgroundColor: 'var(--bg-primary)',
-                                        borderBottom: '1px solid var(--border-light)'
-                                    }}
+                                    className="animate-slide-in-row cursor-pointer hover:[&>td]:bg-bg-tertiary bg-bg-primary border-b border-border-light"
+                                    style={{ animationDelay: `${getRowDelay(index)}ms` }}
                                     onClick={() => handleSelectItem(item.id)}
                                 >
                                     <td className={cellBase} style={{ color: 'var(--text-primary)' }}>
@@ -194,37 +185,21 @@ function ListViewModeSection({
                                         <span className={statusBadge(item.status)}>{item.status}</span>
                                     </td>
                                     <td className={cellSecondary} style={{ color: 'var(--text-secondary)' }}>
-                                        {operator?.name || (
-                                            <span className="italic" style={{ color: 'var(--text-tertiary)' }}>
-                                                —
-                                            </span>
-                                        )}
+                                        {operator?.name || <span className="italic text-text-tertiary">—</span>}
                                     </td>
                                     <td className={cellSecondary}>{renderStars(item.cleanlinessRating)}</td>
                                     <td className={cellSecondary} style={{ color: 'var(--text-secondary)' }}>
                                         {item.vinNumber || item.vin ? (
-                                            <span
-                                                className="rounded font-mono text-[10.5px] py-0.5 px-1 tabular-nums"
-                                                style={{
-                                                    background: 'var(--bg-tertiary)',
-                                                    color: 'var(--text-secondary)'
-                                                }}
-                                            >
+                                            <span className="rounded font-mono text-[10.5px] py-0.5 px-1 tabular-nums bg-bg-tertiary text-text-secondary">
                                                 {item.vinNumber || item.vin}
                                             </span>
                                         ) : (
-                                            <span style={{ color: 'var(--text-tertiary)' }}>—</span>
+                                            <span className="text-text-tertiary">—</span>
                                         )}
                                     </td>
                                     <td className={cellSecondary}>
                                         {item.status === 'Retired' ? (
-                                            <span
-                                                className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5"
-                                                style={{
-                                                    background: 'var(--bg-tertiary)',
-                                                    color: 'var(--text-tertiary)'
-                                                }}
-                                            >
+                                            <span className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-bg-tertiary text-text-tertiary">
                                                 N/A
                                             </span>
                                         ) : (

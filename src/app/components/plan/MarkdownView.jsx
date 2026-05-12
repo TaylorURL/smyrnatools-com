@@ -16,7 +16,7 @@ function MarkdownInline({ text }) {
         if (token.type === 'em') return <em key={idx}>{token.value}</em>
         if (token.type === 'strike')
             return (
-                <span key={idx} style={{ opacity: 0.75, textDecoration: 'line-through' }}>
+                <span className="opacity-75" key={idx} style={{ textDecoration: 'line-through' }}>
                     {token.value}
                 </span>
             )
@@ -28,14 +28,7 @@ function MarkdownInline({ text }) {
 
 function InlineCode({ text }) {
     return (
-        <code
-            className="px-1.5 py-0.5 rounded text-[12px] font-mono"
-            style={{
-                background: 'var(--bg-tertiary)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-primary)'
-            }}
-        >
+        <code className="px-1.5 py-0.5 rounded text-[12px] font-mono bg-bg-tertiary border border-border-light text-text-primary">
             {text}
         </code>
     )
@@ -47,8 +40,7 @@ function InlineLink({ href, label }) {
             href={href}
             target="_blank"
             rel="noreferrer"
-            className="underline font-semibold"
-            style={{ color: 'var(--accent, #1e3a5f)' }}
+            className="underline font-semibold text-[var(--accent, #1e3a5f)]"
         >
             {label}
         </a>
@@ -84,11 +76,10 @@ function ListTaskItem({ item }) {
     return (
         <label className="flex items-start gap-2 cursor-default">
             <span
-                className="mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0"
+                className="mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 text-white"
                 style={{
                     background: item.task ? 'var(--accent, #1e3a5f)' : 'var(--bg-primary)',
-                    border: `1.5px solid ${item.task ? 'var(--accent, #1e3a5f)' : 'var(--border-medium)'}`,
-                    color: '#fff'
+                    border: `1.5px solid ${item.task ? 'var(--accent, #1e3a5f)' : 'var(--border-medium)'}`
                 }}
             >
                 {item.task && <i className="fas fa-check text-[9px]" />}
@@ -120,14 +111,7 @@ function HeadingBlock({ block }) {
 
 function BlockquoteBlock({ block }) {
     return (
-        <blockquote
-            className="pl-3 py-2 pr-3 rounded-r-md border-l-4 italic"
-            style={{
-                background: 'var(--bg-tertiary)',
-                borderColor: 'var(--accent, #1e3a5f)',
-                color: 'var(--text-secondary)'
-            }}
-        >
+        <blockquote className="pl-3 py-2 pr-3 rounded-r-md border-l-4 italic bg-bg-tertiary border-[var(--accent, #1e3a5f)] text-text-secondary">
             {block.text.split('\n').map((line, lineIdx) => (
                 <div key={lineIdx}>
                     <MarkdownInline text={line} />
@@ -139,15 +123,14 @@ function BlockquoteBlock({ block }) {
 
 function TableBlock({ block }) {
     return (
-        <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid var(--border-light)' }}>
+        <div className="overflow-x-auto rounded-lg border border-border-light">
             <table className="w-full text-[12.5px]">
                 <thead>
-                    <tr style={{ background: 'var(--bg-tertiary)' }}>
+                    <tr className="bg-bg-tertiary">
                         {block.header.map((cell, cellIdx) => (
                             <th
                                 key={cellIdx}
-                                className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[11px]"
-                                style={{ color: 'var(--text-secondary)' }}
+                                className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[11px] text-text-secondary"
                             >
                                 <MarkdownInline text={cell} />
                             </th>
@@ -156,13 +139,9 @@ function TableBlock({ block }) {
                 </thead>
                 <tbody>
                     {block.rows.map((row, rowIdx) => (
-                        <tr key={rowIdx} style={{ borderTop: '1px solid var(--border-light)' }}>
+                        <tr className="border-t border-border-light" key={rowIdx}>
                             {row.map((cell, cellIdx) => (
-                                <td
-                                    key={cellIdx}
-                                    className="px-3 py-2 align-top"
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
+                                <td key={cellIdx} className="px-3 py-2 align-top text-text-primary">
                                     <MarkdownInline text={cell} />
                                 </td>
                             ))}
@@ -182,17 +161,10 @@ function TableBlock({ block }) {
 export function MarkdownView({ source }) {
     const blocks = useMemo(() => parseMarkdownBlocks(source), [source])
     return (
-        <div className="flex flex-col gap-2.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+        <div className="flex flex-col gap-2.5 text-[13.5px] leading-relaxed text-text-primary">
             {blocks.map((block, idx) => {
                 if (block.type === 'heading') return <HeadingBlock key={idx} block={block} />
-                if (block.type === 'hr')
-                    return (
-                        <hr
-                            key={idx}
-                            className="my-2 border-0 border-t"
-                            style={{ borderColor: 'var(--border-light)' }}
-                        />
-                    )
+                if (block.type === 'hr') return <hr key={idx} className="my-2 border-0 border-t border-border-light" />
                 if (block.type === 'blockquote') return <BlockquoteBlock key={idx} block={block} />
                 if (block.type === 'table') return <TableBlock key={idx} block={block} />
                 if (block.type === 'list') return <ListBlock key={idx} block={block} />

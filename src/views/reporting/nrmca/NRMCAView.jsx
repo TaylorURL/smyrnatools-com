@@ -93,12 +93,7 @@ function StatusBadge({ status }) {
 function Field({ label, children }) {
     return (
         <div className="flex flex-col gap-1">
-            <label
-                className="text-[11px] font-semibold uppercase tracking-wide"
-                style={{ color: 'var(--text-secondary)' }}
-            >
-                {label}
-            </label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{label}</label>
             {children}
         </div>
     )
@@ -107,25 +102,13 @@ function Field({ label, children }) {
 function Modal({ title, onClose, onSubmit, submitting, children }) {
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div
-                className="rounded shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
-                <div
-                    className="sticky top-0 flex items-center justify-between px-6 py-4 z-10"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        borderBottom: '1px solid var(--border-light)'
-                    }}
-                >
-                    <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
-                        {title}
-                    </h2>
+            <div className="rounded shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto bg-bg-primary border border-border-light">
+                <div className="sticky top-0 flex items-center justify-between px-6 py-4 z-10 bg-bg-primary border-b border-border-light">
+                    <h2 className="text-base font-bold text-text-primary">{title}</h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="transition-colors"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className="transition-colors text-text-tertiary"
                         aria-label="Close"
                     >
                         <i className="fas fa-times" />
@@ -140,22 +123,11 @@ function Modal({ title, onClose, onSubmit, submitting, children }) {
                 >
                     {children}
                 </form>
-                <div
-                    className="sticky bottom-0 flex justify-end gap-3 px-6 py-4"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        borderTop: '1px solid var(--border-light)'
-                    }}
-                >
+                <div className="sticky bottom-0 flex justify-end gap-3 px-6 py-4 bg-bg-primary border-t border-border-light">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-semibold rounded transition-colors"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="px-4 py-2 text-sm font-semibold rounded transition-colors bg-bg-secondary border border-border-light text-text-primary"
                     >
                         Cancel
                     </button>
@@ -163,8 +135,7 @@ function Modal({ title, onClose, onSubmit, submitting, children }) {
                         type="button"
                         onClick={onSubmit}
                         disabled={submitting}
-                        className="px-4 py-2 text-sm font-semibold rounded text-white disabled:opacity-50 transition-colors"
-                        style={{ background: 'var(--accent)' }}
+                        className="px-4 py-2 text-sm font-semibold rounded text-white disabled:opacity-50 transition-colors bg-[var(--accent)]"
                     >
                         {submitting ? 'Saving…' : 'Save'}
                     </button>
@@ -180,12 +151,8 @@ function IconBtn({ icon, onClick, danger, title }) {
             type="button"
             onClick={onClick}
             title={title}
-            className="px-2 py-1 text-[10.5px] font-semibold rounded shrink-0 inline-flex items-center justify-center transition-colors"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: danger ? '#dc2626' : 'var(--text-secondary)'
-            }}
+            className="px-2 py-1 text-[10.5px] font-semibold rounded shrink-0 inline-flex items-center justify-center transition-colors bg-bg-secondary border border-border-light"
+            style={{ color: danger ? '#dc2626' : 'var(--text-secondary)' }}
             aria-label={title || (danger ? 'Delete' : 'Edit')}
         >
             <i className={`fas ${icon} text-[10px]`} />
@@ -361,7 +328,7 @@ function PlantFormModal({ plant, regionPlants, onClose, onSaved }) {
                     {plantCode ? (
                         `(${plantCode}) ${selectedPlantName ?? ''}`
                     ) : (
-                        <span style={{ color: 'var(--text-tertiary)' }}>Select plant…</span>
+                        <span className="text-text-tertiary">Select plant…</span>
                     )}
                 </button>
                 <PlantDropdownModal
@@ -381,7 +348,7 @@ function PlantFormModal({ plant, regionPlants, onClose, onSaved }) {
                     onChange={(e) => setPlantLabel(e.target.value)}
                     required
                 />
-                <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="text-[11px] text-text-tertiary">
                     Use labels to distinguish multiple batch plants at the same location.
                 </p>
             </Field>
@@ -481,9 +448,7 @@ function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, onSaved }
                     value={intervalDays}
                     onChange={(e) => setIntervalDays(e.target.value)}
                 />
-                <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                    365 = annual · 180 = semi-annual
-                </p>
+                <p className="text-[11px] text-text-tertiary">365 = annual · 180 = semi-annual</p>
             </Field>
             <Field label="Notes (optional)">
                 <textarea
@@ -518,22 +483,17 @@ function ScaleRow({ scale, allPlants, onReload, accentColor }) {
 
     return (
         <>
-            <div
-                className="flex items-center gap-2.5 px-3 py-2 transition-colors"
-                style={{ borderBottom: '1px solid var(--border-light)' }}
-            >
+            <div className="flex items-center gap-2.5 px-3 py-2 transition-colors border-b border-border-light">
                 <div className="w-4 shrink-0" />
                 <div className={`${iconToneClass} w-6 h-6 rounded flex items-center justify-center shrink-0`}>
                     <i className="fas fa-balance-scale text-[10px]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
+                    <div className="font-semibold text-[12px] truncate text-text-primary">
                         {scale.scale_name}
-                        <span className="ml-1.5 capitalize font-normal" style={{ color: 'var(--text-tertiary)' }}>
-                            · {scale.scale_type}
-                        </span>
+                        <span className="ml-1.5 capitalize font-normal text-text-tertiary">· {scale.scale_type}</span>
                     </div>
-                    <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="text-[10.5px] mt-0.5 truncate text-text-secondary">
                         {scale.calibrated_at ? `Calibrated ${fmt(scale.calibrated_at)}` : 'Never calibrated'}
                         {scale.calibrated_by ? ` · ${scale.calibrated_by}` : ''}
                         {nextDue &&
@@ -613,14 +573,8 @@ function PlantCard({ plant, scales, allPlants, regionPlants, onReload, accentCol
 
     return (
         <>
-            <section
-                className="rounded overflow-hidden flex flex-col"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
-                <div
-                    className="flex items-center gap-2.5 px-3 py-2"
-                    style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+            <section className="rounded overflow-hidden flex flex-col bg-bg-primary border border-border-light">
+                <div className="flex items-center gap-2.5 px-3 py-2 bg-bg-secondary border-b border-border-light">
                     <div
                         className="w-6 h-6 rounded flex items-center justify-center shrink-0"
                         style={{ background: `${accentColor}22`, color: accentColor }}
@@ -628,16 +582,13 @@ function PlantCard({ plant, scales, allPlants, regionPlants, onReload, accentCol
                         <i className="fas fa-certificate text-[10px]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
+                        <div className="font-semibold text-[12px] truncate text-text-primary">
                             {plant.plant_label}
-                            <span
-                                className="ml-1.5 font-semibold uppercase tracking-wider"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
+                            <span className="ml-1.5 font-semibold uppercase tracking-wider text-text-tertiary">
                                 · {plant.plant_code}
                             </span>
                         </div>
-                        <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
+                        <div className="text-[10.5px] mt-0.5 truncate text-text-secondary">
                             NRMCA Certification · {contextLine}
                         </div>
                     </div>
@@ -665,13 +616,7 @@ function PlantCard({ plant, scales, allPlants, regionPlants, onReload, accentCol
                         />
                     ))
                 ) : (
-                    <div
-                        className="px-3 py-3 text-[11.5px] text-center"
-                        style={{
-                            borderBottom: '1px solid var(--border-light)',
-                            color: 'var(--text-tertiary)'
-                        }}
-                    >
+                    <div className="px-3 py-3 text-[11.5px] text-center border-b border-border-light text-text-tertiary">
                         No scales tracked for this plant yet.
                     </div>
                 )}
@@ -682,8 +627,7 @@ function PlantCard({ plant, scales, allPlants, regionPlants, onReload, accentCol
                     <button
                         type="button"
                         onClick={() => setAddScaleModal(true)}
-                        className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-text-tertiary"
                     >
                         <i className="fas fa-plus text-[9px]" />
                         Add scale
@@ -731,43 +675,24 @@ function PlantCard({ plant, scales, allPlants, regionPlants, onReload, accentCol
 
 function PlantCardSkeleton() {
     return (
-        <div
-            className="rounded overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="flex items-center gap-2.5 px-3 py-2"
-                style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
-            >
-                <div className="w-6 h-6 rounded animate-pulse shrink-0" style={{ background: 'var(--bg-tertiary)' }} />
+        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+            <div className="flex items-center gap-2.5 px-3 py-2 bg-bg-secondary border-b border-border-light">
+                <div className="w-6 h-6 rounded animate-pulse shrink-0 bg-bg-tertiary" />
                 <div className="flex-1 min-w-0">
-                    <div className="h-3 w-40 rounded animate-pulse mb-1" style={{ background: 'var(--bg-tertiary)' }} />
-                    <div className="h-2.5 w-28 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                    <div className="h-3 w-40 rounded animate-pulse mb-1 bg-bg-tertiary" />
+                    <div className="h-2.5 w-28 rounded animate-pulse bg-bg-tertiary" />
                 </div>
-                <div className="h-4 w-14 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                <div className="h-4 w-14 rounded animate-pulse bg-bg-tertiary" />
             </div>
             {[1, 2].map((r) => (
-                <div
-                    key={r}
-                    className="flex items-center gap-2.5 px-3 py-2"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div key={r} className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light">
                     <div className="w-4 shrink-0" />
-                    <div
-                        className="w-6 h-6 rounded animate-pulse shrink-0"
-                        style={{ background: 'var(--bg-tertiary)' }}
-                    />
+                    <div className="w-6 h-6 rounded animate-pulse shrink-0 bg-bg-tertiary" />
                     <div className="flex-1 min-w-0">
-                        <div
-                            className="h-3 w-36 rounded animate-pulse mb-1"
-                            style={{ background: 'var(--bg-tertiary)' }}
-                        />
-                        <div
-                            className="h-2.5 w-48 rounded animate-pulse"
-                            style={{ background: 'var(--bg-tertiary)' }}
-                        />
+                        <div className="h-3 w-36 rounded animate-pulse mb-1 bg-bg-tertiary" />
+                        <div className="h-2.5 w-48 rounded animate-pulse bg-bg-tertiary" />
                     </div>
-                    <div className="h-4 w-12 rounded animate-pulse" style={{ background: 'var(--bg-tertiary)' }} />
+                    <div className="h-4 w-12 rounded animate-pulse bg-bg-tertiary" />
                 </div>
             ))}
         </div>
@@ -909,7 +834,7 @@ export default function NRMCAView() {
     )
 
     return (
-        <div className="min-h-screen w-full pb-16" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="min-h-screen w-full pb-16 bg-bg-secondary">
             <TopSection
                 title="Calibrations & Certifications"
                 forwardedRef={headerRef}
@@ -982,14 +907,8 @@ export default function NRMCAView() {
                 {loading ? (
                     <NRMCASkeleton />
                 ) : plants.length === 0 ? (
-                    <div
-                        className="rounded overflow-hidden"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <div
-                            className="flex flex-col items-center justify-center py-10 px-4 text-center"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                    <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+                        <div className="flex flex-col items-center justify-center py-10 px-4 text-center text-text-tertiary">
                             <i className="fas fa-certificate text-2xl mb-2" />
                             <div className="text-[12px]">
                                 No plants defined yet — add one to start tracking certifications and calibrations.
@@ -997,14 +916,8 @@ export default function NRMCAView() {
                         </div>
                     </div>
                 ) : visiblePlants.length === 0 ? (
-                    <div
-                        className="rounded overflow-hidden"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <div
-                            className="flex flex-col items-center justify-center py-10 px-4 text-center"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                    <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+                        <div className="flex flex-col items-center justify-center py-10 px-4 text-center text-text-tertiary">
                             <i className="fas fa-circle-check text-2xl mb-2" />
                             <div className="text-[12px]">No expired certifications or overdue calibrations.</div>
                         </div>

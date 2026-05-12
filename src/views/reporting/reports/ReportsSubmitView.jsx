@@ -348,35 +348,27 @@ function ReportsSubmitView({
     const renderPlantProductionForm = () => (
         <div className="flex flex-col gap-2.5">
             <div className="flex items-center gap-2">
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                >
+                <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                     <i className="fas fa-stopwatch text-[11px]" />
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                         Production
                     </div>
-                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                    <div className="text-[12.5px] font-semibold leading-tight text-text-primary">
                         Operator Timing Entry
                     </div>
-                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-[10.5px] mt-0.5 text-text-tertiary">
                         Enter punch + load timing for each active operator. Carousel below cycles between operators.
                     </div>
                 </div>
             </div>
 
             <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                <div
-                    className="flex flex-col gap-1.5 rounded p-2.5"
-                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                >
+                <div className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light">
                     <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                         Plant
-                        <span className="ml-0.5" style={{ color: '#dc2626' }}>
-                            *
-                        </span>
+                        <span className="ml-0.5 text-red-600">*</span>
                     </label>
                     <select
                         value={form.plant ?? ''}
@@ -397,15 +389,10 @@ function ReportsSubmitView({
                         ))}
                     </select>
                 </div>
-                <div
-                    className="flex flex-col gap-1.5 rounded p-2.5"
-                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                >
+                <div className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light">
                     <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                         Report Date
-                        <span className="ml-0.5" style={{ color: '#dc2626' }}>
-                            *
-                        </span>
+                        <span className="ml-0.5 text-red-600">*</span>
                     </label>
                     <input
                         type="date"
@@ -415,7 +402,7 @@ function ReportsSubmitView({
                         className={FORM_FIELD_BASE_CLASS}
                         style={FORM_FIELD_STYLE}
                     />
-                    <div className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-[10.5px] text-text-tertiary">
                         Next report {ReportUtility.formatDate(nextForcedReportDate)}
                     </div>
                 </div>
@@ -427,27 +414,13 @@ function ReportsSubmitView({
                 </label>
 
                 {!form.plant && (
-                    <div
-                        className="flex items-center gap-2 rounded p-2.5 text-[12px]"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px dashed var(--border-medium)',
-                            color: 'var(--text-tertiary)'
-                        }}
-                    >
+                    <div className="flex items-center gap-2 rounded p-2.5 text-[12px] bg-bg-secondary border border-border-medium text-text-tertiary">
                         <i className="fas fa-circle-notch fa-spin text-[11px]" />
                         Loading plant assignment…
                     </div>
                 )}
                 {form.plant && !form.rows?.length && !excludedOperators.length && (
-                    <div
-                        className="flex items-center gap-2 rounded p-2.5 text-[12px]"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px dashed var(--border-medium)',
-                            color: 'var(--text-tertiary)'
-                        }}
-                    >
+                    <div className="flex items-center gap-2 rounded p-2.5 text-[12px] bg-bg-secondary border border-border-medium text-text-tertiary">
                         <i className="fas fa-info-circle text-[11px]" />
                         No active operators for this plant.
                     </div>
@@ -463,12 +436,11 @@ function ReportsSubmitView({
                                         key={idx}
                                         type="button"
                                         onClick={() => setCarouselIndex(idx)}
-                                        className="inline-flex items-center justify-center rounded text-[11.5px] font-bold cursor-pointer border-none tabular-nums"
+                                        className="inline-flex items-center justify-center rounded text-[11.5px] font-bold cursor-pointer border-none tabular-nums h-[26px]"
                                         style={{
                                             background: active ? accentColor : 'var(--bg-secondary)',
                                             border: `1px solid ${active ? accentColor : 'var(--border-light)'}`,
                                             color: active ? '#fff' : 'var(--text-secondary)',
-                                            height: 26,
                                             minWidth: 26,
                                             padding: '0 8px'
                                         }}
@@ -478,10 +450,7 @@ function ReportsSubmitView({
                                 )
                             })}
                         </div>
-                        <div
-                            className="rounded p-3"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                        >
+                        <div className="rounded p-3 bg-bg-secondary border border-border-light">
                             {form.rows[carouselIndex] && (
                                 <div className="flex flex-col gap-2">
                                     <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-2">
@@ -586,19 +555,11 @@ function ReportsSubmitView({
                                     </div>
                                 </div>
                             )}
-                            <div
-                                className="flex items-center justify-between gap-2 mt-3 pt-2.5 flex-wrap"
-                                style={{ borderTop: '1px solid var(--border-light)' }}
-                            >
+                            <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 flex-wrap border-t border-border-light">
                                 <button
                                     type="button"
                                     onClick={() => removeOperatorRow(carouselIndex)}
-                                    className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none"
-                                    style={{
-                                        background: 'rgba(220, 38, 38, 0.1)',
-                                        border: '1px solid rgba(220, 38, 38, 0.3)',
-                                        color: '#b91c1c'
-                                    }}
+                                    className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none bg-[rgba(220,_38,_38,_0.1)] border border-[rgba(220,_38,_38,_0.3)] text-red-700"
                                 >
                                     <i className="fas fa-user-minus text-[10px]" />
                                     Exclude
@@ -614,12 +575,9 @@ function ReportsSubmitView({
                                         <i className="fas fa-arrow-left text-[10px]" />
                                         Prev
                                     </button>
-                                    <span
-                                        className="text-[11.5px] tabular-nums"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
-                                        Operator <b style={{ color: 'var(--text-primary)' }}>{carouselIndex + 1}</b> of{' '}
-                                        <b style={{ color: 'var(--text-primary)' }}>{form.rows.length}</b>
+                                    <span className="text-[11.5px] tabular-nums text-text-secondary">
+                                        Operator <b className="text-text-primary">{carouselIndex + 1}</b> of{' '}
+                                        <b className="text-text-primary">{form.rows.length}</b>
                                     </span>
                                     <button
                                         type="button"
@@ -650,12 +608,7 @@ function ReportsSubmitView({
                                         key={opId}
                                         type="button"
                                         onClick={() => addOperatorRow(opId, mixers)}
-                                        className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11.5px] font-semibold cursor-pointer border-none"
-                                        style={{
-                                            background: 'rgba(14, 165, 233, 0.12)',
-                                            border: '1px solid rgba(14, 165, 233, 0.35)',
-                                            color: '#0369a1'
-                                        }}
+                                        className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11.5px] font-semibold cursor-pointer border-none bg-[rgba(14,_165,_233,_0.12)] border border-[rgba(14,_165,_233,_0.35)] text-[#0369a1]"
                                     >
                                         <i className="fas fa-user-plus text-[10px]" />
                                         {op?.label || opId}
@@ -671,20 +624,17 @@ function ReportsSubmitView({
     const renderPlantManagerForm = () => (
         <div className="flex flex-col gap-2.5">
             <div className="flex items-center gap-2">
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                >
+                <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                     <i className="fas fa-clipboard-list text-[11px]" />
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                         Production
                     </div>
-                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                    <div className="text-[12.5px] font-semibold leading-tight text-text-primary">
                         Weekly Production Data
                     </div>
-                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-[10.5px] mt-0.5 text-text-tertiary">
                         Key production metrics for this reporting period.
                     </div>
                 </div>
@@ -695,24 +645,16 @@ function ReportsSubmitView({
                     .map((field) => (
                         <div
                             key={field.name}
-                            className="flex flex-col gap-1.5 rounded p-2.5"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)'
-                            }}
+                            className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light"
                         >
-                            <label className="flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                            <label className="flex items-center gap-1.5 text-text-tertiary">
                                 <i
                                     className={`fas ${getFieldIcon(field.name)} text-[10px]`}
                                     style={{ color: accentColor }}
                                 />
                                 <span className={FORM_SECTION_LABEL_CLASS}>
                                     {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                    {field.required && (
-                                        <span className="ml-0.5" style={{ color: '#dc2626' }}>
-                                            *
-                                        </span>
-                                    )}
+                                    {field.required && <span className="ml-0.5 text-red-600">*</span>}
                                 </span>
                             </label>
                             {renderFieldInput(field, FORM_FIELD_BASE_CLASS)}
@@ -754,19 +696,11 @@ function ReportsSubmitView({
                 .map((field) => (
                     <div
                         key={field.name}
-                        className="flex flex-col gap-1.5 rounded p-2.5"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)'
-                        }}
+                        className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light"
                     >
                         <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                             {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                            {field.required && (
-                                <span className="ml-0.5" style={{ color: '#dc2626' }}>
-                                    *
-                                </span>
-                            )}
+                            {field.required && <span className="ml-0.5 text-red-600">*</span>}
                         </label>
                         {renderFieldInput(field)}
                     </div>
@@ -799,12 +733,7 @@ function ReportsSubmitView({
             />
             <form className="w-full px-3 py-4 sm:px-4 sm:py-6 md:px-6 flex flex-col gap-2.5" onSubmit={handleSubmit}>
                 {!EXCLUDED_REPORT_TYPES.includes(report.name) && (
-                    <div
-                        className="rounded p-3"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        {renderFormSection()}
-                    </div>
+                    <div className="rounded p-3 bg-bg-primary border border-border-light">{renderFormSection()}</div>
                 )}
                 {PluginComponent && (
                     <PluginComponent

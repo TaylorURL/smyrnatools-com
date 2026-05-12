@@ -13,23 +13,14 @@ const SectionLabel = () => (
 const PanelShell = ({ children, title = true, className = '' }) => (
     <div className={`mb-3 ${className}`}>
         {title && <SectionLabel />}
-        <div
-            className="rounded overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            {children}
-        </div>
+        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">{children}</div>
     </div>
 )
 
 const StatGroupSkeleton = ({ cols = 6 }) => (
     <div
-        className="grid mb-3 rounded overflow-hidden"
-        style={{
-            background: 'var(--bg-primary)',
-            border: '1px solid var(--border-light)',
-            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`
-        }}
+        className="grid mb-3 rounded overflow-hidden bg-bg-primary border border-border-light"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
         {Array.from({ length: cols }).map((_, i) => (
             <div
@@ -47,10 +38,7 @@ const StatGroupSkeleton = ({ cols = 6 }) => (
 )
 
 const TableHeaderRow = ({ widths }) => (
-    <div
-        className="flex items-center gap-3 px-3 py-2"
-        style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
-    >
+    <div className="flex items-center gap-3 px-3 py-2 bg-bg-secondary border-b border-border-light">
         {widths.map((w, i) => (
             <Bar key={i} className="h-2.5" style={{ width: w }} />
         ))}
@@ -59,11 +47,7 @@ const TableHeaderRow = ({ widths }) => (
 
 const TableBodyRows = ({ count = 8, widths }) =>
     Array.from({ length: count }).map((_, i) => (
-        <div
-            key={i}
-            className="flex items-center gap-3 px-3 py-2"
-            style={{ borderBottom: '1px solid var(--border-light)' }}
-        >
+        <div key={i} className="flex items-center gap-3 px-3 py-2 border-b border-border-light">
             {widths.map((w, j) => (
                 <Bar key={j} className="h-3" style={{ width: w }} />
             ))}
@@ -73,10 +57,7 @@ const TableBodyRows = ({ count = 8, widths }) =>
 export function DashboardSkeleton() {
     return (
         <div className="flex flex-1 min-h-0 overflow-hidden">
-            <div
-                className="hidden lg:block shrink-0 px-3 py-4"
-                style={{ borderRight: '1px solid var(--border-light)', width: 200 }}
-            >
+            <div className="hidden lg:block shrink-0 px-3 py-4 border-r border-border-light w-[200px]">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                     <Bar key={i} className="h-3 w-32 mb-3" />
                 ))}
@@ -95,11 +76,7 @@ export function DashboardSkeleton() {
                 </PanelShell>
                 <PanelShell>
                     {Array.from({ length: 6 }).map((_, i) => (
-                        <div
-                            key={i}
-                            className="flex items-center gap-2 px-3 py-2"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-border-light">
                             <Bar className="h-2.5 w-10 shrink-0" />
                             <div className="flex-1 mx-2">
                                 <Bar className="h-1.5 rounded-full w-full" />
@@ -109,17 +86,10 @@ export function DashboardSkeleton() {
                     ))}
                 </PanelShell>
             </div>
-            <div
-                className="hidden xl:flex flex-col shrink-0 px-3 py-4 gap-3"
-                style={{ borderLeft: '1px solid var(--border-light)', width: 240 }}
-            >
+            <div className="hidden xl:flex flex-col shrink-0 px-3 py-4 gap-3 border-l border-border-light w-60">
                 <Bar className="h-3 w-28 mb-1" />
                 {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                    <div
-                        key={i}
-                        className="flex items-center justify-between py-1.5"
-                        style={{ borderBottom: '1px solid var(--border-light)' }}
-                    >
+                    <div key={i} className="flex items-center justify-between py-1.5 border-b border-border-light">
                         <Bar className="h-2.5 w-20" />
                         <Bar className="h-3 w-12" />
                     </div>
@@ -151,20 +121,14 @@ export function ScheduleSkeleton() {
 export function FlowSkeleton() {
     return (
         <div className="flex flex-1 min-h-0 overflow-hidden">
-            <div className="flex-1 relative" style={{ background: 'var(--bg-secondary)' }}>
-                <div
-                    className="absolute top-0 left-0 right-0 flex items-center gap-2 px-3 py-2 z-10"
-                    style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+            <div className="flex-1 relative bg-bg-secondary">
+                <div className="absolute top-0 left-0 right-0 flex items-center gap-2 px-3 py-2 z-10 bg-bg-primary border-b border-border-light">
                     <Bar className="h-3 w-24" />
                     <div className="flex-1" />
                     <Bar className="h-6 w-16" />
                     <Bar className="h-6 w-16" />
                 </div>
-                <div
-                    className="absolute top-12 left-0 right-0 px-3 py-2 z-10"
-                    style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="absolute top-12 left-0 right-0 px-3 py-2 z-10 bg-bg-primary border-b border-border-light">
                     <Bar className="h-2 w-full rounded-full" />
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center pt-20">
@@ -172,32 +136,22 @@ export function FlowSkeleton() {
                         {[1, 2, 3, 4, 5, 6].map((i) => (
                             <div
                                 key={i}
-                                className="rounded-full animate-pulse"
-                                style={{
-                                    background: 'var(--bg-tertiary)',
-                                    height: 70 + (i % 3) * 12,
-                                    width: 70 + (i % 3) * 12
-                                }}
+                                className="rounded-full animate-pulse bg-bg-tertiary"
+                                style={{ height: 70 + (i % 3) * 12, width: 70 + (i % 3) * 12 }}
                             />
                         ))}
                     </div>
                 </div>
             </div>
-            <div
-                className="hidden lg:flex flex-col shrink-0 px-3 py-3 gap-3"
-                style={{ background: 'var(--bg-primary)', borderLeft: '1px solid var(--border-light)', width: 360 }}
-            >
+            <div className="hidden lg:flex flex-col shrink-0 px-3 py-3 gap-3 bg-bg-primary border-l border-border-light w-[360px]">
                 <Bar className="h-3 w-32" />
-                <div
-                    className="rounded p-3"
-                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                >
+                <div className="rounded p-3 bg-bg-secondary border border-border-light">
                     <Bar className="h-3 w-1/2 mb-2" />
                     <Bar className="h-3 w-3/4 mb-2" />
                     <Bar className="h-3 w-2/3" />
                 </div>
                 {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="rounded p-2" style={{ border: '1px solid var(--border-light)' }}>
+                    <div key={i} className="rounded p-2 border border-border-light">
                         <div className="flex items-center gap-2 mb-1.5">
                             <Bar className="h-3 w-12" />
                             <Bar className="h-3 w-3" />
@@ -239,7 +193,7 @@ export function DemandSkeleton() {
                 ))}
             </div>
             <PanelShell title={false}>
-                <div className="px-3 py-3" style={{ height: 360 }}>
+                <div className="px-3 py-3 h-[360px]">
                     <div className="flex items-end gap-2 h-full">
                         {Array.from({ length: 14 }).map((_, i) => (
                             <Bar key={i} className="flex-1" style={{ height: `${30 + ((i * 13) % 60)}%` }} />
@@ -276,10 +230,7 @@ export function StatisticsSkeleton() {
                 ))}
             </div>
             <div className="flex gap-4 items-start">
-                <div
-                    className="hidden md:flex flex-col gap-2 shrink-0 rounded p-3"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)', width: 200 }}
-                >
+                <div className="hidden md:flex flex-col gap-2 shrink-0 rounded p-3 bg-bg-primary border border-border-light w-[200px]">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <Bar key={i} className="h-3 w-32" />
                     ))}
@@ -297,7 +248,7 @@ export function StatisticsSkeleton() {
                         </div>
                     </PanelShell>
                     <PanelShell title={false} className="mb-0">
-                        <div className="px-3 py-3" style={{ height: 280 }}>
+                        <div className="px-3 py-3 h-[280px]">
                             <div className="flex items-end gap-2 h-full">
                                 {Array.from({ length: 12 }).map((_, i) => (
                                     <Bar key={i} className="flex-1" style={{ height: `${30 + ((i * 17) % 60)}%` }} />
@@ -329,23 +280,13 @@ export function CallListSkeleton() {
                         <div className="flex-1" />
                         <Bar className="h-6 w-20" />
                     </div>
-                    <div
-                        className="flex-1 min-h-0 flex flex-col rounded overflow-hidden"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <div
-                            className="flex items-center gap-2 px-3 py-2"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
+                    <div className="flex-1 min-h-0 flex flex-col rounded overflow-hidden bg-bg-primary border border-border-light">
+                        <div className="flex items-center gap-2 px-3 py-2 border-b border-border-light">
                             <Bar className="h-7 flex-1" />
                             <Bar className="h-7 w-32" />
                         </div>
                         {Array.from({ length: 10 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="flex items-center gap-2.5 px-3 py-2"
-                                style={{ borderBottom: '1px solid var(--border-light)' }}
-                            >
+                            <div key={i} className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light">
                                 <div className="flex-1 min-w-0">
                                     <Bar className="h-3 w-2/3 mb-1.5" />
                                     <Bar className="h-2.5 w-1/2" />
@@ -359,11 +300,8 @@ export function CallListSkeleton() {
                     <div className="flex items-center gap-2">
                         <Bar className="h-4 w-20" />
                     </div>
-                    <div
-                        className="flex-1 min-h-0 rounded flex flex-col"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                    <div className="flex-1 min-h-0 rounded flex flex-col bg-bg-primary border border-border-light">
+                        <div className="px-4 py-2.5 border-b border-border-light">
                             <div className="flex items-center gap-2">
                                 <Bar className="h-4 w-44" />
                                 <div className="flex-1" />
@@ -371,18 +309,12 @@ export function CallListSkeleton() {
                             </div>
                             <Bar className="h-3 w-32 mt-1.5" />
                         </div>
-                        <div
-                            className="px-4 py-2 flex items-center gap-3"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <div className="px-4 py-2 flex items-center gap-3 border-b border-border-light">
                             {Array.from({ length: 4 }).map((_, i) => (
                                 <Bar key={i} className="h-3 w-20" />
                             ))}
                         </div>
-                        <div
-                            className="px-4 py-3 flex flex-col gap-2.5"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
+                        <div className="px-4 py-3 flex flex-col gap-2.5 border-b border-border-light">
                             <div className="grid grid-cols-2 gap-2">
                                 {Array.from({ length: 4 }).map((_, i) => (
                                     <Bar key={i} className="h-9" />
@@ -393,15 +325,11 @@ export function CallListSkeleton() {
                                 <Bar className="h-7 w-24" />
                             </div>
                         </div>
-                        <div className="px-4 py-1.5" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <div className="px-4 py-1.5 border-b border-border-light">
                             <Bar className="h-2.5 w-32" />
                         </div>
                         {Array.from({ length: 4 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="px-3 py-2 flex flex-col gap-1.5"
-                                style={{ borderBottom: '1px solid var(--border-light)' }}
-                            >
+                            <div key={i} className="px-3 py-2 flex flex-col gap-1.5 border-b border-border-light">
                                 <div className="flex items-center gap-2">
                                     <Bar className="h-4 w-16 rounded-full" />
                                     <div className="flex-1" />

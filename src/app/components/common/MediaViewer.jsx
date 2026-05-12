@@ -235,10 +235,9 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                         alt={item.name}
                         draggable={false}
                         onPointerDown={handlePointerDown}
-                        className="transition-transform duration-100"
+                        className="transition-transform duration-100 max-w-full"
                         style={{
                             transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-                            maxWidth: '100%',
                             maxHeight: 'calc(100vh - 100px)',
                             cursor: zoom > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in',
                             objectFit: 'contain',

@@ -19,14 +19,8 @@ const FIELD_STYLE = {
     border: '1px solid var(--border-light)',
     color: 'var(--text-primary)'
 }
-const PM_TH = `${SECTION_LABEL_CLASS} text-left px-3 py-2 whitespace-nowrap`
-const PM_TH_STYLE = {
-    background: 'var(--bg-tertiary)',
-    color: 'var(--text-tertiary)',
-    borderBottom: '1px solid var(--border-light)'
-}
-const PM_TD = 'px-3 py-2 text-[12px] align-top'
-const PM_TD_STYLE = { color: 'var(--text-primary)', borderTop: '1px solid var(--border-light)' }
+const PM_TH = `${SECTION_LABEL_CLASS} text-left px-3 py-2 whitespace-nowrap bg-bg-tertiary text-text-tertiary border-b border-border-light`
+const PM_TD = 'px-3 py-2 text-[12px] align-top text-text-primary border-t border-border-light'
 const PM_INPUT =
     'rounded px-2.5 py-1.5 text-[12.5px] outline-none focus:ring-1 focus:ring-[var(--border-medium)] box-border'
 const GRADE_COLORS = { average: '#d97706', excellent: '#16a34a', good: '#0ea5e9', poor: '#dc2626' }
@@ -38,10 +32,7 @@ function CardHeader({ icon, label, sub, title, right }) {
     return (
         <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 min-w-0">
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                >
+                <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                     <i className={`fas ${icon} text-[11px]`} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -50,14 +41,8 @@ function CardHeader({ icon, label, sub, title, right }) {
                             {label}
                         </div>
                     )}
-                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                        {title}
-                    </div>
-                    {sub && (
-                        <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                            {sub}
-                        </div>
-                    )}
+                    <div className="text-[12.5px] font-semibold leading-tight text-text-primary">{title}</div>
+                    {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
                 </div>
             </div>
             {right && <div className="shrink-0">{right}</div>}
@@ -72,12 +57,8 @@ function IconChip({ accent = 'var(--text-secondary)', icon, label, onClick, titl
             type={type}
             onClick={onClick}
             title={title}
-            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer disabled:opacity-50"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: `1px solid var(--border-light)`,
-                color: accent
-            }}
+            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer disabled:opacity-50 bg-bg-secondary"
+            style={{ border: `1px solid var(--border-light)`, color: accent }}
         >
             {icon && <i className={`fas ${icon} text-[10px]`} />}
             {label}
@@ -116,28 +97,22 @@ function YphMetricCard({ grade, label, yph }) {
     const labelText = label?.adjusted ?? label
     const gradeColor = GRADE_COLORS[adjustedGrade] || 'var(--text-secondary)'
     return (
-        <div
-            className="rounded p-3 flex flex-col gap-2"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded p-3 flex flex-col gap-2 bg-bg-secondary border border-border-light">
             <div className="flex items-center gap-1.5">
-                <i className="fas fa-tachometer-alt text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                <i className="fas fa-tachometer-alt text-[10px] text-text-tertiary" />
                 <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                     Yards per man-hour
                 </span>
             </div>
             <div
-                className="flex items-baseline gap-1.5 font-mono tabular-nums"
-                style={{ color: 'var(--text-primary)' }}
+                className="flex items-baseline gap-1.5 font-mono tabular-nums text-text-primary"
                 title="Raw / Adjusted (for help sent)"
             >
                 <span className="text-[22px] font-bold leading-none">{formatYphValue(yph?.raw ?? yph)}</span>
-                <span className="text-[16px]" style={{ color: 'var(--text-tertiary)' }}>
-                    /
-                </span>
+                <span className="text-[16px] text-text-tertiary">/</span>
                 <span className="text-[22px] font-bold leading-none">{formatYphValue(yph?.adjusted ?? yph)}</span>
             </div>
-            <div className="flex gap-4 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+            <div className="flex gap-4 text-[10px] text-text-tertiary">
                 <span>Raw</span>
                 <span>Adjusted</span>
             </div>
@@ -610,10 +585,7 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
         return (
             <div className="rounded p-3" style={CARD_STYLE}>
                 <CardHeader icon="fa-chart-line" label="Trends" title="Monthly Performance Trends" />
-                <div
-                    className="flex items-center justify-center gap-2 py-6 text-[12px]"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
+                <div className="flex items-center justify-center gap-2 py-6 text-[12px] text-text-tertiary">
                     <i className="fas fa-circle-notch fa-spin text-[11px]" />
                     Loading historical data…
                 </div>
@@ -652,7 +624,7 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                 sub={`${weeksWithData} of ${historicalData.length} ${historicalData.length === 1 ? 'week' : 'weeks'} with data`}
             />
             <div className="relative">
-                <div className="absolute left-3 top-2 bottom-2 w-px" style={{ background: 'var(--border-light)' }} />
+                <div className="absolute left-3 top-2 bottom-2 w-px bg-[var(--border-light)]" />
 
                 <div className="flex flex-col relative">
                     {historicalData.map((report, idx) => {
@@ -675,15 +647,10 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                                 className="flex items-start gap-2.5 py-2 relative"
                                 style={{ opacity: report.isPlaceholder ? 0.6 : 1 }}
                             >
-                                <div
-                                    className="flex items-center justify-center relative z-[1] shrink-0"
-                                    style={{ width: 24, height: 24 }}
-                                >
+                                <div className="flex items-center justify-center relative z-[1] shrink-0 w-6 h-6">
                                     <div
-                                        className="rounded-full"
+                                        className="rounded-full w-2.5 h-2.5"
                                         style={{
-                                            width: 10,
-                                            height: 10,
                                             background: report.isPlaceholder
                                                 ? 'var(--border-medium)'
                                                 : 'var(--accent, #1e3a5f)',
@@ -691,59 +658,35 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                                         }}
                                     />
                                 </div>
-                                <div
-                                    className="flex-1 rounded p-2.5"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
-                                    <div
-                                        className="flex items-center gap-1.5 text-[12px] font-semibold mb-1"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                <div className="flex-1 rounded p-2.5 bg-bg-secondary border border-border-light">
+                                    <div className="flex items-center gap-1.5 text-[12px] font-semibold mb-1 text-text-primary">
                                         {weekLabel}
                                         {report.isCurrentWeek && (
-                                            <span
-                                                className="rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
-                                                style={{ background: 'var(--accent, #1e3a5f)', color: '#fff' }}
-                                            >
+                                            <span className="rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-[var(--accent, #1e3a5f)] text-white">
                                                 Current
                                             </span>
                                         )}
                                     </div>
                                     {report.isPlaceholder ? (
-                                        <div
-                                            className="flex items-center gap-1.5 text-[11.5px]"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
+                                        <div className="flex items-center gap-1.5 text-[11.5px] text-text-tertiary">
                                             <i className="fas fa-clock text-[10px]" />
                                             <span>Pending</span>
                                         </div>
                                     ) : (
                                         <>
-                                            <div
-                                                className="flex items-center gap-1.5 text-[11px] mb-1.5"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            >
+                                            <div className="flex items-center gap-1.5 text-[11px] mb-1.5 text-text-tertiary">
                                                 <i className="fas fa-user text-[9px]" />
                                                 {userName || 'Unknown'}
                                             </div>
                                             <div className="flex items-baseline gap-2 flex-wrap">
                                                 <span
-                                                    className="flex items-baseline gap-1 font-mono tabular-nums"
-                                                    style={{ color: 'var(--text-primary)' }}
+                                                    className="flex items-baseline gap-1 font-mono tabular-nums text-text-primary"
                                                     title="Raw / Adjusted YPH"
                                                 >
                                                     <span className="text-[16px] font-bold leading-none">
                                                         {(report.rawYph ?? report.yph).toFixed(2)}
                                                     </span>
-                                                    <span
-                                                        className="text-[11px]"
-                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                    >
-                                                        /
-                                                    </span>
+                                                    <span className="text-[11px] text-text-tertiary">/</span>
                                                     <span className="text-[16px] font-bold leading-none">
                                                         {(report.adjustedYph ?? report.yph).toFixed(2)}
                                                     </span>
@@ -776,11 +719,9 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
             </div>
             {yearlyTotals && yearlyTotals.weeklyBreakdown && yearlyTotals.weeklyBreakdown.length > 0 && (
                 <div className="flex flex-col gap-2.5">
-                    <div className={`${SECTION_LABEL_CLASS}`} style={{ color: 'var(--text-secondary)' }}>
-                        Weekly Breakdown
-                    </div>
+                    <div className={`${SECTION_LABEL_CLASS} text-text-secondary`}>Weekly Breakdown</div>
                     <div className="overflow-x-auto rounded" style={CARD_STYLE}>
-                        <table className="w-full min-w-[700px]" style={{ borderCollapse: 'collapse' }}>
+                        <table className="w-full min-w-[700px] border-collapse">
                             <thead>
                                 <tr>
                                     {[
@@ -792,7 +733,7 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                                         'Daily Avg',
                                         'Efficiency'
                                     ].map((h) => (
-                                        <th key={h} className={PM_TH} style={PM_TH_STYLE}>
+                                        <th key={h} className={PM_TH}>
                                             {h}
                                         </th>
                                     ))}
@@ -809,32 +750,19 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                                         week.hours > 0 ? Math.min((week.yph / targetYPH) * 100, 100) : 0
                                     const overallEfficiency = yphEfficiency
                                     const isMissingRow = week.isMissing || week.isNotSubmitted
-                                    const rowStyle = {
-                                        ...PM_TD_STYLE,
-                                        background: isMissingRow ? 'rgba(220, 38, 38, 0.04)' : undefined
-                                    }
+                                    const rowStyle = isMissingRow
+                                        ? { background: 'rgba(220, 38, 38, 0.04)' }
+                                        : undefined
                                     return (
-                                        <tr key={idx} style={{ borderTop: '1px solid var(--border-light)' }}>
+                                        <tr className="border-t border-border-light" key={idx}>
                                             <td className={PM_TD} style={rowStyle}>
                                                 {week.isNotSubmitted && (
-                                                    <span
-                                                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                                                        style={{
-                                                            background: 'rgba(217, 119, 6, 0.12)',
-                                                            color: '#b45309'
-                                                        }}
-                                                    >
+                                                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-[rgba(217,_119,_6,_0.12)] text-[#b45309]">
                                                         Not Submitted
                                                     </span>
                                                 )}
                                                 {week.isMissing && (
-                                                    <span
-                                                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                                                        style={{
-                                                            background: 'rgba(220, 38, 38, 0.12)',
-                                                            color: '#b91c1c'
-                                                        }}
-                                                    >
+                                                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-[rgba(220,_38,_38,_0.12)] text-red-700">
                                                         Missing
                                                     </span>
                                                 )}
@@ -858,7 +786,7 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                                                         title="Raw / Adjusted YPH"
                                                     >
                                                         <span>{(week.rawYph ?? week.yph).toFixed(2)}</span>
-                                                        <span style={{ color: 'var(--text-tertiary)' }}>/</span>
+                                                        <span className="text-text-tertiary">/</span>
                                                         <span>{(week.adjustedYph ?? week.yph).toFixed(2)}</span>
                                                     </span>
                                                 )}
@@ -876,32 +804,21 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                         </table>
                     </div>
                     {yearlyTotals.notSubmittedWeeks?.length > 0 && (
-                        <div
-                            className="rounded p-2.5"
-                            style={{
-                                background: 'rgba(217, 119, 6, 0.08)',
-                                border: '1px solid rgba(217, 119, 6, 0.35)'
-                            }}
-                        >
+                        <div className="rounded p-2.5 bg-[rgba(217,_119,_6,_0.08)] border border-[rgba(217,_119,_6,_0.35)]">
                             <div className="flex items-center gap-1.5 mb-1.5">
-                                <i className="fas fa-circle-exclamation text-[11px]" style={{ color: '#b45309' }} />
-                                <span className="text-[12px] font-semibold" style={{ color: '#92400e' }}>
+                                <i className="fas fa-circle-exclamation text-[11px] text-[#b45309]" />
+                                <span className="text-[12px] font-semibold text-[#92400e]">
                                     {yearlyTotals.notSubmittedWeeks.length} Draft{' '}
                                     {yearlyTotals.notSubmittedWeeks.length === 1 ? 'Report' : 'Reports'}
                                 </span>
                             </div>
-                            <div className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
+                            <div className="text-[11.5px] text-text-secondary">
                                 The following weeks have saved drafts that need to be submitted:
                                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                                     {yearlyTotals.notSubmittedWeeks.map((week, idx) => (
                                         <span
                                             key={idx}
-                                            className="rounded px-2 py-0.5 text-[11px] tabular-nums"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)',
-                                                color: 'var(--text-primary)'
-                                            }}
+                                            className="rounded px-2 py-0.5 text-[11px] tabular-nums bg-bg-primary border border-border-light text-text-primary"
                                         >
                                             {ReportUtility.formatDate(new Date(week.week + 'T12:00:00'))}
                                         </span>
@@ -911,32 +828,21 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                         </div>
                     )}
                     {yearlyTotals.missingWeeks?.length > 0 && (
-                        <div
-                            className="rounded p-2.5"
-                            style={{
-                                background: 'rgba(220, 38, 38, 0.08)',
-                                border: '1px solid rgba(220, 38, 38, 0.35)'
-                            }}
-                        >
+                        <div className="rounded p-2.5 bg-[rgba(220,_38,_38,_0.08)] border border-[rgba(220,_38,_38,_0.35)]">
                             <div className="flex items-center gap-1.5 mb-1.5">
-                                <i className="fas fa-triangle-exclamation text-[11px]" style={{ color: '#b91c1c' }} />
-                                <span className="text-[12px] font-semibold" style={{ color: '#991b1b' }}>
+                                <i className="fas fa-triangle-exclamation text-[11px] text-red-700" />
+                                <span className="text-[12px] font-semibold text-[#991b1b]">
                                     {yearlyTotals.missingWeeks.length} Missing{' '}
                                     {yearlyTotals.missingWeeks.length === 1 ? 'Report' : 'Reports'}
                                 </span>
                             </div>
-                            <div className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
+                            <div className="text-[11.5px] text-text-secondary">
                                 The following weeks need reports to be created and submitted:
                                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                                     {yearlyTotals.missingWeeks.map((week, idx) => (
                                         <span
                                             key={idx}
-                                            className="rounded px-2 py-0.5 text-[11px] tabular-nums"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)',
-                                                color: 'var(--text-primary)'
-                                            }}
+                                            className="rounded px-2 py-0.5 text-[11px] tabular-nums bg-bg-primary border border-border-light text-text-primary"
                                         >
                                             {ReportUtility.formatDate(new Date(week.week + 'T12:00:00'))}
                                         </span>
@@ -1095,10 +1001,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
         return (
             <div className="rounded p-3" style={CARD_STYLE}>
                 <CardHeader icon="fa-hands-helping" label="Help" title="Operators Sent to Other Plants" />
-                <div
-                    className="flex items-center justify-center gap-2 py-6 text-[12px]"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
+                <div className="flex items-center justify-center gap-2 py-6 text-[12px] text-text-tertiary">
                     <i className="fas fa-circle-notch fa-spin text-[11px]" />
                     Loading…
                 </div>
@@ -1117,8 +1020,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                         <button
                             type="button"
                             onClick={addEntry}
-                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none"
-                            style={{ background: 'var(--accent, #1e3a5f)' }}
+                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none bg-[var(--accent, #1e3a5f)]"
                         >
                             <i className="fas fa-plus text-[10px]" />
                             Add Entry
@@ -1126,20 +1028,12 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                     ) : null
                 }
             />
-            <div
-                className="rounded p-2.5"
-                style={{ background: 'rgba(14, 165, 233, 0.06)', border: '1px solid rgba(14, 165, 233, 0.25)' }}
-            >
+            <div className="rounded p-2.5 bg-[rgba(14,_165,_233,_0.06)] border border-[rgba(14,_165,_233,_0.25)]">
                 <div className="flex items-center gap-1.5 mb-1.5">
-                    <i className="fas fa-info-circle text-[11px]" style={{ color: '#0369a1' }} />
-                    <span className="text-[11.5px] font-semibold" style={{ color: '#0369a1' }}>
-                        How to track operator assistance
-                    </span>
+                    <i className="fas fa-info-circle text-[11px] text-[#0369a1]" />
+                    <span className="text-[11.5px] font-semibold text-[#0369a1]">How to track operator assistance</span>
                 </div>
-                <ul
-                    className="m-0 pl-4 text-[11px] leading-relaxed [&>li]:mb-0.5"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
+                <ul className="m-0 pl-4 text-[11px] leading-relaxed [&>li]:mb-0.5 text-text-secondary">
                     <li>Record each operator who assisted another plant, including travel time in total hours.</li>
                     <li>Create a separate entry for each day an operator helped a different plant.</li>
                     <li>For partial days, enter actual hours (e.g., 4 hours for a half-day).</li>
@@ -1149,38 +1043,21 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
             </div>
             <div className="flex flex-col gap-2">
                 {(!entries || entries.length === 0) && (
-                    <div
-                        className="flex items-center gap-2 rounded p-3 text-[12px]"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px dashed var(--border-medium)',
-                            color: 'var(--text-tertiary)'
-                        }}
-                    >
+                    <div className="flex items-center gap-2 rounded p-3 text-[12px] bg-bg-secondary border border-border-medium text-text-tertiary">
                         <i className="fas fa-info-circle text-[11px]" />
                         <span>No operators were sent to other plants this week.</span>
                     </div>
                 )}
                 {(entries || []).map((entry) => (
-                    <div
-                        key={entry.id}
-                        className="rounded overflow-hidden"
-                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <div
-                            className="flex items-start justify-between gap-2.5 p-2.5"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
+                    <div key={entry.id} className="rounded overflow-hidden bg-bg-secondary border border-border-light">
+                        <div className="flex items-start justify-between gap-2.5 p-2.5 border-b border-border-light">
                             <div className="flex flex-wrap gap-2.5 flex-1">
                                 <div className="flex flex-col gap-1 min-w-[150px]">
                                     <label className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                                         Date
                                     </label>
                                     {readOnly ? (
-                                        <div
-                                            className="text-[12.5px] font-semibold"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <div className="text-[12.5px] font-semibold text-text-primary">
                                             {getDayName(entry.date)}
                                         </div>
                                     ) : (
@@ -1200,10 +1077,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                                         Destination Plant
                                     </label>
                                     {readOnly ? (
-                                        <div
-                                            className="text-[12.5px] font-semibold"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <div className="text-[12.5px] font-semibold text-text-primary">
                                             {entry.destination_plant
                                                 ? (() => {
                                                       if (entry.destination_plant === 'OTHER_REGION')
@@ -1250,8 +1124,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                                     type="button"
                                     onClick={() => removeEntry(entry.id)}
                                     title="Remove entry"
-                                    className="flex items-center justify-center rounded border-none cursor-pointer h-7 w-7"
-                                    style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
+                                    className="flex items-center justify-center rounded border-none cursor-pointer h-7 w-7 bg-[rgba(220,_38,_38,_0.12)] text-red-700"
                                 >
                                     <i className="fas fa-times text-[10px]" />
                                 </button>
@@ -1259,10 +1132,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                         </div>
                         <div className="p-2.5">
                             <div className="flex items-center justify-between mb-2">
-                                <span
-                                    className="flex items-center gap-1.5 text-[11.5px] font-semibold"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <span className="flex items-center gap-1.5 text-[11.5px] font-semibold text-text-secondary">
                                     <i className="fas fa-users text-[10px]" />
                                     Operators
                                 </span>
@@ -1281,11 +1151,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                                     return (
                                         <div
                                             key={opIdx}
-                                            className="grid grid-cols-[1fr_110px_auto] items-end gap-2 rounded p-2"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)'
-                                            }}
+                                            className="grid grid-cols-[1fr_110px_auto] items-end gap-2 rounded p-2 bg-bg-primary border border-border-light"
                                         >
                                             <div className="flex flex-col gap-1">
                                                 <label
@@ -1295,10 +1161,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                                                     Operator
                                                 </label>
                                                 {readOnly ? (
-                                                    <div
-                                                        className="text-[12.5px] font-semibold"
-                                                        style={{ color: 'var(--text-primary)' }}
-                                                    >
+                                                    <div className="text-[12.5px] font-semibold text-text-primary">
                                                         {selectedOperator ? selectedOperator.name : 'Unknown'}
                                                     </div>
                                                 ) : (
@@ -1324,10 +1187,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                                                     Hours
                                                 </label>
                                                 {readOnly ? (
-                                                    <div
-                                                        className="text-[12.5px] font-semibold tabular-nums"
-                                                        style={{ color: 'var(--text-primary)' }}
-                                                    >
+                                                    <div className="text-[12.5px] font-semibold tabular-nums text-text-primary">
                                                         {op.hours || '0'} hrs
                                                     </div>
                                                 ) : (
@@ -1351,13 +1211,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                                                     type="button"
                                                     onClick={() => removeOperator(entry.id, opIdx)}
                                                     title="Remove operator"
-                                                    className="flex items-center justify-center rounded border-none cursor-pointer"
-                                                    style={{
-                                                        background: 'rgba(220, 38, 38, 0.12)',
-                                                        color: '#b91c1c',
-                                                        height: 30,
-                                                        width: 30
-                                                    }}
+                                                    className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-red-700 h-[30px] w-[30px]"
                                                 >
                                                     <i className="fas fa-times text-[10px]" />
                                                 </button>

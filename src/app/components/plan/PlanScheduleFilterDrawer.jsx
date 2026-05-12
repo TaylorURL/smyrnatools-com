@@ -50,44 +50,24 @@ function StatusPill({ accent, active, count, label, onClick }) {
 function ToggleSwitch({ accent, checked, count, hint, label, onChange, tone = 'neutral' }) {
     const trackOn = tone === 'danger' ? '#dc2626' : tone === 'warning' ? '#d97706' : accent
     return (
-        <label
-            className="inline-flex items-center gap-2 cursor-pointer select-none"
-            style={{ color: 'var(--text-secondary)' }}
-        >
+        <label className="inline-flex items-center gap-2 cursor-pointer select-none text-text-secondary">
             <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only" />
             <span
-                className="relative inline-block rounded-full transition-[background-color] duration-150"
-                style={{
-                    background: checked ? trackOn : 'var(--border-medium)',
-                    height: 18,
-                    width: 32
-                }}
+                className="relative inline-block rounded-full transition-[background-color] duration-150 h-[18px] w-8"
+                style={{ background: checked ? trackOn : 'var(--border-medium)' }}
             >
                 <span
-                    className="absolute top-0.5 rounded-full bg-white transition-[left] duration-150"
-                    style={{
-                        height: 14,
-                        left: checked ? 16 : 2,
-                        width: 14
-                    }}
+                    className="absolute top-0.5 rounded-full bg-white transition-[left] duration-150 h-3.5 w-3.5"
+                    style={{ left: checked ? 16 : 2 }}
                 />
             </span>
-            <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {label}
-            </span>
+            <span className="text-[12px] font-semibold text-text-primary">{label}</span>
             {Number.isFinite(count) && (
-                <span
-                    className="text-[10.5px] font-mono tabular-nums rounded px-1"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
-                >
+                <span className="text-[10.5px] font-mono tabular-nums rounded px-1 bg-bg-tertiary text-text-tertiary">
                     {count}
                 </span>
             )}
-            {hint && (
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {hint}
-                </span>
-            )}
+            {hint && <span className="text-[11px] text-text-tertiary">{hint}</span>}
         </label>
     )
 }
@@ -162,43 +142,28 @@ export default function PlanScheduleFilterDrawer({
     /** Hairline vertical divider used to separate logical groups inside
      *  the single horizontal row. Keeps the row scannable without forcing
      *  visual bands. */
-    const Divider = () => (
-        <span
-            aria-hidden
-            className="hidden md:inline-block"
-            style={{ background: 'var(--border-light)', height: 22, width: 1 }}
-        />
-    )
+    const Divider = () => <span aria-hidden className="hidden md:inline-block bg-[var(--border-light)] h-[22px] w-px" />
 
     return (
         <div
-            className="rounded-xl px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-2"
-            style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                boxShadow: 'var(--shadow-sm)'
-            }}
+            className="rounded-xl px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-bg-primary border border-border-light"
+            style={{ boxShadow: 'var(--shadow-sm)' }}
         >
             {/* Search — flexes to fill spare width on the row. */}
-            <div
-                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px]"
-                style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-            >
-                <i className="fas fa-magnifying-glass text-[11px]" style={{ color: 'var(--text-tertiary)' }} />
+            <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px] bg-bg-secondary border border-border-light">
+                <i className="fas fa-magnifying-glass text-[11px] text-text-tertiary" />
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => onChangeQuery(e.target.value)}
                     placeholder="Search customer, address, PO, product…"
-                    className="bg-transparent outline-none border-none text-[12.5px] w-full"
-                    style={{ color: 'var(--text-primary)' }}
+                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary"
                 />
                 {query && (
                     <button
                         type="button"
                         onClick={() => onChangeQuery('')}
-                        className="border-none bg-transparent cursor-pointer"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className="border-none bg-transparent cursor-pointer text-text-tertiary"
                         aria-label="Clear search"
                     >
                         <i className="fas fa-times text-[10px]" />
@@ -223,10 +188,10 @@ export default function PlanScheduleFilterDrawer({
                 {plantFilters.length > 1 ? (
                     <i className="fas fa-layer-group text-[10.5px]" style={{ color: accentColor }} />
                 ) : (
-                    <i className="fas fa-industry text-[10.5px]" style={{ color: 'var(--text-tertiary)' }} />
+                    <i className="fas fa-industry text-[10.5px] text-text-tertiary" />
                 )}
                 <span className="truncate flex-1">{plantButtonLabel}</span>
-                <i className="fas fa-chevron-down text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                <i className="fas fa-chevron-down text-[10px] text-text-tertiary" />
             </button>
 
             {/* Product. */}
@@ -380,10 +345,8 @@ export default function PlanScheduleFilterDrawer({
                 pushes both to the right edge of the row. */}
             <div className="flex-1 min-w-[8px]" />
             {Number.isFinite(totalShown) && Number.isFinite(totalUnfiltered) && (
-                <span className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
-                    <span className="font-mono tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        {totalShown}
-                    </span>
+                <span className="text-[11.5px] text-text-secondary">
+                    <span className="font-mono tabular-nums font-semibold text-text-primary">{totalShown}</span>
                     {' / '}
                     <span className="font-mono tabular-nums">{totalUnfiltered}</span>
                 </span>
@@ -392,12 +355,7 @@ export default function PlanScheduleFilterDrawer({
                 <button
                     type="button"
                     onClick={onClearFilters}
-                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-secondary)'
-                    }}
+                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary"
                 >
                     <i className="fas fa-rotate-left mr-1" />
                     Reset
@@ -407,12 +365,7 @@ export default function PlanScheduleFilterDrawer({
                 <button
                     type="button"
                     onClick={onExitMaximized}
-                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer"
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-secondary)'
-                    }}
+                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary"
                     title="Exit maximised view"
                 >
                     <i className="fas fa-down-left-and-up-right-to-center mr-1" />

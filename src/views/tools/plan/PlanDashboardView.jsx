@@ -280,10 +280,7 @@ function PlanDashboardView({
 
                 <div className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                     <section id="overview" className="scroll-mt-4">
-                        <div
-                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 rounded overflow-hidden"
-                            style={{ border: '1px solid var(--border-light)' }}
-                        >
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 rounded overflow-hidden border border-border-light">
                             <SharedStat
                                 label="Operators"
                                 value={totalOperatorsFleet.toLocaleString()}
@@ -361,8 +358,8 @@ function PlanDashboardView({
                                 onSwitchToPlanner && (
                                     <button
                                         onClick={onSwitchToPlanner}
-                                        className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer shrink-0"
-                                        style={{ background: accentColor, color: '#fff' }}
+                                        className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer shrink-0 text-white"
+                                        style={{ background: accentColor }}
                                         title="Open Planner"
                                     >
                                         <i className="fas fa-project-diagram sm:mr-1" />
@@ -373,16 +370,16 @@ function PlanDashboardView({
                         >
                             {myAlertCount > 0 && (
                                 <div
-                                    className="rounded p-3 mb-3"
-                                    style={{ background: 'var(--bg-secondary)', borderLeft: '3px solid #d97706' }}
+                                    className="rounded p-3 mb-3 bg-bg-secondary"
+                                    style={{ borderLeft: '3px solid #d97706' }}
                                 >
-                                    <div className="text-[12.5px] mb-1.5" style={{ color: 'var(--text-primary)' }}>
+                                    <div className="text-[12.5px] mb-1.5 text-text-primary">
                                         <span className="font-semibold">
                                             {myAlertCount} flagged job{myAlertCount === 1 ? '' : 's'}
                                         </span>{' '}
                                         in your {scopeNoun}
                                         {(mySpecialJobs.length > 0 || myQcJobs.length > 0) && (
-                                            <span style={{ color: 'var(--text-secondary)' }}>
+                                            <span className="text-text-secondary">
                                                 {' — '}
                                                 {mySpecialJobs.length > 0 && `${mySpecialJobs.length} special`}
                                                 {mySpecialJobs.length > 0 && myQcJobs.length > 0 && ', '}
@@ -395,10 +392,9 @@ function PlanDashboardView({
                                             <button
                                                 key={`alert-s-${job.id}`}
                                                 onClick={() => jumpTo('special')}
-                                                className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5"
-                                                style={{ color: 'var(--text-secondary)' }}
+                                                className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5 text-text-secondary"
                                             >
-                                                <span style={{ color: '#d97706' }}>•</span>
+                                                <span className="text-amber-600">•</span>
                                                 <span className="flex-1 truncate">{job.title || 'Untitled'}</span>
                                                 {job.time && <span className="font-mono text-[11px]">{job.time}</span>}
                                             </button>
@@ -407,10 +403,9 @@ function PlanDashboardView({
                                             <button
                                                 key={`alert-q-${job.id}`}
                                                 onClick={() => jumpTo('qc')}
-                                                className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5"
-                                                style={{ color: 'var(--text-secondary)' }}
+                                                className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5 text-text-secondary"
                                             >
-                                                <span style={{ color: '#7c3aed' }}>•</span>
+                                                <span className="text-[#7c3aed]">•</span>
                                                 <span className="flex-1 truncate">{job.title || 'Untitled'}</span>
                                                 {job.time && <span className="font-mono text-[11px]">{job.time}</span>}
                                             </button>
@@ -445,10 +440,7 @@ function PlanDashboardView({
 
                             {pmChecklist.length > 0 ? (
                                 <div>
-                                    <div
-                                        className="text-[11px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                    <div className="text-[11px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5 text-text-secondary">
                                         <i className="fas fa-clipboard-check text-[10px]" />
                                         Dispatch checklist
                                         <span className="font-normal">
@@ -470,10 +462,7 @@ function PlanDashboardView({
                                     </div>
                                 </div>
                             ) : (
-                                <div
-                                    className="rounded-lg p-4 text-center text-[12px]"
-                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-                                >
+                                <div className="rounded-lg p-4 text-center text-[12px] bg-bg-secondary text-text-secondary">
                                     {yourSectionKind === 'plant'
                                         ? 'Your plant isn’t sending operators today.'
                                         : `Nothing being sent outside your ${scopeNoun} today.`}
@@ -517,8 +506,8 @@ function PlanDashboardView({
                             onSwitchToPlanner && (
                                 <button
                                     onClick={onSwitchToPlanner}
-                                    className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer flex items-center gap-1.5 shrink-0"
-                                    style={{ background: accentColor, color: '#fff' }}
+                                    className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer flex items-center gap-1.5 shrink-0 text-white"
+                                    style={{ background: accentColor }}
                                     title="Open Planner"
                                 >
                                     <i className="fas fa-up-right-from-square text-[9px]" />

@@ -15,28 +15,31 @@ update storage.buckets
 set public = false
 where id = 'dispatch-reports';
 
-do $$
+do
+$$
 declare
-    policy_name text;
+policy_name text;
 begin
-    for policy_name in
-        select policyname
-        from pg_policies
-        where schemaname = 'storage'
-          and tablename = 'objects'
-          and (
-              qual ilike '%dispatch-reports%'
+for policy_name in
+select policyname
+from pg_policies
+where schemaname = 'storage'
+  and tablename = 'objects'
+  and (
+    qual ilike '%dispatch-reports%'
               or with_check ilike '%dispatch-reports%'
-          )
+    )
     loop
         execute format('drop policy if exists %I on storage.objects', policy_name);
-    end loop;
+end loop;
 end
 $$;
 
-drop policy if exists "dispatch_reports_service_role_all" on storage.objects;
+drop
+policy if exists "dispatch_reports_service_role_all" on storage.objects;
 
-create policy "dispatch_reports_service_role_all"
+create
+policy "dispatch_reports_service_role_all"
 on storage.objects
 as permissive
 for all

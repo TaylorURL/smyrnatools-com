@@ -72,11 +72,8 @@ export default function PlanScheduleOrderCard({
                 >
                     <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">Start</div>
                     <div
-                        className="font-bold text-[18px] leading-none font-mono"
-                        style={{
-                            fontFamily: 'var(--font-heading)',
-                            textDecoration: isCancelled ? 'line-through' : 'none'
-                        }}
+                        className="font-bold text-[18px] leading-none font-mono font-heading"
+                        style={{ textDecoration: isCancelled ? 'line-through' : 'none' }}
                     >
                         {start || '—'}
                     </div>
@@ -84,12 +81,8 @@ export default function PlanScheduleOrderCard({
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                         <div
-                            className="text-[15px] font-bold leading-tight"
-                            style={{
-                                color: 'var(--text-primary)',
-                                fontFamily: 'var(--font-heading)',
-                                textDecoration: isCancelled ? 'line-through' : 'none'
-                            }}
+                            className="text-[15px] font-bold leading-tight text-text-primary font-heading"
+                            style={{ textDecoration: isCancelled ? 'line-through' : 'none' }}
                         >
                             {clean(order.customer) || 'Unknown customer'}
                         </div>
@@ -110,10 +103,7 @@ export default function PlanScheduleOrderCard({
                         {!isNonProduction && <ServiceBadge service={service} />}
                         {!isNonProduction && <HoursLimitBadge limit={hoursLimit} />}
                     </div>
-                    <div
-                        className="text-[11.5px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
+                    <div className="text-[11.5px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-text-secondary">
                         {plantCode &&
                             (onPickPlant ? (
                                 <button
@@ -161,8 +151,7 @@ export default function PlanScheduleOrderCard({
                                 </button>
                                 {closerPlant && (
                                     <span
-                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start"
-                                        style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#1d4ed8' }}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start bg-[rgba(37,_99,_235,_0.12)] text-blue-700"
                                         title={`Live drive time: ${closerPlant.minutes} min from plant ${closerPlant.plantCode}${closerPlant.plantName ? ` (${closerPlant.plantName})` : ''} vs ${closerPlant.assignedMinutes} min from assigned plant ${plantCode}. Saves ~${closerPlant.savings} min one-way.`}
                                     >
                                         <i className="fas fa-route text-[9px]" />
@@ -171,10 +160,7 @@ export default function PlanScheduleOrderCard({
                                 )}
                             </div>
                         ) : (
-                            <div
-                                className="text-[12px] mt-1 flex items-center gap-1.5"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <div className="text-[12px] mt-1 flex items-center gap-1.5 text-text-secondary">
                                 <i className="fas fa-location-dot text-[10px] opacity-70" />
                                 <span className="truncate uppercase tracking-wide">
                                     {formatOrderAddress(order, ' · ')}
@@ -183,15 +169,10 @@ export default function PlanScheduleOrderCard({
                         ))}
                 </div>
                 <div className="text-right shrink-0">
-                    <div
-                        className="text-[18px] font-bold leading-none"
-                        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                    >
+                    <div className="text-[18px] font-bold leading-none text-text-primary font-heading">
                         {yardage > 0 ? yardage : '—'}
                     </div>
-                    <div className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
-                        yards
-                    </div>
+                    <div className="text-[10px] uppercase tracking-wider text-text-secondary">yards</div>
                 </div>
             </div>
             {(order.productCode || order.description) &&
@@ -199,40 +180,29 @@ export default function PlanScheduleOrderCard({
                     <button
                         type="button"
                         onClick={() => onPickProduct(clean(order.productCode))}
-                        className="rounded-md px-2.5 py-1.5 flex items-center gap-2 border cursor-pointer text-left"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            borderColor: 'var(--border-light)'
-                        }}
+                        className="rounded-md px-2.5 py-1.5 flex items-center gap-2 border cursor-pointer text-left bg-bg-secondary border-border-light"
                         title={`Filter to product ${clean(order.productCode)}`}
                     >
                         <i className="fas fa-cube text-[10px]" style={{ color: accentColor }} />
-                        <span className="text-[12px] font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        <span className="text-[12px] font-mono font-semibold text-text-primary">
                             {clean(order.productCode)}
                         </span>
                         {order.description && (
-                            <span className="text-[12px] truncate" style={{ color: 'var(--text-secondary)' }}>
-                                {clean(order.description)}
-                            </span>
+                            <span className="text-[12px] truncate text-text-secondary">{clean(order.description)}</span>
                         )}
                     </button>
                 ) : (
-                    <div
-                        className="rounded-md px-2.5 py-1.5 flex items-center gap-2"
-                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                    >
+                    <div className="rounded-md px-2.5 py-1.5 flex items-center gap-2 bg-bg-secondary border border-border-light">
                         <i className="fas fa-cube text-[10px]" style={{ color: accentColor }} />
-                        <span className="text-[12px] font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        <span className="text-[12px] font-mono font-semibold text-text-primary">
                             {clean(order.productCode)}
                         </span>
                         {order.description && (
-                            <span className="text-[12px] truncate" style={{ color: 'var(--text-secondary)' }}>
-                                {clean(order.description)}
-                            </span>
+                            <span className="text-[12px] truncate text-text-secondary">{clean(order.description)}</span>
                         )}
                     </div>
                 ))}
-            <div className="flex flex-wrap gap-1.5 text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>
+            <div className="flex flex-wrap gap-1.5 text-[11.5px] text-text-secondary">
                 {order.tktTime && <KeyValue label="Tkt" value={formatHhmm(order.tktTime)} />}
                 {order.rate && <KeyValue label="Rate" value={clean(order.rate)} />}
                 {order.toJobTime && <KeyValue label="To Job" value={clean(order.toJobTime)} />}

@@ -194,7 +194,7 @@ function NotificationsView({ initialConversationId = null }) {
     const activeIsMuted = activeConversation ? mutedSet.has(activeConversation.otherId) : false
 
     return (
-        <div className="absolute inset-0 flex flex-col" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="absolute inset-0 flex flex-col bg-bg-secondary">
             <PageHeader
                 accentColor={accentColor}
                 conversationCount={conversations.length}
@@ -223,7 +223,7 @@ function NotificationsView({ initialConversationId = null }) {
                 )}
 
                 {showThreadPane && (
-                    <div className="flex-1 flex flex-col min-w-0" style={{ background: 'var(--bg-secondary)' }}>
+                    <div className="flex-1 flex flex-col min-w-0 bg-bg-secondary">
                         {activeConversation ? (
                             <>
                                 <ChatHeader
@@ -299,34 +299,15 @@ function NotificationsView({ initialConversationId = null }) {
  *  surface feels like part of the same product. */
 function PageHeader({ accentColor, conversationCount = 0, unreadCount = 0, onMarkAllRead, onCompose }) {
     return (
-        <div
-            className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5"
-            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-        >
-            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0" style={{ color: 'var(--text-primary)' }}>
-                Messages
-            </h1>
-            <span
-                className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1"
-                style={{
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-light)',
-                    color: 'var(--text-primary)'
-                }}
-            >
-                <i className="fas fa-comments text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+        <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5 bg-bg-primary border-border-light">
+            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0 text-text-primary">Messages</h1>
+            <span className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1 bg-bg-secondary border border-border-light text-text-primary">
+                <i className="fas fa-comments text-[10px] text-text-tertiary" />
                 <span className="font-mono tabular-nums">{conversationCount}</span> conversation
                 {conversationCount === 1 ? '' : 's'}
             </span>
             {unreadCount > 0 && (
-                <span
-                    className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1"
-                    style={{
-                        background: 'rgba(220,38,38,0.12)',
-                        border: '1px solid rgba(220,38,38,0.3)',
-                        color: '#dc2626'
-                    }}
-                >
+                <span className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1 bg-[rgba(220,38,38,0.12)] border border-[rgba(220,38,38,0.3)] text-red-600">
                     <i className="fas fa-envelope text-[10px]" />
                     <span className="font-mono tabular-nums">{unreadCount}</span> unread
                 </span>
@@ -336,8 +317,7 @@ function PageHeader({ accentColor, conversationCount = 0, unreadCount = 0, onMar
                 <button
                     type="button"
                     onClick={onMarkAllRead}
-                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 bg-bg-tertiary text-text-secondary"
                 >
                     <i className="fas fa-check-double" />
                     <span className="hidden sm:inline">Mark all read</span>
@@ -386,35 +366,21 @@ function ConversationSidebar({
     }
 
     return (
-        <aside
-            className="shrink-0 flex flex-col w-full lg:w-[320px] min-h-0"
-            style={{ background: 'var(--bg-primary)', borderRight: '1px solid var(--border-light)' }}
-        >
-            <div className="px-3 py-2 shrink-0" style={{ borderBottom: '1px solid var(--border-light)' }}>
+        <aside className="shrink-0 flex flex-col w-full lg:w-[320px] min-h-0 bg-bg-primary border-r border-border-light">
+            <div className="px-3 py-2 shrink-0 border-b border-border-light">
                 <div className="relative">
-                    <i
-                        className="fas fa-magnifying-glass absolute left-2 top-1/2 -translate-y-1/2 text-[10px]"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    />
+                    <i className="fas fa-magnifying-glass absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder="Search conversations…"
-                        className="w-full rounded text-[12px] pl-7 pr-2 py-1.5 outline-none"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-primary)'
-                        }}
+                        className="w-full rounded text-[12px] pl-7 pr-2 py-1.5 outline-none bg-bg-secondary border border-border-light text-text-primary"
                     />
                 </div>
             </div>
 
-            <div
-                className="flex items-center gap-1.5 flex-wrap px-3 py-2 shrink-0"
-                style={{ borderBottom: '1px solid var(--border-light)' }}
-            >
+            <div className="flex items-center gap-1.5 flex-wrap px-3 py-2 shrink-0 border-b border-border-light">
                 {FILTER_PILLS.map(({ icon, id, label }) => {
                     const isActive = activeFilter === id
                     const count = counts[id] ?? 0
@@ -450,12 +416,9 @@ function ConversationSidebar({
                 {loading ? (
                     <SidebarSkeleton />
                 ) : conversations.length === 0 ? (
-                    <div
-                        className="flex flex-col items-center justify-center py-12"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
+                    <div className="flex flex-col items-center justify-center py-12 text-text-tertiary">
                         <i className="fas fa-inbox text-2xl mb-2" />
-                        <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        <span className="text-[12px] font-semibold text-text-primary">
                             {activeFilter === 'unread'
                                 ? 'No unread messages'
                                 : activeFilter === 'pinned'
@@ -534,12 +497,7 @@ function SidebarSection({ accentColor, badge, children, icon, label }) {
     return (
         <div>
             <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
-                {icon && (
-                    <i
-                        className={`fas ${icon} text-[10px]`}
-                        style={{ color: 'var(--text-tertiary)', textAlign: 'center', width: 12 }}
-                    />
-                )}
+                {icon && <i className={`fas ${icon} text-[10px] text-text-tertiary text-center w-3`} />}
                 <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                     {label}
                 </span>
@@ -576,10 +534,9 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
         <button
             type="button"
             onClick={() => onSelect(conversation)}
-            className="flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-bg-tertiary"
+            className="flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-bg-tertiary border-b border-border-light"
             style={{
                 background: active ? `${accentColor}14` : hasUnread ? `${accentColor}0A` : 'transparent',
-                borderBottom: '1px solid var(--border-light)',
                 borderLeft: active ? `2px solid ${accentColor}` : '2px solid transparent'
             }}
         >
@@ -592,8 +549,8 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
                 </div>
                 {hasUnread && (
                     <span
-                        className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold text-white font-mono tabular-nums"
-                        style={{ background: '#dc2626', border: '1.5px solid var(--bg-primary)' }}
+                        className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold text-white font-mono tabular-nums bg-red-600"
+                        style={{ border: '1.5px solid var(--bg-primary)' }}
                     >
                         {conversation.unread}
                     </span>
@@ -608,20 +565,14 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
                                 style={{ color: accentColor, transform: 'rotate(40deg)' }}
                             />
                         )}
-                        {muted && (
-                            <i className="fas fa-bell-slash text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
-                        )}
+                        {muted && <i className="fas fa-bell-slash text-[9px] text-text-tertiary" />}
                         <span
-                            className={`truncate text-[12.5px] ${hasUnread ? 'font-bold' : 'font-semibold'}`}
-                            style={{ color: 'var(--text-primary)' }}
+                            className={`truncate text-[12.5px] ${hasUnread ? 'font-bold' : 'font-semibold'} text-text-primary`}
                         >
                             {displayName}
                         </span>
                     </span>
-                    <span
-                        className="shrink-0 text-[10px] font-mono tabular-nums"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
+                    <span className="shrink-0 text-[10px] font-mono tabular-nums text-text-tertiary">
                         {DateUtility.formatTimeAgo(latest?.createdAt)}
                     </span>
                 </div>
@@ -662,21 +613,11 @@ function SidebarSkeleton() {
     return (
         <div>
             {[0, 1, 2, 3, 4].map((i) => (
-                <div
-                    key={i}
-                    className="flex animate-pulse items-center gap-2.5 px-3 py-2"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
-                    <div className="h-7 w-7 shrink-0 rounded" style={{ background: 'var(--bg-tertiary)' }} />
+                <div key={i} className="flex animate-pulse items-center gap-2.5 px-3 py-2 border-b border-border-light">
+                    <div className="h-7 w-7 shrink-0 rounded bg-bg-tertiary" />
                     <div className="flex flex-1 min-w-0 flex-col gap-1">
-                        <div
-                            className="h-3 rounded"
-                            style={{ background: 'var(--bg-tertiary)', width: `${60 + i * 8}%` }}
-                        />
-                        <div
-                            className="h-2.5 rounded"
-                            style={{ background: 'var(--bg-secondary)', width: `${78 - i * 6}%` }}
-                        />
+                        <div className="h-3 rounded bg-bg-tertiary" style={{ width: `${60 + i * 8}%` }} />
+                        <div className="h-2.5 rounded bg-bg-secondary" style={{ width: `${78 - i * 6}%` }} />
                     </div>
                 </div>
             ))}
@@ -699,15 +640,11 @@ function ChatHeader({
     const name = userNames[conversation.otherId] || 'Conversation'
     const messageCount = conversation.messages.length
     return (
-        <div
-            className="flex items-center gap-2.5 px-3 py-2 shrink-0"
-            style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-        >
+        <div className="flex items-center gap-2.5 px-3 py-2 shrink-0 bg-bg-primary border-b border-border-light">
             {isMobile && (
                 <button
                     onClick={onBack}
-                    className="flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-bg-tertiary"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-bg-tertiary text-text-secondary"
                     aria-label="Back to inbox"
                 >
                     <i className="fas fa-arrow-left text-[12px]" />
@@ -721,9 +658,7 @@ function ChatHeader({
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[13px] font-semibold m-0 truncate" style={{ color: 'var(--text-primary)' }}>
-                        {name}
-                    </span>
+                    <span className="text-[13px] font-semibold m-0 truncate text-text-primary">{name}</span>
                     {isPinned && (
                         <i
                             className="fas fa-thumbtack text-[10px]"
@@ -731,18 +666,9 @@ function ChatHeader({
                             title="Pinned"
                         />
                     )}
-                    {isMuted && (
-                        <i
-                            className="fas fa-bell-slash text-[10px]"
-                            style={{ color: 'var(--text-tertiary)' }}
-                            title="Muted"
-                        />
-                    )}
+                    {isMuted && <i className="fas fa-bell-slash text-[10px] text-text-tertiary" title="Muted" />}
                 </div>
-                <div
-                    className="text-[10.5px] m-0 font-mono tabular-nums uppercase tracking-wider"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
+                <div className="text-[10.5px] m-0 font-mono tabular-nums uppercase tracking-wider text-text-tertiary">
                     {messageCount} message{messageCount !== 1 ? 's' : ''}
                 </div>
             </div>
@@ -791,19 +717,14 @@ function ChatHeaderIconButton({ accentColor, active = false, danger = false, ico
 
 function EmptyThreadPane({ accentColor, onCompose }) {
     return (
-        <div
-            className="flex-1 flex flex-col items-center justify-center text-center px-4"
-            style={{ color: 'var(--text-tertiary)' }}
-        >
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4 text-text-tertiary">
             <div
-                className="flex h-12 w-12 items-center justify-center rounded mb-3"
-                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                className="flex h-12 w-12 items-center justify-center rounded mb-3 bg-bg-tertiary"
+                style={{ color: accentColor }}
             >
                 <i className="fas fa-comments text-lg" />
             </div>
-            <div className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Select a conversation
-            </div>
+            <div className="text-[13px] font-semibold text-text-primary">Select a conversation</div>
             <div className="text-[10.5px] mt-1">Pick a thread on the left or start a new message</div>
             <button
                 onClick={onCompose}
@@ -847,22 +768,11 @@ function ChatMessages({ conversation, userNames, accentColor, resolvedUserId, on
     }, [chronological.length])
 
     return (
-        <div
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto min-h-0 px-3 sm:px-4 py-3"
-            style={{ background: 'var(--bg-secondary)' }}
-        >
+        <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 px-3 sm:px-4 py-3 bg-bg-secondary">
             {dateGroups.map((group) => (
                 <React.Fragment key={group.label}>
                     <div className="flex justify-center my-3 first:mt-0">
-                        <span
-                            className="px-2 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider font-mono tabular-nums"
-                            style={{
-                                background: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-secondary)'
-                            }}
-                        >
+                        <span className="px-2 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider font-mono tabular-nums bg-bg-primary border border-border-light text-text-secondary">
                             {group.label}
                         </span>
                     </div>
@@ -952,10 +862,7 @@ function ChatMessages({ conversation, userNames, accentColor, resolvedUserId, on
                                         <div
                                             className={`flex items-center gap-1.5 mt-1 ${isMine ? 'justify-end' : ''}`}
                                         >
-                                            <span
-                                                className="text-[9.5px] font-mono tabular-nums"
-                                                style={{ opacity: 0.55 }}
-                                            >
+                                            <span className="text-[9.5px] font-mono tabular-nums opacity-55">
                                                 {formatMessageTime(msg.createdAt)}
                                             </span>
                                             {isMine && (
@@ -1000,10 +907,7 @@ function ReplyBar({ accentColor, otherName, onSend }) {
     const canSend = !!body.trim() && !sending
 
     return (
-        <div
-            className="flex items-end gap-2 px-3 sm:px-4 py-2 shrink-0"
-            style={{ background: 'var(--bg-primary)', borderTop: '1px solid var(--border-light)' }}
-        >
+        <div className="flex items-end gap-2 px-3 sm:px-4 py-2 shrink-0 bg-bg-primary border-t border-border-light">
             <textarea
                 ref={textareaRef}
                 value={body}
@@ -1016,14 +920,8 @@ function ReplyBar({ accentColor, otherName, onSend }) {
                 }}
                 placeholder={`Message ${otherName}…`}
                 rows="1"
-                className="flex-1 px-3 py-1.5 rounded text-[12.5px] outline-none resize-none"
-                style={{
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-light)',
-                    color: 'var(--text-primary)',
-                    fontFamily: 'inherit',
-                    maxHeight: '100px'
-                }}
+                className="flex-1 px-3 py-1.5 rounded text-[12.5px] outline-none resize-none bg-bg-secondary border border-border-light text-text-primary"
+                style={{ fontFamily: 'inherit', maxHeight: '100px' }}
                 onFocus={(e) => {
                     e.currentTarget.style.borderColor = accentColor
                 }}
@@ -1095,15 +993,9 @@ function AttachmentPreview({ type, meta, accentColor, light }) {
                             {meta.severity}
                         </span>
                     )}
-                    {isViewable && (
-                        <i className="fas fa-external-link-alt text-[9px] ml-auto" style={{ opacity: 0.55 }} />
-                    )}
+                    {isViewable && <i className="fas fa-external-link-alt text-[9px] ml-auto opacity-55" />}
                 </div>
-                {meta.issueText && (
-                    <p className="text-[11px] m-0 leading-snug" style={{ opacity: 0.85 }}>
-                        {meta.issueText}
-                    </p>
-                )}
+                {meta.issueText && <p className="text-[11px] m-0 leading-snug opacity-85">{meta.issueText}</p>}
             </div>
         </div>
     )
@@ -1180,25 +1072,20 @@ function ComposeModal({ accentColor, onSend, onClose }) {
 
     return (
         <div
-            className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+            className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose()
             }}
         >
             <div
-                className="w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden rounded"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                className="w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden rounded bg-bg-primary border border-border-light"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div
-                    className="flex items-center justify-between px-3 py-2"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border-light">
                     <div className="flex items-center gap-2">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-6 w-6 items-center justify-center rounded bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-pen text-[11px]" />
                         </div>
@@ -1208,8 +1095,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                     </div>
                     <button
                         onClick={onClose}
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary"
-                        style={{ color: 'var(--text-secondary)' }}
+                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary text-text-secondary"
                         aria-label="Close"
                     >
                         <i className="fas fa-times text-[11px]" />
@@ -1219,16 +1105,11 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                 <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
                     {sent ? (
                         <div className="flex flex-col items-center gap-3 py-6 text-center">
-                            <div
-                                className="w-12 h-12 rounded flex items-center justify-center"
-                                style={{ background: '#dcfce7', color: '#166534' }}
-                            >
+                            <div className="w-12 h-12 rounded flex items-center justify-center bg-green-100 text-[#166534]">
                                 <i className="fas fa-check text-lg" />
                             </div>
-                            <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                Message Sent
-                            </div>
-                            <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                            <div className="text-[14px] font-semibold text-text-primary">Message Sent</div>
+                            <p className="text-[12px] text-text-secondary">
                                 {selectedRecipient?.firstName} {selectedRecipient?.lastName} will receive your message
                             </p>
                             <button
@@ -1242,12 +1123,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                     ) : (
                         <>
                             <div>
-                                <label
-                                    className={`block ${SECTION_LABEL_CLASS} mb-1.5`}
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
-                                    To
-                                </label>
+                                <label className={`block ${SECTION_LABEL_CLASS} mb-1.5 text-text-secondary`}>To</label>
                                 <div ref={dropdownRef} className="relative">
                                     {selectedRecipient ? (
                                         <div
@@ -1263,16 +1139,10 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div
-                                                    className="text-[12.5px] font-semibold truncate"
-                                                    style={{ color: 'var(--text-primary)' }}
-                                                >
+                                                <div className="text-[12.5px] font-semibold truncate text-text-primary">
                                                     {selectedRecipient.firstName} {selectedRecipient.lastName}
                                                 </div>
-                                                <div
-                                                    className="text-[10.5px] truncate"
-                                                    style={{ color: 'var(--text-secondary)' }}
-                                                >
+                                                <div className="text-[10.5px] truncate text-text-secondary">
                                                     {selectedRecipient.roleName}
                                                     {selectedRecipient.plantCode
                                                         ? ` · ${selectedRecipient.plantCode}`
@@ -1281,8 +1151,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                             </div>
                                             <button
                                                 onClick={() => setSelectedRecipient(null)}
-                                                className="text-[11px] flex h-6 w-6 items-center justify-center rounded hover:bg-bg-tertiary"
-                                                style={{ color: 'var(--text-secondary)' }}
+                                                className="text-[11px] flex h-6 w-6 items-center justify-center rounded hover:bg-bg-tertiary text-text-secondary"
                                                 aria-label="Clear recipient"
                                             >
                                                 <i className="fas fa-times" />
@@ -1303,26 +1172,14 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                                 style={fieldStyle}
                                             />
                                             {dropdownOpen && (
-                                                <div
-                                                    className="absolute left-0 right-0 z-10 mt-1 max-h-52 overflow-y-auto rounded py-1"
-                                                    style={{
-                                                        background: 'var(--bg-primary)',
-                                                        border: '1px solid var(--border-light)'
-                                                    }}
-                                                >
+                                                <div className="absolute left-0 right-0 z-10 mt-1 max-h-52 overflow-y-auto rounded py-1 bg-bg-primary border border-border-light">
                                                     {loadingRecipients ? (
-                                                        <div
-                                                            className="px-3 py-2 text-[12px] text-center"
-                                                            style={{ color: 'var(--text-secondary)' }}
-                                                        >
+                                                        <div className="px-3 py-2 text-[12px] text-center text-text-secondary">
                                                             <i className="fas fa-spinner fa-spin mr-1.5" />
                                                             Loading…
                                                         </div>
                                                     ) : filteredRecipients.length === 0 ? (
-                                                        <div
-                                                            className="px-3 py-2 text-[12px] text-center"
-                                                            style={{ color: 'var(--text-secondary)' }}
-                                                        >
+                                                        <div className="px-3 py-2 text-[12px] text-center text-text-secondary">
                                                             No results found
                                                         </div>
                                                     ) : (
@@ -1335,8 +1192,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                                                     setDropdownOpen(false)
                                                                     setRecipientSearch('')
                                                                 }}
-                                                                className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-colors hover:bg-bg-tertiary"
-                                                                style={{ color: 'var(--text-primary)' }}
+                                                                className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-colors hover:bg-bg-tertiary text-text-primary"
                                                             >
                                                                 <div
                                                                     className="w-6 h-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
@@ -1350,10 +1206,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                                                                     <div className="text-[12px] font-semibold truncate">
                                                                         {r.firstName} {r.lastName}
                                                                     </div>
-                                                                    <div
-                                                                        className="text-[10.5px] truncate"
-                                                                        style={{ color: 'var(--text-secondary)' }}
-                                                                    >
+                                                                    <div className="text-[10.5px] truncate text-text-secondary">
                                                                         {r.roleName}
                                                                         {r.plantCode ? ` · ${r.plantCode}` : ''}
                                                                     </div>
@@ -1369,10 +1222,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                             </div>
 
                             <div>
-                                <label
-                                    className={`block ${SECTION_LABEL_CLASS} mb-1.5`}
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <label className={`block ${SECTION_LABEL_CLASS} mb-1.5 text-text-secondary`}>
                                     Subject
                                 </label>
                                 <input
@@ -1386,10 +1236,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                             </div>
 
                             <div>
-                                <label
-                                    className={`block ${SECTION_LABEL_CLASS} mb-1.5`}
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <label className={`block ${SECTION_LABEL_CLASS} mb-1.5 text-text-secondary`}>
                                     Message
                                 </label>
                                 <textarea
@@ -1403,10 +1250,7 @@ function ComposeModal({ accentColor, onSend, onClose }) {
                             </div>
 
                             {error && (
-                                <div
-                                    className="px-2.5 py-1.5 rounded text-[12px] font-medium"
-                                    style={{ background: '#fee2e2', color: '#b91c1c' }}
-                                >
+                                <div className="px-2.5 py-1.5 rounded text-[12px] font-medium bg-red-100 text-red-700">
                                     <i className="fas fa-exclamation-triangle mr-1.5" />
                                     {error}
                                 </div>
@@ -1494,16 +1338,10 @@ function ConversationContextRail({
     }, [messages, resolvedUserId, conversation.lastMessage, sharedAssets.length])
 
     return (
-        <aside
-            className="hidden xl:flex shrink-0 flex-col w-[280px] overflow-y-auto"
-            style={{ background: 'var(--bg-primary)', borderLeft: '1px solid var(--border-light)' }}
-        >
+        <aside className="hidden xl:flex shrink-0 flex-col w-[280px] overflow-y-auto bg-bg-primary border-l border-border-light">
             <div className="flex flex-col gap-3.5 p-3.5">
                 {/* Profile card */}
-                <div
-                    className="flex flex-col items-center gap-2 rounded p-4 text-center"
-                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                >
+                <div className="flex flex-col items-center gap-2 rounded p-4 text-center bg-bg-secondary border border-border-light">
                     <div
                         className="flex h-14 w-14 items-center justify-center rounded text-[18px] font-bold text-white"
                         style={{ background: accentColor }}
@@ -1511,10 +1349,8 @@ function ConversationContextRail({
                         {initials}
                     </div>
                     <div className="min-w-0">
-                        <div className="text-[13.5px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                            {displayName}
-                        </div>
-                        <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>
+                        <div className="text-[13.5px] font-bold truncate text-text-primary">{displayName}</div>
+                        <div className="text-[10.5px] mt-0.5 truncate text-text-tertiary">
                             {stats.total} message{stats.total === 1 ? '' : 's'} · last{' '}
                             {DateUtility.formatTimeAgo(stats.lastActivity)}
                         </div>
@@ -1540,30 +1376,17 @@ function ConversationContextRail({
                                         type="button"
                                         onClick={() => isViewable && onAttachmentClick?.(type, meta)}
                                         disabled={!isViewable}
-                                        className="flex items-center gap-2 rounded text-left transition-colors hover:bg-bg-tertiary px-2.5 py-1.5 cursor-pointer disabled:cursor-default"
-                                        style={{
-                                            background: 'var(--bg-primary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
+                                        className="flex items-center gap-2 rounded text-left transition-colors hover:bg-bg-tertiary px-2.5 py-1.5 cursor-pointer disabled:cursor-default bg-bg-primary border border-border-light"
                                     >
                                         <i className={`${icon} text-[11px]`} style={{ color: accentColor }} />
-                                        <span
-                                            className="font-mono tabular-nums text-[11.5px] font-bold"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <span className="font-mono tabular-nums text-[11.5px] font-bold text-text-primary">
                                             {meta.itemNumber || '—'}
                                         </span>
-                                        <span
-                                            className="ml-auto text-[9.5px] uppercase tracking-wider font-semibold"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
+                                        <span className="ml-auto text-[9.5px] uppercase tracking-wider font-semibold text-text-tertiary">
                                             {label}
                                         </span>
                                         {isViewable && (
-                                            <i
-                                                className="fas fa-external-link-alt text-[9px]"
-                                                style={{ color: 'var(--text-tertiary)' }}
-                                            />
+                                            <i className="fas fa-external-link-alt text-[9px] text-text-tertiary" />
                                         )}
                                     </button>
                                 )
@@ -1617,20 +1440,12 @@ function ContextSection({ children, count, icon, label }) {
     return (
         <div>
             <div className="flex items-center gap-1.5 mb-1.5 px-1">
-                {icon && (
-                    <i
-                        className={`fas ${icon} text-[10px]`}
-                        style={{ color: 'var(--text-tertiary)', textAlign: 'center', width: 12 }}
-                    />
-                )}
+                {icon && <i className={`fas ${icon} text-[10px] text-text-tertiary text-center w-3`} />}
                 <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                     {label}
                 </span>
                 {count != null && (
-                    <span
-                        className="ml-auto font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold"
-                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
-                    >
+                    <span className="ml-auto font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold bg-bg-tertiary text-text-tertiary">
                         {count}
                     </span>
                 )}
@@ -1642,14 +1457,7 @@ function ContextSection({ children, count, icon, label }) {
 
 function ContextEmpty({ children }) {
     return (
-        <div
-            className="text-[11px] rounded px-2.5 py-2"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px dashed var(--border-light)',
-                color: 'var(--text-tertiary)'
-            }}
-        >
+        <div className="text-[11px] rounded px-2.5 py-2 bg-bg-secondary border border-border-light text-text-tertiary">
             {children}
         </div>
     )
@@ -1657,16 +1465,9 @@ function ContextEmpty({ children }) {
 
 function ContextStat({ label, value }) {
     return (
-        <div
-            className="rounded px-2.5 py-2 flex flex-col gap-0.5"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
-            <span className="text-[9.5px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                {label}
-            </span>
-            <span className="text-[15px] font-bold font-mono tabular-nums" style={{ color: 'var(--text-primary)' }}>
-                {value}
-            </span>
+        <div className="rounded px-2.5 py-2 flex flex-col gap-0.5 bg-bg-secondary border border-border-light">
+            <span className="text-[9.5px] font-bold uppercase tracking-wider text-text-tertiary">{label}</span>
+            <span className="text-[15px] font-bold font-mono tabular-nums text-text-primary">{value}</span>
         </div>
     )
 }
@@ -1684,7 +1485,7 @@ function ContextActionButton({ accentColor, active = false, danger = false, icon
             className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-semibold cursor-pointer transition-colors hover:brightness-95 border"
             style={styles}
         >
-            <i className={`fas ${icon} text-[11px]`} style={{ textAlign: 'center', width: 14 }} />
+            <i className={`fas ${icon} text-[11px] text-center w-3.5`} />
             <span>{label}</span>
         </button>
     )

@@ -127,10 +127,7 @@ function ActivityEvent({ event }) {
     const showFromFor =
         !isComplete && event.fromPlantCode && event.forPlantCode && event.fromPlantCode !== event.forPlantCode
     return (
-        <li
-            className="px-3 py-2 flex items-start gap-2 animate-fade-slide-in"
-            style={{ borderBottom: '1px solid var(--border-light)' }}
-        >
+        <li className="px-3 py-2 flex items-start gap-2 animate-fade-slide-in border-b border-border-light">
             <div
                 className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
                 style={{
@@ -142,19 +139,13 @@ function ActivityEvent({ event }) {
                 <i className={`fas ${icon} text-[10px]`} />
             </div>
             <div className="flex-1 min-w-0">
-                <div className="text-[11.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                    {headline}
-                </div>
-                {event.customer && (
-                    <div className="text-[10.5px] truncate" style={{ color: 'var(--text-secondary)' }}>
-                        {event.customer}
-                    </div>
-                )}
+                <div className="text-[11.5px] font-semibold truncate text-text-primary">{headline}</div>
+                {event.customer && <div className="text-[10.5px] truncate text-text-secondary">{event.customer}</div>}
                 <div className="mt-1 flex items-center flex-wrap gap-1">
                     {showFromFor ? (
                         <>
                             <PlantChip code={event.fromPlantCode} name={event.fromPlantName} tag="from" tone={tone} />
-                            <i className="fas fa-arrow-right text-[8px]" style={{ color: 'var(--text-tertiary)' }} />
+                            <i className="fas fa-arrow-right text-[8px] text-text-tertiary" />
                             <PlantChip code={event.forPlantCode} name={event.forPlantName} tag="for" tone="#64748b" />
                         </>
                     ) : (
@@ -165,13 +156,13 @@ function ActivityEvent({ event }) {
                         />
                     )}
                 </div>
-                <div className="text-[10px] mt-1 flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="text-[10px] mt-1 flex items-center gap-1.5 text-text-tertiary">
                     {isComplete && event.yardage > 0 && <span>{event.yardage.toLocaleString()} yd</span>}
                     {!isComplete && event.quantity > 0 && <span>{event.quantity.toFixed(1)} yd</span>}
                     {!isComplete && event.driverName && <span className="truncate">· {event.driverName}</span>}
                 </div>
             </div>
-            <span className="text-[10px] font-mono shrink-0 mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+            <span className="text-[10px] font-mono shrink-0 mt-0.5 text-text-tertiary">
                 {formatLoadedTime(event.ts)}
             </span>
         </li>
@@ -194,34 +185,22 @@ export default function PlanDashboardActivityFeed({ detailByOrderId, plantNameBy
 
     return (
         <aside
-            className="hidden lg:flex flex-col sticky top-0 self-start py-5 pr-3"
-            style={{ maxHeight: '100vh', width: 260 }}
+            className="hidden lg:flex flex-col sticky top-0 self-start py-5 pr-3 w-[260px]"
+            style={{ maxHeight: '100vh' }}
         >
             <div className="flex items-center gap-2 mb-2 px-1">
-                <i className="fas fa-bolt text-[11px]" style={{ color: 'var(--text-secondary)' }} />
-                <h3
-                    className="text-[12px] font-bold uppercase tracking-wider m-0"
-                    style={{ color: 'var(--text-primary)' }}
-                >
+                <i className="fas fa-bolt text-[11px] text-text-secondary" />
+                <h3 className="text-[12px] font-bold uppercase tracking-wider m-0 text-text-primary">
                     Latest Activity
                 </h3>
-                <span
-                    className="ml-auto inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider"
-                    style={{ color: '#16a34a' }}
-                >
-                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#16a34a' }} />
+                <span className="ml-auto inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider text-green-600">
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-green-600" />
                     Live
                 </span>
             </div>
-            <div
-                className="flex-1 min-h-0 overflow-y-auto rounded"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
+            <div className="flex-1 min-h-0 overflow-y-auto rounded bg-bg-primary border border-border-light">
                 {events.length === 0 ? (
-                    <div
-                        className="flex flex-col items-center justify-center text-center gap-2 px-3 py-8"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
+                    <div className="flex flex-col items-center justify-center text-center gap-2 px-3 py-8 text-text-tertiary">
                         <i className="fas fa-truck-fast text-[20px]" />
                         <div className="text-[11px]">
                             Waiting on the day’s first ticket — feed updates as trucks load and jobs complete.

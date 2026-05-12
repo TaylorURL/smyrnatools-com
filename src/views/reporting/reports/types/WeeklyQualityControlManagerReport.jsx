@@ -19,10 +19,7 @@ const WEEKDAYS = [
 function CardHeader({ icon, label, sub, title }) {
     return (
         <div className="flex items-center gap-2 mb-2">
-            <div
-                className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-            >
+            <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                 <i className={`fas ${icon} text-[11px]`} />
             </div>
             <div className="min-w-0 flex-1">
@@ -31,14 +28,8 @@ function CardHeader({ icon, label, sub, title }) {
                         {label}
                     </div>
                 )}
-                <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                    {title}
-                </div>
-                {sub && (
-                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        {sub}
-                    </div>
-                )}
+                <div className="text-[12.5px] font-semibold leading-tight text-text-primary">{title}</div>
+                {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
             </div>
         </div>
     )
@@ -59,26 +50,15 @@ function DailyRecapSection({ form, handleChange, readOnly }) {
                     return (
                         <div
                             key={day.key}
-                            className="rounded p-2.5 flex flex-col gap-1.5"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                            className="rounded p-2.5 flex flex-col gap-1.5 bg-bg-secondary border border-border-light"
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
-                                    <i
-                                        className="fas fa-calendar-day text-[10px]"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    />
-                                    <span
-                                        className="text-[11.5px] font-semibold"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
-                                        {day.label}
-                                    </span>
-                                    {!readOnly && <span style={{ color: '#dc2626' }}>*</span>}
+                                    <i className="fas fa-calendar-day text-[10px] text-text-tertiary" />
+                                    <span className="text-[11.5px] font-semibold text-text-primary">{day.label}</span>
+                                    {!readOnly && <span className="text-red-600">*</span>}
                                 </div>
-                                <span className="text-[10px] tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
-                                    {value.length}
-                                </span>
+                                <span className="text-[10px] tabular-nums text-text-tertiary">{value.length}</span>
                             </div>
                             <textarea
                                 value={value}
@@ -87,12 +67,7 @@ function DailyRecapSection({ form, handleChange, readOnly }) {
                                 required={!readOnly}
                                 disabled={readOnly}
                                 rows={5}
-                                className="w-full rounded px-2 py-1.5 text-[12px] outline-none resize-y min-h-[88px] disabled:opacity-90"
-                                style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-primary)'
-                                }}
+                                className="w-full rounded px-2 py-1.5 text-[12px] outline-none resize-y min-h-[88px] disabled:opacity-90 bg-bg-primary border border-border-light text-text-primary"
                             />
                         </div>
                     )

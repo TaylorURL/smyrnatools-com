@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
+import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
+import HistoryViewSection from '../../../app/components/sections/HistoryViewSection'
+import IssueModalSection from '../../../app/components/sections/IssueModalSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { PickupTruckService } from '../../../services/PickupTruckService'
 import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
-import PickupTruckCommentModal from './PickupTruckCommentModal'
-import PickupTruckHistoryView from './PickupTruckHistoryView'
-import PickupTruckIssueModal from './PickupTruckIssueModal'
 
 /**
  * Full detail/edit view for a single pickup truck. Supports editing VIN,
@@ -343,20 +343,18 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                     canEditPickup && (
                         <>
                             <button
-                                className="global-button-secondary"
+                                className="global-button-secondary flex-1 justify-center"
                                 onClick={handleSave}
                                 disabled={isSaving || !canEditPickup}
-                                style={{ flex: 1, justifyContent: 'center' }}
                             >
                                 <i className="fas fa-save"></i>
                                 <span>{isSaving ? 'Saving...' : 'Save'}</span>
                             </button>
                             {canDeletePickup && (
                                 <button
-                                    className="global-button-secondary"
+                                    className="global-button-secondary flex-1 justify-center"
                                     onClick={handleDelete}
                                     disabled={isSaving || !canEditPickup}
-                                    style={{ flex: 1, justifyContent: 'center' }}
                                 >
                                     <i className="fas fa-trash-alt"></i>
                                     <span>Delete</span>
@@ -377,20 +375,28 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                             />
                         )}
                         {showHistory && (
-                            <PickupTruckHistoryView pickupTruck={pickup} onClose={() => setShowHistory(false)} />
+                            <HistoryViewSection
+                                item={pickup}
+                                onClose={() => setShowHistory(false)}
+                                type="pickup-truck"
+                            />
                         )}
                         {showComments && (
-                            <PickupTruckCommentModal
-                                pickupId={pickup?.id}
-                                pickupNumber={pickup?.assigned || pickup?.vin || pickup?.id}
+                            <CommentModalSection
+                                itemId={pickup?.id}
+                                itemNumber={pickup?.assigned || pickup?.vin || pickup?.id}
+                                itemType="Pickup Truck"
                                 onClose={() => setShowComments(false)}
+                                service={PickupTruckService}
                             />
                         )}
                         {showIssues && (
-                            <PickupTruckIssueModal
-                                pickupId={pickup?.id}
-                                pickupNumber={pickup?.assigned || pickup?.vin || pickup?.id}
+                            <IssueModalSection
+                                itemId={pickup?.id}
+                                itemNumber={pickup?.assigned || pickup?.vin || pickup?.id}
+                                itemType="Pickup Truck"
                                 onClose={() => setShowIssues(false)}
+                                service={PickupTruckService}
                             />
                         )}
                     </>
@@ -406,13 +412,7 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                                 type="button"
                                 disabled={!canEditPickup}
                             >
-                                <span
-                                    style={{
-                                        display: 'block',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }}
-                                >
+                                <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
                                     {plantDisplayText}
                                 </span>
                             </button>

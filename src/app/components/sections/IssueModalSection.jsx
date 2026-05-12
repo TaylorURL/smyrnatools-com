@@ -124,41 +124,30 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose()
             }}
-            className="fixed inset-0 z-[2100] flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+            className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="flex flex-col max-h-[90vh] max-w-[520px] w-full overflow-hidden rounded"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                className="flex flex-col max-h-[90vh] max-w-[520px] w-full overflow-hidden rounded bg-bg-primary border border-border-light"
             >
-                <div
-                    className="flex items-center justify-between px-4 py-3"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
                     <div className="flex items-center gap-2.5 min-w-0">
                         <div
-                            className="w-7 h-7 rounded flex items-center justify-center shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accent }}
+                            className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary"
+                            style={{ color: accent }}
                         >
                             <i className="fas fa-paper-plane text-[12px]" />
                         </div>
                         <div className="min-w-0">
-                            <div
-                                className="text-[10px] font-semibold uppercase tracking-wider"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                                 Send Message
                             </div>
-                            <div className="text-[12px] truncate" style={{ color: 'var(--text-primary)' }}>
-                                Notify a team member
-                            </div>
+                            <div className="text-[12px] truncate text-text-primary">Notify a team member</div>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-7 h-7 flex items-center justify-center rounded transition-colors"
-                        style={{ background: 'transparent', color: 'var(--text-secondary)' }}
+                        className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
@@ -169,22 +158,17 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                 <div className="flex-1 overflow-y-auto px-4 py-3">
                     {sent ? (
                         <div className="flex flex-col items-center gap-3 py-8 text-center">
-                            <div
-                                className="w-12 h-12 rounded flex items-center justify-center"
-                                style={{ background: '#dcfce7', color: '#166534' }}
-                            >
+                            <div className="w-12 h-12 rounded flex items-center justify-center bg-green-100 text-[#166534]">
                                 <i className="fas fa-check text-[18px]" />
                             </div>
-                            <div className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                Message Sent
-                            </div>
-                            <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                            <div className="text-[14px] font-semibold text-text-primary">Message Sent</div>
+                            <div className="text-[11px] text-text-secondary">
                                 {selectedManager?.firstName} {selectedManager?.lastName} will be notified
                             </div>
                             <button
                                 onClick={onClose}
-                                className="rounded text-[10.5px] font-semibold uppercase tracking-wider px-3 py-1.5 mt-1"
-                                style={{ background: accent, color: '#fff' }}
+                                className="rounded text-[10.5px] font-semibold uppercase tracking-wider px-3 py-1.5 mt-1 text-white"
+                                style={{ background: accent }}
                             >
                                 Done
                             </button>
@@ -192,25 +176,15 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                     ) : (
                         <>
                             <div
-                                className="rounded mb-3 overflow-hidden"
-                                style={{
-                                    background: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-light)',
-                                    borderLeft: `3px solid ${sevConfig.fg}`
-                                }}
+                                className="rounded mb-3 overflow-hidden bg-bg-secondary border border-border-light"
+                                style={{ borderLeft: `3px solid ${sevConfig.fg}` }}
                             >
                                 <div className="px-3 py-2.5">
                                     <div className="flex items-center gap-2 mb-1.5">
-                                        <span
-                                            className="text-[10px] font-semibold uppercase tracking-wider"
-                                            style={{ color: 'var(--text-secondary)' }}
-                                        >
+                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                                             {itemType}
                                         </span>
-                                        <span
-                                            className="text-[12px] font-semibold font-mono tabular-nums"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <span className="text-[12px] font-semibold font-mono tabular-nums text-text-primary">
                                             {itemNumber || 'N/A'}
                                         </span>
                                         <span
@@ -221,33 +195,21 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                             {issue.severity}
                                         </span>
                                     </div>
-                                    <p
-                                        className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                    <p className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap text-text-primary">
                                         {issue.issue}
                                     </p>
-                                    <div className="text-[10.5px] mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                                    <div className="text-[10.5px] mt-1.5 text-text-tertiary">
                                         Reported by {creatorName}
                                     </div>
                                 </div>
                             </div>
 
                             <div className="mb-3">
-                                <label
-                                    className="block text-[10px] font-semibold uppercase tracking-wider mb-1"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1 text-text-secondary">
                                     Send to
                                 </label>
                                 {loading ? (
-                                    <div
-                                        className="rounded px-3 py-2"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
-                                    >
+                                    <div className="rounded px-3 py-2 bg-bg-secondary border border-border-light">
                                         <LoadingScreen message="Loading team members..." inline />
                                     </div>
                                 ) : (
@@ -255,9 +217,8 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                         <button
                                             type="button"
                                             onClick={() => setManagerDropdownOpen((prev) => !prev)}
-                                            className="w-full flex items-center gap-2.5 rounded px-3 py-2 text-left text-[12px]"
+                                            className="w-full flex items-center gap-2.5 rounded px-3 py-2 text-left text-[12px] bg-bg-secondary"
                                             style={{
-                                                background: 'var(--bg-secondary)',
                                                 border: `1px solid ${managerDropdownOpen ? accent : 'var(--border-light)'}`,
                                                 color: selectedManager ? 'var(--text-primary)' : 'var(--text-tertiary)'
                                             }}
@@ -274,10 +235,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                         <div className="font-semibold truncate">
                                                             {selectedManager.firstName} {selectedManager.lastName}
                                                         </div>
-                                                        <div
-                                                            className="text-[10.5px] truncate"
-                                                            style={{ color: 'var(--text-secondary)' }}
-                                                        >
+                                                        <div className="text-[10.5px] truncate text-text-secondary">
                                                             {selectedManager.roleName}
                                                             {selectedManager.plantCode
                                                                 ? ` · ${selectedManager.plantCode}`
@@ -292,9 +250,8 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                 </>
                                             )}
                                             <i
-                                                className="fas fa-chevron-down text-[9px] ml-auto"
+                                                className="fas fa-chevron-down text-[9px] ml-auto text-text-secondary"
                                                 style={{
-                                                    color: 'var(--text-secondary)',
                                                     transform: managerDropdownOpen ? 'rotate(180deg)' : 'none',
                                                     transition: 'transform 0.2s'
                                                 }}
@@ -302,19 +259,11 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                         </button>
                                         {managerDropdownOpen && (
                                             <div
-                                                className="absolute left-0 right-0 mt-1 rounded overflow-y-auto z-10"
-                                                style={{
-                                                    background: 'var(--bg-primary)',
-                                                    border: '1px solid var(--border-light)',
-                                                    maxHeight: 220,
-                                                    top: '100%'
-                                                }}
+                                                className="absolute left-0 right-0 mt-1 rounded overflow-y-auto z-10 bg-bg-primary border border-border-light"
+                                                style={{ maxHeight: 220, top: '100%' }}
                                             >
                                                 {managers.length === 0 ? (
-                                                    <div
-                                                        className="text-center py-3 text-[11px]"
-                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                    >
+                                                    <div className="text-center py-3 text-[11px] text-text-tertiary">
                                                         No team members found
                                                     </div>
                                                 ) : (
@@ -328,12 +277,11 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                                     setSelectedManager(mgr)
                                                                     setManagerDropdownOpen(false)
                                                                 }}
-                                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
+                                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors border-b border-border-light"
                                                                 style={{
                                                                     background: isSelected
                                                                         ? 'var(--bg-tertiary)'
-                                                                        : 'transparent',
-                                                                    borderBottom: '1px solid var(--border-light)'
+                                                                        : 'transparent'
                                                                 }}
                                                                 onMouseEnter={(e) => {
                                                                     if (!isSelected)
@@ -359,16 +307,10 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                                     {getInitials(mgr)}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <div
-                                                                        className="text-[12px] font-semibold truncate"
-                                                                        style={{ color: 'var(--text-primary)' }}
-                                                                    >
+                                                                    <div className="text-[12px] font-semibold truncate text-text-primary">
                                                                         {mgr.firstName} {mgr.lastName}
                                                                     </div>
-                                                                    <div
-                                                                        className="text-[10.5px] truncate"
-                                                                        style={{ color: 'var(--text-secondary)' }}
-                                                                    >
+                                                                    <div className="text-[10.5px] truncate text-text-secondary">
                                                                         {mgr.roleName}
                                                                         {mgr.plantCode ? ` · ${mgr.plantCode}` : ''}
                                                                     </div>
@@ -390,34 +332,21 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                             </div>
 
                             <div className="mb-3">
-                                <label
-                                    className="block text-[10px] font-semibold uppercase tracking-wider mb-1"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1 text-text-secondary">
                                     Message{' '}
-                                    <span className="font-normal normal-case" style={{ color: 'var(--text-tertiary)' }}>
-                                        (optional)
-                                    </span>
+                                    <span className="font-normal normal-case text-text-tertiary">(optional)</span>
                                 </label>
                                 <textarea
                                     value={commentary}
                                     onChange={(e) => setCommentary(e.target.value)}
                                     placeholder="Add context, questions, or instructions..."
                                     rows="3"
-                                    className="w-full rounded outline-none px-3 py-2 text-[12px] resize-vertical"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-primary)'
-                                    }}
+                                    className="w-full rounded outline-none px-3 py-2 text-[12px] resize-vertical bg-bg-secondary border border-border-light text-text-primary"
                                 />
                             </div>
 
                             {error && (
-                                <div
-                                    className="rounded px-3 py-2 mb-3 text-[11px] font-semibold"
-                                    style={{ background: '#fee2e2', color: '#b91c1c' }}
-                                >
+                                <div className="rounded px-3 py-2 mb-3 text-[11px] font-semibold bg-red-100 text-red-700">
                                     <i className="fas fa-exclamation-triangle mr-2 text-[10px]" />
                                     {error}
                                 </div>
@@ -599,42 +528,30 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
         <>
             <div
                 onClick={handleBackdropClick}
-                className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
-                style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+                className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
             >
                 <div
                     onClick={(e) => e.stopPropagation()}
-                    className="flex flex-col max-h-[90vh] max-w-[580px] w-full overflow-hidden rounded"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                    className="flex flex-col max-h-[90vh] max-w-[580px] w-full overflow-hidden rounded bg-bg-primary border border-border-light"
                 >
-                    <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                    <div className="px-4 py-3 border-b border-border-light">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2.5 min-w-0">
-                                <div
-                                    className="w-7 h-7 rounded flex items-center justify-center shrink-0"
-                                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                                >
+                                <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-secondary">
                                     <i className="fas fa-exclamation-circle text-[12px]" />
                                 </div>
                                 <div className="min-w-0">
-                                    <div
-                                        className="text-[10px] font-semibold uppercase tracking-wider"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                    <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                                         {itemType} · Issues
                                     </div>
-                                    <div
-                                        className="text-[14px] font-semibold font-mono tabular-nums truncate"
-                                        style={{ color: 'var(--text-primary)' }}
-                                    >
+                                    <div className="text-[14px] font-semibold font-mono tabular-nums truncate text-text-primary">
                                         {itemNumber || itemId}
                                     </div>
                                 </div>
                             </div>
                             <button
                                 onClick={onClose}
-                                className="w-7 h-7 flex items-center justify-center rounded transition-colors"
-                                style={{ background: 'transparent', color: 'var(--text-secondary)' }}
+                                className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
                                 onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                             >
@@ -657,25 +574,14 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
 
                         {activeTab === 'open' && (
                             <form onSubmit={handleAddIssue} className="mb-3">
-                                <div
-                                    className="rounded p-2.5"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
+                                <div className="rounded p-2.5 bg-bg-secondary border border-border-light">
                                     <textarea
                                         value={newIssue}
                                         onChange={(e) => setNewIssue(e.target.value)}
                                         placeholder="What's the issue?"
                                         disabled={isSubmitting}
                                         rows="2"
-                                        className="w-full rounded outline-none p-2 resize-none text-[12px]"
-                                        style={{
-                                            background: 'var(--bg-primary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-primary)'
-                                        }}
+                                        className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary"
                                     />
                                     <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
                                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -724,25 +630,16 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                                 <LoadingScreen message="Loading issues..." inline={true} />
                             </div>
                         ) : displayIssues.length === 0 ? (
-                            <div
-                                className="flex flex-col items-center py-8 px-4 text-center"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
+                            <div className="flex flex-col items-center py-8 px-4 text-center text-text-tertiary">
                                 <i
                                     className={`fas ${activeTab === 'open' ? 'fa-clipboard-check' : 'fa-trophy'} text-2xl mb-2`}
                                 />
-                                <p className="text-[12px] m-0 font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                                <p className="text-[12px] m-0 font-semibold text-text-secondary">
                                     {activeTab === 'open' ? 'No open issues' : 'No resolved issues yet'}
                                 </p>
                             </div>
                         ) : (
-                            <div
-                                className="rounded overflow-hidden"
-                                style={{
-                                    background: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)'
-                                }}
-                            >
+                            <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
                                 {displayIssues.map((issue) => {
                                     const sevConfig = SEVERITY_PALETTE[issue.severity] || SEVERITY_PALETTE.Medium
                                     const isResolved = !!issue.time_completed
@@ -750,27 +647,15 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                                     return (
                                         <div
                                             key={issue.id}
-                                            className="flex items-start gap-2.5 px-3 py-2.5"
-                                            style={{
-                                                borderBottom: '1px solid var(--border-light)',
-                                                opacity: isResolved ? 0.7 : 1
-                                            }}
+                                            className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light"
+                                            style={{ opacity: isResolved ? 0.7 : 1 }}
                                         >
-                                            <div
-                                                className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold"
-                                                style={{
-                                                    background: 'var(--bg-tertiary)',
-                                                    color: 'var(--text-secondary)'
-                                                }}
-                                            >
+                                            <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold bg-bg-tertiary text-text-secondary">
                                                 {getNameInitials(creatorName)}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                                    <span
-                                                        className="text-[12px] font-semibold"
-                                                        style={{ color: 'var(--text-primary)' }}
-                                                    >
+                                                    <span className="text-[12px] font-semibold text-text-primary">
                                                         {creatorName}
                                                     </span>
                                                     <span
@@ -780,24 +665,15 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                                                         <i className={`fas ${sevConfig.icon} text-[8px]`} />
                                                         {issue.severity}
                                                     </span>
-                                                    <span
-                                                        className="text-[10.5px] font-mono tabular-nums"
-                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                    >
+                                                    <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
                                                         {formatDate(issue.time_created)}
                                                     </span>
                                                 </div>
-                                                <p
-                                                    className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap break-words"
-                                                    style={{ color: 'var(--text-secondary)' }}
-                                                >
+                                                <p className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap break-words text-text-secondary">
                                                     {issue.issue}
                                                 </p>
                                                 {isResolved && (
-                                                    <div
-                                                        className="flex items-center gap-1 mt-1 text-[10.5px] font-semibold"
-                                                        style={{ color: '#166534' }}
-                                                    >
+                                                    <div className="flex items-center gap-1 mt-1 text-[10.5px] font-semibold text-[#166534]">
                                                         <i className="fas fa-check text-[9px]" />
                                                         Resolved {formatDate(issue.time_completed)}
                                                     </div>
@@ -809,11 +685,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                                                         <button
                                                             onClick={() => handleCompleteIssue(issue.id)}
                                                             title="Mark resolved"
-                                                            className="w-6 h-6 flex items-center justify-center rounded transition-colors"
-                                                            style={{
-                                                                background: 'transparent',
-                                                                color: '#22c55e'
-                                                            }}
+                                                            className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-green-500"
                                                             onMouseEnter={(e) =>
                                                                 (e.currentTarget.style.background =
                                                                     'var(--bg-tertiary)')
@@ -827,11 +699,8 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                                                         <button
                                                             onClick={() => setMessageIssue(issue)}
                                                             title="Send message"
-                                                            className="w-6 h-6 flex items-center justify-center rounded transition-colors"
-                                                            style={{
-                                                                background: 'transparent',
-                                                                color: accent
-                                                            }}
+                                                            className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent"
+                                                            style={{ color: accent }}
                                                             onMouseEnter={(e) =>
                                                                 (e.currentTarget.style.background =
                                                                     'var(--bg-tertiary)')
@@ -848,11 +717,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                                                     <button
                                                         onClick={() => handleDeleteIssue(issue.id)}
                                                         title="Delete"
-                                                        className="w-6 h-6 flex items-center justify-center rounded transition-colors"
-                                                        style={{
-                                                            background: 'transparent',
-                                                            color: 'var(--text-tertiary)'
-                                                        }}
+                                                        className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-tertiary"
                                                         onMouseEnter={(e) => {
                                                             e.currentTarget.style.background = 'var(--bg-tertiary)'
                                                             e.currentTarget.style.color = '#dc2626'

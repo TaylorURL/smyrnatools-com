@@ -107,56 +107,36 @@ function CallListView({ accentColor }) {
             <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3">
                 <section className="lg:col-span-5 flex flex-col gap-2 min-h-0">
                     <div className="flex items-center flex-wrap gap-x-2 gap-y-1.5">
-                        <h3 className="text-[14px] font-semibold m-0 truncate" style={{ color: 'var(--text-primary)' }}>
+                        <h3 className="text-[14px] font-semibold m-0 truncate text-text-primary">
                             {`Dormant Customers (${filtered.length})`}
                         </h3>
                         <div className="flex-1" />
                         <button
                             type="button"
                             onClick={refreshRoster}
-                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold border-none cursor-pointer"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold border-none cursor-pointer bg-bg-tertiary text-text-secondary"
                             title="Reload roster"
                         >
                             <i className="fas fa-rotate" />
                             Refresh
                         </button>
                     </div>
-                    <div
-                        className="flex-1 min-h-0 flex flex-col rounded overflow-hidden"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <div
-                            className="flex items-center gap-2 px-3 py-2"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
+                    <div className="flex-1 min-h-0 flex flex-col rounded overflow-hidden bg-bg-primary border border-border-light">
+                        <div className="flex items-center gap-2 px-3 py-2 border-b border-border-light">
                             <div className="relative flex-1 min-w-0">
-                                <i
-                                    className="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                />
+                                <i className="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none text-text-tertiary" />
                                 <input
                                     type="search"
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     placeholder="Search customers, contacts, phone…"
-                                    className="w-full rounded-md pl-7 pr-2.5 py-1.5 text-[12px] outline-none"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-light)',
-                                        color: 'var(--text-primary)'
-                                    }}
+                                    className="w-full rounded-md pl-7 pr-2.5 py-1.5 text-[12px] outline-none bg-bg-secondary border border-border-light text-text-primary"
                                 />
                             </div>
                             <select
                                 value={sortKey}
                                 onChange={(e) => setSortKey(e.target.value)}
-                                className="rounded-md px-2 py-1.5 text-[12px] cursor-pointer outline-none"
-                                style={{
-                                    background: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-primary)'
-                                }}
+                                className="rounded-md px-2 py-1.5 text-[12px] cursor-pointer outline-none bg-bg-secondary border border-border-light text-text-primary"
                             >
                                 {CALL_LIST_SORT_OPTIONS.map(({ key, label }) => (
                                     <option key={key} value={key}>
@@ -167,20 +147,17 @@ function CallListView({ accentColor }) {
                         </div>
 
                         {isLoadingRoster && (
-                            <div className="text-sm italic text-center p-6" style={{ color: 'var(--text-tertiary)' }}>
+                            <div className="text-sm italic text-center p-6 text-text-tertiary">
                                 Loading dormant customers…
                             </div>
                         )}
                         {rosterError && !isLoadingRoster && (
-                            <div
-                                className="m-3 rounded-md p-2.5 text-[12px]"
-                                style={{ background: 'rgba(220,38,38,0.1)', color: '#b91c1c' }}
-                            >
+                            <div className="m-3 rounded-md p-2.5 text-[12px] bg-[rgba(220,38,38,0.1)] text-red-700">
                                 {rosterError}
                             </div>
                         )}
                         {!isLoadingRoster && !rosterError && filtered.length === 0 && (
-                            <div className="text-sm italic text-center p-6" style={{ color: 'var(--text-tertiary)' }}>
+                            <div className="text-sm italic text-center p-6 text-text-tertiary">
                                 No dormant customers match your filters.
                             </div>
                         )}
@@ -189,14 +166,7 @@ function CallListView({ accentColor }) {
                             {filtered.map((row, idx) => (
                                 <React.Fragment key={row.customer_num}>
                                     {idx === cooldownStartIndex && cooldownStartIndex > 0 && (
-                                        <div
-                                            className="px-3 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] flex items-center gap-2"
-                                            style={{
-                                                background: 'var(--bg-secondary)',
-                                                color: 'var(--text-tertiary)',
-                                                borderBottom: '1px solid var(--border-light)'
-                                            }}
-                                        >
+                                        <div className="px-3 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] flex items-center gap-2 bg-bg-secondary text-text-tertiary border-b border-border-light">
                                             <i className="fas fa-hourglass-half text-[9px]" />
                                             Called in last {RECENT_CALL_COOLDOWN_DAYS} days
                                         </div>
@@ -215,22 +185,14 @@ function CallListView({ accentColor }) {
 
                 <section className="lg:col-span-7 flex flex-col gap-2 min-h-0">
                     <div className="flex items-center flex-wrap gap-x-2 gap-y-1.5">
-                        <h3
-                            className="text-[14px] font-semibold m-0 min-w-0 truncate"
-                            style={{ color: 'var(--text-primary)' }}
-                        >
-                            Detail
-                        </h3>
+                        <h3 className="text-[14px] font-semibold m-0 min-w-0 truncate text-text-primary">Detail</h3>
                         {selectedRow && (
-                            <span className="text-[12px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                            <span className="text-[12px] truncate text-text-tertiary">
                                 · {selectedRow.customer_name || selectedRow.customer_num}
                             </span>
                         )}
                     </div>
-                    <div
-                        className="flex-1 min-h-0 overflow-y-auto rounded"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
+                    <div className="flex-1 min-h-0 overflow-y-auto rounded bg-bg-primary border border-border-light">
                         <CallListDetail
                             history={selectedRow ? historyByCustomer[selectedRow.customer_num] : null}
                             isLoadingHistory={selectedRow ? loadingHistoryFor.has(selectedRow.customer_num) : false}

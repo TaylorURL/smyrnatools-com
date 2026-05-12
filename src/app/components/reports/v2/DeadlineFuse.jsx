@@ -63,29 +63,17 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Mon · 7:00 AM CST', todayIndex
 
     return (
         <div
-            className="rounded px-3 py-2.5 flex items-center gap-4 flex-col sm:flex-row overflow-hidden"
-            style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                transition: 'border-color 0.4s ease'
-            }}
+            className="rounded px-3 py-2.5 flex items-center gap-4 flex-col sm:flex-row overflow-hidden bg-bg-primary border border-border-light"
+            style={{ transition: 'border-color 0.4s ease' }}
         >
             <div className="w-full sm:w-auto">
-                <div
-                    className="text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
-                    Cutoff
-                </div>
-                <div
-                    className="text-[13px] font-semibold mt-0.5 font-mono tabular-nums"
-                    style={{ color: 'var(--text-primary)' }}
-                >
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">Cutoff</div>
+                <div className="text-[13px] font-semibold mt-0.5 font-mono tabular-nums text-text-primary">
                     {cutoffLabel}
                 </div>
             </div>
             <div className="flex-1 relative w-full pt-5">
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+                <div className="h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
                     <div
                         className={`relative h-full overflow-hidden rounded-full transition-[width,background] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]${showPulse ? ' animate-fuse-pulse' : ''}`}
                         style={{ background: gradient, width: `${pct}%` }}
@@ -122,10 +110,7 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Mon · 7:00 AM CST', todayIndex
                 >
                     {renderedDays}
                 </div>
-                <div
-                    className="text-[10px] font-semibold uppercase tracking-wider mt-0 sm:mt-1"
-                    style={{ color: 'var(--text-secondary)' }}
-                >
+                <div className="text-[10px] font-semibold uppercase tracking-wider mt-0 sm:mt-1 text-text-secondary">
                     {resolvedCaption}
                 </div>
             </div>

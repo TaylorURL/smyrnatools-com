@@ -235,7 +235,7 @@ export default function MaintenanceView() {
             key: 'description',
             label: 'Description',
             render: (row) => (
-                <span className="truncate max-w-[250px] inline-block" style={{ color: 'var(--text-secondary)' }}>
+                <span className="truncate max-w-[250px] inline-block text-text-secondary">
                     {row.description || '—'}
                 </span>
             )
@@ -320,15 +320,8 @@ export default function MaintenanceView() {
 
     return (
         <div
-            className="global-dashboard-container dashboard-container global-flush-top flush-top"
-            style={{
-                background: 'var(--bg-secondary)',
-                display: 'flex',
-                flexDirection: 'column',
-                inset: 0,
-                overflow: 'hidden',
-                position: 'absolute'
-            }}
+            className="global-dashboard-container dashboard-container global-flush-top flush-top bg-bg-secondary flex flex-col overflow-hidden absolute"
+            style={{ inset: 0 }}
         >
             <MaintenanceHeader
                 accentColor={accentColor}

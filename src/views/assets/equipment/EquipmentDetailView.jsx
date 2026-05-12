@@ -2,7 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import VerificationRequirementsModal from '../../../app/components/common/VerificationRequirementsModal'
+import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
+import HistoryViewSection from '../../../app/components/sections/HistoryViewSection'
+import IssueModalSection from '../../../app/components/sections/IssueModalSection'
 import VerificationCardSection from '../../../app/components/sections/VerificationCardSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { Equipment } from '../../../app/models/equipment/Equipment'
@@ -12,9 +15,6 @@ import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import DateUtility from '../../../utils/DateUtility'
-import EquipmentCommentModal from './EquipmentCommentModal'
-import EquipmentHistoryView from './EquipmentHistoryView'
-import EquipmentIssueModal from './EquipmentIssueModal'
 
 /**
  * Full detail/edit view for a single equipment record. Handles loading,
@@ -560,19 +560,25 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
         : 'Select Plant'
     return (
         <>
-            {showHistory && <EquipmentHistoryView equipment={equipment} onClose={() => setShowHistory(false)} />}
+            {showHistory && (
+                <HistoryViewSection item={equipment} onClose={() => setShowHistory(false)} type="equipment" />
+            )}
             {showComments && (
-                <EquipmentCommentModal
-                    equipmentId={equipmentId}
-                    equipmentNumber={equipment?.identifyingNumber}
+                <CommentModalSection
+                    itemId={equipmentId}
+                    itemNumber={equipment?.identifyingNumber}
+                    itemType="Equipment"
                     onClose={() => setShowComments(false)}
+                    service={EquipmentService}
                 />
             )}
             {showIssues && (
-                <EquipmentIssueModal
-                    equipmentId={equipmentId}
-                    equipmentNumber={equipment?.identifyingNumber}
+                <IssueModalSection
+                    itemId={equipmentId}
+                    itemNumber={equipment?.identifyingNumber}
+                    itemType="Equipment"
                     onClose={() => setShowIssues(false)}
+                    service={EquipmentService}
                 />
             )}
             {showPlantModal && (
@@ -638,20 +644,18 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                     canEditEquipment && (
                         <>
                             <button
-                                className="global-button-secondary"
+                                className="global-button-secondary flex-1 justify-center"
                                 onClick={() => handleSave()}
                                 disabled={isSaving}
-                                style={{ flex: 1, justifyContent: 'center' }}
                             >
                                 <i className="fas fa-save"></i>
                                 <span>{isSaving ? 'Saving...' : 'Save'}</span>
                             </button>
                             {canDeleteEquipment && (
                                 <button
-                                    className="global-button-secondary"
+                                    className="global-button-secondary flex-1 justify-center"
                                     onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={isSaving}
-                                    style={{ flex: 1, justifyContent: 'center' }}
                                 >
                                     <i className="fas fa-trash-alt"></i>
                                     <span>Delete</span>
@@ -705,13 +709,7 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                                         : {}
                                 }
                             >
-                                <span
-                                    style={{
-                                        display: 'block',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }}
-                                >
+                                <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
                                     {plantDisplayText}
                                 </span>
                             </button>
@@ -807,12 +805,8 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                                 <div className="warning-text">Service overdue</div>
                             )}
                             <div
-                                style={{
-                                    color: 'var(--text-secondary)',
-                                    fontSize: '11px',
-                                    lineHeight: '1.4',
-                                    marginTop: '4px'
-                                }}
+                                className="text-text-secondary text-[11px]"
+                                style={{ lineHeight: '1.4', marginTop: '4px' }}
                             >
                                 Service will show as overdue if it has been more than 6 months since last serviced.
                                 Service is determined by hours on the asset - check hours of service.

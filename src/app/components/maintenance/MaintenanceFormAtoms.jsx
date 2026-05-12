@@ -73,7 +73,7 @@ export function StatusBadge({ status }) {
 /** Plant code chip — consistent blue tint across every list / table. */
 export function PlantChip({ code }) {
     const tint = useTint(PLANT_CHIP_PALETTE)
-    if (!code) return <span style={{ color: 'var(--text-tertiary)' }}>—</span>
+    if (!code) return <span className="text-text-tertiary">—</span>
     return (
         <span
             className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 font-mono tabular-nums"
@@ -98,34 +98,15 @@ export function ItemIcon({ status }) {
 /** Skeleton row strip used while form data is loading. */
 export function FormTabSkeleton({ count = 5 }) {
     return (
-        <div
-            className="rounded overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
             {Array.from({ length: count }, (_, i) => (
-                <div
-                    key={i}
-                    className="flex items-center gap-2.5 px-3 py-2"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
-                    <div
-                        className="w-6 h-6 rounded animate-pulse shrink-0"
-                        style={{ background: 'var(--bg-tertiary)' }}
-                    />
+                <div key={i} className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light">
+                    <div className="w-6 h-6 rounded animate-pulse shrink-0 bg-bg-tertiary" />
                     <div className="flex-1 min-w-0">
-                        <div
-                            className="h-3 w-44 rounded animate-pulse mb-1"
-                            style={{ background: 'var(--bg-tertiary)' }}
-                        />
-                        <div
-                            className="h-2.5 w-56 rounded animate-pulse"
-                            style={{ background: 'var(--bg-secondary)' }}
-                        />
+                        <div className="h-3 w-44 rounded animate-pulse mb-1 bg-bg-tertiary" />
+                        <div className="h-2.5 w-56 rounded animate-pulse bg-bg-secondary" />
                     </div>
-                    <div
-                        className="h-4 w-16 rounded animate-pulse shrink-0"
-                        style={{ background: 'var(--bg-tertiary)' }}
-                    />
+                    <div className="h-4 w-16 rounded animate-pulse shrink-0 bg-bg-tertiary" />
                 </div>
             ))}
         </div>
@@ -135,19 +116,10 @@ export function FormTabSkeleton({ count = 5 }) {
 /** Generic empty state — icon + title + sub message + optional CTA. */
 export function EmptyState({ icon, title, message, children }) {
     return (
-        <div
-            className="flex flex-col items-center justify-center py-12 px-6 text-center"
-            style={{ color: 'var(--text-tertiary)' }}
-        >
+        <div className="flex flex-col items-center justify-center py-12 px-6 text-center text-text-tertiary">
             <i className={`fas ${icon} text-2xl mb-2`} />
-            <div className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {title}
-            </div>
-            {message && (
-                <p className="m-0 mt-1 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                    {message}
-                </p>
-            )}
+            <div className="text-[13px] font-semibold text-text-primary">{title}</div>
+            {message && <p className="m-0 mt-1 text-[11px] text-text-secondary">{message}</p>}
             {children && <div className="mt-3">{children}</div>}
         </div>
     )
@@ -162,10 +134,7 @@ export function EmptyState({ icon, title, message, children }) {
 export function FormTable({ columns, emptyChildren, emptyIcon, emptyMessage, emptyTitle, onRowClick, rows }) {
     if (!rows || rows.length === 0) {
         return (
-            <div
-                className="rounded overflow-hidden"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
+            <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
                 <EmptyState icon={emptyIcon} title={emptyTitle} message={emptyMessage}>
                     {emptyChildren}
                 </EmptyState>
@@ -178,10 +147,7 @@ export function FormTable({ columns, emptyChildren, emptyIcon, emptyMessage, emp
     const metaCols = columns.filter((c) => c !== titleCol && c !== statusCol)
 
     return (
-        <div
-            className="rounded overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
             {rows.map((row, idx) => (
                 <div
                     key={row.id}
@@ -192,29 +158,16 @@ export function FormTable({ columns, emptyChildren, emptyIcon, emptyMessage, emp
                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
                         <ItemIcon status={row.status} />
                         <div className="min-w-0">
-                            <span
-                                className="text-[12px] font-semibold block truncate"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                            <span className="text-[12px] font-semibold block truncate text-text-primary">
                                 {titleCol.render ? titleCol.render(row) : row[titleCol.key]}
                             </span>
-                            <div
-                                className="flex items-center gap-1.5 mt-0.5 text-[10.5px] flex-wrap"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <div className="flex items-center gap-1.5 mt-0.5 text-[10.5px] flex-wrap text-text-secondary">
                                 {metaCols.map((col, i) => {
                                     const val = col.render ? col.render(row) : row[col.key]
                                     if (!val || val === '—') return null
                                     return (
                                         <React.Fragment key={col.key}>
-                                            {i > 0 && (
-                                                <span
-                                                    className="hidden sm:inline"
-                                                    style={{ color: 'var(--text-tertiary)' }}
-                                                >
-                                                    ·
-                                                </span>
-                                            )}
+                                            {i > 0 && <span className="hidden sm:inline text-text-tertiary">·</span>}
                                             <span className="font-mono tabular-nums">{val}</span>
                                         </React.Fragment>
                                     )
@@ -227,10 +180,7 @@ export function FormTable({ columns, emptyChildren, emptyIcon, emptyMessage, emp
                             {statusCol.render ? statusCol.render(row) : row[statusCol.key]}
                         </div>
                     )}
-                    <i
-                        className="fas fa-chevron-right text-[10px] ml-2 sm:hidden"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    />
+                    <i className="fas fa-chevron-right text-[10px] ml-2 sm:hidden text-text-tertiary" />
                 </div>
             ))}
         </div>

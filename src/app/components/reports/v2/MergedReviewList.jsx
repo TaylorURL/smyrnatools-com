@@ -65,14 +65,8 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
 
     if (!hasItems) {
         return (
-            <div
-                className="rounded overflow-hidden"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
-                <div
-                    className="flex flex-col items-center justify-center py-10 px-4"
-                    style={{ color: 'var(--text-tertiary)' }}
-                >
+            <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+                <div className="flex flex-col items-center justify-center py-10 px-4 text-text-tertiary">
                     <i className="fas fa-clipboard-check text-2xl mb-2" />
                     <div className="text-[12px]">Nothing to review right now</div>
                 </div>
@@ -81,10 +75,7 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
     }
 
     return (
-        <div
-            className="rounded overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
             {missing.map((item) => {
                 const reporterName = resolveReporterName(item, getUserName)
                 const rt = reportTypeMap[item.report_name] || reportTypeMap[item.name]
@@ -94,29 +85,23 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                 return (
                     <div
                         key={`missing-${item.id || `${item.plant_code || item.plant}-${weekIso}-${item.report_name || item.name}`}`}
-                        className="flex items-center gap-2.5 px-3 py-2"
-                        style={{ borderBottom: '1px solid var(--border-light)' }}
+                        className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light"
                     >
                         <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-red-100 text-red-700">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div
-                                className="font-semibold text-[12px] truncate"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                            <div className="font-semibold text-[12px] truncate text-text-primary">
                                 Missing · {title}
                             </div>
-                            <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
+                            <div className="text-[10.5px] mt-0.5 truncate text-text-secondary">
                                 {(item.plant_code || item.plant) && <>{item.plant_code || item.plant} · </>}
                                 {reporterName}
                                 {dueLabel && <> · was due {dueLabel}</>}
                                 {daysLate !== null && daysLate > 0 && (
                                     <>
                                         {' · '}
-                                        <span className="font-semibold" style={{ color: '#dc2626' }}>
-                                            {daysLate}d late
-                                        </span>
+                                        <span className="font-semibold text-red-600">{daysLate}d late</span>
                                     </>
                                 )}
                             </div>
@@ -124,12 +109,7 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                         <button
                             type="button"
                             onClick={() => onNudge?.(item)}
-                            className="px-2 py-1 text-[10.5px] font-semibold rounded shrink-0 inline-flex items-center gap-1 uppercase tracking-wider"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="px-2 py-1 text-[10.5px] font-semibold rounded shrink-0 inline-flex items-center gap-1 uppercase tracking-wider bg-bg-secondary border border-border-light text-text-primary"
                         >
                             <i className="fas fa-paper-plane text-[9px]" /> Nudge
                         </button>
@@ -145,23 +125,16 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                 return (
                     <div
                         key={`review-${item.id}`}
-                        className="flex items-center gap-2.5 px-3 py-2 transition-colors hover:bg-bg-tertiary"
-                        style={{ borderBottom: '1px solid var(--border-light)' }}
+                        className="flex items-center gap-2.5 px-3 py-2 transition-colors hover:bg-bg-tertiary border-b border-border-light"
                     >
-                        <div
-                            className="w-6 h-6 rounded flex items-center justify-center shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                        >
+                        <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-secondary">
                             <i className={`fas ${iconClass} text-[11px]`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div
-                                className="font-semibold text-[12px] truncate"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                            <div className="font-semibold text-[12px] truncate text-text-primary">
                                 {item.title || rt?.title || item.name}
                             </div>
-                            <div className="text-[10.5px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
+                            <div className="text-[10.5px] mt-0.5 truncate text-text-secondary">
                                 {reporterName}
                                 {item.plant ? ` · ${item.plant}` : ''}
                                 {item.completedDate || item.submittedAt || item.submitted_at

@@ -7,24 +7,15 @@ const clean = (value) => (value == null ? '' : String(value).trim())
 /** One label-over-value tile in the modal's metrics strip. */
 function MetricTile({ hint, label, value }) {
     return (
-        <div
-            className="rounded-lg px-3 py-2 flex flex-col gap-0.5"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                {label}
-            </span>
+        <div className="rounded-lg px-3 py-2 flex flex-col gap-0.5 bg-bg-primary border border-border-light">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</span>
             <span
-                className="font-mono font-bold text-[15px]"
-                style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+                className="font-mono font-bold text-[15px] text-text-primary"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
             >
                 {value}
             </span>
-            {hint && (
-                <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {hint}
-                </span>
-            )}
+            {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
         </div>
     )
 }
@@ -117,24 +108,18 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
             role="dialog"
             aria-modal="true"
             onClick={onClose}
-            className="fixed inset-0 flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.55)', zIndex: 2147483000 }}
+            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] z-[2147483000]"
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="rounded-2xl flex flex-col w-full overflow-hidden"
+                className="rounded-2xl flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light"
                 style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-light)',
                     boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.35))',
                     maxHeight: '90vh',
                     maxWidth: 900
                 }}
             >
-                <div
-                    className="flex items-start gap-3 px-5 py-3 border-b"
-                    style={{ borderColor: 'var(--border-light)' }}
-                >
+                <div className="flex items-start gap-3 px-5 py-3 border-b border-border-light">
                     <div
                         className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: `${accentColor}14`, color: accentColor }}
@@ -142,17 +127,13 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                         <i className="fas fa-ticket text-[14px]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                        <div className="text-[15px] font-bold leading-tight text-text-primary">
                             Tickets {orderNumLabel}
                         </div>
-                        <div
-                            className="text-[12px] mt-0.5 truncate"
-                            style={{ color: 'var(--text-secondary)' }}
-                            title={customerLabel}
-                        >
+                        <div className="text-[12px] mt-0.5 truncate text-text-secondary" title={customerLabel}>
                             {customerLabel || '—'}
                             {homePlantCode && (
-                                <span className="ml-2" style={{ color: 'var(--text-tertiary)' }}>
+                                <span className="ml-2 text-text-tertiary">
                                     · home plant {homePlantCode}
                                     {homePlantName ? ` (${homePlantName})` : ''}
                                 </span>
@@ -161,10 +142,7 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right">
-                            <div
-                                className="text-[10.5px] font-bold uppercase tracking-wider"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
+                            <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary">
                                 Loaded
                             </div>
                             <div
@@ -176,16 +154,13 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                 }}
                             >
                                 {Number.isInteger(totalLoaded) ? totalLoaded : totalLoaded.toFixed(2)}
-                                <span className="text-[12px] ml-1" style={{ color: 'var(--text-tertiary)' }}>
-                                    / {orderTotal || '—'} yd
-                                </span>
+                                <span className="text-[12px] ml-1 text-text-tertiary">/ {orderTotal || '—'} yd</span>
                             </div>
                         </div>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="w-8 h-8 rounded-md flex items-center justify-center bg-transparent border-0 cursor-pointer"
-                            style={{ color: 'var(--text-secondary)' }}
+                            className="w-8 h-8 rounded-md flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-secondary"
                             aria-label="Close"
                             title="Close"
                         >
@@ -195,10 +170,7 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                 </div>
 
                 {realized && (
-                    <div
-                        className="px-5 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 border-b"
-                        style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
-                    >
+                    <div className="px-5 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 border-b bg-bg-secondary border-border-light">
                         <MetricTile label="First truck loaded" value={realized.firstTime} />
                         <MetricTile
                             hint={
@@ -224,21 +196,16 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
 
                 <div className="flex-1 overflow-auto">
                     {tickets.length === 0 ? (
-                        <div
-                            className="flex flex-col items-center justify-center py-12 px-6 gap-2 text-center"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <div className="flex flex-col items-center justify-center py-12 px-6 gap-2 text-center text-text-tertiary">
                             <i className="fas fa-truck-fast text-[28px]" />
-                            <div className="text-[13px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                                No tickets loaded yet
-                            </div>
+                            <div className="text-[13px] font-semibold text-text-secondary">No tickets loaded yet</div>
                             <div className="text-[11.5px]">
                                 Trucks haven&apos;t started loading for this order, or the bridge hasn&apos;t synced new
                                 detail data yet.
                             </div>
                         </div>
                     ) : (
-                        <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
+                        <table className="w-full text-[12.5px] border-collapse">
                             <thead>
                                 <tr>
                                     {[
@@ -258,16 +225,8 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                     ].map((h) => (
                                         <th
                                             key={h.label}
-                                            className="px-3 py-2 font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
-                                            style={{
-                                                background: 'var(--bg-tertiary)',
-                                                borderBottom: '1px solid var(--border-light)',
-                                                color: 'var(--text-secondary)',
-                                                position: 'sticky',
-                                                textAlign: h.align,
-                                                top: 0,
-                                                zIndex: 1
-                                            }}
+                                            className="px-3 py-2 font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap bg-bg-tertiary border-b border-border-light text-text-secondary sticky z-[1]"
+                                            style={{ textAlign: h.align, top: 0 }}
                                         >
                                             {h.label}
                                         </th>
@@ -281,40 +240,27 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                     const plantName = plantNameByCode?.[plantCode] || ''
                                     return (
                                         <tr
+                                            className="border-t border-border-light"
                                             key={t.ticketId || `${plantCode}-${t.ticketNum || idx}-${idx}`}
-                                            style={{ borderTop: '1px solid var(--border-light)' }}
                                         >
                                             <td
-                                                className="px-3 py-2 font-mono font-semibold text-right whitespace-nowrap"
-                                                style={{
-                                                    color: 'var(--text-tertiary)',
-                                                    fontVariantNumeric: 'tabular-nums'
-                                                }}
+                                                className="px-3 py-2 font-mono font-semibold text-right whitespace-nowrap text-text-tertiary"
+                                                style={{ fontVariantNumeric: 'tabular-nums' }}
                                             >
                                                 {idx + 1}
                                             </td>
                                             <td className="px-3 py-2 whitespace-nowrap">
-                                                <span
-                                                    className="font-mono font-semibold"
-                                                    style={{ color: 'var(--text-primary)' }}
-                                                >
+                                                <span className="font-mono font-semibold text-text-primary">
                                                     {plantCode || '—'}
                                                 </span>
                                                 {plantName && (
-                                                    <span
-                                                        className="ml-2 text-[11px]"
-                                                        style={{ color: 'var(--text-tertiary)' }}
-                                                    >
+                                                    <span className="ml-2 text-[11px] text-text-tertiary">
                                                         {plantName}
                                                     </span>
                                                 )}
                                                 {!isHomePlant && plantCode && (
                                                     <span
-                                                        className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider"
-                                                        style={{
-                                                            background: 'rgba(217, 119, 6, 0.15)',
-                                                            color: '#b45309'
-                                                        }}
+                                                        className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider bg-[rgba(217,_119,_6,_0.15)] text-[#b45309]"
                                                         title={`Loaded from ${plantCode} for an order whose home plant is ${homePlantCode}`}
                                                     >
                                                         <i className="fas fa-shuffle text-[9px]" />
@@ -322,54 +268,33 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                                     </span>
                                                 )}
                                             </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
+                                            <td className="px-3 py-2 font-mono whitespace-nowrap text-text-primary">
                                                 {order?.orderNum ? `#${order.orderNum}` : '—'}
                                             </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
+                                            <td className="px-3 py-2 font-mono whitespace-nowrap text-text-primary">
                                                 {t.ticketNum || '—'}
                                             </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
+                                            <td className="px-3 py-2 font-mono whitespace-nowrap text-text-primary">
                                                 {t.truckNum || '—'}
                                             </td>
-                                            <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
+                                            <td className="px-3 py-2 font-mono whitespace-nowrap text-text-secondary">
                                                 {t.driverNum || '—'}
                                             </td>
                                             <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{
-                                                    color: 'var(--text-primary)',
-                                                    fontVariantNumeric: 'tabular-nums'
-                                                }}
+                                                className="px-3 py-2 font-mono whitespace-nowrap text-text-primary"
+                                                style={{ fontVariantNumeric: 'tabular-nums' }}
                                             >
                                                 {t.ticketTime || '—'}
                                             </td>
                                             <td
-                                                className="px-3 py-2 font-mono whitespace-nowrap"
-                                                style={{
-                                                    color: 'var(--text-primary)',
-                                                    fontVariantNumeric: 'tabular-nums'
-                                                }}
+                                                className="px-3 py-2 font-mono whitespace-nowrap text-text-primary"
+                                                style={{ fontVariantNumeric: 'tabular-nums' }}
                                             >
                                                 {t.loadedTime || '—'}
                                             </td>
                                             <td
-                                                className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"
-                                                style={{
-                                                    color: 'var(--text-primary)',
-                                                    fontVariantNumeric: 'tabular-nums'
-                                                }}
+                                                className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap text-text-primary"
+                                                style={{ fontVariantNumeric: 'tabular-nums' }}
                                                 title={
                                                     t.sourceReport === 'DetailDriver'
                                                         ? 'Yards not in DetailDriver report — cross-plant load'

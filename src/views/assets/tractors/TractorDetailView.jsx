@@ -2,7 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import VerificationRequirementsModal from '../../../app/components/common/VerificationRequirementsModal'
+import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
+import HistoryViewSection from '../../../app/components/sections/HistoryViewSection'
+import IssueModalSection from '../../../app/components/sections/IssueModalSection'
 import VerificationCardSection from '../../../app/components/sections/VerificationCardSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { Tractor } from '../../../app/models/tractors/Tractor'
@@ -15,9 +18,6 @@ import AssetStatsUtility from '../../../utils/AssetStatsUtility'
 import DateUtility from '../../../utils/DateUtility'
 import { ValidationUtility } from '../../../utils/ValidationUtility'
 import OperatorSelectModal from '../mixers/OperatorSelectModal'
-import TractorCommentModal from './TractorCommentModal'
-import TractorHistoryView from './TractorHistoryView'
-import TractorIssueModal from './TractorIssueModal'
 
 /**
  * Full detail/edit view for a single tractor. Handles operator assignment/
@@ -638,19 +638,23 @@ function TractorDetailView({ tractorId, onClose }) {
     ]
     return (
         <>
-            {showHistory && <TractorHistoryView tractor={tractor} onClose={() => setShowHistory(false)} />}
+            {showHistory && <HistoryViewSection item={tractor} onClose={() => setShowHistory(false)} type="tractor" />}
             {showComments && (
-                <TractorCommentModal
-                    tractorId={tractorId}
-                    tractorNumber={tractor?.truckNumber}
+                <CommentModalSection
+                    itemId={tractorId}
+                    itemNumber={tractor?.truckNumber}
+                    itemType="Tractor"
                     onClose={() => setShowComments(false)}
+                    service={TractorService}
                 />
             )}
             {showIssues && (
-                <TractorIssueModal
-                    tractorId={tractorId}
-                    tractorNumber={tractor?.truckNumber}
+                <IssueModalSection
+                    itemId={tractorId}
+                    itemNumber={tractor?.truckNumber}
+                    itemType="Tractor"
                     onClose={() => setShowIssues(false)}
+                    service={TractorService}
                 />
             )}
             {showPlantModal && (
@@ -698,20 +702,18 @@ function TractorDetailView({ tractorId, onClose }) {
                     canEditTractor && (
                         <>
                             <button
-                                className="global-button-secondary"
+                                className="global-button-secondary flex-1 justify-center"
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                style={{ flex: 1, justifyContent: 'center' }}
                             >
                                 <i className="fas fa-save"></i>
                                 <span>{isSaving ? 'Saving...' : 'Save'}</span>
                             </button>
                             {canDeleteTractor && (
                                 <button
-                                    className="global-button-secondary"
+                                    className="global-button-secondary flex-1 justify-center"
                                     onClick={() => setShowDeleteConfirmation(true)}
                                     disabled={isSaving}
-                                    style={{ flex: 1, justifyContent: 'center' }}
                                 >
                                     <i className="fas fa-trash-alt"></i>
                                     <span>Delete</span>
@@ -873,13 +875,7 @@ function TractorDetailView({ tractorId, onClose }) {
                                         : {}
                                 }
                             >
-                                <span
-                                    style={{
-                                        display: 'block',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                    }}
-                                >
+                                <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
                                     {plantDisplayText}
                                 </span>
                             </button>
@@ -907,7 +903,7 @@ function TractorDetailView({ tractorId, onClose }) {
                                             : {}
                                     }
                                 >
-                                    <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
                                         {assignedOperator
                                             ? getOperatorName(assignedOperator)
                                             : 'None (Click to select)'}
@@ -954,7 +950,7 @@ function TractorDetailView({ tractorId, onClose }) {
                                     ) : (
                                         lastUnassignedOperatorId && (
                                             <button
-                                                className="undo-operator-button unassign-operator-button"
+                                                className="undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px]"
                                                 title="Undo Unassign"
                                                 onClick={async () => {
                                                     try {
@@ -979,14 +975,8 @@ function TractorDetailView({ tractorId, onClose }) {
                                                 }}
                                                 type="button"
                                                 style={{
-                                                    backgroundColor: 'var(--success)',
                                                     border: 'none',
-                                                    borderRadius: '4px',
                                                     boxSizing: 'border-box',
-                                                    color: 'var(--text-light)',
-                                                    cursor: 'pointer',
-                                                    fontSize: '1rem',
-                                                    height: '38px',
                                                     marginLeft: '8px',
                                                     minWidth: '140px',
                                                     padding: '0 16px'
@@ -1063,12 +1053,8 @@ function TractorDetailView({ tractorId, onClose }) {
                                 <div className="warning-text">Service overdue</div>
                             )}
                             <div
-                                style={{
-                                    color: 'var(--text-secondary)',
-                                    fontSize: '11px',
-                                    lineHeight: '1.4',
-                                    marginTop: '4px'
-                                }}
+                                className="text-text-secondary text-[11px]"
+                                style={{ lineHeight: '1.4', marginTop: '4px' }}
                             >
                                 Service will show as overdue if it has been more than 6 months since last serviced.
                                 Service is determined by hours on the asset - check hours of service.

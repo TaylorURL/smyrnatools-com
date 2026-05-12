@@ -156,15 +156,10 @@ function PlanDemandView({
     return (
         <div className="flex-1 overflow-y-auto">
             <div className="w-full px-3 sm:px-4 lg:px-6 py-3 flex flex-col gap-3">
-                <div
-                    className="flex items-center justify-between gap-3 flex-wrap pb-2 border-b"
-                    style={{ borderColor: 'var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between gap-3 flex-wrap pb-2 border-b border-border-light">
                     <div className="flex items-baseline gap-2 min-w-0">
-                        <h2 className="text-[15px] font-bold m-0 shrink-0" style={{ color: 'var(--text-primary)' }}>
-                            Demand
-                        </h2>
-                        <span className="text-[12px] truncate" style={{ color: 'var(--text-secondary)' }}>
+                        <h2 className="text-[15px] font-bold m-0 shrink-0 text-text-primary">Demand</h2>
+                        <span className="text-[12px] truncate text-text-secondary">
                             {scopeLabel} · {friendlyDate || 'today'}
                         </span>
                     </div>
@@ -180,8 +175,7 @@ function PlanDemandView({
                             <button
                                 type="button"
                                 onClick={() => setPlantFilter('all')}
-                                className="border-none bg-transparent cursor-pointer text-[11px] font-medium px-1"
-                                style={{ color: 'var(--text-secondary)' }}
+                                className="border-none bg-transparent cursor-pointer text-[11px] font-medium px-1 text-text-secondary"
                                 title="Clear plant filter"
                             >
                                 Clear
@@ -191,8 +185,7 @@ function PlanDemandView({
                             type="button"
                             onClick={handleExportCsv}
                             disabled={data.perPlant.length === 0}
-                            className="border-none rounded text-[12px] font-medium px-2 py-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                            className="border-none rounded text-[12px] font-medium px-2 py-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-bg-tertiary text-text-secondary"
                             title="Download the per-plant breakdown as CSV"
                         >
                             Export CSV
@@ -246,11 +239,7 @@ function PlanDemandView({
 
                 <Panel
                     title={activeChart?.label || 'Chart'}
-                    right={
-                        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                            {activeChart?.group || ''}
-                        </span>
-                    }
+                    right={<span className="text-[11px] text-text-tertiary">{activeChart?.group || ''}</span>}
                 >
                     <DemandChart
                         accentColor={accentColor}

@@ -138,15 +138,13 @@ Deno.serve(async (req) => {
                 if (typeof type !== 'string' || !ALLOWED_TYPES.has(type))
                     return errorResponse('Region type must be one of Concrete, Aggregate, Office', headers, 400)
                 const now = nowISO()
-                const { error } = await supabase
-                    .from(REGIONS_TABLE)
-                    .insert({
-                        region_code: regionCode,
-                        region_name: regionName,
-                        type,
-                        created_at: now,
-                        updated_at: now
-                    })
+                const { error } = await supabase.from(REGIONS_TABLE).insert({
+                    region_code: regionCode,
+                    region_name: regionName,
+                    type,
+                    created_at: now,
+                    updated_at: now
+                })
                 if (error) return errorResponse('Operation failed', headers, 400)
                 return jsonResponse({ success: true }, headers)
             }

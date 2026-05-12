@@ -11,10 +11,7 @@ import { getTodayDate } from '../../../utils/PlanUtility'
 /** Period selector buttons (Day/Week/Month/Quarter/Year/Custom). */
 function PeriodSelector({ accentColor, period, setPeriod }) {
     return (
-        <div
-            className="flex items-center rounded-lg p-0.5"
-            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="flex items-center rounded-lg p-0.5 bg-bg-tertiary border border-border-light">
             {PLAN_STATS_PERIODS.map(({ id, label }) => (
                 <button
                     key={id}
@@ -53,53 +50,33 @@ function PeriodNavigator({
                     value={customStart}
                     max={customEnd}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="rounded px-2 py-1 text-xs"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-primary)'
-                    }}
+                    className="rounded px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary"
                 />
-                <span style={{ color: 'var(--text-secondary)' }}>to</span>
+                <span className="text-text-secondary">to</span>
                 <input
                     type="date"
                     value={customEnd}
                     min={customStart}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="rounded px-2 py-1 text-xs"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-light)',
-                        color: 'var(--text-primary)'
-                    }}
+                    className="rounded px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary"
                 />
             </div>
         )
     }
     const periodLabel = formatPeriodLabel(period, range)
     return (
-        <div
-            className="inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1 py-0.5"
-            style={{
-                background: 'var(--bg-tertiary)',
-                border: '1px solid var(--border-light)'
-            }}
-        >
+        <div className="inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1 py-0.5 bg-bg-tertiary border border-border-light">
             <button
                 onClick={() => setAnchor(shiftAnchor(anchor, period, -1))}
-                className="border-none bg-transparent cursor-pointer p-1.5 rounded"
-                style={{ color: 'var(--text-secondary)' }}
+                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary"
                 title="Previous period"
             >
                 <i className="fas fa-chevron-left text-xs" />
             </button>
-            <span className="px-2 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {periodLabel}
-            </span>
+            <span className="px-2 text-xs font-semibold text-text-primary">{periodLabel}</span>
             <button
                 onClick={() => setAnchor(shiftAnchor(anchor, period, 1))}
-                className="border-none bg-transparent cursor-pointer p-1.5 rounded"
-                style={{ color: 'var(--text-secondary)' }}
+                className="border-none bg-transparent cursor-pointer p-1.5 rounded text-text-secondary"
                 title="Next period"
             >
                 <i className="fas fa-chevron-right text-xs" />
@@ -138,13 +115,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                 <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
             </button>
             {open && (
-                <div
-                    className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-light)'
-                    }}
-                >
+                <div className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light">
                     <button
                         onClick={() => {
                             setSelectedPlant(null)
@@ -160,9 +131,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                         {!selectedPlant && <i className="fas fa-check text-[10px]" />}
                     </button>
                     {availablePlants.length === 0 ? (
-                        <div className="px-3 py-2 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                            No plants in this range
-                        </div>
+                        <div className="px-3 py-2 text-[11px] text-text-tertiary">No plants in this range</div>
                     ) : (
                         availablePlants.map(({ code, label }) => (
                             <button
@@ -211,13 +180,7 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
                 <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
             </button>
             {open && (
-                <div
-                    className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[160px]"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-light)'
-                    }}
-                >
+                <div className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[160px] bg-bg-primary border border-border-light">
                     {PLAN_STATS_COMPARISONS.map(({ id, label }) => (
                         <button
                             key={id}
@@ -300,8 +263,7 @@ export function PlanStatisticsControls({
             <button
                 onClick={onExport}
                 disabled={!canExport}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-50"
-                style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-50 bg-bg-tertiary text-text-secondary"
                 title="Download per-day schedule metrics as CSV"
             >
                 <i className="fas fa-file-csv" />

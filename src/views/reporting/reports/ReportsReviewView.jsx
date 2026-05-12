@@ -120,25 +120,19 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         color: 'var(--text-primary)'
     }
     const renderPlantManagerForm = () => (
-        <div
-            className="rounded p-3 mb-2.5"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded p-3 mb-2.5 bg-bg-primary border border-border-light">
             <div className="flex items-center gap-2 mb-2">
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                >
+                <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                     <i className="fas fa-clipboard-list text-[11px]" />
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className={REVIEW_SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                         Production
                     </div>
-                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                    <div className="text-[12.5px] font-semibold leading-tight text-text-primary">
                         Weekly Production Data
                     </div>
-                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-[10.5px] mt-0.5 text-text-tertiary">
                         Key production metrics for this reporting period.
                     </div>
                 </div>
@@ -149,10 +143,9 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     .map((field) => (
                         <div
                             key={field.name}
-                            className="flex flex-col gap-1.5 rounded p-2.5"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                            className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light"
                         >
-                            <label className="flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                            <label className="flex items-center gap-1.5 text-text-tertiary">
                                 <i
                                     className={`fas ${getFieldIcon(field.name)} text-[10px]`}
                                     style={{ color: accentColor }}
@@ -173,10 +166,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         </div>
     )
     const renderDefaultForm = () => (
-        <div
-            className="rounded p-3 mb-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="rounded p-3 mb-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 bg-bg-primary border border-border-light">
             {report.fields
                 .filter(
                     (f) =>
@@ -187,16 +177,11 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 .map((field) => (
                     <div
                         key={field.name}
-                        className="flex flex-col gap-1.5 rounded p-2.5"
-                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
+                        className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light"
                     >
                         <label className={REVIEW_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                             {getFieldLabel(field)}
-                            {field.required && (
-                                <span className="ml-0.5" style={{ color: '#dc2626' }}>
-                                    *
-                                </span>
-                            )}
+                            {field.required && <span className="ml-0.5 text-red-600">*</span>}
                         </label>
                         {field.type === 'textarea' ||
                         (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (

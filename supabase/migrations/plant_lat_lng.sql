@@ -4,7 +4,7 @@
 -- derived from the plant code so the view still works on day one.
 
 alter table public.plants
-    add column if not exists latitude  double precision,
+    add column if not exists latitude double precision,
     add column if not exists longitude double precision;
 
 create index if not exists idx_plants_lat_lng

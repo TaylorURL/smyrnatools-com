@@ -6,18 +6,15 @@ import { Panel } from '../ui/Panel'
 function CountRow({ color, label, value }) {
     return (
         <tr className="transition-colors hover:bg-bg-tertiary">
-            <td
-                className="px-3 py-2 text-[12.5px]"
-                style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-primary)' }}
-            >
+            <td className="px-3 py-2 text-[12.5px] border-b border-border-light text-text-primary">
                 <div className="flex items-center gap-2">
                     {color && <span className="w-2 h-2 rounded-sm" style={{ background: color }} />}
                     <span>{label}</span>
                 </div>
             </td>
             <td
-                className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
-                style={{ borderBottom: '1px solid var(--border-light)', color: color || 'var(--text-primary)' }}
+                className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold border-b border-border-light"
+                style={{ color: color || 'var(--text-primary)' }}
             >
                 {value.toLocaleString()}
             </td>
@@ -28,17 +25,11 @@ function CountRow({ color, label, value }) {
 /** Bold totals row — sits at the bottom of each sub-table. */
 function TotalRow({ label, value }) {
     return (
-        <tr style={{ background: 'var(--bg-secondary)' }}>
-            <td
-                className="px-3 py-2 text-[12.5px] font-semibold"
-                style={{ borderTop: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
-            >
+        <tr className="bg-bg-secondary">
+            <td className="px-3 py-2 text-[12.5px] font-semibold border-t border-border-medium text-text-primary">
                 {label}
             </td>
-            <td
-                className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
-                style={{ borderTop: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
-            >
+            <td className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold border-t border-border-medium text-text-primary">
                 {value.toLocaleString()}
             </td>
         </tr>
@@ -49,17 +40,8 @@ function TotalRow({ label, value }) {
 function SubHeader({ label, meta }) {
     return (
         <div className="flex items-baseline justify-between mb-1.5">
-            <span
-                className="text-[10px] font-bold uppercase tracking-[0.08em]"
-                style={{ color: 'var(--text-secondary)' }}
-            >
-                {label}
-            </span>
-            {meta && (
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-                    {meta}
-                </span>
-            )}
+            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-secondary">{label}</span>
+            {meta && <span className="text-[11px] text-text-tertiary">{meta}</span>}
         </div>
     )
 }
@@ -127,7 +109,7 @@ export default function DashboardPeopleSection({ accentColor: _accentColor, disp
             title="People"
             innerClassName="p-3"
             right={
-                <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                <span className="text-[11px] text-text-tertiary">
                     {totalOperators} operators · {managers.total} managers
                 </span>
             }
@@ -135,10 +117,7 @@ export default function DashboardPeopleSection({ accentColor: _accentColor, disp
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
                     <SubHeader label="Operators" meta={`${totalOperators} on roster`} />
-                    <table
-                        className="w-full border-collapse rounded overflow-hidden"
-                        style={{ border: '1px solid var(--border-light)' }}
-                    >
+                    <table className="w-full border-collapse rounded overflow-hidden border border-border-light">
                         <tbody>
                             {operatorRows.map((row) => (
                                 <CountRow key={row.label} color={row.color} label={row.label} value={row.value} />
@@ -151,10 +130,7 @@ export default function DashboardPeopleSection({ accentColor: _accentColor, disp
                 <div>
                     <SubHeader label="Managers" meta={`${managers.total} total`} />
                     {managerRows.length > 0 ? (
-                        <table
-                            className="w-full border-collapse rounded overflow-hidden"
-                            style={{ border: '1px solid var(--border-light)' }}
-                        >
+                        <table className="w-full border-collapse rounded overflow-hidden border border-border-light">
                             <tbody>
                                 {managerRows.map((row) => (
                                     <CountRow key={row.role} color={row.color} label={row.role} value={row.count} />
@@ -163,14 +139,7 @@ export default function DashboardPeopleSection({ accentColor: _accentColor, disp
                             </tbody>
                         </table>
                     ) : (
-                        <div
-                            className="rounded p-3 text-[12.5px]"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-secondary)'
-                            }}
-                        >
+                        <div className="rounded p-3 text-[12.5px] bg-bg-secondary border border-border-light text-text-secondary">
                             No managers in scope.
                         </div>
                     )}

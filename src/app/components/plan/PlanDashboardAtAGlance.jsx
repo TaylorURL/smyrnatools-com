@@ -43,20 +43,15 @@ export function PlanDashboardAtAGlance({
         { label: 'Extra diligence', value: ((specialCount || 0) + (qcCount || 0)).toString() }
     ]
     return (
-        <aside className="hidden xl:block sticky top-0 self-start py-5 pl-4" style={{ width: 240 }}>
-            <div className="text-[12px] mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                {dateLabel}
-            </div>
+        <aside className="hidden xl:block sticky top-0 self-start py-5 pl-4 w-60">
+            <div className="text-[12px] mb-1 text-text-tertiary">{dateLabel}</div>
             <div className="flex flex-col">
                 {rows.map((row) => (
                     <div
                         key={row.label}
-                        className="flex items-baseline justify-between py-1.5 border-b"
-                        style={{ borderColor: 'var(--border-light)' }}
+                        className="flex items-baseline justify-between py-1.5 border-b border-border-light"
                     >
-                        <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                            {row.label}
-                        </span>
+                        <span className="text-[12px] text-text-secondary">{row.label}</span>
                         <span
                             className="text-[13px] font-semibold font-mono"
                             style={{ color: row.color || 'var(--text-primary)' }}

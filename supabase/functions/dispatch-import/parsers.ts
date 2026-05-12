@@ -371,7 +371,11 @@ export function parseDailyOrderHtml(htmlString: string, plants: PlantsRow[] = []
                 city: findCellText(pageDivs, HEAD_OFFSETS.city.left, rowTop + HEAD_OFFSETS.city.top, 8),
                 contact: findCellText(pageDivs, HEAD_OFFSETS.contact.left, rowTop + HEAD_OFFSETS.contact.top, 8),
                 customer: findCellText(pageDivs, HEAD_OFFSETS.customer.left, rowTop + HEAD_OFFSETS.customer.top, 8),
-                customerNum: findCellText(pageDivs, HEAD_OFFSETS.customerNum.left, rowTop + HEAD_OFFSETS.customerNum.top),
+                customerNum: findCellText(
+                    pageDivs,
+                    HEAD_OFFSETS.customerNum.left,
+                    rowTop + HEAD_OFFSETS.customerNum.top
+                ),
                 jobNumber: findCellText(pageDivs, HEAD_OFFSETS.jobNumber.left, rowTop + HEAD_OFFSETS.jobNumber.top),
                 phone: findCellText(pageDivs, HEAD_OFFSETS.phone.left, rowTop + HEAD_OFFSETS.phone.top, 8),
                 poNumber: findCellText(pageDivs, HEAD_OFFSETS.poNumber.left, rowTop + HEAD_OFFSETS.poNumber.top),
@@ -508,21 +512,24 @@ export function parseDetailOrderHtml(htmlString: string): DetailTicketRecord[] {
             const timesTop = Number.isFinite(ticketTop || NaN) ? (ticketTop as number) + DETAIL_TIMES_ROW_OFFSET : null
             const ticketPage = getPageWrapper(ticketAnchor)
 
-            const truckNum = ticketTop != null
-                ? findIdentifierAt(cells, DETAIL_TRUCK_LEFT, ticketTop, 6, ROW_TOL * 2, ticketPage)
-                : ''
-            const driverNum = ticketTop != null
-                ? cleanIdentifier(findCellText(cells, DETAIL_DRIVER_LEFT, ticketTop, 6, ROW_TOL, ticketPage))
-                : ''
-            const ticketTime = timesTop != null
-                ? cleanTime(findCellText(cells, DETAIL_TICKET_TIME_LEFT, timesTop, 4, ROW_TOL, ticketPage))
-                : ''
-            const loadedTime = timesTop != null
-                ? cleanTime(findCellText(cells, DETAIL_LOADED_TIME_LEFT, timesTop, 4, ROW_TOL, ticketPage))
-                : ''
-            const plantCellText = ticketTop != null
-                ? findCellText(cells, DETAIL_PLANT_LEFT, ticketTop, 12, ROW_TOL, ticketPage)
-                : ''
+            const truckNum =
+                ticketTop != null
+                    ? findIdentifierAt(cells, DETAIL_TRUCK_LEFT, ticketTop, 6, ROW_TOL * 2, ticketPage)
+                    : ''
+            const driverNum =
+                ticketTop != null
+                    ? cleanIdentifier(findCellText(cells, DETAIL_DRIVER_LEFT, ticketTop, 6, ROW_TOL, ticketPage))
+                    : ''
+            const ticketTime =
+                timesTop != null
+                    ? cleanTime(findCellText(cells, DETAIL_TICKET_TIME_LEFT, timesTop, 4, ROW_TOL, ticketPage))
+                    : ''
+            const loadedTime =
+                timesTop != null
+                    ? cleanTime(findCellText(cells, DETAIL_LOADED_TIME_LEFT, timesTop, 4, ROW_TOL, ticketPage))
+                    : ''
+            const plantCellText =
+                ticketTop != null ? findCellText(cells, DETAIL_PLANT_LEFT, ticketTop, 12, ROW_TOL, ticketPage) : ''
 
             result.push({
                 orderId,
@@ -634,7 +641,10 @@ export function parseDetailDriverHtml(
         const top = style.match(/top:\s*([\d.]+)/)
         if (!left || !top) continue
         // Strip any nested HTML and decode &nbsp;
-        const text = m[2].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
+        const text = m[2]
+            .replace(/<[^>]+>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .trim()
         if (!text) continue
         cells.push({ left: parseFloat(left[1]), top: parseFloat(top[1]), text })
     }

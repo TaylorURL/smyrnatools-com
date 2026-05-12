@@ -40,13 +40,8 @@ export function PlanHeader({
      *  Plan-wide single-day stepper would conflict, so it's locked here. */
     const isStatisticsTab = viewMode === 'statistics'
     return (
-        <div
-            className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5"
-            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-        >
-            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0" style={{ color: 'var(--text-primary)' }}>
-                Plan
-            </h1>
+        <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5 bg-bg-primary border-border-light">
+            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0 text-text-primary">Plan</h1>
             <PlanDateNav
                 accentColor={accentColor}
                 disabled={isStatisticsTab}

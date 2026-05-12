@@ -67,35 +67,22 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                 className="flex max-h-[70vh] w-80 flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div
-                    className="flex shrink-0 items-center justify-between px-3 py-2"
-                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex shrink-0 items-center justify-between px-3 py-2 border-b border-border-light">
                     <div className="flex items-center gap-2">
-                        <div
-                            className="flex h-6 w-6 items-center justify-center rounded"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                        >
+                        <div className="flex h-6 w-6 items-center justify-center rounded bg-bg-tertiary text-text-secondary">
                             <i className="fas fa-users text-[11px]" />
                         </div>
-                        <span
-                            className="text-[10px] font-semibold uppercase tracking-wider"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                             Online Users
                         </span>
                         {!isLoading && (
-                            <span
-                                className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
-                                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                            >
+                            <span className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-bg-tertiary text-text-secondary">
                                 {onlineUsers.length}
                             </span>
                         )}
                     </div>
                     <button
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary"
-                        style={{ color: 'var(--text-secondary)' }}
+                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary text-text-secondary"
                         onClick={onClose}
                         aria-label="Close"
                     >
@@ -104,22 +91,14 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     {isLoading && onlineUsers.length === 0 ? (
-                        <div
-                            className="flex flex-col items-center justify-center py-10"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <div className="flex flex-col items-center justify-center py-10 text-text-tertiary">
                             <i className="fas fa-spinner fa-spin mb-2 text-xl" />
                             <span className="text-[12px]">Loading users…</span>
                         </div>
                     ) : onlineUsers.length === 0 ? (
-                        <div
-                            className="flex flex-col items-center justify-center py-10"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <div className="flex flex-col items-center justify-center py-10 text-text-tertiary">
                             <i className="fas fa-user-slash mb-2 text-2xl" />
-                            <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                No users online
-                            </span>
+                            <span className="text-[12px] font-semibold text-text-primary">No users online</span>
                         </div>
                     ) : (
                         <div>
@@ -132,39 +111,23 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                                 return (
                                     <div
                                         key={user.id}
-                                        className="px-3 py-2 transition-colors hover:bg-bg-tertiary"
-                                        style={{ borderBottom: '1px solid var(--border-light)' }}
+                                        className="px-3 py-2 transition-colors hover:bg-bg-tertiary border-b border-border-light"
                                     >
                                         <div className="flex items-start gap-2.5">
                                             <div className="relative shrink-0">
-                                                <div
-                                                    className="flex h-7 w-7 items-center justify-center rounded"
-                                                    style={{
-                                                        background: 'var(--bg-tertiary)',
-                                                        color: 'var(--text-secondary)'
-                                                    }}
-                                                >
+                                                <div className="flex h-7 w-7 items-center justify-center rounded bg-bg-tertiary text-text-secondary">
                                                     <i className="fas fa-user text-[11px]" />
                                                 </div>
                                                 <div
-                                                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full"
-                                                    style={{
-                                                        background: '#16a34a',
-                                                        border: '2px solid var(--bg-primary)'
-                                                    }}
+                                                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-600"
+                                                    style={{ border: '2px solid var(--bg-primary)' }}
                                                 />
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <span
-                                                    className="block truncate text-[12px] font-semibold"
-                                                    style={{ color: 'var(--text-primary)' }}
-                                                >
+                                                <span className="block truncate text-[12px] font-semibold text-text-primary">
                                                     {user.name || 'Unknown User'}
                                                     {user.isCurrentUser && (
-                                                        <span
-                                                            className="ml-1 font-normal"
-                                                            style={{ color: 'var(--text-tertiary)' }}
-                                                        >
+                                                        <span className="ml-1 font-normal text-text-tertiary">
                                                             (You)
                                                         </span>
                                                     )}
@@ -179,18 +142,12 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                                                         </span>
                                                     )}
                                                     {user.regionCode && (
-                                                        <span
-                                                            className="text-[10.5px]"
-                                                            style={{ color: 'var(--text-secondary)' }}
-                                                        >
+                                                        <span className="text-[10.5px] text-text-secondary">
                                                             {regionNames[user.regionCode] || user.regionCode}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div
-                                                    className="mt-1 flex items-center gap-1.5 text-[10px]"
-                                                    style={{ color: 'var(--text-tertiary)' }}
-                                                >
+                                                <div className="mt-1 flex items-center gap-1.5 text-[10px] text-text-tertiary">
                                                     <span className="flex items-center gap-1">
                                                         {(user.activeDevices || ['desktop']).map((d) => (
                                                             <i

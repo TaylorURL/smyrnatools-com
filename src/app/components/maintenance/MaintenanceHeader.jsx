@@ -11,8 +11,7 @@ function RefreshButton({ isMobile, isSyncing, onClick }) {
             type="button"
             onClick={() => onClick?.()}
             disabled={isSyncing}
-            className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-60"
-            style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+            className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-60 bg-bg-tertiary text-text-secondary"
             title="Refresh maintenance data"
         >
             <i className={`fas fa-rotate ${isSyncing ? 'fa-spin' : ''}`} />
@@ -44,15 +43,8 @@ function PrimaryActionButton({ accentColor, icon, isMobile, label, onClick }) {
 function RegionScopeChip({ regionLabel }) {
     if (!regionLabel) return null
     return (
-        <span
-            className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-primary)'
-            }}
-        >
-            <i className="fas fa-location-dot text-[10px]" style={{ color: '#16a34a' }} />
+        <span className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full bg-bg-secondary border border-border-light text-text-primary">
+            <i className="fas fa-location-dot text-[10px] text-green-600" />
             <span className="truncate">{regionLabel}</span>
         </span>
     )
@@ -83,13 +75,8 @@ export function MaintenanceHeader({
     tabs
 }) {
     return (
-        <div
-            className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5"
-            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-        >
-            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0" style={{ color: 'var(--text-primary)' }}>
-                Maintenance
-            </h1>
+        <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5 bg-bg-primary border-border-light">
+            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0 text-text-primary">Maintenance</h1>
             <RegionScopeChip regionLabel={regionLabel} />
             <div className="flex-1 min-w-[8px]" />
             <div className="flex items-center gap-1.5 shrink-0 ml-auto">

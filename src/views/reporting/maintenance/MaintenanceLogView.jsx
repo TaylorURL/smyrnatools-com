@@ -84,11 +84,8 @@ const SkeletonBar = ({ className = '', style }) => (
 function SkeletonRow({ i }) {
     return (
         <tr
-            style={{
-                animationDelay: `${i * 60}ms`,
-                animationFillMode: 'both',
-                borderBottom: '1px solid var(--border-light)'
-            }}
+            className="border-b border-border-light"
+            style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
         >
             <td className="py-2 px-3">
                 <div className="flex items-center gap-2">
@@ -122,19 +119,12 @@ function SkeletonRow({ i }) {
 function ContentSkeleton({ isMobile }) {
     return (
         <div className={`flex gap-3 items-start ${isMobile ? 'flex-col' : ''}`}>
-            <div
-                className="flex-1 min-w-0 rounded overflow-hidden"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
+            <div className="flex-1 min-w-0 rounded overflow-hidden bg-bg-primary border border-border-light">
                 <table className="w-full border-collapse">
                     <thead>
-                        <tr style={{ background: 'var(--bg-secondary)' }}>
+                        <tr className="bg-bg-secondary">
                             {['w-24', 'w-10', 'w-16', 'w-20', 'w-12', 'w-6'].map((w, i) => (
-                                <th
-                                    key={i}
-                                    className="text-left py-2 px-3"
-                                    style={{ borderBottom: '1px solid var(--border-light)' }}
-                                >
+                                <th key={i} className="text-left py-2 px-3 border-b border-border-light">
                                     <SkeletonBar className={`h-2.5 ${w}`} />
                                 </th>
                             ))}
@@ -152,12 +142,8 @@ function ContentSkeleton({ isMobile }) {
                     {[140, 120, 160].map((h, i) => (
                         <div
                             key={i}
-                            className="rounded p-3"
-                            style={{
-                                animationDelay: `${i * 80}ms`,
-                                background: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)'
-                            }}
+                            className="rounded p-3 bg-bg-primary border border-border-light"
+                            style={{ animationDelay: `${i * 80}ms` }}
                         >
                             <SkeletonBar className="h-2.5 w-24 mb-2" />
                             <SkeletonBar className="rounded" style={{ height: `${h}px` }} />
@@ -253,7 +239,7 @@ function ProgressBar({ item, isDark }) {
             >
                 {info.label}
             </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+            <div className="h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
                 <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{ background: cfg.barColor, width: `${info.pct * 100}%` }}
@@ -299,23 +285,18 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
                 <button
                     type="button"
                     onClick={() => navigate(-1)}
-                    className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer"
-                    style={{ background: 'transparent', color: 'var(--text-secondary)' }}
+                    className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer bg-transparent text-text-secondary"
                     aria-label="Previous month"
                 >
                     <i className="fas fa-chevron-left text-[10px]" />
                 </button>
-                <span
-                    className="text-[12px] font-semibold uppercase tracking-wider"
-                    style={{ color: 'var(--text-primary)' }}
-                >
+                <span className="text-[12px] font-semibold uppercase tracking-wider text-text-primary">
                     {monthLabel}
                 </span>
                 <button
                     type="button"
                     onClick={() => navigate(1)}
-                    className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer"
-                    style={{ background: 'transparent', color: 'var(--text-secondary)' }}
+                    className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer bg-transparent text-text-secondary"
                     aria-label="Next month"
                 >
                     <i className="fas fa-chevron-right text-[10px]" />
@@ -323,11 +304,7 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
             </div>
             <div className="grid grid-cols-7 gap-px text-center">
                 {DAYS_OF_WEEK.map((d) => (
-                    <div
-                        key={d}
-                        className="text-[9.5px] font-bold uppercase tracking-wider py-1"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
+                    <div key={d} className="text-[9.5px] font-bold uppercase tracking-wider py-1 text-text-tertiary">
                         {d}
                     </div>
                 ))}
@@ -388,7 +365,7 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
                 })}
             </div>
             {/* Legend */}
-            <div className="flex items-center gap-2.5 mt-2 pt-2" style={{ borderTop: '1px solid var(--border-light)' }}>
+            <div className="flex items-center gap-2.5 mt-2 pt-2 border-t border-border-light">
                 {[
                     { color: STATUS_CONFIG.ok.barColor, label: 'Serviced' },
                     { color: STATUS_CONFIG.due_soon.barColor, label: 'Due Soon' },
@@ -396,8 +373,7 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
                 ].map((item) => (
                     <span
                         key={item.label}
-                        className="flex items-center gap-1 text-[9.5px] font-semibold uppercase tracking-wider"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className="flex items-center gap-1 text-[9.5px] font-semibold uppercase tracking-wider text-text-tertiary"
                     >
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: item.color }} />
                         {item.label}
@@ -410,25 +386,21 @@ function MiniCalendar({ equipment, calendarDate, onCalendarDateChange, isDark, a
 
 function RecentActivity({ entries, isDark }) {
     if (!entries.length) {
-        return (
-            <p className="text-[10.5px] italic m-0" style={{ color: 'var(--text-tertiary)' }}>
-                No recent activity
-            </p>
-        )
+        return <p className="text-[10.5px] italic m-0 text-text-tertiary">No recent activity</p>
     }
     return (
         <div className="relative pl-5">
-            <div className="absolute left-[6px] top-0 bottom-0 w-0.5" style={{ background: 'var(--border-light)' }} />
+            <div className="absolute left-[6px] top-0 bottom-0 w-0.5 bg-[var(--border-light)]" />
             {entries.slice(0, 5).map((entry, i) => (
                 <div key={entry.id || i} className="relative pb-3 last:pb-0">
                     <div
-                        className="absolute -left-[15px] top-1 w-2 h-2 rounded-full"
-                        style={{ background: 'var(--bg-primary)', border: '2px solid var(--accent, #2A3163)' }}
+                        className="absolute -left-[15px] top-1 w-2 h-2 rounded-full bg-bg-primary"
+                        style={{ border: '2px solid var(--accent, #2A3163)' }}
                     />
-                    <div className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    <div className="text-[12px] font-semibold text-text-primary">
                         {entry.maintenance_log_equipment?.name || 'Equipment'}
                     </div>
-                    <div className="text-[10.5px] font-mono tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
                         {formatDate(entry.service_date)} · {entry.performed_by_name}
                         {entry.maintenance_log_service_types?.name
                             ? ` · ${entry.maintenance_log_service_types.name}`
@@ -473,13 +445,8 @@ function UpcomingServices({ equipment, isDark }) {
                             })}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div
-                                className="text-[12px] font-semibold truncate"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
-                                {item.name}
-                            </div>
-                            <div className="text-[10.5px] truncate" style={{ color: 'var(--text-secondary)' }}>
+                            <div className="text-[12px] font-semibold truncate text-text-primary">{item.name}</div>
+                            <div className="text-[10.5px] truncate text-text-secondary">
                                 {item.category_name} · Plant {item.plant_code}
                             </div>
                         </div>
@@ -558,39 +525,30 @@ function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accen
 
     return (
         <div
-            className="fixed inset-0 flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)', zIndex: 110 }}
+            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] z-[110]"
             onClick={onClose}
         >
             <div
-                className="relative w-full max-w-lg rounded max-h-[90vh] overflow-y-auto"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                className="relative w-full max-w-lg rounded max-h-[90vh] overflow-y-auto bg-bg-primary border border-border-light"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div
-                    className="sticky top-0 z-10 flex items-center justify-between gap-2.5 px-3 py-2"
-                    style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-2.5 px-3 py-2 bg-bg-primary border-b border-border-light">
                     <div className="flex items-center gap-2">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-plus text-[11px]" />
                         </div>
-                        <span
-                            className="text-[9.5px] font-semibold uppercase tracking-wider"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
+                        <span className="text-[9.5px] font-semibold uppercase tracking-wider text-text-secondary">
                             Add Part / Unit / Component
                         </span>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer"
-                        style={{ color: 'var(--text-secondary)' }}
+                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer text-text-secondary"
                         aria-label="Close"
                     >
                         <i className="fas fa-times text-[11px]" />
@@ -599,10 +557,7 @@ function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accen
 
                 <div className="px-4 py-3 flex flex-col gap-3">
                     {error && (
-                        <div
-                            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
-                        >
+                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>
@@ -610,7 +565,7 @@ function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accen
 
                     <div>
                         <label className={FIELD_LABEL_CLS} style={{ color: 'var(--text-secondary)' }}>
-                            Equipment Name <span style={{ color: '#dc2626' }}>*</span>
+                            Equipment Name <span className="text-red-600">*</span>
                         </label>
                         <input
                             className={FIELD_INPUT_CLS}
@@ -623,7 +578,7 @@ function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accen
 
                     <div>
                         <label className={FIELD_LABEL_CLS} style={{ color: 'var(--text-secondary)' }}>
-                            Category <span style={{ color: '#dc2626' }}>*</span>
+                            Category <span className="text-red-600">*</span>
                         </label>
                         <select
                             className={SELECT_CLS}
@@ -642,7 +597,7 @@ function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accen
 
                     <div>
                         <label className={FIELD_LABEL_CLS} style={{ color: 'var(--text-secondary)' }}>
-                            Plant <span style={{ color: '#dc2626' }}>*</span>
+                            Plant <span className="text-red-600">*</span>
                         </label>
                         <button
                             type="button"
@@ -747,19 +702,11 @@ function AddEquipmentModal({ isOpen, onClose, onSaved, categories, plants, accen
                 </div>
 
                 {/* Footer */}
-                <div
-                    className="sticky bottom-0 flex items-center justify-end gap-2 px-3 py-2"
-                    style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
-                >
+                <div className="sticky bottom-0 flex items-center justify-end gap-2 px-3 py-2 bg-bg-secondary border-t border-border-light">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 transition-colors hover:brightness-95"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-secondary)'
-                        }}
+                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 transition-colors hover:brightness-95 bg-bg-primary border border-border-light text-text-secondary"
                     >
                         Cancel
                     </button>
@@ -849,38 +796,29 @@ function EditEquipmentModal({ isOpen, onClose, onSaved, equipment, categories, p
 
     return (
         <div
-            className="fixed inset-0 flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)', zIndex: 120 }}
+            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] z-[120]"
             onClick={onClose}
         >
             <div
-                className="relative w-full max-w-lg rounded max-h-[90vh] overflow-y-auto"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                className="relative w-full max-w-lg rounded max-h-[90vh] overflow-y-auto bg-bg-primary border border-border-light"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div
-                    className="sticky top-0 z-10 flex items-center justify-between gap-2.5 px-3 py-2"
-                    style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-2.5 px-3 py-2 bg-bg-primary border-b border-border-light">
                     <div className="flex items-center gap-2">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-pen text-[11px]" />
                         </div>
-                        <span
-                            className="text-[9.5px] font-semibold uppercase tracking-wider"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
+                        <span className="text-[9.5px] font-semibold uppercase tracking-wider text-text-secondary">
                             Edit Item
                         </span>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer"
-                        style={{ color: 'var(--text-secondary)' }}
+                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer text-text-secondary"
                         aria-label="Close"
                     >
                         <i className="fas fa-times text-[11px]" />
@@ -889,10 +827,7 @@ function EditEquipmentModal({ isOpen, onClose, onSaved, equipment, categories, p
 
                 <div className="px-4 py-3 flex flex-col gap-3">
                     {error && (
-                        <div
-                            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
-                        >
+                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>
@@ -900,7 +835,7 @@ function EditEquipmentModal({ isOpen, onClose, onSaved, equipment, categories, p
 
                     <div>
                         <label className={labelCls} style={{ color: 'var(--text-secondary)' }}>
-                            Equipment Name <span style={{ color: '#dc2626' }}>*</span>
+                            Equipment Name <span className="text-red-600">*</span>
                         </label>
                         <input
                             className={inputCls}
@@ -913,7 +848,7 @@ function EditEquipmentModal({ isOpen, onClose, onSaved, equipment, categories, p
 
                     <div>
                         <label className={labelCls} style={{ color: 'var(--text-secondary)' }}>
-                            Category <span style={{ color: '#dc2626' }}>*</span>
+                            Category <span className="text-red-600">*</span>
                         </label>
                         <select
                             className={SELECT_CLS}
@@ -932,7 +867,7 @@ function EditEquipmentModal({ isOpen, onClose, onSaved, equipment, categories, p
 
                     <div>
                         <label className={labelCls} style={{ color: 'var(--text-secondary)' }}>
-                            Plant <span style={{ color: '#dc2626' }}>*</span>
+                            Plant <span className="text-red-600">*</span>
                         </label>
                         <button
                             type="button"
@@ -1036,19 +971,11 @@ function EditEquipmentModal({ isOpen, onClose, onSaved, equipment, categories, p
                     </div>
                 </div>
 
-                <div
-                    className="sticky bottom-0 flex items-center justify-end gap-2 px-3 py-2"
-                    style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
-                >
+                <div className="sticky bottom-0 flex items-center justify-end gap-2 px-3 py-2 bg-bg-secondary border-t border-border-light">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 transition-colors hover:brightness-95"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-secondary)'
-                        }}
+                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 transition-colors hover:brightness-95 bg-bg-primary border border-border-light text-text-secondary"
                     >
                         Cancel
                     </button>
@@ -1127,34 +1054,26 @@ function LogServiceModal({ isOpen, onClose, onSaved, equipment, serviceTypes, ac
 
     return (
         <div
-            className="fixed inset-0 flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)', zIndex: 110 }}
+            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)] z-[110]"
             onClick={onClose}
         >
             <div
-                className="relative w-full max-w-md rounded max-h-[90vh] overflow-y-auto"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                className="relative w-full max-w-md rounded max-h-[90vh] overflow-y-auto bg-bg-primary border border-border-light"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div
-                    className="sticky top-0 z-10 flex items-center justify-between gap-2.5 px-3 py-2"
-                    style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-2.5 px-3 py-2 bg-bg-primary border-b border-border-light">
                     <div className="flex items-center gap-2 min-w-0">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-wrench text-[11px]" />
                         </div>
                         <div className="min-w-0">
-                            <div
-                                className="text-[9.5px] font-semibold uppercase tracking-wider"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <div className="text-[9.5px] font-semibold uppercase tracking-wider text-text-secondary">
                                 Log Service
                             </div>
-                            <div className="text-[10.5px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                            <div className="text-[10.5px] truncate text-text-tertiary">
                                 {equipment.name} · {equipment.plant_code}
                             </div>
                         </div>
@@ -1162,8 +1081,7 @@ function LogServiceModal({ isOpen, onClose, onSaved, equipment, serviceTypes, ac
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer shrink-0"
-                        style={{ color: 'var(--text-secondary)' }}
+                        className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer shrink-0 text-text-secondary"
                         aria-label="Close"
                     >
                         <i className="fas fa-times text-[11px]" />
@@ -1172,10 +1090,7 @@ function LogServiceModal({ isOpen, onClose, onSaved, equipment, serviceTypes, ac
 
                 <div className="px-4 py-3 flex flex-col gap-3">
                     {error && (
-                        <div
-                            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
-                        >
+                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>
@@ -1183,7 +1098,7 @@ function LogServiceModal({ isOpen, onClose, onSaved, equipment, serviceTypes, ac
 
                     <div>
                         <label className={labelCls} style={{ color: 'var(--text-secondary)' }}>
-                            Service Date <span style={{ color: '#dc2626' }}>*</span>
+                            Service Date <span className="text-red-600">*</span>
                         </label>
                         <input
                             className={inputCls}
@@ -1244,19 +1159,11 @@ function LogServiceModal({ isOpen, onClose, onSaved, equipment, serviceTypes, ac
                     </div>
                 </div>
 
-                <div
-                    className="sticky bottom-0 flex items-center justify-end gap-2 px-3 py-2"
-                    style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
-                >
+                <div className="sticky bottom-0 flex items-center justify-end gap-2 px-3 py-2 bg-bg-secondary border-t border-border-light">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 transition-colors hover:brightness-95"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-secondary)'
-                        }}
+                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 transition-colors hover:brightness-95 bg-bg-primary border border-border-light text-text-secondary"
                     >
                         Cancel
                     </button>
@@ -1311,43 +1218,29 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
     }
 
     return (
-        <div
-            className="fixed inset-0 flex justify-end h-screen"
-            style={{ background: 'rgba(15, 23, 42, 0.65)', zIndex: 110 }}
-            onClick={onClose}
-        >
+        <div className="fixed inset-0 flex justify-end h-screen bg-[rgba(15,_23,_42,_0.65)] z-[110]" onClick={onClose}>
             <div
-                className="relative w-full max-w-lg h-full overflow-y-auto flex flex-col"
-                style={{ background: 'var(--bg-primary)', borderLeft: '1px solid var(--border-light)' }}
+                className="relative w-full max-w-lg h-full overflow-y-auto flex flex-col bg-bg-primary border-l border-border-light"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div
-                    className="sticky top-0 z-10 px-3 py-2 shrink-0"
-                    style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="sticky top-0 z-10 px-3 py-2 shrink-0 bg-bg-primary border-b border-border-light">
                     <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                             <div
-                                className="flex h-7 w-7 items-center justify-center rounded shrink-0"
-                                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                                className="flex h-7 w-7 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                                style={{ color: accentColor }}
                             >
                                 <i className={`fas ${equipment.category_icon || 'fa-cog'} text-[12px]`} />
                             </div>
                             <div className="min-w-0">
-                                <div
-                                    className="text-[9.5px] font-semibold uppercase tracking-wider"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <div className="text-[9.5px] font-semibold uppercase tracking-wider text-text-secondary">
                                     Equipment
                                 </div>
-                                <div
-                                    className="text-[12.5px] font-semibold truncate"
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
+                                <div className="text-[12.5px] font-semibold truncate text-text-primary">
                                     {equipment.name}
                                 </div>
-                                <div className="text-[10.5px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                                <div className="text-[10.5px] truncate text-text-tertiary">
                                     {equipment.category_name} · Plant {equipment.plant_code}
                                 </div>
                             </div>
@@ -1355,8 +1248,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer shrink-0"
-                            style={{ color: 'var(--text-secondary)' }}
+                            className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer shrink-0 text-text-secondary"
                             aria-label="Close"
                         >
                             <i className="fas fa-times text-[11px]" />
@@ -1382,12 +1274,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                                 e.stopPropagation()
                                 onEdit(equipment)
                             }}
-                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 border-none cursor-pointer transition-colors hover:brightness-95"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-secondary)'
-                            }}
+                            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 border-none cursor-pointer transition-colors hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary"
                         >
                             <i className="fas fa-pen text-[10px]" />
                             Edit
@@ -1399,8 +1286,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                                         type="button"
                                         disabled={deleting}
                                         onClick={handleDelete}
-                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-2.5 py-1 border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{ background: '#dc2626' }}
+                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-2.5 py-1 border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-red-600"
                                     >
                                         <i
                                             className={`fas ${deleting ? 'fa-spinner fa-spin' : 'fa-check'} text-[10px]`}
@@ -1410,12 +1296,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                                     <button
                                         type="button"
                                         onClick={() => setConfirmDelete(false)}
-                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 border-none cursor-pointer"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-secondary)'
-                                        }}
+                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary"
                                     >
                                         Cancel
                                     </button>
@@ -1424,8 +1305,7 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                                 <button
                                     type="button"
                                     onClick={() => setConfirmDelete(true)}
-                                    className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 cursor-pointer"
-                                    style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
+                                    className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 cursor-pointer bg-red-100 border border-red-300 text-red-700"
                                 >
                                     <i className="fas fa-trash-alt text-[10px]" />
                                     Delete
@@ -1460,15 +1340,11 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                             .filter((row) => row.value)
                             .map(({ label, mono, value }) => (
                                 <div key={label}>
-                                    <div
-                                        className="text-[9.5px] font-semibold uppercase tracking-wider mb-0.5"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    >
+                                    <div className="text-[9.5px] font-semibold uppercase tracking-wider mb-0.5 text-text-tertiary">
                                         {label}
                                     </div>
                                     <div
-                                        className={`text-[12px] font-semibold ${mono ? 'font-mono tabular-nums' : ''}`}
-                                        style={{ color: 'var(--text-primary)' }}
+                                        className={`text-[12px] font-semibold ${mono ? 'font-mono tabular-nums' : ''} text-text-primary`}
                                     >
                                         {value}
                                     </div>
@@ -1477,14 +1353,8 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                     </div>
 
                     {/* Service Progress */}
-                    <div
-                        className="rounded p-3"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <div
-                            className="text-[9.5px] font-semibold uppercase tracking-wider mb-2"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
+                    <div className="rounded p-3 bg-bg-primary border border-border-light">
+                        <div className="text-[9.5px] font-semibold uppercase tracking-wider mb-2 text-text-secondary">
                             Service Progress
                         </div>
                         <div
@@ -1496,16 +1366,13 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                         >
                             {info.label}
                         </div>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+                        <div className="h-2 rounded-full overflow-hidden bg-bg-tertiary">
                             <div
                                 className="h-full rounded-full transition-all duration-500"
                                 style={{ background: cfg.barColor, width: `${info.pct * 100}%` }}
                             />
                         </div>
-                        <div
-                            className="flex justify-between mt-1.5 text-[10.5px] font-mono tabular-nums"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <div className="flex justify-between mt-1.5 text-[10.5px] font-mono tabular-nums text-text-tertiary">
                             <span>Last: {formatDate(equipment.last_service_date)}</span>
                             <span>Next: {formatDate(equipment.next_service_date)}</span>
                         </div>
@@ -1513,33 +1380,20 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
 
                     {/* Service History */}
                     <div>
-                        <div
-                            className="text-[9.5px] font-semibold uppercase tracking-wider mb-1.5"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
+                        <div className="text-[9.5px] font-semibold uppercase tracking-wider mb-1.5 text-text-secondary">
                             Service History
                         </div>
                         {loadingHistory ? (
                             <div className="flex flex-col gap-1.5">
                                 {Array.from({ length: 3 }, (_, i) => (
-                                    <div
-                                        key={i}
-                                        className="rounded p-2.5"
-                                        style={{
-                                            background: 'var(--bg-primary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
-                                    >
+                                    <div key={i} className="rounded p-2.5 bg-bg-primary border border-border-light">
                                         <SkeletonBar className="h-3 w-32 mb-1" />
                                         <SkeletonBar className="h-2.5 w-48" />
                                     </div>
                                 ))}
                             </div>
                         ) : history.length === 0 ? (
-                            <p
-                                className="text-[11px] italic py-3 text-center m-0"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            >
+                            <p className="text-[11px] italic py-3 text-center m-0 text-text-tertiary">
                                 No service history recorded
                             </p>
                         ) : (
@@ -1547,40 +1401,24 @@ function EquipmentDetailPanel({ equipment, onClose, onLogService, onEdit, onDele
                                 {history.map((entry) => (
                                     <div
                                         key={entry.id}
-                                        className="rounded p-2.5"
-                                        style={{
-                                            background: 'var(--bg-primary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
+                                        className="rounded p-2.5 bg-bg-primary border border-border-light"
                                     >
                                         <div className="flex items-center justify-between mb-1">
-                                            <span
-                                                className="text-[12px] font-semibold font-mono tabular-nums"
-                                                style={{ color: 'var(--text-primary)' }}
-                                            >
+                                            <span className="text-[12px] font-semibold font-mono tabular-nums text-text-primary">
                                                 {formatDate(entry.service_date)}
                                             </span>
                                             {entry.maintenance_log_service_types?.name && (
-                                                <span
-                                                    className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                                                    style={{
-                                                        background: 'var(--bg-tertiary)',
-                                                        color: 'var(--text-secondary)'
-                                                    }}
-                                                >
+                                                <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-bg-tertiary text-text-secondary">
                                                     {entry.maintenance_log_service_types.name}
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                                        <div className="text-[10.5px] text-text-tertiary">
                                             {entry.performed_by_name}
                                             {entry.hours_spent ? ` · ${entry.hours_spent}h` : ''}
                                         </div>
                                         {entry.notes && (
-                                            <p
-                                                className="text-[11px] mt-1.5 leading-snug m-0"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
+                                            <p className="text-[11px] mt-1.5 leading-snug m-0 text-text-secondary">
                                                 {entry.notes}
                                             </p>
                                         )}
@@ -1780,11 +1618,9 @@ export default function MaintenanceLogView({
     const colWidths = ['', '80px', '120px', '25%', '110px', '50px']
 
     const renderEmptyState = () => (
-        <div className="flex flex-col items-center justify-center py-12 px-6" style={{ color: 'var(--text-tertiary)' }}>
+        <div className="flex flex-col items-center justify-center py-12 px-6 text-text-tertiary">
             <i className="fas fa-clipboard-list text-2xl mb-2" />
-            <p className="text-[13px] font-semibold m-0" style={{ color: 'var(--text-primary)' }}>
-                No equipment found
-            </p>
+            <p className="text-[13px] font-semibold m-0 text-text-primary">No equipment found</p>
             <p className="text-[11px] mt-1 m-0">
                 {equipment.length
                     ? 'Try adjusting your filters'
@@ -1803,35 +1639,19 @@ export default function MaintenanceLogView({
                         {/* Content */}
                         <div className="flex-1 min-w-0 w-full overflow-hidden">
                             {sorted.length === 0 ? (
-                                <div
-                                    className="rounded overflow-hidden"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
+                                <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
                                     {renderEmptyState()}
                                 </div>
                             ) : (
-                                <div
-                                    className="rounded overflow-x-auto"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
+                                <div className="rounded overflow-x-auto bg-bg-primary border border-border-light">
                                     <table className="w-full border-collapse" style={{ minWidth: '700px' }}>
                                         <thead>
-                                            <tr style={{ background: 'var(--bg-secondary)' }}>
+                                            <tr className="bg-bg-secondary">
                                                 {headers.map((h, i) => (
                                                     <th
                                                         key={h || i}
-                                                        className="text-left text-[9.5px] font-semibold uppercase tracking-wider py-2 px-3 cursor-pointer select-none transition-colors hover:bg-bg-tertiary"
-                                                        style={{
-                                                            borderBottom: '1px solid var(--border-light)',
-                                                            color: 'var(--text-secondary)',
-                                                            width: colWidths[i] || 'auto'
-                                                        }}
+                                                        className="text-left text-[9.5px] font-semibold uppercase tracking-wider py-2 px-3 cursor-pointer select-none transition-colors hover:bg-bg-tertiary border-b border-border-light text-text-secondary"
+                                                        style={{ width: colWidths[i] || 'auto' }}
                                                         onClick={() => h && handleHeaderClick(h)}
                                                     >
                                                         <span className="inline-flex items-center gap-1">
@@ -1869,43 +1689,28 @@ export default function MaintenanceLogView({
                                                     <td className="py-2 px-3">
                                                         <div className="flex items-center gap-2">
                                                             <div
-                                                                className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                                                                style={{
-                                                                    background: 'var(--bg-tertiary)',
-                                                                    color: accentColor
-                                                                }}
+                                                                className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                                                                style={{ color: accentColor }}
                                                             >
                                                                 <i
                                                                     className={`fas ${item.category_icon || 'fa-cog'} text-[11px]`}
                                                                 />
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <div
-                                                                    className="text-[12px] font-semibold truncate"
-                                                                    style={{ color: 'var(--text-primary)' }}
-                                                                >
+                                                                <div className="text-[12px] font-semibold truncate text-text-primary">
                                                                     {item.name}
                                                                 </div>
-                                                                <div
-                                                                    className="text-[10.5px] truncate"
-                                                                    style={{ color: 'var(--text-secondary)' }}
-                                                                >
+                                                                <div className="text-[10.5px] truncate text-text-secondary">
                                                                     {item.category_name}
                                                                     {item.manufacturer ? ` · ${item.manufacturer}` : ''}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td
-                                                        className="py-2 px-3 text-[12px] font-mono tabular-nums"
-                                                        style={{ color: 'var(--text-primary)' }}
-                                                    >
+                                                    <td className="py-2 px-3 text-[12px] font-mono tabular-nums text-text-primary">
                                                         {item.plant_code}
                                                     </td>
-                                                    <td
-                                                        className="py-2 px-3 text-[12px] font-mono tabular-nums"
-                                                        style={{ color: 'var(--text-secondary)' }}
-                                                    >
+                                                    <td className="py-2 px-3 text-[12px] font-mono tabular-nums text-text-secondary">
                                                         {formatDate(item.last_service_date)}
                                                     </td>
                                                     <td className="py-2 px-3">
@@ -1952,13 +1757,7 @@ export default function MaintenanceLogView({
                         {/* Right rail */}
                         {!isMobile && (
                             <div className="w-[300px] flex-shrink-0 flex flex-col gap-3">
-                                <div
-                                    className="rounded p-3"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
+                                <div className="rounded p-3 bg-bg-primary border border-border-light">
                                     <MiniCalendar
                                         equipment={equipment}
                                         calendarDate={calendarDate}
@@ -1967,42 +1766,21 @@ export default function MaintenanceLogView({
                                         accentColor={accentColor}
                                     />
                                 </div>
-                                <div
-                                    className="rounded p-3"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
-                                    <h4
-                                        className="text-[9.5px] font-semibold uppercase tracking-wider mb-2 m-0"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                <div className="rounded p-3 bg-bg-primary border border-border-light">
+                                    <h4 className="text-[9.5px] font-semibold uppercase tracking-wider mb-2 m-0 text-text-secondary">
                                         Upcoming & Overdue
                                     </h4>
                                     <UpcomingServices equipment={filtered} isDark={isDark} />
                                     {!filtered.some(
                                         (e) => e.service_status === 'overdue' || e.service_status === 'due_soon'
                                     ) && (
-                                        <p
-                                            className="text-[10.5px] italic m-0"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
+                                        <p className="text-[10.5px] italic m-0 text-text-tertiary">
                                             All equipment up to date
                                         </p>
                                     )}
                                 </div>
-                                <div
-                                    className="rounded p-3"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px solid var(--border-light)'
-                                    }}
-                                >
-                                    <h4
-                                        className="text-[9.5px] font-semibold uppercase tracking-wider mb-2 m-0"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                <div className="rounded p-3 bg-bg-primary border border-border-light">
+                                    <h4 className="text-[9.5px] font-semibold uppercase tracking-wider mb-2 m-0 text-text-secondary">
                                         Recent Activity
                                     </h4>
                                     <RecentActivity entries={recentEntries} isDark={isDark} />
@@ -2026,15 +1804,11 @@ export default function MaintenanceLogView({
 
     return (
         <>
-            <div
-                className="flex-1 overflow-hidden flex flex-col lg:flex-row"
-                style={{ background: 'var(--bg-secondary)' }}
-            >
+            <div className="flex-1 overflow-hidden flex flex-col lg:flex-row bg-bg-secondary">
                 {showFormsRail && (
                     <aside
-                        className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 overflow-y-auto"
+                        className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 overflow-y-auto bg-bg-primary"
                         style={{
-                            background: 'var(--bg-primary)',
                             borderBottom: isMobile ? '1px solid var(--border-light)' : 'none',
                             borderRight: isMobile ? 'none' : '1px solid var(--border-light)',
                             maxHeight: isMobile ? '50vh' : 'none'

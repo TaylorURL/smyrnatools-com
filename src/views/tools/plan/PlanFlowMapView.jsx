@@ -597,47 +597,30 @@ function PlanFlowMapView({
 
             <div className="relative flex-1 flex flex-col">
                 {/* Toolbar overlay */}
-                <div
-                    className="shrink-0 flex items-center flex-wrap gap-2 px-3 sm:px-4 py-2"
-                    style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-                >
-                    <span
-                        className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1"
-                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <i className="fas fa-building text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
-                        <span className="font-mono tabular-nums font-bold" style={{ color: 'var(--text-primary)' }}>
+                <div className="shrink-0 flex items-center flex-wrap gap-2 px-3 sm:px-4 py-2 bg-bg-primary border-b border-border-light">
+                    <span className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1 bg-bg-secondary border border-border-light">
+                        <i className="fas fa-building text-[10px] text-text-tertiary" />
+                        <span className="font-mono tabular-nums font-bold text-text-primary">
                             {allPlantStats.length}
                         </span>
-                        <span style={{ color: 'var(--text-secondary)' }}>plants</span>
+                        <span className="text-text-secondary">plants</span>
                     </span>
-                    <span
-                        className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1"
-                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-                    >
-                        <i className="fas fa-route text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
-                        <span className="font-mono tabular-nums font-bold" style={{ color: 'var(--text-primary)' }}>
+                    <span className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1 bg-bg-secondary border border-border-light">
+                        <i className="fas fa-route text-[10px] text-text-tertiary" />
+                        <span className="font-mono tabular-nums font-bold text-text-primary">
                             {Object.keys(polylinesByEdgeRef.current).length ||
                                 assignments.filter((a) => a.fromPlant && a.toPlant && a.fromPlant !== a.toPlant).length}
                         </span>
-                        <span style={{ color: 'var(--text-secondary)' }}>help routes</span>
+                        <span className="text-text-secondary">help routes</span>
                     </span>
                     {pickingDestination && (
-                        <span
-                            className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1"
-                            style={{
-                                background: 'rgba(245,158,11,0.15)',
-                                border: '1px solid rgba(245,158,11,0.4)',
-                                color: '#b45309'
-                            }}
-                        >
+                        <span className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1 bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.4)] text-[#b45309]">
                             <i className="fas fa-crosshairs text-[10px]" />
                             Click a plant to set the destination
                             <button
                                 type="button"
                                 onClick={() => setPickingDestination(false)}
-                                className="ml-1 border-none bg-transparent cursor-pointer p-0"
-                                style={{ color: '#b45309', fontWeight: 700 }}
+                                className="ml-1 border-none bg-transparent cursor-pointer p-0 text-[#b45309] font-bold"
                                 aria-label="Cancel picking"
                             >
                                 ×
@@ -658,8 +641,8 @@ function PlanFlowMapView({
                             <button
                                 type="button"
                                 onClick={() => setSelectedCode(null)}
-                                className="ml-1 border-none bg-transparent cursor-pointer p-0"
-                                style={{ color: accentColor, fontWeight: 700 }}
+                                className="ml-1 border-none bg-transparent cursor-pointer p-0 font-bold"
+                                style={{ color: accentColor }}
                                 aria-label="Clear selection"
                             >
                                 ×
@@ -667,14 +650,7 @@ function PlanFlowMapView({
                         </span>
                     )}
                     {(pendingPlantGeocodes > 0 || pendingRoutes > 0) && (
-                        <span
-                            className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1"
-                            style={{
-                                background: 'rgba(37,99,235,0.12)',
-                                border: '1px solid rgba(37,99,235,0.35)',
-                                color: '#2563eb'
-                            }}
-                        >
+                        <span className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1 bg-[rgba(37,99,235,0.12)] border border-[rgba(37,99,235,0.35)] text-blue-600">
                             <i className="fas fa-circle-notch fa-spin text-[10px]" />
                             {pendingPlantGeocodes > 0 ? `Locating ${pendingPlantGeocodes}` : `Routing ${pendingRoutes}`}
                             …
@@ -684,7 +660,7 @@ function PlanFlowMapView({
                 </div>
 
                 <div className="flex-1 min-h-0 relative">
-                    <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
+                    <div className="h-full w-full" ref={containerRef} />
                     <div className="absolute bottom-3 right-3 z-[400] pointer-events-none">
                         <PlanFlowTimeScrubber
                             accentColor={accentColor}
@@ -696,10 +672,7 @@ function PlanFlowMapView({
                 </div>
             </div>
 
-            <aside
-                className="w-[360px] shrink-0 overflow-y-auto flex flex-col"
-                style={{ background: 'var(--bg-primary)', borderLeft: '1px solid var(--border-light)' }}
-            >
+            <aside className="w-[360px] shrink-0 overflow-y-auto flex flex-col bg-bg-primary border-l border-border-light">
                 {!selected && panelMode === 'overview' && <PlanFlowEmptyPanel accentColor={accentColor} />}
                 {selected && panelMode === 'overview' && (
                     <PlanFlowPlantOverview

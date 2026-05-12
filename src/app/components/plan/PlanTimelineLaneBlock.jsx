@@ -76,10 +76,9 @@ export function PlanTimelineLaneBlock({ homeOffset, isSent, lane, laneIdx }) {
 function ConnectorLine({ blockColor, geom }) {
     return (
         <div
-            className="absolute pointer-events-none"
+            className="absolute pointer-events-none h-0.5"
             style={{
                 background: `${blockColor}30`,
-                height: 2,
                 left: `${geom.clockInPct}%`,
                 top: geom.top + geom.blockHeight / 2 - 1,
                 width: `${(geom.returnEndPct ?? geom.siteStart + geom.siteWidth) - geom.clockInPct}%`
@@ -115,11 +114,10 @@ function PreTripBlock({ blockColor, geom }) {
 function TravelBlock({ blockColor, geom, lane }) {
     return (
         <div
-            className="absolute flex items-center justify-center overflow-visible"
+            className="absolute flex items-center justify-center overflow-visible rounded-[3px]"
             style={{
                 background: `${blockColor}20`,
                 border: `1px dashed ${blockColor}50`,
-                borderRadius: 3,
                 height: geom.blockHeight - 4,
                 left: `${geom.preTripEndPct}%`,
                 minWidth: 8,

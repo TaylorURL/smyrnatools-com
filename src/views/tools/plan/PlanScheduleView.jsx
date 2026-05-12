@@ -713,10 +713,10 @@ function PlanScheduleView({
                                 style={{ color: plantsClosed ? '#dc2626' : '#d97706', fontSize: 14 }}
                             />
                             <div className="flex-1 min-w-0">
-                                <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                                <div className="text-[13px] font-bold text-text-primary">
                                     {plantsClosed ? 'Sunday — plants closed' : 'Saturday — half crew'}
                                 </div>
-                                <div className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                                <div className="text-[12px] text-text-secondary">
                                     {plantsClosed
                                         ? 'All plants are assumed closed today. Truck-coverage math treats every plant pool as 0.'
                                         : 'Saturday crews run at half staffing. Every plant’s active mixer count is halved (rounded down) for the coverage math.'}
@@ -729,16 +729,10 @@ function PlanScheduleView({
                     {!effectiveMaximized && (
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                             <div className="flex-1 min-w-0">
-                                <div
-                                    className="text-[18px] sm:text-[22px] font-bold leading-tight"
-                                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                                >
+                                <div className="text-[18px] sm:text-[22px] font-bold leading-tight text-text-primary font-heading">
                                     Schedule
                                 </div>
-                                <div
-                                    className="text-[11.5px] sm:text-[12px]"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <div className="text-[11.5px] sm:text-[12px] text-text-secondary">
                                     {isMobile
                                         ? `${filtered.length} of ${allOrders.length} orders`
                                         : "Pulled from the Daily Order Listing import. Filter, sort, and scan every plant's orders on one page."}
@@ -746,13 +740,7 @@ function PlanScheduleView({
                             </div>
                             <div className="flex items-center gap-2">
                                 {!isMobile && (
-                                    <div
-                                        className="flex items-center rounded-lg p-0.5"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
-                                    >
+                                    <div className="flex items-center rounded-lg p-0.5 bg-bg-secondary border border-border-light">
                                         {VIEW_MODES.map((m) => (
                                             <button
                                                 key={m}
@@ -790,14 +778,8 @@ function PlanScheduleView({
                                         Filters
                                         {activeFilterCount > 0 && (
                                             <span
-                                                className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.3)',
-                                                    color: '#fff',
-                                                    height: 18,
-                                                    minWidth: 18,
-                                                    padding: '0 5px'
-                                                }}
+                                                className="inline-flex items-center justify-center rounded-full text-[10px] font-bold bg-[rgba(255,255,255,0.3)] text-white h-[18px]"
+                                                style={{ minWidth: 18, padding: '0 5px' }}
                                             >
                                                 {activeFilterCount}
                                             </span>
@@ -808,12 +790,7 @@ function PlanScheduleView({
                                     <button
                                         type="button"
                                         onClick={() => setMaximized(true)}
-                                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
-                                        style={{
-                                            background: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-secondary)'
-                                        }}
+                                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 bg-bg-secondary border border-border-light text-text-secondary"
                                         title="Maximize the schedule — hide the KPI strip and side rail so the table fills the screen"
                                     >
                                         <i className="fas fa-expand text-[10px]" />
@@ -824,8 +801,8 @@ function PlanScheduleView({
                                     <button
                                         type="button"
                                         onClick={onSwitchToPlanner}
-                                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
-                                        style={{ background: accentColor, color: '#fff' }}
+                                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5 text-white"
+                                        style={{ background: accentColor }}
                                     >
                                         <i className="fas fa-project-diagram text-[10px]" /> Planner
                                     </button>
@@ -835,24 +812,12 @@ function PlanScheduleView({
                     )}
 
                     {!hasAnyOrders ? (
-                        <div
-                            className="rounded-xl p-10 text-center"
-                            style={{ background: 'var(--bg-primary)', border: '1px dashed var(--border-medium)' }}
-                        >
-                            <i
-                                className="fas fa-calendar-xmark text-3xl mb-3 opacity-60"
-                                style={{ color: 'var(--text-tertiary)' }}
-                            />
-                            <div
-                                className="text-[15px] font-bold mb-1"
-                                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                            >
+                        <div className="rounded-xl p-10 text-center bg-bg-primary border border-border-medium">
+                            <i className="fas fa-calendar-xmark text-3xl mb-3 opacity-60 text-text-tertiary" />
+                            <div className="text-[15px] font-bold mb-1 text-text-primary font-heading">
                                 No schedule yet
                             </div>
-                            <div
-                                className="text-[12.5px] max-w-[480px] mx-auto"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
+                            <div className="text-[12.5px] max-w-[480px] mx-auto text-text-secondary">
                                 Import the Daily Order Listing HTML to populate every plant&apos;s orders. Customer,
                                 start time, product, yardage, and truck count will all land here.
                             </div>
@@ -925,14 +890,7 @@ function PlanScheduleView({
                             )}
 
                             {filtered.length === 0 ? (
-                                <div
-                                    className="rounded-xl p-10 text-center italic"
-                                    style={{
-                                        background: 'var(--bg-primary)',
-                                        border: '1px dashed var(--border-medium)',
-                                        color: 'var(--text-tertiary)'
-                                    }}
-                                >
+                                <div className="rounded-xl p-10 text-center italic bg-bg-primary border border-border-medium text-text-tertiary">
                                     No orders match the current filters.
                                 </div>
                             ) : viewMode === 'table' && !isMobile ? (
@@ -983,7 +941,7 @@ function PlanScheduleView({
                                                         name={plantNameByCode?.[code]}
                                                     />
                                                 </button>
-                                                <span style={{ color: 'var(--text-tertiary)' }}>
+                                                <span className="text-text-tertiary">
                                                     {orders.length} order{orders.length === 1 ? '' : 's'} ·{' '}
                                                     {sumField(orders, 'yardage').toLocaleString()} yd
                                                 </span>

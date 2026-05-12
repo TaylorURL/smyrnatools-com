@@ -24,26 +24,15 @@ const TABLE_HEADERS = [
  */
 export function PlanDemandPerPlantTable({ peakByPlant, plantColorByCode, rows }) {
     return (
-        <div
-            className="rounded-xl overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="px-4 py-2.5 flex items-center justify-between"
-                style={{ borderBottom: '1px solid var(--border-light)' }}
-            >
-                <div
-                    className="text-[13px] font-bold"
-                    style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                >
-                    Breakdown by plant
-                </div>
-                <div className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+        <div className="rounded-xl overflow-hidden bg-bg-primary border border-border-light">
+            <div className="px-4 py-2.5 flex items-center justify-between border-b border-border-light">
+                <div className="text-[13px] font-bold text-text-primary font-heading">Breakdown by plant</div>
+                <div className="text-[11px] text-text-secondary">
                     Yards · trucks (incl. help) · how well supply meets demand
                 </div>
             </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
+                <table className="w-full text-[12.5px] border-collapse">
                     <thead>
                         <tr>
                             {TABLE_HEADERS.map((header) => (
@@ -51,12 +40,7 @@ export function PlanDemandPerPlantTable({ peakByPlant, plantColorByCode, rows })
                                     key={header.label}
                                     className={`px-3 py-2 font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap ${
                                         header.align === 'right' ? 'text-right' : 'text-left'
-                                    }`}
-                                    style={{
-                                        background: 'var(--bg-tertiary)',
-                                        borderBottom: '1px solid var(--border-light)',
-                                        color: 'var(--text-secondary)'
-                                    }}
+                                    } bg-bg-tertiary border-b border-border-light text-text-secondary`}
                                 >
                                     {header.label}
                                 </th>
@@ -91,45 +75,31 @@ function PerPlantRow({ color, peak, plant }) {
     const helpLine = helpParts.length ? `${baseTrucks} base · ${helpParts.join(' · ')}` : `${baseTrucks} base`
 
     return (
-        <tr style={{ borderTop: '1px solid var(--border-light)' }}>
+        <tr className="border-t border-border-light">
             <td className="px-3 py-2">
                 <div className="flex items-center gap-2">
-                    <span className="inline-block rounded" style={{ background: color, height: 10, width: 10 }} />
+                    <span className="inline-block rounded h-2.5 w-2.5" style={{ background: color }} />
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <span
-                                className="font-bold"
-                                style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}
-                            >
-                                {plant.code}
-                            </span>
-                            <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                            <span className="font-bold text-text-primary font-heading">{plant.code}</span>
+                            <span className="text-[11px] text-text-tertiary">
                                 {plant.name !== plant.code ? plant.name : ''}
                             </span>
                         </div>
-                        <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[10.5px] text-text-tertiary">
                             {plant.orders} order{plant.orders === 1 ? '' : 's'}
                         </span>
                     </div>
                 </div>
             </td>
-            <td
-                className="px-3 py-2 font-mono font-semibold whitespace-nowrap text-right"
-                style={{ color: 'var(--text-primary)' }}
-            >
+            <td className="px-3 py-2 font-mono font-semibold whitespace-nowrap text-right text-text-primary">
                 {Math.round(plant.totalYardage).toLocaleString()} yd
             </td>
             <td className="px-3 py-2 text-right whitespace-nowrap">
                 <div className="flex flex-col items-end">
+                    <span className="font-mono font-bold text-[14px] tabular-nums text-text-primary">{supply}</span>
                     <span
-                        className="font-mono font-bold text-[14px] tabular-nums"
-                        style={{ color: 'var(--text-primary)' }}
-                    >
-                        {supply}
-                    </span>
-                    <span
-                        className="text-[10.5px] font-mono"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className="text-[10.5px] font-mono text-text-tertiary"
                         title="Effective truck pool — base ± inter-plant help today"
                     >
                         {helpLine}
@@ -145,8 +115,7 @@ function PerPlantRow({ color, peak, plant }) {
                         {peak}
                     </span>
                     <span
-                        className="text-[10.5px] font-mono"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className="text-[10.5px] font-mono text-text-tertiary"
                         title="Peak concurrent trucks the schedule needs at any hour"
                     >
                         concurrent
@@ -156,8 +125,7 @@ function PerPlantRow({ color, peak, plant }) {
             <td className="px-3 py-2">
                 <div className="flex items-center gap-2.5 min-w-[180px]">
                     <div
-                        className="rounded h-2 flex-1 overflow-hidden relative"
-                        style={{ background: 'var(--bg-tertiary)' }}
+                        className="rounded h-2 flex-1 overflow-hidden relative bg-bg-tertiary"
                         title={coveragePct == null ? 'No demand scheduled' : `Supply / demand = ${coveragePct}%`}
                     >
                         {coveragePct != null && (
@@ -171,13 +139,8 @@ function PerPlantRow({ color, peak, plant }) {
                                 />
                                 {/* 100% marker — visual reference for "supply equals demand". */}
                                 <div
-                                    className="absolute top-0 bottom-0"
-                                    style={{
-                                        background: 'var(--text-tertiary)',
-                                        left: `${(100 / COVERAGE_BAR_BENCHMARK_PCT) * 100}%`,
-                                        opacity: 0.5,
-                                        width: 1
-                                    }}
+                                    className="absolute top-0 bottom-0 bg-[var(--text-tertiary)] opacity-50 w-px"
+                                    style={{ left: `${(100 / COVERAGE_BAR_BENCHMARK_PCT) * 100}%` }}
                                 />
                             </>
                         )}
@@ -187,11 +150,7 @@ function PerPlantRow({ color, peak, plant }) {
                         style={{ background: `${verdict.color}1f`, color: verdict.color }}
                     >
                         {verdict.label}
-                        {coveragePct != null && (
-                            <span className="font-mono" style={{ opacity: 0.85 }}>
-                                · {coveragePct}%
-                            </span>
-                        )}
+                        {coveragePct != null && <span className="font-mono opacity-85">· {coveragePct}%</span>}
                     </span>
                 </div>
             </td>

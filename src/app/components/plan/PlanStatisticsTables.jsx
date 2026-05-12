@@ -14,17 +14,10 @@ import { MAX_YPH, plantBadgeColor, TARGET_YPH, timeToMinutes } from '../../../ut
 export function ComparisonRow({ current, label, previous }) {
     const pct = deltaPct(current.value, previous?.value)
     return (
-        <div
-            className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-3 py-2 items-center text-[12.5px]"
-            style={{ borderTop: '1px solid var(--border-light)' }}
-        >
-            <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-            <span className="font-semibold font-mono tabular-nums" style={{ color: 'var(--text-primary)' }}>
-                {current.formatted}
-            </span>
-            <span className="font-mono tabular-nums" style={{ color: 'var(--text-tertiary)' }}>
-                {previous ? previous.formatted : '—'}
-            </span>
+        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-3 py-2 items-center text-[12.5px] border-t border-border-light">
+            <span className="text-text-secondary">{label}</span>
+            <span className="font-semibold font-mono tabular-nums text-text-primary">{current.formatted}</span>
+            <span className="font-mono tabular-nums text-text-tertiary">{previous ? previous.formatted : '—'}</span>
             <span
                 className="font-semibold font-mono tabular-nums text-right"
                 style={{ color: deltaColor(pct), minWidth: 60 }}
@@ -38,46 +31,26 @@ export function ComparisonRow({ current, label, previous }) {
 /** Top-N ranked list with bar gauges — reused for customers & products. */
 export function RankedList({ accent, emptyLabel, items, labelKey, secondaryFmt, valueLabel = 'yd³' }) {
     if (items.length === 0) {
-        return (
-            <div className="text-[12px] py-4 text-center" style={{ color: 'var(--text-tertiary)' }}>
-                {emptyLabel}
-            </div>
-        )
+        return <div className="text-[12px] py-4 text-center text-text-tertiary">{emptyLabel}</div>
     }
     const max = items[0].yardage
     return (
         <div className="flex flex-col gap-1.5">
             {items.map((item, idx) => (
                 <div key={item[labelKey] || idx} className="flex items-center gap-2 text-[12px]">
-                    <span
-                        className="font-mono tabular-nums w-5 text-right shrink-0"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
-                        {idx + 1}
-                    </span>
-                    <span className="flex-1 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>
-                        {item[labelKey]}
-                    </span>
-                    <div
-                        className="h-4 rounded-sm overflow-hidden relative shrink-0"
-                        style={{ background: 'var(--bg-tertiary)', width: 80 }}
-                    >
+                    <span className="font-mono tabular-nums w-5 text-right shrink-0 text-text-tertiary">{idx + 1}</span>
+                    <span className="flex-1 min-w-0 truncate text-text-primary">{item[labelKey]}</span>
+                    <div className="h-4 rounded-sm overflow-hidden relative shrink-0 bg-bg-tertiary w-20">
                         <div
                             className="h-full"
                             style={{ background: accent, width: `${max > 0 ? (item.yardage / max) * 100 : 0}%` }}
                         />
                     </div>
-                    <span
-                        className="font-mono tabular-nums font-semibold w-20 text-right shrink-0"
-                        style={{ color: 'var(--text-primary)' }}
-                    >
+                    <span className="font-mono tabular-nums font-semibold w-20 text-right shrink-0 text-text-primary">
                         {fmtInt(item.yardage)} {valueLabel}
                     </span>
                     {secondaryFmt && (
-                        <span
-                            className="font-mono tabular-nums w-16 text-right shrink-0"
-                            style={{ color: 'var(--text-tertiary)' }}
-                        >
+                        <span className="font-mono tabular-nums w-16 text-right shrink-0 text-text-tertiary">
                             {secondaryFmt(item)}
                         </span>
                     )}
@@ -92,9 +65,7 @@ export function RankedList({ accent, emptyLabel, items, labelKey, secondaryFmt, 
 export function BigPoursTable({ accent, plantNameByCode, pours }) {
     if (pours.length === 0) {
         return (
-            <div className="text-[12px] py-4 text-center" style={{ color: 'var(--text-tertiary)' }}>
-                No big pours scheduled in this range.
-            </div>
+            <div className="text-[12px] py-4 text-center text-text-tertiary">No big pours scheduled in this range.</div>
         )
     }
     const sorted = [...pours].sort((a, b) => b.yardage - a.yardage).slice(0, 12)
@@ -121,13 +92,8 @@ export function BigPoursTable({ accent, plantNameByCode, pours }) {
                         </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                            {pour.customer}
-                        </div>
-                        <div
-                            className="text-[11px] flex items-center gap-2 flex-wrap"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
+                        <div className="font-semibold truncate text-text-primary">{pour.customer}</div>
+                        <div className="text-[11px] flex items-center gap-2 flex-wrap text-text-secondary">
                             <span className="font-mono tabular-nums">{pour.plantCode}</span>
                             {plantNameByCode?.[pour.plantCode] && <span>· {plantNameByCode[pour.plantCode]}</span>}
                             {pour.startTime && <span>· {fmtMinutesAsHHMM(timeToMinutes(pour.startTime))}</span>}
@@ -135,12 +101,10 @@ export function BigPoursTable({ accent, plantNameByCode, pours }) {
                         </div>
                     </div>
                     <div className="text-right shrink-0">
-                        <div className="font-mono tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        <div className="font-mono tabular-nums font-semibold text-text-primary">
                             {fmtInt(pour.yardage)} yd³
                         </div>
-                        <div className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                            {fmtInt(pour.loads)} loads
-                        </div>
+                        <div className="text-[10.5px] text-text-tertiary">{fmtInt(pour.loads)} loads</div>
                     </div>
                 </div>
             ))}
@@ -183,11 +147,7 @@ export function PlantScorecardTable({
     totalYardage
 }) {
     if (rows.length === 0) {
-        return (
-            <div className="text-[12px] py-4 text-center" style={{ color: 'var(--text-tertiary)' }}>
-                No plant production in this range.
-            </div>
-        )
+        return <div className="text-[12px] py-4 text-center text-text-tertiary">No plant production in this range.</div>
     }
     const sorted = [...rows].sort((a, b) => b.yardage - a.yardage)
     /** Show the cross-loaded column only when at least one plant has ticket
@@ -198,9 +158,9 @@ export function PlantScorecardTable({
         Object.values(loadAttributionByPlant).some((entry) => entry && (entry.loaded > 0 || entry.crossOutYards > 0))
     return (
         <div className="overflow-x-auto">
-            <table className="w-full text-[12px]" style={{ borderCollapse: 'collapse' }}>
+            <table className="w-full text-[12px] border-collapse">
                 <thead>
-                    <tr style={{ color: 'var(--text-tertiary)' }}>
+                    <tr className="text-text-tertiary">
                         <th className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2">
                             Plant
                         </th>
@@ -255,37 +215,32 @@ export function PlantScorecardTable({
                         const crossInYards = attribution?.crossInYards || 0
                         const crossOutYards = attribution?.crossOutYards || 0
                         return (
-                            <tr key={plant.code} style={{ borderTop: '1px solid var(--border-light)' }}>
+                            <tr className="border-t border-border-light" key={plant.code}>
                                 <td className="px-3 py-2">
                                     <div className="flex items-center gap-2">
                                         <span
                                             className="inline-block w-2 h-2 rounded-full shrink-0"
                                             style={{ background: plantBadgeColor(plant.code, accent) }}
                                         />
-                                        <span
-                                            className="font-mono tabular-nums font-semibold"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <span className="font-mono tabular-nums font-semibold text-text-primary">
                                             {plant.code}
                                         </span>
                                         {plantNameByCode?.[plant.code] && (
-                                            <span className="truncate" style={{ color: 'var(--text-secondary)' }}>
+                                            <span className="truncate text-text-secondary">
                                                 {plantNameByCode[plant.code]}
                                             </span>
                                         )}
                                     </div>
                                 </td>
                                 <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums font-semibold"
-                                    style={{ color: 'var(--text-primary)' }}
+                                    className="px-2 py-2 text-right font-mono tabular-nums font-semibold text-text-primary"
                                     title="Ordered yardage attributed to this plant"
                                 >
                                     {fmtInt(plant.yardage)}
                                 </td>
                                 {hasAttributionData && (
                                     <td
-                                        className="px-2 py-2 text-right font-mono tabular-nums"
-                                        style={{ color: 'var(--text-primary)' }}
+                                        className="px-2 py-2 text-right font-mono tabular-nums text-text-primary"
                                         title={
                                             loadedYards > 0
                                                 ? `${fmtInt(loadedYards)} yd loaded for this plant's orders`
@@ -296,21 +251,14 @@ export function PlantScorecardTable({
                                     </td>
                                 )}
                                 {hasAttributionData && (
-                                    <td
-                                        className="px-2 py-2 text-right font-mono tabular-nums whitespace-nowrap"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums whitespace-nowrap text-text-secondary">
                                         {crossInYards === 0 && crossOutYards === 0 ? (
                                             '—'
                                         ) : (
                                             <span className="inline-flex items-center gap-1.5">
                                                 {crossInYards > 0 && (
                                                     <span
-                                                        className="rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
-                                                        style={{
-                                                            background: 'rgba(37, 99, 235, 0.12)',
-                                                            color: '#1d4ed8'
-                                                        }}
+                                                        className="rounded px-1.5 py-0.5 text-[10.5px] font-semibold bg-[rgba(37,_99,_235,_0.12)] text-blue-700"
                                                         title={`Help received: ${fmtInt(crossInYards)} yd loaded by sibling plants for this plant's orders`}
                                                     >
                                                         +{fmtInt(crossInYards)} in
@@ -318,11 +266,7 @@ export function PlantScorecardTable({
                                                 )}
                                                 {crossOutYards > 0 && (
                                                     <span
-                                                        className="rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
-                                                        style={{
-                                                            background: 'rgba(217, 119, 6, 0.12)',
-                                                            color: '#b45309'
-                                                        }}
+                                                        className="rounded px-1.5 py-0.5 text-[10.5px] font-semibold bg-[rgba(217,_119,_6,_0.12)] text-[#b45309]"
                                                         title={`Help given: ${fmtInt(crossOutYards)} yd loaded by this plant for other plants' orders`}
                                                     >
                                                         −{fmtInt(crossOutYards)} out
@@ -332,22 +276,13 @@ export function PlantScorecardTable({
                                         )}
                                     </td>
                                 )}
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums"
-                                    style={{ color: 'var(--text-primary)' }}
-                                >
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                     {fmtInt(plant.loads)}
                                 </td>
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
                                     {fmtInt(plant.orderCount)}
                                 </td>
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums"
-                                    style={{ color: 'var(--text-secondary)' }}
-                                >
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
                                     {share.toFixed(1)}%
                                 </td>
                                 <td className="px-3 py-2 text-right">

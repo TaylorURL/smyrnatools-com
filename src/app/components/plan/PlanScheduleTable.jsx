@@ -409,22 +409,14 @@ export default function PlanScheduleTable({
                     maxHeight: `calc(100vh - ${isMaximized ? 150 : 260}px)`
                 }}
             >
-                <table className="w-full text-[12.5px]" style={{ borderCollapse: 'collapse' }}>
+                <table className="w-full text-[12.5px] border-collapse">
                     <thead>
                         <tr>
                             {TABLE_HEADERS.map((h) => (
                                 <th
                                     key={h}
-                                    className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap"
-                                    style={{
-                                        background: 'var(--bg-tertiary)',
-                                        borderBottom: '1px solid var(--border-light)',
-                                        boxShadow: '0 1px 0 0 var(--border-light)',
-                                        color: 'var(--text-secondary)',
-                                        position: 'sticky',
-                                        top: 0,
-                                        zIndex: 10
-                                    }}
+                                    className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap bg-bg-tertiary border-b border-border-light text-text-secondary sticky z-10"
+                                    style={{ boxShadow: '0 1px 0 0 var(--border-light)', top: 0 }}
                                 >
                                     {h}
                                 </th>
@@ -493,15 +485,11 @@ export default function PlanScheduleTable({
                             // INSIDE from dismissing.
                             onClick={(e) => e.stopPropagation()}
                             onContextMenu={(e) => e.preventDefault()}
-                            className="rounded-md py-1 min-w-[180px]"
+                            className="rounded-md py-1 min-w-[180px] bg-bg-primary border border-border-light fixed z-[9999]"
                             style={{
-                                background: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)',
                                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.18)',
                                 left: Math.min(rowMenu.x, window.innerWidth - 200),
-                                position: 'fixed',
-                                top: Math.min(rowMenu.y, window.innerHeight - 80),
-                                zIndex: 9999
+                                top: Math.min(rowMenu.y, window.innerHeight - 80)
                             }}
                         >
                             <button
@@ -510,13 +498,9 @@ export default function PlanScheduleTable({
                                     setInfoOrder(rowMenu.order)
                                     setRowMenu(null)
                                 }}
-                                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)]"
-                                style={{ color: 'var(--text-primary)' }}
+                                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary"
                             >
-                                <i
-                                    className="fas fa-clipboard-list text-[12px]"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                />
+                                <i className="fas fa-clipboard-list text-[12px] text-text-tertiary" />
                                 View order
                             </button>
                             <button
@@ -525,10 +509,9 @@ export default function PlanScheduleTable({
                                     setTicketsOrder(rowMenu.order)
                                     setRowMenu(null)
                                 }}
-                                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)]"
-                                style={{ color: 'var(--text-primary)' }}
+                                className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary"
                             >
-                                <i className="fas fa-ticket text-[12px]" style={{ color: 'var(--text-tertiary)' }} />
+                                <i className="fas fa-ticket text-[12px] text-text-tertiary" />
                                 View tickets
                             </button>
                         </div>,

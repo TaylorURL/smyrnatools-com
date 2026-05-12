@@ -2,16 +2,7 @@ import { Mixer } from '../app/models/mixers/Mixer'
 import { MixerComment } from '../app/models/mixers/MixerComment'
 import { MixerHistory } from '../app/models/mixers/MixerHistory'
 import { MixerImage } from '../app/models/mixers/MixerImage'
-import {
-    apiPostOrThrow,
-    apiPostRequireSuccess,
-    ensureSpareIfNoOperatorBase,
-    fetchWithDetailsBase,
-    normalizeSeverity,
-    requireUserId,
-    resolveEntityId,
-    uppercaseVin
-} from '../utils/BaseAssetUtility'
+import { apiPostOrThrow, ensureSpareIfNoOperatorBase } from '../utils/BaseAssetUtility'
 import CleanupUtility from '../utils/CleanupUtility'
 import { ValidationUtility } from '../utils/ValidationUtility'
 import VerifiedUtility from '../utils/VerifiedUtility'
@@ -19,166 +10,107 @@ import BaseAssetService from './BaseAssetService'
 
 const SERVICE_PREFIX = '/mixer-service'
 
-const baseService = new BaseAssetService({
-    commentModelFn: MixerComment.fromRow,
-    commentsTable: 'mixers_comments',
-    entityIdParam: 'mixerId',
-    entityName: 'Mixer',
-    idColumn: 'mixer_id',
-    issuesTable: 'mixers_maintenance',
-    servicePrefix: SERVICE_PREFIX
-})
-
 /** Attaches an isVerified() method using current mixer field values. */
 function enrichMixerWithVerification(mixer) {
     if (!mixer) return mixer
     mixer.isVerified = () => VerifiedUtility.isVerified(mixer.updatedLast, mixer.updatedAt, mixer.updatedBy)
     return mixer
 }
+
+const baseService = new BaseAssetService({
+    clearOperatorOnPlantChange: true,
+    commentModelFn: MixerComment.fromRow,
+    commentsTable: 'mixers_comments',
+    enrichFn: enrichMixerWithVerification,
+    entityIdParam: 'mixerId',
+    entityKey: 'mixer',
+    entityName: 'Mixer',
+    historyTable: 'mixers_history',
+    idColumn: 'mixer_id',
+    issuesTable: 'mixers_maintenance',
+    parseHistoryRow: (row) => new MixerHistory(row),
+    parseRow: (row) => (row ? new Mixer(row) : null),
+    servicePrefix: SERVICE_PREFIX,
+    uppercaseVin: true
+})
+
 /**
  * Mixer CRUD, history, comments, issues, images, and verification service.
  * Delegates shared asset operations to BaseAssetService.
  */
 class MixerServiceImpl {
-    static async getAllMixers() {
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-all`, {}, 'Failed to fetch mixers')
-        return (json?.data ?? []).map((mixer) => new Mixer(mixer))
+    static getAllMixers() {
+        return baseService.getAll()
     }
-    static async fetchMixers() {
+    static fetchMixers() {
         return this.getAllMixers()
     }
-    /** Fetches a mixer by ID with verification status attached. */
-    static async fetchMixerById(id) {
-        ValidationUtility.requireUUID(id, 'Invalid mixer ID')
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-by-id`, { id }, 'Failed to fetch mixer')
-        return json?.data ? enrichMixerWithVerification(new Mixer(json.data)) : null
+    static fetchMixerById(id) {
+        return baseService.fetchById(id)
     }
-    /** Fetches the most recent history entry date for a mixer. */
-    static async getLatestHistoryDate(mixerId) {
+    static getLatestHistoryDate(mixerId) {
         return baseService.getLatestHistoryDate(mixerId)
     }
-    static async getMixerHistory(mixerId, limit = null) {
-        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
-        const payload = { mixerId }
-        if (limit && Number.isInteger(limit) && limit > 0) payload.limit = limit
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-history`, payload, 'Failed to fetch mixer history')
-        return (json?.data ?? []).map((entry) => new MixerHistory(entry))
+    static getMixerHistory(mixerId, limit = null) {
+        return baseService.getHistory(mixerId, limit)
     }
-    /** Creates a mixer with user ID resolution, ID cleanup, and VIN normalization. */
-    static async createMixer(mixer, userId) {
-        const resolvedUserId = await requireUserId(userId, 'Authentication required')
-        if (mixer.id) delete mixer.id
-        uppercaseVin(mixer)
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/create`,
-            { mixer, userId: resolvedUserId },
-            'Failed to create mixer'
-        )
-        return new Mixer(json?.data)
+    static createMixer(mixer, userId) {
+        return baseService.create(mixer, userId)
     }
-    /**
-     * Updates a mixer record. Clears operator assignment when the plant changes
-     * to prevent cross-plant operator assignments.
-     */
-    static async updateMixer(mixerId, mixer, userId, prevMixerState = null) {
-        const id = resolveEntityId(mixerId)
-        ValidationUtility.requireUUID(id, 'Mixer ID is required')
-        const resolvedUserId = await requireUserId(userId)
-        uppercaseVin(mixer)
-        if (prevMixerState?.assignedPlant !== mixer.assignedPlant) {
-            mixer.assignedOperator = null
-        }
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/update`,
-            { id, mixer, userId: resolvedUserId },
-            'Failed to update mixer'
-        )
-        return new Mixer(json?.data)
+    static updateMixer(mixerId, mixer, userId, prevMixerState = null) {
+        return baseService.update(mixerId, mixer, userId, prevMixerState)
     }
-    static async deleteMixer(id) {
-        ValidationUtility.requireUUID(id, 'Mixer ID is required')
-        return apiPostRequireSuccess(`${SERVICE_PREFIX}/delete`, { id }, 'Failed to delete mixer')
+    static deleteMixer(id) {
+        return baseService.delete(id)
     }
-    static async getMixersByOperator(operatorId) {
-        ValidationUtility.requireUUID(operatorId, 'Operator ID is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/fetch-by-operator`,
-            { operatorId },
-            'Failed to fetch mixers by operator'
-        )
-        return (json?.data ?? []).map((mixer) => new Mixer(mixer))
+    static getMixersByOperator(operatorId) {
+        return baseService.getByOperator(operatorId)
     }
     static async searchMixersByVin(query) {
-        if (!query?.trim()) throw new Error('Search query is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/search-by-vin`,
-            { query: query.trim().toUpperCase() },
-            'Failed to search mixers by VIN'
-        )
-        return (json?.data ?? []).map((row) => enrichMixerWithVerification(new Mixer(row)))
+        const rows = await baseService.searchByVin(query)
+        return rows.map(enrichMixerWithVerification)
     }
-    static async searchMixersByVinProcessed(query) {
-        return (await this.searchMixersByVin(query)).map(enrichMixerWithVerification)
+    static searchMixersByVinProcessed(query) {
+        return this.searchMixersByVin(query)
     }
-    static async fetchAllCommentsCounts(mixerIds) {
+    static fetchAllCommentsCounts(mixerIds) {
         return baseService.fetchAllCommentsCounts(mixerIds)
     }
-    static async fetchAllIssuesCounts(mixerIds) {
+    static fetchAllIssuesCounts(mixerIds) {
         return baseService.fetchAllIssuesCounts(mixerIds)
     }
-    static async fetchComments(mixerId) {
+    static fetchComments(mixerId) {
         return baseService.fetchComments(mixerId)
     }
-    static async addComment(mixerId, text, author) {
+    static addComment(mixerId, text, author) {
         return baseService.addComment(mixerId, text, author)
     }
-    static async deleteComment(commentId) {
+    static deleteComment(commentId) {
         return baseService.deleteComment(commentId)
     }
+    /** Mixer-specific: fetches the image gallery rows attached to one mixer. */
     static async fetchMixerImages(mixerId) {
         ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-images`, { mixerId }, 'Failed to fetch mixer images')
-        return (json?.data ?? []).map((image) => MixerImage.fromRow(image))
+        return (json?.data ?? []).map(MixerImage.fromRow)
     }
-    static async fetchIssues(mixerId) {
+    static fetchIssues(mixerId) {
         return baseService.fetchIssues(mixerId)
     }
-    static async completeIssue(issueId) {
+    static completeIssue(issueId) {
         return baseService.completeIssue(issueId)
     }
-    static async addIssue(mixerId, issue, severity, createdBy = null) {
-        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
-        if (!issue?.trim()) throw new Error('Issue description is required')
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/add-issue`,
-            {
-                issue: issue.trim(),
-                mixerId,
-                severity: normalizeSeverity(severity),
-                userId: createdBy
-            },
-            'Failed to add issue'
-        )
-        return json?.data
+    static addIssue(mixerId, issue, severity, createdBy = null) {
+        return baseService.addIssue(mixerId, issue, severity, createdBy)
     }
-    static async deleteIssue(issueId) {
+    static deleteIssue(issueId) {
         return baseService.deleteIssue(issueId)
     }
-    /**
-     * Fetches all mixers with enriched details (comments count, issues count, status history, verification).
-     * Optionally filtered by region codes.
-     */
-    static async fetchMixersWithDetails(regionCodes = null) {
-        return fetchWithDetailsBase({
-            enrichFn: enrichMixerWithVerification,
-            fetchAllFn: () => this.getAllMixers(),
-            historyTableName: 'mixers_history',
-            idColumnName: 'mixer_id',
-            regionCodes
-        })
+    static fetchMixersWithDetails(regionCodes = null) {
+        return baseService.fetchWithDetails(regionCodes)
     }
     /** Sets unassigned-operator mixers to Spare status in batch. */
-    static async ensureSpareIfNoOperator(mixersList) {
+    static ensureSpareIfNoOperator(mixersList) {
         return ensureSpareIfNoOperatorBase(mixersList, async (m) => {
             await this.updateMixer(m.id, {
                 assignedOperator: null,
@@ -194,23 +126,16 @@ class MixerServiceImpl {
         })
     }
     /** Batch-corrects null operator fields by setting affected mixers to Spare. */
-    static async cleanupNullOperators(mixers = null) {
+    static cleanupNullOperators(mixers = null) {
         return CleanupUtility.cleanupNullOperators(
             mixers,
             (id, updates, userId) => this.updateMixer(id, updates, userId),
             () => this.getAllMixers()
         )
     }
-    /** Marks a mixer as verified by the given user and refreshes notification badges. */
-    static async verifyMixer(mixerId, userId) {
-        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
-        const resolvedUserId = await requireUserId(userId)
-        const json = await apiPostOrThrow(
-            `${SERVICE_PREFIX}/verify`,
-            { id: mixerId, userId: resolvedUserId },
-            'Failed to verify mixer'
-        )
-        return enrichMixerWithVerification(new Mixer(json?.data))
+    static verifyMixer(mixerId, userId) {
+        return baseService.verify(mixerId, userId)
     }
 }
+
 export const MixerService = MixerServiceImpl

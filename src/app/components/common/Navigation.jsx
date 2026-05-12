@@ -71,9 +71,9 @@ const ASSET_ITEMS = ['Mixers', 'Tractors', 'Trailers', 'Heavy Equipment', 'Picku
 /** Navigation item IDs grouped under the "People" dropdown. */
 const PEOPLE_ITEMS = ['Operators', 'Managers']
 /** Navigation item IDs grouped under the "Reporting" dropdown. */
-const REPORTING_ITEMS = ['Reports', 'Maintenance', 'NRMCA']
+const REPORTING_ITEMS = ['Reports', 'List', 'Maintenance', 'NRMCA']
 /** Navigation item IDs grouped under the "Tools" dropdown. */
-const TOOLS_ITEMS = ['Plan', 'List', 'Calculators']
+const TOOLS_ITEMS = ['Plan', 'Calculators']
 /** Navigation item IDs grouped under the "Admin" category (two-level mode). */
 const ADMIN_ITEMS = ['Plants', 'Regions', 'Roles']
 
@@ -403,7 +403,7 @@ export default function Navigation({ selectedView, onSelectView, children, userN
         const isOpen = openDropdown === dropdownId
         const isActive = activeCheck()
         return (
-            <div style={{ position: 'relative' }} ref={isOpen ? dropdownRef : null}>
+            <div className="relative" ref={isOpen ? dropdownRef : null}>
                 <div
                     ref={registerMagnetic}
                     style={{ ...navItemStyle(isActive), gap: isTablet ? '4px' : '6px' }}
@@ -424,14 +424,11 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                             const isItemActive = selectedView === item.id
                             return (
                                 <div
+                                    className="items-center rounded-lg cursor-pointer flex"
                                     key={item.id}
                                     style={{
-                                        alignItems: 'center',
                                         backgroundColor: isItemActive ? `${accentColor}12` : 'transparent',
-                                        borderRadius: '8px',
                                         color: isItemActive ? accentColor : 'var(--text-primary)',
-                                        cursor: 'pointer',
-                                        display: 'flex',
                                         fontWeight: isItemActive ? 600 : 400,
                                         gap: '10px',
                                         padding: '10px 14px',
@@ -449,10 +446,7 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                             : 'transparent')
                                     }
                                 >
-                                    <i
-                                        className={`fas ${ICONS[item.id]}`}
-                                        style={{ color: 'var(--text-secondary)', fontSize: '14px', width: '18px' }}
-                                    ></i>
+                                    <i className={`fas ${ICONS[item.id]} text-text-secondary text-sm w-[18px]`}></i>
                                     <span style={{ color: isItemActive ? accentColor : 'var(--text-primary)' }}>
                                         {item.text}
                                     </span>
@@ -475,18 +469,14 @@ export default function Navigation({ selectedView, onSelectView, children, userN
         tutorialTarget = null
     ) => (
         <div
+            className="items-center cursor-pointer flex justify-center relative"
             style={{
-                alignItems: 'center',
                 backgroundColor: isActive ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
                 border: isActive ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.08)',
                 borderRadius: isTablet ? '8px' : '12px',
                 color: 'white',
-                cursor: 'pointer',
-                display: 'flex',
                 flexShrink: 0,
                 height: isTablet ? '32px' : '42px',
-                justifyContent: 'center',
-                position: 'relative',
                 transition: 'all 0.2s ease',
                 width: isTablet ? '32px' : '42px'
             }}
@@ -505,21 +495,16 @@ export default function Navigation({ selectedView, onSelectView, children, userN
             <i className={`fas ${icon}`} style={{ fontSize: isTablet ? '13px' : '16px' }}></i>
             {badge > 0 && (
                 <span
+                    className="items-center rounded-[10px] flex font-bold justify-center absolute"
                     style={{
-                        alignItems: 'center',
                         backgroundColor: badgeColor,
                         border: `2px solid ${accentColor}`,
-                        borderRadius: '10px',
                         boxShadow: `0 2px 8px ${badgeColor}66`,
                         color: 'white',
-                        display: 'flex',
                         fontSize: isTablet ? '9px' : '11px',
-                        fontWeight: 700,
                         height: isTablet ? '16px' : '20px',
-                        justifyContent: 'center',
                         minWidth: isTablet ? '16px' : '20px',
                         padding: '0 4px',
-                        position: 'absolute',
                         right: '-4px',
                         top: '-4px'
                     }}
@@ -568,7 +553,7 @@ export default function Navigation({ selectedView, onSelectView, children, userN
     if (isMobile) {
         return (
             <>
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100%' }}>
+                <div className="flex flex-col h-screen w-full">
                     <div
                         style={{
                             ...headerStyle,
@@ -583,20 +568,14 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                             zIndex: 100
                         }}
                     >
-                        <img src={SrmLogo} alt="Logo" style={{ height: '34px' }} draggable={false} />
+                        <img className="h-[34px]" src={SrmLogo} alt="Logo" draggable={false} />
                         <button
+                            className="items-center rounded-[10px] cursor-pointer flex h-10 justify-center w-10"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             style={{
-                                alignItems: 'center',
                                 backgroundColor: mobileMenuOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
                                 border: 'none',
-                                borderRadius: '10px',
-                                color: 'white',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                height: '40px',
-                                justifyContent: 'center',
-                                width: '40px'
+                                color: 'white'
                             }}
                         >
                             <i className={`fas fa-${mobileMenuOpen ? 'times' : 'bars'}`}></i>
@@ -604,46 +583,24 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                     </div>
                     {mobileMenuOpen && (
                         <div
-                            style={{
-                                backgroundColor: 'rgba(0,0,0,0.5)',
-                                bottom: 0,
-                                left: 0,
-                                position: 'fixed',
-                                right: 0,
-                                top: 0,
-                                zIndex: 200
-                            }}
+                            className="bg-[rgba(0,0,0,0.5)] fixed z-[200]"
+                            style={{ bottom: 0, left: 0, right: 0, top: 0 }}
                             onClick={() => setMobileMenuOpen(false)}
                         >
                             <div
-                                style={{
-                                    backgroundColor: 'var(--bg-primary)',
-                                    boxShadow: 'var(--shadow)',
-                                    height: '100%',
-                                    overflowY: 'auto',
-                                    padding: '20px',
-                                    position: 'absolute',
-                                    right: 0,
-                                    top: 0,
-                                    width: '280px'
-                                }}
+                                className="bg-bg-primary h-full overflow-y-auto absolute w-[280px]"
+                                style={{ boxShadow: 'var(--shadow)', padding: '20px', right: 0, top: 0 }}
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <div style={{ marginBottom: '20px' }}>
                                     <label
-                                        style={{
-                                            color: 'var(--text-secondary)',
-                                            display: 'block',
-                                            fontSize: '11px',
-                                            fontWeight: 600,
-                                            letterSpacing: '0.05em',
-                                            marginBottom: '6px',
-                                            textTransform: 'uppercase'
-                                        }}
+                                        className="text-text-secondary block text-[11px] font-semibold tracking-wider uppercase"
+                                        style={{ marginBottom: '6px' }}
                                     >
                                         Region
                                     </label>
                                     <select
+                                        className="bg-bg-secondary rounded-[10px] text-text-primary cursor-pointer text-sm font-semibold w-full"
                                         value={regionCode || ''}
                                         onChange={handleRegionChange}
                                         onFocus={(e) => {
@@ -656,16 +613,9 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                             e.currentTarget.style.boxShadow = 'none'
                                         }}
                                         style={{
-                                            backgroundColor: 'var(--bg-secondary)',
                                             border: '2px solid var(--border-light)',
-                                            borderRadius: '10px',
-                                            color: 'var(--text-primary)',
-                                            cursor: 'pointer',
-                                            fontSize: '14px',
-                                            fontWeight: 600,
                                             padding: '12px',
-                                            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-                                            width: '100%'
+                                            transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
                                         }}
                                     >
                                         {permittedRegions.length === 0 ? (
@@ -797,10 +747,7 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                             </div>
                         </div>
                     )}
-                    <div
-                        data-content-scroll
-                        style={{ flex: 1, overflowX: 'hidden', overflowY: 'auto', position: 'relative' }}
-                    >
+                    <div className="flex-1 overflow-x-hidden overflow-y-auto relative" data-content-scroll>
                         {children}
                     </div>
                 </div>
@@ -832,8 +779,7 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                 <img
                                     src={SrmLogo}
                                     alt="Smyrna Ready Mix"
-                                    className="flex-shrink-0 transition-all duration-300 hover:brightness-125"
-                                    style={{ height: 28 }}
+                                    className="flex-shrink-0 transition-all duration-300 hover:brightness-125 h-7"
                                     draggable={false}
                                 />
                                 <div className="flex items-center gap-1">
@@ -843,12 +789,10 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                             {[72, 56, 52, 64, 48].map((w, i) => (
                                                 <div
                                                     key={i}
-                                                    className="animate-pulse rounded-lg"
+                                                    className="animate-pulse rounded-lg bg-[rgba(255,255,255,0.08)] h-[34px]"
                                                     style={{
                                                         animationDelay: `${i * 80}ms`,
                                                         animationFillMode: 'both',
-                                                        backgroundColor: 'rgba(255,255,255,0.08)',
-                                                        height: 34,
                                                         width: w
                                                     }}
                                                 />
@@ -860,10 +804,9 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                         return (
                                             <button
                                                 key={cat.id}
-                                                className="flex items-center gap-2 whitespace-nowrap cursor-pointer border-none transition-all duration-200"
+                                                className="flex items-center gap-2 whitespace-nowrap cursor-pointer border-none transition-all duration-200 rounded-[10px]"
                                                 style={{
                                                     background: isActive ? 'rgba(255,255,255,0.18)' : 'transparent',
-                                                    borderRadius: 10,
                                                     boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
                                                     color: isActive ? 'white' : 'rgba(255,255,255,0.65)',
                                                     fontSize: 13,
@@ -894,19 +837,15 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                 <select
                                     value={regionCode || ''}
                                     onChange={handleRegionChange}
-                                    className="cursor-pointer transition-all duration-200 outline-none"
+                                    className="cursor-pointer transition-all duration-200 outline-none bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] rounded-[10px] font-semibold"
                                     style={{
                                         appearance: 'none',
-                                        backgroundColor: 'rgba(255,255,255,0.08)',
                                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                                         backgroundPosition: 'right 8px center',
                                         backgroundRepeat: 'no-repeat',
                                         backgroundSize: 14,
-                                        border: '1px solid rgba(255,255,255,0.12)',
-                                        borderRadius: 10,
                                         color: 'white',
                                         fontSize: 13,
-                                        fontWeight: 600,
                                         padding: '8px 30px 8px 12px'
                                     }}
                                 >
@@ -915,9 +854,9 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                     ) : (
                                         permittedRegions.map((r) => (
                                             <option
+                                                className="bg-[#1e293b] text-slate-50"
                                                 key={r.regionCode || r.region_code}
                                                 value={r.regionCode || r.region_code}
-                                                style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}
                                             >
                                                 {r.regionName || r.region_name}
                                             </option>
@@ -927,18 +866,9 @@ export default function Navigation({ selectedView, onSelectView, children, userN
 
                                 {/* Messages */}
                                 <button
-                                    className="relative flex items-center justify-center cursor-pointer"
+                                    className="relative flex items-center justify-center cursor-pointer bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded-lg text-[rgba(255,255,255,0.7)] h-[34px] w-10"
                                     title="Messages"
-                                    style={{
-                                        backgroundColor: 'rgba(255,255,255,0.06)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: 8,
-                                        color: 'rgba(255,255,255,0.7)',
-                                        gap: 4,
-                                        height: 34,
-                                        outline: 'none',
-                                        width: 40
-                                    }}
+                                    style={{ gap: 4, outline: 'none' }}
                                     onClick={(e) => {
                                         setNotificationsAnchor(e.currentTarget.getBoundingClientRect())
                                         setShowNotifications(true)
@@ -948,14 +878,11 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                     <i className="fas fa-envelope" style={{ fontSize: 11 }} />
                                     {combinedCount > 0 && (
                                         <span
-                                            className="absolute flex items-center justify-center rounded-full"
+                                            className="absolute flex items-center justify-center rounded-full bg-red-500 font-bold h-4"
                                             style={{
-                                                backgroundColor: '#ef4444',
                                                 border: `2px solid ${accentColor}`,
                                                 color: 'white',
                                                 fontSize: 9,
-                                                fontWeight: 700,
-                                                height: 16,
                                                 minWidth: 16,
                                                 right: -4,
                                                 top: -4
@@ -968,17 +895,9 @@ export default function Navigation({ selectedView, onSelectView, children, userN
 
                                 {/* Online users */}
                                 <button
-                                    className="relative flex items-center justify-center cursor-pointer"
+                                    className="relative flex items-center justify-center cursor-pointer bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded-lg text-[rgba(255,255,255,0.7)] h-[34px] w-[34px]"
                                     title="Online Users"
-                                    style={{
-                                        backgroundColor: 'rgba(255,255,255,0.06)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: 8,
-                                        color: 'rgba(255,255,255,0.7)',
-                                        height: 34,
-                                        outline: 'none',
-                                        width: 34
-                                    }}
+                                    style={{ outline: 'none' }}
                                     onClick={(e) => {
                                         setOnlineUsersAnchor(e.currentTarget.getBoundingClientRect())
                                         setShowOnlineUsers(true)
@@ -987,14 +906,11 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                     <i className="fas fa-users" style={{ fontSize: 13 }} />
                                     {onlineUsersCount > 0 && (
                                         <span
-                                            className="absolute flex items-center justify-center rounded-full"
+                                            className="absolute flex items-center justify-center rounded-full bg-green-500 font-bold h-4"
                                             style={{
-                                                backgroundColor: '#22c55e',
                                                 border: `2px solid ${accentColor}`,
                                                 color: 'white',
                                                 fontSize: 9,
-                                                fontWeight: 700,
-                                                height: 16,
                                                 minWidth: 16,
                                                 right: -4,
                                                 top: -4
@@ -1007,17 +923,8 @@ export default function Navigation({ selectedView, onSelectView, children, userN
 
                                 {/* User avatar */}
                                 <div
-                                    className="flex items-center justify-center cursor-pointer"
-                                    style={{
-                                        backgroundColor: 'rgba(255,255,255,0.15)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: 8,
-                                        color: 'white',
-                                        fontSize: 12,
-                                        fontWeight: 700,
-                                        height: 34,
-                                        width: 34
-                                    }}
+                                    className="flex items-center justify-center cursor-pointer bg-[rgba(255,255,255,0.15)] border border-[rgba(255,255,255,0.1)] rounded-lg font-bold h-[34px] w-[34px]"
+                                    style={{ color: 'white', fontSize: 12 }}
                                     onClick={() => handleMenuClick('MyAccount')}
                                     title={userName || 'My Account'}
                                 >
@@ -1071,13 +978,11 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                 {/* Sliding underline */}
                                 <div
                                     ref={underlineRef}
-                                    className="absolute bottom-0 rounded-t"
+                                    className="absolute bottom-0 rounded-t h-[2.5px] w-0"
                                     style={{
                                         backgroundColor: accentColor,
-                                        height: 2.5,
                                         transition:
-                                            'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        width: 0
+                                            'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                                     }}
                                 />
                             </div>
@@ -1100,9 +1005,7 @@ export default function Navigation({ selectedView, onSelectView, children, userN
      * ══════════════════════════════════════════════ */
     return (
         <>
-            <div
-                style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', width: '100%' }}
-            >
+            <div className="flex flex-col h-screen overflow-hidden w-full">
                 <header
                     style={{
                         ...headerStyle,
@@ -1119,25 +1022,10 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                         zIndex: 100
                     }}
                 >
-                    <div
-                        style={{
-                            alignItems: 'center',
-                            display: 'flex',
-                            flex: 1,
-                            gap: isTablet ? '10px' : '28px',
-                            minWidth: 0
-                        }}
-                    >
+                    <div className="items-center flex flex-1 min-w-0" style={{ gap: isTablet ? '10px' : '28px' }}>
                         <div
-                            className="group"
-                            style={{
-                                alignItems: 'center',
-                                borderRight: '1px solid rgba(255,255,255,0.1)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                flexShrink: 0,
-                                paddingRight: isTablet ? '10px' : '24px'
-                            }}
+                            className="group items-center border-r border-[rgba(255,255,255,0.1)] cursor-pointer flex"
+                            style={{ flexShrink: 0, paddingRight: isTablet ? '10px' : '24px' }}
                         >
                             <img
                                 src={SrmLogo}
@@ -1147,25 +1035,16 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                 draggable={false}
                             />
                         </div>
-                        <nav
-                            style={{
-                                alignItems: 'center',
-                                display: 'flex',
-                                flex: 1,
-                                gap: isTablet ? '2px' : '6px',
-                                minWidth: 0
-                            }}
-                        >
+                        <nav className="items-center flex flex-1 min-w-0" style={{ gap: isTablet ? '2px' : '6px' }}>
                             {visibleMenuItems.length === 0 && (
                                 <div className="flex items-center gap-2">
                                     {[72, 56, 52, 64, 48].map((w, i) => (
                                         <div
                                             key={i}
-                                            className="bg-white/10 animate-pulse rounded-lg"
+                                            className="bg-white/10 animate-pulse rounded-lg h-8"
                                             style={{
                                                 animationDelay: `${i * 80}ms`,
                                                 animationFillMode: 'both',
-                                                height: 32,
                                                 width: w
                                             }}
                                         />
@@ -1233,10 +1112,9 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                                 ))}
                         </nav>
                     </div>
-                    <div
-                        style={{ alignItems: 'center', display: 'flex', flexShrink: 0, gap: isTablet ? '8px' : '16px' }}
-                    >
+                    <div className="items-center flex" style={{ flexShrink: 0, gap: isTablet ? '8px' : '16px' }}>
                         <select
+                            className="bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.15)] cursor-pointer font-semibold overflow-hidden whitespace-nowrap"
                             value={regionCode || ''}
                             onChange={handleRegionChange}
                             onMouseEnter={(e) => {
@@ -1260,36 +1138,30 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                             }}
                             style={{
                                 appearance: 'none',
-                                backgroundColor: 'rgba(255,255,255,0.08)',
                                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                                 backgroundPosition: 'right 8px center',
                                 backgroundRepeat: 'no-repeat',
                                 backgroundSize: isTablet ? '12px' : '16px',
-                                border: '1px solid rgba(255,255,255,0.15)',
                                 borderRadius: isTablet ? '8px' : '12px',
                                 color: 'white',
-                                cursor: 'pointer',
                                 fontSize: isTablet ? '12px' : '14px',
-                                fontWeight: 600,
                                 letterSpacing: '0.01em',
                                 maxWidth: isTablet ? '120px' : 'none',
-                                overflow: 'hidden',
                                 padding: isTablet ? '6px 24px 6px 10px' : '10px 36px 10px 16px',
                                 textOverflow: 'ellipsis',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap'
+                                transition: 'all 0.2s ease'
                             }}
                         >
                             {permittedRegions.length === 0 ? (
-                                <option value="" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>
+                                <option className="bg-[#1e293b] text-slate-50" value="">
                                     Loading...
                                 </option>
                             ) : (
                                 permittedRegions.map((r) => (
                                     <option
+                                        className="bg-[#1e293b] text-slate-50"
                                         key={r.regionCode || r.region_code}
                                         value={r.regionCode || r.region_code}
-                                        style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}
                                     >
                                         {r.regionName || r.region_name}
                                     </option>
@@ -1297,19 +1169,13 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                             )}
                         </select>
                         <div
+                            className="items-center bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] cursor-pointer flex justify-center relative"
                             style={{
-                                alignItems: 'center',
-                                backgroundColor: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(255,255,255,0.08)',
                                 borderRadius: isTablet ? '8px' : '12px',
                                 color: 'white',
-                                cursor: 'pointer',
-                                display: 'flex',
                                 flexShrink: 0,
                                 gap: isTablet ? '3px' : '4px',
                                 height: isTablet ? '32px' : '42px',
-                                justifyContent: 'center',
-                                position: 'relative',
                                 transition: 'all 0.2s ease',
                                 width: isTablet ? '40px' : '52px'
                             }}
@@ -1331,21 +1197,15 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                             <i className="fas fa-envelope" style={{ fontSize: isTablet ? '11px' : '13px' }} />
                             {combinedCount > 0 && (
                                 <span
+                                    className="items-center bg-red-500 rounded-[10px] flex font-bold justify-center absolute"
                                     style={{
-                                        alignItems: 'center',
-                                        backgroundColor: '#ef4444',
                                         border: `2px solid ${accentColor}`,
-                                        borderRadius: '10px',
                                         boxShadow: '0 2px 8px #ef444466',
                                         color: 'white',
-                                        display: 'flex',
                                         fontSize: isTablet ? '9px' : '11px',
-                                        fontWeight: 700,
                                         height: isTablet ? '16px' : '20px',
-                                        justifyContent: 'center',
                                         minWidth: isTablet ? '16px' : '20px',
                                         padding: '0 4px',
-                                        position: 'absolute',
                                         right: '-4px',
                                         top: '-4px'
                                     }}
@@ -1376,10 +1236,7 @@ export default function Navigation({ selectedView, onSelectView, children, userN
                         )}
                     </div>
                 </header>
-                <main
-                    data-content-scroll
-                    style={{ flex: 1, overflowX: 'hidden', overflowY: 'auto', position: 'relative' }}
-                >
+                <main className="flex-1 overflow-x-hidden overflow-y-auto relative" data-content-scroll>
                     {children}
                 </main>
                 {renderModals()}
@@ -1392,15 +1249,8 @@ function MobileSection({ title, children }) {
     return (
         <div style={{ marginBottom: '16px' }}>
             <div
-                style={{
-                    color: 'var(--text-secondary)',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    letterSpacing: '0.5px',
-                    marginBottom: '4px',
-                    padding: '8px 12px',
-                    textTransform: 'uppercase'
-                }}
+                className="text-text-secondary text-[11px] font-semibold uppercase"
+                style={{ letterSpacing: '0.5px', marginBottom: '4px', padding: '8px 12px' }}
             >
                 {title}
             </div>
@@ -1412,14 +1262,11 @@ function MobileSection({ title, children }) {
 function MobileMenuItem({ item, isActive, onClick, accentColor = '#1e3a5f' }) {
     return (
         <div
+            className="items-center rounded-[10px] cursor-pointer flex"
             onClick={onClick}
             style={{
-                alignItems: 'center',
                 backgroundColor: isActive ? `${accentColor}12` : 'transparent',
-                borderRadius: '10px',
                 color: isActive ? accentColor : 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
                 fontWeight: isActive ? 600 : 400,
                 gap: '12px',
                 marginBottom: '4px',
@@ -1428,10 +1275,10 @@ function MobileMenuItem({ item, isActive, onClick, accentColor = '#1e3a5f' }) {
             }}
         >
             <i
-                className={`fas ${ICONS[item.id] || 'fa-circle'}`}
-                style={{ color: isActive ? accentColor : 'var(--text-secondary)', fontSize: '16px', width: '20px' }}
+                className={`fas ${ICONS[item.id] || 'fa-circle'} text-base w-5`}
+                style={{ color: isActive ? accentColor : 'var(--text-secondary)' }}
             ></i>
-            <span style={{ fontSize: '15px' }}>{item.text}</span>
+            <span className="text-[15px]">{item.text}</span>
         </div>
     )
 }

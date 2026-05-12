@@ -26,10 +26,7 @@ const MOBILE_TAB_MODES = new Set(['dashboard', 'schedule'])
 export function PlanTabSwitcher({ accentColor, isMobile = false, onChange, viewMode }) {
     const tabs = isMobile ? PLAN_TABS.filter((t) => MOBILE_TAB_MODES.has(t.mode)) : PLAN_TABS
     return (
-        <div
-            className="flex items-center rounded-lg p-0.5"
-            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)' }}
-        >
+        <div className="flex items-center rounded-lg p-0.5 bg-bg-tertiary border border-border-light">
             {tabs.map(({ icon, label, mobileLabel, mode }) => {
                 const isActive = viewMode === mode
                 return (

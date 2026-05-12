@@ -2,13 +2,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
-import {
-    parseDailyOrderHtml,
-    parseDetailDriverHtml,
-    parseDetailOrderHtml,
-    type DailyOrderRecord
-    // @ts-ignore
-} from './parsers.ts'
+import { type DailyOrderRecord, parseDailyOrderHtml, parseDetailDriverHtml, parseDetailOrderHtml } from './parsers.ts'
 
 // ============================================================================
 // Pulls dispatch report HTML files from the `dispatch-reports` bucket, parses
@@ -74,9 +68,7 @@ Deno.serve(async (req: Request) => {
         return errorResponse('Invalid date — expected YYYY-MM-DD', headers, 400)
     }
 
-    const plantFilter = Array.isArray(body.plants) && body.plants.length > 0
-        ? new Set(body.plants.map(String))
-        : null
+    const plantFilter = Array.isArray(body.plants) && body.plants.length > 0 ? new Set(body.plants.map(String)) : null
     const enabled = new Set(body.reports || ['DailyOrder', 'DetailOrderAnalysis', 'DetailDriver'])
 
     // @ts-ignore
@@ -326,7 +318,9 @@ Deno.serve(async (req: Request) => {
     if (enabled.has('DetailDriver') && orderIdLookup.size === 0) {
         const { data: existingOrders } = await supabase
             .from('dispatch_data')
-            .select('order_id, order_num, customer, home_plant_code, customer_num, job_number, address, city, contact, phone, po_number, product_code, product_description, start_time, rate, scheduled_yardage, load_size, truck_count, truck_class, sched_to_job_time, sched_to_plant_time')
+            .select(
+                'order_id, order_num, customer, home_plant_code, customer_num, job_number, address, city, contact, phone, po_number, product_code, product_description, start_time, rate, scheduled_yardage, load_size, truck_count, truck_class, sched_to_job_time, sched_to_plant_time'
+            )
             .eq('order_date', date)
             .eq('ticket_num', '')
         for (const row of (existingOrders || []) as Record<string, unknown>[]) {
@@ -411,7 +405,8 @@ Deno.serve(async (req: Request) => {
                 if (!t.ticketNum) continue
                 const cust = normalizeCustomer(t.customer)
                 const orderId =
-                    (cust && orderIdLookup.get(`${t.orderNum}||${cust}`)) || orderIdLookup.get(t.orderNum) ||
+                    (cust && orderIdLookup.get(`${t.orderNum}||${cust}`)) ||
+                    orderIdLookup.get(t.orderNum) ||
                     orderIdLookupLoose.get(t.orderNum)
                 if (!orderId) continue
                 // DetailDriver doesn't carry yardage. Estimate it from the
@@ -497,9 +492,7 @@ Deno.serve(async (req: Request) => {
         // delete rows owned by reports we didn't run.
         if (error && (error as { code?: string }).code === 'PGRST202') {
             const isFullDefault =
-                enabled.has('DailyOrder') &&
-                enabled.has('DetailOrderAnalysis') &&
-                enabled.has('DetailDriver')
+                enabled.has('DailyOrder') && enabled.has('DetailOrderAnalysis') && enabled.has('DetailDriver')
             if (isFullDefault) {
                 ;({ data: deletedCount, error } = await supabase.rpc('dispatch_sync_delete_orphans', {
                     p_date: date,

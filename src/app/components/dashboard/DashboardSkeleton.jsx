@@ -22,12 +22,7 @@ function PanelChrome({ children, titleWidth = 80, delay = 0 }) {
     return (
         <section className="flex flex-col gap-2">
             <Block delay={delay} height={14} width={titleWidth} />
-            <div
-                className="rounded p-3"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-            >
-                {children}
-            </div>
+            <div className="rounded p-3 bg-bg-primary border border-border-light">{children}</div>
         </section>
     )
 }
@@ -35,14 +30,10 @@ function PanelChrome({ children, titleWidth = 80, delay = 0 }) {
 /** Flat-table skeleton — header row + N body rows. */
 function TableChrome({ delay = 0, columns = 7, rows = 5 }) {
     return (
-        <div className="rounded overflow-hidden" style={{ border: '1px solid var(--border-light)' }}>
+        <div className="rounded overflow-hidden border border-border-light">
             <div
-                className="grid px-3 py-2"
-                style={{
-                    background: 'var(--bg-secondary)',
-                    borderBottom: '1px solid var(--border-light)',
-                    gridTemplateColumns: `1.5fr repeat(${columns - 1}, 1fr)`
-                }}
+                className="grid px-3 py-2 bg-bg-secondary border-b border-border-light"
+                style={{ gridTemplateColumns: `1.5fr repeat(${columns - 1}, 1fr)` }}
             >
                 {Array.from({ length: columns }, (_, i) => (
                     <Block key={i} delay={delay + i * 20} height={10} width="50%" />
@@ -51,9 +42,8 @@ function TableChrome({ delay = 0, columns = 7, rows = 5 }) {
             {Array.from({ length: rows }, (_, r) => (
                 <div
                     key={r}
-                    className="grid px-3 py-2.5"
+                    className="grid px-3 py-2.5 bg-bg-primary"
                     style={{
-                        background: 'var(--bg-primary)',
                         borderBottom: r < rows - 1 ? '1px solid var(--border-light)' : 'none',
                         gridTemplateColumns: `1.5fr repeat(${columns - 1}, 1fr)`
                     }}
@@ -102,18 +92,14 @@ export default function DashboardSkeleton({ isMobile }) {
             <PanelChrome delay={120} titleWidth={120}>
                 <div className="flex flex-col gap-3">
                     <div
-                        className="grid rounded overflow-hidden"
-                        style={{
-                            border: '1px solid var(--border-light)',
-                            gridTemplateColumns: `repeat(${isMobile ? 3 : 6}, minmax(0, 1fr))`
-                        }}
+                        className="grid rounded overflow-hidden border border-border-light"
+                        style={{ gridTemplateColumns: `repeat(${isMobile ? 3 : 6}, minmax(0, 1fr))` }}
                     >
                         {Array.from({ length: isMobile ? 3 : 6 }, (_, i) => (
                             <div
                                 key={i}
-                                className="flex flex-col gap-1.5 px-3 py-2.5"
+                                className="flex flex-col gap-1.5 px-3 py-2.5 bg-bg-primary"
                                 style={{
-                                    background: 'var(--bg-primary)',
                                     borderRight: i < (isMobile ? 3 : 6) - 1 ? '1px solid var(--border-light)' : 'none'
                                 }}
                             >
@@ -147,20 +133,14 @@ export default function DashboardSkeleton({ isMobile }) {
             <PanelChrome delay={920} titleWidth={80}>
                 <div className="flex flex-col gap-3">
                     <div
-                        className="grid rounded overflow-hidden"
-                        style={{
-                            border: '1px solid var(--border-light)',
-                            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))'
-                        }}
+                        className="grid rounded overflow-hidden border border-border-light"
+                        style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}
                     >
                         {Array.from({ length: 4 }, (_, i) => (
                             <div
                                 key={i}
-                                className="flex flex-col gap-1.5 px-3 py-2.5"
-                                style={{
-                                    background: 'var(--bg-primary)',
-                                    borderRight: i < 3 ? '1px solid var(--border-light)' : 'none'
-                                }}
+                                className="flex flex-col gap-1.5 px-3 py-2.5 bg-bg-primary"
+                                style={{ borderRight: i < 3 ? '1px solid var(--border-light)' : 'none' }}
                             >
                                 <Block delay={940 + i * 30} height={10} width="60%" />
                                 <Block delay={980 + i * 30} height={20} width="50%" />

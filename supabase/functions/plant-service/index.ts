@@ -135,15 +135,13 @@ Deno.serve(async (req) => {
                 const plantAddress = body?.plantAddress != null ? trimString(body.plantAddress) || null : null
                 if (!plantCode || !plantName) return errorResponse('Plant code and name are required', headers, 400)
                 const now = nowISO()
-                const { error } = await supabase
-                    .from(PLANTS_TABLE)
-                    .insert({
-                        plant_code: plantCode,
-                        plant_name: plantName,
-                        plant_address: plantAddress,
-                        created_at: now,
-                        updated_at: now
-                    })
+                const { error } = await supabase.from(PLANTS_TABLE).insert({
+                    plant_code: plantCode,
+                    plant_name: plantName,
+                    plant_address: plantAddress,
+                    created_at: now,
+                    updated_at: now
+                })
                 if (error) return errorResponse('Operation failed', headers, 400)
                 return jsonResponse({ success: true }, headers)
             }

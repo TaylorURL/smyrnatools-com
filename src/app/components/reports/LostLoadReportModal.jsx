@@ -281,8 +281,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
     }
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center sm:p-4 overflow-y-auto"
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center sm:p-4 overflow-y-auto bg-[rgba(0,0,0,0.5)]"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div className="rounded-none sm:rounded-2xl shadow-2xl w-full sm:max-w-lg flex flex-col bg-bg-primary min-h-screen sm:min-h-0 sm:max-h-[90vh]">
@@ -341,10 +340,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                     </option>
                                 ))}
                             </select>
-                            <i
-                                className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none"
-                                style={{ color: 'var(--text-secondary)' }}
-                            />
+                            <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none text-text-secondary" />
                         </div>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -367,12 +363,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             value={yardage}
                             onChange={(e) => setYardage(e.target.value)}
                             placeholder="Enter yardage..."
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-                            style={{
-                                backgroundColor: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-bg-primary border border-border-light text-text-primary"
                             min="0"
                         />
                     </div>
@@ -383,71 +374,48 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                         <button
                             type="button"
                             onClick={() => setTruckPickerOpen((v) => !v)}
-                            className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-left transition-colors"
-                            style={{
-                                backgroundColor: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-left transition-colors bg-bg-primary border border-border-light text-text-primary"
                         >
                             {truckNumber ? (
-                                <span className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                                <span className="flex items-center gap-2 text-text-primary">
                                     <span
                                         className="px-2 py-0.5 rounded-md text-xs font-bold text-white"
                                         style={{ backgroundColor: accentColor }}
                                     >
                                         #{truckNumber}
                                     </span>
-                                    <span style={{ color: 'var(--text-secondary)' }}>
+                                    <span className="text-text-secondary">
                                         {operatorMap[
                                             regionalMixers.find((m) => m.truckNumber === truckNumber)?.assignedOperator
                                         ] || 'Unassigned'}
                                     </span>
                                 </span>
                             ) : (
-                                <span style={{ color: 'var(--text-secondary)' }}>Select truck...</span>
+                                <span className="text-text-secondary">Select truck...</span>
                             )}
                             <i
-                                className={`fas fa-chevron-${truckPickerOpen ? 'up' : 'down'} text-xs`}
-                                style={{ color: 'var(--text-secondary)' }}
+                                className={`fas fa-chevron-${truckPickerOpen ? 'up' : 'down'} text-xs text-text-secondary`}
                             />
                         </button>
                         {truckPickerOpen && (
-                            <div
-                                className="rounded-lg overflow-hidden shadow-md"
-                                style={{
-                                    backgroundColor: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)'
-                                }}
-                            >
-                                <div className="p-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                            <div className="rounded-lg overflow-hidden shadow-md bg-bg-primary border border-border-light">
+                                <div className="p-2 border-b border-border-light">
                                     <input
                                         type="text"
                                         value={truckSearch}
                                         onChange={(e) => setTruckSearch(e.target.value)}
                                         placeholder="Search truck #, operator, or plant..."
-                                        className="w-full rounded-md px-3 py-2 text-sm focus:outline-none"
-                                        style={{
-                                            backgroundColor: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-light)',
-                                            color: 'var(--text-primary)'
-                                        }}
+                                        className="w-full rounded-md px-3 py-2 text-sm focus:outline-none bg-bg-secondary border border-border-light text-text-primary"
                                         autoFocus
                                     />
                                 </div>
                                 {regionalMixers.length === 0 ? (
-                                    <div
-                                        className="px-4 py-5 text-center text-sm"
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    >
+                                    <div className="px-4 py-5 text-center text-sm text-text-secondary">
                                         <i className="fas fa-truck mb-2 text-lg block" />
                                         No mixers found
                                     </div>
                                 ) : (
-                                    <div
-                                        className="max-h-48 overflow-y-auto"
-                                        style={{ borderColor: 'var(--border-light)' }}
-                                    >
+                                    <div className="max-h-48 overflow-y-auto border-border-light">
                                         {regionalMixers.map((m) => {
                                             const opName = operatorMap[m.assignedOperator] || null
                                             const isSelected = truckNumber === m.truckNumber
@@ -473,25 +441,16 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                                     </span>
                                                     <span className="flex-1 min-w-0">
                                                         {opName ? (
-                                                            <span
-                                                                className="text-sm font-medium truncate block"
-                                                                style={{ color: 'var(--text-primary)' }}
-                                                            >
+                                                            <span className="text-sm font-medium truncate block text-text-primary">
                                                                 {opName}
                                                             </span>
                                                         ) : (
-                                                            <span
-                                                                className="text-sm italic"
-                                                                style={{ color: 'var(--text-secondary)' }}
-                                                            >
+                                                            <span className="text-sm italic text-text-secondary">
                                                                 Unassigned
                                                             </span>
                                                         )}
                                                     </span>
-                                                    <span
-                                                        className="text-[10px] font-medium flex-shrink-0"
-                                                        style={{ color: 'var(--text-secondary)' }}
-                                                    >
+                                                    <span className="text-[10px] font-medium flex-shrink-0 text-text-secondary">
                                                         {m.assignedPlant || '-'}
                                                     </span>
                                                     {isSelected && (
@@ -517,12 +476,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             value={customerName}
                             onChange={(e) => setCustomerName(e.target.value)}
                             placeholder="Enter customer name..."
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-                            style={{
-                                backgroundColor: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-bg-primary border border-border-light text-text-primary"
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -534,12 +488,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             value={ticketNumber}
                             onChange={(e) => setTicketNumber(e.target.value)}
                             placeholder="Enter ticket number..."
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none"
-                            style={{
-                                backgroundColor: 'var(--bg-primary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)'
-                            }}
+                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-bg-primary border border-border-light text-text-primary"
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -635,12 +584,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 onChange={(e) => setDumpLocationOther(e.target.value)}
                                 placeholder="Specify where concrete was dumped..."
                                 autoFocus
-                                className="rounded-lg px-3 py-2.5 text-sm focus:outline-none mt-1"
-                                style={{
-                                    backgroundColor: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-primary)'
-                                }}
+                                className="rounded-lg px-3 py-2.5 text-sm focus:outline-none mt-1 bg-bg-primary border border-border-light text-text-primary"
                             />
                         )}
                     </div>
@@ -694,12 +638,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 placeholder="Explain what happened and what will be done to prevent this..."
                                 rows={3}
                                 autoFocus
-                                className="rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none mt-1"
-                                style={{
-                                    backgroundColor: 'var(--bg-primary)',
-                                    border: '1px solid var(--border-light)',
-                                    color: 'var(--text-primary)'
-                                }}
+                                className="rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none mt-1 bg-bg-primary border border-border-light text-text-primary"
                             />
                         )}
                     </div>
@@ -722,9 +661,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                     className="w-4 h-4 shrink-0 cursor-pointer"
                                     style={{ accentColor }}
                                 />
-                                <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                                    Operator reprimanded
-                                </span>
+                                <span className="text-sm text-text-primary">Operator reprimanded</span>
                             </label>
                             <label
                                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
@@ -740,21 +677,15 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                     className="w-4 h-4 shrink-0 cursor-pointer"
                                     style={{ accentColor }}
                                 />
-                                <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                                    Plant Manager reprimanded
-                                </span>
+                                <span className="text-sm text-text-primary">Plant Manager reprimanded</span>
                             </label>
                         </div>
                     </div>
                 </div>
-                <div
-                    className="px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 sticky bottom-0 bg-bg-primary border-t border-border-light z-10"
-                    style={{ borderTop: '1px solid var(--border-light)' }}
-                >
+                <div className="px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 sticky bottom-0 bg-bg-primary border-t border-border-light z-10 border-t border-border-light">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2.5 rounded-lg text-sm font-medium"
-                        style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                        className="px-4 py-2.5 rounded-lg text-sm font-medium bg-bg-secondary text-text-secondary"
                         type="button"
                     >
                         Cancel

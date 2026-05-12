@@ -40,14 +40,10 @@ function emptyDraft() {
 
 function FieldLabel({ children, icon, required }) {
     return (
-        <label className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5`} style={{ color: 'var(--text-tertiary)' }}>
+        <label className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5 text-text-tertiary`}>
             {icon && <i className={`fas ${icon} text-[10px]`} />}
             {children}
-            {required && (
-                <span className="ml-0.5" style={{ color: '#dc2626' }}>
-                    *
-                </span>
-            )}
+            {required && <span className="ml-0.5 text-red-600">*</span>}
         </label>
     )
 }
@@ -140,14 +136,11 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                 style={CARD_STYLE}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div
-                    className="flex items-center justify-between px-3 py-2.5"
-                    style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between px-3 py-2.5 bg-bg-secondary border-b border-border-light">
                     <div className="flex items-center gap-2 min-w-0">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-flask text-[11px]" />
                         </div>
@@ -155,10 +148,7 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                             <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                                 Quality Issue
                             </div>
-                            <div
-                                className="text-[12.5px] font-semibold leading-tight"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
+                            <div className="text-[12.5px] font-semibold leading-tight text-text-primary">
                                 {isEditing ? 'Edit issue' : 'New issue'}
                             </div>
                         </div>
@@ -166,13 +156,7 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded border-none cursor-pointer"
-                        style={{
-                            background: 'var(--bg-tertiary)',
-                            color: 'var(--text-secondary)',
-                            height: 24,
-                            width: 24
-                        }}
+                        className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6"
                     >
                         <i className="fas fa-times text-[10px]" />
                     </button>
@@ -273,27 +257,20 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                     </div>
 
                     {error && (
-                        <div
-                            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium"
-                            style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
-                        >
+                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>
                     )}
                 </div>
 
-                <div
-                    className="flex items-center justify-between gap-1.5 px-3 py-2.5"
-                    style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between gap-1.5 px-3 py-2.5 bg-bg-secondary border-t border-border-light">
                     {isEditing ? (
                         <button
                             type="button"
                             onClick={remove}
                             disabled={deleting || submitting}
-                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none disabled:opacity-50"
-                            style={{ background: '#dc2626' }}
+                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none disabled:opacity-50 bg-red-600"
                         >
                             <i className={`fas ${deleting ? 'fa-circle-notch fa-spin' : 'fa-trash-alt'} text-[10px]`} />
                             Delete
@@ -305,12 +282,7 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                         <button
                             type="button"
                             onClick={onClose}
-                            className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none"
-                            style={{
-                                background: 'var(--bg-tertiary)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-secondary)'
-                            }}
+                            className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none bg-bg-tertiary border border-border-light text-text-secondary"
                         >
                             Cancel
                         </button>

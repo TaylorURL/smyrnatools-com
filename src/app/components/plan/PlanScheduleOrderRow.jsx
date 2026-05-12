@@ -22,7 +22,7 @@ function PhoneCell({ phone }) {
     const digits = phone.replace(/\D/g, '')
     if (digits.length === 10) {
         return (
-            <a href={`tel:${digits}`} className="hover:underline" style={{ color: 'var(--text-primary)' }}>
+            <a href={`tel:${digits}`} className="hover:underline text-text-primary">
                 ({digits.slice(0, 3)}) {digits.slice(3, 6)}-{digits.slice(6)}
             </a>
         )
@@ -37,7 +37,7 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
     const rawAddress = clean(order.address)
     const rawCity = clean(order.city)
     if (!rawAddress && !rawCity) {
-        return <span style={{ color: 'var(--text-tertiary)' }}>—</span>
+        return <span className="text-text-tertiary">—</span>
     }
     if (isLikelyBadAddress(rawAddress)) {
         return (
@@ -66,17 +66,16 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
                 <button
                     type="button"
                     onClick={() => onOpenLocation?.(orderForMap)}
-                    className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 font-semibold uppercase tracking-wide"
-                    style={{ color: 'var(--text-primary)', fontSize: 12 }}
+                    className="text-left underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0 truncate min-w-0 font-semibold uppercase tracking-wide text-text-primary"
+                    style={{ fontSize: 12 }}
                     title={`Open map for ${composeAddress(orderForMap)}`}
                 >
-                    <i className="fas fa-location-dot text-[10px] mr-1.5" style={{ color: 'var(--text-tertiary)' }} />
+                    <i className="fas fa-location-dot text-[10px] mr-1.5 text-text-tertiary" />
                     {displayText}
                 </button>
                 {usingFallback && (
                     <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
-                        style={{ background: 'rgba(217, 119, 6, 0.15)', color: '#b45309' }}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 bg-[rgba(217,_119,_6,_0.15)] text-[#b45309]"
                         title={`City wasn't entered by dispatch — we filled in "${fallbackCity}" from plant ${order.plantCode}. The actual delivery city could be different.`}
                     >
                         <i className="fas fa-circle-exclamation text-[9px]" />
@@ -86,8 +85,7 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
             </div>
             {closerPlant && (
                 <span
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start"
-                    style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#1d4ed8' }}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start bg-[rgba(37,_99,_235,_0.12)] text-blue-700"
                     title={`Live drive time: ${closerPlant.minutes} min from plant ${closerPlant.plantCode}${closerPlant.plantName ? ` (${closerPlant.plantName})` : ''} vs ${closerPlant.assignedMinutes} min from assigned plant ${order.plantCode}. Saves ~${closerPlant.savings} min one-way.`}
                 >
                     <i className="fas fa-route text-[9px]" />
@@ -107,11 +105,7 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
  *  is finished, calling for help is moot and the badge is just noise. */
 function TrucksCell({ isNonProduction, isPastDay, order, poolTimeline, rowKey, service, travelOverrides }) {
     if (isNonProduction) {
-        return (
-            <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
-                —
-            </td>
-        )
+        return <td className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-tertiary">—</td>
     }
     const computed = getCalculatedTruckCount(order, travelOverrides)
     const dispatchTrucks = parseFloat(order.truckCount) || 0
@@ -124,14 +118,11 @@ function TrucksCell({ isNonProduction, isPastDay, order, poolTimeline, rowKey, s
     const isCompleted = service?.status === 'good' || service?.status === 'bad'
     const overbooked = Number.isFinite(poolAfterEffective) && poolAfterEffective < 0 && !isPastDay && !isCompleted
     return (
-        <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+        <td className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-secondary">
             <div className="flex flex-col items-end gap-0.5">
                 <span
-                    className="inline-flex items-center gap-1 justify-end"
-                    style={{
-                        color: differsFromDispatch ? '#d97706' : 'var(--text-primary)',
-                        fontWeight: 600
-                    }}
+                    className="inline-flex items-center gap-1 justify-end font-semibold"
+                    style={{ color: differsFromDispatch ? '#d97706' : 'var(--text-primary)' }}
                 >
                     {differsFromDispatch && <i className="fas fa-circle-info text-[10px]" />}
                     {computed != null ? computed : '—'}
@@ -209,12 +200,11 @@ export default function PlanScheduleOrderRow({
     const hoursLimit = !isNonProduction ? evaluateHoursLimit(order, firstLoadOutMin) : null
     return (
         <tr
-            className="animate-slide-in-row"
+            className="animate-slide-in-row border-t border-border-light"
             onContextMenu={onContextMenu}
             style={{
                 animationDelay: `${animationDelayMs}ms`,
                 background: isCancelled ? 'rgba(220, 38, 38, 0.05)' : isTest ? 'rgba(99, 102, 241, 0.05)' : undefined,
-                borderTop: '1px solid var(--border-light)',
                 opacity: isNonProduction ? 0.7 : 1
             }}
         >
@@ -230,14 +220,10 @@ export default function PlanScheduleOrderRow({
             <td className="px-3 py-2 whitespace-nowrap">
                 <PlantBadge code={order.plantCode} fallback={accentColor} name={plantName} />
             </td>
-            <td className="px-3 py-2 whitespace-nowrap font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <td className="px-3 py-2 whitespace-nowrap font-semibold text-text-primary">
                 {order.orderNum ? `#${order.orderNum}` : '—'}
             </td>
-            <td
-                className="px-3 py-2 max-w-[260px]"
-                style={{ color: 'var(--text-primary)' }}
-                title={clean(order.customer)}
-            >
+            <td className="px-3 py-2 max-w-[260px] text-text-primary" title={clean(order.customer)}>
                 <div className="flex items-center gap-2 min-w-0 flex-wrap">
                     <span
                         className="font-semibold truncate"
@@ -260,29 +246,19 @@ export default function PlanScheduleOrderRow({
                     plantCityByCode={plantCityByCode}
                 />
             </td>
-            <td
-                className="px-3 py-2 whitespace-nowrap"
-                style={{ color: 'var(--text-primary)' }}
-                title={clean(order.description)}
-            >
+            <td className="px-3 py-2 whitespace-nowrap text-text-primary" title={clean(order.description)}>
                 <span className="font-mono font-semibold">{clean(order.productCode) || '—'}</span>
                 {order.description && (
-                    <span
-                        className="ml-1 max-w-[180px] truncate inline-block align-middle"
-                        style={{ color: 'var(--text-tertiary)' }}
-                    >
+                    <span className="ml-1 max-w-[180px] truncate inline-block align-middle text-text-tertiary">
                         {clean(order.description)}
                     </span>
                 )}
             </td>
-            <td
-                className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap"
-                style={{ color: 'var(--text-primary)' }}
-            >
+            <td className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap text-text-primary">
                 {yardage > 0 ? yardage : '—'}
             </td>
             <PlanScheduleLoadedCell detail={detail} homePlantCode={order.plantCode} total={yardage} />
-            <td className="px-3 py-2 font-mono text-right whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+            <td className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-secondary">
                 {loadSize > 0 ? loadSize : '—'}
             </td>
             <TrucksCell
@@ -295,8 +271,7 @@ export default function PlanScheduleOrderRow({
                 travelOverrides={travelOverrides}
             />
             <td
-                className="px-3 py-2 font-mono whitespace-nowrap"
-                style={{ color: 'var(--text-secondary)' }}
+                className="px-3 py-2 font-mono whitespace-nowrap text-text-secondary"
                 title={
                     order.toJobTime || order.toPlantTime
                         ? `To job ${clean(order.toJobTime) || '—'} · To plant ${clean(order.toPlantTime) || '—'}`
@@ -306,15 +281,13 @@ export default function PlanScheduleOrderRow({
                 {clean(order.toJobTime) || '—'}
             </td>
             <td
-                className="px-3 py-2 font-mono whitespace-nowrap"
-                style={{ color: 'var(--text-secondary)' }}
+                className="px-3 py-2 font-mono whitespace-nowrap text-text-secondary"
                 title="Spacing between loads (rate)"
             >
                 {clean(order.rate) || '—'}
             </td>
             <td
-                className="px-3 py-2 whitespace-nowrap font-mono"
-                style={{ color: 'var(--text-secondary)' }}
+                className="px-3 py-2 whitespace-nowrap font-mono text-text-secondary"
                 title={clean(order.phone) || undefined}
             >
                 <PhoneCell phone={clean(order.phone)} />

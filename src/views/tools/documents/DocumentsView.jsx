@@ -156,21 +156,17 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                 >
                     <i className={`fas ${icon} text-[10px]`} />
                 </span>
-                <span
-                    className="text-[12px] font-semibold truncate"
-                    style={{ color: 'var(--text-primary)' }}
-                    title={doc.name}
-                >
+                <span className="text-[12px] font-semibold truncate text-text-primary" title={doc.name}>
                     {doc.name}
                 </span>
             </div>
-            <div className="text-[11px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+            <div className="text-[11px] font-mono tabular-nums text-text-secondary">
                 {formatFileSize(doc.file_size)}
             </div>
-            <div className="text-[11px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+            <div className="text-[11px] font-mono tabular-nums text-text-secondary">
                 {DateUtility.formatDate(doc.created_at)}
             </div>
-            <div className="text-[11px] truncate" style={{ color: 'var(--text-secondary)' }} title={uploaderName || ''}>
+            <div className="text-[11px] truncate text-text-secondary" title={uploaderName || ''}>
                 {uploaderName || '\u2014'}
             </div>
             <div className="flex items-center justify-end gap-0.5">
@@ -178,8 +174,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     <button
                         type="button"
                         onClick={() => onPreview(doc)}
-                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent hover:brightness-90 transition-colors"
-                        style={{ color: 'var(--text-tertiary)' }}
+                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent hover:brightness-90 transition-colors text-text-tertiary"
                         title="Preview"
                     >
                         <i className="fas fa-eye" />
@@ -190,8 +185,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     target="_blank"
                     rel="noopener noreferrer"
                     download
-                    className="flex items-center justify-center w-5 h-5 rounded text-[11px] no-underline hover:brightness-90 transition-colors"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    className="flex items-center justify-center w-5 h-5 rounded text-[11px] no-underline hover:brightness-90 transition-colors text-text-tertiary"
                     title="Download"
                 >
                     <i className="fas fa-download" />
@@ -200,8 +194,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     <button
                         type="button"
                         onClick={() => onDelete(doc)}
-                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90"
-                        style={{ color: '#dc2626' }}
+                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90 text-red-600"
                         title="Delete"
                     >
                         <i className="fas fa-trash" />

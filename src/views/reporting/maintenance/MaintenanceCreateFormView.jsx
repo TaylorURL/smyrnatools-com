@@ -44,42 +44,24 @@ const FREQUENCY_HINT = {
 /* ── Plan-tab styled atoms ─────────────────────────────────────── */
 
 function Card({ children }) {
-    return (
-        <section
-            className="rounded overflow-hidden"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            {children}
-        </section>
-    )
+    return <section className="rounded overflow-hidden bg-bg-primary border border-border-light">{children}</section>
 }
 
 function CardHeader({ accentColor, description, icon, required, title }) {
     return (
-        <header
-            className="flex items-center gap-2.5 px-4 py-3"
-            style={{ borderBottom: '1px solid var(--border-light)' }}
-        >
+        <header className="flex items-center gap-2.5 px-4 py-3 border-b border-border-light">
             <div
-                className="flex h-7 w-7 items-center justify-center rounded shrink-0"
-                style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                className="flex h-7 w-7 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                style={{ color: accentColor }}
             >
                 <i className={`fas ${icon} text-[12px]`} />
             </div>
             <div className="min-w-0 flex-1">
                 <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                     {title}
-                    {required && (
-                        <span className="ml-1.5" style={{ color: '#dc2626' }}>
-                            *
-                        </span>
-                    )}
+                    {required && <span className="ml-1.5 text-red-600">*</span>}
                 </div>
-                {description && (
-                    <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        {description}
-                    </div>
-                )}
+                {description && <div className="text-[11px] mt-0.5 text-text-tertiary">{description}</div>}
             </div>
         </header>
     )
@@ -89,11 +71,7 @@ function FieldLabel({ children, required }) {
     return (
         <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
             {children}
-            {required && (
-                <span className="ml-1" style={{ color: '#dc2626' }}>
-                    *
-                </span>
-            )}
+            {required && <span className="ml-1 text-red-600">*</span>}
         </label>
     )
 }
@@ -119,10 +97,9 @@ function SubtleButton({ children, danger = false, disabled = false, icon, onClic
             type={type}
             onClick={onClick}
             disabled={disabled}
-            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95"
+            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95 border border-border-light"
             style={{
                 background: danger ? '#fee2e2' : 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
                 color: danger ? '#b91c1c' : 'var(--text-secondary)'
             }}
         >
@@ -153,7 +130,7 @@ function IconButton({ bg, danger, disabled, fg, icon, onClick, title }) {
 
 function ErrorText({ children }) {
     return (
-        <div className="mt-1 flex items-center gap-1 text-[10.5px]" style={{ color: '#dc2626' }}>
+        <div className="mt-1 flex items-center gap-1 text-[10.5px] text-red-600">
             <i className="fas fa-exclamation-circle text-[10px]" />
             <span>{children}</span>
         </div>
@@ -162,21 +139,14 @@ function ErrorText({ children }) {
 
 function Chip({ accentColor, children, onRemove }) {
     return (
-        <span
-            className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold px-2 py-1"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-primary)'
-            }}
-        >
+        <span className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold px-2 py-1 bg-bg-secondary border border-border-light text-text-primary">
             {children}
             {onRemove && (
                 <button
                     type="button"
                     onClick={onRemove}
-                    className="flex h-4 w-4 items-center justify-center rounded-full border-none cursor-pointer transition-colors hover:brightness-90"
-                    style={{ background: accentColor, color: '#fff' }}
+                    className="flex h-4 w-4 items-center justify-center rounded-full border-none cursor-pointer transition-colors hover:brightness-90 text-white"
+                    style={{ background: accentColor }}
                     aria-label="Remove"
                 >
                     <i className="fas fa-times text-[8px]" />
@@ -391,26 +361,23 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
     const showPerN = ['daily', 'weekly', 'monthly', 'yearly'].includes(frequency)
 
     return (
-        <div className="min-h-screen w-full" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="min-h-screen w-full bg-bg-secondary">
             {/* Sticky page header */}
-            <div
-                className="sticky top-0 z-50 flex items-center justify-between gap-3 px-3 sm:px-4 md:px-6 py-2"
-                style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-light)' }}
-            >
+            <div className="sticky top-0 z-50 flex items-center justify-between gap-3 px-3 sm:px-4 md:px-6 py-2 bg-bg-primary border-b border-border-light">
                 <div className="flex items-center gap-2.5 min-w-0">
                     <button
                         type="button"
                         onClick={onBack}
-                        className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer"
-                        style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                        className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-bg-tertiary border-none cursor-pointer bg-bg-tertiary"
+                        style={{ color: accentColor }}
                         aria-label="Back"
                     >
                         <i className="fas fa-arrow-left text-[11px]" />
                     </button>
                     <div className="flex items-center gap-2 min-w-0">
                         <div
-                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                            className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                            style={{ color: accentColor }}
                         >
                             <i className="fas fa-clipboard-list text-[11px]" />
                         </div>
@@ -471,9 +438,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                                 }
                                             >
                                                 <span className="font-mono tabular-nums text-[10.5px]">{code}</span>
-                                                {name !== code && (
-                                                    <span style={{ color: 'var(--text-secondary)' }}>· {name}</span>
-                                                )}
+                                                {name !== code && <span className="text-text-secondary">· {name}</span>}
                                             </Chip>
                                         )
                                     })}
@@ -489,7 +454,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                 }}
                             >
                                 <span>{selectedPlants.length === 0 ? 'Select plants' : 'Add more plants'}</span>
-                                <i className="fas fa-plus text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                                <i className="fas fa-plus text-[10px] text-text-tertiary" />
                             </button>
                             {errors.plants && <ErrorText>{errors.plants}</ErrorText>}
                             <PlantDropdownModal
@@ -549,10 +514,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                             className="flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none font-mono tabular-nums"
                                             style={FIELD_STYLE}
                                         />
-                                        <span
-                                            className="text-[10.5px] whitespace-nowrap uppercase tracking-wider"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
+                                        <span className="text-[10.5px] whitespace-nowrap uppercase tracking-wider text-text-tertiary">
                                             {frequency === 'daily'
                                                 ? 'day(s)'
                                                 : frequency === 'weekly'
@@ -575,9 +537,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                 className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none font-mono tabular-nums"
                                 style={FIELD_STYLE}
                             />
-                            <p className="mt-1 text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                                {FREQUENCY_HINT[frequency]}
-                            </p>
+                            <p className="mt-1 text-[10.5px] text-text-tertiary">{FREQUENCY_HINT[frequency]}</p>
                         </div>
                     </div>
                 </Card>
@@ -593,39 +553,28 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                     />
                     <div className="px-4 py-3 flex flex-col gap-2">
                         {errors.assignment && <ErrorText>{errors.assignment}</ErrorText>}
-                        <div
-                            className="rounded overflow-hidden"
-                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-                        >
+                        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
                             <button
                                 type="button"
                                 onClick={() => setShowRoleSelector((v) => !v)}
-                                className="flex w-full items-center justify-between px-3 py-2 cursor-pointer border-none transition-colors hover:bg-bg-tertiary"
-                                style={{ background: 'var(--bg-secondary)' }}
+                                className="flex w-full items-center justify-between px-3 py-2 cursor-pointer border-none transition-colors hover:bg-bg-tertiary bg-bg-secondary"
                             >
                                 <div className="flex items-center gap-2">
                                     <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                                         Roles
                                     </span>
-                                    <span
-                                        className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
-                                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                                    >
+                                    <span className="font-mono tabular-nums rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-bg-tertiary text-text-secondary">
                                         {assignedRoles.length} selected
                                     </span>
                                 </div>
                                 <i
-                                    className={`fas fa-chevron-${showRoleSelector ? 'up' : 'down'} text-[10px]`}
-                                    style={{ color: 'var(--text-tertiary)' }}
+                                    className={`fas fa-chevron-${showRoleSelector ? 'up' : 'down'} text-[10px] text-text-tertiary`}
                                 />
                             </button>
                             {showRoleSelector && (
                                 <div className="max-h-60 overflow-y-auto">
                                     {availableRoles.length === 0 ? (
-                                        <div
-                                            className="text-center py-4 text-[12px]"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        >
+                                        <div className="text-center py-4 text-[12px] text-text-tertiary">
                                             No roles available
                                         </div>
                                     ) : (
@@ -644,17 +593,11 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                                     className="w-3.5 h-3.5 cursor-pointer"
                                                 />
                                                 <div className="flex flex-col min-w-0">
-                                                    <span
-                                                        className="text-[12px] font-semibold truncate"
-                                                        style={{ color: 'var(--text-primary)' }}
-                                                    >
+                                                    <span className="text-[12px] font-semibold truncate text-text-primary">
                                                         {role.name}
                                                     </span>
                                                     {role.description && (
-                                                        <span
-                                                            className="text-[10.5px] truncate"
-                                                            style={{ color: 'var(--text-secondary)' }}
-                                                        >
+                                                        <span className="text-[10.5px] truncate text-text-secondary">
                                                             {role.description}
                                                         </span>
                                                     )}
@@ -665,13 +608,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                 </div>
                             )}
                             {assignedRoles.length > 0 && (
-                                <div
-                                    className="flex flex-wrap gap-1.5 px-3 py-2"
-                                    style={{
-                                        background: 'var(--bg-secondary)',
-                                        borderTop: '1px solid var(--border-light)'
-                                    }}
-                                >
+                                <div className="flex flex-wrap gap-1.5 px-3 py-2 bg-bg-secondary border-t border-border-light">
                                     {assignedRoles.map((roleId) => {
                                         const role = availableRoles.find((r) => r.id === roleId)
                                         return role ? (
@@ -713,14 +650,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
 
                         {/* Field cards */}
                         {fields.length === 0 ? (
-                            <div
-                                className="flex flex-col items-center justify-center py-8 rounded"
-                                style={{
-                                    background: 'var(--bg-secondary)',
-                                    border: '1px dashed var(--border-light)',
-                                    color: 'var(--text-tertiary)'
-                                }}
-                            >
+                            <div className="flex flex-col items-center justify-center py-8 rounded bg-bg-secondary border border-border-light text-text-tertiary">
                                 <i className="fas fa-plus-circle text-2xl mb-1.5" />
                                 <p className="text-[12px] m-0">Add fields using the buttons above</p>
                             </div>
@@ -729,24 +659,14 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                 {fields.map((field, index) => (
                                     <div
                                         key={field.id}
-                                        className="rounded overflow-hidden"
-                                        style={{
-                                            background: 'var(--bg-primary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
+                                        className="rounded overflow-hidden bg-bg-primary border border-border-light"
                                     >
                                         {/* Field header */}
-                                        <div
-                                            className="flex items-center justify-between gap-2 px-3 py-2"
-                                            style={{
-                                                background: 'var(--bg-secondary)',
-                                                borderBottom: '1px solid var(--border-light)'
-                                            }}
-                                        >
+                                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-bg-secondary border-b border-border-light">
                                             <div className="flex items-center gap-2 min-w-0">
                                                 <div
-                                                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                                                    style={{ background: 'var(--bg-tertiary)', color: accentColor }}
+                                                    className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
+                                                    style={{ color: accentColor }}
                                                 >
                                                     <i
                                                         className={`fas ${getFieldTypeIcon(field.field_type)} text-[11px]`}
@@ -850,12 +770,8 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                                     <button
                                                         type="button"
                                                         onClick={() => addChecklistItem(index)}
-                                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer self-start transition-colors hover:brightness-95"
-                                                        style={{
-                                                            background: 'transparent',
-                                                            border: '1px dashed var(--border-light)',
-                                                            color: accentColor
-                                                        }}
+                                                        className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer self-start transition-colors hover:brightness-95 bg-transparent border border-border-light"
+                                                        style={{ color: accentColor }}
                                                     >
                                                         <i className="fas fa-plus text-[10px]" />
                                                         Add Item
@@ -864,10 +780,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                             )}
 
                                             <div className="flex flex-wrap gap-3 pt-1">
-                                                <label
-                                                    className="flex items-center gap-1.5 cursor-pointer text-[12px]"
-                                                    style={{ color: 'var(--text-primary)' }}
-                                                >
+                                                <label className="flex items-center gap-1.5 cursor-pointer text-[12px] text-text-primary">
                                                     <input
                                                         type="checkbox"
                                                         checked={field.is_required}
@@ -878,10 +791,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                                                     />
                                                     Required field
                                                 </label>
-                                                <label
-                                                    className="flex items-center gap-1.5 cursor-pointer text-[12px]"
-                                                    style={{ color: 'var(--text-primary)' }}
-                                                >
+                                                <label className="flex items-center gap-1.5 cursor-pointer text-[12px] text-text-primary">
                                                     <input
                                                         type="checkbox"
                                                         checked={field.image_required || false}
@@ -902,10 +812,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                 </Card>
 
                 {errors.save && (
-                    <div
-                        className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-medium"
-                        style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c' }}
-                    >
+                    <div className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-medium bg-red-100 border border-red-300 text-red-700">
                         <i className="fas fa-exclamation-circle text-[11px]" />
                         <span>{errors.save}</span>
                     </div>
@@ -926,23 +833,15 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
 
             {showDeleteConfirm && (
                 <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-                    style={{ background: 'rgba(15, 23, 42, 0.65)' }}
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
                     onClick={() => setShowDeleteConfirm(false)}
                 >
                     <div
-                        className="w-full max-w-sm rounded overflow-hidden"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                        className="w-full max-w-sm rounded overflow-hidden bg-bg-primary border border-border-light"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div
-                            className="flex items-center gap-2.5 px-3 py-2"
-                            style={{ borderBottom: '1px solid var(--border-light)' }}
-                        >
-                            <div
-                                className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                                style={{ background: '#fee2e2', color: '#b91c1c' }}
-                            >
+                        <div className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light">
+                            <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-red-100 text-red-700">
                                 <i className="fas fa-trash text-[11px]" />
                             </div>
                             <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
@@ -950,24 +849,17 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                             </span>
                         </div>
                         <div className="px-4 py-3">
-                            <p className="m-0 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                            <p className="m-0 text-[12px] text-text-secondary">
                                 Are you sure you want to delete this form? This action cannot be undone.
                             </p>
                         </div>
-                        <div
-                            className="flex items-center justify-end gap-2 px-3 py-2"
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                borderTop: '1px solid var(--border-light)'
-                            }}
-                        >
+                        <div className="flex items-center justify-end gap-2 px-3 py-2 bg-bg-secondary border-t border-border-light">
                             <SubtleButton onClick={() => setShowDeleteConfirm(false)}>Cancel</SubtleButton>
                             <button
                                 type="button"
                                 onClick={handleDelete}
                                 disabled={saving}
-                                className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{ background: '#dc2626' }}
+                                className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider text-white px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed bg-red-600"
                             >
                                 <i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-trash'} text-[10px]`} />
                                 {saving ? 'Deleting…' : 'Delete'}

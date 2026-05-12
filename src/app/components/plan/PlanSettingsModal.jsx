@@ -70,8 +70,7 @@ export default function PlanSettingsModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
             <div className="absolute inset-0 bg-black/40" />
             <div
-                className="relative rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+                className="relative rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden bg-bg-primary border border-border-light"
                 onClick={(event) => event.stopPropagation()}
             >
                 <PlanSettingsHeader accentColor={accentColor} onClose={onClose} />
@@ -106,20 +105,14 @@ export default function PlanSettingsModal({
 
 function PlanSettingsHeader({ accentColor, onClose }) {
     return (
-        <div
-            className="flex items-center justify-between px-5 py-4 border-b"
-            style={{ borderColor: 'var(--border-light)' }}
-        >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border-light">
             <div className="flex items-center gap-2">
                 <i className="fas fa-sliders text-sm" style={{ color: accentColor }} />
-                <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-                    Plan Settings
-                </span>
+                <span className="text-sm font-bold text-text-primary">Plan Settings</span>
             </div>
             <button
                 onClick={onClose}
-                className="border-none bg-transparent cursor-pointer p-1 rounded-md"
-                style={{ color: 'var(--text-secondary)' }}
+                className="border-none bg-transparent cursor-pointer p-1 rounded-md text-text-secondary"
             >
                 <i className="fas fa-times text-sm" />
             </button>
@@ -129,7 +122,7 @@ function PlanSettingsHeader({ accentColor, onClose }) {
 
 function PlanSettingsTabs({ accentColor, activeTab, onChange }) {
     return (
-        <div className="flex items-center gap-1 px-5 pt-3 border-b" style={{ borderColor: 'var(--border-light)' }}>
+        <div className="flex items-center gap-1 px-5 pt-3 border-b border-border-light">
             {TABS.map(({ icon, key, label }) => {
                 const active = activeTab === key
                 return (

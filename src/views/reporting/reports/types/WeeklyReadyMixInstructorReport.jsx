@@ -17,13 +17,8 @@ const FIELD_STYLE = {
     color: 'var(--text-primary)'
 }
 const FIELD_INPUT_CLASS = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border disabled:opacity-90'
-const TH_BASE = `${SECTION_LABEL_CLASS} px-3 py-2 text-left whitespace-nowrap`
-const TH_STYLE = {
-    background: 'var(--bg-tertiary)',
-    color: 'var(--text-tertiary)',
-    borderBottom: '1px solid var(--border-light)'
-}
-const TD_BASE = 'px-3 py-1.5 text-[12px] align-middle'
+const TH_BASE = `${SECTION_LABEL_CLASS} px-3 py-2 text-left whitespace-nowrap bg-bg-tertiary text-text-tertiary border-b border-border-light`
+const TD_BASE = 'px-3 py-1.5 text-[12px] align-middle text-text-primary'
 
 const POSITIONS = {
     MIXER: 'Mixer Operator',
@@ -65,10 +60,7 @@ function CardHeader({ icon, label, sub, title, right }) {
     return (
         <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 min-w-0">
-                <div
-                    className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                >
+                <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                     <i className={`fas ${icon} text-[11px]`} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -77,14 +69,8 @@ function CardHeader({ icon, label, sub, title, right }) {
                             {label}
                         </div>
                     )}
-                    <div className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>
-                        {title}
-                    </div>
-                    {sub && (
-                        <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                            {sub}
-                        </div>
-                    )}
+                    <div className="text-[12.5px] font-semibold leading-tight text-text-primary">{title}</div>
+                    {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
                 </div>
             </div>
             {right && <div className="shrink-0">{right}</div>}
@@ -99,12 +85,8 @@ function ActionChip({ accent, children, disabled, icon, onClick, title }) {
             onClick={onClick}
             disabled={disabled}
             title={title}
-            className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-light)',
-                color: accent || 'var(--text-secondary)'
-            }}
+            className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed bg-bg-secondary border border-border-light"
+            style={{ color: accent || 'var(--text-secondary)' }}
         >
             {icon && <i className={`fas ${icon} text-[10px]`} />}
             {children}
@@ -114,14 +96,7 @@ function ActionChip({ accent, children, disabled, icon, onClick, title }) {
 
 function RMIEmptyState({ icon = 'fa-user-slash', message }) {
     return (
-        <div
-            className="flex items-center justify-center gap-2 py-5 px-3 rounded text-[11.5px]"
-            style={{
-                background: 'var(--bg-secondary)',
-                border: '1px dashed var(--border-medium)',
-                color: 'var(--text-tertiary)'
-            }}
-        >
+        <div className="flex items-center justify-center gap-2 py-5 px-3 rounded text-[11.5px] bg-bg-secondary border border-border-medium text-text-tertiary">
             <i className={`fas ${icon} text-[12px]`} />
             <span>{message}</span>
         </div>
@@ -131,29 +106,14 @@ function RMIEmptyState({ icon = 'fa-user-slash', message }) {
 function CategoryCard({ position, label, count, actions, children }) {
     const icon = CATEGORY_ICONS[position] || CATEGORY_ICONS[POSITIONS.MIXER]
     return (
-        <div
-            className="rounded overflow-hidden flex flex-col"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="flex items-center justify-between gap-2 px-2.5 py-2 flex-wrap"
-                style={{ background: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-light)' }}
-            >
+        <div className="rounded overflow-hidden flex flex-col bg-bg-secondary border border-border-light">
+            <div className="flex items-center justify-between gap-2 px-2.5 py-2 flex-wrap bg-bg-tertiary border-b border-border-light">
                 <div className="flex items-center gap-2">
-                    <i className={`fas ${icon} text-[11px]`} style={{ color: 'var(--text-secondary)' }} />
-                    <span className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                        {label}
-                    </span>
+                    <i className={`fas ${icon} text-[11px] text-text-secondary`} />
+                    <span className="text-[12px] font-semibold text-text-primary">{label}</span>
                     <span
-                        className="inline-flex items-center justify-center rounded text-[10.5px] font-bold tabular-nums"
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-secondary)',
-                            minWidth: 22,
-                            height: 18,
-                            padding: '0 5px'
-                        }}
+                        className="inline-flex items-center justify-center rounded text-[10.5px] font-bold tabular-nums bg-bg-secondary border border-border-light text-text-secondary h-[18px]"
+                        style={{ minWidth: 22, padding: '0 5px' }}
                     >
                         {count}
                     </span>
@@ -169,11 +129,11 @@ function DataTable({ data, headers, renderRow, emptyIcon = 'fa-check-circle', em
     if (!data?.length) return <RMIEmptyState icon={emptyIcon} message={emptyMessage} />
     return (
         <div className="overflow-x-auto rounded" style={CARD_STYLE}>
-            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+            <table className="w-full border-collapse">
                 <thead>
                     <tr>
                         {headers.map((h, i) => (
-                            <th key={i} className={TH_BASE} style={TH_STYLE}>
+                            <th key={i} className={TH_BASE}>
                                 {h}
                             </th>
                         ))}
@@ -191,13 +151,7 @@ function TableRowActionButton({ onClick, title }) {
             type="button"
             onClick={onClick}
             title={title}
-            className="flex items-center justify-center rounded border-none cursor-pointer"
-            style={{
-                background: 'rgba(220, 38, 38, 0.12)',
-                color: '#b91c1c',
-                height: 22,
-                width: 22
-            }}
+            className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-red-700 h-[22px] w-[22px]"
         >
             <i className="fas fa-times text-[10px]" />
         </button>
@@ -222,7 +176,7 @@ function TrainerTable({ trainers, plants, position, onRemove, readOnly }) {
                 <tr key={trainer.id} style={ROW_STYLE}>
                     <td className={`${TD_BASE} font-semibold`}>
                         <div className="flex items-center gap-1.5">
-                            <i className="fas fa-user-tie text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                            <i className="fas fa-user-tie text-[10px] text-text-tertiary" />
                             {trainer.name}
                         </div>
                     </td>
@@ -230,10 +184,7 @@ function TrainerTable({ trainers, plants, position, onRemove, readOnly }) {
                         {getPlantNameFromList(trainer.plant, plants)}
                     </td>
                     <td className={TD_BASE}>
-                        <span
-                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
-                            style={{ background: 'rgba(22, 163, 74, 0.12)', color: '#15803d' }}
-                        >
+                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold bg-[rgba(22,_163,_74,_0.12)] text-green-700">
                             {trainer.status}
                         </span>
                     </td>
@@ -262,7 +213,7 @@ function PendingTable({ pending, plants, position, onRemove, readOnly }) {
                 <tr key={op.id} style={ROW_STYLE}>
                     <td className={`${TD_BASE} font-semibold`}>
                         <div className="flex items-center gap-1.5">
-                            <i className="fas fa-user text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                            <i className="fas fa-user text-[10px] text-text-tertiary" />
                             {op.name}
                         </div>
                     </td>
@@ -324,7 +275,7 @@ function TrainingTable({ training, plants, position, onRemove, readOnly, weekIso
                     <tr key={op.id} style={ROW_STYLE}>
                         <td className={`${TD_BASE} font-semibold`}>
                             <div className="flex items-center gap-1.5">
-                                <i className="fas fa-user text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                                <i className="fas fa-user text-[10px] text-text-tertiary" />
                                 {op.name}
                             </div>
                         </td>
@@ -334,7 +285,7 @@ function TrainingTable({ training, plants, position, onRemove, readOnly, weekIso
                         <td className={TD_BASE} style={{ color: 'var(--text-primary)' }}>
                             {op.trainer || '—'}
                         </td>
-                        <td className={`${TD_BASE} tabular-nums`} style={{ color: 'var(--text-primary)' }}>
+                        <td className={`${TD_BASE} tabular-nums text-text-primary`}>
                             {days == null ? '—' : `${days} day${days === 1 ? '' : 's'}`}
                         </td>
                         {!readOnly && (
@@ -363,7 +314,7 @@ function TerminatedTable({ operators, plants }) {
                 <tr key={op.id} style={ROW_STYLE}>
                     <td className={`${TD_BASE} font-semibold`}>
                         <div className="flex items-center gap-1.5">
-                            <i className="fas fa-user-slash text-[10px]" style={{ color: 'var(--text-tertiary)' }} />
+                            <i className="fas fa-user-slash text-[10px] text-text-tertiary" />
                             {op.name}
                         </div>
                     </td>
@@ -382,11 +333,11 @@ function TerminatedTable({ operators, plants }) {
 function HiringGoalsTable({ plants, hiringGoals, onChange, readOnly }) {
     return (
         <div className="overflow-x-auto rounded" style={CARD_STYLE}>
-            <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+            <table className="w-full border-collapse">
                 <thead>
                     <tr>
                         {['Plant', 'Code', 'Hiring Goal'].map((h) => (
-                            <th key={h} className={TH_BASE} style={TH_STYLE}>
+                            <th key={h} className={TH_BASE}>
                                 {h}
                             </th>
                         ))}
@@ -400,31 +351,18 @@ function HiringGoalsTable({ plants, hiringGoals, onChange, readOnly }) {
                             <tr key={plantCode} style={ROW_STYLE}>
                                 <td className={`${TD_BASE} font-semibold`}>
                                     <div className="flex items-center gap-1.5">
-                                        <i
-                                            className="fas fa-industry text-[10px]"
-                                            style={{ color: 'var(--text-tertiary)' }}
-                                        />
+                                        <i className="fas fa-industry text-[10px] text-text-tertiary" />
                                         <span>{plantName}</span>
                                     </div>
                                 </td>
                                 <td className={TD_BASE}>
-                                    <span
-                                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums"
-                                        style={{
-                                            background: 'var(--bg-tertiary)',
-                                            color: 'var(--text-secondary)',
-                                            border: '1px solid var(--border-light)'
-                                        }}
-                                    >
+                                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums bg-bg-tertiary text-text-secondary border border-border-light">
                                         {plantCode}
                                     </span>
                                 </td>
                                 <td className={TD_BASE}>
                                     {readOnly ? (
-                                        <div
-                                            className="font-bold text-[13px] tabular-nums"
-                                            style={{ color: 'var(--text-primary)' }}
-                                        >
+                                        <div className="font-bold text-[13px] tabular-nums text-text-primary">
                                             {hiringGoals[plantCode] || '0'}
                                         </div>
                                     ) : (
@@ -622,62 +560,33 @@ function FormModal({ icon, isOpen, onClose, onSubmit, sub, submitDisabled, submi
                 style={CARD_STYLE}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div
-                    className="flex items-center justify-between px-3 py-2.5"
-                    style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-light)' }}
-                >
+                <div className="flex items-center justify-between px-3 py-2.5 bg-bg-secondary border-b border-border-light">
                     <div className="flex items-center gap-2 min-w-0">
-                        <div
-                            className="flex h-6 w-6 items-center justify-center rounded shrink-0"
-                            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                        >
+                        <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-secondary">
                             <i className={`fas ${icon} text-[11px]`} />
                         </div>
                         <div className="min-w-0">
                             <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                                 Action
                             </div>
-                            <div
-                                className="text-[12.5px] font-semibold leading-tight"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
-                                {title}
-                            </div>
-                            {sub && (
-                                <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                                    {sub}
-                                </div>
-                            )}
+                            <div className="text-[12.5px] font-semibold leading-tight text-text-primary">{title}</div>
+                            {sub && <div className="text-[10.5px] mt-0.5 text-text-tertiary">{sub}</div>}
                         </div>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded border-none cursor-pointer"
-                        style={{
-                            background: 'var(--bg-tertiary)',
-                            color: 'var(--text-secondary)',
-                            height: 24,
-                            width: 24
-                        }}
+                        className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6"
                     >
                         <i className="fas fa-times text-[10px]" />
                     </button>
                 </div>
                 <div className="p-3 flex flex-col gap-2">{children}</div>
-                <div
-                    className="flex justify-end gap-1.5 px-3 py-2.5"
-                    style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-light)' }}
-                >
+                <div className="flex justify-end gap-1.5 px-3 py-2.5 bg-bg-secondary border-t border-border-light">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none"
-                        style={{
-                            background: 'var(--bg-tertiary)',
-                            border: '1px solid var(--border-light)',
-                            color: 'var(--text-secondary)'
-                        }}
+                        className="rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none bg-bg-tertiary border border-border-light text-text-secondary"
                     >
                         Cancel
                     </button>
@@ -685,8 +594,7 @@ function FormModal({ icon, isOpen, onClose, onSubmit, sub, submitDisabled, submi
                         type="button"
                         onClick={onSubmit}
                         disabled={submitDisabled}
-                        className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{ background: 'var(--accent, #1e3a5f)' }}
+                        className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--accent, #1e3a5f)]"
                     >
                         <i className="fas fa-plus text-[10px]" />
                         {submitLabel}
@@ -701,17 +609,10 @@ function FormModal({ icon, isOpen, onClose, onSubmit, sub, submitDisabled, submi
 function ModalField({ children, icon, label, required }) {
     return (
         <div className="flex flex-col gap-1">
-            <label
-                className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5`}
-                style={{ color: 'var(--text-tertiary)' }}
-            >
+            <label className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5 text-text-tertiary`}>
                 {icon && <i className={`fas ${icon} text-[10px]`} />}
                 {label}
-                {required && (
-                    <span className="ml-0.5" style={{ color: '#dc2626' }}>
-                        *
-                    </span>
-                )}
+                {required && <span className="ml-0.5 text-red-600">*</span>}
             </label>
             {children}
         </div>
@@ -1339,7 +1240,7 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
                         ))}
                     </select>
                     {getAvailableTrainers(newTrainer.position).length === 0 && (
-                        <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-[10.5px] text-text-tertiary">
                             No trainers available for this position.
                         </span>
                     )}
@@ -1355,7 +1256,7 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
                         }}
                     >
                         <span>{newTrainer.plant ? getPlantName(newTrainer.plant) : 'Select plant…'}</span>
-                        <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
+                        <i className="fas fa-chevron-down text-[9px] text-text-tertiary" />
                     </button>
                 </ModalField>
             </FormModal>
@@ -1401,7 +1302,7 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
                         }}
                     >
                         <span>{newPending.plant ? getPlantName(newPending.plant) : 'Select plant…'}</span>
-                        <i className="fas fa-chevron-down text-[9px]" style={{ color: 'var(--text-tertiary)' }} />
+                        <i className="fas fa-chevron-down text-[9px] text-text-tertiary" />
                     </button>
                 </ModalField>
                 <ModalField icon="fa-calendar-alt" label="Start Date" required>
