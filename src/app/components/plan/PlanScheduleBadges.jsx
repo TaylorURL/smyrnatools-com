@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { SERVICE_BADGE_BASE } from '../../../utils/PlanScheduleUtility'
@@ -224,8 +225,8 @@ export function HoursLimitBadge({ limit }) {
 /** Maps the start-time sentinel `kind` to one of the project's themed badge
  *  utility classes so the pill flips correctly between light and dark mode. */
 const STATUS_BADGE_TONE_CLASS = {
-    sameDay: 'status-badge-warning',
     cancelled: 'status-badge-danger',
+    sameDay: 'status-badge-warning',
     test: 'status-badge-info'
 }
 

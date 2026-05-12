@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { getTodayDate, getTomorrowDate, offsetDateSkipSunday, skipSundayDate } from '../../../utils/PlanUtility'

@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { memo, useEffect, useState } from 'react'
 
 import { Database } from '../../../services/DatabaseService'

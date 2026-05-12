@@ -65,8 +65,8 @@ class EmailServiceImpl {
         if (!subject || !html) throw new Error('Template must return { subject, html } at minimum')
 
         const payload = {
-            subject,
             html,
+            subject,
             ...(text ? { text } : {}),
             to,
             ...(cc?.length ? { cc } : {}),
@@ -100,8 +100,8 @@ class EmailServiceImpl {
         if (!Array.isArray(to) || to.length === 0) throw new Error('to must be a non-empty array')
 
         const payload = {
-            subject,
             html,
+            subject,
             ...(text ? { text } : {}),
             to,
             ...(cc?.length ? { cc } : {}),
@@ -128,8 +128,8 @@ class EmailServiceImpl {
      */
     async notifyReportSubmitted({ userId, reportTitle, weekLabel, reportFields, attachmentUrl, debug }) {
         const { res, json } = await APIUtility.post('/email-service/notify-report-submitted', {
-            userId,
             reportTitle,
+            userId,
             weekLabel: weekLabel || '',
             ...(reportFields?.length ? { reportFields } : {}),
             ...(attachmentUrl ? { attachmentUrl } : {}),

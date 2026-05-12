@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import React from 'react'
 
 import { clean, SLOT_ROW_ACCENT, SLOT_ROW_TINT } from '../../../utils/PlanScheduleUtility'

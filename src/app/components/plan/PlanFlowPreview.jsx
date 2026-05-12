@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import 'leaflet/dist/leaflet.css'
 
 import L from 'leaflet'

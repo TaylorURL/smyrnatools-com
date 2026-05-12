@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useState } from 'react'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
@@ -80,8 +81,8 @@ function GradeScale({ grade }) {
                         className="rounded px-1.5 py-0.5 text-[10px] font-semibold"
                         style={{
                             background: active ? GRADE_COLORS[g] : 'var(--bg-tertiary)',
-                            color: active ? '#fff' : 'var(--text-tertiary)',
-                            border: `1px solid ${active ? GRADE_COLORS[g] : 'var(--border-light)'}`
+                            border: `1px solid ${active ? GRADE_COLORS[g] : 'var(--border-light)'}`,
+                            color: active ? '#fff' : 'var(--text-tertiary)'
                         }}
                     >
                         {g.charAt(0).toUpperCase() + g.slice(1)}

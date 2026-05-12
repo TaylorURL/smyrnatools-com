@@ -259,7 +259,7 @@ class DispatchDataServiceImpl {
         const { tickets, orders } = await post(
             'fetch-detail-by-order-id',
             { date: dateStr },
-            { tickets: [], orders: [] }
+            { orders: [], tickets: [] }
         )
         return buildDetailByOrderId(tickets, orders)
     }
@@ -275,7 +275,7 @@ class DispatchDataServiceImpl {
         const { tickets, orders } = await post(
             'fetch-detail-by-date-range',
             { dates: validDates },
-            { tickets: [], orders: [] }
+            { orders: [], tickets: [] }
         )
 
         const ticketsByDate = new Map()

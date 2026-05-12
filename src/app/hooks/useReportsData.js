@@ -366,7 +366,7 @@ export function useReportsData() {
     const weeksToShow = useMemo(() => {
         const now = new Date()
         return ReportUtility.getLastNWeekIsos(ReportUtility.getTotalWeeksSince(REPORTS_START_DATE, now), now)
-    }, [refreshKey])
+    }, [])
     const myReportsByWeek = useMemo(() => {
         const grouped = {}
         weeksToShow.forEach((weekIso) => {
@@ -519,6 +519,7 @@ export function useReportsData() {
     return {
         addLostLoadReport,
         deleteLostLoadReport,
+        fetchProfilesFor,
         getUserName,
         hasAnyReviewPermission,
         hasAssigned,
@@ -557,7 +558,6 @@ export function useReportsData() {
         user,
         userAdditionalPlants,
         userPlantCode,
-        fetchProfilesFor,
         userProfiles,
         weeksToShow
     }

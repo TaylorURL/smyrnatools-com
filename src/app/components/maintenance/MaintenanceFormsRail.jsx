@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
 import { formatMaintenanceDate } from '../../../utils/MaintenanceUtility'

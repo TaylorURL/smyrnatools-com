@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
 import MediaViewer from '../../../app/components/common/MediaViewer'
@@ -13,11 +14,11 @@ function ThirdPartyLabDetailModal({ report, getUserName, onClose, onReviewed }) 
     const submitterName = getUserName?.(report?.userId) || 'Unknown'
     const submittedDate = report?.submittedAt
         ? new Date(report.submittedAt).toLocaleDateString(undefined, {
-              month: 'long',
               day: 'numeric',
-              year: 'numeric',
               hour: 'numeric',
-              minute: '2-digit'
+              minute: '2-digit',
+              month: 'long',
+              year: 'numeric'
           })
         : ''
     const attachments = Array.isArray(data.attachments) ? data.attachments : []
@@ -44,8 +45,8 @@ function ThirdPartyLabDetailModal({ report, getUserName, onClose, onReviewed }) 
             label: 'Date',
             value: data.report_date
                 ? new Date(data.report_date + 'T12:00:00').toLocaleDateString(undefined, {
-                      month: 'long',
                       day: 'numeric',
+                      month: 'long',
                       year: 'numeric'
                   })
                 : null

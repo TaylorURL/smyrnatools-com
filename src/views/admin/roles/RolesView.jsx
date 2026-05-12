@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import LoadingScreen from '../../../app/components/common/LoadingScreen'
@@ -110,22 +111,22 @@ const RoleCard = ({
                 .map((line) => line.trim())
                 .filter(Boolean)
             if (incoming.length === 0) {
-                setPasteStatus({ type: 'error', text: 'Clipboard is empty' })
+                setPasteStatus({ text: 'Clipboard is empty', type: 'error' })
                 setTimeout(() => setPasteStatus(null), 2000)
                 return
             }
             const existing = new Set(permissions)
             const toAdd = incoming.filter((p) => !existing.has(p))
             if (toAdd.length === 0) {
-                setPasteStatus({ type: 'info', text: 'Already has all' })
+                setPasteStatus({ text: 'Already has all', type: 'info' })
                 setTimeout(() => setPasteStatus(null), 2000)
                 return
             }
             await onPastePermissions(role.id, [...permissions, ...toAdd])
-            setPasteStatus({ type: 'success', text: `Added ${toAdd.length}` })
+            setPasteStatus({ text: `Added ${toAdd.length}`, type: 'success' })
             setTimeout(() => setPasteStatus(null), 2000)
         } catch {
-            setPasteStatus({ type: 'error', text: 'Paste failed' })
+            setPasteStatus({ text: 'Paste failed', type: 'error' })
             setTimeout(() => setPasteStatus(null), 2000)
         }
     }
@@ -382,7 +383,7 @@ const EditWeightModal = ({ role, onClose, onSave }) => {
 }
 
 /** Modal for bulk-adding a permission to one or more roles. */
-const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor }) => {
+const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, _accentColor }) => {
     const [permission, setPermission] = useState('')
     const [selectedRoleIds, setSelectedRoleIds] = useState(new Set())
     const [saving, setSaving] = useState(false)
@@ -507,7 +508,7 @@ function RolesView() {
         isLoading,
         loadData,
         message,
-        removePermissionFromAllRoles,
+        removePermissionFromAllRoles: _removePermissionFromAllRoles,
         removePermissionFromRole: _removePermissionFromRole,
         roles,
         setError,

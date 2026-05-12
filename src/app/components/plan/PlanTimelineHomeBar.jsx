@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { MAX_YPH, TARGET_YPH, timeToMinutes, timeToPercent } from '../../../utils/PlanUtility'

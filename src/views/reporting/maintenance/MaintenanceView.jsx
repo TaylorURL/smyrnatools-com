@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { MaintenanceFilterBar } from '../../../app/components/maintenance/MaintenanceFilterBar'

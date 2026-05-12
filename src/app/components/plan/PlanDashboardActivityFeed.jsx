@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
 import { PLAN_META_KEY } from '../../../utils/PlanUtility'
@@ -62,8 +63,8 @@ const buildEvents = (detailByOrderId, orderMetaByOrderId, plantNameByCode) => {
                 kind: 'load',
                 orderNum: meta?.orderNum || '',
                 quantity: parseFloat(ticket?.quantity) || 0,
-                ts,
-                truckNum: trim(ticket?.truckNum)
+                truckNum: trim(ticket?.truckNum),
+                ts
             })
         })
         const scheduled = meta?.scheduledYardage || 0

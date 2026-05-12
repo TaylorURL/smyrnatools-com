@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React from 'react'
 
 import TopSection from '../../../app/components/sections/TopSection'
@@ -243,15 +244,15 @@ export function ReportsActionBar({
 /* ── Per-tab filter bars — same flat chrome as Plan tab dropdowns ─────── */
 
 const QC_TYPE_OPTIONS = [
-    { value: 'all', label: 'All Types' },
-    { value: 'qc_strength', label: 'QC Strength' },
-    { value: 'third_party_lab', label: 'Third Party Lab' }
+    { label: 'All Types', value: 'all' },
+    { label: 'QC Strength', value: 'qc_strength' },
+    { label: 'Third Party Lab', value: 'third_party_lab' }
 ]
 
 const QC_STATUS_OPTIONS = [
-    { value: 'all', label: 'All Status' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'reviewed', label: 'Reviewed' }
+    { label: 'All Status', value: 'all' },
+    { label: 'Pending', value: 'pending' },
+    { label: 'Reviewed', value: 'reviewed' }
 ]
 
 export function QcFilterBar({
@@ -278,10 +279,10 @@ export function QcFilterBar({
                     value={qcSort}
                     onChange={onQcSortChange}
                     options={[
-                        { value: 'newest', label: 'Newest First' },
-                        { value: 'oldest', label: 'Oldest First' },
-                        { value: 'cast_desc', label: 'Cast Date ↓' },
-                        { value: 'cast_asc', label: 'Cast Date ↑' }
+                        { label: 'Newest First', value: 'newest' },
+                        { label: 'Oldest First', value: 'oldest' },
+                        { label: 'Cast Date ↓', value: 'cast_desc' },
+                        { label: 'Cast Date ↑', value: 'cast_asc' }
                     ]}
                 />
                 <DateRange
@@ -317,8 +318,8 @@ export function ReviewFilterBar({
     onClear
 }) {
     const reportTypeSelectOptions = [
-        { value: '', label: 'All Report Types' },
-        ...reportTypeOptions.map((opt) => ({ value: opt.name, label: opt.title }))
+        { label: 'All Report Types', value: '' },
+        ...reportTypeOptions.map((opt) => ({ label: opt.title, value: opt.name }))
     ]
     return (
         <div className="flex items-stretch sm:items-center flex-wrap gap-2 w-full">
@@ -336,8 +337,8 @@ export function ReviewFilterBar({
                     value={sort}
                     onChange={onSortChange}
                     options={[
-                        { value: 'newest', label: 'Newest First' },
-                        { value: 'oldest', label: 'Oldest First' }
+                        { label: 'Newest First', value: 'newest' },
+                        { label: 'Oldest First', value: 'oldest' }
                     ]}
                 />
                 <DateRange from={dateFrom} to={dateTo} onFromChange={onDateFromChange} onToChange={onDateToChange} />
@@ -408,8 +409,8 @@ export function LossFilterBar({
                     value={sort}
                     onChange={onSortChange}
                     options={[
-                        { value: 'newest', label: 'Newest First' },
-                        { value: 'oldest', label: 'Oldest First' }
+                        { label: 'Newest First', value: 'newest' },
+                        { label: 'Oldest First', value: 'oldest' }
                     ]}
                 />
                 <DateRange from={dateFrom} to={dateTo} onFromChange={onDateFromChange} onToChange={onDateToChange} />

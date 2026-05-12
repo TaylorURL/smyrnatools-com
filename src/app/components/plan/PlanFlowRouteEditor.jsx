@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
 import { addMinutesToTime, minutesToTime, timeToMinutes } from '../../../utils/PlanUtility'

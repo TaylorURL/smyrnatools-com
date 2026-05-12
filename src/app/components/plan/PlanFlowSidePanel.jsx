@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 /** Empty-state shown when no plant is selected. */

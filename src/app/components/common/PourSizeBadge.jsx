@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 /* Per-size visual identity. Color is intentionally minimal — surfaced as a

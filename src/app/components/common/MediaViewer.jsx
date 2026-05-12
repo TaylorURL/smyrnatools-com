@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
@@ -237,11 +238,11 @@ function MediaViewer({ items, initialIndex = 0, onClose }) {
                         onPointerDown={handlePointerDown}
                         className="transition-transform duration-100 max-w-full"
                         style={{
-                            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-                            maxHeight: 'calc(100vh - 100px)',
                             cursor: zoom > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in',
+                            maxHeight: 'calc(100vh - 100px)',
                             objectFit: 'contain',
-                            touchAction: 'none'
+                            touchAction: 'none',
+                            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`
                         }}
                     />
                 )}

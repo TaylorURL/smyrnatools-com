@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 

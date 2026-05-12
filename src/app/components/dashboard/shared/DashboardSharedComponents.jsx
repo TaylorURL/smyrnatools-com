@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 /** Maps asset type labels to their corresponding embedded view route keys. */

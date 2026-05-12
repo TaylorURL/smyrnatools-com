@@ -10,8 +10,8 @@ const SESSION_ID_KEY = 'smyrna_session_id'
 const getSessionCredentials = () => {
     try {
         return {
-            __sessionUserId: sessionStorage.getItem(SESSION_KEY) || undefined,
-            __sessionId: sessionStorage.getItem(SESSION_ID_KEY) || undefined
+            __sessionId: sessionStorage.getItem(SESSION_ID_KEY) || undefined,
+            __sessionUserId: sessionStorage.getItem(SESSION_KEY) || undefined
         }
     } catch {}
     return {}

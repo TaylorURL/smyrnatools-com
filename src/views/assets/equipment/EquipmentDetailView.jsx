@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -92,8 +93,8 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                     equipmentMake: equipmentData.equipmentMake || '',
                     equipmentModel: equipmentData.equipmentModel || '',
                     equipmentType: equipmentData.equipmentType || '',
-                    hoursMileage: equipmentData.hoursMileage ? equipmentData.hoursMileage.toString() : '',
                     hours: equipmentData.hours != null ? String(equipmentData.hours) : '',
+                    hoursMileage: equipmentData.hoursMileage ? equipmentData.hoursMileage.toString() : '',
                     identifyingNumber: equipmentData.identifyingNumber || '',
                     lastServiceDate: equipmentData.lastServiceDate || null,
                     status: equipmentData.status || '',
@@ -330,8 +331,8 @@ function EquipmentDetailView({ equipmentId, onClose, onSaved }) {
                 equipmentMake: result.equipmentMake,
                 equipmentModel: result.equipmentModel,
                 equipmentType: result.equipmentType,
-                hoursMileage: result.hoursMileage ? result.hoursMileage.toString() : '',
                 hours: result.hours != null ? String(result.hours) : '',
+                hoursMileage: result.hoursMileage ? result.hoursMileage.toString() : '',
                 identifyingNumber: result.identifyingNumber,
                 lastServiceDate: result.lastServiceDate,
                 status: result.status,

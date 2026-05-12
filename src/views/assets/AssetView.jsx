@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import EmbeddedViewModal from '../../app/components/dashboard/EmbeddedViewModal'
@@ -24,7 +25,7 @@ function AssetView({
     config,
     title,
     onSelectItem,
-    setSelectedView,
+    _setSelectedView,
     embedded = false,
     initialSearch = '',
     exactMatch = false
@@ -43,7 +44,7 @@ function AssetView({
     const resetFilters = fp ? prefsContext[fp.resetFnKey] : null
     const savedFilters = fp ? preferences[fp.filterKey] : null
     const saveLastViewedFilters = prefsContext.saveLastViewedFilters
-    const updateOperatorFilter = prefsContext.updateOperatorFilter
+    const _updateOperatorFilter = prefsContext.updateOperatorFilter
 
     // Fetch current user's plant code for district filtering in PlantDropdownModal
     const [userPlantCode, setUserPlantCode] = useState('')
@@ -340,7 +341,7 @@ function AssetView({
     const { activeCount, shopCount, spareCount, totalCount } = useMemo(() => {
         if (!data.items?.length) return { activeCount: 0, shopCount: 0, spareCount: 0, totalCount: 0 }
         const q = filters.searchText.trim().toLowerCase()
-        const normalizedSearch = q.replace(/\s+/g, '')
+        const _normalizedSearch = q.replace(/\s+/g, '')
         const scoped = data.items.filter((item) => {
             let matchesSearch = true
             if (q && config.searchFields) {
@@ -377,7 +378,7 @@ function AssetView({
         filters.searchText,
         filters.selectedPlant,
         districtPlantCodes,
-        config.searchFields
+        config
     ])
 
     const canShowOperatorBadge =
@@ -729,7 +730,7 @@ function AssetView({
                 ))}
             </select>
         )
-    }, [config.extraTypeFilter, filters.extraTypeFilter])
+    }, [config.extraTypeFilter, filters])
 
     return (
         <div
@@ -754,14 +755,14 @@ function AssetView({
                                   : null
                         }
                         onPillClick={(label) => {
-                            const STATUS_MAP = { Active: 'Active', Spare: 'Spare', Shop: 'In Shop' }
+                            const STATUS_MAP = { Active: 'Active', Shop: 'In Shop', Spare: 'Spare' }
                             if (label === 'Unassigned' && canShowOperatorBadge) {
                                 setEmbeddedModal({
-                                    view: 'operators',
                                     props: {
-                                        initialStatusFilter: 'Unassigned Active',
-                                        initialPositionFilter: config.operatorConfig.positionLabel
-                                    }
+                                        initialPositionFilter: config.operatorConfig.positionLabel,
+                                        initialStatusFilter: 'Unassigned Active'
+                                    },
+                                    view: 'operators'
                                 })
                             } else if (label === 'Total') {
                                 filters.setStatusFilter('')

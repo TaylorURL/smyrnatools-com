@@ -8,7 +8,7 @@ const MILLIS_PER_DAY = 1000 * 60 * 60 * 24
 
 const RETIRED_STATUSES = ['Retired', 'Terminated']
 
-const STATUS_PRIORITY = { Active: 0, Stationary: 1, Spare: 2, 'In Shop': 3, Retired: 4, Sold: 5 }
+const STATUS_PRIORITY = { Active: 0, 'In Shop': 3, Retired: 4, Sold: 5, Spare: 2, Stationary: 1 }
 
 const VALID_STATUSES = ['Active', 'Spare', 'In Shop', 'Retired']
 
@@ -29,11 +29,27 @@ const AssetStatsUtility = {
         return String(a?.[numberField] ?? '').localeCompare(String(b?.[numberField] ?? ''))
     },
 
+    
+    /**
+     * Counts total active operators in scope (by position, plant, and region).
+     * Used alongside countUnassignedActiveOperators to derive assigned count.
+     */
+countActiveOperatorsInScope(operators, { position, selectedPlant, regionPlantCodes }) {
+        return (operators || []).filter((op) => {
+            if (op?.status !== 'Active') return false
+            if (position && op?.position !== position) return false
+            if (selectedPlant && selectedPlant !== 'All' && op?.plantCode !== selectedPlant) return false
+            if (regionPlantCodes && regionPlantCodes.size > 0 && !regionPlantCodes.has(op?.plantCode)) return false
+            return true
+        }).length
+    },
+
+    
     /**
      * Counts active operators not assigned to any active item, with optional
      * search text, position, plant, and region filtering.
      */
-    countUnassignedActiveOperators(
+countUnassignedActiveOperators(
         items,
         operators,
         searchText,
@@ -75,20 +91,6 @@ const AssetStatsUtility = {
         return filteredOperators.filter(
             (op) => !activeItems.some((it) => it?.[assignedOperatorField] === op?.[operatorIdField])
         ).length
-    },
-
-    /**
-     * Counts total active operators in scope (by position, plant, and region).
-     * Used alongside countUnassignedActiveOperators to derive assigned count.
-     */
-    countActiveOperatorsInScope(operators, { position, selectedPlant, regionPlantCodes }) {
-        return (operators || []).filter((op) => {
-            if (op?.status !== 'Active') return false
-            if (position && op?.position !== position) return false
-            if (selectedPlant && selectedPlant !== 'All' && op?.plantCode !== selectedPlant) return false
-            if (regionPlantCodes && regionPlantCodes.size > 0 && !regionPlantCodes.has(op?.plantCode)) return false
-            return true
-        }).length
     },
 
     /**

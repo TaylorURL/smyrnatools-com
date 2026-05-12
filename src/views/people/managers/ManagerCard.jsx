@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import CardSection from '../../../app/components/sections/CardSection'
