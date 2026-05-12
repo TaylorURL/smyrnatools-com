@@ -13,21 +13,70 @@ export const TOOLBAR_CLEAR = 64
  *  pan past the outermost nodes without hitting a wall immediately. */
 export const HORIZONTAL_OVERSCROLL = 900
 
-/** Scale a plant's render radius from its effective operator count. */
-export function radiusForOps(ops) {
-    const n = Math.max(0, Number.isFinite(ops) ? ops : 0)
-    const scaled = NODE_RADIUS_MIN + Math.sqrt(n) * 14
-    return Math.round(Math.max(NODE_RADIUS_MIN, Math.min(NODE_RADIUS_MAX, scaled)))
+interface LayoutItem {
+    code: string
+    radius: number
 }
 
-/** Aggregate assignments into directed edges with operator totals + earliest time. */
+interface Position {
+    x: number
+    y: number
+}
+
+interface LayoutResult {
+    width: number
+    height: number
+    positions: Record<string, Position>
+}
+
+interface Edge {
+    from: string
+    to: string
+    ops: number
+    earliest: string | null
+    isReturn: boolean
+    assignmentIndexes: number[]
+}
+
+interface Assignment {
+    fromPlant?: string
+    toPlant?: string
+    driverCount?: string | number
+    time?: string
+    leaveTime?: string
+    forOrderId?: string
+    [key: string]: unknown
+}
+
+interface ClusterLayoutOptions {
+    pinTop?: number
+    pad?: number
+    edgeGap?: number
+    horizontalOverscroll?: number
+}
+
+interface RelaxLayoutOptions {
+    edgeBuffer?: number
+    edgePasses?: number
+    collisionPasses?: number
+    pad?: number
+    minLabelClearance?: number
+    stretchPasses?: number
+}
+
 /**
  * Perpendicular offset (px) applied to bidirectional route pairs so the
  * outbound and return arrows render as two parallel lanes instead of
- * stacking on top of each other. Shared by the Planner tab and the
- * dashboard flow preview so both views look identical.
+ * stacking on top of each other.
  */
 export const EDGE_PARALLEL_OFFSET = 26
+
+/** Scale a plant's render radius from its effective operator count. */
+export function radiusForOps(ops: number | null | undefined): number {
+    const n = Math.max(0, Number.isFinite(ops) ? (ops as number) : 0)
+    const scaled = NODE_RADIUS_MIN + Math.sqrt(n) * 14
+    return Math.round(Math.max(NODE_RADIUS_MIN, Math.min(NODE_RADIUS_MAX, scaled)))
+}
 
 /**
  * Aggregate assignments into directed edges with operator totals + earliest
@@ -35,14 +84,14 @@ export const EDGE_PARALLEL_OFFSET = 26
  * return trip back to their origin plant — we emit an implicit reverse edge
  * tagged `isReturn: true` so rendering can style it differently.
  */
-export function buildEdges(assignments) {
-    const map = new Map()
-    const upsert = (from, to, ops, time, idx, isReturn) => {
+export function buildEdges(assignments: Assignment[] | null | undefined): Edge[] {
+    const map = new Map<string, Edge>()
+    const upsert = (from: string, to: string, ops: number, time: string | undefined, idx: number, isReturn: boolean) => {
         const key = `${from}->${to}`
         if (!map.has(key)) {
             map.set(key, { assignmentIndexes: [], earliest: null, from, isReturn, ops: 0, to })
         }
-        const edge = map.get(key)
+        const edge = map.get(key)!
         edge.ops += ops
         if (time && (!edge.earliest || time < edge.earliest)) edge.earliest = time
         edge.assignmentIndexes.push(idx)
@@ -52,18 +101,18 @@ export function buildEdges(assignments) {
     }
     ;(assignments || []).forEach((a, idx) => {
         if (!a.fromPlant || !a.toPlant) return
-        const ops = parseInt(a.driverCount, 10) || 0
+        const ops = parseInt(String(a.driverCount), 10) || 0
         upsert(a.fromPlant, a.toPlant, ops, a.time, idx, false)
         if (a.leaveTime) upsert(a.toPlant, a.fromPlant, ops, a.leaveTime, idx, true)
     })
     return Array.from(map.values())
 }
 
-/** Keys of edges that have an opposite counterpart (A→B and B→A both
+/** Keys of edges that have an opposite counterpart (A->B and B->A both
  *  present). Used to decide which edges need perpendicular offset. */
-export function computeBidirectionalEdgeKeys(edges) {
+export function computeBidirectionalEdgeKeys(edges: Edge[] | null | undefined): Set<string> {
     const keys = new Set((edges || []).map((e) => `${e.from}->${e.to}`))
-    const out = new Set()
+    const out = new Set<string>()
     for (const key of keys) {
         const [from, to] = key.split('->')
         if (keys.has(`${to}->${from}`)) out.add(key)
@@ -72,7 +121,7 @@ export function computeBidirectionalEdgeKeys(edges) {
 }
 
 /** Deterministic PRNG so a given plant-code set always lays out the same way. */
-export function mulberry32(seed) {
+export function mulberry32(seed: number): () => number {
     let s = seed >>> 0
     return () => {
         s = (s + 0x6d2b79f5) >>> 0
@@ -82,7 +131,7 @@ export function mulberry32(seed) {
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296
     }
 }
-export function hashString(str) {
+export function hashString(str: string): number {
     let h = 2166136261
     for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619)
     return h >>> 0
@@ -93,7 +142,12 @@ export function hashString(str) {
  * at random angles on expanding rings with collision rejection. Canvas
  * tightens to the cluster bounds and pins it near the top.
  */
-export function computeClusterLayout(items, viewportWidth, viewportHeight, options = {}) {
+export function computeClusterLayout(
+    items: LayoutItem[],
+    viewportWidth: number,
+    viewportHeight: number,
+    options: ClusterLayoutOptions = {}
+): LayoutResult {
     const {
         pinTop = TOOLBAR_CLEAR,
         pad = CANVAS_PADDING,
@@ -116,9 +170,9 @@ export function computeClusterLayout(items, viewportWidth, viewportHeight, optio
     const side = Math.max(viewportWidth, viewportHeight, targetSide)
     const cx = side / 2
     const cy = side / 2
-    const placed = []
-    const positions = {}
-    const tryPlace = (item, x, y) => {
+    const placed: Array<LayoutItem & Position> = []
+    const positions: Record<string, Position> = {}
+    const tryPlace = (item: LayoutItem, x: number, y: number): boolean => {
         if (x - item.radius < pad || x + item.radius > side - pad) return false
         if (y - item.radius < pad || y + item.radius > side - pad) return false
         for (const p of placed) {
@@ -165,7 +219,6 @@ export function computeClusterLayout(items, viewportWidth, viewportHeight, optio
     const clusterWidth = maxX - minX + pad * 2
     const clusterHeight = maxY - minY + pad * 2
     // Widen the canvas on both sides so users can drag-pan past the cluster
-    // for a bit — feels less cramped without letting them drift into the void.
     const paddedWidth = clusterWidth + horizontalOverscroll * 2
     const finalWidth = Math.max(viewportWidth, paddedWidth)
     const finalHeight = Math.max(viewportHeight, clusterHeight + pinTop)
@@ -185,7 +238,12 @@ export function computeClusterLayout(items, viewportWidth, viewportHeight, optio
  * new overlaps the shoves introduced. Bounds are recomputed afterwards so
  * nothing slips off-canvas.
  */
-export function relaxLayoutForEdges(layout, items, edges, options = {}) {
+export function relaxLayoutForEdges(
+    layout: LayoutResult,
+    items: LayoutItem[],
+    edges: Edge[] | null | undefined,
+    options: RelaxLayoutOptions = {}
+): LayoutResult {
     if (!edges?.length) return layout
     const {
         edgeBuffer = 14,
@@ -194,18 +252,17 @@ export function relaxLayoutForEdges(layout, items, edges, options = {}) {
         pad = CANVAS_PADDING,
         // Required visible line length between two endpoints (after subtracting
         // their radii) so the badge fits with a few px of visible line on each
-        // side. ~96 px label + 2× ~8 px padding = 112.
+        // side. ~96 px label + 2x ~8 px padding = 112.
         minLabelClearance = 112,
         stretchPasses = 4
     } = options
-    const positions = Object.fromEntries(
+    const positions: Record<string, Position> = Object.fromEntries(
         Object.entries(layout.positions).map(([code, p]) => [code, { x: p.x, y: p.y }])
     )
-    const radiusByCode = Object.fromEntries(items.map((i) => [i.code, i.radius]))
+    const radiusByCode: Record<string, number> = Object.fromEntries(items.map((i) => [i.code, i.radius]))
 
     // Stretch-pass: if an edge's visible line is shorter than the label needs,
-    // push its endpoints apart along the line so the badge sits between them
-    // without touching either node.
+    // push its endpoints apart along the line.
     for (let iter = 0; iter < stretchPasses; iter++) {
         let stretched = false
         for (const edge of edges) {
@@ -242,10 +299,8 @@ export function relaxLayoutForEdges(layout, items, edges, options = {}) {
             const lenSq = dx * dx + dy * dy
             if (lenSq < 1) continue
             const len = Math.sqrt(lenSq)
-            const ux = dx / len
-            const uy = dy / len
-            const px = -uy
-            const py = ux
+            const px = -(dy / len)
+            const py = dx / len
             for (const item of items) {
                 if (item.code === edge.from || item.code === edge.to) continue
                 const p = positions[item.code]
@@ -328,7 +383,7 @@ export function relaxLayoutForEdges(layout, items, edges, options = {}) {
     return { height: newHeight, positions, width: newWidth }
 }
 
-export const yphColorFor = (yph, accentColor) => {
+export const yphColorFor = (yph: number | null | undefined, accentColor: string): string => {
     if (yph == null) return accentColor
     if (yph > MAX_YPH) return '#ef4444'
     if (yph < TARGET_YPH - 0.3) return '#d97706'

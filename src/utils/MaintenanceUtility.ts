@@ -3,7 +3,12 @@
  * icon/label resolution. The richer parse / validate / response-build helpers
  * have been removed — their dynamic-form consumer surface was retired.
  */
-export function formatMaintenanceDate(dateStr) {
+
+type FrequencyKey = 'biweekly' | 'daily' | 'monthly' | 'quarterly' | 'weekly' | 'yearly'
+
+type FieldType = 'checklist' | 'long_answer' | 'notes' | 'short_answer'
+
+export function formatMaintenanceDate(dateStr: string | null | undefined): string {
     if (!dateStr) return ''
     const date = new Date(dateStr)
     return date.toLocaleDateString('en-US', {
@@ -12,7 +17,7 @@ export function formatMaintenanceDate(dateStr) {
         year: 'numeric'
     })
 }
-export function formatMaintenanceDateShort(dateStr) {
+export function formatMaintenanceDateShort(dateStr: string | null | undefined): string {
     if (!dateStr) return ''
     const date = new Date(dateStr)
     return date.toLocaleDateString('en-US', {
@@ -21,8 +26,8 @@ export function formatMaintenanceDateShort(dateStr) {
         weekday: 'short'
     })
 }
-export function formatFrequency(frequency, value = 1) {
-    const labels = {
+export function formatFrequency(frequency: string, value: number = 1): string {
+    const labels: Record<string, string> = {
         biweekly: 'Bi-weekly',
         daily: value === 1 ? 'Daily' : `Every ${value} days`,
         monthly: value === 1 ? 'Monthly' : `Every ${value} months`,
@@ -32,7 +37,7 @@ export function formatFrequency(frequency, value = 1) {
     }
     return labels[frequency] || frequency
 }
-export function getFieldTypeIcon(type) {
+export function getFieldTypeIcon(type: string): string {
     switch (type) {
         case 'short_answer':
             return 'fa-font'
@@ -46,7 +51,7 @@ export function getFieldTypeIcon(type) {
             return 'fa-question'
     }
 }
-export function getFieldTypeName(type) {
+export function getFieldTypeName(type: string): string {
     switch (type) {
         case 'short_answer':
             return 'Short Answer'

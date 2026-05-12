@@ -2,14 +2,37 @@
  *  utils so the row, detail panel, and view file can all import from one
  *  source without circular references. */
 
-export const CALL_OUTCOME_BUTTONS = [
+interface CallOutcomeButton {
+    color: string
+    icon: string
+    key: string
+    label: string
+}
+
+interface SortOption {
+    key: string
+    label: string
+}
+
+interface CallListRow {
+    contact_name?: string | null
+    customer_name?: string | null
+    customer_num?: string | null
+    last_call_at?: string | null
+    last_pour_date?: string | null
+    phone?: string | null
+    pour_days_last_year?: number | null
+    [key: string]: unknown
+}
+
+export const CALL_OUTCOME_BUTTONS: CallOutcomeButton[] = [
     { color: '#64748b', icon: 'fa-phone-slash', key: 'no_answer', label: 'No Answer' },
     { color: '#2563eb', icon: 'fa-rotate-right', key: 'will_book_again', label: 'Will Book Again' },
     { color: '#16a34a', icon: 'fa-circle-check', key: 'booked', label: 'Booked' },
     { color: '#dc2626', icon: 'fa-circle-xmark', key: 'not_interested', label: 'Not Interested' }
 ]
 
-export const CALL_OUTCOME_LABELS = {
+export const CALL_OUTCOME_LABELS: Record<string, string> = {
     booked: 'Booked',
     no_answer: 'No Answer',
     not_interested: 'Not Interested',
@@ -17,7 +40,7 @@ export const CALL_OUTCOME_LABELS = {
     will_book_again: 'Will Book Again'
 }
 
-export const CALL_OUTCOME_COLORS = {
+export const CALL_OUTCOME_COLORS: Record<string, string> = {
     booked: '#16a34a',
     no_answer: '#64748b',
     not_interested: '#dc2626',
@@ -25,7 +48,7 @@ export const CALL_OUTCOME_COLORS = {
     will_book_again: '#2563eb'
 }
 
-export const CALL_LIST_SORT_OPTIONS = [
+export const CALL_LIST_SORT_OPTIONS: SortOption[] = [
     { key: 'oldest', label: 'Longest dormant' },
     { key: 'newest', label: 'Most recent pour' },
     { key: 'volume', label: 'Most pours / yr' },
@@ -34,7 +57,7 @@ export const CALL_LIST_SORT_OPTIONS = [
 
 /** Pretty-print a phone number. Accepts US 10- or 11-digit strings; falls
  *  back to the original input for anything else (intl, vanity, etc.). */
-export const formatCallListPhone = (phone) => {
+export const formatCallListPhone = (phone: string | null | undefined): string => {
     if (!phone) return ''
     const digits = String(phone).replace(/\D/g, '')
     if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
@@ -46,7 +69,7 @@ export const formatCallListPhone = (phone) => {
 
 /** Color tone for the days-dormant badge — same red/amber/green tiers used
  *  by the schedule tab's other health indicators. */
-export const dormancyTone = (days) => {
+export const dormancyTone = (days: number): string => {
     if (days >= 180) return '#dc2626'
     if (days >= 90) return '#d97706'
     return '#16a34a'
@@ -60,7 +83,7 @@ export const RECENT_CALL_COOLDOWN_DAYS = 30
 
 /** Whole days between `from` (ISO timestamp/string) and now. Returns null
  *  for missing/unparseable input. Used to label rows like "called 3d ago". */
-export const daysSinceTimestamp = (from) => {
+export const daysSinceTimestamp = (from: string | null | undefined): number | null => {
     if (!from) return null
     const ms = Date.parse(from)
     if (Number.isNaN(ms)) return null
@@ -69,7 +92,7 @@ export const daysSinceTimestamp = (from) => {
 }
 
 /** Short relative-day label for the row's "called X" badge. */
-export const formatRelativeDays = (from) => {
+export const formatRelativeDays = (from: string | null | undefined): string => {
     const days = daysSinceTimestamp(from)
     if (days == null) return ''
     if (days === 0) return 'today'
@@ -80,13 +103,13 @@ export const formatRelativeDays = (from) => {
 }
 
 /** True when the customer has been logged inside the cooldown window. */
-export const wasRecentlyCalled = (lastCallAt) => {
+export const wasRecentlyCalled = (lastCallAt: string | null | undefined): boolean => {
     const days = daysSinceTimestamp(lastCallAt)
     return days != null && days < RECENT_CALL_COOLDOWN_DAYS
 }
 
 /** Case-insensitive substring search across the row's display fields. */
-export const matchesCallListQuery = (row, query) => {
+export const matchesCallListQuery = (row: CallListRow, query: string | null | undefined): boolean => {
     if (!query) return true
     const haystack = [row.customer_name, row.customer_num, row.contact_name, row.phone]
         .filter(Boolean)
@@ -95,7 +118,7 @@ export const matchesCallListQuery = (row, query) => {
     return haystack.includes(query)
 }
 
-const compareWithinTier = (a, b, sortKey) => {
+const compareWithinTier = (a: CallListRow, b: CallListRow, sortKey: string): number => {
     if (sortKey === 'newest') return String(b.last_pour_date || '').localeCompare(String(a.last_pour_date || ''))
     if (sortKey === 'volume') return (b.pour_days_last_year || 0) - (a.pour_days_last_year || 0)
     if (sortKey === 'name') return String(a.customer_name || '').localeCompare(String(b.customer_name || ''))
@@ -106,17 +129,17 @@ const compareWithinTier = (a, b, sortKey) => {
  *  bottom tier (most recently called LAST so the dispatcher sees the next
  *  callable customer at the top). Within each tier the chosen sortKey
  *  applies — default 'oldest' surfaces the longest-dormant first. */
-export const sortCallListRoster = (rows, sortKey) => {
-    const fresh = []
-    const recent = []
+export const sortCallListRoster = (rows: CallListRow[], sortKey: string): CallListRow[] => {
+    const fresh: CallListRow[] = []
+    const recent: CallListRow[] = []
     for (const row of rows) {
         if (wasRecentlyCalled(row.last_call_at)) recent.push(row)
         else fresh.push(row)
     }
     fresh.sort((a, b) => compareWithinTier(a, b, sortKey))
     recent.sort((a, b) => {
-        const aMs = Date.parse(a.last_call_at) || 0
-        const bMs = Date.parse(b.last_call_at) || 0
+        const aMs = Date.parse(a.last_call_at || '') || 0
+        const bMs = Date.parse(b.last_call_at || '') || 0
         return aMs - bMs
     })
     return [...fresh, ...recent]

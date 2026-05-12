@@ -13,9 +13,176 @@ import {
  * hourly demand, top-customers, product mix, and per-plant breakdown.
  */
 
-/** Fallback palette for plants that aren't in the shared plant-badge map.
- *  Real plants use the canonical color from `plantBadgeColor` so every view
- *  (Schedule badges, Planner nodes, Demand charts) renders them the same. */
+interface OrderLike {
+    startTime?: string
+    rate?: string
+    loadSize?: string | number
+    yardage?: string | number
+    customer?: string
+    productCode?: string
+    orderNum?: string
+    plantCode?: string
+    [key: string]: unknown
+}
+
+interface PlantProduction {
+    [key: string]: {
+        orders?: OrderLike[]
+        [key: string]: unknown
+    }
+}
+
+interface PlantStat {
+    code?: string
+    base?: number
+    send?: number
+    recv?: number
+    [key: string]: unknown
+}
+
+interface PlantAccumulator {
+    code: string
+    name: string
+    base: number
+    adjustedBase: number
+    helpSend: number
+    helpRecv: number
+    orders: number
+    totalTrucks: number
+    totalYardage: number
+}
+
+interface HourBucket {
+    hour: number
+    label: string
+    total: number
+    yardage: number
+}
+
+interface StackedHourlyEntry {
+    hour: number
+    label: string
+    [plantCode: string]: number | string
+}
+
+interface BiggestOrder {
+    customer: string
+    orderNum: string
+    plantCode: string
+    startTime: string
+    yardage: number
+}
+
+interface HourlyKpiResult {
+    hours: HourBucket[]
+    stackedHourly: StackedHourlyEntry[]
+    customerYardage: Map<string, number>
+    productYardage: Map<string, number>
+    biggestOrder: BiggestOrder | null
+    bigPourCount: number
+    totalLoadSizeSum: number
+    totalLoadSizeCount: number
+}
+
+interface TimeOfDayTotals {
+    overnight: number
+    morning: number
+    afternoon: number
+    evening: number
+}
+
+interface CapacityByPlantEntry {
+    code: string
+    label: string
+    base: number
+    rawBase: number
+    peak: number
+    slack: number
+}
+
+interface CustomerEntry {
+    customer: string
+    yardage: number
+}
+
+interface ProductEntry {
+    product: string
+    yardage: number
+}
+
+interface PeakHour {
+    hour: number | null
+    label: string
+    total: number
+}
+
+interface DemandTotals {
+    orders: number
+    trucks: number
+    yardage: number
+}
+
+interface DemandData {
+    avgLoadSize: number
+    bigPourCount: number
+    biggestOrder: BiggestOrder | null
+    capacityByPlant: CapacityByPlantEntry[]
+    capacityUtilization: number
+    cumulativeHourly: Array<{ hour: number; label: string; yardage: number }>
+    hours: HourBucket[]
+    peakByPlant: Record<string, number>
+    peakHour: PeakHour
+    perPlant: PlantAccumulator[]
+    productMix: ProductEntry[]
+    stackedHourly: StackedHourlyEntry[]
+    timeOfDay: TimeOfDayTotals
+    topCustomers: CustomerEntry[]
+    totalBase: number
+    totals: DemandTotals
+}
+
+interface SupplyVerdict {
+    label: string
+    color: string
+    tone: string
+    coverage?: number
+}
+
+interface BuildDemandParams {
+    plantProduction: PlantProduction | null | undefined
+    stats: PlantStat[] | null | undefined
+    plantNameByCode: Record<string, string> | null | undefined
+    planDate: string | null | undefined
+    allowedCodes: Set<string> | null | undefined
+}
+
+interface BuildPlantAccumulatorsParams {
+    stats: PlantStat[] | null | undefined
+    plantProduction: PlantProduction | null | undefined
+    plantNameByCode: Record<string, string> | null | undefined
+    planDate: string | null | undefined
+    passesPlantFilter: (code: string) => boolean
+}
+
+interface AccumulateOrdersParams {
+    plants: Map<string, PlantAccumulator>
+    plantProduction: PlantProduction | null | undefined
+    plantNameByCode: Record<string, string> | null | undefined
+    passesPlantFilter: (code: string) => boolean
+}
+
+interface CollectHourlyParams {
+    plantProduction: PlantProduction | null | undefined
+    passesPlantFilter: (code: string) => boolean
+}
+
+interface BuildPerPlantCsvParams {
+    perPlant: PlantAccumulator[]
+    peakByPlant: Record<string, number>
+    totals: DemandTotals
+}
+
+/** Fallback palette for plants that aren't in the shared plant-badge map. */
 export const FALLBACK_SERIES_COLORS = [
     '#0ea5e9',
     '#8b5cf6',
@@ -58,7 +225,7 @@ const TIME_OF_DAY_BUCKETS = {
     overnightEnd: 6
 }
 
-const parseHourMinute = (value) => {
+const parseHourMinute = (value: string | null | undefined): number | null => {
     const v = String(value || '').trim()
     const m = v.match(/^(\d{1,2}):(\d{2})$/)
     if (!m) return null
@@ -69,7 +236,7 @@ const parseHourMinute = (value) => {
 }
 
 /** Rolling-sum helper: returns prefix sums of `arr` without mutating it. */
-const toCumulative = (arr) => {
+const toCumulative = (arr: number[]): number[] => {
     let running = 0
     return arr.map((x) => {
         running += x
@@ -78,16 +245,21 @@ const toCumulative = (arr) => {
 }
 
 /** Initialize the per-plant accumulator with starting-pool math that
- *  matches the Schedule tab (date/holiday adjustments + missing-operator
- *  shortfalls + help sent/received). */
-const buildPlantAccumulators = ({ stats, plantProduction, plantNameByCode, planDate, passesPlantFilter }) => {
-    const plants = new Map()
+ *  matches the Schedule tab. */
+const buildPlantAccumulators = ({
+    stats,
+    plantProduction,
+    plantNameByCode,
+    planDate,
+    passesPlantFilter
+}: BuildPlantAccumulatorsParams): Map<string, PlantAccumulator> => {
+    const plants = new Map<string, PlantAccumulator>()
     ;(stats || []).forEach((s) => {
         if (!s?.code || !passesPlantFilter(s.code)) return
-        const rawBase = Number.isFinite(s.base) ? s.base : 0
+        const rawBase = Number.isFinite(s.base) ? s.base! : 0
         const effectiveBase = getEffectiveBase(rawBase, s.code, plantProduction, planDate)
-        const send = Number.isFinite(s.send) ? s.send : 0
-        const recv = Number.isFinite(s.recv) ? s.recv : 0
+        const send = Number.isFinite(s.send) ? s.send! : 0
+        const recv = Number.isFinite(s.recv) ? s.recv! : 0
         plants.set(s.code, {
             adjustedBase: Math.max(0, effectiveBase - send + recv),
             base: rawBase,
@@ -103,10 +275,8 @@ const buildPlantAccumulators = ({ stats, plantProduction, plantNameByCode, planD
     return plants
 }
 
-/** Cumulate per-order numbers onto each plant's accumulator. Plants seen
- *  in `plantProduction` but missing from `stats` are auto-added with a
- *  zero base so the breakdown still includes them. */
-const accumulateOrdersByPlant = ({ plants, plantProduction, plantNameByCode, passesPlantFilter }) => {
+/** Cumulate per-order numbers onto each plant's accumulator. */
+const accumulateOrdersByPlant = ({ plants, plantProduction, plantNameByCode, passesPlantFilter }: AccumulateOrdersParams): void => {
     Object.entries(plantProduction || {}).forEach(([code, prod]) => {
         if (code === PLAN_META_KEY || !passesPlantFilter(code)) return
         if (!plants.has(code)) {
@@ -123,10 +293,10 @@ const accumulateOrdersByPlant = ({ plants, plantProduction, plantNameByCode, pas
             })
         }
         const list = Array.isArray(prod?.orders) ? prod.orders : []
-        const record = plants.get(code)
+        const record = plants.get(code)!
         list.forEach((order) => {
             if (isExcludedOrder(order)) return
-            record.totalYardage += parseFloat(order?.yardage) || 0
+            record.totalYardage += parseFloat(String(order?.yardage)) || 0
             record.totalTrucks += getCalculatedTruckCount(order) || 0
             record.orders += 1
         })
@@ -134,19 +304,18 @@ const accumulateOrdersByPlant = ({ plants, plantProduction, plantNameByCode, pas
 }
 
 /** Walk every order to fill the per-hour matrices, time-of-day buckets,
- *  and KPI aggregates. Returns the raw payload the Demand view needs to
- *  render every chart. */
-const collectHourlyAndKpis = ({ plantProduction, passesPlantFilter }) => {
-    const hours = Array.from({ length: 24 }, (_, i) => ({
+ *  and KPI aggregates. */
+const collectHourlyAndKpis = ({ plantProduction, passesPlantFilter }: CollectHourlyParams): HourlyKpiResult => {
+    const hours: HourBucket[] = Array.from({ length: 24 }, (_, i) => ({
         hour: i,
         label: `${String(i).padStart(2, '0')}:00`,
         total: 0,
         yardage: 0
     }))
-    const stackedHourly = hours.map((h) => ({ hour: h.hour, label: h.label }))
-    const customerYardage = new Map()
-    const productYardage = new Map()
-    let biggestOrder = null
+    const stackedHourly: StackedHourlyEntry[] = hours.map((h) => ({ hour: h.hour, label: h.label }))
+    const customerYardage = new Map<string, number>()
+    const productYardage = new Map<string, number>()
+    let biggestOrder: BiggestOrder | null = null
     let bigPourCount = 0
     let totalLoadSizeSum = 0
     let totalLoadSizeCount = 0
@@ -156,14 +325,14 @@ const collectHourlyAndKpis = ({ plantProduction, passesPlantFilter }) => {
         const list = Array.isArray(prod?.orders) ? prod.orders : []
         list.forEach((order) => {
             if (isExcludedOrder(order)) return
-            const yardage = parseFloat(order?.yardage) || 0
+            const yardage = parseFloat(String(order?.yardage)) || 0
             const trucks = getCalculatedTruckCount(order) || 0
-            const loadSize = parseFloat(order?.loadSize) || 0
+            const loadSize = parseFloat(String(order?.loadSize)) || 0
 
             if (yardage > 0) {
                 const customer = cleanString(order?.customer) || 'Unknown'
                 customerYardage.set(customer, (customerYardage.get(customer) || 0) + yardage)
-                const product = cleanString(order?.productCode) || '—'
+                const product = cleanString(order?.productCode) || '\u2014'
                 productYardage.set(product, (productYardage.get(product) || 0) + yardage)
                 if (!biggestOrder || yardage > biggestOrder.yardage) {
                     biggestOrder = {
@@ -185,16 +354,16 @@ const collectHourlyAndKpis = ({ plantProduction, passesPlantFilter }) => {
             const startMin = parseHourMinute(order?.startTime)
             if (!Number.isFinite(startMin) || trucks <= 0) return
             const duration = estimatePourMinutes(order)
-            const endMin = startMin + duration
-            const startHour = Math.max(0, Math.floor(startMin / 60))
+            const endMin = startMin! + duration
+            const startHour = Math.max(0, Math.floor(startMin! / 60))
             const endHour = Math.min(23, Math.floor((endMin - 1) / 60))
             for (let h = startHour; h <= endHour; h++) {
                 hours[h].total += trucks
-                stackedHourly[h][code] = (stackedHourly[h][code] || 0) + trucks
+                ;(stackedHourly[h] as Record<string, number | string>)[code] =
+                    ((stackedHourly[h] as Record<string, number | string>)[code] as number || 0) + trucks
             }
-            // Yardage goes into the hour the pour STARTS (dispatcher-friendly
-            // rather than spread across the rotation).
-            const startH = Math.max(0, Math.min(23, Math.floor(startMin / 60)))
+            // Yardage goes into the hour the pour STARTS
+            const startH = Math.max(0, Math.min(23, Math.floor(startMin! / 60)))
             hours[startH].yardage += yardage
         })
     })
@@ -211,10 +380,9 @@ const collectHourlyAndKpis = ({ plantProduction, passesPlantFilter }) => {
     }
 }
 
-/** Bucket cumulative yardage into the dispatcher-relevant time-of-day
- *  splits. */
-const summarizeTimeOfDay = (hours) => {
-    const totals = { afternoon: 0, evening: 0, morning: 0, overnight: 0 }
+/** Bucket cumulative yardage into the dispatcher-relevant time-of-day splits. */
+const summarizeTimeOfDay = (hours: HourBucket[]): TimeOfDayTotals => {
+    const totals: TimeOfDayTotals = { afternoon: 0, evening: 0, morning: 0, overnight: 0 }
     hours.forEach((h) => {
         if (h.hour < TIME_OF_DAY_BUCKETS.overnightEnd) totals.overnight += h.yardage
         else if (h.hour < TIME_OF_DAY_BUCKETS.morningEnd) totals.morning += h.yardage
@@ -224,13 +392,10 @@ const summarizeTimeOfDay = (hours) => {
     return totals
 }
 
-/** Build the entire Demand view payload — KPIs, hourly + cumulative
- *  matrices, top-customers / product-mix lists, capacity table, peak
- *  totals, and time-of-day splits. When `allowedCodes` is a Set, every
- *  aggregate is narrowed to just those plants. */
-export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planDate, allowedCodes }) => {
+/** Build the entire Demand view payload. */
+export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planDate, allowedCodes }: BuildDemandParams): DemandData => {
     const filterActive = allowedCodes instanceof Set
-    const passesPlantFilter = (code) => !filterActive || allowedCodes.has(code)
+    const passesPlantFilter = (code: string): boolean => !filterActive || allowedCodes!.has(code)
 
     const plants = buildPlantAccumulators({ passesPlantFilter, planDate, plantNameByCode, plantProduction, stats })
     accumulateOrdersByPlant({ passesPlantFilter, plantNameByCode, plantProduction, plants })
@@ -239,17 +404,17 @@ export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planD
     const hourly = collectHourlyAndKpis({ passesPlantFilter, plantProduction })
     const { hours, stackedHourly, customerYardage, productYardage, biggestOrder, bigPourCount } = hourly
 
-    const peakByPlant = {}
+    const peakByPlant: Record<string, number> = {}
     perPlant.forEach((plant) => {
         let peak = 0
         for (let h = 0; h < hours.length; h++) {
-            const value = stackedHourly[h][plant.code] || 0
+            const value = (stackedHourly[h] as Record<string, number | string>)[plant.code] as number || 0
             if (value > peak) peak = value
         }
         peakByPlant[plant.code] = peak
     })
 
-    const totals = perPlant.reduce(
+    const totals = perPlant.reduce<DemandTotals>(
         (acc, p) => ({
             orders: acc.orders + p.orders,
             trucks: acc.trucks + p.totalTrucks,
@@ -258,11 +423,10 @@ export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planD
         { orders: 0, trucks: 0, yardage: 0 }
     )
 
-    const peakHour = hours.reduce((best, h) => (h.total > best.total ? h : best), {
-        hour: null,
-        label: '—',
-        total: 0
-    })
+    const peakHour = hours.reduce<PeakHour>(
+        (best, h) => (h.total > best.total ? h : best),
+        { hour: null, label: '\u2014', total: 0 }
+    )
 
     const cumulativeYardage = toCumulative(hours.map((h) => h.yardage))
     const cumulativeHourly = hours.map((h, i) => ({
@@ -271,7 +435,7 @@ export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planD
         yardage: Math.round(cumulativeYardage[i])
     }))
 
-    const capacityByPlant = perPlant
+    const capacityByPlant: CapacityByPlantEntry[] = perPlant
         .map((p) => ({
             base: p.adjustedBase,
             code: p.code,
@@ -282,12 +446,12 @@ export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planD
         }))
         .sort((a, b) => b.peak - a.peak)
 
-    const topCustomers = Array.from(customerYardage.entries())
+    const topCustomers: CustomerEntry[] = Array.from(customerYardage.entries())
         .map(([customer, yardage]) => ({ customer, yardage: Math.round(yardage) }))
         .sort((a, b) => b.yardage - a.yardage)
         .slice(0, 10)
 
-    const productMix = Array.from(productYardage.entries())
+    const productMix: ProductEntry[] = Array.from(productYardage.entries())
         .map(([product, yardage]) => ({ product, yardage: Math.round(yardage) }))
         .sort((a, b) => b.yardage - a.yardage)
 
@@ -319,11 +483,9 @@ export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planD
 }
 
 /**
- * Verdict pill for how supply (effective truck pool) compares to peak
- * demand. No-demand plants render a neutral "Idle" pill so the row still
- * says something useful.
+ * Verdict pill for how supply (effective truck pool) compares to peak demand.
  */
-export const supplyVerdict = (supply, demand) => {
+export const supplyVerdict = (supply: number, demand: number): SupplyVerdict => {
     if (!demand) return { color: 'var(--text-tertiary)', label: 'Idle', tone: 'idle' }
     const coverage = supply > 0 ? (supply / demand) * 100 : 0
     if (coverage >= COVERAGE_COMFORTABLE) return { color: '#16a34a', coverage, label: 'Comfortable', tone: 'good' }
@@ -332,15 +494,14 @@ export const supplyVerdict = (supply, demand) => {
     return { color: '#dc2626', coverage, label: 'Overbooked', tone: 'bad' }
 }
 
-/** Escape a value for CSV output (RFC 4180 quoting for commas, quotes,
- *  and newlines). */
-const csvCell = (value) => {
+/** Escape a value for CSV output (RFC 4180 quoting). */
+const csvCell = (value: string | number | null | undefined): string => {
     const str = String(value ?? '')
     return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
 }
 
 /** Build the per-plant CSV string for export download. */
-export const buildPerPlantCsv = ({ perPlant, peakByPlant, totals }) => {
+export const buildPerPlantCsv = ({ perPlant, peakByPlant, totals }: BuildPerPlantCsvParams): string => {
     const header = ['Plant', 'Name', 'Orders', 'Yardage (yd)', 'Trucks', 'Share %', 'Base', 'Peak']
     const rows = perPlant.map((p) => {
         const share = totals.trucks > 0 ? (p.totalTrucks / totals.trucks) * 100 : 0
@@ -358,9 +519,8 @@ export const buildPerPlantCsv = ({ perPlant, peakByPlant, totals }) => {
     return [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\n')
 }
 
-/** Trigger a CSV file download in the browser. Idempotent — caller can
- *  invoke from any click handler without managing object URLs. */
-export const downloadCsvFile = (csv, filename) => {
+/** Trigger a CSV file download in the browser. */
+export const downloadCsvFile = (csv: string, filename: string): void => {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')

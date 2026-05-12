@@ -1,10 +1,10 @@
-import { Component } from 'react'
+import { Component, ReactNode } from 'react'
 
 /**
  * Thin shim that preserves the legacy ErrorReporterUtility public API but
  * delegates all work to the TaylorURL beacon (window.__taylorURL).
  *
- * The beacon is loaded via the <script src="…/analytics-service/beacon.js">
+ * The beacon is loaded via the <script src="...analytics-service/beacon.js">
  * tag in public/index.html — it installs window.onerror, fetch/XHR wrappers,
  * and unhandledrejection handlers once and exposes window.__taylorURL for
  * React ErrorBoundary wiring.
@@ -17,17 +17,28 @@ import { Component } from 'react'
  * All sites should mirror THIS shim verbatim.
  */
 
+interface TaylorURLBeacon {
+    flush?: () => void
+    reportError?: (error: unknown, metadata?: Record<string, unknown>) => void
+}
+
+declare global {
+    interface Window {
+        __taylorURL?: TaylorURLBeacon
+    }
+}
+
 const PENDING_TIMEOUT_MS = 10_000
 const POLL_INTERVAL_MS = 100
 
-const pendingCalls = []
-let drainTimer = null
+const pendingCalls: Array<(beacon: TaylorURLBeacon) => void> = []
+let drainTimer: ReturnType<typeof setInterval> | null = null
 
-function getBeacon() {
-    return typeof window !== 'undefined' ? window.__taylorURL : null
+function getBeacon(): TaylorURLBeacon | null {
+    return typeof window !== 'undefined' ? window.__taylorURL ?? null : null
 }
 
-function runOrDefer(call) {
+function runOrDefer(call: (beacon: TaylorURLBeacon) => void): void {
     const beacon = getBeacon()
     if (beacon) {
         call(beacon)
@@ -37,17 +48,17 @@ function runOrDefer(call) {
     scheduleDrain()
 }
 
-function scheduleDrain() {
+function scheduleDrain(): void {
     if (drainTimer !== null) return
     const startedAt = Date.now()
     drainTimer = setInterval(() => {
         const beacon = getBeacon()
         if (beacon) {
-            clearInterval(drainTimer)
+            clearInterval(drainTimer!)
             drainTimer = null
-            while (pendingCalls.length) pendingCalls.shift()(beacon)
+            while (pendingCalls.length) pendingCalls.shift()!(beacon)
         } else if (Date.now() - startedAt > PENDING_TIMEOUT_MS) {
-            clearInterval(drainTimer)
+            clearInterval(drainTimer!)
             drainTimer = null
             pendingCalls.length = 0
         }
@@ -56,44 +67,53 @@ function scheduleDrain() {
 
 const ErrorReporterUtility = {
     /**
-     * No-op: the beacon auto-initializes from its <script data-project="…"> tag.
+     * No-op: the beacon auto-initializes from its <script data-project="..."> tag.
      * Accepted for backwards compatibility with older call sites.
      */
-    init() {},
+    init(): void {},
 
     /** Manually report an error. Delegates to the beacon once it's available. */
-    reportError(error, metadata) {
+    reportError(error: unknown, metadata?: Record<string, unknown>): void {
         runOrDefer((beacon) => beacon.reportError?.(error, metadata))
     },
 
     /** Force-flush queued errors. */
-    flush() {
+    flush(): void {
         runOrDefer((beacon) => beacon.flush?.())
     },
 
     /** No-op: the beacon handlers are installed for the page's lifetime. */
-    destroy() {}
+    destroy(): void {}
+}
+
+interface ErrorBoundaryProps {
+    children: ReactNode
+    fallback?: ReactNode
+}
+
+interface ErrorBoundaryState {
+    hasError: boolean
 }
 
 /**
  * React ErrorBoundary that captures render errors and forwards them to the
  * beacon. Wrap your top-level <App /> with this.
  */
-class ErrorBoundary extends Component {
-    constructor(props) {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    constructor(props: ErrorBoundaryProps) {
         super(props)
         this.state = { hasError: false }
     }
 
-    static getDerivedStateFromError() {
+    static getDerivedStateFromError(): ErrorBoundaryState {
         return { hasError: true }
     }
 
-    componentDidCatch(error, info) {
+    componentDidCatch(error: Error, info: { componentStack?: string }): void {
         runOrDefer((beacon) => beacon.reportError?.(error, { component_stack: info?.componentStack }))
     }
 
-    render() {
+    render(): ReactNode {
         if (this.state.hasError) return this.props.fallback ?? null
         return this.props.children
     }

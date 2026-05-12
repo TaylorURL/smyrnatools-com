@@ -19,9 +19,42 @@ const BLOCKQUOTE_PATTERN = /^\s*>\s?/
 const TABLE_SEPARATOR_PATTERN = /^\s*\|?[\s:|-]+\|?\s*$/
 const MAX_HEADING_LEVEL = 3
 
+interface TextToken {
+    type: 'text'
+    value: string
+}
+
+interface StrongToken {
+    type: 'strong'
+    value: string
+}
+
+interface EmToken {
+    type: 'em'
+    value: string
+}
+
+interface StrikeToken {
+    type: 'strike'
+    value: string
+}
+
+interface CodeToken {
+    type: 'code'
+    value: string
+}
+
+interface LinkToken {
+    type: 'link'
+    label: string
+    href: string
+}
+
+type InlineToken = TextToken | StrongToken | EmToken | StrikeToken | CodeToken | LinkToken
+
 /** Tokenise a single line of inline markdown into ordered token records. */
-export function tokenizeMarkdownInline(text) {
-    const tokens = []
+export function tokenizeMarkdownInline(text: string): InlineToken[] {
+    const tokens: InlineToken[] = []
     let remaining = text
     while (remaining.length > 0) {
         const match = remaining.match(MARKDOWN_INLINE_PATTERN)
@@ -30,7 +63,7 @@ export function tokenizeMarkdownInline(text) {
             break
         }
         const { index } = match
-        if (index > 0) tokens.push({ type: 'text', value: remaining.slice(0, index) })
+        if (index! > 0) tokens.push({ type: 'text', value: remaining.slice(0, index!) })
         const token = match[0]
         if (token.startsWith('**') || token.startsWith('__')) {
             tokens.push({ type: 'strong', value: token.slice(2, -2) })
@@ -43,30 +76,70 @@ export function tokenizeMarkdownInline(text) {
         } else {
             tokens.push({ type: 'em', value: token.slice(1, -1) })
         }
-        remaining = remaining.slice(index + token.length)
+        remaining = remaining.slice(index! + token.length)
     }
     return tokens
 }
 
-const splitTableRow = (line) =>
+const splitTableRow = (line: string): string[] =>
     line
         .replace(/^\s*\|/, '')
         .replace(/\|\s*$/, '')
         .split('|')
         .map((cell) => cell.trim())
 
+interface ListItem {
+    children: ListBlock[]
+    content: string
+    task: boolean | null
+}
+
+interface ListBlock {
+    type: 'list'
+    items: ListItem[]
+    ordered: boolean
+}
+
+interface HeadingBlock {
+    type: 'heading'
+    level: number
+    text: string
+}
+
+interface ParagraphBlock {
+    type: 'paragraph'
+    text: string
+}
+
+interface BlockquoteBlock {
+    type: 'blockquote'
+    text: string
+}
+
+interface HrBlock {
+    type: 'hr'
+}
+
+interface TableBlock {
+    type: 'table'
+    header: string[]
+    rows: string[][]
+}
+
+type MarkdownBlock = ListBlock | HeadingBlock | ParagraphBlock | BlockquoteBlock | HrBlock | TableBlock
+
 /**
  * Parse markdown source into a block tree consumable by `MarkdownView`.
- * Supports headings (h1–h3), paragraphs, blockquotes, horizontal rules,
+ * Supports headings (h1-h3), paragraphs, blockquotes, horizontal rules,
  * tables, and nested ordered / unordered / task lists.
  */
-export function parseMarkdownBlocks(source) {
+export function parseMarkdownBlocks(source: string | null | undefined): MarkdownBlock[] {
     const lines = (source || '').split(/\r?\n/)
-    const blocks = []
+    const blocks: MarkdownBlock[] = []
     const cursor = { i: 0 }
 
-    const parseListItems = (baseIndent, ordered) => {
-        const items = []
+    const parseListItems = (baseIndent: number, ordered: boolean): ListBlock => {
+        const items: ListItem[] = []
         while (cursor.i < lines.length) {
             const line = lines[cursor.i]
             if (!line.trim()) {
@@ -88,7 +161,7 @@ export function parseMarkdownBlocks(source) {
             }
             if (isOrdered !== ordered) break
             let content = match[3]
-            let task = null
+            let task: boolean | null = null
             const taskMatch = content.match(TASK_ITEM_PATTERN)
             if (taskMatch) {
                 task = taskMatch[1].toLowerCase() === 'x'
@@ -122,7 +195,7 @@ export function parseMarkdownBlocks(source) {
             continue
         }
         if (BLOCKQUOTE_PATTERN.test(line)) {
-            const quoted = []
+            const quoted: string[] = []
             while (cursor.i < lines.length && BLOCKQUOTE_PATTERN.test(lines[cursor.i])) {
                 quoted.push(lines[cursor.i].replace(BLOCKQUOTE_PATTERN, ''))
                 cursor.i++
@@ -133,7 +206,7 @@ export function parseMarkdownBlocks(source) {
         if (line.includes('|') && cursor.i + 1 < lines.length && TABLE_SEPARATOR_PATTERN.test(lines[cursor.i + 1])) {
             const header = splitTableRow(line)
             cursor.i += 2
-            const rows = []
+            const rows: string[][] = []
             while (cursor.i < lines.length && lines[cursor.i].includes('|')) {
                 rows.push(splitTableRow(lines[cursor.i]))
                 cursor.i++
@@ -146,7 +219,7 @@ export function parseMarkdownBlocks(source) {
             blocks.push(parseListItems(listMatch[1].length, /\d+\./.test(listMatch[2])))
             continue
         }
-        const paragraphLines = []
+        const paragraphLines: string[] = []
         while (
             cursor.i < lines.length &&
             lines[cursor.i].trim() &&

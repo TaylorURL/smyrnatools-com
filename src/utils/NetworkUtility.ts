@@ -2,12 +2,12 @@
  * Browser connectivity detection: checks online status via ping endpoints,
  * with mobile-aware timeouts and dual-strategy (Google 204 + local turl.json) verification.
  */
-const isMobileDevice = () => {
+const isMobileDevice = (): boolean => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 }
 const PING_TIMEOUT = isMobileDevice() ? 15000 : 5000
 const NetworkUtility = {
-    async checkConnection() {
+    async checkConnection(): Promise<boolean> {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT)
         if (!isMobileDevice()) {
@@ -38,7 +38,7 @@ const NetworkUtility = {
             return false
         }
     },
-    isMobileDevice() {
+    isMobileDevice(): boolean {
         return isMobileDevice()
     }
 }

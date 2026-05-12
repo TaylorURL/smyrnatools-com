@@ -7,13 +7,69 @@ const LABEL_PUSH_MIN_PX = 30
 const LABEL_PUSH_MAX_PX = 260
 const LABEL_PUSH_STEP_PX = 20
 
+interface OrderLike {
+    orderId?: string
+    orderNum?: string
+    plantCode?: string
+    [key: string]: unknown
+}
+
+interface Assignment {
+    forOrderId?: string
+    [key: string]: unknown
+}
+
+interface Edge {
+    from: string
+    to: string
+    isReturn: boolean
+    assignmentIndexes?: number[]
+}
+
+interface Position {
+    x: number
+    y: number
+}
+
+interface PlantStat {
+    code: string
+    [key: string]: unknown
+}
+
+interface PlantProduction {
+    [key: string]: {
+        orders?: OrderLike[]
+        [key: string]: unknown
+    }
+}
+
+interface LabelLayoutEntry {
+    x: number
+    y: number
+    anchorX: number
+    anchorY: number
+    offset: number
+}
+
+interface LabelLayoutParams {
+    allPlantStats: PlantStat[]
+    bidirectionalEdgeKeys: Set<string>
+    edges: Edge[]
+    positions: Record<string, Position>
+    radiusByCode: Record<string, number>
+}
+
 /**
- * Build a map of outbound edge key (`from->to`) → `{ assignment, order }`
+ * Build a map of outbound edge key (`from->to`) -> `{ assignment, order }`
  * for assignments that are loading directly for a specific destination job.
  * Only outbound edges qualify — return legs are ignored.
  */
-export function computeEdgeJobs(edges, assignments, plantProduction) {
-    const jobsByEdge = new Map()
+export function computeEdgeJobs(
+    edges: Edge[],
+    assignments: Assignment[] | null | undefined,
+    plantProduction: PlantProduction | null | undefined
+): Map<string, { assignment: Assignment; order: OrderLike }> {
+    const jobsByEdge = new Map<string, { assignment: Assignment; order: OrderLike }>()
     for (const edge of edges) {
         if (edge.isReturn) continue
         const edgeKey = `${edge.from}->${edge.to}`
@@ -40,8 +96,14 @@ export function computeEdgeJobs(edges, assignments, plantProduction) {
  * edge until clear. The original midpoint is also returned so a small
  * connector line can be drawn back to the edge.
  */
-export function computeLabelLayout({ allPlantStats, bidirectionalEdgeKeys, edges, positions, radiusByCode }) {
-    const labelLayoutByEdgeKey = {}
+export function computeLabelLayout({
+    allPlantStats,
+    bidirectionalEdgeKeys,
+    edges,
+    positions,
+    radiusByCode
+}: LabelLayoutParams): Record<string, LabelLayoutEntry> {
+    const labelLayoutByEdgeKey: Record<string, LabelLayoutEntry> = {}
     const obstacles = allPlantStats
         .map((stat) => ({
             code: stat.code,
@@ -72,7 +134,7 @@ export function computeLabelLayout({ allPlantStats, bidirectionalEdgeKeys, edges
         const perpY = ux
 
         const blockers = obstacles.filter((obstacle) => obstacle.code !== edge.from && obstacle.code !== edge.to)
-        const isPositionOccluded = (x, y) => {
+        const isPositionOccluded = (x: number, y: number): boolean => {
             for (const blocker of blockers) {
                 const minClearance = blocker.radius + LABEL_HALF_HEIGHT_PX + LABEL_OBSTACLE_PADDING_PX
                 const ddx = blocker.pos.x - x
@@ -115,10 +177,13 @@ export function computeLabelLayout({ allPlantStats, bidirectionalEdgeKeys, edges
  * Cancelled (17:00) and dispatcher test (18:00) sentinel rows are filtered
  * here so the point-in-time "active orders" view never falsely counts them.
  */
-export function flattenPlantOrders(stats, plantProduction) {
-    const flatOrders = []
+export function flattenPlantOrders(
+    stats: PlantStat[] | null | undefined,
+    plantProduction: PlantProduction | null | undefined
+): Array<OrderLike & { plantCode: string }> {
+    const flatOrders: Array<OrderLike & { plantCode: string }> = []
     ;(stats || []).forEach((stat) => {
-        const production = plantProduction[stat.code] || {}
+        const production = plantProduction?.[stat.code] || {}
         const orders = Array.isArray(production.orders) ? production.orders : []
         orders.forEach((order) => {
             if (isExcludedOrder(order)) return
