@@ -1,7 +1,6 @@
 import React, { useCallback, useState, useTransition } from 'react'
 
 import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'
-import PlanActivityBanner from '../../../app/components/plan/PlanActivityBanner'
 import { PlanHeader } from '../../../app/components/plan/PlanHeader'
 import { PlanReadOnlyBanner } from '../../../app/components/plan/PlanReadOnlyBanner'
 import { PlanScheduleStaleBanner } from '../../../app/components/plan/PlanScheduleStaleBanner'
@@ -351,11 +350,6 @@ function PlanView() {
                     </div>
                 )}
             </div>
-            <PlanActivityBanner
-                accentColor={accentColor}
-                plantCodes={(regionPlants || []).map((p) => p.plantCode || p.plant_code).filter(Boolean)}
-                plantNameByCode={plantNameByCode}
-            />
         </div>
     )
 }

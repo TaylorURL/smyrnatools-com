@@ -65,29 +65,6 @@ function buildDistanceTable(latlngs) {
     return { segs, total }
 }
 
-/**
- * Walk the polyline by `progress` (0 → 1) and return the interpolated
- * `[lat, lng]` along it. Assumes constant ground speed — the caller can
- * apply easing on `progress` before calling.
- */
-export function pointAlongRoute(latlngs, distances, progress) {
-    if (!latlngs || latlngs.length === 0) return null
-    if (latlngs.length === 1) return latlngs[0]
-    const target = Math.max(0, Math.min(1, progress)) * distances.total
-    let acc = 0
-    for (let i = 0; i < distances.segs.length; i++) {
-        const segLen = distances.segs[i]
-        if (acc + segLen >= target || i === distances.segs.length - 1) {
-            const t = segLen > 0 ? (target - acc) / segLen : 0
-            const [lat1, lng1] = latlngs[i]
-            const [lat2, lng2] = latlngs[i + 1]
-            return [lat1 + (lat2 - lat1) * t, lng1 + (lng2 - lng1) * t]
-        }
-        acc += segLen
-    }
-    return latlngs[latlngs.length - 1]
-}
-
 /* ── OSRM lookup ───────────────────────────────────────────────────── */
 
 async function fetchRouteRaw(from, to) {

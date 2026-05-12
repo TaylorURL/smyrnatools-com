@@ -149,19 +149,6 @@ export const isLikelyBadAddress = (raw) => {
     return false
 }
 
-/** Parse a `HH:MM` duration string (from the dispatch report) into minutes.
- *  Returns null when the value is missing or unparseable. Mirrors the
- *  behaviour of `parseDurationMinutes` for HH:MM-only sources. */
-export const parseHhmmToMinutes = (value) => {
-    const v = clean(value)
-    const m = v.match(/^(\d{1,2}):(\d{2})$/)
-    if (!m) return null
-    const hours = parseInt(m[1], 10)
-    const mins = parseInt(m[2], 10)
-    if (!Number.isFinite(hours) || !Number.isFinite(mins)) return null
-    return hours * 60 + mins
-}
-
 /** Clamp a number into the [0, 1] range. */
 export const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
 

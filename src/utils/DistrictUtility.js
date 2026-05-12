@@ -49,31 +49,6 @@ export const getDistrictPlantCodes = (plantCode, regionPlants) => {
     return Array.from(matches)
 }
 
-/**
- * Resolve the district manager for a plant by scanning a list of candidate
- * users. A user qualifies if their own assigned plant shares at least one
- * district with the given plant (within the provided region plant list).
- *
- * @param {object} plant - The plant to look up (any shape with `plant_code`/`plantCode`).
- * @param {object} options
- * @param {Array<object>} options.regionPlants - Region plant records with district info.
- * @param {Array<{id, name, plant_code}>} options.candidateUsers - Users to check
- *        (pre-filtered to those with a plant assignment, ideally with a
- *        District-Manager-ish role).
- * @returns {object|null} The first matching user, or null.
- */
-export const getDistrictManager = (plant, { candidateUsers = [], regionPlants = [] } = {}) => {
-    const targetDistricts = new Set(getPlantDistricts(plant))
-    if (targetDistricts.size === 0) return null
-    for (const user of candidateUsers) {
-        const userPlantCode = user?.plant_code ?? user?.plantCode
-        if (!userPlantCode) continue
-        const userDistricts = getDistrictsForPlantCode(userPlantCode, regionPlants)
-        if (userDistricts.some((d) => targetDistricts.has(d))) return user
-    }
-    return null
-}
-
 /* ── Role-name predicates ────────────────────────────────────────────────── */
 
 const normalizeRoleName = (name) =>
@@ -93,10 +68,6 @@ export const isDispatcherRole = (name) => {
 }
 /** True for any dispatch-focused role (Dispatcher or Dispatch Manager). */
 export const isDispatchRole = (name) => isDispatcherRole(name) || isDispatchManagerRole(name)
-
-/** Any of the roles the `plan.yourtab` section is designed for. */
-export const isYourTabRole = (name) =>
-    isPlantManagerRole(name) || isGeneralManagerRole(name) || isDistrictManagerRole(name) || isDispatchRole(name)
 
 /* ── Scope resolution for the Plan "Your Plant" section ──────────────────── */
 

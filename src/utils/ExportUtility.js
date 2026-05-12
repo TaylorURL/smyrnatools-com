@@ -316,12 +316,6 @@ export async function fetchRMIReport(weekIso) {
     return pickBestReport(reports)?.data ?? null
 }
 
-export async function fetchGMReportForWeek(weekIso) {
-    if (!weekIso) return null
-    const { reports } = await fetchReportsByWeekWindow('general_manager', weekIso)
-    return pickBestReport(reports)?.data ?? null
-}
-
 export async function fetchAllMonthlyGMReports() {
     const { data: reports } = await Database.from('reports')
         .select(REPORT_COLUMNS_SHORT)

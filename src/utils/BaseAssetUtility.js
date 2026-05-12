@@ -1,5 +1,4 @@
 import { Database } from '../services/DatabaseService'
-import { PlantService } from '../services/PlantService'
 import { UserService } from '../services/UserService'
 import APIUtility from './APIUtility'
 
@@ -178,40 +177,4 @@ export async function ensureSpareIfNoOperatorBase(items, updateFn) {
         }
     }
     return items
-}
-/** Normalizes a list or Set of plant codes to an uppercase Set of strings. */
-function normalizePlantCodes(list) {
-    const result = new Set()
-    if (!list) return result
-    const entries = list instanceof Set ? [...list] : Array.isArray(list) ? list : []
-    entries.forEach((code) => result.add(String(code).toUpperCase()))
-    return result
-}
-/**
- * Builds a set of plant codes the user can access based on their selected region.
- * Office-type regions aggregate codes from all permitted regions.
- */
-export async function getRegionScopedPlantCodes(userId, selectedRegion) {
-    const code = selectedRegion?.code || ''
-    const type = selectedRegion?.type || ''
-    if (!code) return new Set()
-    if (String(type).toLowerCase() === 'office') {
-        const regions = await UserService.getPermittedRegions(userId).catch(() => [])
-        const allCodes = new Set()
-        for (const region of Array.isArray(regions) ? regions : []) {
-            const regionCode = region.regionCode || region.region_code
-            if (!regionCode) continue
-            const plantCodes = await PlantService.getAllowedPlantCodes(regionCode).catch(() => null)
-            normalizePlantCodes(plantCodes).forEach((p) => allCodes.add(p))
-        }
-        return allCodes
-    }
-    const plantCodes = await PlantService.getAllowedPlantCodes(code).catch(() => null)
-    return normalizePlantCodes(plantCodes)
-}
-/** Resolves the user's assigned plant code as an uppercase string. */
-export async function resolveUserPlantCode(userId) {
-    const userPlant = await UserService.getUserPlant(userId).catch(() => null)
-    const raw = typeof userPlant === 'string' ? userPlant : userPlant?.plant_code || userPlant?.plantCode || ''
-    return raw ? String(raw).toUpperCase() : ''
 }

@@ -337,15 +337,6 @@ export const getEffectiveMinTrucks = (order, overrides) => {
     return effective > 0 ? effective : null
 }
 
-/** How many trucks the order is short of its effective minimum.
- *  Returns 0 when the order is adequately staffed or when we can't compute. */
-export const getTruckShortfall = (order, overrides) => {
-    const needed = getEffectiveMinTrucks(order, overrides || {})
-    if (!needed) return 0
-    const scheduled = parseFloat(order?.truckCount) || 0
-    return Math.max(0, needed - scheduled)
-}
-
 /**
  * Simulate per-plant truck pools through the day.
  *

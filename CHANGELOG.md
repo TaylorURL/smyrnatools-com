@@ -2,6 +2,21 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.11] - 2026-05-12
+
+- Delete PlanActivityBanner, PlanFlowEdges, PlanFlowNode, PlanFlowToolbar, and all plan timeline components (MiniTimelineHeader, MiniTimelineRow, TimelineDayColumn, TimelinePlantLabels, TimelineSnapshotBar)
+- Delete PlanPlantProductionEditor and PlanRealtimeTables plan components
+- Delete CollapsibleTable, DashboardCards, and ImagePreviewModal UI components
+- Remove unused role-related code from RoleModal
+- Delete useLiveClock, useMaintenanceImages, usePlanFlowCanvas, usePlanMiniTimelineRows, usePlanTimelineData, and useRecentLoadedTickets hooks
+- Delete PlanRealtimeUtility entirely
+- Strip dead helper functions from BaseAssetUtility, DistrictUtility, ExportUtility, GeocodingUtility, and RoutingUtility
+- Gut MaintenanceUtility down to a minimal implementation, removing the bulk of its logic
+- Remove unused schedule helpers from PlanScheduleUtility and PlanUtility
+- Trim unused dashboard and history constants from dashboardConstants and historyConstants
+- Remove unused imports and dead code from WeeklyAggregateProductionReport and PlanView
+- Remove marquee-scroll animation keyframes and related custom utilities from tailwind.config.js
+
 ## [41.0.10] - 2026-05-12
 
 - Remove DashboardSidebar, KeyMetricsStrip, PeopleSection, and DashboardSharedComponents from the dashboard module

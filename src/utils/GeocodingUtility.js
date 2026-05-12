@@ -441,14 +441,3 @@ export function getCachedGeocode(address, city, state, { validate } = {}) {
     }
     return null
 }
-
-/** Clears the geocode cache so the next render retries every address.
- *  Surfaced to the UI as a "Retry geocoding" affordance. */
-export function clearGeocodeCache() {
-    cacheRef = {}
-    try {
-        window?.localStorage?.removeItem(CACHE_KEY)
-    } catch {
-        // ignore
-    }
-}

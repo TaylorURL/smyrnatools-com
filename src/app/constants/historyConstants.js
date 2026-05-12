@@ -1,11 +1,3 @@
-/** Maps asset types to their corresponding CRUD service class names. */
-export const ASSET_SERVICE_MAP = {
-    equipment: 'EquipmentService',
-    mixer: 'MixerService',
-    'pickup-truck': 'PickupTruckService',
-    tractor: 'TractorService',
-    trailer: 'TrailerService'
-}
 /** Maps asset types to their history-fetching service and method names. */
 export const HISTORY_SERVICE_MAP = {
     equipment: { method: 'getEquipmentHistory', service: 'EquipmentService' },

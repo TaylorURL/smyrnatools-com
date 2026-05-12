@@ -209,8 +209,3 @@ function AggregatePluginBody({ form, setForm, readOnly, weekIso }) {
 export function AggregateProductionSubmitPlugin({ form, readOnly, setForm, weekIso }) {
     return <AggregatePluginBody form={form} setForm={setForm} readOnly={readOnly} weekIso={weekIso} />
 }
-
-/** Review-mode plugin for the Aggregate Production report — read-only same body so reviewers see the same comparison + variance. */
-export function AggregateProductionReviewPlugin({ form, weekIso }) {
-    return <AggregatePluginBody form={form} setForm={null} readOnly weekIso={weekIso} />
-}

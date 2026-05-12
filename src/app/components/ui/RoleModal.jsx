@@ -50,10 +50,6 @@ function RoleModal({ children, isOpen, maxWidth = 'max-w-md', onClose, subtitle,
 export function RoleModalBody({ children }) {
     return <div className={BODY_CLASSES}>{children}</div>
 }
-/** Scrollable body section for RoleModal with overflow handling. */
-export function RoleModalScrollBody({ children }) {
-    return <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
-}
 /** Footer bar with primary submit and secondary cancel buttons, supporting loading state. */
 export function RoleModalFooter({
     disabled,
@@ -111,18 +107,6 @@ export function RoleTextInput({ disabled, onChange, placeholder, type = 'text', 
             onChange={(e) => !disabled && onChange(type === 'number' ? parseInt(e.target.value) || 0 : e.target.value)}
             placeholder={placeholder}
             type={type}
-            value={value}
-        />
-    )
-}
-/** Styled textarea for role modal forms with monospace font. */
-export function RoleTextarea({ disabled, onChange, placeholder, value }) {
-    return (
-        <textarea
-            className="w-full h-40 px-4 py-3 bg-white border border-slate-300 rounded-xl text-sm font-mono text-slate-700 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 resize-none"
-            disabled={disabled}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
             value={value}
         />
     )
