@@ -32,3 +32,17 @@
        `default` vs `{ named }`.
     4. After every batch of edits to a file's imports, re-read the import block and verify the sort by eyeballing the
        paths in alphabetical order. If you can't tell at a glance, you haven't sorted it. Don't ship until it's clean.
+
+## Error Tracking — Sentry
+
+- **Sentry is initialized in `src/index.js`** via `@sentry/react`. The DSN comes from `REACT_APP_SENTRY_DSN`. When the
+  env var is absent Sentry is fully inert — no SDK calls are made.
+- **`ErrorReporterUtility`** (`src/utils/ErrorReporterUtility.js`) is a thin facade over `Sentry.captureException`.
+  Existing call sites (e.g. `ReportsSubmitView`) use `ErrorReporterUtility.reportError(error, metadata)` and should
+  continue to do so — do not import `@sentry/react` directly in feature code.
+- **User scope**: user id (from `users_sessions`, not `auth.uid()`) and region tags are attached/cleared automatically
+  via `authSuccess` / `authSignOut` / `region-changed` window events. No PII beyond the user id is sent.
+- **Releases**: tagged as `smyrnatools@<package.json version>` so errors map to deploys.
+- **Source maps**: generated as `hidden-source-map` during production builds (not served to clients). Uploaded to Sentry
+  via `@sentry/webpack-plugin` in `config-overrides.js` when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT`
+  env vars are set (CI only).

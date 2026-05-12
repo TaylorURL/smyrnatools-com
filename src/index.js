@@ -1,17 +1,90 @@
 import './app/index.css'
 
+import * as Sentry from '@sentry/react'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 
+import packageJson from '../package.json'
 import App from './app/App.js'
+import { SESSION_STORAGE_KEYS } from './app/constants/auth'
 import { AuthProvider } from './app/context/AuthContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
-import { databaseKey, databaseUrl } from './services/DatabaseService'
-import ErrorReporterUtility, { ErrorBoundary } from './utils/ErrorReporterUtility'
 
-ErrorReporterUtility.init({ project: 'smyrnatools.com', apiKey: databaseKey, baseUrl: databaseUrl })
+const SENTRY_DSN = process.env.REACT_APP_SENTRY_DSN
+
+if (SENTRY_DSN) {
+    Sentry.init({
+        beforeSend(event) {
+            if (event.user) {
+                delete event.user.email
+                delete event.user.ip_address
+                delete event.user.username
+            }
+            return event
+        },
+        dsn: SENTRY_DSN,
+        environment: process.env.NODE_ENV,
+        integrations: [Sentry.browserTracingIntegration()],
+        release: `smyrnatools@${packageJson.version}`,
+        sendDefaultPii: false
+    })
+}
+
+/** Minimal full-screen error fallback shown when the root ErrorBoundary catches. */
+function ErrorFallback() {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-gray-100 p-6 dark:bg-gray-900">
+            <div className="max-w-md rounded-lg bg-white p-8 text-center shadow-lg dark:bg-gray-800">
+                <h1 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">Something went wrong</h1>
+                <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                    An unexpected error occurred. Please reload the page to try again.
+                </p>
+                <button
+                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    onClick={() => window.location.reload()}
+                >
+                    Reload Page
+                </button>
+            </div>
+        </div>
+    )
+}
+
+/** Attaches user id and region to Sentry scope on login; clears on logout. */
+function configureSentryUserScope() {
+    if (!SENTRY_DSN) return
+
+    const attachUser = () => {
+        const userId =
+            sessionStorage.getItem(SESSION_STORAGE_KEYS.USER_ID) ||
+            sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_KEY)
+        if (userId) Sentry.setUser({ id: userId })
+    }
+
+    const detachUser = () => {
+        Sentry.setUser(null)
+    }
+
+    const attachRegion = (event) => {
+        const region = event?.detail
+        if (region?.code) {
+            Sentry.setTag('region.code', region.code)
+            Sentry.setTag('region.name', region.name)
+            Sentry.setTag('region.type', region.type)
+        }
+    }
+
+    window.addEventListener('authSuccess', attachUser)
+    window.addEventListener('authSignOut', detachUser)
+    window.addEventListener('region-changed', attachRegion)
+
+    attachUser()
+}
+
+configureSentryUserScope()
+
 document.head.appendChild(
     Object.assign(document.createElement('meta'), {
         content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
@@ -24,9 +97,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <AuthProvider>
                 <PreferencesProvider>
                     <TutorialProvider>
-                        <ErrorBoundary>
+                        <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
                             <App />
-                        </ErrorBoundary>
+                        </Sentry.ErrorBoundary>
                     </TutorialProvider>
                 </PreferencesProvider>
             </AuthProvider>
