@@ -1,6 +1,8 @@
 // @ts-ignore
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4' // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 const FORMS_TABLE = 'maintenance_forms'
 const FIELDS_TABLE = 'maintenance_form_fields'
@@ -65,6 +67,10 @@ Deno.serve(async (req) => {
     try {
         const url = new URL(req.url)
         const endpoint = url.pathname.split('/').pop()
+
+        const auth = await requireAuthenticated(null, req, headers)
+        if (auth instanceof Response) return auth
+
         const supabase = createSupabaseClient(req.headers.get('Authorization') || '')
 
         switch (endpoint) {

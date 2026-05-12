@@ -2,6 +2,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 /**
  * Live driving-time proxy backed by Google's Distance Matrix API.
@@ -20,8 +22,6 @@ import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_
 
 const CACHE_TABLE = 'travel_time_cache'
 const CACHE_BUCKET_MINUTES = 15
-const SESSIONS_TABLE = 'users_sessions'
-const SESSION_EXPIRY_DAYS = 7
 
 function getAdminClient(): any {
     return createClient(
@@ -36,40 +36,6 @@ async function parseBody(req: Request): Promise<any> {
     } catch {
         return {}
     }
-}
-
-async function requireAuthenticated(req: Request, headers: any, body?: any): Promise<string | Response> {
-    let userId = body?.__sessionUserId || req.headers.get('x-user-id') || null
-    let sessionId = body?.__sessionId || req.headers.get('x-session-id') || null
-    if (!userId || !sessionId) {
-        try {
-            const b = await req.clone().json()
-            userId = userId || b?.__sessionUserId
-            sessionId = sessionId || b?.__sessionId
-        } catch {}
-    }
-    if (!userId || !sessionId) return errorResponse('Unauthorized', headers, 401)
-    const admin = getAdminClient()
-    const { data, error } = await admin
-        .from(SESSIONS_TABLE)
-        .select('id, last_active')
-        .eq('id', sessionId)
-        .eq('user_id', userId)
-        .maybeSingle()
-    if (error || !data) return errorResponse('Unauthorized', headers, 401)
-    if (data.last_active) {
-        const lastActive = new Date(data.last_active)
-        const expiry = new Date()
-        expiry.setDate(expiry.getDate() - SESSION_EXPIRY_DAYS)
-        if (lastActive < expiry) return errorResponse('Session expired', headers, 401)
-    }
-    admin
-        .from(SESSIONS_TABLE)
-        .update({ last_active: new Date().toISOString() })
-        .eq('id', sessionId)
-        .then(() => {})
-        .catch(() => {})
-    return userId
 }
 
 function bucketDeparture(): { iso: string; key: string } {
@@ -116,7 +82,7 @@ Deno.serve(async (req) => {
         if (endpoint !== 'distance') return errorResponse('Unknown endpoint', headers, 404)
 
         const body = await parseBody(req)
-        const auth = await requireAuthenticated(req, headers, body)
+        const auth = await requireAuthenticated(null, req, headers, body)
         if (auth instanceof Response) return auth
 
         const originAddr = String(body?.origin ?? '').trim()

@@ -1,6 +1,8 @@
 // @ts-ignore
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4' // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 const ISSUES_TABLE = 'quality_issues'
 const HISTORY_TABLE = 'quality_issues_history'
@@ -83,8 +85,12 @@ Deno.serve(async (req) => {
     try {
         const url = new URL(req.url)
         const endpoint = url.pathname.split('/').pop()
-        const auth = req.headers.get('Authorization') || ''
-        const supabase = createSupabaseClient(auth)
+
+        const sessionAuth = await requireAuthenticated(null, req, headers)
+        if (sessionAuth instanceof Response) return sessionAuth
+
+        const authHeader = req.headers.get('Authorization') || ''
+        const supabase = createSupabaseClient(authHeader)
 
         switch (endpoint) {
             // ── Reads ───────────────────────────────────────────────

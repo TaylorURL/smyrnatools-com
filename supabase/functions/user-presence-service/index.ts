@@ -2,6 +2,8 @@
 import { createClient } from '@supabase/supabase-js'
 // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 const PRESENCE_TABLE = 'users_presence'
 const STALE_THRESHOLD_MS = 2 * 60 * 1000
@@ -20,13 +22,6 @@ async function parseBody(req: Request): Promise<any> {
     }
 }
 
-function resolveClient(headerAuth: string, body: any) {
-    if ((!headerAuth || !headerAuth.trim()) && body?.token) {
-        return createSupabaseClient(`Bearer ${body.token}`)
-    }
-    return createSupabaseClient(headerAuth)
-}
-
 function nowISO(): string {
     return new Date().toISOString()
 }
@@ -38,8 +33,12 @@ Deno.serve(async (req) => {
     try {
         const url = new URL(req.url)
         const endpoint = url.pathname.split('/').pop()
+
+        const sessionAuth = await requireAuthenticated(null, req, headers)
+        if (sessionAuth instanceof Response) return sessionAuth
+
         const headerAuth = req.headers.get('Authorization') || ''
-        let supabase = createSupabaseClient(headerAuth)
+        const supabase = createSupabaseClient(headerAuth)
 
         switch (endpoint) {
             case 'set-online':
@@ -47,7 +46,6 @@ Deno.serve(async (req) => {
             case 'heartbeat':
             case 'update-activity': {
                 const body = await parseBody(req)
-                supabase = resolveClient(headerAuth, body)
                 const userId = body?.userId
                 if (typeof userId !== 'string' || !userId) return errorResponse('User ID is required', headers, 400)
                 const now = nowISO()
@@ -78,7 +76,6 @@ Deno.serve(async (req) => {
             }
             case 'merge-device': {
                 const body = await parseBody(req)
-                supabase = resolveClient(headerAuth, body)
                 const userId = body?.userId
                 const device = body?.device
                 if (typeof userId !== 'string' || !userId || !device)
@@ -101,7 +98,6 @@ Deno.serve(async (req) => {
             }
             case 'update-last-login': {
                 const body = await parseBody(req)
-                supabase = resolveClient(headerAuth, body)
                 const userId = body?.userId
                 if (typeof userId !== 'string' || !userId) return errorResponse('User ID is required', headers, 400)
                 const loginDate = body?.date || nowISO().split('T')[0]

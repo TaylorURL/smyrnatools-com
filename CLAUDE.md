@@ -32,3 +32,15 @@
        `default` vs `{ named }`.
     4. After every batch of edits to a file's imports, re-read the import block and verify the sort by eyeballing the
        paths in alphabetical order. If you can't tell at a glance, you haven't sorted it. Don't ship until it's clean.
+
+## Edge Functions
+
+- **Every non-public edge function MUST call `requireAuthenticated`** from `_shared/requireSession.ts` before processing
+  a request. This validates the caller's session against the `users_sessions` table and returns the authenticated userId.
+  Without this check, the endpoint is fully open — RLS policies are `using (true)`.
+- Import pattern: `import { requireAuthenticated } from '../_shared/requireSession.ts'`
+- Call pattern: `const auth = await requireAuthenticated(supabase, req, headers, body); if (auth instanceof Response) return auth;`
+- The only exceptions are pure utility functions with no database access (e.g. `crypto-utility`, `user-utility`,
+  `geocode-service`) and pre-auth endpoints (e.g. `sign-in`, `sign-up`, `reset-password` in `auth-context`).
+- For functions that receive service-to-service calls (e.g. `email-service`), check for the service role key in the
+  `Authorization` header as an alternative to session auth.
