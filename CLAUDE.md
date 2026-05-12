@@ -32,3 +32,35 @@
        `default` vs `{ named }`.
     4. After every batch of edits to a file's imports, re-read the import block and verify the sort by eyeballing the
        paths in alphabetical order. If you can't tell at a glance, you haven't sorted it. Don't ship until it's clean.
+
+## Testing
+
+- **Runner**: Jest via `react-app-rewired test`. Run with `npm test -- --watchAll=false` for a single pass.
+- **Libraries**: `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`.
+- **Setup file**: `src/setupTests.js` — imports `jest-dom` matchers and polyfills missing jsdom APIs (e.g.
+  `ResizeObserver`).
+- **CI**: `.github/workflows/test.yml` runs `npm test -- --watchAll=false` on every PR to `main` / `core`.
+
+### File placement and naming
+- Unit tests for utilities: `src/utils/__tests__/<UtilityName>.test.js`
+- Unit tests for services: `src/services/__tests__/<ServiceName>.test.js`
+- Integration tests for views: `src/views/__tests__/<ViewName>.test.jsx`
+- Always use a `__tests__/` directory co-located with the module under test — do NOT place test files next to source
+  files.
+
+### Mocking conventions
+- **Modules that read env vars at load time** (APIUtility, DatabaseService): set `process.env.*` before the import,
+  use `jest.resetModules()` + `require()` (dynamic import) so the module re-evaluates with the correct values.
+- **Database client**: mock `DatabaseService` at the module level (`jest.mock('../../services/DatabaseService', ...)`).
+  Never let tests hit a real database.
+- **Edge function calls**: mock `APIUtility.post` via `jest.mock('../../utils/APIUtility')`.
+- **React context hooks** (useAuth, usePreferences): mock the context module to return controlled values.
+- **Heavy child components** (plugins, modals, lazy-loaded views): stub with simple function components to keep tests
+  focused and fast.
+
+### Writing tests
+- Prioritize tests that catch regressions: boundary conditions, error paths, security guards (allowlist enforcement,
+  injection prevention).
+- Do not chase coverage numbers. Write tests for behavior a user or caller would observe.
+- Keep integration tests focused on one flow per test file. Mock at the service/hook boundary, not deep internals.
+- Avoid snapshot tests — they break on trivial markup changes and provide little signal.
