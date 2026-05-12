@@ -46,11 +46,10 @@ function RoleModal({ children, isOpen, maxWidth = 'max-w-md', onClose, subtitle,
         document.body
     )
 }
-/** Padded body section for RoleModal content. */
 export function RoleModalBody({ children }) {
     return <div className={BODY_CLASSES}>{children}</div>
 }
-/** Footer bar with primary submit and secondary cancel buttons, supporting loading state. */
+
 export function RoleModalFooter({
     disabled,
     isLoading,
@@ -86,7 +85,6 @@ export function RoleModalFooter({
         </div>
     )
 }
-/** Labeled form field wrapper with optional sublabel. */
 export function RoleFormField({ children, label, sublabel }) {
     return (
         <div className="mb-4 last:mb-0">
@@ -98,7 +96,6 @@ export function RoleFormField({ children, label, sublabel }) {
         </div>
     )
 }
-/** Styled text input for role modal forms. */
 export function RoleTextInput({ disabled, onChange, placeholder, type = 'text', value }) {
     return (
         <input

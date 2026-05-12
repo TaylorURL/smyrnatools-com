@@ -1,5 +1,5 @@
 import React from 'react'
-/** Compact stat card — Plan-tab tokens, small-caps label, bold tabular value. */
+
 export default function StatCard({ label, value, sublabel, className = '' }) {
     return (
         <div className={`rounded p-2.5 flex flex-col gap-0.5 ${className} bg-bg-secondary border border-border-light`}>

@@ -1,8 +1,7 @@
-// Lightweight markdown parser used by the plan notes mini-renderer. Avoids
-// pulling a full markdown library — handles only the subset we need: headings,
-// paragraphs, blockquotes, horizontal rules, tables, ordered / unordered /
-// task lists with nesting, and inline bold / italic / strikethrough / code /
-// links.
+// Markdown parser for the plan notes mini-renderer. Avoids pulling a full
+// markdown library — handles only what AIService emits: headings, paragraphs,
+// blockquotes, horizontal rules, tables, ordered / unordered / task lists with
+// nesting, and inline bold / italic / strikethrough / code / links.
 
 /**
  * Inline token pattern, scanned greedily left-to-right. Order matters: longer

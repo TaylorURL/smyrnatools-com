@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { PlantService } from '../../services/PlantService'
 
-/** Numeric-prefix sort for plant codes. Falls back gracefully on non-numeric codes. */
+/** Sorts plants by the leading numeric portion of plantCode. Non-numeric codes resolve to 0 (collapse together). */
 const byPlantCodeNumeric = (a, b) => {
     const aCode = String(a.plantCode || a.plant_code || '')
     const bCode = String(b.plantCode || b.plant_code || '')

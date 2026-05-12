@@ -47,17 +47,14 @@ export const MILEAGE_MILESTONES = [
     { label: 'Moderate', level: 'info', threshold: 100000 },
     { label: 'Low', level: 'good', threshold: 0 }
 ]
-/** LocalStorage key for caching AI-generated history summaries. */
 export const AI_HISTORY_CACHE_KEY = 'srm_history_ai_summaries'
-/** AI summary cache duration: 24 hours. */
 export const AI_CACHE_DURATION_MS = 24 * 60 * 60 * 1000
-/** SVG chart rendering dimensions. */
 export const CHART_HEIGHT = 300
 export const CHART_PADDING = 40
 export const CHART_WIDTH = 1000
 export const MAX_STAR_RATING = 5
 export const DAYS_IN_MS = 1000 * 60 * 60 * 24
-/** Feature-flag lists controlling which history tabs/sections are shown per asset type. */
+/** Which history tabs/sections render for each asset type — drives the tab strip in HistoryViewSection. */
 export const ASSET_TYPES_WITH_OVERVIEW = ['mixer', 'tractor', 'trailer', 'equipment', 'pickup-truck']
 export const ASSET_TYPES_WITH_OPERATORS = ['mixer', 'tractor']
 export const ASSET_TYPES_WITH_SERVICE = ['mixer', 'tractor', 'equipment', 'pickup-truck']

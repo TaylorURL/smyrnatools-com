@@ -14,19 +14,18 @@ const TABS = [
 ]
 
 /**
- * Modal for configuring plant-to-plant travel times AND each plant's street
- * address. Plant addresses feed the Schedule tab's plant→job→plant route map
- * and seed driving-time estimates.
+ * Inline settings panel for plant-to-plant travel times and plant street
+ * addresses. Lives inside the Plan → Admin tab. Plant addresses feed the
+ * Schedule tab's route map and seed driving-time estimates.
  */
-export default function PlanSettingsModal({
+export default function PlanSettings({
     accentColor,
-    plants,
-    travelTimes,
-    newTravelTime,
-    setNewTravelTime,
     addTravelTime,
+    newTravelTime,
+    plants,
     removeTravelTime,
-    onClose
+    setNewTravelTime,
+    travelTimes
 }) {
     const [tab, setTab] = useState(TAB_ROUTES)
     const [addresses, setAddresses] = useState({})
@@ -37,8 +36,8 @@ export default function PlanSettingsModal({
     const [savedCode, setSavedCode] = useState(null)
     const [error, setError] = useState(null)
 
-    // Seed local edit state from the plant list whenever the modal opens or
-    // the plant list changes — preserves any draft the user is mid-edit on.
+    // Seed local edit state from the plant list whenever the plant list
+    // changes — preserves any draft the user is mid-edit on.
     useEffect(() => {
         setAddresses((prev) => {
             const next = { ...prev }
@@ -67,55 +66,41 @@ export default function PlanSettingsModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-            <div className="absolute inset-0 bg-black/40" />
-            <div
-                className="relative rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden bg-bg-primary border border-border-light"
-                onClick={(event) => event.stopPropagation()}
-            >
-                <PlanSettingsHeader accentColor={accentColor} onClose={onClose} />
-                <PlanSettingsTabs accentColor={accentColor} activeTab={tab} onChange={setTab} />
-                {tab === TAB_ROUTES ? (
-                    <PlanSettingsRoutesPanel
-                        accentColor={accentColor}
-                        addTravelTime={addTravelTime}
-                        newTravelTime={newTravelTime}
-                        plants={plants}
-                        removeTravelTime={removeTravelTime}
-                        setNewTravelTime={setNewTravelTime}
-                        travelTimes={travelTimes}
-                    />
-                ) : (
-                    <PlanSettingsAddressesPanel
-                        accentColor={accentColor}
-                        addresses={addresses}
-                        error={error}
-                        persistedOverride={persistedOverride}
-                        plants={plants}
-                        savedCode={savedCode}
-                        savingCode={savingCode}
-                        setAddresses={setAddresses}
-                        onSave={saveAddress}
-                    />
-                )}
-            </div>
+        <div className="rounded-lg overflow-hidden bg-bg-primary border border-border-light">
+            <PlanSettingsHeader accentColor={accentColor} />
+            <PlanSettingsTabs accentColor={accentColor} activeTab={tab} onChange={setTab} />
+            {tab === TAB_ROUTES ? (
+                <PlanSettingsRoutesPanel
+                    accentColor={accentColor}
+                    addTravelTime={addTravelTime}
+                    newTravelTime={newTravelTime}
+                    plants={plants}
+                    removeTravelTime={removeTravelTime}
+                    setNewTravelTime={setNewTravelTime}
+                    travelTimes={travelTimes}
+                />
+            ) : (
+                <PlanSettingsAddressesPanel
+                    accentColor={accentColor}
+                    addresses={addresses}
+                    error={error}
+                    persistedOverride={persistedOverride}
+                    plants={plants}
+                    savedCode={savedCode}
+                    savingCode={savingCode}
+                    setAddresses={setAddresses}
+                    onSave={saveAddress}
+                />
+            )}
         </div>
     )
 }
 
-function PlanSettingsHeader({ accentColor, onClose }) {
+function PlanSettingsHeader({ accentColor }) {
     return (
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border-light">
-            <div className="flex items-center gap-2">
-                <i className="fas fa-sliders text-sm" style={{ color: accentColor }} />
-                <span className="text-sm font-bold text-text-primary">Plan Settings</span>
-            </div>
-            <button
-                onClick={onClose}
-                className="border-none bg-transparent cursor-pointer p-1 rounded-md text-text-secondary"
-            >
-                <i className="fas fa-times text-sm" />
-            </button>
+        <div className="flex items-center gap-2 px-5 py-3 border-b border-border-light">
+            <i className="fas fa-sliders text-sm" style={{ color: accentColor }} />
+            <span className="text-sm font-bold text-text-primary">Plan Settings</span>
         </div>
     )
 }

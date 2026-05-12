@@ -1,0 +1,1191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Smyrna Tools — Workflow Map</title>
+<style id="theme-defaults">
+:root {
+  color-scheme: light;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f1f3f5;
+  --bg-hover: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-tertiary: #94a3b8;
+  --accent: #1e3a5f;
+  --accent-soft: rgba(30, 58, 95, 0.10);
+  --border-light: #dee2e6;
+  --border-medium: #ced4da;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 2px 4px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.10);
+  --font-heading: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #242424;
+    --bg-tertiary: #303030;
+    --bg-hover: #3c3c3c;
+    --text-primary: #f5f5f5;
+    --text-secondary: #a8a8a8;
+    --text-tertiary: #787878;
+    --accent: #4d8bd6;
+    --accent-soft: rgba(77, 139, 214, 0.16);
+    --border-light: #363636;
+    --border-medium: #424242;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.35);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+  }
+}
+</style>
+<!-- Theme + fonts injected by JS from data.theme -->
+<style>
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; height: 100%; overflow: hidden;
+  background: var(--bg-primary); color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13.5px; line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+h1, h2, h3 { font-family: var(--font-heading); letter-spacing: 0.01em; margin: 0; }
+
+header {
+  display: flex; align-items: center; gap: 18px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+header .brand h1 { font-size: 18px; font-weight: 600; }
+header .brand .desc { color: var(--text-secondary); font-size: 11.5px; margin-top: 2px; font-weight: 400; }
+header .counts { display: flex; gap: 18px; margin-left: auto; }
+header .counts .stat { display: flex; flex-direction: column; align-items: flex-end; }
+header .counts .stat .num { font-family: var(--font-heading); font-size: 18px; font-weight: 600; color: var(--text-primary); line-height: 1; font-variant-numeric: tabular-nums; }
+header .counts .stat .lbl { font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-top: 3px; }
+header .meta { color: var(--text-tertiary); font-size: 10.5px; font-variant-numeric: tabular-nums; padding-left: 18px; border-left: 1px solid var(--border-light); }
+
+.app { display: grid; grid-template-columns: 340px 1fr; height: calc(100vh - 70px); }
+
+aside {
+  border-right: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  display: flex; flex-direction: column; min-height: 0;
+}
+.search-wrap { padding: 12px 14px; border-bottom: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 8px; }
+.search-wrap input {
+  width: 100%; padding: 8px 12px;
+  background: var(--bg-primary); border: 1px solid var(--border-light);
+  border-radius: 6px;
+  color: var(--text-primary); font-family: var(--font-body); font-size: 13px;
+  outline: none; -webkit-appearance: none;
+}
+.search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.filter-chip {
+  display: none; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  background: var(--accent-soft); border: 1px solid var(--accent);
+  border-radius: 14px;
+  color: var(--accent); font-size: 11.5px; font-weight: 500;
+}
+.filter-chip.visible { display: inline-flex; }
+.filter-chip button {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--accent); font-size: 14px; line-height: 1; font-weight: 600;
+}
+#flows { padding: 6px 8px 16px; overflow-y: auto; flex: 1; }
+
+.cat { margin-top: 4px; }
+.cat-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; cursor: pointer; user-select: none;
+  border-radius: 5px;
+  color: var(--text-tertiary);
+  font-family: var(--font-heading);
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.cat-head:hover { color: var(--text-secondary); background: var(--bg-tertiary); }
+.cat-head .chev { display: inline-block; transition: transform .15s ease; width: 12px; }
+.cat.open .cat-head .chev { transform: rotate(90deg); }
+.cat-head .count {
+  font-family: var(--font-body);
+  color: var(--text-tertiary); font-weight: 600;
+  font-size: 10px; letter-spacing: 0; text-transform: none;
+  padding: 1px 7px; background: var(--bg-primary); border: 1px solid var(--border-light);
+  border-radius: 10px;
+}
+.cat-items { display: none; padding: 1px 4px 4px; }
+.cat.open .cat-items { display: block; }
+.flow {
+  padding: 8px 11px; border-radius: 5px; cursor: pointer;
+  margin-bottom: 1px;
+  transition: background 0.15s ease;
+}
+.flow:hover { background: var(--bg-tertiary); }
+.flow.active { background: var(--accent-soft); }
+.flow.active .label { color: var(--accent); }
+.flow .label { font-size: 12.5px; font-weight: 500; line-height: 1.3; color: var(--text-primary); }
+.flow .desc { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+main { display: grid; grid-template-rows: 1fr 240px; min-height: 0; background: var(--bg-primary); }
+
+#graph-wrap {
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(ellipse at 25% 15%, var(--accent-soft), transparent 55%),
+    radial-gradient(ellipse at 75% 85%, var(--accent-soft), transparent 55%),
+    var(--bg-primary);
+}
+#graph {
+  display: block; width: 100%; height: 100%;
+  touch-action: none; cursor: grab;
+}
+#graph.grabbing { cursor: grabbing; }
+#graph-controls {
+  position: absolute; right: 16px; top: 16px;
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--bg-secondary); border: 1px solid var(--border-light);
+  border-radius: 8px; padding: 4px; box-shadow: var(--shadow-md);
+  z-index: 5;
+}
+#graph-controls button {
+  width: 30px; height: 28px;
+  background: transparent; border: 0; border-radius: 5px;
+  color: var(--text-secondary); font-family: var(--font-body); font-size: 14px; font-weight: 600;
+  cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+#graph-controls button:hover { background: var(--bg-hover); color: var(--text-primary); }
+#graph-controls .zoom-readout {
+  text-align: center; color: var(--text-tertiary);
+  font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.05em; padding: 4px 0 2px;
+  font-variant-numeric: tabular-nums;
+}
+#graph-hint {
+  position: absolute; left: 16px; bottom: 16px;
+  background: var(--bg-secondary); border: 1px solid var(--border-light);
+  border-radius: 6px; padding: 6px 10px;
+  color: var(--text-tertiary); font-size: 10.5px;
+  box-shadow: var(--shadow-sm);
+  z-index: 5; opacity: 0.92;
+}
+#graph-hint kbd {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+  background: var(--bg-primary); border: 1px solid var(--border-light);
+  border-radius: 3px; padding: 1px 5px; margin: 0 2px;
+}
+
+/* Tooltip floating over the graph on node hover. Pointer-events are
+ * `auto` so the copy button inside is clickable — show/hide logic in
+ * JS keeps the tip open while the mouse is over either the node or
+ * the tip itself. */
+#node-tip {
+  position: absolute;
+  pointer-events: auto;
+  background: var(--bg-secondary); border: 1px solid var(--border-light);
+  border-radius: 6px; padding: 8px 10px;
+  box-shadow: var(--shadow-lg);
+  font-size: 11.5px; color: var(--text-primary);
+  max-width: 280px; z-index: 6;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+#node-tip:not(.visible) { pointer-events: none; }
+#node-tip.visible { opacity: 1; transform: translateY(0); }
+#node-tip .tip-name { font-weight: 600; }
+#node-tip .tip-kind {
+  font-family: var(--font-heading);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-tertiary); margin-top: 2px;
+}
+#node-tip .tip-meta { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+#node-tip .tip-flows { margin-top: 4px; padding: 0; list-style: none; }
+#node-tip .tip-flows li {
+  font-size: 11px; color: var(--text-secondary);
+  padding: 2px 0; line-height: 1.4;
+}
+#node-tip .tip-actions { margin-top: 8px; pointer-events: auto; }
+
+#detail {
+  border-top: 1px solid var(--border-light); background: var(--bg-secondary);
+  padding: 14px 22px; overflow-y: auto;
+}
+.detail-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 4px; }
+.detail-head h2 { flex: 1; }
+#detail h2 { font-size: 17px; font-weight: 600; color: var(--text-primary); }
+
+/* Copy button — reused on the detail header, each step row, and the
+ * node tooltip. Subtle by default, lights up on hover or after a
+ * successful copy (briefly shows "Copied"). */
+.copy-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg-primary); border: 1px solid var(--border-light);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-family: var(--font-body); font-size: 11px; font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.copy-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--border-medium); }
+.copy-btn.copied {
+  background: var(--accent-soft); color: var(--accent); border-color: var(--accent);
+}
+.copy-btn .copy-icon { width: 12px; height: 12px; }
+.copy-btn .copy-icon path { fill: currentColor; }
+#detail .detail-cat {
+  font-family: var(--font-heading);
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 6px;
+}
+#detail p { margin: 0 0 14px; color: var(--text-secondary); font-size: 12.5px; line-height: 1.55; max-width: 920px; }
+#detail ol { margin: 0; padding-left: 0; list-style: none; counter-reset: step; max-width: 1100px; }
+#detail ol li {
+  position: relative; padding: 10px 14px 10px 42px;
+  background: var(--bg-primary); border: 1px solid var(--border-light);
+  border-radius: 8px;
+  margin-bottom: 6px; font-size: 12.5px; line-height: 1.5;
+  opacity: 0; transform: translateY(6px);
+  animation: step-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+#detail ol li .step-copy {
+  position: absolute; top: 8px; right: 8px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+#detail ol li:hover .step-copy,
+#detail ol li .step-copy.copied { opacity: 1; }
+#detail ol li::before {
+  counter-increment: step; content: counter(step);
+  position: absolute; left: 10px; top: 10px;
+  width: 24px; height: 24px;
+  background: var(--accent); color: #fff;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-size: 11px; font-weight: 700;
+}
+#detail ol li .step-edge { font-weight: 600; color: var(--text-primary); }
+#detail ol li .step-verb {
+  font-family: ui-monospace, "SF Mono", Consolas, Menlo, monospace;
+  color: var(--accent); font-size: 11px; font-weight: 500;
+  background: var(--accent-soft); padding: 1px 6px; border-radius: 3px;
+  margin: 0 2px;
+}
+#detail ol li .step-note { margin-top: 4px; color: var(--text-secondary); font-size: 11.5px; }
+
+@keyframes step-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes path-draw {
+  from { stroke-dashoffset: var(--path-len, 1000); }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes bubble-pop {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes lit-pulse {
+  0%   { filter: drop-shadow(0 0 0 var(--node-color, var(--accent))); }
+  100% { filter: drop-shadow(0 0 10px var(--node-color, var(--accent))); }
+}
+
+/* SVG */
+.lane-header {
+  font-family: var(--font-heading);
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.lane-divider { stroke-dasharray: 2 5; stroke-opacity: 0.3; }
+.node { cursor: pointer; transition: opacity 0.28s ease; }
+.node rect {
+  fill: var(--bg-secondary); stroke: var(--border-light); stroke-width: 1;
+  transition:
+    opacity 0.28s ease,
+    fill 0.28s ease,
+    stroke 0.28s ease,
+    stroke-width 0.28s ease,
+    filter 0.32s ease;
+}
+.node text {
+  fill: var(--text-primary); font-family: var(--font-body);
+  font-size: 13.5px; font-weight: 500; pointer-events: none;
+  transition: fill 0.28s ease, opacity 0.28s ease, font-weight 0.28s ease, font-size 0.28s ease;
+}
+.node.dim rect { opacity: 0.18; }
+.node.dim text { opacity: 0.32; }
+.node.lit rect {
+  fill: var(--bg-primary);
+  stroke: var(--node-color, var(--accent)); stroke-width: 2;
+  filter: drop-shadow(0 0 14px var(--node-color, var(--accent)));
+}
+.node.lit text { fill: var(--text-primary); font-weight: 700; font-size: 14px; }
+
+/* Per-node enter animation when a new flow renders. Stagger via inline
+ * animation-delay so nodes fade in left-to-right in step order. */
+.node-enter { opacity: 0; transform: translateY(6px); animation: node-enter 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+@keyframes node-enter {
+  to { opacity: 1; transform: translateY(0); }
+}
+.node.hover-target rect { stroke: var(--node-color, var(--accent)); stroke-width: 1.6; }
+.node.pinned rect {
+  stroke: var(--accent); stroke-width: 2.2; stroke-dasharray: 4 3;
+}
+.edge {
+  fill: none; stroke-width: 2;
+  stroke-dasharray: var(--path-len, 1000);
+  stroke-dashoffset: var(--path-len, 1000);
+  animation: path-draw 0.55s cubic-bezier(0.55, 0, 0.1, 1) forwards;
+}
+.step-bubble {
+  stroke-width: 1.8;
+  transform-origin: center;
+  transform-box: fill-box;
+  opacity: 0;
+  animation: bubble-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.step-num {
+  font-family: var(--font-heading);
+  font-size: 10px; font-weight: 700;
+  pointer-events: none; font-variant-numeric: tabular-nums;
+  opacity: 0;
+  animation: bubble-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>Smyrna Tools — Workflow Map</h1>
+    <div class="desc" id="header-desc"></div>
+  </div>
+  <div class="counts">
+    <div class="stat"><div class="num" id="count-flows">0</div><div class="lbl">Flows</div></div>
+    <div class="stat"><div class="num" id="count-nodes">0</div><div class="lbl">Nodes</div></div>
+    <div class="stat"><div class="num" id="count-cats">0</div><div class="lbl">Categories</div></div>
+  </div>
+  <span class="meta" id="generated-at" title="2026-05-12T22:40:02.706Z" data-iso="2026-05-12T22:40:02.706Z">Generated 2026-05-12T22:40:02.706Z</span>
+</header>
+<div class="app">
+  <aside>
+    <div class="search-wrap">
+      <input id="search" type="search" placeholder="Search workflows…" autocomplete="off" />
+      <div class="filter-chip" id="node-filter">
+        <span>Filtered by node: <strong id="node-filter-label"></strong></span>
+        <button id="node-filter-clear" title="Clear filter">×</button>
+      </div>
+    </div>
+    <div id="flows"></div>
+  </aside>
+  <main>
+    <div id="graph-wrap">
+      <svg id="graph" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="graph-controls">
+        <button id="zoom-in" title="Zoom in">+</button>
+        <button id="zoom-out" title="Zoom out">−</button>
+        <button id="zoom-fit" title="Fit to viewport">⤢</button>
+        <div class="zoom-readout" id="zoom-readout">100%</div>
+      </div>
+      <div id="graph-hint">Scroll / pinch to zoom · drag (or <kbd>shift</kbd>+scroll) to pan · click a node to filter · <kbd>F</kbd> to fit</div>
+      <div id="node-tip"></div>
+    </div>
+    <section id="detail">
+      <div class="detail-cat" id="detail-cat"></div>
+      <div class="detail-head">
+        <h2 id="detail-title">Select a workflow on the left.</h2>
+        <button class="copy-btn" id="copy-flow" title="Copy this flow as Markdown — paste into ChatGPT / Claude as context">
+          <svg class="copy-icon" viewBox="0 0 14 14"><path d="M3 0h7a1 1 0 011 1v9a1 1 0 01-1 1H3a1 1 0 01-1-1V1a1 1 0 011-1zm0 1v9h7V1H3zm-2 3v9a1 1 0 001 1h7v-1H2V4H1z"/></svg>
+          <span class="copy-label">Copy flow</span>
+        </button>
+      </div>
+      <p id="detail-desc">Each workflow lights up the path through services, hooks, edge functions, and external systems involved in completing the action.</p>
+      <ol id="detail-steps"></ol>
+    </section>
+  </main>
+</div>
+<script id="data" type="application/json">{"title":"Smyrna Tools — Workflow Map","description":"Every flow below is generated by grepping the smyrnatools-com source tree. Each step corresponds to an identifier verified to exist in the code.","theme":{"fonts":{"heading":"'Rajdhani', 'Inter', system-ui, sans-serif","body":"'Exo 2', 'Inter', system-ui, sans-serif","googleFonts":"https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap"},"light":{"bg-primary":"#ffffff","bg-secondary":"#f8f9fa","bg-tertiary":"#f1f3f5","bg-hover":"#e9ecef","text-primary":"#212529","text-secondary":"#6c757d","text-tertiary":"#94a3b8","accent":"#1e3a5f","border-light":"#dee2e6","border-medium":"#ced4da"},"dark":{"bg-primary":"#1a1a1a","bg-secondary":"#242424","bg-tertiary":"#303030","bg-hover":"#3c3c3c","text-primary":"#f5f5f5","text-secondary":"#a8a8a8","text-tertiary":"#787878","accent":"#4d8bd6","border-light":"#363636","border-medium":"#424242"}},"lanes":[{"id":"view","label":"Views","color":"#4f8eff"},{"id":"service","label":"Services","color":"#f59e0b"},{"id":"edge-function","label":"Edge Functions","color":"#ef4444"},{"id":"table","label":"Tables","color":"#64748b"},{"id":"rpc","label":"RPC","color":"#a855f7"}],"nodes":[{"id":"view:admin-plants-plantsaddview","label":"PlantsAddView","kind":"view"},{"id":"svc:PlantService","label":"PlantService","kind":"service"},{"id":"view:admin-plants-plantsdetailview","label":"PlantsDetailView","kind":"view"},{"id":"view:admin-plants-plantsview","label":"PlantsView","kind":"view"},{"id":"edge:region-service","label":"region-service","kind":"edge-function"},{"id":"view:admin-regions-regionsview","label":"RegionsView","kind":"view"},{"id":"view:assets-assetview","label":"AssetView","kind":"view"},{"id":"view:assets-equipment-equipmentdetailview","label":"EquipmentDetailView","kind":"view"},{"id":"svc:UserService","label":"UserService","kind":"service"},{"id":"view:assets-mixers-mixerdetailview","label":"MixerDetailView","kind":"view"},{"id":"svc:OperatorService","label":"OperatorService","kind":"service"},{"id":"tbl:operators","label":"operators","kind":"table"},{"id":"view:assets-pickup-trucks-pickuptrucksdetailview","label":"PickupTrucksDetailView","kind":"view"},{"id":"view:assets-tractors-tractordetailview","label":"TractorDetailView","kind":"view"},{"id":"view:assets-trailers-trailerdetailview","label":"TrailerDetailView","kind":"view"},{"id":"view:common-dashboard-dashboardview","label":"DashboardView","kind":"view"},{"id":"view:common-myaccount-myaccountview","label":"MyAccountView","kind":"view"},{"id":"view:common-notifications-notificationsview","label":"NotificationsView","kind":"view"},{"id":"svc:MessageService","label":"MessageService","kind":"service"},{"id":"view:people-managers-managerdetailview","label":"ManagerDetailView","kind":"view"},{"id":"view:people-managers-managersview","label":"ManagersView","kind":"view"},{"id":"tbl:users","label":"users","kind":"table"},{"id":"tbl:users_permissions","label":"users_permissions","kind":"table"},{"id":"tbl:users_roles","label":"users_roles","kind":"table"},{"id":"view:people-operators-operatoraddview","label":"OperatorAddView","kind":"view"},{"id":"view:people-operators-operatordetailview","label":"OperatorDetailView","kind":"view"},{"id":"view:people-operators-operatorsview","label":"OperatorsView","kind":"view"},{"id":"view:reporting-list-listaddview","label":"ListAddView","kind":"view"},{"id":"svc:AIService","label":"AIService","kind":"service"},{"id":"svc:ListService","label":"ListService","kind":"service"},{"id":"edge:list-service","label":"list-service","kind":"edge-function"},{"id":"view:reporting-list-listdetailview","label":"ListDetailView","kind":"view"},{"id":"view:reporting-list-listview","label":"ListView","kind":"view"},{"id":"view:reporting-maintenance-maintenancecreateformview","label":"MaintenanceCreateFormView","kind":"view"},{"id":"view:reporting-maintenance-maintenanceformview","label":"MaintenanceFormView","kind":"view"},{"id":"view:reporting-maintenance-maintenancelogview","label":"MaintenanceLogView","kind":"view"},{"id":"svc:MaintenanceLogService","label":"MaintenanceLogService","kind":"service"},{"id":"view:reporting-maintenance-maintenanceview","label":"MaintenanceView","kind":"view"},{"id":"view:reporting-nrmca-nrmcaview","label":"NRMCAView","kind":"view"},{"id":"svc:NRMCAService","label":"NRMCAService","kind":"service"},{"id":"tbl:nrmca_plants","label":"nrmca_plants","kind":"table"},{"id":"tbl:nrmca_scales","label":"nrmca_scales","kind":"table"},{"id":"view:reporting-reports-reportsview","label":"ReportsView","kind":"view"},{"id":"svc:ReportService","label":"ReportService","kind":"service"},{"id":"view:reporting-reports-types-weeklydistrictmanagerreport","label":"WeeklyDistrictManagerReport","kind":"view"},{"id":"svc:PlanService","label":"PlanService","kind":"service"},{"id":"view:reporting-reports-types-weeklyefficiencyreport","label":"WeeklyEfficiencyReport","kind":"view"},{"id":"view:reporting-reports-types-weeklygeneralmanagerreport","label":"WeeklyGeneralManagerReport","kind":"view"},{"id":"view:reporting-reports-types-weeklyplantmanagerreport","label":"WeeklyPlantManagerReport","kind":"view"},{"id":"tbl:reports","label":"reports","kind":"table"},{"id":"view:reporting-reports-types-weeklyreadymixinstructorreport","label":"WeeklyReadyMixInstructorReport","kind":"view"},{"id":"view:tools-plan-bookorderview","label":"BookOrderView","kind":"view"},{"id":"svc:BookOrderLogService","label":"BookOrderLogService","kind":"service"},{"id":"edge:book-order-log-service","label":"book-order-log-service","kind":"edge-function"},{"id":"view:tools-plan-plansettingsview","label":"PlanSettingsView","kind":"view"}],"flows":[{"id":"admin-plants-plantsview__PlantService_fetchRegionPlants","label":"PlantsView → PlantService.fetchRegionPlants()","category":"Admin · Plants","description":"Verified call chain: PlantsView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:admin-plants-plantsview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by PlantsView — call site at src/views/admin/plants/PlantsView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"admin-plants-plantsview__PlantService_fetchRegions","label":"PlantsView → PlantService.fetchRegions()","category":"Admin · Plants","description":"Verified call chain: PlantsView invokes PlantService.fetchRegions().","steps":[{"from":"view:admin-plants-plantsview","to":"svc:PlantService","verb":"PlantService.fetchRegions()","note":"Imported by PlantsView — call site at src/views/admin/plants/PlantsView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions","note":"Routes to case \"fetch-regions\" in supabase/functions/region-service/index.ts."}]},{"id":"admin-regions-regionsview__PlantService_fetchRegions","label":"RegionsView → PlantService.fetchRegions()","category":"Admin · Regions","description":"Verified call chain: RegionsView invokes PlantService.fetchRegions().","steps":[{"from":"view:admin-regions-regionsview","to":"svc:PlantService","verb":"PlantService.fetchRegions()","note":"Imported by RegionsView — call site at src/views/admin/regions/RegionsView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions","note":"Routes to case \"fetch-regions\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-equipment-equipmentdetailview__PlantService_fetchRegionByCode","label":"EquipmentDetailView → PlantService.fetchRegionByCode()","category":"Equipment","description":"Verified call chain: EquipmentDetailView invokes PlantService.fetchRegionByCode().","steps":[{"from":"view:assets-equipment-equipmentdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionByCode()","note":"Imported by EquipmentDetailView — call site at src/views/assets/equipment/EquipmentDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-by-code","note":"Routes to case \"fetch-region-by-code\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-equipment-equipmentdetailview__PlantService_fetchRegionPlants","label":"EquipmentDetailView → PlantService.fetchRegionPlants()","category":"Equipment","description":"Verified call chain: EquipmentDetailView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:assets-equipment-equipmentdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by EquipmentDetailView — call site at src/views/assets/equipment/EquipmentDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-equipment-equipmentdetailview__PlantService_fetchRegionsByPlantCode","label":"EquipmentDetailView → PlantService.fetchRegionsByPlantCode()","category":"Equipment","description":"Verified call chain: EquipmentDetailView invokes PlantService.fetchRegionsByPlantCode().","steps":[{"from":"view:assets-equipment-equipmentdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionsByPlantCode()","note":"Imported by EquipmentDetailView — call site at src/views/assets/equipment/EquipmentDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions-by-plant-code","note":"Routes to case \"fetch-regions-by-plant-code\" in supabase/functions/region-service/index.ts."}]},{"id":"people-managers-managerdetailview__PlantService_fetchRegionPlants","label":"ManagerDetailView → PlantService.fetchRegionPlants()","category":"Managers","description":"Verified call chain: ManagerDetailView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:people-managers-managerdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by ManagerDetailView — call site at src/views/people/managers/ManagerDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"people-managers-managerdetailview__PlantService_fetchRegionsByPlantCode","label":"ManagerDetailView → PlantService.fetchRegionsByPlantCode()","category":"Managers","description":"Verified call chain: ManagerDetailView invokes PlantService.fetchRegionsByPlantCode().","steps":[{"from":"view:people-managers-managerdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionsByPlantCode()","note":"Imported by ManagerDetailView — call site at src/views/people/managers/ManagerDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions-by-plant-code","note":"Routes to case \"fetch-regions-by-plant-code\" in supabase/functions/region-service/index.ts."}]},{"id":"people-managers-managersview__UserService_getAllUsersWithProfilesAndRoles","label":"ManagersView → UserService.getAllUsersWithProfilesAndRoles()","category":"Managers","description":"Verified call chain: ManagersView invokes UserService.getAllUsersWithProfilesAndRoles().","steps":[{"from":"view:people-managers-managersview","to":"svc:UserService","verb":"UserService.getAllUsersWithProfilesAndRoles()","note":"Imported by ManagersView — call site at src/views/people/managers/ManagersView.jsx."},{"from":"svc:UserService","to":"tbl:users","verb":"SELECT / direct query","note":"UserService.getAllUsersWithProfilesAndRoles() reads users directly via Database.from()."},{"from":"svc:UserService","to":"tbl:users_permissions","verb":"SELECT / direct query","note":"UserService.getAllUsersWithProfilesAndRoles() reads users_permissions directly via Database.from()."},{"from":"svc:UserService","to":"tbl:users_roles","verb":"SELECT / direct query","note":"UserService.getAllUsersWithProfilesAndRoles() reads users_roles directly via Database.from()."}]},{"id":"assets-mixers-mixerdetailview__OperatorService_fetchOperators","label":"MixerDetailView → OperatorService.fetchOperators()","category":"Mixers","description":"Verified call chain: MixerDetailView invokes OperatorService.fetchOperators().","steps":[{"from":"view:assets-mixers-mixerdetailview","to":"svc:OperatorService","verb":"OperatorService.fetchOperators()","note":"Imported by MixerDetailView — call site at src/views/assets/mixers/MixerDetailView.jsx."},{"from":"svc:OperatorService","to":"tbl:operators","verb":"SELECT / direct query","note":"OperatorService.fetchOperators() reads operators directly via Database.from()."}]},{"id":"assets-mixers-mixerdetailview__PlantService_fetchRegionPlants","label":"MixerDetailView → PlantService.fetchRegionPlants()","category":"Mixers","description":"Verified call chain: MixerDetailView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:assets-mixers-mixerdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by MixerDetailView — call site at src/views/assets/mixers/MixerDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-mixers-mixerdetailview__PlantService_fetchRegionsByPlantCode","label":"MixerDetailView → PlantService.fetchRegionsByPlantCode()","category":"Mixers","description":"Verified call chain: MixerDetailView invokes PlantService.fetchRegionsByPlantCode().","steps":[{"from":"view:assets-mixers-mixerdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionsByPlantCode()","note":"Imported by MixerDetailView — call site at src/views/assets/mixers/MixerDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions-by-plant-code","note":"Routes to case \"fetch-regions-by-plant-code\" in supabase/functions/region-service/index.ts."}]},{"id":"people-operators-operatoraddview__PlantService_fetchRegionPlants","label":"OperatorAddView → PlantService.fetchRegionPlants()","category":"Operators","description":"Verified call chain: OperatorAddView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:people-operators-operatoraddview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by OperatorAddView — call site at src/views/people/operators/OperatorAddView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"people-operators-operatordetailview__PlantService_fetchRegionByCode","label":"OperatorDetailView → PlantService.fetchRegionByCode()","category":"Operators","description":"Verified call chain: OperatorDetailView invokes PlantService.fetchRegionByCode().","steps":[{"from":"view:people-operators-operatordetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionByCode()","note":"Imported by OperatorDetailView — call site at src/views/people/operators/OperatorDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-by-code","note":"Routes to case \"fetch-region-by-code\" in supabase/functions/region-service/index.ts."}]},{"id":"people-operators-operatordetailview__PlantService_fetchRegionsByPlantCode","label":"OperatorDetailView → PlantService.fetchRegionsByPlantCode()","category":"Operators","description":"Verified call chain: OperatorDetailView invokes PlantService.fetchRegionsByPlantCode().","steps":[{"from":"view:people-operators-operatordetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionsByPlantCode()","note":"Imported by OperatorDetailView — call site at src/views/people/operators/OperatorDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions-by-plant-code","note":"Routes to case \"fetch-regions-by-plant-code\" in supabase/functions/region-service/index.ts."}]},{"id":"people-operators-operatorsview__OperatorService_fetchOperators","label":"OperatorsView → OperatorService.fetchOperators()","category":"Operators","description":"Verified call chain: OperatorsView invokes OperatorService.fetchOperators().","steps":[{"from":"view:people-operators-operatorsview","to":"svc:OperatorService","verb":"OperatorService.fetchOperators()","note":"Imported by OperatorsView — call site at src/views/people/operators/OperatorsView.jsx."},{"from":"svc:OperatorService","to":"tbl:operators","verb":"SELECT / direct query","note":"OperatorService.fetchOperators() reads operators directly via Database.from()."}]},{"id":"people-operators-operatorsview__OperatorService_fetchTrainers","label":"OperatorsView → OperatorService.fetchTrainers()","category":"Operators","description":"Verified call chain: OperatorsView invokes OperatorService.fetchTrainers().","steps":[{"from":"view:people-operators-operatorsview","to":"svc:OperatorService","verb":"OperatorService.fetchTrainers()","note":"Imported by OperatorsView — call site at src/views/people/operators/OperatorsView.jsx."},{"from":"svc:OperatorService","to":"tbl:operators","verb":"SELECT / direct query","note":"OperatorService.fetchTrainers() reads operators directly via Database.from()."}]},{"id":"assets-pickup-trucks-pickuptrucksdetailview__PlantService_fetchRegionByCode","label":"PickupTrucksDetailView → PlantService.fetchRegionByCode()","category":"Pickup-trucks","description":"Verified call chain: PickupTrucksDetailView invokes PlantService.fetchRegionByCode().","steps":[{"from":"view:assets-pickup-trucks-pickuptrucksdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionByCode()","note":"Imported by PickupTrucksDetailView — call site at src/views/assets/pickup-trucks/PickupTrucksDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-by-code","note":"Routes to case \"fetch-region-by-code\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-pickup-trucks-pickuptrucksdetailview__PlantService_fetchRegionPlants","label":"PickupTrucksDetailView → PlantService.fetchRegionPlants()","category":"Pickup-trucks","description":"Verified call chain: PickupTrucksDetailView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:assets-pickup-trucks-pickuptrucksdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by PickupTrucksDetailView — call site at src/views/assets/pickup-trucks/PickupTrucksDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-pickup-trucks-pickuptrucksdetailview__PlantService_fetchRegionsByPlantCode","label":"PickupTrucksDetailView → PlantService.fetchRegionsByPlantCode()","category":"Pickup-trucks","description":"Verified call chain: PickupTrucksDetailView invokes PlantService.fetchRegionsByPlantCode().","steps":[{"from":"view:assets-pickup-trucks-pickuptrucksdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionsByPlantCode()","note":"Imported by PickupTrucksDetailView — call site at src/views/assets/pickup-trucks/PickupTrucksDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions-by-plant-code","note":"Routes to case \"fetch-regions-by-plant-code\" in supabase/functions/region-service/index.ts."}]},{"id":"tools-plan-bookorderview__BookOrderLogService_logSuggestion","label":"BookOrderView → BookOrderLogService.logSuggestion()","category":"Plan","description":"Verified call chain: BookOrderView invokes BookOrderLogService.logSuggestion().","steps":[{"from":"view:tools-plan-bookorderview","to":"svc:BookOrderLogService","verb":"BookOrderLogService.logSuggestion()","note":"Imported by BookOrderView — call site at src/views/tools/plan/BookOrderView.jsx."},{"from":"svc:BookOrderLogService","to":"edge:book-order-log-service","verb":"POST /book-order-log-service/log-suggestion","note":"Routes to case \"log-suggestion\" in supabase/functions/book-order-log-service/index.ts."}]},{"id":"tools-plan-plansettingsview__BookOrderLogService_listRecent","label":"PlanSettingsView → BookOrderLogService.listRecent()","category":"Plan","description":"Verified call chain: PlanSettingsView invokes BookOrderLogService.listRecent().","steps":[{"from":"view:tools-plan-plansettingsview","to":"svc:BookOrderLogService","verb":"BookOrderLogService.listRecent()","note":"Imported by PlanSettingsView — call site at src/views/tools/plan/PlanSettingsView.jsx."},{"from":"svc:BookOrderLogService","to":"edge:book-order-log-service","verb":"POST /book-order-log-service/list-recent","note":"Routes to case \"list-recent\" in supabase/functions/book-order-log-service/index.ts."}]},{"id":"tools-plan-plansettingsview__UserService_getAllUsersWithProfilesAndRoles","label":"PlanSettingsView → UserService.getAllUsersWithProfilesAndRoles()","category":"Plan","description":"Verified call chain: PlanSettingsView invokes UserService.getAllUsersWithProfilesAndRoles().","steps":[{"from":"view:tools-plan-plansettingsview","to":"svc:UserService","verb":"UserService.getAllUsersWithProfilesAndRoles()","note":"Imported by PlanSettingsView — call site at src/views/tools/plan/PlanSettingsView.jsx."},{"from":"svc:UserService","to":"tbl:users","verb":"SELECT / direct query","note":"UserService.getAllUsersWithProfilesAndRoles() reads users directly via Database.from()."},{"from":"svc:UserService","to":"tbl:users_permissions","verb":"SELECT / direct query","note":"UserService.getAllUsersWithProfilesAndRoles() reads users_permissions directly via Database.from()."},{"from":"svc:UserService","to":"tbl:users_roles","verb":"SELECT / direct query","note":"UserService.getAllUsersWithProfilesAndRoles() reads users_roles directly via Database.from()."}]},{"id":"reporting-list-listaddview__ListService_createListItem","label":"ListAddView → ListService.createListItem()","category":"Reports · List","description":"Verified call chain: ListAddView invokes ListService.createListItem().","steps":[{"from":"view:reporting-list-listaddview","to":"svc:ListService","verb":"ListService.createListItem()","note":"Imported by ListAddView — call site at src/views/reporting/list/ListAddView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/create","note":"Routes to case \"create\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listaddview__ListService_updateListItem","label":"ListAddView → ListService.updateListItem()","category":"Reports · List","description":"Verified call chain: ListAddView invokes ListService.updateListItem().","steps":[{"from":"view:reporting-list-listaddview","to":"svc:ListService","verb":"ListService.updateListItem()","note":"Imported by ListAddView — call site at src/views/reporting/list/ListAddView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/update","note":"Routes to case \"update\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listdetailview__ListService_deleteListItem","label":"ListDetailView → ListService.deleteListItem()","category":"Reports · List","description":"Verified call chain: ListDetailView invokes ListService.deleteListItem().","steps":[{"from":"view:reporting-list-listdetailview","to":"svc:ListService","verb":"ListService.deleteListItem()","note":"Imported by ListDetailView — call site at src/views/reporting/list/ListDetailView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/delete","note":"Routes to case \"delete\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listdetailview__ListService_fetchListItems","label":"ListDetailView → ListService.fetchListItems()","category":"Reports · List","description":"Verified call chain: ListDetailView invokes ListService.fetchListItems().","steps":[{"from":"view:reporting-list-listdetailview","to":"svc:ListService","verb":"ListService.fetchListItems()","note":"Imported by ListDetailView — call site at src/views/reporting/list/ListDetailView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/fetch-items-with-profiles","note":"Routes to case \"fetch-items-with-profiles\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listdetailview__ListService_fetchPlants","label":"ListDetailView → ListService.fetchPlants()","category":"Reports · List","description":"Verified call chain: ListDetailView invokes ListService.fetchPlants().","steps":[{"from":"view:reporting-list-listdetailview","to":"svc:ListService","verb":"ListService.fetchPlants()","note":"Imported by ListDetailView — call site at src/views/reporting/list/ListDetailView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/fetch-plants","note":"Routes to case \"fetch-plants\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listdetailview__ListService_updateListItem","label":"ListDetailView → ListService.updateListItem()","category":"Reports · List","description":"Verified call chain: ListDetailView invokes ListService.updateListItem().","steps":[{"from":"view:reporting-list-listdetailview","to":"svc:ListService","verb":"ListService.updateListItem()","note":"Imported by ListDetailView — call site at src/views/reporting/list/ListDetailView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/update","note":"Routes to case \"update\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listdetailview__PlantService_fetchRegionPlants","label":"ListDetailView → PlantService.fetchRegionPlants()","category":"Reports · List","description":"Verified call chain: ListDetailView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:reporting-list-listdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by ListDetailView — call site at src/views/reporting/list/ListDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"reporting-list-listdetailview__PlantService_fetchRegionsByPlantCode","label":"ListDetailView → PlantService.fetchRegionsByPlantCode()","category":"Reports · List","description":"Verified call chain: ListDetailView invokes PlantService.fetchRegionsByPlantCode().","steps":[{"from":"view:reporting-list-listdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionsByPlantCode()","note":"Imported by ListDetailView — call site at src/views/reporting/list/ListDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions-by-plant-code","note":"Routes to case \"fetch-regions-by-plant-code\" in supabase/functions/region-service/index.ts."}]},{"id":"reporting-list-listview__ListService_deleteListItem","label":"ListView → ListService.deleteListItem()","category":"Reports · List","description":"Verified call chain: ListView invokes ListService.deleteListItem().","steps":[{"from":"view:reporting-list-listview","to":"svc:ListService","verb":"ListService.deleteListItem()","note":"Imported by ListView — call site at src/views/reporting/list/ListView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/delete","note":"Routes to case \"delete\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listview__ListService_fetchActivityFeed","label":"ListView → ListService.fetchActivityFeed()","category":"Reports · List","description":"Verified call chain: ListView invokes ListService.fetchActivityFeed().","steps":[{"from":"view:reporting-list-listview","to":"svc:ListService","verb":"ListService.fetchActivityFeed()","note":"Imported by ListView — call site at src/views/reporting/list/ListView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/fetch-activity","note":"Routes to case \"fetch-activity\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listview__ListService_fetchListItems","label":"ListView → ListService.fetchListItems()","category":"Reports · List","description":"Verified call chain: ListView invokes ListService.fetchListItems().","steps":[{"from":"view:reporting-list-listview","to":"svc:ListService","verb":"ListService.fetchListItems()","note":"Imported by ListView — call site at src/views/reporting/list/ListView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/fetch-items-with-profiles","note":"Routes to case \"fetch-items-with-profiles\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listview__ListService_fetchPlants","label":"ListView → ListService.fetchPlants()","category":"Reports · List","description":"Verified call chain: ListView invokes ListService.fetchPlants().","steps":[{"from":"view:reporting-list-listview","to":"svc:ListService","verb":"ListService.fetchPlants()","note":"Imported by ListView — call site at src/views/reporting/list/ListView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/fetch-plants","note":"Routes to case \"fetch-plants\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listview__ListService_toggleCompletion","label":"ListView → ListService.toggleCompletion()","category":"Reports · List","description":"Verified call chain: ListView invokes ListService.toggleCompletion().","steps":[{"from":"view:reporting-list-listview","to":"svc:ListService","verb":"ListService.toggleCompletion()","note":"Imported by ListView — call site at src/views/reporting/list/ListView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/toggle-completion","note":"Routes to case \"toggle-completion\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listview__ListService_updateListItem","label":"ListView → ListService.updateListItem()","category":"Reports · List","description":"Verified call chain: ListView invokes ListService.updateListItem().","steps":[{"from":"view:reporting-list-listview","to":"svc:ListService","verb":"ListService.updateListItem()","note":"Imported by ListView — call site at src/views/reporting/list/ListView.jsx."},{"from":"svc:ListService","to":"edge:list-service","verb":"POST /list-service/update","note":"Routes to case \"update\" in supabase/functions/list-service/index.ts."}]},{"id":"reporting-list-listview__PlantService_fetchRegionPlants","label":"ListView → PlantService.fetchRegionPlants()","category":"Reports · List","description":"Verified call chain: ListView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:reporting-list-listview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by ListView — call site at src/views/reporting/list/ListView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"reporting-maintenance-maintenancecreateformview__PlantService_fetchRegionPlants","label":"MaintenanceCreateFormView → PlantService.fetchRegionPlants()","category":"Reports · Maintenance","description":"Verified call chain: MaintenanceCreateFormView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:reporting-maintenance-maintenancecreateformview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by MaintenanceCreateFormView — call site at src/views/reporting/maintenance/MaintenanceCreateFormView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"reporting-maintenance-maintenanceview__PlantService_fetchRegionPlants","label":"MaintenanceView → PlantService.fetchRegionPlants()","category":"Reports · Maintenance","description":"Verified call chain: MaintenanceView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:reporting-maintenance-maintenanceview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by MaintenanceView — call site at src/views/reporting/maintenance/MaintenanceView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"reporting-nrmca-nrmcaview__NRMCAService_fetchPlants","label":"NRMCAView → NRMCAService.fetchPlants()","category":"Reports · Nrmca","description":"Verified call chain: NRMCAView invokes NRMCAService.fetchPlants().","steps":[{"from":"view:reporting-nrmca-nrmcaview","to":"svc:NRMCAService","verb":"NRMCAService.fetchPlants()","note":"Imported by NRMCAView — call site at src/views/reporting/nrmca/NRMCAView.jsx."},{"from":"svc:NRMCAService","to":"tbl:nrmca_plants","verb":"SELECT / direct query","note":"NRMCAService.fetchPlants() reads nrmca_plants directly via Database.from()."}]},{"id":"reporting-nrmca-nrmcaview__NRMCAService_fetchScales","label":"NRMCAView → NRMCAService.fetchScales()","category":"Reports · Nrmca","description":"Verified call chain: NRMCAView invokes NRMCAService.fetchScales().","steps":[{"from":"view:reporting-nrmca-nrmcaview","to":"svc:NRMCAService","verb":"NRMCAService.fetchScales()","note":"Imported by NRMCAView — call site at src/views/reporting/nrmca/NRMCAView.jsx."},{"from":"svc:NRMCAService","to":"tbl:nrmca_scales","verb":"SELECT / direct query","note":"NRMCAService.fetchScales() reads nrmca_scales directly via Database.from()."}]},{"id":"reporting-nrmca-nrmcaview__PlantService_fetchRegionPlants","label":"NRMCAView → PlantService.fetchRegionPlants()","category":"Reports · Nrmca","description":"Verified call chain: NRMCAView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:reporting-nrmca-nrmcaview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by NRMCAView — call site at src/views/reporting/nrmca/NRMCAView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"reporting-reports-types-weeklydistrictmanagerreport__PlantService_fetchRegionPlants","label":"WeeklyDistrictManagerReport → PlantService.fetchRegionPlants()","category":"Reports · Reports","description":"Verified call chain: WeeklyDistrictManagerReport invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:reporting-reports-types-weeklydistrictmanagerreport","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by WeeklyDistrictManagerReport — call site at src/views/reporting/reports/types/WeeklyDistrictManagerReport.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"reporting-reports-types-weeklyplantmanagerreport__ReportService_fetchPlantManagerReportsForYear","label":"WeeklyPlantManagerReport → ReportService.fetchPlantManagerReportsForYear()","category":"Reports · Reports","description":"Verified call chain: WeeklyPlantManagerReport invokes ReportService.fetchPlantManagerReportsForYear().","steps":[{"from":"view:reporting-reports-types-weeklyplantmanagerreport","to":"svc:ReportService","verb":"ReportService.fetchPlantManagerReportsForYear()","note":"Imported by WeeklyPlantManagerReport — call site at src/views/reporting/reports/types/WeeklyPlantManagerReport.jsx."},{"from":"svc:ReportService","to":"tbl:reports","verb":"SELECT / direct query","note":"ReportService.fetchPlantManagerReportsForYear() reads reports directly via Database.from()."}]},{"id":"reporting-reports-types-weeklyreadymixinstructorreport__OperatorService_fetchOperators","label":"WeeklyReadyMixInstructorReport → OperatorService.fetchOperators()","category":"Reports · Reports","description":"Verified call chain: WeeklyReadyMixInstructorReport invokes OperatorService.fetchOperators().","steps":[{"from":"view:reporting-reports-types-weeklyreadymixinstructorreport","to":"svc:OperatorService","verb":"OperatorService.fetchOperators()","note":"Imported by WeeklyReadyMixInstructorReport — call site at src/views/reporting/reports/types/WeeklyReadyMixInstructorReport.jsx."},{"from":"svc:OperatorService","to":"tbl:operators","verb":"SELECT / direct query","note":"OperatorService.fetchOperators() reads operators directly via Database.from()."}]},{"id":"reporting-reports-types-weeklyreadymixinstructorreport__PlantService_fetchRegionPlants","label":"WeeklyReadyMixInstructorReport → PlantService.fetchRegionPlants()","category":"Reports · Reports","description":"Verified call chain: WeeklyReadyMixInstructorReport invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:reporting-reports-types-weeklyreadymixinstructorreport","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by WeeklyReadyMixInstructorReport — call site at src/views/reporting/reports/types/WeeklyReadyMixInstructorReport.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"reporting-reports-types-weeklyreadymixinstructorreport__PlantService_fetchRegionsByPlantCode","label":"WeeklyReadyMixInstructorReport → PlantService.fetchRegionsByPlantCode()","category":"Reports · Reports","description":"Verified call chain: WeeklyReadyMixInstructorReport invokes PlantService.fetchRegionsByPlantCode().","steps":[{"from":"view:reporting-reports-types-weeklyreadymixinstructorreport","to":"svc:PlantService","verb":"PlantService.fetchRegionsByPlantCode()","note":"Imported by WeeklyReadyMixInstructorReport — call site at src/views/reporting/reports/types/WeeklyReadyMixInstructorReport.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions-by-plant-code","note":"Routes to case \"fetch-regions-by-plant-code\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-tractors-tractordetailview__OperatorService_fetchOperators","label":"TractorDetailView → OperatorService.fetchOperators()","category":"Tractors","description":"Verified call chain: TractorDetailView invokes OperatorService.fetchOperators().","steps":[{"from":"view:assets-tractors-tractordetailview","to":"svc:OperatorService","verb":"OperatorService.fetchOperators()","note":"Imported by TractorDetailView — call site at src/views/assets/tractors/TractorDetailView.jsx."},{"from":"svc:OperatorService","to":"tbl:operators","verb":"SELECT / direct query","note":"OperatorService.fetchOperators() reads operators directly via Database.from()."}]},{"id":"assets-tractors-tractordetailview__PlantService_fetchRegionByCode","label":"TractorDetailView → PlantService.fetchRegionByCode()","category":"Tractors","description":"Verified call chain: TractorDetailView invokes PlantService.fetchRegionByCode().","steps":[{"from":"view:assets-tractors-tractordetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionByCode()","note":"Imported by TractorDetailView — call site at src/views/assets/tractors/TractorDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-by-code","note":"Routes to case \"fetch-region-by-code\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-tractors-tractordetailview__PlantService_fetchRegionPlants","label":"TractorDetailView → PlantService.fetchRegionPlants()","category":"Tractors","description":"Verified call chain: TractorDetailView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:assets-tractors-tractordetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by TractorDetailView — call site at src/views/assets/tractors/TractorDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-tractors-tractordetailview__PlantService_fetchRegionsByPlantCode","label":"TractorDetailView → PlantService.fetchRegionsByPlantCode()","category":"Tractors","description":"Verified call chain: TractorDetailView invokes PlantService.fetchRegionsByPlantCode().","steps":[{"from":"view:assets-tractors-tractordetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionsByPlantCode()","note":"Imported by TractorDetailView — call site at src/views/assets/tractors/TractorDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions-by-plant-code","note":"Routes to case \"fetch-regions-by-plant-code\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-trailers-trailerdetailview__PlantService_fetchRegionByCode","label":"TrailerDetailView → PlantService.fetchRegionByCode()","category":"Trailers","description":"Verified call chain: TrailerDetailView invokes PlantService.fetchRegionByCode().","steps":[{"from":"view:assets-trailers-trailerdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionByCode()","note":"Imported by TrailerDetailView — call site at src/views/assets/trailers/TrailerDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-by-code","note":"Routes to case \"fetch-region-by-code\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-trailers-trailerdetailview__PlantService_fetchRegionPlants","label":"TrailerDetailView → PlantService.fetchRegionPlants()","category":"Trailers","description":"Verified call chain: TrailerDetailView invokes PlantService.fetchRegionPlants().","steps":[{"from":"view:assets-trailers-trailerdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionPlants()","note":"Imported by TrailerDetailView — call site at src/views/assets/trailers/TrailerDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-region-plants","note":"Routes to case \"fetch-region-plants\" in supabase/functions/region-service/index.ts."}]},{"id":"assets-trailers-trailerdetailview__PlantService_fetchRegionsByPlantCode","label":"TrailerDetailView → PlantService.fetchRegionsByPlantCode()","category":"Trailers","description":"Verified call chain: TrailerDetailView invokes PlantService.fetchRegionsByPlantCode().","steps":[{"from":"view:assets-trailers-trailerdetailview","to":"svc:PlantService","verb":"PlantService.fetchRegionsByPlantCode()","note":"Imported by TrailerDetailView — call site at src/views/assets/trailers/TrailerDetailView.jsx."},{"from":"svc:PlantService","to":"edge:region-service","verb":"POST /region-service/fetch-regions-by-plant-code","note":"Routes to case \"fetch-regions-by-plant-code\" in supabase/functions/region-service/index.ts."}]}]}</script>
+<script>
+(function () {
+  var raw = document.getElementById("data").textContent;
+  var data;
+  try { data = JSON.parse(raw); } catch (err) {
+    document.body.innerHTML = '<div style="padding:40px;color:red">Failed to parse embedded JSON: ' + err.message + '</div>';
+    return;
+  }
+
+  // ─── Apply theme from data.theme ─────────────────────────────────
+  applyTheme(data.theme);
+  function applyTheme(theme) {
+    if (!theme) return;
+    // Optional Google Fonts load
+    if (theme.fonts && theme.fonts.googleFonts) {
+      var pre1 = document.createElement("link");
+      pre1.rel = "preconnect"; pre1.href = "https://fonts.googleapis.com";
+      document.head.appendChild(pre1);
+      var pre2 = document.createElement("link");
+      pre2.rel = "preconnect"; pre2.href = "https://fonts.gstatic.com"; pre2.crossOrigin = "anonymous";
+      document.head.appendChild(pre2);
+      var link = document.createElement("link");
+      link.rel = "stylesheet"; link.href = theme.fonts.googleFonts;
+      document.head.appendChild(link);
+    }
+    var rules = [];
+    if (theme.light) rules.push(":root {" + cssVars(theme.light, theme.fonts) + "}");
+    var dark = theme.dark || theme.light;
+    if (dark) rules.push("@media (prefers-color-scheme: dark) { :root {" + cssVars(dark, theme.fonts) + "} }");
+    var style = document.createElement("style");
+    style.id = "theme-override";
+    style.textContent = rules.join("\n");
+    document.head.appendChild(style);
+  }
+  function cssVars(palette, fonts) {
+    var out = "";
+    Object.keys(palette).forEach(function (k) {
+      var key = k.indexOf("--") === 0 ? k : "--" + k;
+      out += key + ":" + palette[k] + ";";
+    });
+    // Derive --accent-soft from --accent if not specified
+    if (palette.accent && !palette["accent-soft"] && !palette["--accent-soft"]) {
+      out += "--accent-soft: color-mix(in srgb, " + palette.accent + " 14%, transparent);";
+    }
+    if (fonts) {
+      if (fonts.heading) out += "--font-heading:" + fonts.heading + ";";
+      if (fonts.body) out += "--font-body:" + fonts.body + ";";
+    }
+    return out;
+  }
+
+  document.getElementById("header-desc").textContent = data.description || "";
+
+  // ─── Format the generated-at stamp into the user's locale ───────
+  (function () {
+    var el = document.getElementById("generated-at");
+    if (!el) return;
+    var iso = el.getAttribute("data-iso") || "";
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d.getTime())) return;
+    var datePart = d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    var timePart = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    el.textContent = "Generated " + datePart + " at " + timePart;
+  })();
+
+  // ─── Lookups ─────────────────────────────────────────────────────
+  var lanesById = {};
+  (data.lanes || []).forEach(function (l) { lanesById[l.id] = l; });
+  var nodesById = {};
+  (data.nodes || []).forEach(function (n) { nodesById[n.id] = n; });
+
+  // Count how many flows touch each node. Drives in-lane sort order
+  // (most-used nodes float to the top) and node hover tooltips.
+  var flowsByNode = {};
+  (data.flows || []).forEach(function (flow) {
+    var seen = {};
+    (flow.steps || []).forEach(function (s) {
+      [s.from, s.to].forEach(function (id) {
+        if (!id || seen[id]) return;
+        seen[id] = 1;
+        if (!flowsByNode[id]) flowsByNode[id] = [];
+        flowsByNode[id].push(flow);
+      });
+    });
+  });
+  function flowCount(nodeId) { return (flowsByNode[nodeId] || []).length; }
+
+  var orderedLaneIds = (data.lanes || []).map(function (l) { return l.id; });
+  var nodesByLane = {};
+  orderedLaneIds.forEach(function (id) { nodesByLane[id] = []; });
+  (data.nodes || []).forEach(function (n) {
+    var lane = n.kind || "misc";
+    if (!nodesByLane[lane]) nodesByLane[lane] = [];
+    nodesByLane[lane].push(n);
+  });
+  // Sort within lane by flow usage (desc), then by label.
+  Object.keys(nodesByLane).forEach(function (laneId) {
+    nodesByLane[laneId].sort(function (a, b) {
+      var d = flowCount(b.id) - flowCount(a.id);
+      if (d !== 0) return d;
+      return (a.label || a.id).localeCompare(b.label || b.id);
+    });
+  });
+
+  // ─── Per-flow layout ─────────────────────────────────────────────
+  // The canvas now renders ONLY the nodes that appear in the selected
+  // flow. Layout is computed fresh on each selection: lanes that have
+  // at least one node in the flow become columns; within a lane,
+  // nodes are ordered by the step they FIRST appear in (so step-1
+  // nodes sit near the top of their lane). Generous spacing because
+  // there are only ever 4–15 nodes on screen at a time.
+  var LANE_WIDTH = 240;
+  var LANE_GAP = 36;
+  var NODE_WIDTH = 224;
+  var NODE_HEIGHT = 56;
+  var NODE_VGAP = 16;
+  var TOP_PAD = 64;
+  var SIDE_PAD = 32;
+  var BOTTOM_PAD = 40;
+
+  var svg = document.getElementById("graph");
+  var wrap = document.getElementById("graph-wrap");
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+  function svgEl(tag, attrs, parent) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+    if (parent) parent.appendChild(el);
+    return el;
+  }
+
+  var rootG = svgEl("g", { id: "root-g" }, svg);
+  var laneG = svgEl("g", { id: "lane-layer" }, rootG);
+  var edgeLayer = svgEl("g", { id: "edge-layer" }, rootG);
+  var nodeLayer = svgEl("g", { id: "node-layer" }, rootG);
+
+  // Layout state — recomputed per flow
+  var positions = {};
+  var nodeEls = {};
+  var currentLayoutW = 800;
+  var currentLayoutH = 480;
+
+  function layoutForFlow(flow) {
+    var involvedOrdered = [];
+    var seen = {};
+    (flow.steps || []).forEach(function (s) {
+      [s.from, s.to].forEach(function (id) {
+        if (!id || seen[id]) return;
+        seen[id] = involvedOrdered.length;
+        involvedOrdered.push(id);
+      });
+    });
+    var byLane = {};
+    involvedOrdered.forEach(function (id) {
+      var n = nodesById[id];
+      if (!n) return;
+      var lane = n.kind || "misc";
+      if (!byLane[lane]) byLane[lane] = [];
+      byLane[lane].push(n);
+    });
+    var activeLanes = orderedLaneIds
+      .map(function (id) { return { id: id, lane: lanesById[id], nodes: byLane[id] || [] }; })
+      .filter(function (l) { return l.nodes.length > 0; });
+
+    var newPositions = {};
+    var laneX = SIDE_PAD;
+    activeLanes.forEach(function (entry) {
+      entry.x = laneX;
+      entry.nodes.forEach(function (n, i) {
+        var x = laneX + (LANE_WIDTH - NODE_WIDTH) / 2;
+        var y = TOP_PAD + i * (NODE_HEIGHT + NODE_VGAP);
+        newPositions[n.id] = {
+          x: x, y: y, w: NODE_WIDTH, h: NODE_HEIGHT,
+          cx: x + NODE_WIDTH / 2, cy: y + NODE_HEIGHT / 2,
+          right: x + NODE_WIDTH, left: x, top: y, bottom: y + NODE_HEIGHT
+        };
+      });
+      laneX += LANE_WIDTH + LANE_GAP;
+    });
+    var tallestLane = activeLanes.reduce(function (m, e) { return Math.max(m, e.nodes.length); }, 0);
+    var totalW = Math.max(LANE_WIDTH, laneX - LANE_GAP + SIDE_PAD);
+    var totalH = TOP_PAD + tallestLane * (NODE_HEIGHT + NODE_VGAP) + BOTTOM_PAD;
+    return { positions: newPositions, activeLanes: activeLanes, w: totalW, h: totalH };
+  }
+
+  function renderGraphForFlow(flow) {
+    var L = layoutForFlow(flow);
+    positions = L.positions;
+    currentLayoutW = L.w;
+    currentLayoutH = L.h;
+    svg.setAttribute("viewBox", "0 0 " + L.w + " " + L.h);
+
+    // Clear layers
+    laneG.innerHTML = "";
+    nodeLayer.innerHTML = "";
+    edgeLayer.innerHTML = "";
+    nodeEls = {};
+
+    // Lane headers + soft dividers
+    L.activeLanes.forEach(function (entry) {
+      var color = (entry.lane && entry.lane.color) || "var(--accent)";
+      var label = ((entry.lane && entry.lane.label) || entry.id).toUpperCase();
+      var laneCx = entry.x + LANE_WIDTH / 2;
+      var headerY = TOP_PAD - 26;
+      var t = svgEl("text", {
+        class: "lane-header",
+        x: laneCx, y: headerY,
+        "text-anchor": "middle", fill: color
+      }, laneG);
+      t.textContent = label;
+      svgEl("line", {
+        class: "lane-divider",
+        x1: laneCx, x2: laneCx,
+        y1: headerY + 14, y2: L.h - 18,
+        stroke: color, "stroke-opacity": 0.18
+      }, laneG);
+    });
+
+    // Nodes — staggered fade-in
+    var nodeOrder = 0;
+    L.activeLanes.forEach(function (entry) {
+      entry.nodes.forEach(function (n) {
+        var p = positions[n.id];
+        if (!p) return;
+        var laneColor = (lanesById[n.kind] && lanesById[n.kind].color) || "var(--accent)";
+        var g = svgEl("g", { class: "node node-enter", "data-id": n.id }, nodeLayer);
+        g.style.setProperty("--node-color", laneColor);
+        g.style.animationDelay = (nodeOrder * 0.03) + "s";
+        svgEl("rect", { x: p.x, y: p.y, width: p.w, height: p.h, rx: 8, ry: 8 }, g);
+        var label = n.label || n.id;
+        if (label.length > 30) label = label.slice(0, 28) + "…";
+        var t = svgEl("text", { x: p.cx, y: p.cy + 4, "text-anchor": "middle" }, g);
+        t.textContent = label;
+        nodeEls[n.id] = g;
+        bindNodeInteractions(g, n);
+        nodeOrder += 1;
+      });
+    });
+  }
+
+  function bindNodeInteractions(g, node) {
+    g.addEventListener("mouseenter", function (e) { showNodeTip(node, e); });
+    g.addEventListener("mousemove", function (e) { moveNodeTip(e); });
+    g.addEventListener("mouseleave", function () { scheduleHideTip(); });
+    g.addEventListener("click", function (e) {
+      e.stopPropagation();
+      setNodeFilter(node.id);
+    });
+  }
+
+  // ─── Node tooltip ────────────────────────────────────────────────
+  // The tooltip is interactive (contains a Copy button), so we keep it
+  // open while the mouse is over either the source node OR the tip.
+  // `tipHideTimer` gives a short grace period to let the cursor move
+  // from one to the other without the tip vanishing.
+  var tip = document.getElementById("node-tip");
+  var tipNode = null;
+  var tipHideTimer = null;
+  tip.addEventListener("mouseenter", function () {
+    if (tipHideTimer) { clearTimeout(tipHideTimer); tipHideTimer = null; }
+  });
+  tip.addEventListener("mouseleave", scheduleHideTip);
+  function scheduleHideTip() {
+    if (tipHideTimer) clearTimeout(tipHideTimer);
+    tipHideTimer = setTimeout(hideNodeTip, 120);
+  }
+  function showNodeTip(node, event) {
+    if (tipHideTimer) { clearTimeout(tipHideTimer); tipHideTimer = null; }
+    tipNode = node;
+    var flows = flowsByNode[node.id] || [];
+    var laneLabel = (lanesById[node.kind] && lanesById[node.kind].label) || node.kind || "node";
+    var html = '<div class="tip-name">' + escapeHtml(node.label || node.id) + '</div>';
+    html += '<div class="tip-kind">' + escapeHtml(laneLabel) + '</div>';
+    html += '<div class="tip-meta">' + flows.length + ' flow' + (flows.length === 1 ? "" : "s") + ' touch this node</div>';
+    if (flows.length) {
+      html += '<ul class="tip-flows">';
+      flows.slice(0, 6).forEach(function (f) {
+        html += '<li>• ' + escapeHtml(f.label) + '</li>';
+      });
+      if (flows.length > 6) html += '<li style="color:var(--text-tertiary)">+ ' + (flows.length - 6) + ' more…</li>';
+      html += '</ul>';
+    }
+    html += '<div class="tip-actions"><button class="copy-btn" id="tip-copy" title="Copy this node + its flows as Markdown">' +
+            '<svg class="copy-icon" viewBox="0 0 14 14"><path d="M3 0h7a1 1 0 011 1v9a1 1 0 01-1 1H3a1 1 0 01-1-1V1a1 1 0 011-1zm0 1v9h7V1H3zm-2 3v9a1 1 0 001 1h7v-1H2V4H1z"/></svg>' +
+            '<span class="copy-label">Copy node</span></button></div>';
+    tip.innerHTML = html;
+    var tipCopyBtn = document.getElementById("tip-copy");
+    if (tipCopyBtn) {
+      tipCopyBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (tipNode) copyText(nodeToMarkdown(tipNode), tipCopyBtn);
+      });
+    }
+    moveNodeTip(event);
+    tip.classList.add("visible");
+  }
+  function moveNodeTip(event) {
+    var wrapRect = wrap.getBoundingClientRect();
+    var x = event.clientX - wrapRect.left + 14;
+    var y = event.clientY - wrapRect.top + 14;
+    var tipRect = tip.getBoundingClientRect();
+    var tw = tipRect.width || 240, th = tipRect.height || 80;
+    if (x + tw > wrapRect.width - 8) x = event.clientX - wrapRect.left - tw - 14;
+    if (y + th > wrapRect.height - 8) y = event.clientY - wrapRect.top - th - 14;
+    tip.style.left = x + "px";
+    tip.style.top = y + "px";
+  }
+  function hideNodeTip() {
+    tip.classList.remove("visible");
+    tipNode = null;
+  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c];
+  }); }
+
+  // ─── Copy-to-clipboard helpers ───────────────────────────────────
+  // Each helper builds a Markdown string suited for pasting into an AI
+  // chat as context, then writes it to the clipboard and flashes a
+  // "Copied" state on the button that triggered the action.
+  function copyText(text, button) {
+    var done = function () {
+      if (!button) return;
+      button.classList.add("copied");
+      var label = button.querySelector(".copy-label");
+      var original = label ? label.textContent : null;
+      if (label) label.textContent = "Copied";
+      setTimeout(function () {
+        button.classList.remove("copied");
+        if (label && original != null) label.textContent = original;
+      }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
+    } else { fallbackCopy(text, done); }
+  }
+  function fallbackCopy(text, done) {
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+    if (done) done();
+  }
+  function flowToMarkdown(flow) {
+    var lines = [
+      "# " + flow.label,
+      "Category: " + (flow.category || "Other")
+    ];
+    if (flow.description) { lines.push(""); lines.push(flow.description); }
+    lines.push("");
+    lines.push("## Steps");
+    lines.push("");
+    (flow.steps || []).forEach(function (s, i) {
+      var fromN = nodesById[s.from] || { label: s.from, kind: "?" };
+      var toN = nodesById[s.to] || { label: s.to, kind: "?" };
+      lines.push((i + 1) + ". **" + fromN.label + "** _(" + fromN.kind + ")_ → **" + toN.label + "** _(" + toN.kind + ")_");
+      if (s.verb) lines.push("   - Verb: `" + s.verb + "`");
+      if (s.note) lines.push("   - " + s.note);
+      lines.push("");
+    });
+    var involvedSet = {};
+    (flow.steps || []).forEach(function (s) { involvedSet[s.from] = 1; involvedSet[s.to] = 1; });
+    var involvedIds = Object.keys(involvedSet);
+    if (involvedIds.length) {
+      lines.push("## Nodes involved");
+      involvedIds.forEach(function (id) {
+        var n = nodesById[id];
+        if (n) lines.push("- **" + n.label + "** _(" + n.kind + ")_");
+      });
+    }
+    return lines.join("\n");
+  }
+  function stepToMarkdown(flow, step, idx) {
+    var fromN = nodesById[step.from] || { label: step.from, kind: "?" };
+    var toN = nodesById[step.to] || { label: step.to, kind: "?" };
+    var lines = [
+      "Flow: **" + flow.label + "** _(" + (flow.category || "Other") + ")_",
+      "Step " + (idx + 1) + " of " + (flow.steps || []).length + ":"
+    ];
+    lines.push("- **" + fromN.label + "** _(" + fromN.kind + ")_ → **" + toN.label + "** _(" + toN.kind + ")_");
+    if (step.verb) lines.push("- Verb: `" + step.verb + "`");
+    if (step.note) lines.push("- Note: " + step.note);
+    return lines.join("\n");
+  }
+  function nodeToMarkdown(node) {
+    var flows = flowsByNode[node.id] || [];
+    var lines = [
+      "# Node: " + node.label,
+      "Kind: " + node.kind,
+      "Used in " + flows.length + " flow" + (flows.length === 1 ? "" : "s") + ":"
+    ];
+    flows.forEach(function (f) {
+      lines.push("- **" + f.label + "** _(" + (f.category || "Other") + ")_");
+    });
+    return lines.join("\n");
+  }
+  // Wire the detail-panel "Copy flow" button.
+  document.getElementById("copy-flow").addEventListener("click", function () {
+    var flow = (data.flows || []).find(function (f) { return f.id === currentFlowId; });
+    if (!flow) return;
+    copyText(flowToMarkdown(flow), this);
+  });
+
+  // ─── Pan & zoom ──────────────────────────────────────────────────
+  var view = { x: 0, y: 0, k: 1 };
+  function applyTransform(animated) {
+    if (animated) {
+      rootG.style.transition = "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)";
+      setTimeout(function () { rootG.style.transition = ""; }, 480);
+    }
+    rootG.setAttribute("transform", "translate(" + view.x + " " + view.y + ") scale(" + view.k + ")");
+    document.getElementById("zoom-readout").textContent = Math.round(view.k * 100) + "%";
+  }
+  function clientToSvg(clientX, clientY) {
+    var rect = svg.getBoundingClientRect();
+    var vb = svg.viewBox.baseVal;
+    var ratioSvg = vb.width / vb.height;
+    var ratioBox = rect.width / rect.height;
+    var effScale, offX = 0, offY = 0;
+    if (ratioBox > ratioSvg) {
+      effScale = rect.height / vb.height;
+      offX = (rect.width - vb.width * effScale) / 2;
+    } else {
+      effScale = rect.width / vb.width;
+      offY = (rect.height - vb.height * effScale) / 2;
+    }
+    return { x: (clientX - rect.left - offX) / effScale, y: (clientY - rect.top - offY) / effScale };
+  }
+  function zoomAt(svgX, svgY, factor) {
+    var nextK = Math.max(0.25, Math.min(4, view.k * factor));
+    var realFactor = nextK / view.k;
+    view.x = svgX - (svgX - view.x) * realFactor;
+    view.y = svgY - (svgY - view.y) * realFactor;
+    view.k = nextK;
+    applyTransform();
+  }
+  // Wheel = zoom around the mouse pointer by default (matches Figma,
+  // draw.io, Lucidchart). Hold Shift to pan instead. Trackpad pinch
+  // gestures also come through as wheel events with ctrlKey=true and
+  // are treated as zoom regardless of the Shift modifier.
+  wrap.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    var isPinch = e.ctrlKey || e.metaKey;
+    if (e.shiftKey && !isPinch) {
+      view.x -= e.deltaX; view.y -= e.deltaY;
+      applyTransform();
+    } else {
+      var pt = clientToSvg(e.clientX, e.clientY);
+      var factor = Math.exp(-e.deltaY * 0.012);
+      zoomAt(pt.x, pt.y, factor);
+    }
+  }, { passive: false });
+
+  var dragging = false, dragMoved = false, lastX = 0, lastY = 0;
+  svg.addEventListener("pointerdown", function (e) {
+    dragging = true; dragMoved = false;
+    lastX = e.clientX; lastY = e.clientY;
+    svg.classList.add("grabbing");
+    svg.setPointerCapture(e.pointerId);
+  });
+  svg.addEventListener("pointermove", function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (Math.abs(dx) + Math.abs(dy) > 2) dragMoved = true;
+    view.x += dx; view.y += dy;
+    lastX = e.clientX; lastY = e.clientY;
+    applyTransform();
+  });
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    svg.classList.remove("grabbing");
+  }
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+  svg.addEventListener("pointerleave", endDrag);
+  // Clicking empty SVG background clears any pinned node filter.
+  svg.addEventListener("click", function (e) {
+    if (dragMoved) return;
+    if (e.target === svg || e.target.id === "lane-layer" || e.target === rootG) {
+      clearNodeFilter();
+    }
+  });
+
+  function zoomCenter(factor) {
+    var rect = svg.getBoundingClientRect();
+    var center = clientToSvg(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    zoomAt(center.x, center.y, factor);
+  }
+  document.getElementById("zoom-in").addEventListener("click", function () { zoomCenter(1.2); });
+  document.getElementById("zoom-out").addEventListener("click", function () { zoomCenter(1 / 1.2); });
+  // Default zoom level. 70% gives room around the laid-out nodes so
+  // the path arrows + step bubbles aren't right against the edge.
+  var DEFAULT_ZOOM = 0.7;
+  function resetView(animated) {
+    view.k = DEFAULT_ZOOM;
+    view.x = currentLayoutW * (1 - view.k) / 2;
+    view.y = currentLayoutH * (1 - view.k) / 2;
+    applyTransform(animated);
+  }
+  function fitToView() { resetView(true); }
+  document.getElementById("zoom-fit").addEventListener("click", fitToView);
+  window.addEventListener("keydown", function (e) {
+    var tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (e.key === "f" || e.key === "F") fitToView();
+    if (e.key === "Escape") clearNodeFilter();
+  });
+
+  applyTransform();
+  // Per-flow rendering no longer needs the legacy all-nodes minimap; the
+  // canvas already shows only what's relevant. Keep `miniNodes` as an
+  // empty stub so selectFlow's toggle calls remain harmless.
+  var miniNodes = {};
+
+  // ─── Sidebar ─────────────────────────────────────────────────────
+  var flowsRoot = document.getElementById("flows");
+  var nodeFilter = null; // node-id filter applied via clicking a node
+  var openCategories = {};
+
+  function flowMatches(flow, searchText) {
+    if (nodeFilter) {
+      var hits = false;
+      (flow.steps || []).forEach(function (s) {
+        if (s.from === nodeFilter || s.to === nodeFilter) hits = true;
+      });
+      if (!hits) return false;
+    }
+    if (searchText) {
+      var hay = ((flow.label || "") + " " + (flow.description || "") + " " + (flow.category || "")).toLowerCase();
+      if (hay.indexOf(searchText) === -1) return false;
+    }
+    return true;
+  }
+  function groupFlows(searchText) {
+    var f = (searchText || "").trim().toLowerCase();
+    var groups = [];
+    var byCat = {};
+    (data.flows || []).forEach(function (flow) {
+      if (!flowMatches(flow, f)) return;
+      var cat = flow.category || "Other";
+      if (!byCat[cat]) { byCat[cat] = []; groups.push(cat); }
+      byCat[cat].push(flow);
+    });
+    return { order: groups, byCat: byCat };
+  }
+
+  function renderSidebar() {
+    var searchText = document.getElementById("search").value || "";
+    var grouped = groupFlows(searchText);
+    flowsRoot.innerHTML = "";
+    if (!grouped.order.length) {
+      var empty = document.createElement("div");
+      empty.style.padding = "20px 14px";
+      empty.style.color = "var(--text-tertiary)";
+      empty.style.fontSize = "12px";
+      empty.textContent = "No flows match.";
+      flowsRoot.appendChild(empty);
+      return;
+    }
+    var hasFilter = !!(searchText && searchText.trim()) || !!nodeFilter;
+    grouped.order.forEach(function (cat, idx) {
+      var section = document.createElement("div");
+      section.className = "cat";
+      var openByDefault = idx === 0 || hasFilter;
+      if (openCategories[cat] === undefined) openCategories[cat] = openByDefault;
+      if (openCategories[cat] || hasFilter) section.classList.add("open");
+      var head = document.createElement("div");
+      head.className = "cat-head";
+      head.innerHTML = '<span><span class="chev">›</span> <span class="cat-label"></span></span><span class="count"></span>';
+      head.querySelector(".cat-label").textContent = cat;
+      head.querySelector(".count").textContent = grouped.byCat[cat].length;
+      head.addEventListener("click", function () {
+        openCategories[cat] = !openCategories[cat];
+        section.classList.toggle("open", openCategories[cat]);
+      });
+      section.appendChild(head);
+      var items = document.createElement("div");
+      items.className = "cat-items";
+      grouped.byCat[cat].forEach(function (flow) {
+        var row = document.createElement("div");
+        row.className = "flow";
+        row.dataset.id = flow.id;
+        if (currentFlowId === flow.id) row.classList.add("active");
+        row.innerHTML = '<div class="label"></div><div class="desc"></div>';
+        row.querySelector(".label").textContent = flow.label;
+        row.querySelector(".desc").textContent = flow.description || "";
+        row.addEventListener("click", function () { selectFlow(flow.id); });
+        items.appendChild(row);
+      });
+      section.appendChild(items);
+      flowsRoot.appendChild(section);
+    });
+  }
+  renderSidebar();
+  document.getElementById("search").addEventListener("input", renderSidebar);
+
+  function setNodeFilter(nodeId) {
+    if (nodeFilter === nodeId) { clearNodeFilter(); return; }
+    nodeFilter = nodeId;
+    Object.keys(nodeEls).forEach(function (id) {
+      nodeEls[id].classList.toggle("pinned", id === nodeId);
+    });
+    var node = nodesById[nodeId];
+    var chip = document.getElementById("node-filter");
+    chip.classList.add("visible");
+    document.getElementById("node-filter-label").textContent = (node && node.label) || nodeId;
+    renderSidebar();
+  }
+  function clearNodeFilter() {
+    if (!nodeFilter) return;
+    nodeFilter = null;
+    Object.keys(nodeEls).forEach(function (id) { nodeEls[id].classList.remove("pinned"); });
+    document.getElementById("node-filter").classList.remove("visible");
+    renderSidebar();
+  }
+  document.getElementById("node-filter-clear").addEventListener("click", clearNodeFilter);
+
+  // ─── Edge geometry & flow selection ──────────────────────────────
+  function anchorsFor(a, b) {
+    if (Math.abs(a.cx - b.cx) < 1) {
+      return { s: { x: a.right, y: a.cy }, e: { x: b.right, y: b.cy }, same: true };
+    }
+    if (a.cx < b.cx) {
+      return { s: { x: a.right, y: a.cy }, e: { x: b.left, y: b.cy }, same: false };
+    }
+    return { s: { x: a.left, y: a.cy }, e: { x: b.right, y: b.cy }, same: false, reverse: true };
+  }
+  function buildPath(a, b) {
+    var ax = anchorsFor(a, b);
+    if (ax.same) {
+      var off = 26;
+      return "M " + ax.s.x + " " + ax.s.y + " C " + (ax.s.x + off) + " " + ax.s.y + ", " + (ax.e.x + off) + " " + ax.e.y + ", " + ax.e.x + " " + ax.e.y;
+    }
+    if (ax.reverse) {
+      var off2 = 40;
+      var yMid = (ax.s.y + ax.e.y) / 2;
+      return "M " + ax.s.x + " " + ax.s.y + " C " + (ax.s.x - off2) + " " + yMid + ", " + (ax.e.x + off2) + " " + yMid + ", " + ax.e.x + " " + ax.e.y;
+    }
+    var midX = (ax.s.x + ax.e.x) / 2;
+    return "M " + ax.s.x + " " + ax.s.y + " C " + midX + " " + ax.s.y + ", " + midX + " " + ax.e.y + ", " + ax.e.x + " " + ax.e.y;
+  }
+
+  function clearEdges() {
+    edgeLayer.innerHTML = "";
+  }
+
+
+  var currentFlowId = null;
+  function selectFlow(id) {
+    var flow = (data.flows || []).find(function (f) { return f.id === id; });
+    if (!flow) return;
+    currentFlowId = id;
+
+    // Build the canvas from scratch for just this flow.
+    renderGraphForFlow(flow);
+    // Reset pan/zoom to the default 70% so the new layout sits
+    // centered with breathing room around the edges.
+    resetView(false);
+
+    var cat = flow.category || "Other";
+    openCategories[cat] = true;
+    renderSidebar();
+    var li = flowsRoot.querySelector('.flow[data-id="' + id + '"]');
+    if (li) try { li.scrollIntoView({ block: "nearest" }); } catch (e) {}
+
+    // Every rendered node is part of the current flow — mark them all
+    // "lit" so the styling matches (kept for the colored stroke / glow).
+    Object.keys(nodeEls).forEach(function (nid) {
+      nodeEls[nid].classList.add("lit");
+      if (miniNodes[nid]) miniNodes[nid].classList.add("lit");
+    });
+    // Mini-map dots for non-flow nodes go un-lit.
+    Object.keys(miniNodes).forEach(function (nid) {
+      if (!nodeEls[nid]) miniNodes[nid].classList.remove("lit");
+    });
+
+    (flow.steps || []).forEach(function (s, i) {
+      var a = positions[s.from];
+      var b = positions[s.to];
+      if (!a || !b) return;
+      var targetLane = nodesById[s.to] && nodesById[s.to].kind;
+      var color = (lanesById[targetLane] && lanesById[targetLane].color) || "var(--accent)";
+      var markerId = "arrow-" + i + "-" + Math.random().toString(36).slice(2, 7);
+      var defs = svgEl("defs", null, edgeLayer);
+      var marker = svgEl("marker", {
+        id: markerId, viewBox: "0 0 12 12",
+        refX: 10, refY: 6, markerWidth: 7, markerHeight: 7,
+        orient: "auto-start-reverse"
+      }, defs);
+      svgEl("path", { d: "M0,1 L11,6 L0,11 z", fill: color }, marker);
+
+      var path = svgEl("path", {
+        class: "edge",
+        d: buildPath(a, b),
+        stroke: color,
+        "marker-end": "url(#" + markerId + ")"
+      }, edgeLayer);
+      // Animated path-draw: stagger by step index
+      var len;
+      try { len = path.getTotalLength(); } catch (e) { len = 1000; }
+      path.style.setProperty("--path-len", len);
+      path.style.animationDelay = (i * 0.08) + "s";
+
+      var midpoint;
+      try { midpoint = path.getPointAtLength(len / 2); }
+      catch (e) { midpoint = { x: (a.cx + b.cx) / 2, y: (a.cy + b.cy) / 2 }; }
+      var bubble = svgEl("circle", {
+        class: "step-bubble",
+        cx: midpoint.x, cy: midpoint.y, r: 10,
+        fill: "var(--bg-primary)", stroke: color
+      }, edgeLayer);
+      bubble.style.animationDelay = (i * 0.08 + 0.25) + "s";
+      var num = svgEl("text", {
+        class: "step-num",
+        x: midpoint.x, y: midpoint.y + 3.5,
+        "text-anchor": "middle", fill: color
+      }, edgeLayer);
+      num.textContent = String(i + 1);
+      num.style.animationDelay = (i * 0.08 + 0.3) + "s";
+    });
+
+    document.getElementById("detail-cat").textContent = flow.category || "";
+    document.getElementById("detail-title").textContent = flow.label;
+    document.getElementById("detail-desc").textContent = flow.description || "";
+    var ol = document.getElementById("detail-steps");
+    ol.innerHTML = "";
+    (flow.steps || []).forEach(function (s, i) {
+      var fromLabel = (nodesById[s.from] && nodesById[s.from].label) || s.from;
+      var toLabel = (nodesById[s.to] && nodesById[s.to].label) || s.to;
+      var li2 = document.createElement("li");
+      li2.style.animationDelay = (i * 0.04) + "s";
+      var head = document.createElement("div");
+      head.innerHTML = '<span class="step-edge"></span> → <span class="step-edge"></span>';
+      head.querySelectorAll(".step-edge")[0].textContent = fromLabel;
+      head.querySelectorAll(".step-edge")[1].textContent = toLabel;
+      if (s.verb) {
+        var v = document.createElement("span");
+        v.className = "step-verb"; v.textContent = s.verb;
+        head.appendChild(document.createTextNode(" "));
+        head.appendChild(v);
+      }
+      li2.appendChild(head);
+      if (s.note) {
+        var note = document.createElement("div");
+        note.className = "step-note"; note.textContent = s.note;
+        li2.appendChild(note);
+      }
+      // Per-step copy button (visible on row hover or while flashing copied).
+      var btn = document.createElement("button");
+      btn.className = "copy-btn step-copy";
+      btn.title = "Copy this step + parent flow context as Markdown";
+      btn.innerHTML = '<svg class="copy-icon" viewBox="0 0 14 14"><path d="M3 0h7a1 1 0 011 1v9a1 1 0 01-1 1H3a1 1 0 01-1-1V1a1 1 0 011-1zm0 1v9h7V1H3zm-2 3v9a1 1 0 001 1h7v-1H2V4H1z"/></svg><span class="copy-label">Copy</span>';
+      (function (step, idx) {
+        btn.addEventListener("click", function () { copyText(stepToMarkdown(flow, step, idx), btn); });
+      })(s, i);
+      li2.appendChild(btn);
+      ol.appendChild(li2);
+    });
+
+  }
+
+  document.getElementById("count-flows").textContent = (data.flows || []).length;
+  document.getElementById("count-nodes").textContent = (data.nodes || []).length;
+  document.getElementById("count-cats").textContent = (function () {
+    var s = {}; (data.flows || []).forEach(function (f) { s[f.category || "Other"] = 1; });
+    return Object.keys(s).length;
+  })();
+
+  if ((data.flows || []).length) selectFlow(data.flows[0].id);
+})();
+</script>
+</body>
+</html>

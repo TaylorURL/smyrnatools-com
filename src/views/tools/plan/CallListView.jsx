@@ -91,7 +91,7 @@ function CallListView({ accentColor }) {
      * within the remaining space — no viewport-math needed.
      *
      * Show the layout-matching skeleton only on first load so the hand-off
-     * from the global Plan skeleton stays seamless. Manual refreshes keep
+     * from the global Plan skeleton doesn't flicker. Manual refreshes keep
      * the previous roster visible so the user isn't yanked back to a blank
      * skeleton mid-task. */
     if (isLoadingRoster && roster.length === 0) return <CallListSkeleton />

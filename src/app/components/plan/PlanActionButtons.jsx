@@ -35,42 +35,12 @@ function CopyPlanButton({ copied, isMobile, onCopy }) {
     )
 }
 
-/** Settings cog — only renders for users with edit permission. The active
- *  state is wired to the panel's open/closed flag so the button reads as
- *  a toggle. */
-function SettingsButton({ accentColor, onToggle, showSettings }) {
-    return (
-        <button
-            onClick={onToggle}
-            className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
-            style={{
-                backgroundColor: showSettings ? accentColor : 'var(--bg-tertiary)',
-                color: showSettings ? '#fff' : 'var(--text-secondary)'
-            }}
-            title="Travel time settings"
-        >
-            <i className="fas fa-cog" />
-        </button>
-    )
-}
-
 /**
- * Right-aligned action cluster in the Plan header — refresh, copy-plan,
- * and the settings cog (edit-only). The cluster collapses to icons on
- * mobile so the tab switcher beside it doesn't overflow.
+ * Right-aligned action cluster in the Plan header — refresh + copy-plan.
+ * Settings now live inline on the Admin tab (gated by `plan.admin`), so
+ * the cog button is gone from here.
  */
-export function PlanActionButtons({
-    accentColor,
-    canEdit,
-    copied,
-    isMobile,
-    isSchedulesSyncing,
-    onCopy,
-    onRefresh,
-    onToggleSettings,
-    scheduleLastSyncedAt,
-    showSettings
-}) {
+export function PlanActionButtons({ copied, isMobile, isSchedulesSyncing, onCopy, onRefresh, scheduleLastSyncedAt }) {
     return (
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             <RefreshButton
@@ -80,9 +50,6 @@ export function PlanActionButtons({
                 onRefresh={onRefresh}
             />
             <CopyPlanButton copied={copied} isMobile={isMobile} onCopy={onCopy} />
-            {canEdit && (
-                <SettingsButton accentColor={accentColor} onToggle={onToggleSettings} showSettings={showSettings} />
-            )}
         </div>
     )
 }

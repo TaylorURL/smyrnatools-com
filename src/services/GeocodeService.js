@@ -160,17 +160,15 @@ function buildHit(displayName, lat, lng, source) {
     return { coord: { lat: numLat, lng: numLng }, displayName: name, source }
 }
 
-// ============================================================
-// Provider: US Census Geocoder (via edge function proxy)
-// Census doesn't send CORS headers, so direct browser fetches are
-// blocked. `geocode-service/census` is a thin server-side proxy that
-// adds CORS to the upstream response and normalises the payload into
-// the same `{ matches: [{ displayName, lat, lng }] }` shape every
-// provider returns. Per-host spacing isn't applied here because the
-// proxy and the upstream sit on different hosts; if Census ever rate-
-// limits us, the edge function will surface the failure as a non-2xx
-// and we fall through to Photon / Nominatim cleanly.
-// ============================================================
+// ── Provider: US Census Geocoder (via edge function proxy) ──
+// Census doesn't send CORS headers, so direct browser fetches are blocked.
+// `geocode-service/census` is a thin server-side proxy that adds CORS to the
+// upstream response and normalises the payload into the same
+// `{ matches: [{ displayName, lat, lng }] }` shape every provider returns.
+// Per-host spacing isn't applied here because the proxy and the upstream sit
+// on different hosts; if Census ever rate-limits us, the edge function
+// surfaces the failure as a non-2xx and we fall through to Photon / Nominatim
+// cleanly.
 async function censusFetch(query, limit) {
     try {
         const { json, res } = await APIUtility.post('/geocode-service/census', { limit, query })
@@ -189,9 +187,7 @@ async function censusFetch(query, limit) {
     }
 }
 
-// ============================================================
-// Provider: Photon (komoot)
-// ============================================================
+// ── Provider: Photon (komoot) ──
 async function photonFetch(query, limit) {
     const host = 'photon.komoot.io'
     await waitForHost(host)
@@ -227,9 +223,7 @@ async function photonFetch(query, limit) {
     }
 }
 
-// ============================================================
-// Provider: Nominatim (OpenStreetMap)
-// ============================================================
+// ── Provider: Nominatim (OpenStreetMap) ──
 async function nominatimFetch(query, limit) {
     const host = 'nominatim.openstreetmap.org'
     await waitForHost(host)

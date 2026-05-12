@@ -35,7 +35,6 @@ export function usePlanActions({
     const [templates, setTemplates] = useState([])
     const [showTemplateModal, setShowTemplateModal] = useState(false)
     const [templateName, setTemplateName] = useState('')
-    const [showSettings, setShowSettings] = useState(false)
     const [newTravelTime, setNewTravelTime] = useState({ from: '', minutes: '', to: '' })
     const [activeRowId, setActiveRowId] = useState(null)
 
@@ -238,10 +237,8 @@ export function usePlanActions({
         removeTravelTime,
         saveAsTemplate,
         setNewTravelTime,
-        setShowSettings,
         setShowTemplateModal,
         setTemplateName,
-        showSettings,
         showTemplateModal,
         switchToCustom,
         templateName,

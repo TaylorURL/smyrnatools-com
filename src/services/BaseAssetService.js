@@ -132,7 +132,7 @@ class BaseAssetService {
         return this.parseRow(json?.data)
     }
 
-    /** Soft-deletes an entity by ID. */
+    /** Calls the service's delete endpoint for the given ID. */
     async delete(id) {
         ValidationUtility.requireUUID(id, `${this.entityName} ID is required`)
         return apiPostRequireSuccess(
@@ -142,7 +142,7 @@ class BaseAssetService {
         )
     }
 
-    /** Verifies an entity by stamping updatedLast / updatedBy / updatedAt server-side. */
+    /** Calls the service's verify endpoint with the current user ID. */
     async verify(id, userId) {
         const resolvedId = resolveEntityId(id)
         ValidationUtility.requireUUID(resolvedId, `${this.entityName} ID is required`)

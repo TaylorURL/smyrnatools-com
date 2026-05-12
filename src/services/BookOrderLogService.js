@@ -34,7 +34,10 @@ export const BookOrderLogService = {
                 console.warn('[BookOrderLogService] log-suggestion failed:', res?.status, json?.error)
                 return null
             }
-            return json?.id || null
+            // Truthy on any 2xx — server may or may not echo back an id, but
+            // both indicate the row was written. Callers use truthiness to
+            // distinguish success from the failure paths above.
+            return json?.id ?? true
         } catch (error) {
             console.warn('[BookOrderLogService] log-suggestion threw:', error)
             return null

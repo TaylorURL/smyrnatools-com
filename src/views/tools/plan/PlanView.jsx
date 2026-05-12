@@ -1,10 +1,9 @@
-import React, { useCallback, useState, useTransition } from 'react'
+import React, { useCallback, useEffect, useState, useTransition } from 'react'
 
 import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'
 import { PlanHeader } from '../../../app/components/plan/PlanHeader'
 import { PlanReadOnlyBanner } from '../../../app/components/plan/PlanReadOnlyBanner'
 import { PlanScheduleStaleBanner } from '../../../app/components/plan/PlanScheduleStaleBanner'
-import PlanSettingsModal from '../../../app/components/plan/PlanSettingsModal'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { usePlanActions } from '../../../app/hooks/usePlanActions'
@@ -21,6 +20,7 @@ import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
 import PlanFlowMapView from './PlanFlowMapView'
 import PlanScheduleView from './PlanScheduleView'
+import PlanSettingsView from './PlanSettingsView'
 import PlanStatisticsView from './PlanStatisticsView'
 
 /**
@@ -132,9 +132,7 @@ function PlanView() {
         copyToClipboard,
         newTravelTime,
         removeTravelTime,
-        setNewTravelTime,
-        setShowSettings,
-        showSettings
+        setNewTravelTime
     } = usePlanActions({
         assignments,
         getTravelTime,
@@ -156,7 +154,14 @@ function PlanView() {
         travelTimes
     })
 
-    const { canSeeYourTab, userPlantCode, userRoleNames } = usePlanUserContext(userId)
+    const { canSeeSettingsTab, canSeeYourTab, userPlantCode, userRoleNames } = usePlanUserContext(userId)
+
+    /* Bounce a user off the Settings tab if they ever land there without
+     * the `plan.settings` permission (revoked mid-session, deep link, etc.).
+     * Belt-and-suspenders — the tab is already hidden from the switcher. */
+    useEffect(() => {
+        if (viewMode === 'settings' && !canSeeSettingsTab) setViewModeRaw('dashboard')
+    }, [viewMode, canSeeSettingsTab])
 
     const { plantAddressByCode, plantNameByCode, plantsWithDistricts, yourPlantScope } = usePlanLookups({
         canSeeYourTab,
@@ -171,8 +176,6 @@ function PlanView() {
         [assignments, copyToClipboard, planDate, plantProduction]
     )
 
-    const handleToggleSettings = useCallback(() => setShowSettings((prev) => !prev), [setShowSettings])
-
     return (
         <div
             className="global-dashboard-container dashboard-container global-flush-top flush-top plan-view flex flex-col overflow-hidden absolute"
@@ -180,7 +183,7 @@ function PlanView() {
         >
             <PlanHeader
                 accentColor={accentColor}
-                canEdit={canEdit}
+                canSeeSettings={canSeeSettingsTab}
                 copied={copied}
                 isDark={isDark}
                 isMobile={isMobile}
@@ -190,10 +193,8 @@ function PlanView() {
                 onChangeViewMode={setViewMode}
                 onCopyPlan={handleCopyPlan}
                 onRefresh={refreshSchedule}
-                onToggleSettings={handleToggleSettings}
                 planDate={planDate}
                 scheduleLastSyncedAt={scheduleLastSyncedAt}
-                showSettings={showSettings}
                 viewMode={viewMode}
             />
             <div className="w-full max-w-full overflow-x-hidden flex flex-1 flex-col min-h-0 overflow-hidden">
@@ -227,19 +228,6 @@ function PlanView() {
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden animate-fade-in-fast">
                         {!canEdit && <PlanReadOnlyBanner accentColor={accentColor} />}
                         <PlanScheduleStaleBanner planDate={planDate} scheduleFileUpdatedAt={scheduleFileUpdatedAt} />
-
-                        {showSettings && (
-                            <PlanSettingsModal
-                                accentColor={accentColor}
-                                addTravelTime={addTravelTime}
-                                newTravelTime={newTravelTime}
-                                onClose={() => setShowSettings(false)}
-                                plants={plants}
-                                removeTravelTime={removeTravelTime}
-                                setNewTravelTime={setNewTravelTime}
-                                travelTimes={travelTimes}
-                            />
-                        )}
 
                         {effectiveViewMode === 'dashboard' && (
                             <PlanDashboardView
@@ -342,6 +330,18 @@ function PlanView() {
                                 planDate={planDate}
                                 plantProduction={plantProduction}
                                 plants={plants}
+                            />
+                        )}
+
+                        {effectiveViewMode === 'settings' && canSeeSettingsTab && (
+                            <PlanSettingsView
+                                accentColor={accentColor}
+                                addTravelTime={addTravelTime}
+                                newTravelTime={newTravelTime}
+                                plants={plants}
+                                removeTravelTime={removeTravelTime}
+                                setNewTravelTime={setNewTravelTime}
+                                travelTimes={travelTimes}
                             />
                         )}
                     </div>

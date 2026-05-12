@@ -8,23 +8,27 @@ const PLAN_TABS = [
     { icon: 'fa-chart-column', label: 'Demand', mode: 'demand' },
     { icon: 'fa-chart-line', label: 'Statistics', mode: 'statistics' },
     { icon: 'fa-phone-volume', label: 'Call List', mode: 'call-list' },
-    { icon: 'fa-clipboard-list', label: 'Find a Spot', mode: 'book-order' }
+    { icon: 'fa-clipboard-list', label: 'Find a Spot', mode: 'book-order' },
+    { icon: 'fa-sliders', label: 'Settings', mode: 'settings', requiresSettings: true }
 ]
 
 /** Tabs that survive on a phone. Wide-layout tabs (Planner / Demand /
- *  Statistics / Call List / Find a Spot) need horizontal real estate that
- *  doesn't exist on mobile, so they're hidden in favour of Dashboard +
- *  Schedule — the two surfaces that already render usefully at narrow
- *  widths and cover the most frequent on-the-go workflows. */
+ *  Statistics / Call List / Find a Spot / Settings) need horizontal real
+ *  estate that doesn't exist on mobile, so they're hidden in favour of
+ *  Dashboard + Schedule — the two surfaces that already render usefully
+ *  at narrow widths and cover the most frequent on-the-go workflows. */
 const MOBILE_TAB_MODES = new Set(['dashboard', 'schedule'])
 
 /**
  * Tab toggle in the Plan header. Desktop renders the full ladder; mobile
  * collapses to a compact two-tab switcher (Dashboard + Schedule) so the
- * header stays single-line on a phone.
+ * header stays single-line on a phone. Settings tab only appears when the
+ * caller passes `canSeeSettings` — gated by the `plan.settings` permission.
  */
-export function PlanTabSwitcher({ accentColor, isMobile = false, onChange, viewMode }) {
-    const tabs = isMobile ? PLAN_TABS.filter((t) => MOBILE_TAB_MODES.has(t.mode)) : PLAN_TABS
+export function PlanTabSwitcher({ accentColor, canSeeSettings = false, isMobile = false, onChange, viewMode }) {
+    const tabs = (isMobile ? PLAN_TABS.filter((t) => MOBILE_TAB_MODES.has(t.mode)) : PLAN_TABS).filter(
+        (t) => !t.requiresSettings || canSeeSettings
+    )
     return (
         <div className="flex items-center rounded-lg p-0.5 bg-bg-tertiary border border-border-light">
             {tabs.map(({ icon, label, mobileLabel, mode }) => {

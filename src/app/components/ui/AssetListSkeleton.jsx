@@ -6,7 +6,6 @@ const DEFAULT_GRID_COUNT = 8
 const DEFAULT_LIST_COUNT = 10
 const SKELETON_ROW_WIDTHS = ['60%', '40%', '50%', '70%', '45%']
 const MOBILE_DETAIL_ROW_COUNT = 3
-/** Single shimmer card matching the CardSection layout (status bar, title, subtitle, detail rows). */
 function SkeletonAssetCard({ compact }) {
     const rows = compact ? SKELETON_ROW_WIDTHS.slice(0, MOBILE_DETAIL_ROW_COUNT) : SKELETON_ROW_WIDTHS
     return (
@@ -32,7 +31,6 @@ function SkeletonAssetCard({ compact }) {
         </div>
     )
 }
-/** Single shimmer table row matching the ListViewModeSection row layout. */
 function SkeletonAssetRow({ columnCount, isEven, compact }) {
     return (
         <tr className={isEven ? 'bg-white' : 'bg-slate-50'}>
@@ -47,7 +45,6 @@ function SkeletonAssetRow({ columnCount, isEven, compact }) {
         </tr>
     )
 }
-/** Single shimmer task row matching the ListView grouped-item layout. */
 function SkeletonTaskRow({ compact }) {
     // Heights derived from real item font sizes × 1.5 line-height:
     //   Mobile title:    0.8125rem (13px) → 20px   Desktop title:    0.9375rem (15px) → 22px
@@ -112,13 +109,7 @@ export function TaskListSkeleton({ groupCount = 3 }) {
         </div>
     )
 }
-/**
- * Skeleton placeholder rendered while asset list/grid data is loading.
- * Mimics the grid (CardSection) or list (table row) layout with shimmer rectangles.
- * @param {'grid' | 'list' | null} viewMode - Current view mode; defaults to grid skeleton.
- * @param {number} [count] - Number of skeleton items to render.
- * @param {number} [columnCount=8] - Number of columns for list mode skeleton rows.
- */
+/** Skeleton for the asset list/grid views. Mirrors CardSection (grid) or table rows (list) with shimmer rectangles. */
 export default function AssetListSkeleton({ viewMode, count, columnCount = 8 }) {
     const isMobile = useIsMobile()
     if (viewMode === 'list') {

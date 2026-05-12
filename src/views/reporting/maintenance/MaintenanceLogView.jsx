@@ -1481,9 +1481,9 @@ export default function MaintenanceLogView({
         onFormDataReload?.()
     }, [onFormDataReload])
 
-    // Soft-delete a submission from the rail without leaving the page. Wraps
-    // both response + parent rows since the responses table FKs back to the
-    // submission and would orphan otherwise.
+    // Delete a submission from the rail without leaving the page. Removes the
+    // child response rows first since they FK back to the submission and would
+    // orphan otherwise.
     const handleDeleteSubmission = useCallback(
         async (event, submissionId) => {
             event?.stopPropagation()

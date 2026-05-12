@@ -154,9 +154,9 @@ function TableBlock({ block }) {
 }
 
 /**
- * Lightweight read-only markdown renderer used for AI-formatted plan notes.
- * Only handles the subset of markdown produced by `AIService.formatPlanNotes`
- * (headings, lists, tables, blockquotes, basic inline formatting).
+ * Read-only markdown renderer for AI-formatted plan notes. Handles only the
+ * subset `AIService.formatPlanNotes` emits (headings, lists, tables,
+ * blockquotes, basic inline formatting) — pairs with the parser in MarkdownUtility.
  */
 export function MarkdownView({ source }) {
     const blocks = useMemo(() => parseMarkdownBlocks(source), [source])

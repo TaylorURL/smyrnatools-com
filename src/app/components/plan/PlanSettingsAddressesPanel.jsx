@@ -22,7 +22,7 @@ export function PlanSettingsAddressesPanel({
     onSave
 }) {
     return (
-        <div className="px-5 py-4 max-h-[420px] overflow-y-auto flex flex-col gap-3">
+        <div className="px-5 py-4 flex flex-col gap-3">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-text-secondary">
                 Plant addresses
             </div>

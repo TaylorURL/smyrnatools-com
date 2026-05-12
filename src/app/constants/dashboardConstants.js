@@ -1,10 +1,7 @@
-/** Dashboard cache key for localStorage persistence. */
 export const DASHBOARD_CACHE_KEY = 'dashboard_assets_cache_v1'
-/** Cache time-to-live: 2 minutes. */
 export const DASHBOARD_CACHE_TTL_MS = 120000
-/** Auto-refresh interval: 10 minutes. */
 export const DASHBOARD_REFRESH_INTERVAL_MS = 600000
-/** Color mapping for asset status badges and charts. */
+/** Status → hex used across dashboard badges and Recharts series. Keep in sync with status pill colors in index.css. */
 export const STATUS_COLORS = {
     Active: '#22c55e',
     'In Shop': '#3b82f6',
@@ -12,7 +9,7 @@ export const STATUS_COLORS = {
     Spare: '#a855f7',
     Stationary: '#eab308'
 }
-/** Zero-state structure for all dashboard statistics categories. */
+/** Zero-state for the dashboard stats reducer. Every field must be present so partial updates merge cleanly. */
 export const INITIAL_STATS = {
     equipment: { active: 0, allocationPercent: 0, comments: 0, issues: 0, overdue: 0, shop: 0, spare: 0, total: 0 },
     fleetTotal: 0,
@@ -77,7 +74,7 @@ export const INITIAL_STATS = {
     },
     verificationAverage: 0
 }
-/** Zero-state structure for per-plant notification/alert data. */
+/** Zero-state for per-plant notification data fed into DashboardAlertsPanel. */
 export const INITIAL_PLANT_NOTIFICATIONS = {
     aiSummary: null,
     aiSummaryFailed: false,

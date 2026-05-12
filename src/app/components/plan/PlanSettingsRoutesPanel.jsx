@@ -59,7 +59,7 @@ export function PlanSettingsRoutesPanel({
                     </button>
                 </div>
             </div>
-            <div className="px-5 py-4 max-h-[300px] overflow-y-auto">
+            <div className="px-5 py-4">
                 <SectionLabel>Saved Routes</SectionLabel>
                 {directedRoutes.length === 0 ? (
                     <div className="text-xs py-4 text-center text-text-secondary">No travel times configured yet</div>

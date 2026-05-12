@@ -20,7 +20,7 @@ import { PlanTabSwitcher } from './PlanTabSwitcher'
  */
 export function PlanHeader({
     accentColor,
-    canEdit,
+    canSeeSettings = false,
     copied,
     isDark,
     isMobile,
@@ -30,10 +30,8 @@ export function PlanHeader({
     onChangeViewMode,
     onCopyPlan,
     onRefresh,
-    onToggleSettings,
     planDate,
     scheduleLastSyncedAt,
-    showSettings,
     viewMode
 }) {
     /** Statistics manages its own from/to range + range-mode tab — the
@@ -56,18 +54,16 @@ export function PlanHeader({
             <div className="flex-1 min-w-[8px]" />
             <PlanActionButtons
                 accentColor={accentColor}
-                canEdit={canEdit}
                 copied={copied}
                 isMobile={isMobile}
                 isSchedulesSyncing={isSchedulesSyncing}
                 onCopy={onCopyPlan}
                 onRefresh={onRefresh}
-                onToggleSettings={onToggleSettings}
                 scheduleLastSyncedAt={scheduleLastSyncedAt}
-                showSettings={showSettings}
             />
             <PlanTabSwitcher
                 accentColor={accentColor}
+                canSeeSettings={canSeeSettings}
                 isMobile={isMobile}
                 onChange={onChangeViewMode}
                 viewMode={viewMode}

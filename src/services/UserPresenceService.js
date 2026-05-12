@@ -29,7 +29,7 @@ async function mergeActiveDevice(userId, device) {
     }
 }
 
-/* ── Online users helpers (read side) ── */
+// ── Online users helpers (read side) ──
 
 const STALE_THRESHOLD = 5 * 60 * 1000
 const HEARTBEAT_INTERVAL_MS = 30000

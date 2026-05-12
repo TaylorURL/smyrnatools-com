@@ -186,7 +186,7 @@ function OperatorsView({
             Database.removeChannel(channel)
         }
     }, [])
-    /** Fetches operators scoped to the given plant codes; falls back to a 1-hour localStorage cache on failure. */
+    /** Backfills commentsCount onto each operator in local state. Errors are swallowed. */
     const fetchCommentCounts = useCallback(async (operatorsList) => {
         if (!operatorsList || operatorsList.length === 0) return
         const operatorIds = operatorsList.map((op) => op.employeeId).filter(Boolean)
@@ -203,6 +203,7 @@ function OperatorsView({
             console.error('Error loading operator comment counts:', e)
         }
     }, [])
+    /** Fetches operators scoped to the given plant codes; falls back to a 1-hour localStorage cache on failure. */
     const fetchOperators = useCallback(
         async (codes) => {
             try {
