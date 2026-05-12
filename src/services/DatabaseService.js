@@ -110,16 +110,6 @@ const sanitizeTableName = (tableName) => {
     const cleaned = tableName.toLowerCase().replace(/[^a-z0-9_]/g, '')
     return ALLOWED_TABLES.has(cleaned) ? cleaned : null
 }
-/** Strips non-alphanumeric/underscore characters from a column name to prevent injection. */
-const sanitizeColumnName = (columnName) => {
-    if (!columnName || typeof columnName !== 'string') return null
-    return columnName.replace(/[^a-zA-Z0-9_]/g, '')
-}
-/** Escapes SQL LIKE pattern special characters (%, _, \) in user input. */
-const sanitizeLikePattern = (input) => {
-    if (!input || typeof input !== 'string') return ''
-    return input.trim().replace(/[%_\\]/g, (char) => '\\' + char)
-}
 /**
  * Provides controlled database operations (migrations, existence checks, record retrieval)
  * through the edge function API, enforcing table/migration allowlists.
@@ -171,68 +161,4 @@ export const getDatabaseErrorDetails = (error) => {
 export const logDatabaseError = (context, error) => {
     console.error(`Database error in ${context}:`, error)
     console.error('Details:', getDatabaseErrorDetails(error))
-}
-/** Converts a date value to ISO string format for database queries. Returns null on invalid input. */
-export const formatDateForDatabase = (date) => {
-    if (!date) return null
-    if (date instanceof Date) return date.toISOString()
-    try {
-        const d = new Date(date)
-        return isNaN(d.getTime()) ? null : d.toISOString()
-    } catch {
-        return null
-    }
-}
-/** Validates that the database is properly configured with real (non-placeholder) credentials. */
-export const isDatabaseConfigured = (client) => {
-    if (!client) return false
-    if (!process.env.REACT_APP_SUPABASE_URL || !process.env.REACT_APP_SUPABASE_ANON_KEY) return false
-    if (!client.supabaseUrl || client.supabaseUrl.includes('example.supabase.co')) return false
-    if (!client.supabaseKey || client.supabaseKey === 'your-public-anon-key') return false
-    return true
-}
-/** Extracts an error message from a database response, or null if no error. */
-export const extractDatabaseErrorMessage = (response) => {
-    if (!response) return 'Empty response received'
-    return response.error ? getDatabaseErrorDetails(response.error) : null
-}
-/** Builds a case-insensitive partial text filter object for ILIKE queries. */
-export const createPartialTextFilter = (column, searchTerm) => {
-    const sanitizedColumn = sanitizeColumnName(column)
-    if (!searchTerm?.trim() || !sanitizedColumn) return {}
-    const sanitizedTerm = sanitizeLikePattern(searchTerm)
-    return { [sanitizedColumn]: { ilike: `%${sanitizedTerm}%` } }
-}
-/**
- * Low-level CRUD operations against allowlisted tables via the database-service edge function.
- * All table and column names are sanitized before being sent to the API.
- */
-export const DatabaseUtils = {
-    /** Fetches records from an allowlisted table filtered by a column/value pair. */
-    async fetch(table, columns = '*', filterColumn, value) {
-        const sanitizedTable = sanitizeTableName(table)
-        const sanitizedColumn = sanitizeColumnName(filterColumn)
-        if (!sanitizedTable) throw new Error('Invalid or disallowed table name')
-        if (!sanitizedColumn || value === undefined) throw new Error('Filter column and value are required')
-        const { res, json } = await APIUtility.post('/database-service/fetch', {
-            columns,
-            filterColumn: sanitizedColumn,
-            table: sanitizedTable,
-            value
-        })
-        if (!res.ok) throw new Error(json?.error || 'Failed to fetch')
-        return json?.data ?? []
-    },
-    /** Fetches all records from an allowlisted table, ordered by ID. */
-    async fetchAll(table, columns = '*') {
-        const sanitizedTable = sanitizeTableName(table)
-        if (!sanitizedTable) throw new Error('Invalid or disallowed table name')
-        const { res, json } = await APIUtility.post('/database-service/fetch-all', {
-            columns,
-            orderBy: 'id',
-            table: sanitizedTable
-        })
-        if (!res.ok) throw new Error(json?.error || 'Failed to fetch all')
-        return json?.data ?? []
-    }
 }

@@ -2,6 +2,28 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.10] - 2026-05-12
+
+- Remove DashboardSidebar, KeyMetricsStrip, PeopleSection, and DashboardSharedComponents from the dashboard module
+- Remove PlanFlowView and PlanRealtimeView from the plan tools
+- Remove PlanAssignmentDetails, PlanDashboardJobs, PlanMiniTimeline, PlanPlantCard, PlanScheduleFilterField, PlanScheduleSideRail, PlanTemplatesModal, and TimelineView plan components
+- Remove MaintenanceFormReview common component and useMaintenanceDraft hook
+- Remove EmptyState UI component
+- Remove useTodaysRecentJobsByTruck and strip down useDashboardEffects hook
+- Gut usePlantNotifications down to a minimal implementation, removing alert/people/shop notification logic
+- Strip PlanDashboardLists down to a minimal export
+- Simplify PlanStatisticsCharts by removing the tonnage-by-mixer chart and its data pipeline
+- Remove the sanitized mutation helpers (sanitizedInsert, sanitizedUpdate, sanitizedDelete) and table/column allowlists from DatabaseService
+- Remove unused report-related helper functions and simplify ReportComponents
+- Trim useReportData by removing dead helper functions
+- Remove the status-color badge helper from AssetCard
+- Add BookOrderView for managing plan book order entries
+- Add BookOrderLogService for CRUD operations against the book order log edge function
+- Add book-order-log-service edge function for insert, update, and delete operations on plan_book_order_logs
+- Add migration to create plan_book_order_logs table with RLS policies and indexes
+- Enhance GeocodeService with Census and Photon geocoding providers, progressive address trimming, and a chained fallback strategy
+- Add shift-cap, partial-coverage, slot-packing, and preferred-window improvements to the book order scheduling logic via changelog
+
 ## [41.0.9] - 2026-05-12
 
 - Fix shift-cap anchor bug in best-effort slot scanner — use the day's earliest existing load-out instead of midnight, so legitimate morning starts no longer get rejected by the 14-hour shift check

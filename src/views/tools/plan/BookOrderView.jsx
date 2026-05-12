@@ -6,6 +6,7 @@ import useAddressDistances from '../../../app/hooks/useAddressDistances'
 import useAdjacentDayPlantProduction from '../../../app/hooks/useAdjacentDayPlantProduction'
 import usePlantToPlantDistances from '../../../app/hooks/usePlantToPlantDistances'
 import useYesterdayOperatorRestFloor from '../../../app/hooks/useYesterdayOperatorRestFloor'
+import { BookOrderLogService } from '../../../services/BookOrderLogService'
 import { formatOrderAddress } from '../../../utils/AddressUtility'
 import {
     buildBookingRequest,
@@ -587,6 +588,227 @@ const buildShiftReason = ({ recommendedSlot, request }) => {
     return 'This slot keeps the day clustered and avoids idle gaps.'
 }
 
+/** Collapsible audit log of recent Find-a-Spot recommendations. One row
+ *  per (form, recommendation) pair. The expanded view exposes the full
+ *  `decision_context` JSON so a bad suggestion can be diagnosed by
+ *  replaying the stored inputs against the current algorithm. */
+function RecentActivityPanel({ accentColor, logs, onRefresh, onToggle, open }) {
+    return (
+        <div
+            className="rounded-lg flex flex-col"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
+            <button
+                type="button"
+                onClick={onToggle}
+                className="flex items-center justify-between gap-3 px-4 py-3 text-left bg-transparent border-0 cursor-pointer"
+                style={{ color: 'var(--text-primary)' }}
+            >
+                <span className="flex items-center gap-2">
+                    <i className="fas fa-clock-rotate-left text-[12px]" style={{ color: accentColor }} />
+                    <span className="text-[13px] font-semibold">Recent activity</span>
+                    <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                        {logs.length === 0 ? 'no entries yet' : `${logs.length} entr${logs.length === 1 ? 'y' : 'ies'}`}
+                    </span>
+                </span>
+                <span className="flex items-center gap-2">
+                    <span
+                        onClick={(event) => {
+                            event.stopPropagation()
+                            onRefresh()
+                        }}
+                        className="text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded"
+                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.stopPropagation()
+                                onRefresh()
+                            }
+                        }}
+                    >
+                        <i className="fas fa-arrows-rotate text-[10px]" />
+                        Refresh
+                    </span>
+                    <i
+                        className={`fas ${open ? 'fa-chevron-up' : 'fa-chevron-down'} text-[10px]`}
+                        style={{ color: 'var(--text-tertiary)' }}
+                    />
+                </span>
+            </button>
+            {open && (
+                <div className="flex flex-col" style={{ borderTop: '1px solid var(--border-light)' }}>
+                    {logs.length === 0 && (
+                        <div className="px-4 py-3 text-[12px]" style={{ color: 'var(--text-tertiary)' }}>
+                            No bookings have been run through Find a Spot yet on this account. Submit the form above and
+                            a row will land here with the full decision context for diagnostics.
+                        </div>
+                    )}
+                    {logs.map((entry) => (
+                        <RecentActivityRow key={entry.id} entry={entry} />
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
+function RecentActivityRow({ entry }) {
+    const [expanded, setExpanded] = useState(false)
+    const [copied, setCopied] = useState(false)
+    const createdLabel = formatLogTimestamp(entry?.created_at)
+    const recDateLabel = entry?.recommended_date || entry?.plan_date || ''
+    const recTimeLabel = entry?.recommended_start_time || entry?.requested_start_time || ''
+    const recPlantLabel = entry?.recommended_plant_name || entry?.recommended_plant_code || '—'
+    const submitterLabel = entry?.submitter_name || entry?.user_id || 'unknown user'
+    const handleCopy = useCallback(
+        async (event) => {
+            event.stopPropagation()
+            try {
+                const payload = buildLogClipboardPayload(entry)
+                await navigator.clipboard.writeText(payload)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 1800)
+            } catch (error) {
+                console.warn('[RecentActivityRow] clipboard write failed:', error)
+            }
+        },
+        [entry]
+    )
+    return (
+        <div className="flex flex-col" style={{ borderTop: '1px solid var(--border-light)' }}>
+            <div className="flex items-start gap-3 px-4 py-2" style={{ color: 'var(--text-primary)' }}>
+                <button
+                    type="button"
+                    onClick={() => setExpanded((value) => !value)}
+                    className="flex-1 min-w-0 flex items-start gap-3 text-left bg-transparent border-0 cursor-pointer"
+                    style={{ color: 'var(--text-primary)' }}
+                >
+                    <i
+                        className={`fas ${expanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[10px] mt-1`}
+                        style={{ color: 'var(--text-tertiary)' }}
+                    />
+                    <span className="flex-1 min-w-0 flex flex-col gap-0.5">
+                        <span className="text-[12px] font-semibold truncate">
+                            {recDateLabel} {recTimeLabel} · {recPlantLabel}
+                        </span>
+                        <span className="text-[11px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                            <i className="fas fa-user text-[9px] mr-1" />
+                            {submitterLabel} · {createdLabel} · {entry?.estimated_trucks ?? '?'} trucks ·{' '}
+                            {entry?.yardage ?? '?'} yd · {entry?.job_address || 'no address'}
+                        </span>
+                    </span>
+                </button>
+                <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded cursor-pointer border-0 shrink-0"
+                    style={{
+                        background: copied ? 'rgba(22, 163, 74, 0.16)' : 'var(--bg-secondary)',
+                        color: copied ? '#15803d' : 'var(--text-secondary)'
+                    }}
+                    title="Copy this log entry to clipboard so you can paste it for diagnosis"
+                >
+                    <i className={`fas ${copied ? 'fa-check' : 'fa-copy'} text-[10px]`} />
+                    {copied ? 'Copied' : 'Copy'}
+                </button>
+            </div>
+            {expanded && (
+                <div className="px-4 py-3 flex flex-col gap-2" style={{ background: 'var(--bg-secondary)' }}>
+                    <RecentActivityField label="Submitted by" value={submitterLabel} />
+                    <RecentActivityField label="Submitted at" value={createdLabel} />
+                    <RecentActivityField label="Recommendation title" value={entry?.recommendation_title} />
+                    <RecentActivityField label="Recommendation subtitle" value={entry?.recommendation_subtitle} />
+                    <RecentActivityField label="Recommendation kind" value={entry?.recommendation_kind} />
+                    <RecentActivityField label="Requested time" value={entry?.requested_start_time} />
+                    <RecentActivityField label="Pour method" value={entry?.pour_method} />
+                    <RecentActivityField label="Spacing (min)" value={entry?.truck_spacing_min} />
+                    <RecentActivityField
+                        label="Decision context"
+                        value={JSON.stringify(entry?.decision_context || {}, null, 2)}
+                        mono
+                    />
+                </div>
+            )}
+        </div>
+    )
+}
+
+/** Build a paste-ready text payload for a single log row. Leads with
+ *  a human-readable summary (form inputs + recommendation) so the
+ *  context is legible at a glance, then dumps the full row JSON for
+ *  precise diagnosis. */
+function buildLogClipboardPayload(entry) {
+    if (!entry) return ''
+    const summary = [
+        '=== Find a Spot — log entry ===',
+        `id: ${entry.id || ''}`,
+        `created: ${entry.created_at || ''}`,
+        `submitted_by: ${entry.submitter_name || entry.user_id || ''}`,
+        '',
+        '--- Form inputs ---',
+        `plan_date: ${entry.plan_date || ''}`,
+        `requested_start_time: ${entry.requested_start_time || ''}`,
+        `yardage: ${entry.yardage ?? ''}`,
+        `estimated_trucks: ${entry.estimated_trucks ?? ''}`,
+        `truck_spacing_min: ${entry.truck_spacing_min ?? ''}`,
+        `pour_method: ${entry.pour_method || ''}`,
+        `job_address: ${entry.job_address || ''}`,
+        `pour_window: ${entry.estimated_pour_window_start_min ?? ''}–${entry.estimated_pour_window_end_min ?? ''}`,
+        '',
+        '--- Recommendation ---',
+        `kind: ${entry.recommendation_kind || ''}`,
+        `plant: ${entry.recommended_plant_name || ''} (${entry.recommended_plant_code || ''})`,
+        `date: ${entry.recommended_date || ''}`,
+        `time: ${entry.recommended_start_time || ''}`,
+        `title: ${entry.recommendation_title || ''}`,
+        `subtitle: ${entry.recommendation_subtitle || ''}`,
+        '',
+        '--- Decision context (raw) ---',
+        JSON.stringify(entry.decision_context || {}, null, 2)
+    ]
+    return summary.join('\n')
+}
+
+function RecentActivityField({ label, mono, value }) {
+    if (value === null || value === undefined || value === '') return null
+    return (
+        <div className="flex flex-col gap-0.5">
+            <span
+                className="text-[10px] font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--text-tertiary)' }}
+            >
+                {label}
+            </span>
+            <span
+                className={`text-[11.5px] ${mono ? 'font-mono whitespace-pre-wrap break-all' : ''}`}
+                style={{
+                    color: 'var(--text-primary)',
+                    maxHeight: mono ? 240 : undefined,
+                    overflowY: mono ? 'auto' : 'visible'
+                }}
+            >
+                {String(value)}
+            </span>
+        </div>
+    )
+}
+
+/** "May 12, 02:48 PM" — short timestamp for log rows. */
+function formatLogTimestamp(iso) {
+    if (!iso) return ''
+    const date = new Date(iso)
+    if (!Number.isFinite(date.getTime())) return iso
+    return date.toLocaleString('en-US', {
+        day: 'numeric',
+        hour: 'numeric',
+        hour12: true,
+        minute: '2-digit',
+        month: 'short'
+    })
+}
+
 /** Single, action-oriented recommendation. Always shows the SYSTEM's best
  *  time for this booking on the closest plant — when the dispatcher's
  *  typed time matches, we just confirm it; when it doesn't (e.g. they
@@ -1060,6 +1282,105 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
             restFloorMin: restFloorByPlant?.[plantCode]
         })
     }, [topPlantRecord, request, conflict, mixerCountsByPlant, planDate, plantProduction, restFloorByPlant])
+
+    /* Audit log — exactly ONE row per form submission, written AFTER
+     * the address/travel-time loaders have settled so the logged
+     * recommendation reflects the final ranked state. Without the
+     * "wait for distances" gate the recommender's intermediate
+     * rankings (different plants while OSRM resolves) each fired a
+     * separate log row, polluting the audit trail.
+     *
+     * `loggedFormKeyRef` keys on the form INPUTS only (not the
+     * recommendation), so once a given form is logged we never re-log
+     * it even if downstream state keeps shifting. Resubmitting the
+     * form with any input change produces a new key → new log. */
+    const loggedFormKeyRef = useRef(null)
+    /* Tracks whether we've ever observed `distancesLoading === true`
+     * since the current submission started. Without this guard the
+     * INITIAL render — where the hook hasn't run its effect yet so
+     * `isLoading` is still its default `false` — slips past the
+     * loading gate and we log the default plant ordering (alphabetical
+     * by code → "Freeport" wins) instead of waiting for the real
+     * travel-time ranking to settle. */
+    const distancesObservedLoadingRef = useRef(false)
+    const [recentLogs, setRecentLogs] = useState([])
+    const [recentLogsOpen, setRecentLogsOpen] = useState(false)
+    const refreshRecentLogs = useCallback(async () => {
+        const logs = await BookOrderLogService.listRecent({ limit: 20 })
+        setRecentLogs(logs)
+    }, [])
+    /* Reset the dedupe key + settled-flag when the form is cleared /
+     * new submission starts. `submitted` going from true → false
+     * marks a fresh session, so the next ready-to-log state can write
+     * a new row only after distances have re-loaded fully. */
+    useEffect(() => {
+        if (!submitted) {
+            loggedFormKeyRef.current = null
+            distancesObservedLoadingRef.current = false
+        }
+    }, [submitted])
+    useEffect(() => {
+        if (distancesLoading) distancesObservedLoadingRef.current = true
+    }, [distancesLoading])
+    useEffect(() => {
+        if (!submitted || !request || !top) return
+        if (distancesLoading) return
+        /* If we've never seen `distancesLoading === true` since the
+         * submission started, the loader's effect hasn't actually run
+         * yet — the `false` we're observing is just the hook's
+         * initial state. Don't log yet; wait for the loading cycle
+         * to actually complete. */
+        if (!distancesObservedLoadingRef.current) return
+        const recommendationReady = !!(conflict || recommendedSlot)
+        if (!recommendationReady) return
+        const formKey = [
+            planDate,
+            request?.startMin,
+            request?.yardage,
+            request?.trucksNeeded,
+            request?.spacingMin,
+            request?.address,
+            request?.pourMethod
+        ].join('|')
+        if (loggedFormKeyRef.current === formKey) return
+        loggedFormKeyRef.current = formKey
+        const recPlantCode = conflict?.plantCode || top?.plantCode || null
+        const recStartMin =
+            conflict?.bestEffortSlot?.slot?.startMin ?? recommendedSlot?.startMin ?? request?.startMin ?? null
+        const recDate = conflict?.bestEffortSlot?.dateStr || planDate || null
+        const recKind = conflict ? 'conflict' : 'happy-path'
+        const payload = {
+            context: {
+                conflict: conflict || null,
+                ranked: ranked || [],
+                recommendedSlot: recommendedSlot || null,
+                topPlantCode: top?.plantCode || null,
+                yourPlantScope: null
+            },
+            form: {
+                address: request?.address || '',
+                planDate,
+                pourMethod: request?.pourMethod || '',
+                spacingMin: request?.spacingMin ?? null,
+                startTime: formatHhmm(request?.startMin ?? 0),
+                trucksNeeded: request?.trucksNeeded ?? null,
+                windowEndMin: (request?.startMin ?? 0) + (request?.durationMin ?? 0),
+                windowStartMin: request?.startMin ?? null,
+                yardage: request?.yardage ?? null
+            },
+            recommendation: {
+                dateStr: recDate,
+                kind: recKind,
+                plantCode: recPlantCode,
+                plantName: conflict?.plantName || top?.plantName || null,
+                startTime: Number.isFinite(recStartMin) ? formatHhmm(recStartMin) : null
+            }
+        }
+        BookOrderLogService.logSuggestion(payload).then(() => refreshRecentLogs())
+    }, [submitted, request, top, conflict, recommendedSlot, ranked, planDate, distancesLoading, refreshRecentLogs])
+    useEffect(() => {
+        refreshRecentLogs()
+    }, [refreshRecentLogs])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col gap-4 px-3 sm:px-4 lg:px-6 py-4 sm:py-5 overflow-y-auto">
@@ -1614,6 +1935,14 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                             </>
                         )
                     })()}
+
+                    <RecentActivityPanel
+                        accentColor={accentColor}
+                        logs={recentLogs}
+                        onRefresh={refreshRecentLogs}
+                        onToggle={() => setRecentLogsOpen((open) => !open)}
+                        open={recentLogsOpen}
+                    />
                 </section>
             </div>
         </div>

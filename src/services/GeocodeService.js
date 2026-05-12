@@ -71,22 +71,60 @@ const SECONDARY_UNIT_RE = /,?\s*(apt|apartment|unit|ste|suite|fl|floor|rm|room|#
 // eslint-disable-next-line security/detect-unsafe-regex
 const ZIP_RE = /\b\d{5}(?:-\d{4})?\b/
 
+/* Texas-specific road-code expansions. Dispatchers paste addresses in
+ * the official TxDOT form ("FM 1960 Rd W", "RM 12", "SH 6"), but
+ * Photon and other OSM-backed geocoders index these roads under their
+ * full names ("Farm to Market Road 1960"). US Census knows the codes,
+ * but it's queried second — so without expanding, the autocomplete
+ * dropdown stays empty on a perfectly valid TX address. Each entry
+ * generates an alternate variant the chain can try. */
+const TX_ROAD_CODE_EXPANSIONS = [
+    { code: /\bFM[\s-]*(\d+)\b/gi, expanded: 'Farm to Market $1' },
+    { code: /\bRM[\s-]*(\d+)\b/gi, expanded: 'Ranch to Market $1' },
+    { code: /\bSH[\s-]*(\d+)\b/gi, expanded: 'State Highway $1' },
+    { code: /\bUS[\s-]*(\d+)\b/gi, expanded: 'US Highway $1' }
+]
+
+const tidyCommas = (value) => value.replace(/\s+,/g, ',').replace(/,\s*,/g, ',').replace(/,\s*$/, '').trim()
+
 /** Generate progressively-trimmed variants of an address. We try each
  *  in order against each provider — many addresses fail with the unit
  *  suffix and resolve cleanly without it, or fail with a ZIP that
- *  doesn't cover the parcel and resolve once the ZIP is gone. */
+ *  doesn't cover the parcel and resolve once the ZIP is gone. TX
+ *  road-code expansions ("FM 1960" → "Farm to Market 1960") give
+ *  OSM-backed providers a form they actually index. */
 function buildAddressVariants(address) {
     const raw = String(address || '')
         .trim()
         .replace(/\s+/g, ' ')
     if (!raw) return []
-    const variants = [raw]
-    const noUnit = raw.replace(SECONDARY_UNIT_RE, '').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').trim()
-    if (noUnit && noUnit !== raw) variants.push(noUnit)
-    const noZip = noUnit.replace(ZIP_RE, '').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').replace(/,\s*$/, '').trim()
-    if (noZip && noZip !== noUnit) variants.push(noZip)
-    // De-dupe while preserving order so cheaper variants run first.
-    return Array.from(new Set(variants))
+    const base = [raw]
+    const noUnit = tidyCommas(raw.replace(SECONDARY_UNIT_RE, ''))
+    if (noUnit && noUnit !== raw) base.push(noUnit)
+    const noZip = tidyCommas(noUnit.replace(ZIP_RE, ''))
+    if (noZip && noZip !== noUnit) base.push(noZip)
+
+    /* Expand TX road codes on every base variant — so a query like
+     * "4534 FM 1960 Rd W, Houston, TX 77069" generates both the raw
+     * form and "4534 Farm to Market 1960 Rd W, ..." Expanded variants
+     * lead the list because OSM-backed providers (Photon, Nominatim)
+     * index the long form — if we tried "FM 1960" first, Photon would
+     * fall back to loose fuzzy matches on the rest of the string and
+     * return irrelevant Houston results instead of falling through to
+     * the variant the geocoder can actually resolve. */
+    const expanded = []
+    for (const variant of base) {
+        for (const { code, expanded: replacement } of TX_ROAD_CODE_EXPANSIONS) {
+            if (code.test(variant)) {
+                expanded.push(variant.replace(code, replacement))
+            }
+        }
+    }
+
+    // De-dupe while preserving order. Expanded forms lead so they
+    // resolve before the raw "FM 1960" string falls into Photon's
+    // fuzzy matcher.
+    return Array.from(new Set([...expanded, ...base]))
 }
 
 const lastRequestAtByHost = new Map()
@@ -224,10 +262,17 @@ async function nominatimFetch(query, limit) {
 /** Provider chains tuned for two access patterns:
  *   - `GEOCODE_PROVIDERS` for resolving a final, committed address to
  *     coords (parcel accuracy first → fuzzier providers as fallbacks).
- *   - `SEARCH_PROVIDERS` for autocomplete typeahead (Photon ranks
- *     partial matches better, so it leads). */
+ *   - `SEARCH_PROVIDERS` for autocomplete typeahead. Census leads here
+ *     too: dispatchers paste full real-world addresses ("4534 FM 1960
+ *     Rd W, Houston, TX 77069"), and Census returns parcel-accurate
+ *     matches or nothing. Photon-first felt snappier for partial
+ *     queries but routinely returned loose fuzzy matches on the rest
+ *     of the string when it didn't recognize a token — so an FM-road
+ *     address would surface unrelated Houston suggestions and never
+ *     fall through to Census. Photon stays as a fallback for new
+ *     construction / unusual addresses Census doesn't index yet. */
 const GEOCODE_PROVIDERS = [censusFetch, photonFetch, nominatimFetch]
-const SEARCH_PROVIDERS = [photonFetch, censusFetch]
+const SEARCH_PROVIDERS = [censusFetch, photonFetch]
 
 class GeocodeServiceImpl {
     constructor() {
@@ -299,9 +344,13 @@ class GeocodeServiceImpl {
 
     /** Multi-result lookup for the autocomplete dropdown. Walks the
      *  search-provider chain (Photon first — its typeahead matches feel
-     *  much closer to Google Places than Nominatim's), and stops as soon
-     *  as a provider returns at least one hit. Returns up to `limit`
-     *  results in display order.
+     *  much closer to Google Places than Nominatim's) AND each
+     *  trimmed/expanded variant of the query, stopping as soon as any
+     *  combination returns at least one hit. Walking variants is what
+     *  catches TX road-code addresses ("FM 1960 Rd W"): Photon doesn't
+     *  index "FM 1960" but does index "Farm to Market 1960", and the
+     *  expansion variant surfaces it. Returns up to `limit` results in
+     *  display order.
      *
      *  Bypasses the geocode cache (autocomplete queries are exploratory
      *  and short-lived — caching every prefix would balloon storage).
@@ -311,10 +360,13 @@ class GeocodeServiceImpl {
     async search(query, { limit = 5 } = {}) {
         const trimmed = String(query || '').trim()
         if (trimmed.length < 3) return []
+        const variants = buildAddressVariants(trimmed)
         for (const provider of SEARCH_PROVIDERS) {
-            const hits = await provider(trimmed, limit)
-            if (hits.length > 0) {
-                return hits.map(({ coord, displayName }) => ({ coord, displayName }))
+            for (const variant of variants) {
+                const hits = await provider(variant, limit)
+                if (hits.length > 0) {
+                    return hits.map(({ coord, displayName }) => ({ coord, displayName }))
+                }
             }
         }
         return []

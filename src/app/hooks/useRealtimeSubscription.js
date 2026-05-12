@@ -92,49 +92,4 @@ export function useRealtimeSubscription(config) {
         }
     }, [table, event, filter, enabled, handleChange])
 }
-/**
- * Subscribes to multiple database tables simultaneously,
- * invoking a shared onAnyChange handler for any event.
- */
-export function useMultiTableSubscription(tables, handlers) {
-    const { onAnyChange, enabled = true } = handlers
-    useEffect(() => {
-        if (!enabled || !tables || tables.length === 0) return
-        const channelName = `realtime-multi-${tables.join('-')}-${Date.now()}`
-        let channel = Database.channel(channelName)
-        tables.forEach((table) => {
-            channel = channel.on('postgres_changes', { event: '*', schema: 'public', table }, (payload) => {
-                if (onAnyChange) {
-                    onAnyChange({ ...payload, table })
-                }
-            })
-        })
-        channel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-                activeChannels.set(channelName, channel)
-            }
-        })
-        return () => {
-            activeChannels.delete(channelName)
-            Database.removeChannel(channel)
-        }
-    }, [tables, onAnyChange, enabled])
-}
-/** Imperatively subscribes to a single database table outside of React lifecycle. */
-export function subscribeToTable(table, callback, options = {}) {
-    const { event = '*', filter = null } = options
-    const channelName = `manual-${table}-${Date.now()}`
-    const subscriptionConfig = {
-        event,
-        schema: 'public',
-        table
-    }
-    if (filter) {
-        subscriptionConfig.filter = filter
-    }
-    const channel = Database.channel(channelName).on('postgres_changes', subscriptionConfig, callback).subscribe()
-    return () => {
-        Database.removeChannel(channel)
-    }
-}
 export default useRealtimeSubscription

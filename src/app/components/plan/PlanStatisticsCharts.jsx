@@ -20,8 +20,7 @@ import {
     fmtDate,
     fmtInt,
     fmtPct,
-    parseIsoLocal,
-    satisfactionColor
+    parseIsoLocal
 } from '../../../utils/PlanStatisticsFormatUtility'
 import { PLAN_STATS_CHART_TOOLTIP_STYLE, PLAN_STATS_FALLBACK_SERIES_COLORS } from '../../../utils/PlanStatisticsUtility'
 import { plantBadgeColor } from '../../../utils/PlanUtility'
@@ -232,114 +231,6 @@ export function DayOfWeekChart({ accent, plans }) {
                     <Bar dataKey="avg" name="Avg yardage" fill={accent} radius={[3, 3, 0, 0]} />
                 </BarChart>
             </ResponsiveContainer>
-        </div>
-    )
-}
-
-/**
- * Customer satisfaction chart — wraps the SHARED `computeCustomerSatisfaction`
- * results from `PlanUtility` so the page reads the same score the Schedule
- * tab badge reads. Per-day score points feed a trend line; the headline shows
- * the period-aggregate score with good/bad-service counts and a sample tally.
- */
-export function SatisfactionChart({ accent, aggregate, isLoading, satisfactionByDay, days }) {
-    const trend = useMemo(
-        () =>
-            days
-                .map((d) => {
-                    const sat = satisfactionByDay[d.planDate]
-                    if (!sat) return null
-                    return {
-                        badService: sat.badService,
-                        goodService: sat.goodService,
-                        label: fmtDate(d.planDate),
-                        samples: sat.samples,
-                        score: Math.round(sat.score * 100)
-                    }
-                })
-                .filter(Boolean),
-        [days, satisfactionByDay]
-    )
-    const score100 = aggregate ? Math.round(aggregate.score * 100) : null
-    const headlineColor = satisfactionColor(score100)
-    return (
-        <div className="flex flex-col gap-3">
-            <div className="flex items-end gap-3 px-1">
-                <div className="flex items-baseline gap-1">
-                    <span
-                        className="text-[40px] font-bold leading-none font-mono tabular-nums"
-                        style={{ color: headlineColor }}
-                    >
-                        {score100 == null ? '—' : score100}
-                    </span>
-                    <span className="text-[16px] font-semibold" style={{ color: headlineColor }}>
-                        %
-                    </span>
-                </div>
-                <div className="flex flex-col text-[11px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
-                    {aggregate ? (
-                        <>
-                            <span>
-                                {fmtInt(aggregate.goodService)} good service · {fmtInt(aggregate.badService)} bad
-                            </span>
-                            <span style={{ color: 'var(--text-tertiary)' }}>
-                                across {fmtInt(aggregate.samples)} order
-                                {aggregate.samples === 1 ? '' : 's'} with ticket data
-                            </span>
-                        </>
-                    ) : (
-                        <>
-                            <span>{isLoading ? 'Fetching ticket data…' : 'No ticket data in range'}</span>
-                            <span style={{ color: 'var(--text-tertiary)' }}>
-                                Score combines pace (60%) and on-time start (40%)
-                            </span>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {trend.length > 1 ? (
-                <div style={{ height: 140 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={trend} margin={{ bottom: 0, left: 0, right: 8, top: 8 }}>
-                            <CartesianGrid stroke="var(--border-light)" strokeDasharray="3 3" />
-                            <XAxis
-                                dataKey="label"
-                                stroke="var(--text-tertiary)"
-                                tick={{ fontSize: 10 }}
-                                interval="preserveStartEnd"
-                            />
-                            <YAxis domain={[0, 100]} stroke="var(--text-tertiary)" tick={{ fontSize: 10 }} width={30} />
-                            <Tooltip
-                                contentStyle={PLAN_STATS_CHART_TOOLTIP_STYLE}
-                                cursor={{ stroke: accent, strokeOpacity: 0.2 }}
-                                formatter={(value, _name, item) => [
-                                    `${value}% · ${item?.payload?.goodService} good / ${item?.payload?.badService} bad`,
-                                    'Score'
-                                ]}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="score"
-                                stroke={accent}
-                                strokeWidth={2}
-                                dot={{ r: 2.5 }}
-                                activeDot={{ r: 4 }}
-                                isAnimationActive={false}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-            ) : (
-                <div
-                    className="text-[11.5px] py-3 px-2 rounded text-center"
-                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
-                >
-                    {isLoading
-                        ? 'Loading per-day ticket data…'
-                        : 'Trend chart needs at least two days with ticket data.'}
-                </div>
-            )}
         </div>
     )
 }
