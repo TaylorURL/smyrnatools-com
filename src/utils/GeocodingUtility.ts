@@ -22,6 +22,34 @@
  *      it as a tiebreaker.
  */
 
+interface LatLng {
+    lat: number
+    lng: number
+}
+
+interface CacheEntry {
+    coords: LatLng | null
+    ts: number
+}
+
+interface LegacyCacheEntry {
+    lat?: number
+    lng?: number
+}
+
+interface ParsedAddress {
+    city: string
+    state: string
+    street: string
+    zip: string
+}
+
+interface GeocodeOptions {
+    validate?: (coords: LatLng) => boolean
+}
+
+type GeocodeCache = Record<string, CacheEntry>
+
 const CACHE_KEY = 'smyrnatools_geocode_cache_v6'
 const LEGACY_CACHE_KEYS = [
     'smyrnatools_geocode_cache_v1',
@@ -34,11 +62,11 @@ const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 const MIN_INTERVAL_MS = 1100
 const NEGATIVE_TTL_MS = 24 * 60 * 60 * 1000
 
-let cacheRef = null
-let queueTail = Promise.resolve()
+let cacheRef: GeocodeCache | null = null
+let queueTail: Promise<unknown> = Promise.resolve()
 let lastFetchAt = 0
 
-function loadCache() {
+function loadCache(): GeocodeCache {
     if (cacheRef) return cacheRef
     try {
         const raw = window?.localStorage?.getItem(CACHE_KEY)
@@ -49,10 +77,10 @@ function loadCache() {
             try {
                 const old = window?.localStorage?.getItem(legacy)
                 if (!old) return
-                const parsed = JSON.parse(old)
+                const parsed: Record<string, LegacyCacheEntry> = JSON.parse(old)
                 Object.entries(parsed || {}).forEach(([k, v]) => {
-                    if (v && Number.isFinite(v.lat) && Number.isFinite(v.lng) && !cacheRef[k]) {
-                        cacheRef[k] = { coords: { lat: v.lat, lng: v.lng }, ts: Date.now() }
+                    if (v && Number.isFinite(v.lat) && Number.isFinite(v.lng) && !cacheRef![k]) {
+                        cacheRef![k] = { coords: { lat: v.lat!, lng: v.lng! }, ts: Date.now() }
                     }
                 })
                 window.localStorage.removeItem(legacy)
@@ -63,10 +91,10 @@ function loadCache() {
     } catch {
         cacheRef = {}
     }
-    return cacheRef
+    return cacheRef!
 }
 
-function persistCache() {
+function persistCache(): void {
     try {
         window?.localStorage?.setItem(CACHE_KEY, JSON.stringify(cacheRef || {}))
     } catch {
@@ -75,7 +103,7 @@ function persistCache() {
 }
 
 /** Combines fragments into a single Nominatim query string. */
-function buildQuery(...parts) {
+function buildQuery(...parts: (string | null | undefined)[]): string {
     return parts
         .map((p) => String(p || '').trim())
         .filter(Boolean)
@@ -196,8 +224,8 @@ const US_STATE_NAMES = new Set([
 /** Does the supplied free-form address already contain US state context?
  *  Looks for either a `, XX` 2-letter code or a comma-delimited full state
  *  name. If yes, the state-hint variants are skipped so we don't risk
- *  conflicting suffixes (e.g. "…Huntsville, TX 77340, Tennessee"). */
-function addressHasState(...parts) {
+ *  conflicting suffixes (e.g. "...Huntsville, TX 77340, Tennessee"). */
+function addressHasState(...parts: (string | null | undefined)[]): boolean {
     const text = parts.filter(Boolean).join(', ').toLowerCase()
     if (!text) return false
     if (US_STATE_NAMES.has(text)) return true
@@ -205,7 +233,7 @@ function addressHasState(...parts) {
         if (text.includes(`, ${name}`) || text.startsWith(`${name},`) || text.endsWith(` ${name}`)) return true
     }
     // Two-letter code: must be preceded by ", " or " " and followed by a
-    // word boundary so we don't false-positive on "Main St" → "St" etc.
+    // word boundary so we don't false-positive on "Main St" -> "St" etc.
     const codeMatch = text.match(/[,\s]([a-z]{2})(?:[\s,]|\s+\d{5}|$)/i)
     if (codeMatch && US_STATE_CODES.has(codeMatch[1].toUpperCase())) return true
     return false
@@ -213,14 +241,14 @@ function addressHasState(...parts) {
 
 /** Returns true when a cached entry is a fresh negative miss (skip the
  *  retry) and false when it has expired (treat as not-cached). */
-function isFreshMiss(entry) {
+function isFreshMiss(entry: CacheEntry | undefined): boolean {
     if (!entry || entry.coords) return false
     return Date.now() - (entry.ts || 0) < NEGATIVE_TTL_MS
 }
 
-async function geocodeRaw(query) {
+async function geocodeRaw(query: string): Promise<LatLng | null> {
     const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=0`
-    let res
+    let res: Response
     try {
         res = await fetch(url, {
             headers: {
@@ -232,7 +260,7 @@ async function geocodeRaw(query) {
         return null
     }
     if (!res.ok) return null
-    let data
+    let data: Array<{ lat: string; lon: string }>
     try {
         data = await res.json()
     } catch {
@@ -251,7 +279,7 @@ async function geocodeRaw(query) {
  *  the address doesn't follow that convention (the caller falls back to
  *  comma-trim variants). Strips trailing country tokens so the regex
  *  doesn't have to handle them. */
-function parseUsAddress(raw) {
+function parseUsAddress(raw: string | null | undefined): ParsedAddress | null {
     const text = String(raw || '')
         .trim()
         .replace(/,\s*$/, '')
@@ -275,7 +303,7 @@ function parseUsAddress(raw) {
 /** Produce progressive-trim fallbacks for a single-string address by
  *  shedding trailing comma-parts. Used as a generic fallback when the
  *  structured parser doesn't match. */
-function trimmedAddressVariants(address) {
+function trimmedAddressVariants(address: string | null | undefined): string[] {
     const cleaned = String(address || '')
         .trim()
         .replace(/,\s*$/, '')
@@ -284,7 +312,7 @@ function trimmedAddressVariants(address) {
         .split(',')
         .map((p) => p.trim())
         .filter(Boolean)
-    const out = []
+    const out: string[] = []
     for (let i = parts.length; i >= 1; i--) {
         out.push(parts.slice(0, i).join(', '))
     }
@@ -294,21 +322,21 @@ function trimmedAddressVariants(address) {
 /** Build the fallback query variants for a single (address, city, state)
  *  tuple. Strategy:
  *
- *    • Self-sufficient addresses (already carry a state code or name) —
+ *    - Self-sufficient addresses (already carry a state code or name) --
  *      try verbatim, then a structured ladder that always preserves the
  *      parsed state so we never drift across state lines just because
  *      Nominatim doesn't know a specific rural street. The very last
  *      shot is `City, ST` which is guaranteed to resolve for any real
- *      US city — better to plot the plant at city centre than not at
+ *      US city -- better to plot the plant at city centre than not at
  *      all. (This is the fix for plant 455 in Huntsville, TX whose
  *      street isn't well-indexed in OSM.)
  *
- *    • Bare addresses — try the cleanest variants first (no hint) and
+ *    - Bare addresses -- try the cleanest variants first (no hint) and
  *      only append the state hint as a fallback when the literal
  *      address didn't resolve. */
-function buildFallbackQueries(address, city, state) {
+function buildFallbackQueries(address: string | null | undefined, city: string | null | undefined, state: string | null | undefined): string[] {
     const selfSufficient = addressHasState(address, city)
-    const variants = []
+    const variants: string[] = []
     if (selfSufficient) {
         const parsed = parseUsAddress(address)
         // 1. Verbatim — best-case full match.
@@ -335,8 +363,8 @@ function buildFallbackQueries(address, city, state) {
             buildQuery(city)
         )
     }
-    const seen = new Set()
-    const out = []
+    const seen = new Set<string>()
+    const out: string[] = []
     for (const v of variants) {
         if (!v || seen.has(v)) continue
         seen.add(v)
@@ -352,24 +380,25 @@ function buildFallbackQueries(address, city, state) {
  * result from a more specific one. Optionally accepts a `validate`
  * predicate so the caller can reject geographically implausible
  * matches and fall through to the next variant — used by the Plan map
- * to drop "Memphis → Memphis, NY" misfires that fall outside a plant's
+ * to drop "Memphis -> Memphis, NY" misfires that fall outside a plant's
  * realistic delivery radius.
  *
- * @param {string} address — street address (may be empty)
- * @param {string} [city]  — city
- * @param {string} [state] — state / region context, e.g. "Tennessee"
- * @param {object} [opts]
- * @param {(coords: {lat:number,lng:number}) => boolean} [opts.validate]
- *   Returns true if the geocoded position is acceptable. When falsey,
- *   the variant is skipped and the next fallback is tried. The
- *   validator is NOT cached — different callers can apply different
- *   policies against the same cached coords.
+ * @param address — street address (may be empty)
+ * @param city — city
+ * @param state — state / region context, e.g. "Tennessee"
+ * @param opts
+ * @param opts.validate — returns true if the geocoded position is acceptable
  */
-export function geocodeAddress(address, city, state, { validate } = {}) {
+export function geocodeAddress(
+    address: string | null | undefined,
+    city?: string | null,
+    state?: string | null,
+    { validate }: GeocodeOptions = {}
+): Promise<LatLng | null> {
     const variants = buildFallbackQueries(address, city, state)
     if (variants.length === 0) return Promise.resolve(null)
     const cache = loadCache()
-    const acceptable = (c) => !validate || validate(c)
+    const acceptable = (c: LatLng): boolean => !validate || validate(c)
 
     // Synchronous walk: return the first cached, acceptable hit.
     for (const variant of variants) {
@@ -381,7 +410,7 @@ export function geocodeAddress(address, city, state, { validate } = {}) {
     // validator or (b) a fresh-miss, there's nothing left to try.
     const needsFetch = variants.some((v) => {
         const e = cache[v]
-        if (e?.coords) return false // cached → already considered above
+        if (e?.coords) return false // cached -> already considered above
         if (isFreshMiss(e)) return false
         return true
     })
@@ -390,18 +419,18 @@ export function geocodeAddress(address, city, state, { validate } = {}) {
     const task = queueTail.then(async () => {
         for (const variant of variants) {
             const entry = cache[variant]
-            // Cached + acceptable → return (re-check after wait).
+            // Cached + acceptable -> return (re-check after wait).
             if (entry?.coords && acceptable(entry.coords)) return entry.coords
-            // Cached + unacceptable → skip without refetching (the data
+            // Cached + unacceptable -> skip without refetching (the data
             // hasn't changed; trying again would just rate-burn).
             if (entry?.coords) continue
-            // Fresh miss → skip; TTL will re-open it later.
+            // Fresh miss -> skip; TTL will re-open it later.
             if (isFreshMiss(entry)) continue
             // Need to fetch.
             const wait = MIN_INTERVAL_MS - (Date.now() - lastFetchAt)
-            if (wait > 0) await new Promise((r) => setTimeout(r, wait))
+            if (wait > 0) await new Promise<void>((r) => setTimeout(r, wait))
             lastFetchAt = Date.now()
-            let result = null
+            let result: LatLng | null = null
             try {
                 result = await geocodeRaw(variant)
             } catch {
@@ -432,11 +461,16 @@ export function geocodeAddress(address, city, state, { validate } = {}) {
 /** Returns the cached coords for an address without firing a network
  *  request, honouring the same validator semantics as `geocodeAddress`.
  *  `null` covers not-yet-tried, fresh-miss, and cached-but-rejected. */
-export function getCachedGeocode(address, city, state, { validate } = {}) {
+export function getCachedGeocode(
+    address: string | null | undefined,
+    city?: string | null,
+    state?: string | null,
+    { validate }: GeocodeOptions = {}
+): LatLng | null {
     const variants = buildFallbackQueries(address, city, state)
     if (variants.length === 0) return null
     const cache = loadCache()
-    const acceptable = (c) => !validate || validate(c)
+    const acceptable = (c: LatLng): boolean => !validate || validate(c)
     for (const variant of variants) {
         const entry = cache[variant]
         if (entry?.coords && acceptable(entry.coords)) return entry.coords

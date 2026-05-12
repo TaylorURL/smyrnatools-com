@@ -8,8 +8,13 @@
  * through Monday 5 PM CT past-due window.
  */
 
+interface DueSeverityResult {
+    severity: 'error' | 'warning'
+    titlePhase: 'Past Due' | 'Due'
+}
+
 const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const CENTRAL_TIME_FORMAT_OPTIONS = {
+const CENTRAL_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
     hour: '2-digit',
     hour12: false,
     minute: '2-digit',
@@ -22,7 +27,8 @@ const SUNDAY_INDEX = 0
 const MONDAY_INDEX = 1
 const PAST_DUE_FRIDAY_HOUR = 10
 const PAST_DUE_MONDAY_CUTOFF_HOUR = 17
-function isPastDue() {
+
+function isPastDue(): boolean {
     const parts = new Intl.DateTimeFormat('en-US', CENTRAL_TIME_FORMAT_OPTIONS).formatToParts(new Date())
     const partMap = Object.fromEntries(parts.map(({ type, value }) => [type, value]))
     const dayIndex = WEEKDAY_NAMES.indexOf(partMap.weekday)
@@ -34,7 +40,8 @@ function isPastDue() {
         (dayIndex === MONDAY_INDEX && hour < PAST_DUE_MONDAY_CUTOFF_HOUR)
     )
 }
-export function buildDueSeverity() {
+
+export function buildDueSeverity(): DueSeverityResult {
     const pastDue = isPastDue()
     return {
         severity: pastDue ? 'error' : 'warning',
@@ -44,14 +51,14 @@ export function buildDueSeverity() {
 
 const VerifiedUtility = {
     buildDueSeverity,
-    isVerified(updatedLast, updatedAt, updatedBy) {
+    isVerified(updatedLast: string | null | undefined, updatedAt: string, updatedBy: string | null | undefined): boolean {
         if (!updatedLast || !updatedBy) return false
         try {
             const lastVerified = new Date(updatedLast)
             const lastUpdated = new Date(updatedAt)
             const now = new Date()
             if (lastUpdated > lastVerified) return false
-            const getMostRecentMonday5pmCT = (date) => {
+            const getMostRecentMonday5pmCT = (date: Date): Date => {
                 // Resolve current day-of-week and hour in Central Time (handles CST/CDT automatically)
                 const parts = new Intl.DateTimeFormat('en-US', {
                     ...CENTRAL_TIME_FORMAT_OPTIONS,

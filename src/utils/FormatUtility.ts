@@ -4,11 +4,11 @@
 const FormatUtility = {
     /**
      * Truncates text by character count or word count with ellipsis.
-     * @param {string} text - Source text
-     * @param {number} maxLength - Character limit (or word limit when byWords is true)
-     * @param {boolean} [byWords=false] - Truncate by word count instead of characters
+     * @param text - Source text
+     * @param maxLength - Character limit (or word limit when byWords is true)
+     * @param byWords - Truncate by word count instead of characters
      */
-    truncateText(text, maxLength, byWords = false) {
+    truncateText(text: string, maxLength: number, byWords = false): string {
         if (!text) return ''
         if (byWords) {
             const words = text.split(' ')

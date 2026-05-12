@@ -37,10 +37,10 @@ const KEEP_UPPER = new Set([
 ])
 const LOWER_CONNECTORS = new Set(['of', 'and', 'the', 'at', 'on', 'in'])
 
-const cleanString = (value) => (value == null ? '' : String(value).trim())
+const cleanString = (value: string | null | undefined): string => (value == null ? '' : String(value).trim())
 
 /** Format a single street or city segment. */
-export const formatAddressSegment = (raw) => {
+export const formatAddressSegment = (raw: string | null | undefined): string => {
     let v = cleanString(raw)
     if (!v) return ''
     v = v
@@ -71,7 +71,7 @@ export const formatAddressSegment = (raw) => {
             // eslint-disable-next-line security/detect-unsafe-regex -- anchored, no overlapping quantifiers; linear scan
             if (/^\d+(?:[A-Za-z]+)?$/.test(token)) return token
             // Title-case word, preserving internal apostrophes / hyphens / slashes.
-            return token.toLowerCase().replace(/(^|[\s'\-/])([a-z])/g, (_match, sep, ch) => sep + ch.toUpperCase())
+            return token.toLowerCase().replace(/(^|[\s'\-/])([a-z])/g, (_match, sep: string, ch: string) => sep + ch.toUpperCase())
         })
         .join('')
         .replace(/\s+,/g, ',')
@@ -80,8 +80,13 @@ export const formatAddressSegment = (raw) => {
         .trim()
 }
 
+interface OrderWithAddress {
+    address?: string | null
+    city?: string | null
+}
+
 /** Combine the cleaned street + city into a single readable string. */
-export const formatOrderAddress = (order, separator = ', ') => {
+export const formatOrderAddress = (order: OrderWithAddress | null | undefined, separator: string = ', '): string => {
     const street = formatAddressSegment(order?.address)
     const city = formatAddressSegment(order?.city)
     return [street, city].filter(Boolean).join(separator)
@@ -93,7 +98,7 @@ export const formatOrderAddress = (order, separator = ', ') => {
  * each segment through the segment formatter, and rejoins. Safe to call
  * on any free-form address string.
  */
-export const formatFullAddress = (raw) => {
+export const formatFullAddress = (raw: string | null | undefined): string => {
     const v = cleanString(raw)
     if (!v) return ''
     return v
