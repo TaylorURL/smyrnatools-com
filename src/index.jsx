@@ -6,7 +6,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 
 import packageJson from '../package.json'
-import App from './app/App.js'
+import App from './app/App'
 import { SESSION_STORAGE_KEYS } from './app/constants/auth'
 import { AuthProvider } from './app/context/AuthContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
