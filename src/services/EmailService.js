@@ -1,6 +1,6 @@
 import APIUtility from '../utils/APIUtility'
 
-const DEBUG_MODE = process.env.REACT_APP_EMAIL_DEBUG === 'true'
+const DEBUG_MODE = import.meta.env.REACT_APP_EMAIL_DEBUG === 'true'
 
 /** Cached template context (theme, logo, URLs) fetched once from the edge function. */
 let templateContextCache = null

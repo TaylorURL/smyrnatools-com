@@ -247,10 +247,10 @@ class UserPresenceService {
 
     handleBeforeUnload() {
         if (this.currentUserId) {
-            fetch(`${process.env.REACT_APP_EDGE_FUNCTIONS_URL}${PRESENCE_FUNCTION}/set-offline`, {
+            fetch(`${import.meta.env.REACT_APP_EDGE_FUNCTIONS_URL}${PRESENCE_FUNCTION}/set-offline`, {
                 body: JSON.stringify({ userId: this.currentUserId }),
                 headers: {
-                    Authorization: `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`,
+                    Authorization: `Bearer ${import.meta.env.REACT_APP_SUPABASE_ANON_KEY}`,
                     'Content-Type': 'application/json'
                 },
                 keepalive: true,

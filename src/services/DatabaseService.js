@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import { SESSION_STORAGE_KEYS } from '../app/constants/auth'
 import APIUtility from '../utils/APIUtility'
 
-const databaseUrl = process.env.REACT_APP_SUPABASE_URL
-const databaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY
+const databaseUrl = import.meta.env.REACT_APP_SUPABASE_URL
+const databaseKey = import.meta.env.REACT_APP_SUPABASE_ANON_KEY
 
 /** Reads the current session JWT from sessionStorage, or null if not signed
  *  in / not yet minted. We never throw here — pre-login the JWT is absent

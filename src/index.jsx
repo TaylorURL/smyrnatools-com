@@ -4,7 +4,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 
-import App from './app/App.js'
+import App from './app/App'
 import { AuthProvider } from './app/context/AuthContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
