@@ -6,7 +6,7 @@ import { apiPostOrThrow, ensureSpareIfNoOperatorBase } from '../utils/BaseAssetU
 import CleanupUtility from '../utils/CleanupUtility'
 import { ValidationUtility } from '../utils/ValidationUtility'
 import VerifiedUtility from '../utils/VerifiedUtility'
-import BaseAssetService from './BaseAssetService'
+import { createAssetService } from './BaseAssetService'
 
 const SERVICE_PREFIX = '/mixer-service'
 
@@ -17,7 +17,7 @@ function enrichMixerWithVerification(mixer) {
     return mixer
 }
 
-const baseService = new BaseAssetService({
+const base = createAssetService({
     clearOperatorOnPlantChange: true,
     commentModelFn: MixerComment.fromRow,
     commentsTable: 'mixers_comments',
@@ -36,81 +36,35 @@ const baseService = new BaseAssetService({
 
 /**
  * Mixer CRUD, history, comments, issues, images, and verification service.
- * Delegates shared asset operations to BaseAssetService.
+ * Generic asset methods (comments, issues, counts, history entry) provided by createAssetService.
  */
-class MixerServiceImpl {
-    static getAllMixers() {
-        return baseService.getAll()
-    }
-    static fetchMixers() {
-        return this.getAllMixers()
-    }
-    static fetchMixerById(id) {
-        return baseService.fetchById(id)
-    }
-    static getLatestHistoryDate(mixerId) {
-        return baseService.getLatestHistoryDate(mixerId)
-    }
-    static getMixerHistory(mixerId, limit = null) {
-        return baseService.getHistory(mixerId, limit)
-    }
-    static createMixer(mixer, userId) {
-        return baseService.create(mixer, userId)
-    }
-    static updateMixer(mixerId, mixer, userId, prevMixerState = null) {
-        return baseService.update(mixerId, mixer, userId, prevMixerState)
-    }
-    static deleteMixer(id) {
-        return baseService.delete(id)
-    }
-    static getMixersByOperator(operatorId) {
-        return baseService.getByOperator(operatorId)
-    }
-    static async searchMixersByVin(query) {
-        const rows = await baseService.searchByVin(query)
+export const MixerService = {
+    ...base,
+    getAllMixers() { return base._base.getAll() },
+    fetchMixers() { return this.getAllMixers() },
+    fetchMixerById(id) { return base._base.fetchById(id) },
+    getMixerHistory(mixerId, limit = null) { return base._base.getHistory(mixerId, limit) },
+    createMixer(mixer, userId) { return base._base.create(mixer, userId) },
+    updateMixer(mixerId, mixer, userId, prevMixerState = null) {
+        return base._base.update(mixerId, mixer, userId, prevMixerState)
+    },
+    deleteMixer(id) { return base._base.delete(id) },
+    getMixersByOperator(operatorId) { return base._base.getByOperator(operatorId) },
+    async searchMixersByVin(query) {
+        const rows = await base._base.searchByVin(query)
         return rows.map(enrichMixerWithVerification)
-    }
-    static searchMixersByVinProcessed(query) {
-        return this.searchMixersByVin(query)
-    }
-    static fetchAllCommentsCounts(mixerIds) {
-        return baseService.fetchAllCommentsCounts(mixerIds)
-    }
-    static fetchAllIssuesCounts(mixerIds) {
-        return baseService.fetchAllIssuesCounts(mixerIds)
-    }
-    static fetchComments(mixerId) {
-        return baseService.fetchComments(mixerId)
-    }
-    static addComment(mixerId, text, author) {
-        return baseService.addComment(mixerId, text, author)
-    }
-    static deleteComment(commentId) {
-        return baseService.deleteComment(commentId)
-    }
+    },
+    searchMixersByVinProcessed(query) { return this.searchMixersByVin(query) },
+    fetchMixersWithDetails(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
+    verifyMixer(mixerId, userId) { return base._base.verify(mixerId, userId) },
     /** Mixer-specific: fetches the image gallery rows attached to one mixer. */
-    static async fetchMixerImages(mixerId) {
+    async fetchMixerImages(mixerId) {
         ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
         const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-images`, { mixerId }, 'Failed to fetch mixer images')
         return (json?.data ?? []).map(MixerImage.fromRow)
-    }
-    static fetchIssues(mixerId) {
-        return baseService.fetchIssues(mixerId)
-    }
-    static completeIssue(issueId) {
-        return baseService.completeIssue(issueId)
-    }
-    static addIssue(mixerId, issue, severity, createdBy = null) {
-        return baseService.addIssue(mixerId, issue, severity, createdBy)
-    }
-    static deleteIssue(issueId) {
-        return baseService.deleteIssue(issueId)
-    }
-    static fetchMixersWithDetails(regionCodes = null) {
-        return baseService.fetchWithDetails(regionCodes)
-    }
+    },
     /** Sets unassigned-operator mixers to Spare status in batch. */
-    static ensureSpareIfNoOperator(mixersList) {
+    ensureSpareIfNoOperator(mixersList) {
         return ensureSpareIfNoOperatorBase(mixersList, async (m) => {
             await this.updateMixer(m.id, {
                 assignedOperator: null,
@@ -124,18 +78,13 @@ class MixerServiceImpl {
             m.updatedAt = null
             m.updatedBy = null
         })
-    }
+    },
     /** Batch-corrects null operator fields by setting affected mixers to Spare. */
-    static cleanupNullOperators(mixers = null) {
+    cleanupNullOperators(mixers = null) {
         return CleanupUtility.cleanupNullOperators(
             mixers,
             (id, updates, userId) => this.updateMixer(id, updates, userId),
             () => this.getAllMixers()
         )
     }
-    static verifyMixer(mixerId, userId) {
-        return baseService.verify(mixerId, userId)
-    }
 }
-
-export const MixerService = MixerServiceImpl

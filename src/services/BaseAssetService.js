@@ -331,4 +331,28 @@ class BaseAssetService {
     }
 }
 
+/**
+ * Factory that creates a service object with all generic asset methods pre-bound.
+ * Spread the result into an entity-specific service object, then add entity-named
+ * CRUD aliases and any unique methods on top.
+ */
+export function createAssetService(config) {
+    const base = new BaseAssetService(config)
+    return {
+        _base: base,
+        fetchComments: (entityId) => base.fetchComments(entityId),
+        addComment: (entityId, text, author) => base.addComment(entityId, text, author),
+        deleteComment: (commentId) => base.deleteComment(commentId),
+        fetchIssues: (entityId) => base.fetchIssues(entityId),
+        addIssue: (entityId, issue, severity, createdBy = null) => base.addIssue(entityId, issue, severity, createdBy),
+        completeIssue: (issueId) => base.completeIssue(issueId),
+        deleteIssue: (issueId) => base.deleteIssue(issueId),
+        fetchAllCommentsCounts: (entityIds) => base.fetchAllCommentsCounts(entityIds),
+        fetchAllIssuesCounts: (entityIds) => base.fetchAllIssuesCounts(entityIds),
+        getLatestHistoryDate: (entityId) => base.getLatestHistoryDate(entityId),
+        createHistoryEntry: (entityId, fieldName, oldValue, newValue, changedBy) =>
+            base.createHistoryEntry(entityId, fieldName, oldValue, newValue, changedBy)
+    }
+}
+
 export default BaseAssetService

@@ -2,9 +2,7 @@ import { Equipment } from '../app/models/equipment/Equipment'
 import { EquipmentComment } from '../app/models/equipment/EquipmentComment'
 import { EquipmentHistory } from '../app/models/equipment/EquipmentHistory'
 import VerifiedUtility from '../utils/VerifiedUtility'
-import BaseAssetService from './BaseAssetService'
-
-const SERVICE_PREFIX = '/equipment-service'
+import { createAssetService } from './BaseAssetService'
 
 /** Attaches a lazy isVerified() method using current row state. */
 function attachIsVerified(equipment) {
@@ -17,7 +15,7 @@ function attachIsVerified(equipment) {
     return equipment
 }
 
-const baseService = new BaseAssetService({
+const base = createAssetService({
     commentModelFn: EquipmentComment.fromRow,
     commentsTable: 'heavy_equipment_comments',
     enrichFn: attachIsVerified,
@@ -29,65 +27,18 @@ const baseService = new BaseAssetService({
     issuesTable: 'heavy_equipment_maintenance',
     parseHistoryRow: EquipmentHistory.fromApiFormat,
     parseRow: (row) => (row ? new Equipment(row) : null),
-    servicePrefix: SERVICE_PREFIX
+    servicePrefix: '/equipment-service'
 })
 
 /** Heavy equipment CRUD, history, comments, issues, and verification service. */
-class EquipmentServiceImpl {
-    static fetchAllCommentsCounts(equipmentIds) {
-        return baseService.fetchAllCommentsCounts(equipmentIds)
-    }
-    static fetchAllIssuesCounts(equipmentIds) {
-        return baseService.fetchAllIssuesCounts(equipmentIds)
-    }
-    static getAllEquipments() {
-        return baseService.getAll()
-    }
-    static fetchEquipmentById(id) {
-        return baseService.fetchById(id)
-    }
-    static getEquipmentHistory(equipmentId, limit = null) {
-        return baseService.getHistory(equipmentId, limit)
-    }
-    static createEquipment(equipment, userId) {
-        return baseService.create(equipment, userId)
-    }
-    static updateEquipment(equipmentId, equipment, userId) {
-        return baseService.update(equipmentId, equipment, userId)
-    }
-    static deleteEquipment(id) {
-        return baseService.delete(id)
-    }
-    static createHistoryEntry(equipmentId, fieldName, oldValue, newValue, changedBy) {
-        return baseService.createHistoryEntry(equipmentId, fieldName, oldValue, newValue, changedBy)
-    }
-    static fetchComments(equipmentId) {
-        return baseService.fetchComments(equipmentId)
-    }
-    static addComment(equipmentId, text, author) {
-        return baseService.addComment(equipmentId, text, author)
-    }
-    static deleteComment(commentId) {
-        return baseService.deleteComment(commentId)
-    }
-    static fetchIssues(equipmentId) {
-        return baseService.fetchIssues(equipmentId)
-    }
-    static addIssue(equipmentId, issueText, severity, createdBy = null) {
-        return baseService.addIssue(equipmentId, issueText, severity, createdBy)
-    }
-    static deleteIssue(issueId) {
-        return baseService.deleteIssue(issueId)
-    }
-    static completeIssue(issueId) {
-        return baseService.completeIssue(issueId)
-    }
-    static fetchEquipmentsWithDetails(regionCodes = null) {
-        return baseService.fetchWithDetails(regionCodes)
-    }
-    static verifyEquipment(equipmentId, userId) {
-        return baseService.verify(equipmentId, userId)
-    }
+export const EquipmentService = {
+    ...base,
+    getAllEquipments() { return base._base.getAll() },
+    fetchEquipmentById(id) { return base._base.fetchById(id) },
+    getEquipmentHistory(equipmentId, limit = null) { return base._base.getHistory(equipmentId, limit) },
+    createEquipment(equipment, userId) { return base._base.create(equipment, userId) },
+    updateEquipment(equipmentId, equipment, userId) { return base._base.update(equipmentId, equipment, userId) },
+    deleteEquipment(id) { return base._base.delete(id) },
+    fetchEquipmentsWithDetails(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
+    verifyEquipment(equipmentId, userId) { return base._base.verify(equipmentId, userId) }
 }
-
-export const EquipmentService = EquipmentServiceImpl
