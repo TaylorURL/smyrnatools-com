@@ -1,4 +1,3 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -238,14 +237,6 @@ function ReportsView() {
         if (diff <= 0) return 0
         return Math.min(8, Math.max(0, Math.ceil(diff / 86400000)))
     }, [cutoffForWeek, thisWeekIso])
-
-    const _todayDayIndex = useMemo(() => {
-        const { monday } = ReportUtility.getWeekDatesFromIso(thisWeekIso)
-        if (!monday) return 0
-        const now = new Date()
-        const diffDays = Math.floor((now - monday) / 86400000)
-        return Math.max(0, Math.min(6, diffDays))
-    }, [thisWeekIso])
 
     const overdueSourceItems = useMemo(() => {
         const now = Date.now()
@@ -543,9 +534,6 @@ function ReportsView() {
             ),
         [hasAssigned, hasReviewPermission, regionType]
     )
-
-    const _pendingReviewCount = visibleReviewReports.filter((r) => !reviewedByCurrentUser.has(r.id)).length
-    const _pendingQcCount = qcReports.filter((r) => !r.reviewed).length
 
     /* ─────────────────────────────────────────────────────────────
        Loss / QC tab data & pagination (unchanged from prior version)

@@ -23,6 +23,7 @@ const UPDATE_CHECK_INTERVAL_MS = 10 * 1000
  * The `_meta` blob (special/QC jobs, formatted notes) is preserved across
  * every sync so user-authored plan metadata isn't wiped.
  */
+// eslint-disable-next-line no-unused-vars
 export function useScheduleSync({ planDate, plants: _plants, setPlantProduction, enabled = true }) {
     const [lastSyncedAt, setLastSyncedAt] = useState(null)
     const [fileUpdatedAt, setFileUpdatedAt] = useState(null)

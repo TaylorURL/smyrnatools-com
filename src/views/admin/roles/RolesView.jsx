@@ -1,4 +1,3 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import LoadingScreen from '../../../app/components/common/LoadingScreen'
@@ -383,7 +382,7 @@ const EditWeightModal = ({ role, onClose, onSave }) => {
 }
 
 /** Modal for bulk-adding a permission to one or more roles. */
-const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, _accentColor }) => {
+const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor: _accentColor }) => {
     const [permission, setPermission] = useState('')
     const [selectedRoleIds, setSelectedRoleIds] = useState(new Set())
     const [saving, setSaving] = useState(false)

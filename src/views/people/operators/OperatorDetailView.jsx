@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -194,8 +193,7 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
         setIsSaving(true)
         setMessage('')
         try {
-            const userObj = await UserService.getCurrentUser()
-            const _userId = typeof userObj === 'object' && userObj !== null ? userObj.id : userObj
+            await UserService.getCurrentUser()
             const updatedOperator = {
                 ...operator,
                 plant_code: newPlantCode

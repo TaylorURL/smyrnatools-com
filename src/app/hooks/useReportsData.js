@@ -366,7 +366,8 @@ export function useReportsData() {
     const weeksToShow = useMemo(() => {
         const now = new Date()
         return ReportUtility.getLastNWeekIsos(ReportUtility.getTotalWeeksSince(REPORTS_START_DATE, now), now)
-    }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey triggers intentional recomputation
+    }, [refreshKey])
     const myReportsByWeek = useMemo(() => {
         const grouped = {}
         weeksToShow.forEach((weekIso) => {

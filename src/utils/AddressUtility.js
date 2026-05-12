@@ -68,7 +68,7 @@ export const formatAddressSegment = (raw) => {
             if (KEEP_UPPER.has(upper)) return token.toUpperCase()
             if (idx > 0 && LOWER_CONNECTORS.has(upper.toLowerCase())) return upper.toLowerCase()
             // Pure numerics or numeric+short-letter (1A, 1488B) stay as-is.
-            // eslint-disable-next-line security/detect-unsafe-regex
+            // eslint-disable-next-line security/detect-unsafe-regex -- anchored, no overlapping quantifiers; linear scan
             if (/^\d+(?:[A-Za-z]+)?$/.test(token)) return token
             // Title-case word, preserving internal apostrophes / hyphens / slashes.
             return token.toLowerCase().replace(/(^|[\s'\-/])([a-z])/g, (_match, sep, ch) => sep + ch.toUpperCase())

@@ -17,7 +17,7 @@ const WEIGHT_CAPACITY = 0.5
 const WEIGHT_PROXIMITY = 0.3
 const WEIGHT_LOAD_BALANCE = 0.2
 
-// eslint-disable-next-line security/detect-unsafe-regex
+// eslint-disable-next-line security/detect-unsafe-regex -- fixed-length digit match with optional literal-dash suffix; no backtracking risk
 const ZIP_REGEX = /\b(\d{5})(?:-\d{4})?\b/
 const STATE_REGEX = /\b([A-Z]{2})\b(?=[\s,]*\d{5})?/
 

@@ -256,11 +256,11 @@ function parseUsAddress(raw) {
         .trim()
         .replace(/,\s*$/, '')
     if (!text) return null
-    // eslint-disable-next-line security/detect-unsafe-regex
+    // eslint-disable-next-line security/detect-unsafe-regex -- non-overlapping alternation anchored to $; input is pre-trimmed so \s*$ is a formality
     const stripped = text.replace(/,\s*(United States(?:\s+of\s+America)?|USA|U\.S\.A?\.?)\s*$/i, '').trim()
     // "street, city, ST 12345" or "street, city, ST"
-    // eslint-disable-next-line security/detect-unsafe-regex
-    const m = stripped.match(/^(.+?),\s*([^,]+?),\s*([A-Z]{2})(?:\s+(\d{5}(?:-\d{4})?))?\s*$/i)
+    // eslint-disable-next-line security/detect-unsafe-regex -- lazy quantifiers are comma-bounded; input is short (single address line) and pre-trimmed
+    const m = stripped.match(/^(.+?),\s*([^,]+?),\s*([A-Z]{2})(?:\s+(\d{5}(?:-\d{4})?))?$/i)
     if (m && US_STATE_CODES.has(m[3].toUpperCase())) {
         return {
             city: m[2].trim(),

@@ -235,12 +235,11 @@ getLateCutoff(weekIso) {
         return new Date(Date.UTC(y, m, d, 7 - offsetMinutes / 60, 0, 0))
     },
     
-/** Display label for the weekly cutoff — surfaced in the UI alongside countdowns. */
+    /** Display label for the weekly cutoff — surfaced in the UI alongside countdowns. */
 getLateCutoffLabel() {
         return 'Mon · 7:00 AM CST'
     },
-    
-getMondayISO(dateInput) {
+    getMondayISO(dateInput) {
         const monday = this.mondayOf(dateInput || new Date())
         return monday ? monday.toISOString().slice(0, 10) : ''
     },

@@ -66,17 +66,15 @@ formatDateForDb(date) {
         return `${y}-${m}-${day} ${h}:${min}:${s}+00`
     },
     
-    
-formatDateTime(dateStr) {
+    formatDateTime(dateStr) {
         if (!dateStr) return ''
         const date = new Date(dateStr)
         if (isNaN(date.getTime())) return dateStr
         const options = { day: 'numeric', hour: '2-digit', minute: '2-digit', month: 'short', year: 'numeric' }
         return date.toLocaleString('en-US', options)
     },
-    
-/** Formats a date string into an HTML datetime-local input value (YYYY-MM-DDTHH:MM). */
-formatDateTimeLocal(dateStr) {
+    /** Formats a date string into an HTML datetime-local input value (YYYY-MM-DDTHH:MM). */
+    formatDateTimeLocal(dateStr) {
         if (!dateStr) return ''
         const date = new Date(dateStr)
         if (isNaN(date.getTime())) return ''
