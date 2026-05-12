@@ -1,6 +1,11 @@
 const path = require('path')
 
 module.exports = function override(config, env) {
+    // Allow importing CHANGELOG.md from the project root (outside src/)
+    config.resolve.plugins = config.resolve.plugins.filter(
+        (plugin) => plugin.constructor.name !== 'ModuleScopePlugin'
+    )
+
     config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
@@ -22,6 +27,12 @@ module.exports = function override(config, env) {
                         oneOfRule.options.name = 'static/media/[name].[ext]'
                     }
                 }
+            })
+
+            // Import .md files as raw text strings
+            rule.oneOf.unshift({
+                test: /\.md$/,
+                type: 'asset/source'
             })
         }
     })
