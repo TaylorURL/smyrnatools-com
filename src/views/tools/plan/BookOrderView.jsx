@@ -707,15 +707,24 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
 
     /* Cascade — pick the simplest option that fully covers the pour.
      * 1. `shift` when the per-plant launch cap forces a different
-     *    minute. 2. `help` when nearby plants cover the gap at the
-     *    typed time. 3. `shift` when a same-day alternate slot fully
-     *    fits on its own (incl. shifting INTO the preferred window).
-     *    4. `best-effort` — earliest day with own + per-slot help
-     *    that fully covers. 5. `none` only when no day in the 10-day
-     *    window has the trucks. */
+     *    minute. 2. `best-effort` when it identifies a same-day slot
+     *    that beats the typed time on packing — tighter cluster
+     *    against existing pours, less help needed, etc. Even when
+     *    help happens to cover at the typed time, a 00:00 start that
+     *    leaves a 90-minute idle gap before the day's first existing
+     *    pour is worse than a 01:30 start that lands trucks back at
+     *    yard right as the next pour begins. 3. `help` when nearby
+     *    plants cover the gap at the typed time. 4. `shift` when a
+     *    same-day alternate slot fully fits on its own (incl. shifting
+     *    INTO the preferred window). 5. `best-effort` — earliest day
+     *    with own + per-slot help that fully covers. 6. `none` only
+     *    when no day in the 10-day window has the trucks. */
     const hasBestEffort = !!bestEffortSlot
+    const bestEffortFindsBetterSameDayTime =
+        hasBestEffort && bestEffortSlot.isSameDay && bestEffortSlot.slot.startMin !== request.startMin
     let primary
     if (launchSlotFull) primary = 'shift'
+    else if (bestEffortFindsBetterSameDayTime) primary = 'best-effort'
     else if (helpCovers) primary = 'help'
     else if (hasFittingAlternate) primary = 'shift'
     else if (hasBestEffort) primary = 'best-effort'
@@ -756,7 +765,7 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
                     title: `Book the order at ${formatMinutesAsClock(shiftTarget.startMin)} on ${plantName}`
                 }
             case 'best-effort': {
-                const { dateStr, fitsCleanly, isSameDay, slot } = bestEffortSlot
+                const { covered, dateStr, fitsCleanly, isSameDay, slot } = bestEffortSlot
                 const timeLabel = formatMinutesAsClock(slot.startMin)
                 const fullDateLabel = formatFullDateLabel(dateStr)
                 const dateInTitle = isSameDay ? '' : ` on ${fullDateLabel}`
@@ -768,12 +777,20 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
                         title: `Book the order at ${timeLabel}${dateInTitle} on ${plantName} — clean fit, no help needed`
                     }
                 }
-                /* fitsWithHelp branch — best-effort never returns a
-                 * partial-only slot, so this is the only remaining
-                 * sub-case. Help fully covers the gap. */
+                if (covered) {
+                    return {
+                        subtitle: `${plantName} has ${ownFreeLabel} at ${timeLabel}${isSameDay ? ' today' : ` on ${dateInSubtitle}`} and the ${slot.helpFree} truck${slot.helpFree === 1 ? '' : 's'} of nearby help cover the remaining ${slot.shortBy} truck${slot.shortBy === 1 ? '' : 's'} cleanly. ${isSameDay ? 'Best same-day' : 'Soonest'} time the network can host the pour in full.`,
+                        title: `Book the order at ${timeLabel}${dateInTitle} on ${plantName} — pull help to fully cover`
+                    }
+                }
+                /* Partial-coverage same-day slot — pushing the dispatcher
+                 * out 5 days for full coverage is worse than telling them
+                 * the best the day can do and how many trucks they'll
+                 * still need to find. They can split the booking, pull
+                 * from beyond the 1-hour radius, or shrink the pour. */
                 return {
-                    subtitle: `${plantName} has ${ownFreeLabel} at ${timeLabel}${isSameDay ? ' today' : ` on ${dateInSubtitle}`} and the ${helpFleetTotal} truck${helpFleetTotal === 1 ? '' : 's'} of nearby help cover the remaining ${slot.shortBy} truck${slot.shortBy === 1 ? '' : 's'} cleanly. ${isSameDay ? 'Earliest' : 'Soonest'} time the network can host the pour in full.`,
-                    title: `Book the order at ${timeLabel}${dateInTitle} on ${plantName} — pull help to fully cover`
+                    subtitle: `${plantName} has ${ownFreeLabel} at ${timeLabel}${isSameDay ? ' today' : ` on ${dateInSubtitle}`} and ${slot.helpFree} truck${slot.helpFree === 1 ? '' : 's'} of nearby help. You'll still be ${slot.networkShortBy} truck${slot.networkShortBy === 1 ? '' : 's'} short — split the booking with another plant, pull from beyond the 1-hour radius, or shrink the pour. Best ${isSameDay ? 'same-day' : 'soonest-day'} option.`,
+                    title: `Book the order at ${timeLabel}${dateInTitle} on ${plantName} — pull what help is available (still ${slot.networkShortBy} truck${slot.networkShortBy === 1 ? '' : 's'} short)`
                 }
             }
             default:

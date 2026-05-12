@@ -950,7 +950,7 @@ export const findBestEffortSlot = ({
 
     const demandWindowMin = truckDemandWindowMin(request)
 
-    const pickCoverableSlotForDay = (dayDateStr, dayProduction, _dayRestFloorMin) => {
+    const pickBestSlotForDay = (dayDateStr, dayProduction, _dayRestFloorMin) => {
         const orders = dayProduction?.[shortPlantCode]?.orders || []
         const adjustedPool = adjustPoolForDate(mixerCountsByPlant?.[shortPlantCode] || 0, dayDateStr)
         if (adjustedPool <= 0) return null
@@ -963,80 +963,160 @@ export const findBestEffortSlot = ({
          * book by hand. The 14-hour shift cap downstream still rejects
          * starts that would push operators past their legal window. */
         const scanFloor = computeScanFloor(orders, undefined, request)
-        const coverable = []
+        /* Shift-cap anchor: the earliest REAL clock-in on the day. When
+         * the day already has existing pours, that's the existing
+         * first-load-out (since those operators are already on the
+         * clock). Without existing pours, the anchor falls back to the
+         * candidate slot's own start — each operator's 14-hour clock
+         * starts when their pour does. Using scanFloor=00:00 as the
+         * anchor was the bug: it forced every late-day slot to be
+         * measured from midnight, rejecting 07:00 starts (whose pour
+         * ends at 18:14) because 18:14 − 00:00 > 14h. */
+        let existingFirstLoadOut = null
+        for (const order of orders) {
+            if (!order || isExcludedOrder(order)) continue
+            const orderStart = timeToMinutes(order?.startTime)
+            if (!Number.isFinite(orderStart)) continue
+            if (existingFirstLoadOut == null || orderStart < existingFirstLoadOut) {
+                existingFirstLoadOut = orderStart
+            }
+        }
+        const candidates = []
         /* Loop bound is start-only ("no booking starts after 13:00").
          * The 14-hour shift cap rejects starts whose projected
          * back-at-yard would push operators over their legal window. */
         for (let start = scanFloor; start < ALTERNATE_SCAN_END_MIN; start += ALTERNATE_SCAN_STEP_MIN) {
             const end = start + demandWindowMin
-            if (!respectsShiftLimit(start, projectedBackAtYardMin(start, request.durationMin), scanFloor)) continue
+            const shiftAnchor = Number.isFinite(existingFirstLoadOut) ? existingFirstLoadOut : start
+            if (!respectsShiftLimit(start, projectedBackAtYardMin(start, request.durationMin), shiftAnchor)) continue
             if (countOrdersAtSameStart(orders, start) >= MAX_CONCURRENT_LAUNCHES_PER_PLANT) continue
 
             const ownBusy = computeConcurrentTrucks(orders, start, end)
             const ownFree = Math.max(0, adjustedPool - ownBusy)
-            /* IMPLICIT BORROW — when the short plant's existing orders
-             * over-fill its own pool during this candidate's window,
-             * the deficit is already being lent by nearby plants.
-             * Those committed lender trucks are NOT available to the
-             * new pour, even though they look idle in the lender's own
-             * schedule (the lend isn't recorded on the lender's side).
-             * Now that the demand window covers the FULL pour duration,
-             * `ownBusy` correctly includes every same-plant order whose
-             * truck rotation overlaps the new pour — so 04:30 properly
-             * shows as conflicting with the 07:30/09:30/10:00 cluster
-             * and loses out to a 01:30 start that doesn't overlap any
-             * of them. */
-            const existingBorrow = Math.max(0, ownBusy - adjustedPool)
 
-            let helpFreeRaw = 0
+            /* Sum of lender free trucks during this candidate's window.
+             * Matches the math `findHelpAvailability` uses for the
+             * help chips, so the headline ("X trucks of nearby help")
+             * and bestEffort's coverage decision agree. The earlier
+             * "implicit borrow" subtraction (existingBorrow = ownBusy
+             * − pool) was over-conservative: it assumed the short
+             * plant's entire overflow was already being lent by THIS
+             * exact set of eligible lenders, which routinely zeroed
+             * out helpFree even when the dispatcher could clearly see
+             * free trucks at nearby plants. Cross-plant lending isn't
+             * tracked in dispatch data, so any subtraction here is a
+             * guess — and erring toward "show the dispatcher what's
+             * visibly free" is more useful than hiding it. */
+            let helpFree = 0
             for (const lenderCode of eligibleLenders) {
                 const lenderOrders = dayProduction?.[lenderCode]?.orders || []
                 const lenderPool = adjustPoolForDate(mixerCountsByPlant?.[lenderCode] || 0, dayDateStr)
                 if (lenderPool <= 0) continue
                 const lenderBusy = computeConcurrentTrucks(lenderOrders, start, end)
-                helpFreeRaw += Math.max(0, lenderPool - lenderBusy)
+                helpFree += Math.max(0, lenderPool - lenderBusy)
             }
-            const helpFree = Math.max(0, helpFreeRaw - existingBorrow)
-
             const totalAvailable = ownFree + helpFree
-            if (totalAvailable < trucksNeeded) continue
 
-            coverable.push({
+            /* "Preferred" only when the ENTIRE pour fits inside the
+             * 05:00–12:00 window — start in window AND end in window.
+             * For a long pour (e.g., 11h) every start makes the pour
+             * exit the window, so no slot is preferred and the
+             * preferred-window sort key collapses, freeing the
+             * earlier-start tiebreaker below to fire. The old
+             * `isPreferredStartWindow(yardage, startMin)` check looked
+             * only at the start, which incorrectly tagged a 07:00 start
+             * of an 11-hour pour as "preferred" even though it ran to
+             * 17:49 — way past business hours. */
+            const pourFullyInPreferredWindow = start >= PREFERRED_WINDOW_START_MIN && end <= PREFERRED_WINDOW_END_MIN
+
+            /* Partial-coverage slots stay in the candidate list — pushing
+             * the dispatcher five days out because today can't FULLY
+             * cover is worse than telling them today's best option +
+             * how many trucks they'll still need to scrounge. The
+             * sort below prefers covered candidates first; partials
+             * surface only when no slot on the day covers. */
+            candidates.push({
+                covered: totalAvailable >= trucksNeeded,
                 fitsCleanly: ownFree >= trucksNeeded,
                 free: ownFree,
                 helpFree,
-                preferred: isPreferredStartWindow(request.yardage, start),
+                isolationMin: computeIsolationMin(start, end, orders),
+                networkShortBy: Math.max(0, trucksNeeded - totalAvailable),
+                preferred: pourFullyInPreferredWindow,
                 shortBy: Math.max(0, trucksNeeded - ownFree),
-                startMin: start
+                startMin: start,
+                totalAvailable
             })
         }
 
-        if (coverable.length === 0) return null
-        coverable.sort((a, b) => {
+        if (candidates.length === 0) return null
+        /* When no candidate fits entirely inside the preferred window
+         * (long pours), the preferred-window sort key collapses and
+         * we fall back to "earliest start" — minimises how far into
+         * business hours the pour extends, which is what dispatchers
+         * mean when they say "just start it early and get it done."
+         * When some slots ARE fully preferred (short pours), the
+         * typed-time bias takes over so a dispatcher's deliberate
+         * 06:00 choice isn't jumped to 05:00 on a tiebreaker. */
+        const anyFullyPreferred = candidates.some((c) => c.preferred)
+        candidates.sort((a, b) => {
+            /* Covered slots always beat partial — but a partial same-day
+             * slot still beats falling through to future days, which is
+             * why partials stay in the list at all. */
+            if (a.covered !== b.covered) return a.covered ? -1 : 1
             if (a.fitsCleanly !== b.fitsCleanly) return a.fitsCleanly ? -1 : 1
-            /* Prefer slots that need LESS help. Equivalent to "less
-             * peak strain on the network during the pour" — a 01:30
-             * start that doesn't overlap any same-plant order needs
-             * fewer borrowed trucks than a 04:30 start that overlaps
-             * the entire morning cluster, even if both technically
-             * cover with help. This sort key is what corrects the
-             * anchor-distance bias that used to pick 04:30 (closer
-             * to 08:30) over 01:30 (objectively better for the day). */
+            /* Less help needed = less peak strain on the network — the
+             * scenario-1 fix that kept 01:30 winning over 04:30. */
             if (a.shortBy !== b.shortBy) return a.shortBy - b.shortBy
             if (a.preferred !== b.preferred) return a.preferred ? -1 : 1
+            /* Pack tight against existing pours — a 00:00 start that
+             * ends 101 min before the next existing pour loses to a
+             * 01:30 start that ends 11 min before it. Isolation = 0
+             * when the candidate overlaps an existing pour. */
+            if (a.isolationMin !== b.isolationMin) return a.isolationMin - b.isolationMin
+            if (!anyFullyPreferred) {
+                /* Long pour — no slot fits in the preferred window.
+                 * Earliest start = earliest end = less of the pour
+                 * spent inside business hours, which is the metric
+                 * dispatchers care about when a pour can't avoid
+                 * overlap with the morning cluster. */
+                if (a.startMin !== b.startMin) return a.startMin - b.startMin
+            } else {
+                /* Short pour — the preferred window has slots in it.
+                 * Honor the dispatcher's typed time among otherwise-
+                 * equivalent candidates rather than jumping it to a
+                 * neighboring minute on a tiebreaker. */
+                if (a.startMin === request.startMin && b.startMin !== request.startMin) return -1
+                if (b.startMin === request.startMin && a.startMin !== request.startMin) return 1
+            }
             const aAnchor = distanceFromShiftAnchor(a.startMin)
             const bAnchor = distanceFromShiftAnchor(b.startMin)
             if (aAnchor !== bAnchor) return aAnchor - bAnchor
             return a.startMin - b.startMin
         })
-        return coverable[0]
+        return candidates[0]
     }
 
-    const sameDay = pickCoverableSlotForDay(planDate, plantProduction, restFloorMin)
+    /* Same-day always wins when it has ANY slot that passes the hard
+     * constraints (shift cap, launch cap, non-zero pool). Even a
+     * partial-coverage same-day slot is more useful than pushing the
+     * dispatcher to a date five days out — they can manually scrounge
+     * a few extra trucks for a same-day pour, but they can't postpone
+     * the customer without a real conversation. */
+    const sameDay = pickBestSlotForDay(planDate, plantProduction, restFloorMin)
     if (sameDay) {
-        return { dateStr: planDate, fitsCleanly: sameDay.fitsCleanly, isSameDay: true, slot: sameDay }
+        return {
+            covered: sameDay.covered,
+            dateStr: planDate,
+            fitsCleanly: sameDay.fitsCleanly,
+            isSameDay: true,
+            slot: sameDay
+        }
     }
 
+    /* Same-day is genuinely unworkable (Sunday → pool 0, or every slot
+     * fails the shift / launch caps). Walk upcoming days and surface
+     * the soonest one that can host a slot at all. */
     const dates = Object.keys(adjacentProduction || {}).sort()
     let scanned = 0
     for (const dateStr of dates) {
@@ -1044,9 +1124,15 @@ export const findBestEffortSlot = ({
         scanned += 1
         const prod = adjacentProduction[dateStr]
         if (!prod || typeof prod !== 'object') continue
-        const futureDay = pickCoverableSlotForDay(dateStr, prod, undefined)
+        const futureDay = pickBestSlotForDay(dateStr, prod, undefined)
         if (futureDay) {
-            return { dateStr, fitsCleanly: futureDay.fitsCleanly, isSameDay: false, slot: futureDay }
+            return {
+                covered: futureDay.covered,
+                dateStr,
+                fitsCleanly: futureDay.fitsCleanly,
+                isSameDay: false,
+                slot: futureDay
+            }
         }
     }
 

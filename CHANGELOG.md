@@ -2,6 +2,18 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.9] - 2026-05-12
+
+- Fix shift-cap anchor bug in best-effort slot scanner — use the day's earliest existing load-out instead of midnight, so legitimate morning starts no longer get rejected by the 14-hour shift check
+- Allow partial-coverage same-day slots to surface instead of pushing dispatchers days out when full coverage isn't available — they can split the booking or pull from beyond the 1-hour radius
+- Simplify lender free-truck math by dropping the over-conservative "implicit borrow" subtraction that was zeroing out visible help at nearby plants
+- Add isolation-based slot packing so candidates that land trucks back at yard right before the next existing pour beat slots with idle gaps
+- Add a "better same-day time" best-effort path in the conflict panel cascade — tighter cluster against existing pours now takes priority over help-covers-at-typed-time
+- Distinguish long pours from short pours in slot sorting: long pours prefer earliest start to minimize business-hour overlap, short pours honor the dispatcher's typed time among equivalent candidates
+- Rework preferred-window check to require the entire pour (start and end) inside the 05:00-12:00 window, not just the start time
+- Surface partial-coverage slots in the conflict panel with actionable guidance — shows how many trucks the dispatcher is still short and suggests splitting, pulling from farther out, or shrinking the pour
+- Return covered and networkShortBy fields from best-effort results so the UI can differentiate full-coverage from partial-coverage recommendations
+
 ## [41.0.8] - 2026-05-12
 
 - Rewrite GeocodeService to chain three free providers (Census, Photon, Nominatim) instead of relying on Nominatim alone, with progressive address trimming (strip unit/suite, strip ZIP) to maximize hit rate on messy addresses
