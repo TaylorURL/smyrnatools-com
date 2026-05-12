@@ -1,5 +1,7 @@
+const { sentryWebpackPlugin } = require('@sentry/webpack-plugin')
 const path = require('path')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+const { version } = require('./package.json')
 
 module.exports = function override(config, env) {
     if (process.env.ANALYZE === 'true') {
@@ -36,6 +38,25 @@ module.exports = function override(config, env) {
             })
         }
     })
+
+    /* Source maps: generate hidden maps (not served to clients) and upload
+     * them to Sentry during production builds. Requires SENTRY_AUTH_TOKEN
+     * and SENTRY_ORG / SENTRY_PROJECT env vars in CI. */
+    if (env === 'production') {
+        config.devtool = 'hidden-source-map'
+
+        if (process.env.SENTRY_AUTH_TOKEN) {
+            config.plugins.push(
+                sentryWebpackPlugin({
+                    authToken: process.env.SENTRY_AUTH_TOKEN,
+                    org: process.env.SENTRY_ORG,
+                    project: process.env.SENTRY_PROJECT,
+                    release: { name: `smyrnatools@${version}` },
+                    sourcemaps: { assets: './build/static/js/**' }
+                })
+            )
+        }
+    }
 
     return config
 }

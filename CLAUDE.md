@@ -82,3 +82,17 @@
 - Do not chase coverage numbers. Write tests for behavior a user or caller would observe.
 - Keep integration tests focused on one flow per test file. Mock at the service/hook boundary, not deep internals.
 - Avoid snapshot tests — they break on trivial markup changes and provide little signal.
+
+## Error Tracking — Sentry
+
+- **Sentry is initialized in `src/index.js`** via `@sentry/react`. The DSN comes from `REACT_APP_SENTRY_DSN`. When the
+  env var is absent Sentry is fully inert — no SDK calls are made.
+- **`ErrorReporterUtility`** (`src/utils/ErrorReporterUtility.js`) is a thin facade over `Sentry.captureException`.
+  Existing call sites (e.g. `ReportsSubmitView`) use `ErrorReporterUtility.reportError(error, metadata)` and should
+  continue to do so — do not import `@sentry/react` directly in feature code.
+- **User scope**: user id (from `users_sessions`, not `auth.uid()`) and region tags are attached/cleared automatically
+  via `authSuccess` / `authSignOut` / `region-changed` window events. No PII beyond the user id is sent.
+- **Releases**: tagged as `smyrnatools@<package.json version>` so errors map to deploys.
+- **Source maps**: generated as `hidden-source-map` during production builds (not served to clients). Uploaded to Sentry
+  via `@sentry/webpack-plugin` in `config-overrides.js` when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT`
+  env vars are set (CI only).
