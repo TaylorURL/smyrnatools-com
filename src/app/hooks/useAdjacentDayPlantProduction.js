@@ -3,7 +3,11 @@ import { useEffect, useState } from 'react'
 import { DispatchDataService } from '../../services/DispatchDataService'
 import { getOffsetDate } from '../../utils/PlanUtility'
 
-const DEFAULT_OFFSETS = [1, 2, 3, 4]
+/* Offsets ahead of `planDate` we fetch schedules for. Ten calendar days
+ * comfortably yields seven or more non-Sunday options once we filter,
+ * which is the reach the conflict panel needs to recommend the soonest
+ * day that can host a pour the requested day genuinely can't. */
+const DEFAULT_OFFSETS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 const isSundayDate = (dateStr) => {
     if (!dateStr) return false
@@ -12,15 +16,14 @@ const isSundayDate = (dateStr) => {
 }
 
 /**
- * Fetches schedule data for the next several days after `planDate` so the
- * Find-a-Spot recommender can suggest cross-day options when the requested
- * day can't muster 3 viable slots. Sundays are skipped — plants are
+ * Fetches schedule data for upcoming days so the Find-a-Spot conflict
+ * panel can suggest the soonest day that can actually host the pour
+ * when the requested day can't. Sundays are skipped — plants are
  * closed, so suggesting one would just waste a row.
  *
  * Returns `{ [dateStr]: plantProduction }` (same shape as
  * `DispatchDataService.fetchSchedule`). Empty object until the fetches
- * resolve so callers can safely `Object.keys(...).length === 0` to detect
- * "still loading or no data yet".
+ * resolve so callers can safely treat it as "no data yet".
  */
 export default function useAdjacentDayPlantProduction(planDate) {
     const [byDate, setByDate] = useState({})

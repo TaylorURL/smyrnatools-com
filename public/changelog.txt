@@ -2,6 +2,20 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.7] - 2026-05-11
+
+- Add multi-strategy auto re-authentication to the dispatch sync userscript when the session expires (reuse captured seat, try fresh seat, fall back to page reload with auto-login)
+- Auto-detect the dispatch server hostname from the current page instead of hardcoding srm-c03, allowing the script to work across multiple dispatch servers (srm-c03, srm-h)
+- Add auto-login on the /security/login page — detects the login form, fills credentials, and submits automatically after a reload-for-reauth
+- Wrap all dispatch API calls (apiPost, apiGetHtml) in a withReauthRetry layer that transparently re-authenticates on 401/403 and retries the request
+- Detect stealth auth failures where the server returns the login page HTML with a 200 status instead of the expected JSON or report content
+- Add reauth failure backoff and page-reload cooldown to prevent stampeding the login endpoint or reload-looping
+- Mint a seat token on cold start instead of stalling indefinitely when no UI call has been intercepted yet
+- Add a "re-authenticating" badge state so the sync status indicator reflects ongoing reauth attempts
+- Show PlanTabSwitcher on mobile as a compact two-tab toggle (Dashboard + Schedule) instead of hiding it entirely
+- Allow mobile users to access the Plan Dashboard tab and fall back to Dashboard instead of Schedule when landing on a wide-layout-only tab
+- Hide the "switch to Planner" action on mobile since the Planner tab is unavailable at narrow widths
+
 ## [41.0.6] - 2026-05-11
 
 - Show PlanTabSwitcher on mobile as a compact two-tab toggle (Dashboard + Schedule) instead of hiding it entirely

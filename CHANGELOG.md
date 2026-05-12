@@ -2,6 +2,21 @@
 
 ## [40.0.5] - 2026-04-29
 
+## [41.0.8] - 2026-05-12
+
+- Rewrite GeocodeService to chain three free providers (Census, Photon, Nominatim) instead of relying on Nominatim alone, with progressive address trimming (strip unit/suite, strip ZIP) to maximize hit rate on messy addresses
+- Add a Census Geocoder edge function proxy (geocode-service) to work around CORS restrictions on the US Census Bureau endpoint
+- Add Photon (komoot) as the primary autocomplete provider for typeahead suggestions, with Texas proximity bias
+- Deduplicate concurrent geocode calls for the same address via an in-flight promise map
+- Switch per-host rate limiting so each provider tracks its own request spacing independently
+- Bump geocode cache version to v2 to avoid stale single-provider entries
+- Lower autocomplete debounce from 350ms to 250ms and minimum query length from 4 to 3 characters, increase suggestion limit from 5 to 8
+- Expand adjacent-day plant production lookahead from 4 days to 10 days so the conflict panel can recommend the soonest viable day further out
+- Replace size-based preferred booking windows (big-pour graveyard vs small-pour daylight) with a single unified preferred window for all pour sizes
+- Refactor BookOrderView into a leaner shell by extracting ranking, slot-scanning, and conflict logic into BookOrderUtility
+- Add 30-minute slot granularity throughout alternate-time and move scanners, dropping unused 15-minute step support
+- Introduce operator rest-floor and shift-limit checks to prevent recommending starts that violate the 10-hour rest reset or 14-hour shift cap
+
 ## [41.0.7] - 2026-05-11
 
 - Add multi-strategy auto re-authentication to the dispatch sync userscript when the session expires (reuse captured seat, try fresh seat, fall back to page reload with auto-login)

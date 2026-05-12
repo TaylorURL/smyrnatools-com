@@ -12,8 +12,6 @@ import {
     computeBookingConflict,
     DEFAULT_LOAD_SIZE_YARDS,
     DEFAULT_TRUCK_SPACING_MIN,
-    findAlternateStartTimes,
-    findCrossDaySuggestions,
     findRecommendedStartTime,
     POUR_METHOD_OPTIONS,
     rankPlantsForBooking,
@@ -30,6 +28,15 @@ const FIELD_STYLE = {
 }
 
 const FIELD_LABEL_CLASS = 'block text-[11px] font-semibold uppercase tracking-wider mb-2'
+
+/** "Tue, May 13" — used by the conflict panel when recommending a
+ *  cross-day shift so the dispatcher reads the day at a glance. */
+const formatFullDateLabel = (dateStr) => {
+    if (!dateStr) return ''
+    const date = new Date(`${dateStr}T00:00:00`)
+    if (!Number.isFinite(date.getTime())) return dateStr
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', weekday: 'short' })
+}
 
 const formatMinutesAsClock = (mins) => {
     if (!Number.isFinite(mins)) return ''
@@ -135,39 +142,6 @@ function RoutePreview({ jobAddress, plantAddress, plantName, travelMin }) {
                 referrerPolicy="no-referrer-when-downgrade"
             />
         </div>
-    )
-}
-
-/** Single help-plant pill — used by both the required and backup
- *  sub-groups in the "pull help" recommendation. Renders the plant
- *  name, lend count (or "backup" tag), and travel time from the job.
- *  Backup pills are dimmed so they read as secondary to required
- *  lenders even when they sit in the same flex row. */
-function HelpPlantPill({ help, shortBy }) {
-    const tooltip = help.isBackup
-        ? `${help.plantName} — backup option, ${help.free} free if you need more than the required plants can spare`
-        : `${help.plantName} must lend ${help.lendCount} of the ${shortBy} trucks needed to cover this booking (${help.free} total free)`
-    return (
-        <span
-            className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px]"
-            style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-primary)',
-                opacity: help.isBackup ? 0.65 : 1
-            }}
-            title={tooltip}
-        >
-            <i
-                className="fas fa-truck-arrow-right text-[10px]"
-                style={{ color: help.isBackup ? 'var(--text-tertiary)' : '#16a34a' }}
-            />
-            <span className="font-semibold">{help.plantName}</span>
-            <span style={{ color: 'var(--text-tertiary)' }}>
-                {help.isBackup ? ' · backup' : ` · lend ${help.lendCount}`}
-                {Number.isFinite(help.travelMinFromJob) ? ` · ${help.travelMinFromJob} min` : ''}
-            </span>
-        </span>
     )
 }
 
@@ -613,123 +587,6 @@ const buildShiftReason = ({ recommendedSlot, request }) => {
     return 'This slot keeps the day clustered and avoids idle gaps.'
 }
 
-/** Format an ISO date as "Wed, May 8" — used by the cross-day rows of
- *  the viable-slots panel so the dispatcher can read the date at a
- *  glance without parsing yyyy-mm-dd. */
-const formatDayLabel = (dateStr) => {
-    if (!dateStr) return ''
-    const date = new Date(`${dateStr}T00:00:00`)
-    if (!Number.isFinite(date.getTime())) return dateStr
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', weekday: 'short' })
-}
-
-/**
- * "At least 3 viable options" panel — surfaces fitting start times for
- * the recommended plant on the requested day, then fills any shortfall
- * with the next non-Sunday days where the same plant can host the pour
- * cleanly. Each row is annotated so the dispatcher can tell at a glance
- * which slot the system picked first ("recommended") and which are
- * alternatives. When even the cross-day fallback can't muster three
- * fitting slots, the panel calls that out explicitly so the dispatcher
- * knows to revisit the request rather than chase an option that doesn't
- * exist.
- */
-function ViableSlotsPanel({ accentColor, crossDaySuggestions, plantName, recommendedStartMin, sameDaySlots }) {
-    const TARGET = 3
-    const sameDayRows = sameDaySlots.slice(0, TARGET).map((slot) => ({
-        dateLabel: null,
-        free: slot.free,
-        isRecommended: slot.startMin === recommendedStartMin,
-        startMin: slot.startMin
-    }))
-    const remaining = Math.max(0, TARGET - sameDayRows.length)
-    const crossDayRows = []
-    if (remaining > 0) {
-        for (const day of crossDaySuggestions) {
-            for (const slot of day.slots) {
-                crossDayRows.push({
-                    dateLabel: formatDayLabel(day.dateStr),
-                    free: slot.free,
-                    isRecommended: false,
-                    startMin: slot.startMin
-                })
-                if (crossDayRows.length >= remaining) break
-            }
-            if (crossDayRows.length >= remaining) break
-        }
-    }
-    const allRows = [...sameDayRows, ...crossDayRows]
-    const fellShort = allRows.length < TARGET
-
-    return (
-        <div
-            className="rounded-lg p-4 flex flex-col gap-2"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            <div
-                className="text-[10.5px] font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--text-tertiary)' }}
-            >
-                Viable start times on {plantName}
-            </div>
-            {allRows.length > 0 ? (
-                <div className="flex flex-col gap-1">
-                    {allRows.map((row, idx) => (
-                        <div
-                            key={`${row.dateLabel || 'today'}-${row.startMin}-${idx}`}
-                            className="flex items-center gap-2 text-[12px]"
-                            style={{ color: 'var(--text-primary)' }}
-                        >
-                            <i
-                                className="fas fa-clock text-[10px]"
-                                style={{ color: row.isRecommended ? accentColor : '#16a34a' }}
-                            />
-                            {row.dateLabel ? (
-                                <span
-                                    className="text-[10px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5"
-                                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}
-                                >
-                                    {row.dateLabel}
-                                </span>
-                            ) : (
-                                <span
-                                    className="text-[10px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5"
-                                    style={{
-                                        background: row.isRecommended ? `${accentColor}1f` : 'var(--bg-secondary)',
-                                        color: row.isRecommended ? accentColor : 'var(--text-tertiary)'
-                                    }}
-                                >
-                                    {row.isRecommended ? 'Recommended' : 'Today'}
-                                </span>
-                            )}
-                            <span className="font-mono tabular-nums font-semibold">
-                                {formatMinutesAsClock(row.startMin)}
-                            </span>
-                            <span style={{ color: 'var(--text-tertiary)' }}>· {row.free} trucks free</span>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                    No viable slots on {plantName} for the requested day.
-                </div>
-            )}
-            {fellShort && (
-                <div
-                    className="text-[11px] flex items-start gap-1.5 mt-1 pt-2"
-                    style={{ borderTop: '1px solid var(--border-light)', color: 'var(--text-tertiary)' }}
-                >
-                    <i className="fas fa-circle-info text-[10px] mt-0.5" />
-                    <span>
-                        Couldn&apos;t find {TARGET} viable times — pick a different day on the form for more open
-                        windows, or try a smaller / shorter pour.
-                    </span>
-                </div>
-            )}
-        </div>
-    )
-}
-
 /** Single, action-oriented recommendation. Always shows the SYSTEM's best
  *  time for this booking on the closest plant — when the dispatcher's
  *  typed time matches, we just confirm it; when it doesn't (e.g. they
@@ -823,50 +680,45 @@ function RecommendationAdvice({ accentColor, recommendedSlot, request, top }) {
 /** Conflict-resolution panel — only renders when the closest plant
  *  (forced to position #1) doesn't have enough free trucks. Suggests
  *  shifting the new order to a different time on the same plant, OR
- *  moving an existing overlapping order somewhere else. Both are
- *  read-only suggestions; the dispatcher still books manually. */
+ *  pulling help from nearby plants. Both are read-only suggestions;
+ *  the dispatcher still books manually. */
 function BookingConflictPanel({ accentColor, conflict, request }) {
     if (!conflict) return null
     const {
         alternateTimes,
+        bestEffortSlot,
         helpAvailability,
-        helpCoverableSlots,
         launchSlotFull,
-        moveCandidates,
         plantCode,
         plantName,
         sameSlotCount,
-        shortBy,
-        sizeWindowAdvice
+        shortBy
     } = conflict
     const requestedTime = request ? formatMinutesAsClock(request.startMin) : null
 
     /* Score each fix against the actual shortfall so we can lead with the
-     * one that genuinely solves the problem instead of treating all three
-     * as equal. The numbers come from the same data the existing chips
+     * one that genuinely solves the problem instead of treating both as
+     * equal. The numbers come from the same data the existing chips
      * already render — no extra fetches. */
     const helpFleetTotal = (helpAvailability || []).reduce((sum, h) => sum + (h?.free || 0), 0)
     const helpCovers = helpFleetTotal >= shortBy
-    const moveFleetTotal = (moveCandidates || []).reduce((sum, c) => sum + (c?.trucks || 0), 0)
-    const movesCover = moveFleetTotal >= shortBy
     const fittingAlternates = (alternateTimes || []).filter((s) => s.fits)
     const hasFittingAlternate = fittingAlternates.length > 0
 
-    /* Pick which option leads — the one most likely to actually fix the
-     * shortage. Special cases first: launch-slot overflow (too many
-     * orders sharing a start minute) MUST shift — pulling help can't
-     * fix a physical loading-bay constraint; size-window mismatch then
-     * also routes to shift. After those, the standard cascade: help,
-     * clean time shift, reschedule, partial help, no-fix. */
-    const hasHelpCoverableSlot = (helpCoverableSlots || []).length > 0
+    /* Cascade — pick the simplest option that fully covers the pour.
+     * 1. `shift` when the per-plant launch cap forces a different
+     *    minute. 2. `help` when nearby plants cover the gap at the
+     *    typed time. 3. `shift` when a same-day alternate slot fully
+     *    fits on its own (incl. shifting INTO the preferred window).
+     *    4. `best-effort` — earliest day with own + per-slot help
+     *    that fully covers. 5. `none` only when no day in the 10-day
+     *    window has the trucks. */
+    const hasBestEffort = !!bestEffortSlot
     let primary
     if (launchSlotFull) primary = 'shift'
-    else if (sizeWindowAdvice && sizeWindowAdvice.suggestedSlot) primary = 'shift'
     else if (helpCovers) primary = 'help'
     else if (hasFittingAlternate) primary = 'shift'
-    else if (hasHelpCoverableSlot) primary = 'help-coverable'
-    else if (movesCover) primary = 'reschedule'
-    else if (helpFleetTotal > 0) primary = 'help'
+    else if (hasBestEffort) primary = 'best-effort'
     else primary = 'none'
 
     /* Choose a clear action headline + subtitle the dispatcher can act on
@@ -877,18 +729,14 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
     const fittingAlt = fittingAlternates[0]
     const helpPlantCount = (helpAvailability || []).length
     const requestedTimeLabel = requestedTime || 'the requested time'
-    /* The size-window suggested slot wins when it exists, so the shift
-     * branch can lead with the graveyard / business-hours target instead
-     * of whatever happened to be the first fitting alternate. */
-    const shiftTarget = sizeWindowAdvice?.suggestedSlot || (hasFittingAlternate ? fittingAlt : null)
-    const yardageLabel = request?.yardage ? `${request.yardage}-yd` : ''
+    const shiftTarget = hasFittingAlternate ? fittingAlt : null
     const headlineCopy = (() => {
         if (launchSlotFull) {
             const launchSlot = shiftTarget
             if (launchSlot) {
                 return {
-                    subtitle: `${plantName} already has ${sameSlotCount} order${sameSlotCount === 1 ? '' : 's'} starting at ${requestedTimeLabel} — that's the per-plant launch cap, so a fourth truck can't load at the same minute. Shifting to ${formatMinutesAsClock(launchSlot.startMin)} clears the constraint without expanding the day.`,
-                    title: `Shift to ${formatMinutesAsClock(launchSlot.startMin)} on ${plantName} — ${requestedTimeLabel} is already at the per-plant launch cap`
+                    subtitle: `${plantName} already has ${sameSlotCount} order${sameSlotCount === 1 ? '' : 's'} starting at ${requestedTimeLabel} — that's the per-plant launch cap, so a fourth truck can't load at the same minute. Booking at ${formatMinutesAsClock(launchSlot.startMin)} clears the constraint without expanding the day.`,
+                    title: `Book the order at ${formatMinutesAsClock(launchSlot.startMin)} on ${plantName} — ${requestedTimeLabel} is already at the per-plant launch cap`
                 }
             }
             return {
@@ -896,141 +744,68 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
                 title: `${plantName} is at the per-plant launch cap at ${requestedTimeLabel}`
             }
         }
-        if (primary === 'shift' && sizeWindowAdvice?.suggestedSlot) {
-            const slot = sizeWindowAdvice.suggestedSlot
-            const sizeKind = sizeWindowAdvice.isBigPour ? 'big' : 'small / medium'
-            const stillShort = !slot.fits
-            const titleSuffix = stillShort ? ' (will still need help to cover trucks)' : ''
-            const subtitleTail = stillShort
-                ? `${plantName} still needs ${slot.shortBy} more truck${slot.shortBy === 1 ? '' : 's'} at ${formatMinutesAsClock(slot.startMin)} — pull help in addition to shifting.`
-                : `${plantName} has ${slot.free} truck${slot.free === 1 ? '' : 's'} free at ${formatMinutesAsClock(slot.startMin)}, no help needed.`
-            return {
-                subtitle: `${yardageLabel} pours belong in the ${sizeWindowAdvice.preferredWindowLabel} window — ${sizeKind} pours that run outside it tie up the day's pool. ${subtitleTail}`,
-                title: `Shift to ${formatMinutesAsClock(slot.startMin)} on ${plantName} — ${sizeWindowAdvice.preferredWindowLabel} is the right window for a ${yardageLabel} pour${titleSuffix}`
-            }
-        }
         switch (primary) {
             case 'help':
-                return helpCovers
-                    ? {
-                          subtitle: `Pull help from ${helpPlantCount} nearby plant${helpPlantCount === 1 ? '' : 's'} — they cover all ${shortBy} truck${shortBy === 1 ? '' : 's'} short. Keep the booking at ${requestedTimeLabel}.`,
-                          title: `Book at ${plantName} at ${requestedTimeLabel} — pull help`
-                      }
-                    : {
-                          subtitle: `Nearby plants cover ${helpFleetTotal} of the ${shortBy} trucks short. Book at ${requestedTimeLabel}, pull what you can, and split the remaining ${shortBy - helpFleetTotal} across another plant or shrink the order.`,
-                          title: `Book at ${plantName} at ${requestedTimeLabel} — pull help (partial coverage)`
-                      }
+                return {
+                    subtitle: `Pull help from ${helpPlantCount} nearby plant${helpPlantCount === 1 ? '' : 's'} — they cover all ${shortBy} truck${shortBy === 1 ? '' : 's'} short. Keep the booking at ${requestedTimeLabel}.`,
+                    title: `Book the order at ${requestedTimeLabel} on ${plantName} — pull help`
+                }
             case 'shift':
                 return {
                     subtitle: `${plantName} can pour cleanly here without help — ${shiftTarget.free} truck${shiftTarget.free === 1 ? '' : 's'} free at ${formatMinutesAsClock(shiftTarget.startMin)}.`,
-                    title: `Shift to ${formatMinutesAsClock(shiftTarget.startMin)} on ${plantName}`
+                    title: `Book the order at ${formatMinutesAsClock(shiftTarget.startMin)} on ${plantName}`
                 }
-            case 'help-coverable': {
-                const target = helpCoverableSlots[0]
-                const targetLabel = formatMinutesAsClock(target.startMin)
+            case 'best-effort': {
+                const { dateStr, fitsCleanly, isSameDay, slot } = bestEffortSlot
+                const timeLabel = formatMinutesAsClock(slot.startMin)
+                const fullDateLabel = formatFullDateLabel(dateStr)
+                const dateInTitle = isSameDay ? '' : ` on ${fullDateLabel}`
+                const dateInSubtitle = isSameDay ? 'today' : fullDateLabel
+                const ownFreeLabel = `${slot.free} truck${slot.free === 1 ? '' : 's'} free`
+                if (fitsCleanly) {
+                    return {
+                        subtitle: `${plantName} has ${ownFreeLabel} at ${timeLabel}${isSameDay ? ' today' : ` on ${dateInSubtitle}`} — fully covers the pour on its own, no help needed. ${isSameDay ? 'Same-day' : 'Soonest day'} the plant can host it cleanly.`,
+                        title: `Book the order at ${timeLabel}${dateInTitle} on ${plantName} — clean fit, no help needed`
+                    }
+                }
+                /* fitsWithHelp branch — best-effort never returns a
+                 * partial-only slot, so this is the only remaining
+                 * sub-case. Help fully covers the gap. */
                 return {
-                    subtitle: `Nearby plants cover only ${helpFleetTotal} of the ${shortBy} truck${shortBy === 1 ? '' : 's'} short at ${requestedTimeLabel}. Shift to ${targetLabel} where ${plantName} (${target.ownFree} truck${target.ownFree === 1 ? '' : 's'} free) plus ${target.helpPlantCount} plant${target.helpPlantCount === 1 ? '' : 's'} within an hour (${target.helpFree} truck${target.helpFree === 1 ? '' : 's'} lent) can fully cover the pour.`,
-                    title: `Shift to ${targetLabel} on ${plantName} — help within an hour can cover there`
+                    subtitle: `${plantName} has ${ownFreeLabel} at ${timeLabel}${isSameDay ? ' today' : ` on ${dateInSubtitle}`} and the ${helpFleetTotal} truck${helpFleetTotal === 1 ? '' : 's'} of nearby help cover the remaining ${slot.shortBy} truck${slot.shortBy === 1 ? '' : 's'} cleanly. ${isSameDay ? 'Earliest' : 'Soonest'} time the network can host the pour in full.`,
+                    title: `Book the order at ${timeLabel}${dateInTitle} on ${plantName} — pull help to fully cover`
                 }
             }
-            case 'reschedule':
-                return {
-                    subtitle: `Move one or two of ${plantName}'s overlapping orders to clear ${shortBy} truck${shortBy === 1 ? '' : 's'} for this booking.`,
-                    title: `Book at ${plantName} at ${requestedTimeLabel} — reschedule existing orders`
-                }
             default:
+                /* Should be functionally unreachable now that the scan
+                 * floor allows the full 00:00–13:00 range and per-slot
+                 * help is computed across all eligible lenders. If we
+                 * still land here, fall back to recommending the typed
+                 * time on the closest plant — the dispatcher can see
+                 * the schedule preview and decide manually. Never
+                 * dead-end them. */
                 return {
-                    subtitle: `${plantName} can't cover this on its own and no nearby plant can lend trucks. Split the booking, push the date out, or shrink the pour.`,
-                    title: `${plantName} can't host this booking`
+                    subtitle: `${plantName} is the closest plant — book here at ${requestedTimeLabel} and pull help from nearby plants as needed. The schedule preview below shows what the day looks like with this booking added.`,
+                    title: `Book the order at ${requestedTimeLabel} on ${plantName}`
                 }
         }
     })()
     const headlineTitle = headlineCopy.title
     const headlineSubtitle = headlineCopy.subtitle
-    /* Help / shift recommendations get a confident green icon — they're a
-     * clear next action. The "no fix" case keeps the warning amber. */
-    const headlineTone =
-        primary === 'none'
-            ? { background: 'rgba(217, 119, 6, 0.18)', color: '#b45309', icon: 'fa-triangle-exclamation' }
-            : { background: accentColor || '#1e3a5f', color: '#fff', icon: 'fa-thumbs-up' }
+    /* Every recommendation is an actionable next step now — the
+     * recommender always produces a "Book the order at X on Plant"
+     * answer. Consistent confident-green icon across the board. */
+    const headlineTone = { background: accentColor || '#1e3a5f', color: '#fff', icon: 'fa-thumbs-up' }
 
-    /* Hide secondary sections that wouldn't actually help. Help is
-     * irrelevant when the constraint is a launch-slot cap (truck pool
-     * isn't the bottleneck — the loading bay is). Alternate-time chips
-     * only when at least one window fits cleanly AND we're not already
-     * recommending a forced shift. Reschedule rows only when help can't
-     * fully cover AND we're not shifting — once the new pour moves out
-     * of the typed slot, the existing-order overlap goes away. */
-    const isSizeShift = primary === 'shift' && !!sizeWindowAdvice?.suggestedSlot
-    const isLaunchCapShift = primary === 'shift' && !!launchSlotFull
-    const isForcedShift = isSizeShift || isLaunchCapShift
-    const showHelpSection = !isLaunchCapShift && (helpAvailability || []).length > 0
-    const showAlternatesSection = hasFittingAlternate && !isForcedShift
-    const showMoveSection = (moveCandidates || []).length > 0 && !helpCovers && !isForcedShift
-    /* Help-coverable times only surface when help at the typed time
-     * can't close the gap AND no cleaner alternative (own-plant
-     * fitting alternate) is already being recommended — otherwise the
-     * panel gets noisy and the dispatcher has too many overlapping
-     * suggestions. */
-    const showHelpCoverableSection =
-        !helpCovers && !hasFittingAlternate && (helpCoverableSlots || []).length > 0 && !isLaunchCapShift
-
-    /* Trim + annotate the help section so a 2-truck shortage doesn't
-     * read as "9 plants × 14 free trucks each". Walks plants in
-     * proximity order, splits the running gap across them ("lend 2",
-     * "lend 3" for a 5-short), then surfaces one extra plant as a
-     * "backup" option. When help can't fully cover, every plant shows
-     * with its full free count so the dispatcher sees the partial
-     * picture. */
-    const helpRowsForDisplay = (() => {
-        if (!helpAvailability?.length) return []
-        if (!helpCovers) {
-            return helpAvailability.map((h) => ({ ...h, isBackup: false, lendCount: h.free }))
-        }
-        let remaining = shortBy
-        const out = []
-        for (const h of helpAvailability) {
-            if (remaining <= 0) {
-                out.push({ ...h, isBackup: true, lendCount: 0 })
-                break
-            }
-            const lend = Math.min(h.free, remaining)
-            out.push({ ...h, isBackup: false, lendCount: lend })
-            remaining -= lend
-        }
-        return out
-    })()
-
-    /* Split the help rows into the plants the dispatcher MUST pull from
-     * to fully cover the shortage vs. the optional backup plant we
-     * surface in case one of the required lenders can't deliver. The
-     * two groups render under separate labels so the difference between
-     * "you have to call these" and "nice-to-have if needed" is obvious
-     * at a glance. */
-    const requiredHelpRows = helpRowsForDisplay.filter((h) => !h.isBackup)
-    const backupHelpRows = helpRowsForDisplay.filter((h) => h.isBackup)
-    const requiredLendTotal = requiredHelpRows.reduce((sum, h) => sum + (h.lendCount || 0), 0)
-
-    const sections = [
-        showHelpSection && 'help',
-        showHelpCoverableSection && 'help-coverable',
-        showAlternatesSection && 'shift',
-        showMoveSection && 'reschedule'
-    ].filter(Boolean)
-    /* Lead with the primary fix — Array.sort is stable in modern engines
-     * so the remaining sections keep their declaration order. */
-    sections.sort((a, b) => (a === primary ? -1 : b === primary ? 1 : 0))
-
-    /* Frame the panel in amber only when we genuinely have no fix; when
-     * there's an actionable next step (help / shift / reschedule) the
-     * panel reads as guidance rather than a warning. */
-    const panelTone =
-        primary === 'none'
-            ? { background: 'rgba(217, 119, 6, 0.08)', border: '1px solid rgba(217, 119, 6, 0.35)' }
-            : { background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }
-
+    /* Panel renders ONE message — the headline (title + subtitle). No
+     * help table, no alternates chips, no shrink-target math. The
+     * dispatcher gets a single concrete "book at HH:MM on Plant"
+     * recommendation and acts on it. */
     return (
-        <div className="rounded-lg p-4 flex flex-col gap-3" style={panelTone}>
+        <div
+            className="rounded-lg p-4 flex flex-col gap-3"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
+        >
             <div className="flex items-start gap-3">
                 <div
                     className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
@@ -1052,276 +827,6 @@ function BookingConflictPanel({ accentColor, conflict, request }) {
                     </div>
                 </div>
             </div>
-
-            {sections.map((section) => {
-                if (section === 'help') {
-                    const isPrimary = primary === 'help'
-                    /* Required sub-group caption depends on whether help
-                     * actually closes the gap: when it does, the dispatcher
-                     * MUST pull every plant listed to cover the shortage;
-                     * when it can't, the same plants are still the best
-                     * partial coverage available, framed as "suggested". */
-                    const requiredCaption = helpCovers
-                        ? `Must pull · ${requiredLendTotal} truck${requiredLendTotal === 1 ? '' : 's'} to cover shortage`
-                        : `Suggested · pulls ${requiredLendTotal} of ${shortBy} truck${shortBy === 1 ? '' : 's'} needed`
-                    return (
-                        <div key="help" className="flex flex-col gap-2">
-                            <div
-                                className="text-[10.5px] font-semibold uppercase tracking-wider flex items-center gap-1.5"
-                                style={{ color: isPrimary ? '#15803d' : 'var(--text-tertiary)' }}
-                            >
-                                {isPrimary && <i className="fas fa-circle-check text-[10px]" />}
-                                {isPrimary ? 'Recommended · pull help' : 'Help from nearby plants'}
-                            </div>
-
-                            {requiredHelpRows.length > 0 && (
-                                <div className="flex flex-col gap-1">
-                                    <div
-                                        className="text-[10px] font-semibold uppercase tracking-wider"
-                                        style={{ color: helpCovers ? '#15803d' : '#b45309' }}
-                                    >
-                                        {requiredCaption}
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {requiredHelpRows.map((help) => (
-                                            <HelpPlantPill key={help.plantCode} help={help} shortBy={shortBy} />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {backupHelpRows.length > 0 && (
-                                <div className="flex flex-col gap-1">
-                                    <div
-                                        className="text-[10px] font-semibold uppercase tracking-wider"
-                                        style={{ color: 'var(--text-tertiary)' }}
-                                    >
-                                        Optional backup · only if a required plant can&apos;t deliver
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {backupHelpRows.map((help) => (
-                                            <HelpPlantPill key={help.plantCode} help={help} shortBy={shortBy} />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )
-                }
-
-                if (section === 'help-coverable') {
-                    /* "Not enough help at the typed time — but at these
-                     * times, plants within an hour CAN cover the gap."
-                     * Each pill spells out the own-plant free, the help
-                     * free, and how many lender plants contributed so
-                     * the dispatcher can see the math at a glance. */
-                    return (
-                        <div key="help-coverable" className="flex flex-col gap-1.5">
-                            <div
-                                className="text-[10.5px] font-semibold uppercase tracking-wider"
-                                style={{ color: '#15803d' }}
-                            >
-                                Shift here · nearby plants can cover the gap
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {helpCoverableSlots.map((slot) => {
-                                    const tooltip = `${plantName} can run ${slot.ownFree} truck${slot.ownFree === 1 ? '' : 's'} at ${formatMinutesAsClock(slot.startMin)} and pull ${slot.helpFree} more from ${slot.helpPlantCount} plant${slot.helpPlantCount === 1 ? '' : 's'} within an hour — total ${slot.totalFree} of the ${shortBy + slot.ownFree} truck${shortBy + slot.ownFree === 1 ? '' : 's'} needed.`
-                                    return (
-                                        <span
-                                            key={slot.startMin}
-                                            className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px]"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)',
-                                                color: 'var(--text-primary)'
-                                            }}
-                                            title={tooltip}
-                                        >
-                                            <i
-                                                className="fas fa-clock-rotate-left text-[10px]"
-                                                style={{ color: '#16a34a' }}
-                                            />
-                                            <span className="font-mono tabular-nums font-semibold">
-                                                {formatMinutesAsClock(slot.startMin)}
-                                            </span>
-                                            <span style={{ color: 'var(--text-tertiary)' }}>
-                                                · {slot.ownFree} here + {slot.helpFree} from {slot.helpPlantCount} plant
-                                                {slot.helpPlantCount === 1 ? '' : 's'}
-                                            </span>
-                                        </span>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )
-                }
-
-                if (section === 'shift') {
-                    const isPrimary = primary === 'shift'
-                    return (
-                        <div key="shift" className="flex flex-col gap-1.5">
-                            <div
-                                className="text-[10.5px] font-semibold uppercase tracking-wider flex items-center gap-1.5"
-                                style={{ color: isPrimary ? '#15803d' : 'var(--text-tertiary)' }}
-                            >
-                                {isPrimary && <i className="fas fa-circle-check text-[10px]" />}
-                                {isPrimary
-                                    ? `Recommended · shift to a different time on ${plantName}`
-                                    : `Or try a different time on ${plantName}`}
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {(hasFittingAlternate ? fittingAlternates : alternateTimes).map((slot) => {
-                                    const fits = slot.fits
-                                    const tone = fits ? '#16a34a' : '#b45309'
-                                    const trailing = fits
-                                        ? `${slot.free} trucks free`
-                                        : 'will still need help to pour on pace'
-                                    const tooltip = fits
-                                        ? `${plantName} can cover this booking at ${formatMinutesAsClock(slot.startMin)} with no help or rescheduling.`
-                                        : `${formatMinutesAsClock(slot.startMin)} is the best window ${plantName} can offer — ${slot.free} of ${slot.free + slot.shortBy} trucks free here, so you'll still need help from another plant to keep the pour on pace.`
-                                    return (
-                                        <span
-                                            key={slot.startMin}
-                                            className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12px]"
-                                            style={{
-                                                background: 'var(--bg-primary)',
-                                                border: '1px solid var(--border-light)',
-                                                color: 'var(--text-primary)'
-                                            }}
-                                            title={tooltip}
-                                        >
-                                            <i
-                                                className={`fas ${fits ? 'fa-clock' : 'fa-circle-exclamation'} text-[10px]`}
-                                                style={{ color: tone }}
-                                            />
-                                            <span className="font-mono tabular-nums font-semibold">
-                                                {formatMinutesAsClock(slot.startMin)}
-                                            </span>
-                                            <span style={{ color: 'var(--text-tertiary)' }}>· {trailing}</span>
-                                        </span>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )
-                }
-
-                if (section === 'reschedule') {
-                    const isPrimary = primary === 'reschedule'
-                    return (
-                        <div key="reschedule" className="flex flex-col gap-1.5">
-                            <div
-                                className="text-[10.5px] font-semibold uppercase tracking-wider flex items-center gap-1.5"
-                                style={{ color: isPrimary ? '#15803d' : 'var(--text-tertiary)' }}
-                            >
-                                {isPrimary && <i className="fas fa-circle-check text-[10px]" />}
-                                {isPrimary
-                                    ? `Recommended · reschedule one of ${plantName}'s orders`
-                                    : `Or reschedule one of ${plantName}'s orders`}
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                {moveCandidates.map((cand) => (
-                                    <MoveCandidateRow
-                                        key={cand.order?.orderId || cand.order?.orderNum}
-                                        candidate={cand}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )
-                }
-                return null
-            })}
-
-            {primary === 'none' && (
-                <div className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                    No automatic resolution available on {plantName} — try a plant further from the job, split the
-                    booking across plants, or push the date out.
-                </div>
-            )}
-        </div>
-    )
-}
-
-/** Compact "5h later" / "30m earlier" label for a move target relative to
- *  the order's current start time. Used inside the move-candidate rows so
- *  the dispatcher can see at a glance how far the suggestion shifts the
- *  pour without doing the math themselves. */
-const formatMoveDelta = (deltaMin) => {
-    if (!Number.isFinite(deltaMin) || deltaMin === 0) return 'same time'
-    const abs = Math.abs(deltaMin)
-    const h = Math.floor(abs / 60)
-    const m = abs % 60
-    const span = [h > 0 ? `${h}h` : '', m > 0 ? `${m}m` : ''].filter(Boolean).join(' ') || '0m'
-    return deltaMin > 0 ? `${span} later` : `${span} earlier`
-}
-
-function MoveCandidateRow({ candidate }) {
-    const { alternateTimes, order, trucks, window } = candidate
-    const customer = order?.customer || 'Order'
-    const yards = parseFloat(order?.yardage) || 0
-    const orderLabel = order?.orderNum ? `#${order.orderNum}` : ''
-    /* Sort the displayed moves chronologically so dispatchers read them
-     * left-to-right by time, but keep the picker's "best first" intent by
-     * tagging the top result. The scanner already returns at most two
-     * options, so the labeling stays simple: Best + Backup. */
-    const slotsByPreference = alternateTimes
-    const slotsChronological = [...alternateTimes].sort((a, b) => a.startMin - b.startMin)
-    return (
-        <div
-            className="rounded-md px-3 py-2 flex flex-col gap-1"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }}
-        >
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <div className="flex items-center gap-2 min-w-0">
-                    <i className="fas fa-arrows-up-down-left-right text-[10px]" style={{ color: '#b45309' }} />
-                    <span className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                        {customer} {orderLabel}
-                    </span>
-                </div>
-                <span className="text-[11.5px] font-mono tabular-nums" style={{ color: 'var(--text-secondary)' }}>
-                    Currently {formatMinutesAsClock(window.startMin)} · {yards} yd · {trucks} truck
-                    {trucks === 1 ? '' : 's'}
-                </span>
-            </div>
-            {slotsByPreference.length > 0 ? (
-                <div className="flex flex-col gap-0.5 pl-1">
-                    {slotsChronological.map((slot) => {
-                        const isBest = slot === slotsByPreference[0]
-                        const time = formatMinutesAsClock(slot.startMin)
-                        const delta = formatMoveDelta(slot.startMin - window.startMin)
-                        return (
-                            <span
-                                key={slot.startMin}
-                                className="text-[11.5px] inline-flex items-center gap-2"
-                                style={{ color: isBest ? 'var(--text-primary)' : 'var(--text-secondary)' }}
-                            >
-                                <i
-                                    className="fas fa-arrow-right text-[9px]"
-                                    style={{ color: 'var(--text-tertiary)' }}
-                                />
-                                <span
-                                    className="text-[9.5px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5"
-                                    style={{
-                                        background: isBest ? 'rgba(22, 163, 74, 0.14)' : 'var(--bg-secondary)',
-                                        color: isBest ? '#15803d' : 'var(--text-tertiary)'
-                                    }}
-                                >
-                                    {isBest ? 'Best' : 'Backup'}
-                                </span>
-                                <span className="font-mono tabular-nums font-semibold">{time}</span>
-                                <span className="text-[10.5px]" style={{ color: 'var(--text-tertiary)' }}>
-                                    ({delta})
-                                </span>
-                            </span>
-                        )
-                    })}
-                </div>
-            ) : (
-                <span className="text-[11px] pl-1" style={{ color: 'var(--text-tertiary)' }}>
-                    No clear reschedule slot today.
-                </span>
-            )}
         </div>
     )
 }
@@ -1470,7 +975,13 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
         plants: submitted ? plants : null
     })
 
-    /* Surface time-shift / order-move / help-available suggestions only
+    /* Adjacent days' schedules. Powers the "soonest day that can host"
+     * recommendation inside the conflict panel — when the requested
+     * day genuinely can't fit the pour, we walk upcoming days and
+     * surface the first one with a fitting slot. */
+    const adjacentProduction = useAdjacentDayPlantProduction(planDate)
+
+    /* Surface time-shift / help-available / cross-day suggestions only
      * when the closest plant (now always #1) genuinely can't cover the
      * requested window. travelMinByPlantCode lets the help section sort
      * lender plants by drive time from the job — a proxy for proximity to
@@ -1478,6 +989,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
     const conflict = useMemo(
         () =>
             computeBookingConflict({
+                adjacentProduction,
                 mixerCountsByPlant,
                 planDate,
                 plantProduction,
@@ -1489,6 +1001,7 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                 travelMinFromShortPlantByPlantCode
             }),
         [
+            adjacentProduction,
             mixerCountsByPlant,
             planDate,
             plantProduction,
@@ -1530,40 +1043,6 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
             restFloorMin: restFloorByPlant?.[plantCode]
         })
     }, [topPlantRecord, request, conflict, mixerCountsByPlant, planDate, plantProduction, restFloorByPlant])
-
-    /* "At least 3 viable options" rule. Pulls a longer alternates list
-     * for the top plant so the no-conflict path can offer the dispatcher
-     * choices beyond the single highlighted recommendation. The same
-     * data feeds the cross-day fallback when the requested day is too
-     * tight. */
-    const topPlantViableSlots = useMemo(() => {
-        if (!topPlantRecord || !request) return []
-        const plantCode = topPlantRecord?.plantCode || topPlantRecord?.plant_code
-        return findAlternateStartTimes({
-            count: 6,
-            mixerCountsByPlant,
-            planDate,
-            plant: topPlantRecord,
-            plantProduction,
-            request,
-            restFloorMin: restFloorByPlant?.[plantCode]
-        }).filter((s) => s.fits)
-    }, [topPlantRecord, request, mixerCountsByPlant, planDate, plantProduction, restFloorByPlant])
-
-    /* Adjacent days' schedules (next 2–4 non-Sunday dates). Used to fill
-     * out the viable-options panel when the requested day can't supply 3
-     * fitting slots on its own. */
-    const adjacentProduction = useAdjacentDayPlantProduction(planDate)
-    const crossDaySuggestions = useMemo(() => {
-        if (!topPlantRecord || !request) return []
-        return findCrossDaySuggestions({
-            adjacentProduction,
-            maxDays: 2,
-            mixerCountsByPlant,
-            plant: topPlantRecord,
-            request
-        })
-    }, [topPlantRecord, request, adjacentProduction, mixerCountsByPlant])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col gap-4 px-3 sm:px-4 lg:px-6 py-4 sm:py-5 overflow-y-auto">
@@ -2033,19 +1512,6 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                         />
                                     )}
                                 </FadeIn>
-                                <FadeIn show={showResult} delayMs={140}>
-                                    {top && !conflict && (
-                                        <ViableSlotsPanel
-                                            accentColor={accentColor}
-                                            crossDaySuggestions={crossDaySuggestions}
-                                            plantName={top.plantName}
-                                            recommendedStartMin={
-                                                recommendedSlot ? recommendedSlot.startMin : request.startMin
-                                            }
-                                            sameDaySlots={topPlantViableSlots}
-                                        />
-                                    )}
-                                </FadeIn>
                                 <FadeIn show={showResult} delayMs={170}>
                                     {top && !conflict && (
                                         <RoutePreview
@@ -2081,21 +1547,6 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                                             accentColor={accentColor}
                                             conflict={conflict}
                                             request={request}
-                                        />
-                                    )}
-                                </FadeIn>
-                                {/* Suppress the "more viable times" panel when the conflict
-                                 * resolution is a size-window shift — the headline already
-                                 * names the recommended slot, and listing it again as
-                                 * "no viable slots / try another day" reads as a contradiction. */}
-                                <FadeIn show={showConflict && !conflict?.sizeWindowAdvice?.suggestedSlot} delayMs={140}>
-                                    {conflict && !conflict.sizeWindowAdvice?.suggestedSlot && (
-                                        <ViableSlotsPanel
-                                            accentColor={accentColor}
-                                            crossDaySuggestions={crossDaySuggestions}
-                                            plantName={conflict.plantName}
-                                            recommendedStartMin={null}
-                                            sameDaySlots={topPlantViableSlots}
                                         />
                                     )}
                                 </FadeIn>

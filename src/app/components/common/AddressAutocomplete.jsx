@@ -3,18 +3,24 @@ import { createPortal } from 'react-dom'
 
 import { GeocodeService } from '../../../services/GeocodeService'
 
-const SUGGESTION_DEBOUNCE_MS = 350
-const SUGGESTION_MIN_QUERY_LEN = 4
+const SUGGESTION_DEBOUNCE_MS = 250
+const SUGGESTION_MIN_QUERY_LEN = 3
+/* Higher limit gives the picker more room to surface the right
+ * candidate on tricky addresses (rural roads, plus codes, new
+ * construction) — Photon and Census both rank decently, so the extra
+ * rows usually contain useful near-matches rather than noise. */
+const SUGGESTION_LIMIT = 8
 
 /**
- * Free-text address input with Nominatim-backed autocomplete + verification.
+ * Free-text address input with multi-provider autocomplete + verification.
  *
- * As the dispatcher types we hit Nominatim (debounced) for matching US
- * addresses, render the top hits in a dropdown, and on select replace the
- * input with the canonical `display_name` plus pre-warm the geocode cache
- * with the known-good lat/lng. Result: by the time Submit fires, the job
- * coord is already cached so plant ranking runs without a network round-
- * trip and the address is guaranteed to be a real, geocodable location.
+ * As the dispatcher types we hit the geocode chain (Photon → Census →
+ * Nominatim, debounced) for matching US addresses, render the top hits
+ * in a dropdown, and on select replace the input with the canonical
+ * display name plus pre-warm the geocode cache with the known-good
+ * lat/lng. Result: by the time Submit fires, the job coord is already
+ * cached so plant ranking runs without a network round-trip and the
+ * address is guaranteed to be a real, geocodable location.
  *
  * The dropdown renders inside a `createPortal` at document body level so an
  * ancestor with `overflow: hidden | auto` (e.g. the booking form's scroll
@@ -56,7 +62,7 @@ function AddressAutocomplete({ fieldStyle, inputClassName, onChange, placeholder
         setIsLoading(true)
         setIsOpen(true)
         const handle = setTimeout(async () => {
-            const results = await GeocodeService.search(trimmed)
+            const results = await GeocodeService.search(trimmed, { limit: SUGGESTION_LIMIT })
             if (cancelled) return
             setSuggestions(results)
             setHighlightIndex(-1)
