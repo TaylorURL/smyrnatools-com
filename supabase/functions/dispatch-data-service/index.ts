@@ -2,6 +2,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 // ============================================================================
 // Session-validated read endpoints for the `dispatch_data` table. Replaces
@@ -17,8 +19,6 @@ import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_
 // ============================================================================
 
 const DISPATCH_TABLE = 'dispatch_data'
-const SESSIONS_TABLE = 'users_sessions'
-const SESSION_EXPIRY_DAYS = 7
 const PAGE_SIZE = 1000
 const PAGE_SAFETY_LIMIT = 200
 
@@ -53,36 +53,6 @@ async function parseBody(req: Request): Promise<any> {
     } catch {
         return {}
     }
-}
-
-/** Confirms the request carries a live `users_sessions` row. Mirrors the
- *  pattern in `list-service` so callers authenticate the same way across
- *  the edge surface. */
-async function requireAuthenticated(req: Request, headers: any, body: any): Promise<string | Response> {
-    const userId = body?.__sessionUserId || req.headers.get('x-user-id') || null
-    const sessionId = body?.__sessionId || req.headers.get('x-session-id') || null
-    if (!userId || !sessionId) return errorResponse('Unauthorized', headers, 401)
-    const admin = getAdminClient()
-    const { data, error } = await admin
-        .from(SESSIONS_TABLE)
-        .select('id, last_active')
-        .eq('id', sessionId)
-        .eq('user_id', userId)
-        .maybeSingle()
-    if (error || !data) return errorResponse('Unauthorized', headers, 401)
-    if (data.last_active) {
-        const lastActive = new Date(data.last_active)
-        const expiry = new Date()
-        expiry.setDate(expiry.getDate() - SESSION_EXPIRY_DAYS)
-        if (lastActive < expiry) return errorResponse('Session expired', headers, 401)
-    }
-    admin
-        .from(SESSIONS_TABLE)
-        .update({ last_active: new Date().toISOString() })
-        .eq('id', sessionId)
-        .then(() => {})
-        .catch(() => {})
-    return userId
 }
 
 /** Filters out a list of date strings to ones matching `YYYY-MM-DD`. */
@@ -205,7 +175,7 @@ Deno.serve(async (req) => {
     const headers = getCorsHeaders(origin)
     try {
         const body = await parseBody(req)
-        const auth = await requireAuthenticated(req, headers, body)
+        const auth = await requireAuthenticated(null, req, headers, body)
         if (auth instanceof Response) return auth
 
         const url = new URL(req.url)

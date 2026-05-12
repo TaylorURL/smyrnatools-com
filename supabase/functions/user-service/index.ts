@@ -1,6 +1,8 @@
 // @ts-ignore
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4' // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 const USERS_TABLE = 'users'
 const PROFILES_TABLE = 'users_profiles'
@@ -50,52 +52,12 @@ function fallbackUserName(userId: string): string {
 }
 
 const SESSIONS_TABLE = 'users_sessions'
-const SESSION_EXPIRY_DAYS = 7
 
 function getAdminClient(): any {
     return createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
-}
-
-async function requireAuthenticated(
-    _supabase: any,
-    req: Request,
-    headers: any,
-    body?: any
-): Promise<string | Response> {
-    let userId = body?.__sessionUserId || req.headers.get('x-user-id') || null
-    let sessionId = body?.__sessionId || req.headers.get('x-session-id') || null
-    if (!userId || !sessionId) {
-        try {
-            const b = await req.clone().json()
-            userId = userId || b?.__sessionUserId
-            sessionId = sessionId || b?.__sessionId
-        } catch {}
-    }
-    if (!userId || !sessionId) return errorResponse('Unauthorized', headers, 401)
-    const admin = getAdminClient()
-    const { data, error } = await admin
-        .from(SESSIONS_TABLE)
-        .select('id, last_active')
-        .eq('id', sessionId)
-        .eq('user_id', userId)
-        .maybeSingle()
-    if (error || !data) return errorResponse('Unauthorized', headers, 401)
-    if (data.last_active) {
-        const lastActive = new Date(data.last_active)
-        const expiryDate = new Date()
-        expiryDate.setDate(expiryDate.getDate() - SESSION_EXPIRY_DAYS)
-        if (lastActive < expiryDate) return errorResponse('Session expired', headers, 401)
-    }
-    admin
-        .from(SESSIONS_TABLE)
-        .update({ last_active: new Date().toISOString() })
-        .eq('id', sessionId)
-        .then(() => {})
-        .catch(() => {})
-    return userId
 }
 
 async function requireElevatedCaller(_supabase: any, req: Request, headers: any, body?: any): Promise<Response | null> {

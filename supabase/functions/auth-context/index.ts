@@ -2,6 +2,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.55.0'
 import { buildForgotPasswordEmail } from '../../../scripts/emails/forgot-passwords-email.js' // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 const USERS_TABLE = 'users'
 const PROFILES_TABLE = 'users_profiles'
@@ -266,28 +268,8 @@ Deno.serve(async (req) => {
                 const { userId, firstName, lastName, plantCode } = await req.json()
                 if (!userId || !firstName || !lastName)
                     return errorResponse('User ID, first name, and last name required', headers, 400)
-                const authUserId = req.headers.get('x-user-id')
-                const authSessionId = req.headers.get('x-session-id')
-                if (!authUserId || !authSessionId) return errorResponse('Unauthorized', headers, 401)
-                const { data: sessionData, error: sessionErr } = await supabase
-                    .from('users_sessions')
-                    .select('id, last_active')
-                    .eq('id', authSessionId)
-                    .eq('user_id', authUserId)
-                    .maybeSingle()
-                if (sessionErr || !sessionData) return errorResponse('Unauthorized', headers, 401)
-                if (sessionData.last_active) {
-                    const lastActive = new Date(sessionData.last_active)
-                    const expiryDate = new Date()
-                    expiryDate.setDate(expiryDate.getDate() - 7)
-                    if (lastActive < expiryDate) return errorResponse('Session expired', headers, 401)
-                }
-                supabase
-                    .from('users_sessions')
-                    .update({ last_active: new Date().toISOString() })
-                    .eq('id', authSessionId)
-                    .then(() => {})
-                    .catch(() => {})
+                const authUserId = await requireAuthenticated(supabase, req, headers)
+                if (authUserId instanceof Response) return authUserId
                 if (authUserId !== userId) return errorResponse('Forbidden', headers, 403)
                 const normFirst = normalizeName(firstName)
                 const normLast = normalizeName(lastName)

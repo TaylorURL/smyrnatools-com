@@ -1,11 +1,11 @@
 // @ts-ignore
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4' // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 const CALL_LOG_TABLE = 'customer_call_log'
-const SESSIONS_TABLE = 'users_sessions'
 const USERS_TABLE = 'users'
-const SESSION_EXPIRY_DAYS = 7
 const VALID_OUTCOMES = new Set(['no_answer', 'booked', 'not_interested', 'will_book_again', 'note'])
 
 async function parseBody(req: Request): Promise<any> {
@@ -21,40 +21,6 @@ function getAdminClient(): any {
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
-}
-
-async function requireAuthenticated(req: Request, headers: any, body?: any): Promise<string | Response> {
-    let userId = body?.__sessionUserId || req.headers.get('x-user-id') || null
-    let sessionId = body?.__sessionId || req.headers.get('x-session-id') || null
-    if (!userId || !sessionId) {
-        try {
-            const b = await req.clone().json()
-            userId = userId || b?.__sessionUserId
-            sessionId = sessionId || b?.__sessionId
-        } catch {}
-    }
-    if (!userId || !sessionId) return errorResponse('Unauthorized', headers, 401)
-    const admin = getAdminClient()
-    const { data, error } = await admin
-        .from(SESSIONS_TABLE)
-        .select('id, last_active')
-        .eq('id', sessionId)
-        .eq('user_id', userId)
-        .maybeSingle()
-    if (error || !data) return errorResponse('Unauthorized', headers, 401)
-    if (data.last_active) {
-        const lastActive = new Date(data.last_active)
-        const expiryDate = new Date()
-        expiryDate.setDate(expiryDate.getDate() - SESSION_EXPIRY_DAYS)
-        if (lastActive < expiryDate) return errorResponse('Session expired', headers, 401)
-    }
-    admin
-        .from(SESSIONS_TABLE)
-        .update({ last_active: new Date().toISOString() })
-        .eq('id', sessionId)
-        .then(() => {})
-        .catch(() => {})
-    return userId
 }
 
 async function lookupUserDisplayName(admin: any, userId: string): Promise<string | null> {
@@ -87,7 +53,7 @@ Deno.serve(async (req) => {
         switch (endpoint) {
             case 'roster': {
                 const body = await parseBody(req)
-                const auth = await requireAuthenticated(req, headers, body)
+                const auth = await requireAuthenticated(null, req, headers, body)
                 if (auth instanceof Response) return auth
                 const admin = getAdminClient()
                 const { data, error } = await admin.rpc('get_call_list_roster')
@@ -96,7 +62,7 @@ Deno.serve(async (req) => {
             }
             case 'history': {
                 const body = await parseBody(req)
-                const auth = await requireAuthenticated(req, headers, body)
+                const auth = await requireAuthenticated(null, req, headers, body)
                 if (auth instanceof Response) return auth
                 const customerNum = typeof body?.customerNum === 'string' ? body.customerNum.trim() : ''
                 if (!customerNum) return errorResponse('customerNum is required', headers, 400)
@@ -113,7 +79,7 @@ Deno.serve(async (req) => {
             }
             case 'log-call': {
                 const body = await parseBody(req)
-                const auth = await requireAuthenticated(req, headers, body)
+                const auth = await requireAuthenticated(null, req, headers, body)
                 if (auth instanceof Response) return auth
                 const userId = auth as string
                 const customerNum = typeof body?.customerNum === 'string' ? body.customerNum.trim() : ''
@@ -145,7 +111,7 @@ Deno.serve(async (req) => {
             }
             case 'delete-log': {
                 const body = await parseBody(req)
-                const auth = await requireAuthenticated(req, headers, body)
+                const auth = await requireAuthenticated(null, req, headers, body)
                 if (auth instanceof Response) return auth
                 const logId = typeof body?.logId === 'string' ? body.logId.trim() : ''
                 if (!logId) return errorResponse('logId is required', headers, 400)

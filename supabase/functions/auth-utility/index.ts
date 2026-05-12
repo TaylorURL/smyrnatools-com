@@ -2,6 +2,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 const PWD_HASH_TIMEOUT = 5000
 const MIN_PASSWORD_LENGTH = 8
@@ -87,17 +89,8 @@ Deno.serve(async (req) => {
                 return jsonResponse({ salt: bytesToHex(randomBytes) }, headers)
             }
             case 'hash-password': {
-                const hpUserId = req.headers.get('x-user-id')
-                const hpSessionId = req.headers.get('x-session-id')
-                if (!hpUserId || !hpSessionId) return errorResponse('Unauthorized', headers, 401)
-                const hpAdmin = getAdminClient()
-                const { data: hpSession, error: hpSessionErr } = await hpAdmin
-                    .from('users_sessions')
-                    .select('id')
-                    .eq('id', hpSessionId)
-                    .eq('user_id', hpUserId)
-                    .maybeSingle()
-                if (hpSessionErr || !hpSession) return errorResponse('Unauthorized', headers, 401)
+                const hpAuth = await requireAuthenticated(null, req, headers)
+                if (hpAuth instanceof Response) return hpAuth
                 let body
                 try {
                     body = await req.json()
@@ -118,18 +111,9 @@ Deno.serve(async (req) => {
                 }
             }
             case 'get-user-id': {
-                const guiUserId = req.headers.get('x-user-id')
-                const guiSessionId = req.headers.get('x-session-id')
-                if (!guiUserId || !guiSessionId) return jsonResponse({ userId: null }, headers)
-                const guiAdmin = getAdminClient()
-                const { data: guiSession } = await guiAdmin
-                    .from('users_sessions')
-                    .select('id')
-                    .eq('id', guiSessionId)
-                    .eq('user_id', guiUserId)
-                    .maybeSingle()
-                if (!guiSession) return jsonResponse({ userId: null }, headers)
-                return jsonResponse({ userId: guiUserId }, headers)
+                const guiAuth = await requireAuthenticated(null, req, headers)
+                if (guiAuth instanceof Response) return jsonResponse({ userId: null }, headers)
+                return jsonResponse({ userId: guiAuth }, headers)
             }
             default:
                 return errorResponse('Invalid endpoint', headers, 404, { path: url.pathname })

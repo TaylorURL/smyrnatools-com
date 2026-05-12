@@ -2,6 +2,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 import { type DailyOrderRecord, parseDailyOrderHtml, parseDetailDriverHtml, parseDetailOrderHtml } from './parsers.ts'
 
 // ============================================================================
@@ -62,6 +64,9 @@ Deno.serve(async (req: Request) => {
     } catch {
         body = {}
     }
+
+    const auth = await requireAuthenticated(null, req, headers, body)
+    if (auth instanceof Response) return auth
 
     const date = body.date || todayIso()
     if (!body.reconcile && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {

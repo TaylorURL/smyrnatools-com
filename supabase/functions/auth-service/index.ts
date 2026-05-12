@@ -22,6 +22,8 @@ import {
 import { generateSalt, hashPassword, rehashAndUpdate, verifyPassword } from '../_shared/crypto-helpers.ts'
 // @ts-ignore
 import { mintSessionJwt } from '../_shared/jwt.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 const JWT_TTL_SECONDS = 3600
 
@@ -80,32 +82,6 @@ function getRateLimitKey(req: Request, identifier: string): string {
 const SESSIONS_TABLE = 'users_sessions'
 const SESSION_EXPIRY_DAYS = 7
 const ELEVATED_WEIGHT_THRESHOLD = 75
-
-async function requireAuthenticated(supabase: any, req: Request, headers: any, body?: any): Promise<string | Response> {
-    const userId = body?.__sessionUserId || req.headers.get('x-user-id')
-    const sessionId = body?.__sessionId || req.headers.get('x-session-id')
-    if (!userId || !sessionId) return errorResponse('Unauthorized', headers, 401)
-    const { data, error } = await supabase
-        .from(SESSIONS_TABLE)
-        .select('id, last_active')
-        .eq('id', sessionId)
-        .eq('user_id', userId)
-        .maybeSingle()
-    if (error || !data) return errorResponse('Unauthorized', headers, 401)
-    if (data.last_active) {
-        const lastActive = new Date(data.last_active)
-        const expiryDate = new Date()
-        expiryDate.setDate(expiryDate.getDate() - SESSION_EXPIRY_DAYS)
-        if (lastActive < expiryDate) return errorResponse('Session expired', headers, 401)
-    }
-    supabase
-        .from(SESSIONS_TABLE)
-        .update({ last_active: new Date().toISOString() })
-        .eq('id', sessionId)
-        .then(() => {})
-        .catch(() => {})
-    return userId
-}
 
 async function requireElevatedCaller(supabase: any, req: Request, headers: any, body?: any): Promise<Response | null> {
     const auth = await requireAuthenticated(supabase, req, headers, body)

@@ -2,6 +2,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
+// @ts-ignore
+import { requireAuthenticated } from '../_shared/requireSession.ts'
 
 // ============================================================================
 // Audit log endpoints for the "Find a Spot" booking-assist tool. Writes one
@@ -14,8 +16,6 @@ import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_
 
 const TABLE = 'plan_book_order_logs'
 const PROFILES_TABLE = 'users_profiles'
-const SESSIONS_TABLE = 'users_sessions'
-const SESSION_EXPIRY_DAYS = 7
 const MAX_LIST_LIMIT = 50
 const DEFAULT_LIST_LIMIT = 20
 
@@ -32,33 +32,6 @@ async function parseBody(req: Request): Promise<any> {
     } catch {
         return {}
     }
-}
-
-async function requireAuthenticated(req: Request, headers: any, body?: any): Promise<string | Response> {
-    const userId = body?.__sessionUserId || req.headers.get('x-user-id') || null
-    const sessionId = body?.__sessionId || req.headers.get('x-session-id') || null
-    if (!userId || !sessionId) return errorResponse('Unauthorized', headers, 401)
-    const admin = getAdminClient()
-    const { data, error } = await admin
-        .from(SESSIONS_TABLE)
-        .select('id, last_active')
-        .eq('id', sessionId)
-        .eq('user_id', userId)
-        .maybeSingle()
-    if (error || !data) return errorResponse('Unauthorized', headers, 401)
-    if (data.last_active) {
-        const lastActive = new Date(data.last_active)
-        const expiry = new Date()
-        expiry.setDate(expiry.getDate() - SESSION_EXPIRY_DAYS)
-        if (lastActive < expiry) return errorResponse('Session expired', headers, 401)
-    }
-    admin
-        .from(SESSIONS_TABLE)
-        .update({ last_active: new Date().toISOString() })
-        .eq('id', sessionId)
-        .then(() => {})
-        .catch(() => {})
-    return userId
 }
 
 /** Coerce a numeric value defensively — accepts numbers and numeric
@@ -170,7 +143,7 @@ Deno.serve(async (req: Request) => {
     if (req.method !== 'POST') return errorResponse('Method not allowed', headers, 405)
     try {
         const body = await parseBody(req)
-        const auth = await requireAuthenticated(req, headers, body)
+        const auth = await requireAuthenticated(null, req, headers, body)
         if (auth instanceof Response) return auth
         const url = new URL(req.url)
         const endpoint = url.pathname.split('/').pop() || ''
