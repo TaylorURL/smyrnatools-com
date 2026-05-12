@@ -22,10 +22,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "sync-changelog": "node -e \"require('fs').copyFileSync('CHANGELOG.md','public/changelog.txt')\"",
-    "prestart": "npm run sync-changelog",
     "start": "react-app-rewired start",
-    "prebuild": "npm run sync-changelog",
     "build": "cross-env CI=false react-app-rewired build",
     "analyze": "cross-env ANALYZE=true CI=false react-app-rewired build",
     "test": "react-app-rewired test",
