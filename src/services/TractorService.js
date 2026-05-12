@@ -3,9 +3,7 @@ import { TractorComment } from '../app/models/tractors/TractorComment'
 import { TractorHistory } from '../app/models/tractors/TractorHistory'
 import CleanupUtility from '../utils/CleanupUtility'
 import VerifiedUtility from '../utils/VerifiedUtility'
-import BaseAssetService from './BaseAssetService'
-
-const SERVICE_PREFIX = '/tractor-service'
+import { createAssetService } from './BaseAssetService'
 
 /** Tractor history columns allowed in the audit trail; others are silently dropped. */
 const ALLOWED_HISTORY_FIELDS = [
@@ -32,7 +30,7 @@ function enrichTractorWithVerification(tractor) {
     return tractor
 }
 
-const baseService = new BaseAssetService({
+const base = createAssetService({
     allowedHistoryFields: ALLOWED_HISTORY_FIELDS,
     clearOperatorOnPlantChange: true,
     commentModelFn: TractorComment.fromRow,
@@ -46,50 +44,27 @@ const baseService = new BaseAssetService({
     issuesTable: 'tractors_maintenance',
     parseHistoryRow: TractorHistory.fromApiFormat,
     parseRow: Tractor.fromApiFormat,
-    servicePrefix: SERVICE_PREFIX,
+    servicePrefix: '/tractor-service',
     uppercaseVin: true
 })
 
 /** Tractor CRUD, history, comments, issues, and verification service. */
-export class TractorService {
-    static getAllTractors() {
-        return baseService.getAll()
-    }
-    static fetchTractors() {
-        return this.getAllTractors()
-    }
-    static fetchTractorById(id) {
-        return baseService.fetchById(id)
-    }
-    static getLatestHistoryDate(tractorId) {
-        return baseService.getLatestHistoryDate(tractorId)
-    }
-    static getTractorHistory(tractorId, limit = null) {
-        return baseService.getHistory(tractorId, limit)
-    }
-    static createTractor(tractor, userId) {
-        return baseService.create(tractor, userId)
-    }
-    static updateTractor(tractorId, tractor, userId, prevTractorState = null) {
-        return baseService.update(tractorId, tractor, userId, prevTractorState)
-    }
-    static verifyTractor(tractorId, userId) {
-        return baseService.verify(tractorId, userId)
-    }
-    static deleteTractor(id) {
-        return baseService.delete(id)
-    }
-    static createHistoryEntry(tractorId, fieldName, oldValue, newValue, changedBy) {
-        return baseService.createHistoryEntry(tractorId, fieldName, oldValue, newValue, changedBy)
-    }
-    static getTractorsByOperator(operatorId) {
-        return baseService.getByOperator(operatorId)
-    }
-    static searchTractorsByVin(query) {
-        return baseService.searchByVin(query)
-    }
+export const TractorService = {
+    ...base,
+    getAllTractors() { return base._base.getAll() },
+    fetchTractors() { return this.getAllTractors() },
+    fetchTractorById(id) { return base._base.fetchById(id) },
+    getTractorHistory(tractorId, limit = null) { return base._base.getHistory(tractorId, limit) },
+    createTractor(tractor, userId) { return base._base.create(tractor, userId) },
+    updateTractor(tractorId, tractor, userId, prevTractorState = null) {
+        return base._base.update(tractorId, tractor, userId, prevTractorState)
+    },
+    verifyTractor(tractorId, userId) { return base._base.verify(tractorId, userId) },
+    deleteTractor(id) { return base._base.delete(id) },
+    getTractorsByOperator(operatorId) { return base._base.getByOperator(operatorId) },
+    searchTractorsByVin(query) { return base._base.searchByVin(query) },
     /** VIN search with enrichment + safe count defaults for downstream consumers. */
-    static async searchTractorsByVinProcessed(query) {
+    async searchTractorsByVinProcessed(query) {
         const rows = await this.searchTractorsByVin(query)
         return rows.map((t) => {
             t.isVerified = () => VerifiedUtility.isVerified(t.updatedLast, t.updatedAt, t.updatedBy)
@@ -97,39 +72,10 @@ export class TractorService {
             if (typeof t.commentsCount !== 'number') t.commentsCount = 0
             return t
         })
-    }
-    static fetchAllCommentsCounts(tractorIds) {
-        return baseService.fetchAllCommentsCounts(tractorIds)
-    }
-    static fetchAllIssuesCounts(tractorIds) {
-        return baseService.fetchAllIssuesCounts(tractorIds)
-    }
-    static fetchComments(tractorId) {
-        return baseService.fetchComments(tractorId)
-    }
-    static addComment(tractorId, text, author) {
-        return baseService.addComment(tractorId, text, author)
-    }
-    static deleteComment(commentId) {
-        return baseService.deleteComment(commentId)
-    }
-    static fetchIssues(tractorId) {
-        return baseService.fetchIssues(tractorId)
-    }
-    static addIssue(tractorId, issueText, severity, createdBy = null) {
-        return baseService.addIssue(tractorId, issueText, severity, createdBy)
-    }
-    static deleteIssue(issueId) {
-        return baseService.deleteIssue(issueId)
-    }
-    static completeIssue(issueId) {
-        return baseService.completeIssue(issueId)
-    }
-    static fetchTractorsWithDetails(regionCodes = null) {
-        return baseService.fetchWithDetails(regionCodes)
-    }
+    },
+    fetchTractorsWithDetails(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
     /** Batch-corrects null operator fields by setting affected tractors to Spare. */
-    static cleanupNullOperators(tractors = null) {
+    cleanupNullOperators(tractors = null) {
         return CleanupUtility.cleanupNullOperators(
             tractors,
             (id, updates, userId) => this.updateTractor(id, updates, userId),

@@ -1,11 +1,11 @@
 import PickupTruck from '../app/models/pickup-trucks/PickupTruck'
 import { apiPostOrThrow, getDuplicateFieldValues, requireUserId, resolveEntityId } from '../utils/BaseAssetUtility'
 import { ValidationUtility } from '../utils/ValidationUtility'
-import BaseAssetService from './BaseAssetService'
+import { createAssetService } from './BaseAssetService'
 
 const SERVICE_PREFIX = '/pickup-truck-service'
 
-const baseService = new BaseAssetService({
+const base = createAssetService({
     commentsTable: 'pickup_trucks_comments',
     entityIdParam: 'pickupId',
     entityKey: 'pickup',
@@ -18,36 +18,17 @@ const baseService = new BaseAssetService({
 })
 
 /** Pickup truck CRUD, comments, issues, history, and verification service. */
-class PickupTruckServiceImpl {
-    static fetchAllCommentsCounts(pickupIds) {
-        return baseService.fetchAllCommentsCounts(pickupIds)
-    }
-    static fetchAllIssuesCounts(pickupIds) {
-        return baseService.fetchAllIssuesCounts(pickupIds)
-    }
-    static getAll() {
-        return baseService.getAll()
-    }
-    static fetchAll(regionCodes = null) {
-        return baseService.fetchWithDetails(regionCodes)
-    }
-    static getById(id) {
-        return baseService.fetchById(id)
-    }
-    static create(pickup, userId) {
-        return baseService.create(pickup, userId)
-    }
-    static update(id, pickup, userId) {
-        return baseService.update(id, pickup, userId)
-    }
-    static remove(id) {
-        return baseService.delete(id)
-    }
-    static searchByVin(query) {
-        return baseService.searchByVin(query)
-    }
+export const PickupTruckService = {
+    ...base,
+    getAll() { return base._base.getAll() },
+    fetchAll(regionCodes = null) { return base._base.fetchWithDetails(regionCodes) },
+    getById(id) { return base._base.fetchById(id) },
+    create(pickup, userId) { return base._base.create(pickup, userId) },
+    update(id, pickup, userId) { return base._base.update(id, pickup, userId) },
+    remove(id) { return base._base.delete(id) },
+    searchByVin(query) { return base._base.searchByVin(query) },
     /** Pickup-specific search by assigned-person name (not in the generic BaseAssetService API). */
-    static async searchByAssigned(query) {
+    async searchByAssigned(query) {
         if (!query?.trim()) throw new Error('Search query is required')
         const json = await apiPostOrThrow(
             `${SERVICE_PREFIX}/search-by-assigned`,
@@ -55,12 +36,12 @@ class PickupTruckServiceImpl {
             'Failed to search pickup trucks by assignee'
         )
         return (json?.data ?? []).map(PickupTruck.fromApiFormat)
-    }
+    },
     /**
      * Verifies via the `/update` endpoint with a fresh `updatedLast` timestamp
-     * — the pickup-truck service has no dedicated `/verify` route.
+     * -- the pickup-truck service has no dedicated `/verify` route.
      */
-    static async verify(pickupId, userId) {
+    async verify(pickupId, userId) {
         const id = resolveEntityId(pickupId)
         ValidationUtility.requireUUID(id, 'Pickup Truck ID is required')
         const resolvedUserId = await requireUserId(userId)
@@ -70,48 +51,18 @@ class PickupTruckServiceImpl {
             'Failed to verify pickup truck'
         )
         return PickupTruck.fromApiFormat(json?.data)
-    }
-    static getDuplicateVINs(pickups) {
+    },
+    getDuplicateVINs(pickups) {
         return getDuplicateFieldValues(pickups, (p) => {
-            const key = String(p.vin || '')
-                .trim()
-                .toUpperCase()
-                .replace(/\s+/g, '')
+            const key = String(p.vin || '').trim().toUpperCase().replace(/\s+/g, '')
             return key || null
         })
-    }
-    static getDuplicateAssigned(pickups) {
+    },
+    getDuplicateAssigned(pickups) {
         return getDuplicateFieldValues(pickups, (p) => {
-            const key = String(p.assigned || '')
-                .trim()
-                .toLowerCase()
+            const key = String(p.assigned || '').trim().toLowerCase()
             return key || null
         })
-    }
-    static fetchComments(pickupId) {
-        return baseService.fetchComments(pickupId)
-    }
-    static addComment(pickupId, text, author) {
-        return baseService.addComment(pickupId, text, author)
-    }
-    static deleteComment(commentId) {
-        return baseService.deleteComment(commentId)
-    }
-    static fetchIssues(pickupId) {
-        return baseService.fetchIssues(pickupId)
-    }
-    static completeIssue(issueId) {
-        return baseService.completeIssue(issueId)
-    }
-    static addIssue(pickupId, issue, severity, createdBy = null) {
-        return baseService.addIssue(pickupId, issue, severity, createdBy)
-    }
-    static deleteIssue(issueId) {
-        return baseService.deleteIssue(issueId)
-    }
-    static fetchHistory(pickupId, limit = null) {
-        return baseService.getHistory(pickupId, limit)
-    }
+    },
+    fetchHistory(pickupId, limit = null) { return base._base.getHistory(pickupId, limit) }
 }
-
-export const PickupTruckService = PickupTruckServiceImpl
