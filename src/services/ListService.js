@@ -16,26 +16,12 @@ const PRIORITY_CACHE_PREFIX = 'ai:priority:'
  *  rgba bg/border layer over the active theme background instead of relying
  *  on a hard-coded pale tint that disappears on dark surfaces. */
 const PRIORITY_CONFIG = {
-    urgent: {
-        bg: 'rgba(220,38,38,0.12)',
-        border: 'rgba(220,38,38,0.35)',
-        color: '#ef4444',
-        icon: 'fa-fire',
-        label: 'Urgent'
-    },
     high: {
         bg: 'rgba(234,88,12,0.12)',
         border: 'rgba(234,88,12,0.35)',
         color: '#f97316',
         icon: 'fa-arrow-up',
         label: 'High'
-    },
-    medium: {
-        bg: 'rgba(202,138,4,0.12)',
-        border: 'rgba(202,138,4,0.35)',
-        color: '#eab308',
-        icon: 'fa-minus',
-        label: 'Medium'
     },
     low: {
         bg: 'rgba(59,130,246,0.12)',
@@ -44,12 +30,26 @@ const PRIORITY_CONFIG = {
         icon: 'fa-arrow-down',
         label: 'Low'
     },
+    medium: {
+        bg: 'rgba(202,138,4,0.12)',
+        border: 'rgba(202,138,4,0.35)',
+        color: '#eab308',
+        icon: 'fa-minus',
+        label: 'Medium'
+    },
     none: {
         bg: 'rgba(148,163,184,0.12)',
         border: 'rgba(148,163,184,0.30)',
         color: '#94a3b8',
         icon: 'fa-minus',
         label: 'No Priority'
+    },
+    urgent: {
+        bg: 'rgba(220,38,38,0.12)',
+        border: 'rgba(220,38,38,0.35)',
+        color: '#ef4444',
+        icon: 'fa-fire',
+        label: 'Urgent'
     }
 }
 const PRIORITY_OPTIONS = [
@@ -409,31 +409,31 @@ class ListServiceImpl {
      */
     getActivityDisplay(action, fieldName) {
         const FIELD_LABELS = {
-            status: 'status',
-            priority: 'priority',
-            responsible_role: 'assigned role',
-            plant_code: 'plant',
+            comments: 'comments',
             deadline: 'deadline',
             description: 'description',
-            comments: 'comments'
+            plant_code: 'plant',
+            priority: 'priority',
+            responsible_role: 'assigned role',
+            status: 'status'
         }
         switch (action) {
             case 'created':
-                return { verb: 'created', icon: 'fa-plus', color: 'accentColor' }
+                return { color: 'accentColor', icon: 'fa-plus', verb: 'created' }
             case 'completed':
-                return { verb: 'completed', icon: 'fa-check', color: '#16a34a' }
+                return { color: '#16a34a', icon: 'fa-check', verb: 'completed' }
             case 'uncompleted':
-                return { verb: 'reopened', icon: 'fa-undo', color: '#f59e0b' }
+                return { color: '#f59e0b', icon: 'fa-undo', verb: 'reopened' }
             case 'deleted':
-                return { verb: 'deleted', icon: 'fa-trash', color: '#ef4444' }
+                return { color: '#ef4444', icon: 'fa-trash', verb: 'deleted' }
             case 'updated':
                 return {
-                    verb: `changed ${FIELD_LABELS[fieldName] || fieldName || 'a field'} on`,
+                    color: '#3b82f6',
                     icon: 'fa-pen',
-                    color: '#3b82f6'
+                    verb: `changed ${FIELD_LABELS[fieldName] || fieldName || 'a field'} on`
                 }
             default:
-                return { verb: action, icon: 'fa-circle', color: '#94a3b8' }
+                return { color: '#94a3b8', icon: 'fa-circle', verb: action }
         }
     }
     /**
@@ -476,7 +476,7 @@ class ListServiceImpl {
         if (diffHours < 24) return `${diffHours}h ago`
         if (diffDays === 1) return 'Yesterday'
         if (diffDays < 7) return `${diffDays}d ago`
-        return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        return then.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
     }
     /** Computes per-plant distribution of total, completed, pending, and overdue items. */
     getPlantDistribution(listItems) {

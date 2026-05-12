@@ -107,9 +107,9 @@ export const PreferencesProvider = ({ children }) => {
             if (userId) {
                 const now = new Date().toISOString()
                 const upsertData = {
+                    accent_color: updatedPreferences.accentColor,
                     accept_comment_emails: updatedPreferences.acceptCommentEmails,
                     accept_report_submitted_emails: updatedPreferences.acceptReportSubmittedEmails,
-                    accent_color: updatedPreferences.accentColor,
                     created_at: now,
                     default_view_mode: updatedPreferences.defaultViewMode,
                     equipment_filters: updatedPreferences.equipmentFilters,
@@ -161,9 +161,9 @@ export const PreferencesProvider = ({ children }) => {
                     const data = await UserPreferencesService.getUserPreferences(user.id)
                     if (data) {
                         prefs = {
+                            accentColor: data.accent_color || defaultPreferences.accentColor,
                             acceptCommentEmails:
                                 data.accept_comment_emails === undefined ? true : data.accept_comment_emails,
-                            accentColor: data.accent_color || defaultPreferences.accentColor,
                             accept_report_submitted_emails:
                                 data.accept_report_submitted_emails === undefined
                                     ? true

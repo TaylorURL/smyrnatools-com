@@ -13,14 +13,14 @@ const DEFAULT_COL_WIDTHS = ['10%', '12%', '12%', '18%', '12%', '18%', '10%', '8%
 /* ── Visual atoms — flat, Plan-tab aesthetic ────────────────────────── */
 
 const BADGE_PILL_TINTS = {
-    Total: '#475569',
-    Shop: '#dc2626',
     Active: '#16a34a',
-    Spare: '#7c3aed',
-    Unassigned: '#a16207',
-    OK: '#16a34a',
     'Due Soon': '#d97706',
-    Overdue: '#dc2626'
+    OK: '#16a34a',
+    Overdue: '#dc2626',
+    Shop: '#dc2626',
+    Spare: '#7c3aed',
+    Total: '#475569',
+    Unassigned: '#a16207'
 }
 
 /** Inline badge — parses "X Label · Y Label" into a row of compact pills. */
@@ -52,7 +52,7 @@ const Badge = ({ children, onClick, onPillClick, accentColor }) => {
                             className={`inline-flex items-center gap-1 rounded text-[11px] font-semibold px-1.5 py-0.5${
                                 clickHandler ? ' border-none cursor-pointer hover:brightness-95' : ''
                             }`}
-                            style={{ background: `${color}14`, color, border: `1px solid ${color}30` }}
+                            style={{ background: `${color}14`, border: `1px solid ${color}30`, color }}
                             {...clickProps}
                         >
                             <span className="font-mono tabular-nums">{count}</span>
@@ -67,16 +67,16 @@ const Badge = ({ children, onClick, onPillClick, accentColor }) => {
     const Wrapper = onClick ? 'button' : 'span'
     const wrapperProps = onClick
         ? {
+              className: 'border-none bg-transparent p-0 cursor-pointer',
               onClick,
-              type: 'button',
-              className: 'border-none bg-transparent p-0 cursor-pointer'
+              type: 'button'
           }
         : {}
     return (
         <Wrapper {...wrapperProps}>
             <span
                 className="inline-flex items-center gap-1 rounded text-[11px] font-semibold px-1.5 py-0.5"
-                style={{ background: `${accentColor}14`, color: accentColor, border: `1px solid ${accentColor}30` }}
+                style={{ background: `${accentColor}14`, border: `1px solid ${accentColor}30`, color: accentColor }}
             >
                 {children}
             </span>

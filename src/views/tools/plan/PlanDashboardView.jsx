@@ -10,8 +10,6 @@ import PlanNotesSection from '../../../app/components/plan/PlanNotesSection'
 import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
 import {
     computeDashboardJobCoverage,
-    computeDashboardPullUpRows,
-    computeDashboardSuggestedSlots,
     countPlantsWithYardage,
     PLAN_META_KEY,
     readPlanMeta,
@@ -111,7 +109,7 @@ function PlanDashboardView({
         scopePlantCodes,
         scopePlantSet,
         yourSectionKind,
-        yourSectionLabel,
+        yourSectionLabel: _yourSectionLabel,
         yourSectionTitle
     } = useYourScope(yourPlantScope)
 
@@ -126,15 +124,6 @@ function PlanDashboardView({
         () => computeDashboardJobCoverage({ assignments, planDate, plantProduction, stats }),
         [plantProduction, stats, assignments, planDate]
     )
-    const pullUpRecommendations = useMemo(
-        () => computeDashboardPullUpRows({ assignments, planDate, plantProduction, stats }),
-        [plantProduction, stats, assignments, planDate]
-    )
-    const suggestedSlotRecommendations = useMemo(
-        () => computeDashboardSuggestedSlots({ assignments, planDate, plantProduction, stats }),
-        [plantProduction, stats, assignments, planDate]
-    )
-
     const totalOperatorsFleet = useMemo(
         () => Object.values(mixerCountsByPlant || {}).reduce((sum, count) => sum + (count || 0), 0),
         [mixerCountsByPlant]
@@ -164,16 +153,6 @@ function PlanDashboardView({
     const meta = readPlanMeta(plantProduction)
     const specialJobs = useMemo(() => meta.specialJobs || [], [meta.specialJobs])
     const qcJobs = useMemo(() => meta.qcJobs || [], [meta.qcJobs])
-    const updateJobList = useCallback(
-        (key, updater) => {
-            writePlanMeta(setPlantProduction, (prev) => ({
-                ...prev,
-                [key]: typeof updater === 'function' ? updater(prev[key] || []) : updater
-            }))
-        },
-        [setPlantProduction]
-    )
-
     const formattedNotes = meta.formattedNotes || null
     const formattedNotesSource = meta.formattedNotesSource ?? null
     const setFormattedNotes = useCallback(
@@ -193,14 +172,6 @@ function PlanDashboardView({
         [setPlantProduction]
     )
 
-    const addSpecialJob = (job) => updateJobList('specialJobs', (list) => [...list, job])
-    const saveSpecialJob = (job) =>
-        updateJobList('specialJobs', (list) => list.map((entry) => (entry.id === job.id ? job : entry)))
-    const deleteSpecialJob = (id) => updateJobList('specialJobs', (list) => list.filter((entry) => entry.id !== id))
-    const addQcJob = (job) => updateJobList('qcJobs', (list) => [...list, job])
-    const saveQcJob = (job) =>
-        updateJobList('qcJobs', (list) => list.map((entry) => (entry.id === job.id ? job : entry)))
-    const deleteQcJob = (id) => updateJobList('qcJobs', (list) => list.filter((entry) => entry.id !== id))
 
     /* ── Scope-aware summary (Plant / District / Region) ────────────
        Outbound/Inbound include intra-scope moves so managers see every

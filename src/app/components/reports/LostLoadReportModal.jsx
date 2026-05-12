@@ -246,16 +246,13 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
             // Notify GMs — await so failures are visible, but don't block the success flow
             try {
                 await EmailService.notifyReportSubmitted({
-                    userId: user.id,
-                    reportTitle: 'Lost Load Report',
-                    weekLabel: '',
                     attachmentUrl,
                     reportFields: [
                         {
                             label: 'Date of Lost Load',
                             value: new Date(lostLoadDate + 'T12:00:00').toLocaleDateString('en-US', {
-                                month: 'short',
                                 day: 'numeric',
+                                month: 'short',
                                 year: 'numeric'
                             })
                         },
@@ -267,7 +264,10 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                         ...(ticketNumber.trim() ? [{ label: 'Ticket Number', value: ticketNumber.trim() }] : []),
                         { label: 'Reason', value: fullReason },
                         ...(attachmentUrl ? [{ label: 'Writeup', value: 'PDF attached' }] : [])
-                    ]
+                    ],
+                    reportTitle: 'Lost Load Report',
+                    userId: user.id,
+                    weekLabel: ''
                 })
                 onClose()
             } catch (emailErr) {

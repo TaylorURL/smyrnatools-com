@@ -73,7 +73,8 @@ export const extractCityFromFullAddress = (fullAddress) => {
     if (parts.length >= 3) return parts[1]
     if (parts.length === 2) {
         // "street, city STATE ZIP" — strip trailing state + zip to isolate city.
-        return parts[1].replace(/\s+[A-Za-z]{2}(\s+\d{5}(-\d{4})?)?\s*$/i, '').trim()
+        // eslint-disable-next-line security/detect-unsafe-regex -- anchored to $, fixed-length character classes; no exponential backtracking path
+        return parts[1].replace(/\s+[A-Za-z]{2}(\s+\d{5}(-\d{4})?)?$/i, '').trim()
     }
     return ''
 }

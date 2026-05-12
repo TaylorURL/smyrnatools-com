@@ -21,18 +21,18 @@ const SCALE_TYPES = ['batch', 'aggregate', 'truck', 'water', 'admixture', 'cemen
  * pills flip cleanly between light and dark mode without per-status hex math.
  */
 const STATUS_BADGE = {
-    valid: { label: 'Valid', cls: 'status-badge-success' },
-    expiring: { label: 'Expiring', cls: 'status-badge-warning' },
-    expired: { label: 'Expired', cls: 'status-badge-danger' },
-    ok: { label: 'OK', cls: 'status-badge-success' },
-    due_soon: { label: 'Due Soon', cls: 'status-badge-warning' },
-    overdue: { label: 'Overdue', cls: 'status-badge-danger' },
-    unknown: { label: 'Not Set', cls: 'status-badge-neutral' }
+    due_soon: { cls: 'status-badge-warning', label: 'Due Soon' },
+    expired: { cls: 'status-badge-danger', label: 'Expired' },
+    expiring: { cls: 'status-badge-warning', label: 'Expiring' },
+    ok: { cls: 'status-badge-success', label: 'OK' },
+    overdue: { cls: 'status-badge-danger', label: 'Overdue' },
+    unknown: { cls: 'status-badge-neutral', label: 'Not Set' },
+    valid: { cls: 'status-badge-success', label: 'Valid' }
 }
 
 const SCALE_ICON_TONE_CLASS = {
-    ok: 'status-badge-success',
     due_soon: 'status-badge-warning',
+    ok: 'status-badge-success',
     overdue: 'status-badge-danger',
     unknown: 'status-badge-neutral'
 }
@@ -54,7 +54,7 @@ const SELECT_CLS = `${INPUT_CLS} appearance-none cursor-pointer`
 
 const fmt = (d) =>
     d
-        ? new Date(d + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+        ? new Date(d + 'T12:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
         : null
 
 const daysFromNow = (d) => (d ? Math.ceil((new Date(d + 'T12:00:00') - Date.now()) / 86400000) : null)
@@ -174,10 +174,10 @@ function LogRenewalModal({ plant, onClose, onSaved }) {
         setSaving(true)
         try {
             await NRMCAService.logRenewal({
+                notes: notes || null,
                 nrmca_plant_id: plant.id,
-                renewed_at: renewedAt,
                 renewal_expires_at: expiresAt || null,
-                notes: notes || null
+                renewed_at: renewedAt
             })
             onSaved()
         } catch (err) {
@@ -232,10 +232,10 @@ function LogCalibrationModal({ scale, onClose, onSaved }) {
         setSaving(true)
         try {
             await NRMCAService.logCalibration({
-                scale_id: scale.id,
                 calibrated_at: calibratedAt,
                 calibrated_by: calibratedBy || null,
-                notes: notes || null
+                notes: notes || null,
+                scale_id: scale.id
             })
             onSaved()
         } catch (err) {
@@ -304,9 +304,9 @@ function PlantFormModal({ plant, regionPlants, onClose, onSaved }) {
         try {
             await NRMCAService.upsertPlant({
                 id: plant?.id,
+                notes: notes || null,
                 plant_code: plantCode,
-                plant_label: plantLabel,
-                notes: notes || null
+                plant_label: plantLabel
             })
             onSaved()
         } catch (err) {
@@ -380,13 +380,13 @@ function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, onSaved }
         setSaving(true)
         try {
             await NRMCAService.upsertScale({
+                calibration_interval_days: parseInt(intervalDays) || 365,
                 id: scale?.id,
+                notes: notes || null,
                 nrmca_plant_id: nrmcaPlantId,
                 plant_code: selectedPlant?.plant_code ?? null,
                 scale_name: scaleName,
-                scale_type: scaleType,
-                calibration_interval_days: parseInt(intervalDays) || 365,
-                notes: notes || null
+                scale_type: scaleType
             })
             onSaved()
         } catch (err) {
@@ -823,11 +823,11 @@ export default function NRMCAView() {
 
     const tabs = useMemo(
         () => [
-            { key: 'all', label: 'All', icon: 'fa-list' },
+            { icon: 'fa-list', key: 'all', label: 'All' },
             {
+                icon: 'fa-triangle-exclamation',
                 key: 'issues',
-                label: issueCount > 0 ? `Issues · ${issueCount}` : 'Issues',
-                icon: 'fa-triangle-exclamation'
+                label: issueCount > 0 ? `Issues · ${issueCount}` : 'Issues'
             }
         ],
         [issueCount]

@@ -130,8 +130,8 @@ function TrackCard({ item, history = [], onStart, onContinue, onView, plantLabel
                         isViewMode
                             ? {
                                   background: 'var(--bg-tertiary)',
-                                  color: 'var(--text-primary)',
-                                  border: '1px solid var(--border-light)'
+                                  border: '1px solid var(--border-light)',
+                                  color: 'var(--text-primary)'
                               }
                             : { background: buttonBg, color: '#fff' }
                     }

@@ -62,8 +62,8 @@ const buildEvents = (detailByOrderId, orderMetaByOrderId, plantNameByCode) => {
                 kind: 'load',
                 orderNum: meta?.orderNum || '',
                 quantity: parseFloat(ticket?.quantity) || 0,
-                ts,
-                truckNum: trim(ticket?.truckNum)
+                truckNum: trim(ticket?.truckNum),
+                ts
             })
         })
         const scheduled = meta?.scheduledYardage || 0

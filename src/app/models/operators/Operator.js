@@ -60,8 +60,8 @@ export class Operator {
             pending_start_date: this.pendingStartDate ?? null,
             phone: this.phone ?? null,
             plant_code: this.plantCode ?? null,
-            rating: typeof this.rating === 'number' ? this.rating : 0,
             position: this.position ?? null,
+            rating: typeof this.rating === 'number' ? this.rating : 0,
             smyrna_id: this.smyrnaId ?? null,
             status: this.status || 'Active',
             updated_at: this.updatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')

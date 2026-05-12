@@ -238,14 +238,6 @@ function ReportsView() {
         return Math.min(8, Math.max(0, Math.ceil(diff / 86400000)))
     }, [cutoffForWeek, thisWeekIso])
 
-    const todayDayIndex = useMemo(() => {
-        const { monday } = ReportUtility.getWeekDatesFromIso(thisWeekIso)
-        if (!monday) return 0
-        const now = new Date()
-        const diffDays = Math.floor((now - monday) / 86400000)
-        return Math.max(0, Math.min(6, diffDays))
-    }, [thisWeekIso])
-
     const overdueSourceItems = useMemo(() => {
         const now = Date.now()
         const pool = []
@@ -542,9 +534,6 @@ function ReportsView() {
             ),
         [hasAssigned, hasReviewPermission, regionType]
     )
-
-    const pendingReviewCount = visibleReviewReports.filter((r) => !reviewedByCurrentUser.has(r.id)).length
-    const pendingQcCount = qcReports.filter((r) => !r.reviewed).length
 
     /* ─────────────────────────────────────────────────────────────
        Loss / QC tab data & pagination (unchanged from prior version)
@@ -978,7 +967,7 @@ function ReportsView() {
             if (qcSort === 'cast_desc') return (a.data?.date_molded || '') > (b.data?.date_molded || '') ? -1 : 1
             return new Date(b.submittedAt) - new Date(a.submittedAt)
         })
-    }, [qcReports, qcTypeFilter, qcStatusFilter, qcSort, qcDateFrom, qcDateTo])
+    }, [qcReports, qcTypeFilter, qcStatusFilter, qcSort, qcDateFrom, qcDateTo, districtPlantSet, filterPlant, getUserName, myPlantCodesSet, searchLower])
     const qcHasActiveFilters =
         qcTypeFilter !== 'all' ||
         qcStatusFilter !== 'all' ||

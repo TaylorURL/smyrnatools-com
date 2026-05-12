@@ -229,11 +229,11 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
     /** Groups open (non-completed) tasks by priority level. */
     const groupedByPriority = useMemo(() => {
         const groups = {
-            urgent: { color: 'danger', icon: 'fa-fire', items: [], label: 'Urgent', priority: 1 },
             high: { color: 'warning', icon: 'fa-arrow-up', items: [], label: 'High', priority: 2 },
-            medium: { color: 'accent', icon: 'fa-minus', items: [], label: 'Medium', priority: 3 },
             low: { color: 'info', icon: 'fa-arrow-down', items: [], label: 'Low', priority: 4 },
-            none: { color: 'secondary', icon: 'fa-minus', items: [], label: 'No Priority', priority: 5 }
+            medium: { color: 'accent', icon: 'fa-minus', items: [], label: 'Medium', priority: 3 },
+            none: { color: 'secondary', icon: 'fa-minus', items: [], label: 'No Priority', priority: 5 },
+            urgent: { color: 'danger', icon: 'fa-fire', items: [], label: 'Urgent', priority: 1 }
         }
         roleFilteredItems
             .filter((item) => !item.completed && item.status !== 'completed')

@@ -94,7 +94,7 @@ export default function DashboardView() {
         allOperatorsFullRef,
         dataReady,
         error,
-        lightDutyOperators,
+        lightDutyOperators: _lightDutyOperators,
         loading,
         pendingStartOperators,
         trainingOperators

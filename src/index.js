@@ -11,7 +11,7 @@ import { TutorialProvider } from './app/context/TutorialContext'
 import { databaseKey, databaseUrl } from './services/DatabaseService'
 import ErrorReporterUtility, { ErrorBoundary } from './utils/ErrorReporterUtility'
 
-ErrorReporterUtility.init({ project: 'smyrnatools.com', apiKey: databaseKey, baseUrl: databaseUrl })
+ErrorReporterUtility.init({ apiKey: databaseKey, baseUrl: databaseUrl, project: 'smyrnatools.com' })
 document.head.appendChild(
     Object.assign(document.createElement('meta'), {
         content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',

@@ -126,10 +126,10 @@ function ListViewModeSection({
                                         `animate-slide-in-row hover:[&>td]:bg-bg-tertiary ${row.props.className || ''}`.trim(),
                                     key: row.key || item.id,
                                     style: {
+                                        animationDelay: `${getRowDelay(index)}ms`,
                                         backgroundColor: 'var(--bg-primary)',
                                         borderBottom: '1px solid var(--border-light)',
                                         cursor: 'pointer',
-                                        animationDelay: `${getRowDelay(index)}ms`,
                                         ...row.props.style
                                     }
                                 })

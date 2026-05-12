@@ -719,19 +719,19 @@ export function ReadyMixInstructorSubmitPlugin({ form, setForm, readOnly, plants
             const filterRows = (rows) => (Array.isArray(rows) ? rows.filter((r) => inRegion(r?.plant)) : rows)
             const nextSnapshot = {
                 ...snapshot,
-                mixer_trainers: filterRows(snapshot.mixer_trainers),
-                tractor_trainers: filterRows(snapshot.tractor_trainers),
                 mixer_pending: filterRows(snapshot.mixer_pending),
-                tractor_pending: filterRows(snapshot.tractor_pending),
+                mixer_trainers: filterRows(snapshot.mixer_trainers),
                 mixer_training: filterRows(snapshot.mixer_training),
-                tractor_training: filterRows(snapshot.tractor_training),
-                terminated_operators: filterRows(snapshot.terminated_operators)
+                terminated_operators: filterRows(snapshot.terminated_operators),
+                tractor_pending: filterRows(snapshot.tractor_pending),
+                tractor_trainers: filterRows(snapshot.tractor_trainers),
+                tractor_training: filterRows(snapshot.tractor_training)
             }
             const nextGoals = {}
             Object.entries(prev.hiring_goals || {}).forEach(([code, goal]) => {
                 if (inRegion(code)) nextGoals[code] = goal
             })
-            return { ...prev, snapshot_data: nextSnapshot, hiring_goals: nextGoals }
+            return { ...prev, hiring_goals: nextGoals, snapshot_data: nextSnapshot }
         })
     }, [resolvedRegionCodes, readOnly, setForm])
     /** Region plant codes used for every operator filter in this plugin. Prefers

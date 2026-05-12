@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react'
  * Extracts modal state, form fields, and save/verify logic so the
  * parent component stays focused on list rendering.
  */
-export default function useAssetVerification({ config, items, setItems, allItems, setAllItems }) {
+export default function useAssetVerification({ config, items, setItems, allItems: _allItems, setAllItems }) {
     const [showVerifyModal, setShowVerifyModal] = useState(false)
     const [verifyItem, setVerifyItem] = useState(null)
     const [verifyVin, setVerifyVin] = useState('')
@@ -71,7 +71,7 @@ export default function useAssetVerification({ config, items, setItems, allItems
             console.error(`Failed to verify ${config.singularLabel}:`, error)
             throw new Error(`Failed to verify ${config.singularLabel}. Please try again.`)
         }
-    }, [verifyItem, verifyVin, verifyMake, verifyModel, verifyYear, verifyLastServiceDate, verifyLastChipDate, config])
+    }, [verifyItem, verifyVin, verifyMake, verifyModel, verifyYear, verifyLastServiceDate, verifyLastChipDate, config, setAllItems, setItems])
 
     return {
         handleSaveAndVerify,

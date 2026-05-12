@@ -618,9 +618,9 @@ export function SafetyManagerSubmitPlugin({ form, plants, readOnly, setForm }) {
                                             <span
                                                 className="absolute rounded-full bg-bg-primary transition-all w-3 h-3"
                                                 style={{
-                                                    top: 2,
+                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
                                                     left: issue.affectsEfficiency ? 16 : 2,
-                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                                    top: 2
                                                 }}
                                             />
                                         </span>

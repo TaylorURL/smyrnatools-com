@@ -55,9 +55,9 @@ const VerifiedUtility = {
                 // Resolve current day-of-week and hour in Central Time (handles CST/CDT automatically)
                 const parts = new Intl.DateTimeFormat('en-US', {
                     ...CENTRAL_TIME_FORMAT_OPTIONS,
-                    year: 'numeric',
+                    day: '2-digit',
                     month: '2-digit',
-                    day: '2-digit'
+                    year: 'numeric'
                 }).formatToParts(date)
                 const partMap = Object.fromEntries(parts.map(({ type, value }) => [type, value]))
                 const ctDayIndex = WEEKDAY_NAMES.indexOf(partMap.weekday)
@@ -74,9 +74,9 @@ const VerifiedUtility = {
                 const targetMs = date.getTime() - daysBack * 86400000
                 const targetParts = new Intl.DateTimeFormat('en-US', {
                     ...CENTRAL_TIME_FORMAT_OPTIONS,
-                    year: 'numeric',
+                    day: '2-digit',
                     month: '2-digit',
-                    day: '2-digit'
+                    year: 'numeric'
                 }).formatToParts(new Date(targetMs))
                 const tp = Object.fromEntries(targetParts.map(({ type, value }) => [type, value]))
 

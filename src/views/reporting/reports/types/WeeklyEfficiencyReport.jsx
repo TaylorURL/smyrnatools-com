@@ -291,9 +291,9 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
                                     className={`${TD_BASE} align-top`}
                                     style={{
                                         ...rowStyle,
-                                        minWidth: 260,
+                                        color: missingRequiredComment ? '#dc2626' : 'var(--text-secondary)',
                                         maxWidth: 360,
-                                        color: missingRequiredComment ? '#dc2626' : 'var(--text-secondary)'
+                                        minWidth: 260
                                     }}
                                 >
                                     {hasComment ? (

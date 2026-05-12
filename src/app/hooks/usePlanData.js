@@ -204,7 +204,6 @@ export function usePlanData(planDate) {
     plantProductionRef.current = plantProduction
 
     useRealtimeSubscription({
-        table: 'plans',
         enabled: !isLoading,
         onChange: useCallback((payload) => {
             if (dirtyRef.current) return
@@ -227,7 +226,8 @@ export function usePlanData(planDate) {
                     setPlantProduction(record.plant_production)
                 }
             }
-        }, [])
+        }, []),
+        table: 'plans'
     })
 
     // Realtime: refresh mixer counts
@@ -235,18 +235,17 @@ export function usePlanData(planDate) {
     plantCodesRef.current = plants.map((p) => p.plant_code).filter(Boolean)
 
     useRealtimeSubscription({
-        table: 'mixers',
         enabled: !isLoading && plants.length > 0,
         onChange: useCallback(async () => {
             if (!plantCodesRef.current.length) return
             const counts = await ReportService.fetchActiveMixerCountsByPlant(plantCodesRef.current)
             setMixerCountsByPlant(counts)
-        }, [])
+        }, []),
+        table: 'mixers'
     })
 
     // Realtime: refresh travel times
     useRealtimeSubscription({
-        table: 'plant_travel_times',
         enabled: !isLoading,
         onChange: useCallback(async () => {
             try {
@@ -255,7 +254,8 @@ export function usePlanData(planDate) {
             } catch (err) {
                 console.warn('[usePlanData] realtime travel-times refresh failed:', err?.message || err)
             }
-        }, [])
+        }, []),
+        table: 'plant_travel_times'
     })
 
     // Pull the daily schedule from the bucket every 5 min, plus realtime when
@@ -268,10 +268,10 @@ export function usePlanData(planDate) {
         lastSyncedAt: scheduleLastSyncedAt,
         refresh: refreshSchedule
     } = useScheduleSync({
+        enabled: !isLoading && plants.length > 0,
         planDate,
         plants,
-        setPlantProduction,
-        enabled: !isLoading && plants.length > 0
+        setPlantProduction
     })
 
     // Detail (ticket-level) orders are fetched once at this level so every

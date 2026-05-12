@@ -78,8 +78,8 @@ function PageHeader({ accentColor, dueDate, onBack, plantCode, status, statusCol
                     className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider"
                     style={{
                         background: `${statusColor}1f`,
-                        color: statusColor,
-                        border: `1px solid ${statusColor}55`
+                        border: `1px solid ${statusColor}55`,
+                        color: statusColor
                     }}
                 >
                     {status}
@@ -127,7 +127,7 @@ function PdfEmbed({ url }) {
                 title="Submitted maintenance form"
                 src={url}
                 className="w-full bg-bg-secondary h-[70vh]"
-                style={{ minHeight: 480, border: 'none' }}
+                style={{ border: 'none', minHeight: 480 }}
             />
             <div className="flex items-center justify-between px-3 py-2 text-[11px] bg-bg-secondary border-t border-border-light">
                 <span className="text-text-tertiary">Embedded scan — open in a new tab for full view</span>

@@ -123,14 +123,14 @@ function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = nul
             } else {
                 const { monday, saturday } = getCurrentWeekBounds()
                 const row = {
-                    user_id: user?.id,
-                    report_name: 'qc_strength',
-                    week: monday.toISOString(),
-                    report_date_range_start: monday.toISOString(),
-                    report_date_range_end: saturday.toISOString(),
-                    data: { ...formData },
                     completed: true,
-                    submitted_at: new Date().toISOString()
+                    data: { ...formData },
+                    report_date_range_end: saturday.toISOString(),
+                    report_date_range_start: monday.toISOString(),
+                    report_name: 'qc_strength',
+                    submitted_at: new Date().toISOString(),
+                    user_id: user?.id,
+                    week: monday.toISOString()
                 }
                 const { data: inserted, error: dbError } = await Database.from(TABLE).insert(row).select().single()
                 if (dbError) throw new Error(dbError.message)
@@ -158,8 +158,8 @@ function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = nul
                         className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                         style={{
                             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                            backgroundRepeat: 'no-repeat',
                             backgroundPosition: 'right 10px center',
+                            backgroundRepeat: 'no-repeat',
                             backgroundSize: '16px'
                         }}
                     >
@@ -189,8 +189,8 @@ function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = nul
                         className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors cursor-pointer"
                         style={{
                             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                            backgroundRepeat: 'no-repeat',
                             backgroundPosition: 'right 10px center',
+                            backgroundRepeat: 'no-repeat',
                             backgroundSize: '16px'
                         }}
                     >

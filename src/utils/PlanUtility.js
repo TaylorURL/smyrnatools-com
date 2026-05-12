@@ -551,7 +551,7 @@ const simulatePoolTimeline = (orders, initialPoolByCode = {}, getTravelOverrides
     // them previously made the per-order coverage hover disagree with the
     // plant timeline (which correctly showed a deficit) and the planner's
     // YPH flag — every order looked "covered" while the plant was overbooked.
-    Object.entries(byOrder).forEach(([orderKey, entry]) => {
+    Object.entries(byOrder).forEach(([_orderKey, entry]) => {
         let inboundDuringPour = 0
         for (const event of events) {
             if (event.plantCode !== entry.plantCode) continue
