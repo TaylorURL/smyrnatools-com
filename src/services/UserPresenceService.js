@@ -114,36 +114,46 @@ class UserPresenceService {
 
     async setup() {
         if (this.isSetup) return true
-        try {
-            const user = await UserService.getCurrentUser()
-            if (!user?.id) return false
-            this.currentUserId = user.id
-            const subscription = Database.channel('presence_changes')
-                .on(
-                    'postgres_changes',
-                    {
-                        event: '*',
-                        schema: 'public',
-                        table: 'users_presence'
-                    },
-                    this.onPresenceChange
-                )
-                .subscribe()
-            this.subscriptions.push(subscription)
-            await this.setUserOnline(this.currentUserId)
-            this.startHeartbeat()
-            this.startCleanup()
-            this.startActivityRefresh()
-            this.setupActivityTracking()
-            window.addEventListener('beforeunload', this.onBeforeUnload)
-            window.addEventListener('online', this.onOnline)
-            window.addEventListener('offline', this.onOffline)
-            this.isSetup = true
-            return true
-        } catch (err) {
-            console.error('Failed to setup presence tracking:', err)
-            return false
-        }
+        // Promise lock: concurrent callers (e.g. React StrictMode double-invoke)
+        // share the same in-flight setup so we never subscribe the realtime
+        // channel twice, which would throw "cannot add postgres_changes
+        // callbacks after subscribe()".
+        if (this._setupPromise) return this._setupPromise
+        this._setupPromise = (async () => {
+            try {
+                const user = await UserService.getCurrentUser()
+                if (!user?.id) return false
+                this.currentUserId = user.id
+                const subscription = Database.channel('presence_changes')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'users_presence'
+                        },
+                        this.onPresenceChange
+                    )
+                    .subscribe()
+                this.subscriptions.push(subscription)
+                await this.setUserOnline(this.currentUserId)
+                this.startHeartbeat()
+                this.startCleanup()
+                this.startActivityRefresh()
+                this.setupActivityTracking()
+                window.addEventListener('beforeunload', this.onBeforeUnload)
+                window.addEventListener('online', this.onOnline)
+                window.addEventListener('offline', this.onOffline)
+                this.isSetup = true
+                return true
+            } catch (err) {
+                console.error('Failed to setup presence tracking:', err)
+                return false
+            } finally {
+                this._setupPromise = null
+            }
+        })()
+        return this._setupPromise
     }
 
     setupActivityTracking() {
