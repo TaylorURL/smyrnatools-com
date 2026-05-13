@@ -596,11 +596,22 @@ export const evaluateScheduleSatisfaction = ({ detailByOrderId, isPastDay, isTod
  * positive-delta inbound events identical in shape to inter-plant help
  * arrivals — just sourced from the operator showing up rather than another
  * plant.
+ *
+ * **Outbound clock-ins**: when an operator drives from `fromPlant` to help
+ * another plant, that operator clocked in at `fromPlant` first. Without an
+ * explicit +clock-in event, the simulator's `-row.count` outbound dispatch
+ * drives `fromPlant`'s pool negative because the schedule's local clock-in
+ * roster (`computeClockInRows`) only covers operators needed for the
+ * from-plant's own orders. Emit a +delta event at `clockInRangeStart`
+ * (or `time` as a same-minute fallback when travel time is unknown) so the
+ * operator is accounted for before they leave.
  */
 export const buildHelpTransfers = (helpRows, clockInRows) => {
     const out = []
     helpRows.forEach((row) => {
         if (row.direction === 'outbound') {
+            const clockInTime = Number.isFinite(row.clockInRangeStart) ? row.clockInRangeStart : row.time
+            out.push({ delta: row.count, plantCode: row.fromPlant, time: clockInTime })
             out.push({ delta: -row.count, plantCode: row.fromPlant, time: row.time })
             out.push({ delta: row.count, plantCode: row.toPlant, time: row.time })
         } else {

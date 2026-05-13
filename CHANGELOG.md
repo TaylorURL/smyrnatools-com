@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026.20.8] - 2026-05-13
+
+- `src/utils/PlanScheduleUtility.ts` — fixed `buildHelpTransfers` so outbound help dispatches no longer drive the
+  from-plant's operator pool negative on the schedule timeline. The function previously emitted only
+  `{ delta: -row.count, plantCode: fromPlant }` for an outbound row, with no matching `+` clock-in event at the
+  from-plant. The schedule's local clock-in roster (`computeClockInRows`) only enumerates operators needed for the
+  from-plant's own orders, so an operator dispatched to help another plant was never accounted for at `fromPlant`
+  before being subtracted. `buildHelpTransfers` now also pushes
+  `{ delta: row.count, plantCode: fromPlant, time: clockInRangeStart }` at the start of the outbound clock-in window,
+  falling back to the same minute as `time` when `clockInRangeStart` isn't a finite number (no travel-time data).
+  Return-direction events are unchanged.
+- Added a TSDoc paragraph on `buildHelpTransfers` documenting the outbound clock-in delta and why it's required to
+  keep `computePlantPoolTimeline` non-negative.
+
 ## [2026.20.7] - 2026-05-13
 
 - Removed the role-weight gate on asset and issue deletions. `supabase/functions/_shared/asset-helpers.ts` —
