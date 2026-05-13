@@ -3,7 +3,9 @@ import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 // @ts-ignore
 import { errorResponse, jsonResponse } from './cors.ts'
 // @ts-ignore
-export { requireAuthenticated } from './requireSession.ts'
+import { requireAuthenticated } from './requireSession.ts'
+// Re-export so service handlers that import from this module pick it up too.
+export { requireAuthenticated }
 
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
 

@@ -54,8 +54,12 @@ export default function useHistoryData(item, type) {
     }, [])
     const fetchUsers = useCallback(async () => {
         try {
-            const { data } = await Database.from('profiles').select('id, name, email')
-            setUsers(data ?? [])
+            const { data } = await Database.from('users_profiles').select('id, first_name, last_name')
+            const rows = (data ?? []).map((row) => ({
+                id: row.id,
+                name: [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || 'Unknown'
+            }))
+            setUsers(rows)
         } catch (e) {
             console.error('Failed to fetch user profiles for history:', e)
         }

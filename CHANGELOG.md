@@ -1,5 +1,28 @@
 # Changelog
 
+## [2026.20.3] - 2026-05-13
+
+- Fixed HTTP 500 `EDGE_FUNCTION_ERROR` (no CORS headers) on every asset mutation endpoint — add-issue,
+  add-comment, add-history, complete-issue, delete-issue, delete-comment, delete — across `trailer-service`,
+  `equipment-service`, `mixer-service`, `pickup-truck-service`, `tractor-service`, and `report-service`. The
+  shared helper `supabase/functions/_shared/asset-helpers.ts` was using `export { requireAuthenticated } from
+  './requireSession.ts'`, which is a pure re-export — it surfaces the symbol to other modules but never binds
+  it inside `asset-helpers.ts` itself. Every helper that called `requireAuthenticated` internally
+  (`handleAddIssue`, `handleAddComment`, `handleAddHistory`, `handleCompleteIssue`, `handleDeleteIssue`,
+  `handleDeleteComment`, `handleDelete`) threw `ReferenceError: requireAuthenticated is not defined`. The
+  throw escaped `Deno.serve`'s user-land try/catch, so Supabase's runtime returned 500 with `Internal Server
+  Error` and no CORS headers — which the browser surfaced as a CORS error. The `fetch-*` handlers all worked
+  because none of them reference `requireAuthenticated` internally. Regression introduced in commit `304f4fc`
+  when the inline definition was migrated to the shared `_shared/requireSession.ts` helper. Fixed by adding a
+  regular `import` of `requireAuthenticated` next to the re-export so the symbol is bound in the module.
+  Redeployed all six affected edge functions.
+- Fixed `relation "public.profiles" does not exist` (HTTP 404) when opening history on TrailersView, MixersView,
+  and every other AssetView that loads history. `src/app/hooks/useHistoryData.js` was querying
+  `Database.from('profiles')` — a table that has never existed in this project. The actual table is
+  `users_profiles` and its display columns are `first_name` and `last_name` (no `name`, no `email`). The hook
+  now queries `users_profiles`, selects `id, first_name, last_name`, and maps each row to `{ id, name }` so the
+  existing `users.find((u) => u.id === userId)?.name` lookup keeps working.
+
 ## [2026.20.2] - 2026-05-13
 
 - Fixed the stale `Schedule hasn't been updated since…` banner on PlanView. Root cause: the dispatcher's
