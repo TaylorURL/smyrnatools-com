@@ -89,13 +89,11 @@ describe('DatabaseService', () => {
         })
 
         it('throws for disallowed table names', async () => {
-            await expect(DatabaseService.tableExists('evil_table')).rejects.toThrow(
-                'Invalid or disallowed table name'
-            )
+            await expect(DatabaseService.tableExists('evil_table')).rejects.toThrow('Invalid or disallowed table name')
         })
 
         it('throws for SQL-injection-style table names', async () => {
-            await expect(DatabaseService.tableExists("users; DROP TABLE users--")).rejects.toThrow(
+            await expect(DatabaseService.tableExists('users; DROP TABLE users--')).rejects.toThrow(
                 'Invalid or disallowed table name'
             )
         })

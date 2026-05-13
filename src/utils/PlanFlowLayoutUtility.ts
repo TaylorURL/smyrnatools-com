@@ -86,7 +86,14 @@ export function radiusForOps(ops: number | null | undefined): number {
  */
 export function buildEdges(assignments: Assignment[] | null | undefined): Edge[] {
     const map = new Map<string, Edge>()
-    const upsert = (from: string, to: string, ops: number, time: string | undefined, idx: number, isReturn: boolean) => {
+    const upsert = (
+        from: string,
+        to: string,
+        ops: number,
+        time: string | undefined,
+        idx: number,
+        isReturn: boolean
+    ) => {
         const key = `${from}->${to}`
         if (!map.has(key)) {
             map.set(key, { assignmentIndexes: [], earliest: null, from, isReturn, ops: 0, to })

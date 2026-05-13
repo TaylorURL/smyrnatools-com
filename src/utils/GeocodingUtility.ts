@@ -334,7 +334,11 @@ function trimmedAddressVariants(address: string | null | undefined): string[] {
  *    - Bare addresses -- try the cleanest variants first (no hint) and
  *      only append the state hint as a fallback when the literal
  *      address didn't resolve. */
-function buildFallbackQueries(address: string | null | undefined, city: string | null | undefined, state: string | null | undefined): string[] {
+function buildFallbackQueries(
+    address: string | null | undefined,
+    city: string | null | undefined,
+    state: string | null | undefined
+): string[] {
     const selfSufficient = addressHasState(address, city)
     const variants: string[] = []
     if (selfSufficient) {

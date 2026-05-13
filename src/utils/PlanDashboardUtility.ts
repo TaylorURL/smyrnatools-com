@@ -157,7 +157,12 @@ export const formatPullUpDelta = (mins: number | null | undefined): string => {
 /** Common pool-simulation inputs derived once and shared by the
  *  Dashboard's coverage / pull-up / suggested-slot blocks. Returns null
  *  when no orders exist so callers can short-circuit. */
-const buildPoolSimulationInputs = ({ plantProduction, stats, assignments, planDate }: DashboardParams): PoolSimInputs | null => {
+const buildPoolSimulationInputs = ({
+    plantProduction,
+    stats,
+    assignments,
+    planDate
+}: DashboardParams): PoolSimInputs | null => {
     const flatOrders = flattenPlanOrders(plantProduction)
     if (flatOrders.length === 0) return null
     return {
@@ -172,7 +177,12 @@ const buildPoolSimulationInputs = ({ plantProduction, stats, assignments, planDa
  * dashboard's "needs help vs covered" totals match the per-row Trucks
  * column on the Schedule tab.
  */
-export const computeDashboardJobCoverage = ({ plantProduction, stats, assignments, planDate }: DashboardParams): JobCoverageResult | null => {
+export const computeDashboardJobCoverage = ({
+    plantProduction,
+    stats,
+    assignments,
+    planDate
+}: DashboardParams): JobCoverageResult | null => {
     const inputs = buildPoolSimulationInputs({ assignments, planDate, plantProduction, stats })
     if (!inputs) return null
     const byOrder = computePlantPoolTimeline(inputs.flatOrders, inputs.initialPoolByCode, null, inputs.helpTransfers)

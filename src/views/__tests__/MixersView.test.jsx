@@ -142,10 +142,12 @@ jest.mock('../../app/components/modules/export/issues/AssetIssuesExport', () => 
     exportAssetIssuesSheet: jest.fn()
 }))
 
-jest.mock('../../app/components/dashboard/EmbeddedViewModal', () =>
-    function MockEmbeddedViewModal() {
-        return null
-    }
+jest.mock(
+    '../../app/components/dashboard/EmbeddedViewModal',
+    () =>
+        function MockEmbeddedViewModal() {
+            return null
+        }
 )
 
 import MixersView from '../assets/mixers/MixersView'

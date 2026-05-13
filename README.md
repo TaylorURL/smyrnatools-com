@@ -10,7 +10,8 @@
 
 <p align="center">
   <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/ci.yml/badge.svg?branch=core" alt="CI Status" />
-  <img src="https://img.shields.io/badge/v38.4-release-1e3a5f" alt="Version" />
+  <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/test.yml/badge.svg?branch=core" alt="Test Status" />
+  <img src="https://img.shields.io/badge/v41.0.13-release-c12033" alt="Version" />
   <img src="https://img.shields.io/badge/React-19.1-61DAFB?logo=react&logoColor=white" alt="React" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind" />
@@ -195,10 +196,24 @@ A document management module for creating, organizing, and accessing internal do
 Task tracking with list creation, detail views, and task addition. Users create lists, drill into individual list
 details, and add tasks to track operational to-dos.
 
-### Plan & Timeline
+### Plan
 
-A planning module with timeline visualization, templates, and settings. Supports structured planning workflows with
-configurable templates and visual timeline displays.
+Dispatch planning suite organised as a tab-switched workspace:
+
+- **Dashboard** — role-aware "Your plant / district / region" view with clock-in board, activity feed, and at-a-glance
+  pull-up suggestions
+- **Schedule** — full daily order list (table or cards) with truck-coverage hover panels, big-pour warnings, closer-plant
+  alerts, and AI-driven dispatch flags
+- **Planner** — visual flow editor with route/leg editing and time scrubber
+- **Demand** — per-plant production charts comparing booked vs available capacity
+- **Statistics** — date-range KPIs (yardage, loads, hours, satisfaction) with charts and per-plant tables
+- **Call List** — dispatcher roster with clock-in tracking
+- **Find a Spot** — booking-assist that geocodes a job address, ranks plants by drive time, detects conflicts, and
+  recommends a slot. Every recommendation is written to an audit log with the full decision context
+- **Settings** *(permission-gated)* — travel-time matrix, plant-address editor, and the Find-a-Spot audit log with
+  metrics: submission counts, system-shift rate, no-recommendation incidents, recommendation-kind breakdown, and a
+  **Dispatcher leaderboard** showing top users by Find-a-Spot usage. Visible only to roles with the `plan.settings`
+  permission
 
 ---
 
@@ -235,7 +250,11 @@ Authorization uses a weighted role hierarchy:
 
 - Roles have numeric weights defining seniority
 - Users can hold multiple roles
-- Granular permissions mapped to specific features (e.g., `reports.assigned.plant_manager`)
+- Granular permissions mapped to specific features. Examples in active use:
+  - `reports.assigned.plant_manager` — gates report assignment
+  - `plan.yourtab` — unlocks the Plan dashboard's role-scoped section
+  - `plan.defaultplant` — defaults the realtime filter to the user's home plant
+  - `plan.settings` — unlocks the Plan → Settings tab (travel times, plant addresses, Find-a-Spot audit log)
 - Special roles: "Terminated" revokes all access, "Guest" provides read-only
 - Region-based view filtering and plant-based data restrictions for non-admin roles
 
@@ -255,6 +274,43 @@ Tutorials, Messages) and ref-based caching in data hooks.
 
 Supabase provides PostgreSQL with real-time subscriptions. All database access goes through a sanitized service layer
 with table and column allowlists — no raw SQL from the client. Edge functions handle auth, AI, and database operations.
+
+### Asset module pattern
+
+The five fleet asset types share a config-driven base class. Adding a sixth asset type is a ~30-line config + factory
+exercise rather than a copy-paste of N service files.
+
+- **`BaseAssetService`** — generic CRUD pipeline (fetch-all / by-id, create with VIN normalization, update with
+  cross-plant operator clearing, delete, verify, search-by-VIN, get-by-operator, with-details), comments, issues,
+  and history. Each concrete service (`MixerService`, `TractorService`, `TrailerService`, `EquipmentService`,
+  `PickupTruckService`) composes the base with a config object — entity name, ID column, optional VIN normalization,
+  optional history-field whitelist, row parser — and exposes typed method names (`getAllMixers`, `fetchTractorById`,
+  etc.) as thin delegations.
+- **`createAssetComment`** / **`createAssetHistory`** — model factories that produce the comment / history domain
+  classes from a `{ foreignKey, foreignKeyColumn }` config. Replaces what used to be 5 hand-rolled 20-80 line classes
+  per asset type.
+- **`usePlantPicker`** / **`PlantPickerField`** — shared hook + component used by every asset Add view for plant
+  selection with optional region-scoped filtering.
+
+### Testing
+
+`vitest` for unit tests. Current coverage targets the high-value utilities and a couple of view smoke tests:
+
+- `src/utils/__tests__/` — DateUtility, FormatUtility, ValidationUtility, APIUtility
+- `src/services/__tests__/` — DatabaseService
+- `src/views/__tests__/` — LoginView, MixersView, ReportsSubmitView
+
+Run `npm test` locally. CI runs vitest on every PR to `main` or `core`.
+
+### CI
+
+Three GitHub Actions workflows:
+
+| Workflow | Runs | Purpose |
+|---|---|---|
+| `ci.yml` | push / PR to `core` | ESLint + production Vite build |
+| `test.yml` | PR to `main` or `core` | `npm test` (vitest) |
+| `lint.yml` | PR to `main` | ESLint |
 
 ### Data Flow
 
@@ -320,14 +376,16 @@ standalone app on iOS with translucent status bar.
 
 | Metric                | Value                                              |
 |-----------------------|----------------------------------------------------|
-| **Current Version**   | 38.4                                               |
-| **Views**             | 23 distinct page modules                           |
-| **Services**          | 22 service classes                                 |
-| **Custom Hooks**      | 38 specialized hooks                               |
-| **Domain Models**     | 15+ data model classes                             |
+| **Current Version**   | 41.0.13                                            |
+| **Views**             | 83 view files across ~23 page modules              |
+| **Services**          | 30 service classes                                 |
+| **Custom Hooks**      | 58 specialized hooks                               |
+| **Domain Models**     | 22 model classes                                   |
+| **Edge Functions**    | 35 Supabase edge functions                         |
 | **AI Prompt Types**   | 11 registered prompt categories                    |
 | **Report Types**      | 8 weekly + 3 one-off report formats                |
 | **Fleet Asset Types** | 5 (Mixers, Tractors, Trailers, Equipment, Pickups) |
+| **Plan Tabs**         | 8 (Dashboard, Schedule, Planner, Demand, Statistics, Call List, Find a Spot, Settings) |
 
 ---
 

@@ -51,7 +51,11 @@ export function buildDueSeverity(): DueSeverityResult {
 
 const VerifiedUtility = {
     buildDueSeverity,
-    isVerified(updatedLast: string | null | undefined, updatedAt: string, updatedBy: string | null | undefined): boolean {
+    isVerified(
+        updatedLast: string | null | undefined,
+        updatedAt: string,
+        updatedBy: string | null | undefined
+    ): boolean {
         if (!updatedLast || !updatedBy) return false
         try {
             const lastVerified = new Date(updatedLast)

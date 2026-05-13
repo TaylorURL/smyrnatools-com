@@ -239,12 +239,8 @@ export function MaintenanceLogSidebar({
                     Upcoming & Overdue
                 </h4>
                 <UpcomingServices equipment={filtered} isDark={isDark} />
-                {!filtered.some(
-                    (e) => e.service_status === 'overdue' || e.service_status === 'due_soon'
-                ) && (
-                    <p className="text-[10.5px] italic m-0 text-text-tertiary">
-                        All equipment up to date
-                    </p>
+                {!filtered.some((e) => e.service_status === 'overdue' || e.service_status === 'due_soon') && (
+                    <p className="text-[10.5px] italic m-0 text-text-tertiary">All equipment up to date</p>
                 )}
             </div>
             <div className="rounded p-3 bg-bg-primary border border-border-light">

@@ -6,7 +6,14 @@ import { STATUS_FILTER_MAP, STATUS_PRIORITY } from '../../utils/MaintenanceLogUt
  * Filtering and sorting logic for the maintenance log equipment table.
  * @param {{ equipment: Array, searchText: string, selectedPlant: string, categoryFilter: string, statusFilter: string, plants: Array }} params
  */
-export function useMaintenanceLogFilters({ equipment, searchText, selectedPlant, categoryFilter, statusFilter, plants }) {
+export function useMaintenanceLogFilters({
+    equipment,
+    searchText,
+    selectedPlant,
+    categoryFilter,
+    statusFilter,
+    plants
+}) {
     const [sortKey, setSortKey] = useState('')
     const [sortDir, setSortDir] = useState('asc')
 
@@ -80,9 +87,7 @@ export function useMaintenanceLogFilters({ equipment, searchText, selectedPlant,
                     vb = b.next_service_date || ''
                     break
                 case 'Status': {
-                    return (
-                        ((STATUS_PRIORITY[a.service_status] ?? 3) - (STATUS_PRIORITY[b.service_status] ?? 3)) * dir
-                    )
+                    return ((STATUS_PRIORITY[a.service_status] ?? 3) - (STATUS_PRIORITY[b.service_status] ?? 3)) * dir
                 }
                 default:
                     return 0

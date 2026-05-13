@@ -71,7 +71,18 @@ export default function useAssetVerification({ config, items, setItems, allItems
             console.error(`Failed to verify ${config.singularLabel}:`, error)
             throw new Error(`Failed to verify ${config.singularLabel}. Please try again.`)
         }
-    }, [verifyItem, verifyVin, verifyMake, verifyModel, verifyYear, verifyLastServiceDate, verifyLastChipDate, config, setAllItems, setItems])
+    }, [
+        verifyItem,
+        verifyVin,
+        verifyMake,
+        verifyModel,
+        verifyYear,
+        verifyLastServiceDate,
+        verifyLastChipDate,
+        config,
+        setAllItems,
+        setItems
+    ])
 
     return {
         handleSaveAndVerify,

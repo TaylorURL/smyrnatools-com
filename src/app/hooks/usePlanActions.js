@@ -182,17 +182,20 @@ export function usePlanActions({
         await refreshTravelTimes()
     }
 
-    const moveAssignment = useCallback((id, direction) => {
-        setAssignments((prev) => {
-            const idx = prev.findIndex((a) => a.id === id)
-            if (idx < 0) return prev
-            const targetIdx = idx + direction
-            if (targetIdx < 0 || targetIdx >= prev.length) return prev
-            const next = [...prev]
-            ;[next[idx], next[targetIdx]] = [next[targetIdx], next[idx]]
-            return next
-        })
-    }, [setAssignments])
+    const moveAssignment = useCallback(
+        (id, direction) => {
+            setAssignments((prev) => {
+                const idx = prev.findIndex((a) => a.id === id)
+                if (idx < 0) return prev
+                const targetIdx = idx + direction
+                if (targetIdx < 0 || targetIdx >= prev.length) return prev
+                const next = [...prev]
+                ;[next[idx], next[targetIdx]] = [next[targetIdx], next[idx]]
+                return next
+            })
+        },
+        [setAssignments]
+    )
 
     // Template management
     const loadTemplates = useCallback(async () => {
@@ -208,11 +211,14 @@ export function usePlanActions({
         await loadTemplates()
     }, [userId, templateName, assignments, notes, loadTemplates])
 
-    const loadTemplate = useCallback((template) => {
-        setAssignments(ensureUniqueIds(template.assignments || [createEmptyAssignment()]))
-        setNotes(template.notes || '')
-        setShowTemplateModal(false)
-    }, [setAssignments, setNotes])
+    const loadTemplate = useCallback(
+        (template) => {
+            setAssignments(ensureUniqueIds(template.assignments || [createEmptyAssignment()]))
+            setNotes(template.notes || '')
+            setShowTemplateModal(false)
+        },
+        [setAssignments, setNotes]
+    )
 
     const deleteTemplate = useCallback(
         async (templateId) => {

@@ -118,7 +118,9 @@ export const estimatePourMinutes = (order: OrderLike | null | undefined): number
 /** Strip the `_meta` key and return every order on the plan with its
  *  source plant code attached. Excluded (cancelled / test) orders are
  *  filtered out so callers don't have to repeat the check. */
-export const flattenPlanOrders = (plantProduction: PlantProduction | null | undefined): Array<OrderLike & { plantCode: string }> => {
+export const flattenPlanOrders = (
+    plantProduction: PlantProduction | null | undefined
+): Array<OrderLike & { plantCode: string }> => {
     const out: Array<OrderLike & { plantCode: string }> = []
     Object.entries(plantProduction || {}).forEach(([code, prod]) => {
         if (code === PLAN_META_KEY) return
@@ -175,7 +177,11 @@ export const buildInitialPoolByCode = (
 /** Resolve a `plantFilter` selection (single-plant code, `MY_PLANTS`, or
  *  `DISTRICT:<name>`) into a concrete Set of plant codes, or null when
  *  the filter is inactive. */
-export const resolvePlantFilterCodes = ({ plantFilter, plants, userPlantCode }: PlantFilterParams): Set<string> | null => {
+export const resolvePlantFilterCodes = ({
+    plantFilter,
+    plants,
+    userPlantCode
+}: PlantFilterParams): Set<string> | null => {
     if (!plantFilter || plantFilter === 'all' || plantFilter === 'All') return null
     if (plantFilter === 'MY_PLANTS') return userPlantCode ? new Set([userPlantCode]) : new Set()
     if (plantFilter.startsWith('DISTRICT:')) {
@@ -193,7 +199,11 @@ export const resolvePlantFilterCodes = ({ plantFilter, plants, userPlantCode }: 
 }
 
 /** Human-readable label for the active plant-filter selection. */
-export const formatPlantFilterDisplay = ({ plantFilter, plantNameByCode, totalPlantOptions }: PlantFilterDisplayParams): string => {
+export const formatPlantFilterDisplay = ({
+    plantFilter,
+    plantNameByCode,
+    totalPlantOptions
+}: PlantFilterDisplayParams): string => {
     const isActive = plantFilter && plantFilter !== 'all' && plantFilter !== 'All' && plantFilter !== ''
     if (!isActive) return `All plants (${totalPlantOptions ?? 0})`
     if (plantFilter === 'MY_PLANTS') return 'My Plants'

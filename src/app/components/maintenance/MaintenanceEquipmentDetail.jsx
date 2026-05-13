@@ -5,7 +5,15 @@ import { formatLogDate, getProgressInfo, STATUS_CONFIG } from '../../../utils/Ma
 import { SkeletonBar } from './MaintenanceLogSkeleton'
 
 /** Slide-out detail panel for a single piece of equipment. */
-export function MaintenanceEquipmentDetail({ equipment, onClose, onLogService, onEdit, onDelete, isDark, accentColor }) {
+export function MaintenanceEquipmentDetail({
+    equipment,
+    onClose,
+    onLogService,
+    onEdit,
+    onDelete,
+    isDark,
+    accentColor
+}) {
     const [history, setHistory] = useState([])
     const [loadingHistory, setLoadingHistory] = useState(true)
     const [deleting, setDeleting] = useState(false)

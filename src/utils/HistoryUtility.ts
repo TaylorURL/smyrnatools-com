@@ -278,8 +278,7 @@ function filterAndSortByFieldKey(history: HistoryEntry[], matchFn: (key: string)
         .filter((entry) => matchFn(normalizeFieldToSnakeCase(getEntryFieldName(entry) as string)))
         .sort(
             (a, b) =>
-                new Date(getEntryTimestamp(a) as string).getTime() -
-                new Date(getEntryTimestamp(b) as string).getTime()
+                new Date(getEntryTimestamp(a) as string).getTime() - new Date(getEntryTimestamp(b) as string).getTime()
         )
 }
 

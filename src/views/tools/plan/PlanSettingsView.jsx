@@ -295,14 +295,18 @@ function StatCardsRow({ accentColor, metrics }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
             <StatCard
                 accent={accentColor}
-                hint={metrics.medianTrucks ? `median ${metrics.medianTrucks} trucks per pour` : 'all-time fetched window'}
+                hint={
+                    metrics.medianTrucks ? `median ${metrics.medianTrucks} trucks per pour` : 'all-time fetched window'
+                }
                 icon="fa-clipboard-list"
                 label="Submissions"
                 value={metrics.total.toLocaleString()}
             />
             <StatCard
                 accent={accentColor}
-                hint={metrics.totalYardage ? `${metrics.totalYardage.toLocaleString()} yd total` : 'no yardage recorded'}
+                hint={
+                    metrics.totalYardage ? `${metrics.totalYardage.toLocaleString()} yd total` : 'no yardage recorded'
+                }
                 icon="fa-cubes-stacked"
                 label="Avg yardage"
                 value={metrics.avgYardage != null ? `${metrics.avgYardage} yd` : '—'}
@@ -418,9 +422,7 @@ function KindBreakdownCard({ metrics }) {
                 <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-text-tertiary">
                     Recommendation breakdown
                 </span>
-                <span className="text-[10.5px] text-text-tertiary">
-                    {metrics.total.toLocaleString()} total
-                </span>
+                <span className="text-[10.5px] text-text-tertiary">{metrics.total.toLocaleString()} total</span>
             </div>
             <KindBar buckets={metrics.kindBuckets} total={metrics.total} />
         </div>
@@ -448,13 +450,9 @@ function StatCard({ accent, compact = false, hint, icon, label, tone, value }) {
         >
             {/* Accent stripe pinned to the top of warning cards so it reads
              *  as "look here" without colouring the whole tile. */}
-            {isWarning && (
-                <div className="absolute inset-x-0 top-0 h-[3px]" style={{ background: '#dc2626' }} />
-            )}
+            {isWarning && <div className="absolute inset-x-0 top-0 h-[3px]" style={{ background: '#dc2626' }} />}
             <div className="flex items-center justify-between gap-2">
-                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-text-tertiary">
-                    {label}
-                </span>
+                <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-text-tertiary">{label}</span>
                 <span
                     className="flex h-6 w-6 items-center justify-center rounded-md shrink-0"
                     style={{ background: `${accent}15`, color: accent }}
@@ -607,10 +605,7 @@ function ActivityTableRow({ accentColor, entry, expanded, onToggle }) {
 
     return (
         <>
-            <tr
-                onClick={onToggle}
-                className="cursor-pointer hover:bg-bg-secondary border-b border-border-light"
-            >
+            <tr onClick={onToggle} className="cursor-pointer hover:bg-bg-secondary border-b border-border-light">
                 <td className="px-3 py-2 text-[12px] text-text-primary whitespace-nowrap">{createdLabel}</td>
                 <td className="px-3 py-2 text-[12px] text-text-primary">{submitter}</td>
                 <td className="px-3 py-2 text-[11px] whitespace-nowrap">
@@ -624,9 +619,7 @@ function ActivityTableRow({ accentColor, entry, expanded, onToggle }) {
                 </td>
                 <td className="px-3 py-2 text-[12px] text-text-primary whitespace-nowrap font-mono">
                     {suggestedTime || '—'}
-                    {shifted && (
-                        <span className="ml-1.5 text-[10.5px] text-text-tertiary">(typed {typedTime})</span>
-                    )}
+                    {shifted && <span className="ml-1.5 text-[10.5px] text-text-tertiary">(typed {typedTime})</span>}
                     {recDate && <div className="text-[10.5px] text-text-tertiary">{recDate}</div>}
                 </td>
                 <td className="px-3 py-2 text-[12px] text-text-primary whitespace-nowrap">{plantLabel}</td>
@@ -636,7 +629,10 @@ function ActivityTableRow({ accentColor, entry, expanded, onToggle }) {
                 <td className="px-3 py-2 text-[12px] text-text-primary text-right font-mono">
                     {entry?.estimated_trucks ?? '—'}
                 </td>
-                <td className="px-3 py-2 text-[12px] text-text-secondary max-w-[260px] truncate" title={entry?.job_address}>
+                <td
+                    className="px-3 py-2 text-[12px] text-text-secondary max-w-[260px] truncate"
+                    title={entry?.job_address}
+                >
                     {entry?.job_address || '—'}
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">

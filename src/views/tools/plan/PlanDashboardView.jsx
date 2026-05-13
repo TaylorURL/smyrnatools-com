@@ -173,7 +173,6 @@ function PlanDashboardView({
         [setPlantProduction]
     )
 
-
     /* ── Scope-aware summary (Plant / District / Region) ────────────
        Outbound/Inbound include intra-scope moves so managers see every
        transfer touching their coverage area — a plant-to-plant move

@@ -71,7 +71,9 @@ export const formatAddressSegment = (raw: string | null | undefined): string => 
             // eslint-disable-next-line security/detect-unsafe-regex -- anchored, no overlapping quantifiers; linear scan
             if (/^\d+(?:[A-Za-z]+)?$/.test(token)) return token
             // Title-case word, preserving internal apostrophes / hyphens / slashes.
-            return token.toLowerCase().replace(/(^|[\s'\-/])([a-z])/g, (_match, sep: string, ch: string) => sep + ch.toUpperCase())
+            return token
+                .toLowerCase()
+                .replace(/(^|[\s'\-/])([a-z])/g, (_match, sep: string, ch: string) => sep + ch.toUpperCase())
         })
         .join('')
         .replace(/\s+,/g, ',')

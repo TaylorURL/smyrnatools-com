@@ -47,12 +47,8 @@ async function resolvePerformerNames(entries) {
 }
 
 export const MaintenanceLogService = {
-    
-
-    
-    
-/** Creates a new service log entry. */
-async createEntry(entry) {
+    /** Creates a new service log entry. */
+    async createEntry(entry) {
         const user = await requireAuth()
         const userName = user.name || `User ${user.id.slice(0, 8)}`
         const { res, json } = await APIUtility.post(`${MAINT_FUNCTION}/create-entry`, {
@@ -64,18 +60,8 @@ async createEntry(entry) {
         return json.data
     },
 
-    
-
-    
-    
-
-
-
-
-
-
-/** Creates a new equipment record. */
-async createEquipment(equipment) {
+    /** Creates a new equipment record. */
+    async createEquipment(equipment) {
         const user = await requireAuth()
         const { res, json } = await APIUtility.post(`${MAINT_FUNCTION}/create-equipment`, {
             equipment,
@@ -85,47 +71,24 @@ async createEquipment(equipment) {
         return json.data
     },
 
-    
-
-    
-    
-
-
-
-
-
-
-
-
-/** Deletes an equipment record and its service history by ID. */
-async deleteEquipment(id) {
+    /** Deletes an equipment record and its service history by ID. */
+    async deleteEquipment(id) {
         await requireAuth()
         const { res, json } = await APIUtility.post(`${MAINT_FUNCTION}/delete-equipment`, { id })
         if (!res.ok) throw new Error(json?.error || 'Failed to delete equipment')
     },
 
-    
-    
-
-
-
-
-
-// ── Categories ──────────────────────────────────────────────
-/** Fetches all active equipment categories. */
-async fetchCategories() {
+    // ── Categories ──────────────────────────────────────────────
+    /** Fetches all active equipment categories. */
+    async fetchCategories() {
         const { data, error } = await Database.from(CATEGORIES_TABLE).select('*').eq('is_active', true).order('name')
         if (error) throw error
         return data || []
     },
 
-    
-    
-
-
-// ── Equipment ───────────────────────────────────────────────
-/** Fetches equipment summary view with latest service info. Optionally filtered by plant codes. */
-async fetchEquipmentSummary(plantCodes) {
+    // ── Equipment ───────────────────────────────────────────────
+    /** Fetches equipment summary view with latest service info. Optionally filtered by plant codes. */
+    async fetchEquipmentSummary(plantCodes) {
         let query = Database.from(SUMMARY_VIEW).select('*')
         if (plantCodes?.length) {
             query = query.in('plant_code', plantCodes)
@@ -135,14 +98,8 @@ async fetchEquipmentSummary(plantCodes) {
         return data || []
     },
 
-    
-    
-
-
-
-
-/** Fetches recent service entries across all equipment. Optionally limited. */
-async fetchRecentEntries(limit = 10) {
+    /** Fetches recent service entries across all equipment. Optionally limited. */
+    async fetchRecentEntries(limit = 10) {
         const { data, error } = await Database.from(ENTRIES_TABLE)
             .select('*, maintenance_log_equipment(name, plant_code), maintenance_log_service_types(name)')
             .eq('status', 'completed')
@@ -152,19 +109,9 @@ async fetchRecentEntries(limit = 10) {
         return resolvePerformerNames(data || [])
     },
 
-    
-
-    
-    
-
-
-
-
-
-
-// ── Service Log Entries ─────────────────────────────────────
-/** Fetches service history for a specific piece of equipment. Resolves user names from performed_by IDs. */
-async fetchServiceHistory(equipmentId) {
+    // ── Service Log Entries ─────────────────────────────────────
+    /** Fetches service history for a specific piece of equipment. Resolves user names from performed_by IDs. */
+    async fetchServiceHistory(equipmentId) {
         const { data, error } = await Database.from(ENTRIES_TABLE)
             .select('*, maintenance_log_service_types(name)')
             .eq('equipment_id', equipmentId)
@@ -173,27 +120,16 @@ async fetchServiceHistory(equipmentId) {
         return resolvePerformerNames(data || [])
     },
 
-    
-    
-
-
-
-
-// ── Service Types ───────────────────────────────────────────
-/** Fetches all active service types. */
-async fetchServiceTypes() {
+    // ── Service Types ───────────────────────────────────────────
+    /** Fetches all active service types. */
+    async fetchServiceTypes() {
         const { data, error } = await Database.from(SERVICE_TYPES_TABLE).select('*').eq('is_active', true).order('name')
         if (error) throw error
         return data || []
     },
 
-    
-    
-
-
-
-/** Groups upcoming/overdue entries by date for calendar display. */
-getCalendarEvents(equipment) {
+    /** Groups upcoming/overdue entries by date for calendar display. */
+    getCalendarEvents(equipment) {
         const events = {}
         for (const item of equipment) {
             const date = item.next_service_date || item.last_service_date
@@ -204,14 +140,9 @@ getCalendarEvents(equipment) {
         return events
     },
 
-    
-    
-
-
-
-// ── Stats ───────────────────────────────────────────────────
-/** Computes status counts from a list of equipment summary rows. */
-getStatusCounts(equipment) {
+    // ── Stats ───────────────────────────────────────────────────
+    /** Computes status counts from a list of equipment summary rows. */
+    getStatusCounts(equipment) {
         const counts = { dueSoon: 0, neverServiced: 0, ok: 0, overdue: 0, total: 0 }
         for (const item of equipment) {
             counts.total++
@@ -235,41 +166,25 @@ getStatusCounts(equipment) {
         return counts
     },
 
-    
-
-    
-    
-
-
-
-
-/** Updates a service log entry by ID. */
-async updateEntry(id, updates) {
+    /** Updates a service log entry by ID. */
+    async updateEntry(id, updates) {
         await requireAuth()
         const { res, json } = await APIUtility.post(`${MAINT_FUNCTION}/update-entry`, { id, updates })
         if (!res.ok) throw new Error(json?.error || 'Failed to update entry')
         return json.data
     },
 
-    
-
-    
-    
-
-
-
-/** Updates an equipment record by ID. */
-async updateEquipment(id, updates) {
+    /** Updates an equipment record by ID. */
+    async updateEquipment(id, updates) {
         await requireAuth()
         const { res, json } = await APIUtility.post(`${MAINT_FUNCTION}/update-equipment`, { id, updates })
         if (!res.ok) throw new Error(json?.error || 'Failed to update equipment')
         return json.data
     },
 
-    
     // ── Attachments ─────────────────────────────────────────────
-/** Uploads an attachment file to storage. Returns the public URL. */
-async uploadAttachment(file, equipmentId) {
+    /** Uploads an attachment file to storage. Returns the public URL. */
+    async uploadAttachment(file, equipmentId) {
         const user = await requireAuth()
         const timestamp = Date.now()
         const ext = file.name.split('.').pop()

@@ -118,7 +118,10 @@ async function fetchRouteRaw(from: LatLng, to: LatLng): Promise<RouteRawResult |
  * OSRM down, bad coords, etc.) so the caller can fall back to a
  * straight-line render.
  */
-export function getDrivingRoute(from: LatLng | null | undefined, to: LatLng | null | undefined): Promise<RouteResult | null> {
+export function getDrivingRoute(
+    from: LatLng | null | undefined,
+    to: LatLng | null | undefined
+): Promise<RouteResult | null> {
     if (!from || !to) return Promise.resolve(null)
     if (!Number.isFinite(from.lat) || !Number.isFinite(from.lng)) return Promise.resolve(null)
     if (!Number.isFinite(to.lat) || !Number.isFinite(to.lng)) return Promise.resolve(null)

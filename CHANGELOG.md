@@ -1,5 +1,69 @@
 # Changelog
 
+## [2026.20.0] - 2026-05-13
+
+- Adopted CalVer (YYYY.WW.PATCH) for project versioning, replacing the legacy semver-style cadence. First release of
+  the new scheme; previous version was 41.0.12. CHANGELOG entries from this release onward use the new format
+- Migrated the release workflow off the `nit` CLI to a local Claude Code skill at `~/.claude/skills/release/` that
+  generates the commit message and changelog from the staged diff directly. Skill supports both CalVer and semver
+  schemes with automatic detection from the current `package.json` version shape
+- Added `createAssetHistory` model factory in `src/app/models/createAssetHistory.js` alongside the existing
+  `createAssetComment` factory. Both produce typed domain models from a small config object — the new asset types
+  (Trailer, Pickup Truck) now use them, eliminating what would otherwise be hand-rolled 20-80 line classes per type
+- Added `TrailerComment`, `TrailerHistory`, `PickupTruckComment`, and `PickupTruckHistory` model files so all five
+  fleet asset types now have a consistent typed-model surface (Comment + History per type). Previously Trailer and
+  Pickup Truck returned raw API rows
+- Migrated `EquipmentHistory` to the `createAssetHistory` factory — 23 lines of hand-rolled code dropped to 6
+- Wired `TrailerService` and `PickupTruckService` with `commentModelFn` and `parseHistoryRow` so comments and history
+  rows arrive as typed instances rather than raw rows
+- Renamed the Plan tab from `Admin` to `Settings` and the gating permission from `plan.admin` to `plan.settings`. The
+  `Admin` view file (`PlanAdminView.jsx`) renamed to `PlanSettingsView.jsx`; internal `AdminHeader` renamed to
+  `SettingsHeader`; icon switched from `fa-shield-halved` to `fa-sliders` to match the inline settings panel
+- Removed the floating Plan Settings popup entirely. Settings (travel times, plant addresses) now live inline in the
+  Plan -> Settings tab. Settings cog in the header is gone; `showSettings` / `setShowSettings` / `handleToggleSettings`
+  removed from `PlanView`, `PlanHeader`, `PlanActionButtons`, and `usePlanActions`. Deleted `PlanSettingsModal.jsx`
+  and added `PlanSettings.jsx` as the inline replacement
+- Added a Dispatcher leaderboard to the Plan -> Settings tab that ranks users with the `Dispatcher` role by their
+  Find-a-Spot submission count in the filtered window. Resolves submitter display name from the log row's
+  `submitter_name`, falling back to the live roster name. Caps at top 5
+- Redesigned the Plan -> Settings tab layout as a 2-column page on desktop (settings sidebar ~340px + activity log
+  main column with `flex-1`). Metric strip and recommendation breakdown sit full-width above. Single page-level scroll
+  surface replaces the previous nested-scroll trap (settings panels had `max-h-[420px] overflow-y-auto` left over from
+  the modal era, which captured wheel events and blocked scrolling to the activity table)
+- Redesigned the metric cards in the Settings tab with vertical layout, large hero numbers (26px tabular for numerics,
+  15px semibold for text values like top submitter/plant), an accent icon chip in the top-right, and a red-tinted
+  warning variant for the no-recommendation card. Added percentage labels to the recommendation-breakdown legend
+- Fixed a logging bug in Find a Spot where activity rows could be silently dropped on transient POST failures. The
+  dedupe key was being set BEFORE the log call rather than after the response, so a network blip burned the key and
+  the submission was never retried. Replaced with a three-stage guard (success ref + in-flight ref + attempt counter
+  capped at 3) so transient failures self-heal on the next render while still guaranteeing exactly one log row per
+  submission. Updated `BookOrderLogService.logSuggestion` to return a truthy sentinel on any 2xx response so callers
+  can distinguish success unambiguously
+- Fixed the `06:60` time display bug in the Find-a-Spot activity log. `formatHhmm` was being called with raw
+  minutes-of-day numbers (e.g. 660 for 11:00 AM), and its HHMM-string fallback path was treating them as `"0660"` ->
+  `"06:60"`. Switched the two log-payload call sites in `BookOrderView` to use the existing `formatMinutesAsClock`
+  helper which correctly divmods to hours/minutes
+- Fixed a recurring Tailwind compile failure in `src/app/index.css` where the `.form-control` block used
+  `transition-[border-color, box-shadow]`. Prettier kept re-inserting the space inside the brackets, which Tailwind's
+  JIT then rejected as an unknown class. Moved the transition out of `@apply` and into raw CSS so Prettier and
+  Tailwind can't fight over it
+- Added `canSeeSettingsTab` to `usePlanUserContext` (parallel to existing `canSeeYourTab` /
+  `hasDefaultPlantPermission`), reading the `plan.settings` permission. Threaded through `PlanView` -> `PlanHeader` ->
+  `PlanTabSwitcher` as the `canSeeSettings` prop. Defensive `useEffect` in `PlanView` bounces a user off the Settings
+  tab if their permission is revoked mid-session
+- Updated README. Bumped version badge to v2026.20.0, added Test workflow badge, rewrote the Plan section to describe
+  the eight tabs (Dashboard, Schedule, Planner, Demand, Statistics, Call List, Find a Spot, Settings) and the
+  `plan.settings`-gated Settings tab with its dispatcher leaderboard. Added a new `Asset module pattern` subsection
+  under Architecture describing `BaseAssetService` and the model factories. Added Testing and CI subsections.
+  Refreshed Project Stats (30 services, 58 hooks, 22 models, 35 edge functions, 8 plan tabs)
+- Renamed `src/app/utils/BrowserDetection.js` to `src/utils/BrowserUtility.ts` (file relocated to canonical
+  `src/utils/` directory, converted to TypeScript). Stripped redundant JSDoc that just restated function names
+- Converted several utility files from JavaScript to TypeScript: AddressUtility, AssetStatsUtility, BaseAssetUtility,
+  DashboardUtility, DeviceUtility, GeocodingUtility, HistoryDisplayUtility, HistoryUtility, PlanDashboardUtility,
+  PlanDemandUtility, PlanFlowLayoutUtility, PlanRuntimeUtility, ReportUtility, RoutingUtility, VerifiedUtility
+- Renamed `AuthContext.js` to `AuthContext.jsx` to reflect the JSX content in the file
+- Reformatted across the project via Prettier (whitespace, line wrapping). 54 files touched purely for formatting
+
 ## [40.0.5] - 2026-04-29
 
 ## [41.0.12] - 2026-05-12

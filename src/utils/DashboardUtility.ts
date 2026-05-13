@@ -197,7 +197,8 @@ const resolveStatusAtDate = (sortedHistory: HistoryRecord[], cutoffDate: Date, f
     return sortedHistory[0].old_value || fallbackStatus
 }
 
-const findEarliestDate = (dates: (Date | null)[]): Date | null => dates.filter(Boolean).sort((a, b) => a!.getTime() - b!.getTime())[0] ?? null
+const findEarliestDate = (dates: (Date | null)[]): Date | null =>
+    dates.filter(Boolean).sort((a, b) => a!.getTime() - b!.getTime())[0] ?? null
 
 const accumulateStatusDays = (statusDaysMap: Record<string, number>, status: string, days: number): number => {
     statusDaysMap[status] = (statusDaysMap[status] || 0) + days

@@ -98,7 +98,7 @@ export async function apiPostOrThrow(
     errorMessage: string
 ): Promise<Record<string, unknown>> {
     const { json, res } = await apiPost(endpoint, payload)
-    if (!res.ok) throw new Error(json?.error as string || errorMessage)
+    if (!res.ok) throw new Error((json?.error as string) || errorMessage)
     return json
 }
 
@@ -108,7 +108,7 @@ export async function apiPostRequireSuccess(
     errorMessage: string
 ): Promise<true> {
     const { json, res } = await apiPost(endpoint, payload)
-    if (!res.ok || json?.success !== true) throw new Error(json?.error as string || errorMessage)
+    if (!res.ok || json?.success !== true) throw new Error((json?.error as string) || errorMessage)
     return true
 }
 

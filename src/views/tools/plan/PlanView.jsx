@@ -125,25 +125,18 @@ function PlanView() {
         userId
     } = usePlanData(planDate)
 
-    const {
-        addTravelTime,
-        calcClockIn,
-        copied,
-        copyToClipboard,
-        newTravelTime,
-        removeTravelTime,
-        setNewTravelTime
-    } = usePlanActions({
-        assignments,
-        getTravelTime,
-        notes,
-        planDate,
-        refreshTravelTimes,
-        setAssignments,
-        setNotes,
-        setPlantProduction,
-        userId
-    })
+    const { addTravelTime, calcClockIn, copied, copyToClipboard, newTravelTime, removeTravelTime, setNewTravelTime } =
+        usePlanActions({
+            assignments,
+            getTravelTime,
+            notes,
+            planDate,
+            refreshTravelTimes,
+            setAssignments,
+            setNotes,
+            setPlantProduction,
+            userId
+        })
 
     const { earliestClockIn, planInsights, shiftSpanHours, stats, totalOps, validAssignmentCount } = usePlanInsights({
         assignments,

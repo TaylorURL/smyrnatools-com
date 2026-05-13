@@ -276,7 +276,12 @@ const buildPlantAccumulators = ({
 }
 
 /** Cumulate per-order numbers onto each plant's accumulator. */
-const accumulateOrdersByPlant = ({ plants, plantProduction, plantNameByCode, passesPlantFilter }: AccumulateOrdersParams): void => {
+const accumulateOrdersByPlant = ({
+    plants,
+    plantProduction,
+    plantNameByCode,
+    passesPlantFilter
+}: AccumulateOrdersParams): void => {
     Object.entries(plantProduction || {}).forEach(([code, prod]) => {
         if (code === PLAN_META_KEY || !passesPlantFilter(code)) return
         if (!plants.has(code)) {
@@ -360,7 +365,7 @@ const collectHourlyAndKpis = ({ plantProduction, passesPlantFilter }: CollectHou
             for (let h = startHour; h <= endHour; h++) {
                 hours[h].total += trucks
                 ;(stackedHourly[h] as Record<string, number | string>)[code] =
-                    ((stackedHourly[h] as Record<string, number | string>)[code] as number || 0) + trucks
+                    (((stackedHourly[h] as Record<string, number | string>)[code] as number) || 0) + trucks
             }
             // Yardage goes into the hour the pour STARTS
             const startH = Math.max(0, Math.min(23, Math.floor(startMin! / 60)))
@@ -393,7 +398,13 @@ const summarizeTimeOfDay = (hours: HourBucket[]): TimeOfDayTotals => {
 }
 
 /** Build the entire Demand view payload. */
-export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planDate, allowedCodes }: BuildDemandParams): DemandData => {
+export const buildDemandData = ({
+    plantProduction,
+    stats,
+    plantNameByCode,
+    planDate,
+    allowedCodes
+}: BuildDemandParams): DemandData => {
     const filterActive = allowedCodes instanceof Set
     const passesPlantFilter = (code: string): boolean => !filterActive || allowedCodes!.has(code)
 
@@ -408,7 +419,7 @@ export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planD
     perPlant.forEach((plant) => {
         let peak = 0
         for (let h = 0; h < hours.length; h++) {
-            const value = (stackedHourly[h] as Record<string, number | string>)[plant.code] as number || 0
+            const value = ((stackedHourly[h] as Record<string, number | string>)[plant.code] as number) || 0
             if (value > peak) peak = value
         }
         peakByPlant[plant.code] = peak
@@ -423,10 +434,11 @@ export const buildDemandData = ({ plantProduction, stats, plantNameByCode, planD
         { orders: 0, trucks: 0, yardage: 0 }
     )
 
-    const peakHour = hours.reduce<PeakHour>(
-        (best, h) => (h.total > best.total ? h : best),
-        { hour: null, label: '\u2014', total: 0 }
-    )
+    const peakHour = hours.reduce<PeakHour>((best, h) => (h.total > best.total ? h : best), {
+        hour: null,
+        label: '\u2014',
+        total: 0
+    })
 
     const cumulativeYardage = toCumulative(hours.map((h) => h.yardage))
     const cumulativeHourly = hours.map((h, i) => ({

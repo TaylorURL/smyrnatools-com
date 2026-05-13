@@ -15,7 +15,16 @@ import PlantDropdownModal from '../common/PlantDropdownModal'
  * Unified add / edit equipment modal.
  * @param {{ mode: 'add'|'edit', isOpen: boolean, onClose: Function, onSaved: Function, equipment?: object, categories: Array, plants: Array, accentColor: string }} props
  */
-export function MaintenanceEquipmentModal({ mode = 'add', isOpen, onClose, onSaved, equipment, categories, plants, accentColor }) {
+export function MaintenanceEquipmentModal({
+    mode = 'add',
+    isOpen,
+    onClose,
+    onSaved,
+    equipment,
+    categories,
+    plants,
+    accentColor
+}) {
     const [form, setForm] = useState(EMPTY_EQUIPMENT_FORM)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')

@@ -45,10 +45,12 @@ jest.mock('../../utils/ValidationUtility', () => ({
     }
 }))
 
-jest.mock('../../app/components/common/VersionPopup', () =>
-    function MockVersionPopup() {
-        return <div data-testid="version-popup" />
-    }
+jest.mock(
+    '../../app/components/common/VersionPopup',
+    () =>
+        function MockVersionPopup() {
+            return <div data-testid="version-popup" />
+        }
 )
 
 jest.mock('../../assets/images/srm-logo.svg', () => 'srm-logo.svg')

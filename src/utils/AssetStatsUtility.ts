@@ -8,7 +8,14 @@ const MILLIS_PER_DAY = 1000 * 60 * 60 * 24
 
 const RETIRED_STATUSES = ['Retired', 'Terminated']
 
-const STATUS_PRIORITY: Record<string, number> = { Active: 0, Stationary: 1, Spare: 2, 'In Shop': 3, Retired: 4, Sold: 5 }
+const STATUS_PRIORITY: Record<string, number> = {
+    Active: 0,
+    Stationary: 1,
+    Spare: 2,
+    'In Shop': 3,
+    Retired: 4,
+    Sold: 5
+}
 
 const VALID_STATUSES = ['Active', 'Spare', 'In Shop', 'Retired']
 
@@ -49,7 +56,12 @@ interface ScopeOptions {
  * Compares two items by status priority, then by numeric portion of a number field.
  * Status order: Active -> Stationary -> Spare -> In Shop -> Retired -> Sold.
  */
-function compareByStatusThenNumber(a: AssetRow, b: AssetRow, statusField = 'status', numberField = 'truckNumber'): number {
+function compareByStatusThenNumber(
+    a: AssetRow,
+    b: AssetRow,
+    statusField = 'status',
+    numberField = 'truckNumber'
+): number {
     const statusA = STATUS_PRIORITY[a?.[statusField] as string] ?? 99
     const statusB = STATUS_PRIORITY[b?.[statusField] as string] ?? 99
     if (statusA !== statusB) return statusA - statusB
@@ -113,12 +125,16 @@ function countUnassignedActiveOperators(
  * Counts total active operators in scope (by position, plant, and region).
  * Used alongside countUnassignedActiveOperators to derive assigned count.
  */
-function countActiveOperatorsInScope(operators: OperatorRow[], { position, selectedPlant, regionPlantCodes }: ScopeOptions): number {
+function countActiveOperatorsInScope(
+    operators: OperatorRow[],
+    { position, selectedPlant, regionPlantCodes }: ScopeOptions
+): number {
     return (operators || []).filter((op) => {
         if (op?.status !== 'Active') return false
         if (position && op?.position !== position) return false
         if (selectedPlant && selectedPlant !== 'All' && op?.plantCode !== selectedPlant) return false
-        if (regionPlantCodes && regionPlantCodes.size > 0 && !regionPlantCodes.has(op?.plantCode as string)) return false
+        if (regionPlantCodes && regionPlantCodes.size > 0 && !regionPlantCodes.has(op?.plantCode as string))
+            return false
         return true
     }).length
 }
@@ -168,7 +184,13 @@ function getPlantCounts(items: AssetRow[], plantField = 'assignedPlant'): Record
 function getStatusCounts(items: AssetRow[], statusField = 'status'): Record<string, number> {
     if (!Array.isArray(items)) return {}
     const operationalItems = items.filter((item) => !RETIRED_STATUSES.includes(item?.[statusField] as string))
-    const counts: Record<string, number> = { Active: 0, 'In Shop': 0, Retired: 0, Spare: 0, Total: operationalItems.length }
+    const counts: Record<string, number> = {
+        Active: 0,
+        'In Shop': 0,
+        Retired: 0,
+        Spare: 0,
+        Total: operationalItems.length
+    }
     items.forEach((item) => {
         const status = (item[statusField] as string) || 'Unknown'
         if (VALID_STATUSES.includes(status)) counts[status]++
@@ -214,7 +236,11 @@ function isTrailerVerified(
  * Sorts items with retired/terminated entries pushed to the end,
  * applying an optional sort function to each partition independently.
  */
-function sortWithRetiredLast<T extends AssetRow>(items: T[], sortFn?: ((a: T, b: T) => number) | null, statusField = 'status'): T[] {
+function sortWithRetiredLast<T extends AssetRow>(
+    items: T[],
+    sortFn?: ((a: T, b: T) => number) | null,
+    statusField = 'status'
+): T[] {
     if (!items?.length) return items
 
     const activeItems = items.filter((item) => !RETIRED_STATUSES.includes(item?.[statusField] as string))

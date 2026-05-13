@@ -2,8 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 
 import { setDatabaseAuth } from '../../services/DatabaseService'
 import APIUtility from '../../utils/APIUtility'
+import { getBrowserMetadata } from '../../utils/BrowserUtility'
 import { SESSION_STORAGE_KEYS } from '../constants/authConstants'
-import { getBrowserMetadata } from '../utils/BrowserDetection'
 
 const AUTH_FUNCTION = '/auth-service'
 const SESSION_EXPIRY_DAYS = 2

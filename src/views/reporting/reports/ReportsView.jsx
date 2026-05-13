@@ -968,7 +968,19 @@ function ReportsView() {
             if (qcSort === 'cast_desc') return (a.data?.date_molded || '') > (b.data?.date_molded || '') ? -1 : 1
             return new Date(b.submittedAt) - new Date(a.submittedAt)
         })
-    }, [qcReports, qcTypeFilter, qcStatusFilter, qcSort, qcDateFrom, qcDateTo, districtPlantSet, filterPlant, getUserName, myPlantCodesSet, searchLower])
+    }, [
+        qcReports,
+        qcTypeFilter,
+        qcStatusFilter,
+        qcSort,
+        qcDateFrom,
+        qcDateTo,
+        districtPlantSet,
+        filterPlant,
+        getUserName,
+        myPlantCodesSet,
+        searchLower
+    ])
     const qcHasActiveFilters =
         qcTypeFilter !== 'all' ||
         qcStatusFilter !== 'all' ||

@@ -508,7 +508,6 @@ const buildShiftReason = ({ recommendedSlot, request }) => {
     return 'This slot keeps the day clustered and avoids idle gaps.'
 }
 
-
 /** Single, action-oriented recommendation. Always shows the SYSTEM's best
  *  time for this booking on the closest plant — when the dispatcher's
  *  typed time matches, we just confirm it; when it doesn't (e.g. they
@@ -1588,7 +1587,6 @@ function BookOrderView({ accentColor, mixerCountsByPlant, onChangePlanDate, plan
                             </>
                         )
                     })()}
-
                 </section>
             </div>
         </div>

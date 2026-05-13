@@ -110,8 +110,7 @@ export function MaintenanceLogTable({
                                             ? 'rgba(239,68,68,0.04)'
                                             : 'rgba(220,53,69,0.03)'
                                         : 'transparent',
-                                borderBottom:
-                                    idx < sorted.length - 1 ? '1px solid var(--border-light)' : 'none'
+                                borderBottom: idx < sorted.length - 1 ? '1px solid var(--border-light)' : 'none'
                             }}
                             onClick={() => onRowClick(item)}
                         >
@@ -121,9 +120,7 @@ export function MaintenanceLogTable({
                                         className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
                                         style={{ color: accentColor }}
                                     >
-                                        <i
-                                            className={`fas ${item.category_icon || 'fa-cog'} text-[11px]`}
-                                        />
+                                        <i className={`fas ${item.category_icon || 'fa-cog'} text-[11px]`} />
                                     </div>
                                     <div className="min-w-0">
                                         <div className="text-[12px] font-semibold truncate text-text-primary">

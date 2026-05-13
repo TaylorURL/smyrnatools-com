@@ -32,7 +32,9 @@ export function detectDeviceType(): DeviceType {
  * Returns 'ios', 'android', or 'desktop'.
  */
 export function detectPlatformType(): PlatformType {
-    const ua = (navigator.userAgent || (navigator as unknown as Record<string, unknown>).vendor || (window as unknown as Record<string, unknown>).opera) as string
+    const ua = (navigator.userAgent ||
+        (navigator as unknown as Record<string, unknown>).vendor ||
+        (window as unknown as Record<string, unknown>).opera) as string
     if (/iPad|iPhone|iPod/.test(ua) && !(window as unknown as Record<string, unknown>).MSStream) return 'ios'
     if (/android/i.test(ua)) return 'android'
     return 'desktop'

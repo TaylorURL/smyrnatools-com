@@ -6,28 +6,18 @@ const NRMCA_FUNCTION = '/nrmca-service'
 const post = (endpoint, body) => APIUtility.post(`${NRMCA_FUNCTION}/${endpoint}`, body)
 
 const NRMCAServiceImpl = {
-    
-    
-async deletePlant(id) {
+    async deletePlant(id) {
         const { res, json } = await post('delete-plant', { id })
         if (!res?.ok) throw new Error(json?.error || 'Failed to delete plant')
     },
 
-    
-    
-
-
-async deleteScale(id) {
+    async deleteScale(id) {
         const { res, json } = await post('delete-scale', { id })
         if (!res?.ok) throw new Error(json?.error || 'Failed to delete scale')
     },
 
-    
-    
-
-
-/** Fetch calibration history for a single scale. */
-async fetchCalibrationHistory(scaleId) {
+    /** Fetch calibration history for a single scale. */
+    async fetchCalibrationHistory(scaleId) {
         const { data, error } = await Database.from('nrmca_scale_calibrations')
             .select('*')
             .eq('scale_id', scaleId)
@@ -37,11 +27,8 @@ async fetchCalibrationHistory(scaleId) {
         return data ?? []
     },
 
-    
-    
-
-/** Fetch all defined NRMCA plant entries, optionally filtered by plant codes. */
-async fetchPlants(plantCodes = null) {
+    /** Fetch all defined NRMCA plant entries, optionally filtered by plant codes. */
+    async fetchPlants(plantCodes = null) {
         let query = Database.from('nrmca_plants').select('*').order('plant_code').order('plant_label')
         if (plantCodes?.size) query = query.in('plant_code', [...plantCodes])
         const { data, error } = await query
@@ -49,9 +36,8 @@ async fetchPlants(plantCodes = null) {
         return data ?? []
     },
 
-    
-/** Fetch renewal history for a single nrmca_plant. */
-async fetchRenewalHistory(nrmcaPlantId) {
+    /** Fetch renewal history for a single nrmca_plant. */
+    async fetchRenewalHistory(nrmcaPlantId) {
         const { data, error } = await Database.from('nrmca_renewals')
             .select('*')
             .eq('nrmca_plant_id', nrmcaPlantId)
@@ -62,7 +48,7 @@ async fetchRenewalHistory(nrmcaPlantId) {
     },
 
     /** Fetch all scales, with their parent nrmca_plant info, optionally filtered by plant codes. */
-async fetchScales(plantCodes = null) {
+    async fetchScales(plantCodes = null) {
         let query = Database.from('nrmca_scales')
             .select('*, nrmca_plants(plant_label, plant_code)')
             .order('plant_code')

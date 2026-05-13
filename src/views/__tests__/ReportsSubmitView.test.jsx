@@ -74,43 +74,57 @@ jest.mock('../../utils/ReportUtility', () => ({
     }
 }))
 
-jest.mock('../../app/components/reports/SubmitHeader', () =>
-    function MockSubmitHeader({ report, onBack }) {
-        return (
-            <div data-testid="submit-header">
-                <span>{report.title}</span>
-                <button onClick={onBack}>Back</button>
-            </div>
-        )
-    }
+jest.mock(
+    '../../app/components/reports/SubmitHeader',
+    () =>
+        function MockSubmitHeader({ report, onBack }) {
+            return (
+                <div data-testid="submit-header">
+                    <span>{report.title}</span>
+                    <button onClick={onBack}>Back</button>
+                </div>
+            )
+        }
 )
 
-jest.mock('../../app/components/reports/ConfirmationModal', () =>
-    function MockConfirmationModal() {
-        return <div data-testid="confirmation-modal" />
-    }
+jest.mock(
+    '../../app/components/reports/ConfirmationModal',
+    () =>
+        function MockConfirmationModal() {
+            return <div data-testid="confirmation-modal" />
+        }
 )
 
-jest.mock('../../app/components/reports/ErrorModal', () =>
-    function MockErrorModal({ error }) {
-        return <div data-testid="error-modal">{error}</div>
-    }
+jest.mock(
+    '../../app/components/reports/ErrorModal',
+    () =>
+        function MockErrorModal({ error }) {
+            return <div data-testid="error-modal">{error}</div>
+        }
 )
 
-jest.mock('../../app/components/reports/OperatorExclusionReasonModal', () =>
-    function MockExclusionModal() {
-        return <div data-testid="exclusion-modal" />
-    }
+jest.mock(
+    '../../app/components/reports/OperatorExclusionReasonModal',
+    () =>
+        function MockExclusionModal() {
+            return <div data-testid="exclusion-modal" />
+        }
 )
 
 // Mock all report type plugins to simple stubs
-jest.mock('../reporting/reports/types/WeeklyAggregateProductionReport', () => ({ AggregateProductionSubmitPlugin: () => null }))
+jest.mock('../reporting/reports/types/WeeklyAggregateProductionReport', () => ({
+    AggregateProductionSubmitPlugin: () => null
+}))
 jest.mock('../reporting/reports/types/WeeklyDistrictManagerReport', () => ({ DistrictManagerSubmitPlugin: () => null }))
 jest.mock('../reporting/reports/types/WeeklyEfficiencyReport', () => ({ EfficiencySubmitPlugin: () => null }))
 jest.mock('../reporting/reports/types/WeeklyGeneralManagerReport', () => ({ GeneralManagerSubmitPlugin: () => null }))
 jest.mock('../reporting/reports/types/WeeklyPlantManagerReport', () => ({ PlantManagerSubmitPlugin: () => null }))
-jest.mock('../reporting/reports/types/WeeklyQualityControlManagerReport', () => ({ QualityControlManagerSubmitPlugin: () => null }))
-jest.mock('../reporting/reports/types/WeeklyReadyMixInstructorReport', () => ({ ReadyMixInstructorSubmitPlugin: () => null }))
+jest.mock('../reporting/reports/types/WeeklyQualityControlManagerReport', () => ({
+    QualityControlManagerSubmitPlugin: () => null
+}))
+jest.mock('../reporting/reports/types/WeeklyReadyMixInstructorReport', () => ({
+    ReadyMixInstructorSubmitPlugin: () => null
+}))
 jest.mock('../reporting/reports/types/WeeklySafetyManagerReport', () => ({ SafetyManagerSubmitPlugin: () => null }))
 
 import ReportsSubmitView from '../reporting/reports/ReportsSubmitView'
