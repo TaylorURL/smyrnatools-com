@@ -50,6 +50,14 @@
   `geocode-service`) and pre-auth endpoints (e.g. `sign-in`, `sign-up`, `reset-password` in `auth-context`).
 - For functions that receive service-to-service calls (e.g. `email-service`), check for the service role key in the
   `Authorization` header as an alternative to session auth.
+- **Always deploy edge functions with `--no-verify-jwt`.** Every function in this project performs its own session
+  validation via `requireAuthenticated` (custom `users_sessions` table). The Supabase platform JWT gate is redundant
+  and actively harmful: with `verify_jwt = true`, the gateway rejects the browser's CORS preflight (OPTIONS, no
+  Authorization header) and returns `{"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization header"}`
+  with status 403 before the function runs. There is no `supabase/config.toml` in this repo, so the flag is not
+  persisted across deploys — you MUST pass it on the command line every time.
+- Deploy command:
+  `PATH="/Users/trentontaylor/.nvm/versions/node/v22.21.1/bin:$PATH" npx supabase functions deploy <name> --no-verify-jwt --project-ref hzudmeptzciqukwlroos`
 
 ## Testing
 

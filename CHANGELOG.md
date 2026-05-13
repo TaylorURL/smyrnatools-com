@@ -1,5 +1,25 @@
 # Changelog
 
+## [2026.20.7] - 2026-05-13
+
+- Removed the role-weight gate on asset and issue deletions. `supabase/functions/_shared/asset-helpers.ts` —
+  `handleDelete` and `handleDeleteIssue` no longer call `requireOwnerOrHigherRole`. Authenticated users can
+  delete trailer / tractor / mixer / equipment / pickup-truck rows (and their maintenance issues) regardless
+  of who last edited the record. Existence checks and 404 responses are preserved; `requireAuthenticated`
+  still gates every call. The `updated_by` / `created_by` lookups on the row were narrowed to `select('id')`
+  since the owner identity is no longer needed. The previously-existing 403 "Forbidden: insufficient
+  privileges to modify another user's record" path is gone.
+- `supabase/functions/_shared/asset-helpers.ts` — deleted the now-unused `requireOwnerOrHigherRole` helper.
+  `getUserWeight` is kept because `supabase/functions/report-service/index.ts` still imports it.
+- `supabase/functions/trailer-service/index.ts` — collapsed the `delete` case to a single `handleDelete`
+  call. The redundant top-of-case `requireAuthenticated` was a no-op because `handleDelete` already
+  authenticates internally, and the duplicate session-validation query was wasted DB traffic on every
+  delete.
+- Redeployed `trailer-service`, `tractor-service`, `mixer-service`, `equipment-service`, and
+  `pickup-truck-service` to the `hzudmeptzciqukwlroos` project with `--no-verify-jwt`. Each function's
+  bundle now includes the updated `_shared/asset-helpers.ts`. `CLAUDE.md` already documents the
+  `--no-verify-jwt` requirement for every edge function deploy.
+
 ## [2026.20.6] - 2026-05-13
 
 - Closed a direct client-side read of `users_profiles` in `src/views/assets/AssetView.jsx`. The view was calling

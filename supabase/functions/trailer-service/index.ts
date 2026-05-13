@@ -218,8 +218,6 @@ Deno.serve(async (req) => {
                 return jsonResponse({ data }, headers)
             }
             case 'delete': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 return handleDelete(
                     supabase,
                     await parseBody(req),
