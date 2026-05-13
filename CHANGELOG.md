@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026.20.1] - 2026-05-13
+
+- Fixed widespread 401 Unauthorized errors against edge functions that were affecting `dispatch-data-service`,
+  `user-presence-service`, `plant-service`, `report-service`, `tractor-service`, `list-service`,
+  `notification-service`, `district-manager-service`, `quality-issues-service`, `auth-context`, and several
+  others. The auth helper `_shared/requireSession.ts` (introduced in commit `304f4fc`) accepts session credentials
+  from three sources in order: the function's `body` argument, the `X-User-Id` / `X-Session-Id` request headers,
+  and `req.clone().json()` as a last-resort fallback. ~80 edge-function call sites omit the `body` argument when
+  invoking `requireAuthenticated`, AND those handlers consume `req.json()` earlier in the request — which means by
+  the time the helper tries `req.clone().json()`, the body stream is already locked. The client never sent the
+  header fallback either, so every one of those calls fell through to a silent 401
+- Updated `src/utils/APIUtility.ts` to send the session credentials as BOTH body fields (`__sessionUserId` /
+  `__sessionId`) AND HTTP headers (`X-User-Id` / `X-Session-Id`) on every request. CORS already whitelists these
+  headers via `_shared/cors.ts`. Headers don't have the stream-consumption hazard the body fallback does, so auth
+  now works regardless of which order the edge function reads `req.json()` and whether it remembers to pass body to
+  the auth helper. Fixes the "Schedule hasn't been updated since..." stale-banner that was misreporting dispatch
+  workstation status (the bucket was fine; the client just couldn't fetch the real last-updated timestamp)
+- Bumped version 2026.20.0 -> 2026.20.1 (CalVer patch)
+
 ## [2026.20.0] - 2026-05-13
 
 - Adopted CalVer (YYYY.WW.PATCH) for project versioning, replacing the legacy semver-style cadence. First release of

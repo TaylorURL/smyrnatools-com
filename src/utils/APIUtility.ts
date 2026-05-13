@@ -55,6 +55,21 @@ const APIUtility = {
         const url = `${EDGE_FUNCTIONS_URL}${path}`
         const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES
         const retryDelay = options.retryDelay ?? DEFAULT_RETRY_DELAY_MS
+        /* Send session credentials BOTH in the body and as headers. The edge
+         * function `requireAuthenticated` helper checks the body first, then
+         * falls back to headers. Many endpoints call `requireAuthenticated`
+         * without passing the parsed body — which forces the helper to do
+         * `req.clone().json()` to re-read the body, and that fails silently
+         * when the handler has already consumed the body stream earlier in
+         * the request (e.g. `const body = await req.json()` at the top of
+         * the handler). Headers don't have that consumption problem, so
+         * duplicating credentials into both surfaces makes auth work
+         * regardless of which order the endpoint reads things. */
+        const credentials = getSessionCredentials()
+        const credentialHeaders: Record<string, string> = {}
+        if (credentials.__sessionUserId) credentialHeaders['X-User-Id'] = credentials.__sessionUserId
+        if (credentials.__sessionId) credentialHeaders['X-Session-Id'] = credentials.__sessionId
+
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             const isLastAttempt = attempt === maxRetries
             const controller = new AbortController()
@@ -62,10 +77,11 @@ const APIUtility = {
             const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
             try {
                 const res = await fetch(url, {
-                    body: JSON.stringify({ ...data, ...getSessionCredentials() }),
+                    body: JSON.stringify({ ...data, ...credentials }),
                     headers: {
                         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
                         'Content-Type': 'application/json',
+                        ...credentialHeaders,
                         ...(options.headers || {})
                     },
                     keepalive: Boolean(options.keepalive),
