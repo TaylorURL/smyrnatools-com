@@ -7,12 +7,12 @@ import { BrowserRouter } from 'react-router-dom'
 
 import packageJson from '../package.json'
 import App from './app/App'
-import { SESSION_STORAGE_KEYS } from './app/constants/auth'
+import { SESSION_STORAGE_KEYS } from './app/constants/authConstants'
 import { AuthProvider } from './app/context/AuthContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
 
-const SENTRY_DSN = process.env.REACT_APP_SENTRY_DSN
+const SENTRY_DSN = import.meta.env.REACT_APP_SENTRY_DSN
 
 if (SENTRY_DSN) {
     Sentry.init({
@@ -25,7 +25,7 @@ if (SENTRY_DSN) {
             return event
         },
         dsn: SENTRY_DSN,
-        environment: process.env.NODE_ENV,
+        environment: import.meta.env.MODE,
         integrations: [Sentry.browserTracingIntegration()],
         release: `smyrnatools@${packageJson.version}`,
         sendDefaultPii: false

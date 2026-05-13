@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-import { SESSION_STORAGE_KEYS } from '../app/constants/auth'
+import { SESSION_STORAGE_KEYS } from '../app/constants/authConstants'
 import APIUtility from '../utils/APIUtility'
 
 const databaseUrl = import.meta.env.REACT_APP_SUPABASE_URL
