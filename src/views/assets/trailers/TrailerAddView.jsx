@@ -4,6 +4,7 @@ import PlantPickerField from '../../../app/components/common/PlantPickerField'
 import AddViewSection from '../../../app/components/sections/AddViewSection'
 import usePlantPicker from '../../../app/hooks/usePlantPicker'
 import Trailer from '../../../app/models/trailers/Trailer'
+import { getSessionUserId } from '../../../services/SessionService'
 import { TrailerService } from '../../../services/TrailerService'
 import DateUtility from '../../../utils/DateUtility'
 
@@ -31,7 +32,7 @@ function TrailerAddView({ plants, onClose, onTrailerAdded }) {
         if (!picker.assignedPlant) return setError('Plant is required')
         setIsSaving(true)
         try {
-            const userId = sessionStorage.getItem('userId')
+            const userId = getSessionUserId()
             if (!userId) throw new Error('User ID not available. Please log in again.')
             const now = DateUtility.formatDateForDb(new Date())
             const newTrailer = new Trailer({

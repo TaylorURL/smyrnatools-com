@@ -10,6 +10,7 @@ import { usePlanScrollSpy } from '../../../app/hooks/usePlanScrollSpy'
 import { useThemeMode } from '../../../app/hooks/useThemeMode'
 import { useVersion } from '../../../app/hooks/useVersion'
 import { Database } from '../../../services/DatabaseService'
+import { getSessionUserId } from '../../../services/SessionService'
 import { UserService } from '../../../services/UserService'
 import APIUtility from '../../../utils/APIUtility'
 import { getBrowserName, getDeviceType, getOSName } from '../../../utils/BrowserUtility'
@@ -628,7 +629,7 @@ function MyAccountView({ userId, onSelectView }) {
             try {
                 const { data } = await Database.auth.getSession()
                 const session = data?.session
-                const uid = userId || session?.user?.id || sessionStorage.getItem('userId')
+                const uid = userId || session?.user?.id || getSessionUserId()
                 if (!uid) {
                     setIsAuthenticated(false)
                     throw new Error('No active session or user ID')
@@ -782,7 +783,7 @@ function MyAccountView({ userId, onSelectView }) {
         setLoading(true)
         setMessage('')
         try {
-            const uid = userId || sessionStorage.getItem('userId')
+            const uid = userId || getSessionUserId()
             if (!uid) {
                 const {
                     data: { session },
@@ -825,7 +826,7 @@ function MyAccountView({ userId, onSelectView }) {
             if (!currentPassword) throw new Error('Current password is required')
             if (newPassword !== confirmPassword) throw new Error('New passwords do not match')
             if (newPassword.length < 8) throw new Error('Password must be at least 8 characters')
-            const uid = userId || sessionStorage.getItem('userId')
+            const uid = userId || getSessionUserId()
             if (!uid) throw new Error('No active session')
             await verifyPassword(uid, currentPassword)
             await authUpdatePassword(uid, newPassword)

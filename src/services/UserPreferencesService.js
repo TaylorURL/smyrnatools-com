@@ -1,16 +1,15 @@
 import APIUtility from '../utils/APIUtility'
 import { CacheUtility } from '../utils/CacheUtility'
 import { detectPlatformType } from '../utils/DeviceUtility'
+import { getSessionUserId } from './SessionService'
 
 const PREFS_FUNCTION = '/user-preferences-service'
 const TUTORIAL_STORAGE_KEY = 'dismissed_tutorials'
 const VERSION_CACHE_KEY = 'app:version'
 const VERSION_CACHE_TTL_MS = 60_000
 
-/** Resolves the current user ID from session storage. */
-const getTutorialUserId = () => {
-    return sessionStorage.getItem('smyrna_session') || null
-}
+/** Resolves the current user ID from the in-memory session. */
+const getTutorialUserId = () => getSessionUserId()
 
 /** Safely parses a JSON string, returning fallback on failure. */
 function safeParseTutorialList(raw) {

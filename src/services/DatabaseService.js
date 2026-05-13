@@ -1,21 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-import { SESSION_STORAGE_KEYS } from '../app/constants/authConstants'
 import APIUtility from '../utils/APIUtility'
+import { getSessionJwt, registerRealtimeAuthApplier } from './SessionService'
 
 const databaseUrl = import.meta.env.REACT_APP_SUPABASE_URL
 const databaseKey = import.meta.env.REACT_APP_SUPABASE_ANON_KEY
-
-/** Reads the current session JWT from sessionStorage, or null if not signed
- *  in / not yet minted. We never throw here — pre-login the JWT is absent
- *  and supabase-js falls back to the anon key. */
-const readSessionJwt = () => {
-    try {
-        return sessionStorage.getItem(SESSION_STORAGE_KEYS.JWT) || null
-    } catch {
-        return null
-    }
-}
 
 /** Wraps `fetch` so every Supabase REST + Storage request swaps the anon-key
  *  bearer for the current session JWT. The `apikey` header stays — Supabase's
@@ -24,9 +13,10 @@ const readSessionJwt = () => {
  *
  *  Reading the JWT on every request (rather than at client construction)
  *  keeps the client in lockstep with login / logout / token refresh without
- *  ever having to reconstruct it. */
+ *  ever having to reconstruct it. The JWT lives in module memory only
+ *  (see SessionService), never in sessionStorage. */
 const sessionJwtFetch = (input, init = {}) => {
-    const jwt = readSessionJwt()
+    const jwt = getSessionJwt()
     if (!jwt) return fetch(input, init)
     const mergedHeaders = new Headers(init.headers || {})
     if (input instanceof Request) {
@@ -52,14 +42,17 @@ const Database = createClient(databaseUrl, databaseKey, {
     }
 })
 
-/** Updates the realtime websocket auth token. Call after login or token
- *  refresh so postgres_changes subscriptions evaluate RLS against the
- *  authenticated JWT instead of the anon key. Pass `null` after signout. */
-export const setDatabaseAuth = (jwt) => {
+/** Pushes the current JWT (or the anon key when signed out) into the
+ *  realtime websocket so postgres_changes subscriptions evaluate RLS
+ *  against the authenticated user. SessionService invokes this whenever
+ *  the JWT changes. */
+const applyRealtimeAuth = (jwt) => {
     try {
         Database.realtime.setAuth(jwt || databaseKey)
     } catch {}
 }
+registerRealtimeAuthApplier(applyRealtimeAuth)
+
 export default Database
 /** Prefer named import: `import { Database } from './DatabaseService'` */
 export { Database }

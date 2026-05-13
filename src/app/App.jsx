@@ -3,6 +3,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react'
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import { Database } from '../services/DatabaseService'
+import { getSessionUserId } from '../services/SessionService'
 import { UserService } from '../services/UserService'
 import { NetworkUtility } from '../utils/NetworkUtility'
 import LoginView from '../views/common/login/LoginView'
@@ -292,7 +293,7 @@ function AppContent() {
             case 'NRMCA':
                 return <NRMCAView />
             case 'MyAccount': {
-                const effectiveUserId = userId || sessionStorage.getItem('userId')
+                const effectiveUserId = userId || getSessionUserId()
                 return effectiveUserId ? (
                     <MyAccountView userId={effectiveUserId} onSelectView={handleViewSelection} />
                 ) : (

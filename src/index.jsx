@@ -7,10 +7,10 @@ import { BrowserRouter } from 'react-router-dom'
 
 import packageJson from '../package.json'
 import App from './app/App'
-import { SESSION_STORAGE_KEYS } from './app/constants/authConstants'
 import { AuthProvider } from './app/context/AuthContext'
 import { PreferencesProvider } from './app/context/PreferencesContext'
 import { TutorialProvider } from './app/context/TutorialContext'
+import { getSessionUserId } from './services/SessionService'
 
 const SENTRY_DSN = import.meta.env.REACT_APP_SENTRY_DSN
 
@@ -57,9 +57,7 @@ function configureSentryUserScope() {
     if (!SENTRY_DSN) return
 
     const attachUser = () => {
-        const userId =
-            sessionStorage.getItem(SESSION_STORAGE_KEYS.USER_ID) ||
-            sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_KEY)
+        const userId = getSessionUserId()
         if (userId) Sentry.setUser({ id: userId })
     }
 

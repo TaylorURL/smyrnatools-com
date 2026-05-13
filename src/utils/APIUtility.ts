@@ -1,10 +1,13 @@
+// @ts-ignore
+import { getSessionCredentialFields } from '../services/SessionService'
+
+// @ts-ignore
 const EDGE_FUNCTIONS_URL = import.meta.env.REACT_APP_EDGE_FUNCTIONS_URL
+// @ts-ignore
 const SUPABASE_ANON_KEY = import.meta.env.REACT_APP_SUPABASE_ANON_KEY
 const REQUEST_TIMEOUT_MS = 30_000
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 1_000
-const SESSION_KEY = 'smyrna_session'
-const SESSION_ID_KEY = 'smyrna_session_id'
 const SESSION_INVALID_EVENT = 'auth:session-invalid'
 
 /* Auth-service endpoints that legitimately run without an established session
@@ -44,16 +47,8 @@ interface PostOptions {
     timeout?: number
 }
 
-/** Reads session credentials from sessionStorage for edge function authentication. */
-const getSessionCredentials = (): SessionCredentials => {
-    try {
-        return {
-            __sessionUserId: sessionStorage.getItem(SESSION_KEY) || undefined,
-            __sessionId: sessionStorage.getItem(SESSION_ID_KEY) || undefined
-        }
-    } catch {}
-    return {}
-}
+/** Reads in-memory session credentials for edge function authentication. */
+const getSessionCredentials = (): SessionCredentials => getSessionCredentialFields()
 
 /** Notifies the app that the current session is no longer accepted by the
  *  server. AuthContext listens for this and tears down user state so the

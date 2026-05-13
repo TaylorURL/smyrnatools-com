@@ -5,6 +5,7 @@ import AddViewSection from '../../../app/components/sections/AddViewSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import usePlantPicker from '../../../app/hooks/usePlantPicker'
 import { Tractor } from '../../../app/models/tractors/Tractor'
+import { getSessionUserId } from '../../../services/SessionService'
 import { TractorService } from '../../../services/TractorService'
 import DateUtility from '../../../utils/DateUtility'
 
@@ -40,7 +41,7 @@ function TractorAddView({ plants, onClose, onTractorAdded }) {
         if (!freight) return setError('Freight is required')
         setIsSaving(true)
         try {
-            const userId = sessionStorage.getItem('userId')
+            const userId = getSessionUserId()
             if (!userId) throw new Error('User ID not available. Please log in again.')
             const now = DateUtility.formatDateForDb(new Date())
             const parsedHours =

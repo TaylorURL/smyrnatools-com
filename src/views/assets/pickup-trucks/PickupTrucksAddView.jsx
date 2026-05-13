@@ -5,6 +5,7 @@ import AddViewSection from '../../../app/components/sections/AddViewSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import usePlantPicker from '../../../app/hooks/usePlantPicker'
 import { PickupTruckService } from '../../../services/PickupTruckService'
+import { getSessionUserId } from '../../../services/SessionService'
 
 /**
  * Slide-in form for creating a new pickup truck record. Supports VIN
@@ -38,7 +39,7 @@ function PickupTrucksAddView({ onClose, onAdded }) {
         }
         setIsSaving(true)
         try {
-            const userId = sessionStorage.getItem('userId')
+            const userId = getSessionUserId()
             if (!userId) throw new Error('User ID not available. Please log in again.')
             const payload = {
                 assigned: assigned || null,

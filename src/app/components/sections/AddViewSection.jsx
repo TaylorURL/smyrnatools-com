@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 
+import { getSessionUserId } from '../../../services/SessionService'
 import { UserService } from '../../../services/UserService'
 import ErrorMessage from '../common/ErrorMessage'
 
@@ -21,7 +22,7 @@ function AddViewSection({ title, onClose, children, error, isListItem = false })
     const pointerDownTargetRef = useRef(null)
     useEffect(() => {
         async function checkPermission() {
-            const userId = sessionStorage.getItem('userId')
+            const userId = getSessionUserId()
             if (userId) {
                 if (isListItem) {
                     const hasListAdd = await UserService.hasPermission(userId, 'list.add')

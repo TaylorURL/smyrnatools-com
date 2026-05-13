@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { SESSION_STORAGE_KEYS } from '../constants/authConstants'
+import { getSessionUserId } from '../../services/SessionService'
 
 /**
  * Manages authentication session lifecycle on app mount.
@@ -11,17 +11,12 @@ import { SESSION_STORAGE_KEYS } from '../constants/authConstants'
 export function useAuthSession(setUserId, setIsGuestOnly, setRolesLoaded, setSelectedView, setSessionChecked) {
     useEffect(() => {
         const initSession = () => {
-            const userId =
-                sessionStorage.getItem(SESSION_STORAGE_KEYS.USER_ID) ||
-                sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_KEY)
+            const userId = getSessionUserId()
             if (userId) setUserId(userId)
             setSessionChecked(true)
         }
         const handleAuthSuccess = (event) => {
-            const userId =
-                event.detail?.userId ||
-                sessionStorage.getItem(SESSION_STORAGE_KEYS.USER_ID) ||
-                sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_KEY)
+            const userId = event.detail?.userId || getSessionUserId()
             if (userId) setUserId(userId)
         }
         const handleSignOut = () => {

@@ -1,6 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
-import { setDatabaseAuth } from '../../services/DatabaseService'
+import {
+    clearSession,
+    getJwtExpiresAt,
+    getSessionId,
+    getSessionJwt,
+    getSessionUserId,
+    updateSession
+} from '../../services/SessionService'
 import APIUtility, { SESSION_INVALID_EVENT } from '../../utils/APIUtility'
 import { getBrowserMetadata } from '../../utils/BrowserUtility'
 import { SESSION_STORAGE_KEYS } from '../constants/authConstants'
@@ -31,45 +38,25 @@ function generateSessionId() {
     crypto.getRandomValues(array)
     return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('')
 }
-function storeUserId(userId) {
-    sessionStorage.setItem(SESSION_STORAGE_KEYS.USER_ID, userId)
-    sessionStorage.setItem(SESSION_STORAGE_KEYS.SESSION_KEY, userId)
-}
 function clearAllSessionData() {
-    sessionStorage.removeItem(SESSION_STORAGE_KEYS.USER_ID)
-    sessionStorage.removeItem(SESSION_STORAGE_KEYS.SESSION_KEY)
-    sessionStorage.removeItem(SESSION_STORAGE_KEYS.SESSION_ID)
-    sessionStorage.removeItem(SESSION_STORAGE_KEYS.JWT)
-    sessionStorage.removeItem(SESSION_STORAGE_KEYS.JWT_EXPIRES_AT)
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.CACHED_PLANTS)
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.USER_ROLE)
-    setDatabaseAuth(null)
-}
-function getStoredUserId() {
-    return (
-        sessionStorage.getItem(SESSION_STORAGE_KEYS.USER_ID) ||
-        sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_KEY) ||
-        null
-    )
+    clearSession()
 }
 
-/** Persists a freshly-minted JWT and propagates it to the realtime channel. */
+/** Stores a freshly-minted JWT in memory and propagates it to the realtime channel. */
 function applyJwt(jwt, expiresInSeconds) {
     if (!jwt) return
-    sessionStorage.setItem(SESSION_STORAGE_KEYS.JWT, jwt)
-    if (expiresInSeconds) {
-        const expiresAt = Date.now() + expiresInSeconds * 1000
-        sessionStorage.setItem(SESSION_STORAGE_KEYS.JWT_EXPIRES_AT, String(expiresAt))
-    }
-    setDatabaseAuth(jwt)
+    const expiresAt = expiresInSeconds ? Date.now() + expiresInSeconds * 1000 : 0
+    updateSession({ expiresAt, jwt })
 }
 
 /** Re-mints the session JWT against the current users_sessions row. Returns
  *  true on success. Used both by the periodic timer and by the initial
  *  bootstrap when restore-session can't deliver one. */
 async function refreshJwtIfPossible() {
-    const userId = getStoredUserId()
-    const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
+    const userId = getSessionUserId()
+    const sessionId = getSessionId()
     if (!userId || !sessionId) return false
     try {
         const { json, res } = await APIUtility.post(`${AUTH_FUNCTION}/refresh-token`, { sessionId, userId })
@@ -85,6 +72,7 @@ async function refreshJwtIfPossible() {
 async function createDbSession(userId) {
     const sessionId = generateSessionId()
     const { browser, os, device, userAgent } = getBrowserMetadata()
+    updateSession({ sessionId, userId })
     try {
         const { json } = await APIUtility.post(`${AUTH_FUNCTION}/create-session`, {
             browser,
@@ -94,20 +82,17 @@ async function createDbSession(userId) {
             userAgent,
             userId
         })
-        sessionStorage.setItem(SESSION_STORAGE_KEYS.SESSION_ID, sessionId)
         if (json?.jwt) applyJwt(json.jwt, json.expiresIn)
     } catch {}
-    storeUserId(userId)
 }
 /**
  * Validates the current session via auth-service.
  * Expires sessions older than the configured threshold.
  */
 async function validateDbSession() {
-    const userId = getStoredUserId()
-    if (!userId) return { userId: null, valid: false }
-    const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
-    if (!sessionId) return { userId: null, valid: false }
+    const userId = getSessionUserId()
+    const sessionId = getSessionId()
+    if (!userId || !sessionId) return { userId: null, valid: false }
     try {
         const { json } = await APIUtility.post(`${AUTH_FUNCTION}/validate-session`, { sessionId, userId })
         if (!json?.valid) {
@@ -144,13 +129,13 @@ export function AuthProvider({ children }) {
             return false
         }
         try {
-            const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
+            const sessionId = getSessionId()
             const { json } = await APIUtility.post(`${AUTH_FUNCTION}/restore-session`, { sessionId, userId })
             if (json.success && json.user) {
                 if (json.jwt) applyJwt(json.jwt, json.expiresIn)
                 else await refreshJwtIfPossible()
                 setUser(json.user)
-                storeUserId(userId)
+                updateSession({ userId })
                 setLoading(false)
                 return true
             }
@@ -167,12 +152,6 @@ export function AuthProvider({ children }) {
     }, [])
 
     useEffect(() => {
-        // Re-attach realtime auth on mount in case sessionStorage already
-        // has a JWT (e.g. a tab refresh before the restore-session call
-        // returns) — keeps any subscription set up before restore from
-        // running with a stale anon-key bearer.
-        const existingJwt = sessionStorage.getItem(SESSION_STORAGE_KEYS.JWT)
-        if (existingJwt) setDatabaseAuth(existingJwt)
         setLoading(true)
         restoreSession().finally(() => setLoading(false))
         return () => clearTimeout(profileTimerRef.current)
@@ -201,13 +180,11 @@ export function AuthProvider({ children }) {
      * anon key like it always has, and we don't spam refresh-token. */
     useEffect(() => {
         const tick = () => {
-            const userId = getStoredUserId()
-            const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
-            const existingJwt = sessionStorage.getItem(SESSION_STORAGE_KEYS.JWT)
+            const userId = getSessionUserId()
+            const sessionId = getSessionId()
+            const existingJwt = getSessionJwt()
             if (!userId || !sessionId || !existingJwt) return
-            const expiresAtRaw = sessionStorage.getItem(SESSION_STORAGE_KEYS.JWT_EXPIRES_AT)
-            const expiresAt = expiresAtRaw ? Number(expiresAtRaw) : 0
-            const secondsLeft = (expiresAt - Date.now()) / 1000
+            const secondsLeft = (getJwtExpiresAt() - Date.now()) / 1000
             if (secondsLeft > JWT_REFRESH_FLOOR_SECONDS) return
             refreshJwtIfPossible()
         }
@@ -218,7 +195,7 @@ export function AuthProvider({ children }) {
     const loadUserProfile = useCallback(async (userId) => {
         if (!userId) return
         try {
-            const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
+            const sessionId = getSessionId()
             const { json } = await APIUtility.post(`${AUTH_FUNCTION}/load-profile`, { sessionId, userId })
             if (json.profile) {
                 setUser((cu) => ({ ...cu, profile: json.profile }))
@@ -286,7 +263,7 @@ export function AuthProvider({ children }) {
     }, [])
     const signOut = useCallback(async () => {
         clearTimeout(profileTimerRef.current)
-        const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEYS.SESSION_ID)
+        const sessionId = getSessionId()
         if (sessionId) {
             await APIUtility.post(`${AUTH_FUNCTION}/delete-session`, { sessionId }).catch(() => {})
         }

@@ -2,12 +2,12 @@ import APIUtility from '../utils/APIUtility'
 import { requireEntityId, resolveEntityId } from '../utils/BaseAssetUtility'
 import { Database } from './DatabaseService'
 import { PlantService } from './PlantService'
+import { getSessionUserId } from './SessionService'
 
 const USER_FUNCTION = '/user-service'
 const DM_FUNCTION = '/district-manager-service'
 const PROFILES_TABLE = 'users_profiles'
 const USER_ID_REQUIRED = 'User ID is required'
-const SESSION_KEY = 'smyrna_session'
 const UNKNOWN_USER = { id: 'unknown', name: 'Unknown User' }
 const DEFAULT_ROLE_NAME = 'User'
 const ALWAYS_PERMITTED = 'my_account.view'
@@ -82,7 +82,7 @@ class UserServiceImpl {
         this.userPlantsCache.clear()
     }
     async getCurrentUser() {
-        const userId = sessionStorage.getItem(SESSION_KEY)
+        const userId = getSessionUserId()
         return userId ? { id: userId } : null
     }
     async getUserById(userId) {

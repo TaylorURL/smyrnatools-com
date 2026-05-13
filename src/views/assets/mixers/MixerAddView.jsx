@@ -6,6 +6,7 @@ import { usePreferences } from '../../../app/context/PreferencesContext'
 import usePlantPicker from '../../../app/hooks/usePlantPicker'
 import { Mixer } from '../../../app/models/mixers/Mixer'
 import { MixerService } from '../../../services/MixerService'
+import { getSessionUserId } from '../../../services/SessionService'
 import DateUtility from '../../../utils/DateUtility'
 
 /**
@@ -38,7 +39,7 @@ function MixerAddView({ plants, onClose, onMixerAdded }) {
         if (!picker.assignedPlant) return setError('Plant is required')
         setIsSaving(true)
         try {
-            const userId = sessionStorage.getItem('userId')
+            const userId = getSessionUserId()
             if (!userId) throw new Error('User ID not available. Please log in again.')
             const now = DateUtility.formatDateForDb(new Date())
             const parsedHours =

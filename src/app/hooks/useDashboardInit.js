@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Database } from '../../services/DatabaseService'
 import { PlantService } from '../../services/PlantService'
 import { ReportService } from '../../services/ReportService'
+import { getSessionUserId } from '../../services/SessionService'
 import { UserService } from '../../services/UserService'
 import { DASHBOARD_REFRESH_INTERVAL_MS } from '../constants/dashboardConstants'
 
@@ -43,7 +44,7 @@ export function useDashboardInit({ plantSetRef, preferences }) {
                 setAllPlantsCount(Array.isArray(fetchedPlants) ? fetchedPlants.length : 0)
                 setAllPlants(fetchedPlants)
                 const { data: sessionData } = await Database.auth.getSession()
-                const uid = sessionData?.session?.user?.id || sessionStorage.getItem('userId') || ''
+                const uid = sessionData?.session?.user?.id || getSessionUserId() || ''
                 const allPerm = await UserService.hasPermission(uid, 'region.select.all').catch(() => false)
                 if (cancelled) return
                 setHasAllRegionsPermission(!!allPerm)
@@ -122,7 +123,7 @@ export function useDashboardInit({ plantSetRef, preferences }) {
         async function checkPlantManagerRole() {
             try {
                 const { data: sessionData } = await Database.auth.getSession()
-                const uid = sessionData?.session?.user?.id || sessionStorage.getItem('userId') || ''
+                const uid = sessionData?.session?.user?.id || getSessionUserId() || ''
                 if (!uid || cancelled) return
                 const [roles, weight, profileData, highestRole, additionalPlants] = await Promise.all([
                     UserService.getUserRoles(uid),

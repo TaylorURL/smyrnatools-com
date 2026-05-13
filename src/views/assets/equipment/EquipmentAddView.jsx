@@ -4,6 +4,7 @@ import PlantPickerField from '../../../app/components/common/PlantPickerField'
 import AddViewSection from '../../../app/components/sections/AddViewSection'
 import usePlantPicker from '../../../app/hooks/usePlantPicker'
 import { EquipmentService } from '../../../services/EquipmentService'
+import { getSessionUserId } from '../../../services/SessionService'
 
 const EQUIPMENT_TYPES = [
     'Front-End Loader',
@@ -53,7 +54,7 @@ function EquipmentAddView({ plants, onClose, onEquipmentAdded }) {
         if (!equipmentType) return setError('Equipment type is required')
         setIsSaving(true)
         try {
-            const userId = sessionStorage.getItem('userId')
+            const userId = getSessionUserId()
             if (!userId) throw new Error('User ID not available. Please log in again.')
             const parsedHours =
                 hours === '' || hours == null

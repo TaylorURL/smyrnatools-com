@@ -7,6 +7,7 @@ import AddViewSection from '../../../app/components/sections/AddViewSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { OperatorService } from '../../../services/OperatorService'
 import { PlantService } from '../../../services/PlantService'
+import { getSessionUserId } from '../../../services/SessionService'
 import { UserService } from '../../../services/UserService'
 import ValidationUtility from '../../../utils/ValidationUtility'
 
@@ -48,7 +49,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
     }, [allowedPlantCodes, assignedPlant])
     useEffect(() => {
         async function checkPermission() {
-            const userId = sessionStorage.getItem('userId')
+            const userId = getSessionUserId()
             if (userId) {
                 const hasPermission = await UserService.hasPermission(userId, 'operators.training')
                 setHasTrainingPermission(hasPermission)
@@ -98,7 +99,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
     const saveOperator = useCallback(async () => {
         setIsSaving(true)
         try {
-            let userId = sessionStorage.getItem('userId')
+            let userId = getSessionUserId()
             if (!ValidationUtility.isValidUUID(userId))
                 throw new Error('Invalid or missing User ID. Please log in again.')
             const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')

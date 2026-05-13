@@ -12,6 +12,7 @@ import useAssetFilters from '../../app/hooks/useAssetFilters'
 import useAssetVerification from '../../app/hooks/useAssetVerification'
 import { Database } from '../../services/DatabaseService'
 import { PlantService } from '../../services/PlantService'
+import { getSessionUserId } from '../../services/SessionService'
 import AssetStatsUtility from '../../utils/AssetStatsUtility'
 import AssetGridCard from './AssetGridCard'
 import AssetListRow from './AssetListRow'
@@ -51,7 +52,7 @@ function AssetView({
         let cancelled = false
         async function fetchUserPlant() {
             const { data: sessionData } = await Database.auth.getSession()
-            const uid = sessionData?.session?.user?.id || sessionStorage.getItem('userId') || ''
+            const uid = sessionData?.session?.user?.id || getSessionUserId() || ''
             if (!uid || cancelled) return
             const { data: profile } = await Database.from('users_profiles')
                 .select('plant_code')

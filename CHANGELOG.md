@@ -1,5 +1,42 @@
 # Changelog
 
+## [2026.20.5] - 2026-05-13
+
+- Moved the session JWT, session id, user id, and JWT expiry off `sessionStorage` and into a new module-scoped
+  store at `src/services/SessionService.js`. Credentials are now destroyed when the tab closes and are no longer
+  reachable by a stored XSS payload that fires on a future visit; a hard refresh drops the user to the login
+  screen, which is the deliberate trade-off for not persisting bearer tokens to a JS-readable storage surface.
+  `SessionService` exposes `updateSession`, `clearSession`, `getSessionJwt`, `getSessionUserId`, `getSessionId`,
+  `getJwtExpiresAt`, `hasActiveSession`, and `getSessionCredentialFields`, plus a `registerRealtimeAuthApplier`
+  hook that lets `DatabaseService` wire the realtime websocket auth without a circular import.
+- `src/services/DatabaseService.js` — `sessionJwtFetch` now reads the JWT via `getSessionJwt()` instead of
+  `sessionStorage.getItem(SESSION_STORAGE_KEYS.JWT)`. The realtime auth setter is registered with
+  `SessionService` at module load (`registerRealtimeAuthApplier`); the previously-exported `setDatabaseAuth`
+  helper is gone since nothing outside the service needs to drive realtime auth directly anymore.
+- `src/utils/APIUtility.ts` — dropped the hardcoded `'smyrna_session'` / `'smyrna_session_id'` storage keys and
+  the local `getSessionCredentials` reader. The function now delegates to
+  `SessionService.getSessionCredentialFields()` so the body fields `__sessionUserId` / `__sessionId` always come
+  from in-memory state.
+- `src/app/context/AuthContext.jsx` — `applyJwt`, `createDbSession`, `validateDbSession`, `refreshJwtIfPossible`,
+  `restoreSession`, `loadUserProfile`, `signOut`, and the silent-refresh timer effect all read and write via
+  `updateSession` / `clearSession` / `getSessionJwt` / `getSessionId` / `getSessionUserId` / `getJwtExpiresAt`.
+  The boot-time rehydrate effect that re-attached realtime auth from `sessionStorage` is removed (there is
+  nothing to rehydrate). `clearAllSessionData` still clears the two remaining non-credential cache keys
+  (`CACHED_PLANTS`, `USER_ROLE`) and then delegates to `clearSession`.
+- `src/app/constants/authConstants.js` — removed the credential keys (`JWT`, `JWT_EXPIRES_AT`, `SESSION_ID`,
+  `SESSION_KEY`, `USER_ID`) from `SESSION_STORAGE_KEYS` so no other file can reintroduce a sessionStorage write
+  path for them. Only the two non-credential cache keys remain.
+- Replaced every direct `sessionStorage.getItem('userId')` / `'smyrna_session'` read with `getSessionUserId()`
+  across `src/app/App.jsx`, `src/app/hooks/useAuth.js`, `src/app/hooks/useDashboardInit.js`,
+  `src/app/components/sections/AddViewSection.jsx`, `src/index.jsx` (Sentry user scope),
+  `src/services/UserService.js` (`getCurrentUser`), `src/services/UserPreferencesService.js`
+  (`getTutorialUserId`), `src/views/assets/AssetView.jsx`, `src/views/assets/mixers/MixerAddView.jsx`,
+  `src/views/assets/tractors/TractorAddView.jsx`, `src/views/assets/trailers/TrailerAddView.jsx`,
+  `src/views/assets/equipment/EquipmentAddView.jsx`,
+  `src/views/assets/pickup-trucks/PickupTrucksAddView.jsx`,
+  `src/views/people/operators/OperatorAddView.jsx`, and
+  `src/views/common/myaccount/MyAccountView.jsx`.
+
 ## [2026.20.4] - 2026-05-13
 
 - Fixed the missing **Add Entry** button in the *Operators Sent to Other Plants* section of the Plant Manager Report (`src/views/reporting/reports/types/WeeklyPlantManagerReport.jsx`). The button was rendered but invisible: its Tailwind class was `bg-[var(--accent, #1e3a5f)]` — a raw space between the comma and `#1e3a5f` inside the arbitrary-value bracket prevents the JIT compiler from generating the utility, so the button shipped with `text-white` on a transparent background and disappeared against the section background. Swapped both occurrences (the Add Entry button + the *Current* week pill in `WeeklyTrendsSection`) to the project's semantic `bg-accent` alias declared in `tailwind.config.js`. Plant managers can again add destination-plant entries when logging operators sent to help.
