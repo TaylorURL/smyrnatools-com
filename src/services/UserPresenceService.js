@@ -256,17 +256,15 @@ class UserPresenceService {
     }
 
     handleBeforeUnload() {
-        if (this.currentUserId) {
-            fetch(`${import.meta.env.REACT_APP_EDGE_FUNCTIONS_URL}${PRESENCE_FUNCTION}/set-offline`, {
-                body: JSON.stringify({ userId: this.currentUserId }),
-                headers: {
-                    Authorization: `Bearer ${import.meta.env.REACT_APP_SUPABASE_ANON_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                keepalive: true,
-                method: 'POST'
-            }).catch((err) => console.error('Failed to set offline on beforeunload:', err))
-        }
+        if (!this.currentUserId) return
+        /* Routes through APIUtility so session credentials are attached.
+         * `keepalive: true` lets the request finish after the page
+         * unloads, the same as a sendBeacon would. */
+        APIUtility.post(
+            `${PRESENCE_FUNCTION}/set-offline`,
+            { userId: this.currentUserId },
+            { keepalive: true, maxRetries: 0 }
+        ).catch((err) => console.error('Failed to set offline on beforeunload:', err))
     }
 
     handleOnlineStatusChange(isOnline) {

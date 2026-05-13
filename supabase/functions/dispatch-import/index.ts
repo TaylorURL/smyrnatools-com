@@ -65,8 +65,18 @@ Deno.serve(async (req: Request) => {
         body = {}
     }
 
-    const auth = await requireAuthenticated(null, req, headers, body)
-    if (auth instanceof Response) return auth
+    /* Accept service role auth from the dispatch bridge userscript (which
+     * runs unattended on the dispatcher's workstation and has no user
+     * session). Otherwise require a valid users_sessions row — the web app
+     * occasionally invokes a manual re-import. */
+    const authHeader = req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
+    // @ts-ignore Deno env
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const isServiceCall = serviceRoleKey.length > 0 && authHeader === serviceRoleKey
+    if (!isServiceCall) {
+        const auth = await requireAuthenticated(null, req, headers, body)
+        if (auth instanceof Response) return auth
+    }
 
     const date = body.date || todayIso()
     if (!body.reconcile && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {

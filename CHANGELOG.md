@@ -1,5 +1,36 @@
 # Changelog
 
+## [2026.20.2] - 2026-05-13
+
+- Fixed the stale `Schedule hasn't been updated since…` banner on PlanView. Root cause: the dispatcher's
+  workstation userscript was uploading HTML reports to the `dispatch-reports` bucket every 5 minutes, but
+  nothing was triggering `dispatch-import` to parse those files into the `dispatch_data` table. The web app
+  reads from `dispatch_data`, so the table froze at whatever date the function was last invoked manually while
+  the bucket kept getting fresher and fresher files.
+- Updated `scripts/bridge/smyrna-dispatch-sync.user.js` to v2.12.0 — after every upload batch completes, the
+  script now calls `dispatch-import` once per unique date covered by the batch. Runs sequentially so the
+  dispatch server isn't slammed in parallel. Requires re-installing the userscript on the dispatcher's
+  workstation via Tampermonkey.
+- `supabase/functions/dispatch-import/index.ts` accepts the service role key as an alternative to a session
+  check, matching the pattern already used by `email-service`. The bridge userscript has no user session, so
+  the previous `requireAuthenticated`-only gate would have rejected its requests.
+- Stopped the 401 flood that was filling the console whenever a user's session went invalid mid-flight (row
+  deleted, password change, 7-day expiry). `src/utils/APIUtility.ts` now bails with a synthetic 401 before
+  the network round-trip when sessionStorage has no credentials and the endpoint isn't one of the auth
+  bootstrap paths, and broadcasts an `auth:session-invalid` event on any 401 from a non-bootstrap endpoint.
+  Pollers (`useScheduleSync`'s 10-second probe, presence heartbeats) stop retrying instead of hammering.
+- `src/app/context/AuthContext.jsx` listens for `auth:session-invalid` and clears user state, dropping the
+  app back to the login screen instead of leaving the user stuck on a protected route with no working API
+  calls.
+- `src/services/UserPresenceService.js` `handleBeforeUnload` now goes through `APIUtility.post` instead of
+  raw `fetch`, so the `set-offline` request actually carries session credentials on tab close.
+- `supabase/functions/auth-service/index.ts` — `create-session` and `refresh-token` no longer return HTTP
+  500 with `Server JWT secret missing` when `SUPABASE_JWT_SECRET` is unset. The project moved to Supabase's
+  asymmetric JWKS auth per `migrations/20260504_rollback_jwt_lockdown.sql`, so the symmetric-signed JWT
+  isn't accepted by PostgREST anyway — session auth runs entirely off the `users_sessions` row via
+  `X-User-Id` / `X-Session-Id` headers. Both endpoints now return success without a JWT when the secret
+  is absent, restoring the post-rollback architecture as intended.
+
 ## [2026.20.1] - 2026-05-13
 
 - Fixed widespread 401 Unauthorized errors against edge functions that were affecting `dispatch-data-service`,

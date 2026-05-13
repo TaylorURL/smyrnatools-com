@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Smyrna Dispatch Sync
 // @namespace    smyrna-tools
-// @version      2.11.0
-// @description  Syncs today + next 7 days of DailyOrder, per-plant DetailOrderAnalysis, and per-plant DetailDriver reports to Supabase storage every 5 minutes, backfills missing files for the current year, and auto re-authenticates when the dispatch session expires
+// @version      2.12.0
+// @description  Syncs today + next 7 days of DailyOrder, per-plant DetailOrderAnalysis, and per-plant DetailDriver reports to Supabase storage every 5 minutes, triggers dispatch-import to parse uploads into dispatch_data, backfills missing files for the current year, and auto re-authenticates when the dispatch session expires
 // @match        http://srm-c03.aujs.local:8181/*
 // @match        http://srm-h.aujs.local:8181/*
 // @grant        GM_xmlhttpRequest
@@ -789,6 +789,38 @@
         })
     }
 
+    // Triggers the `dispatch-import` edge function for a given date. The
+    // edge function downloads every report HTML we've uploaded for that
+    // date, parses them, and upserts into the `dispatch_data` table — the
+    // canonical source the web app reads from. Without this call, the
+    // bucket fills up but `dispatch_data` stays frozen at whatever date
+    // it was last refreshed for, which surfaces in the UI as the stale-
+    // schedule banner ("Schedule hasn't been updated since…").
+    function triggerDispatchImport(date) {
+        return new Promise((resolve) => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: `${SUPABASE_URL}/functions/v1/dispatch-import`,
+                headers: {
+                    Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+                    apikey: SUPABASE_SERVICE_KEY,
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({ date }),
+                timeout: 120000,
+                onload: (res) => {
+                    if (res.status >= 200 && res.status < 300) {
+                        resolve({ ok: true, body: res.responseText })
+                    } else {
+                        resolve({ ok: false, error: `${res.status}: ${res.responseText}` })
+                    }
+                },
+                onerror: (err) => resolve({ ok: false, error: err?.error || 'network' }),
+                ontimeout: () => resolve({ ok: false, error: 'timeout' })
+            })
+        })
+    }
+
     // ============================================================
     // SYNC FLOW
     // ============================================================
@@ -1006,6 +1038,27 @@
         } else {
             log('Batch failed entirely')
             updateBadge('error', 'All files failed')
+        }
+
+        // Trigger `dispatch-import` once per unique date covered by this
+        // batch — without this the bucket fills up but `dispatch_data`
+        // stays stale and the web app shows the "schedule out of date"
+        // banner. Runs sequentially so the dispatch server (downloads
+        // every HTML once per call) isn't slammed in parallel.
+        const importDates = Array.from(new Set(tasks.map((t) => t.date)))
+        if (importDates.length > 0) {
+            updateBadge('syncing', `importing ${importDates.length} date(s)`)
+            let importOk = 0
+            for (const date of importDates) {
+                const result = await triggerDispatchImport(date)
+                if (result.ok) {
+                    importOk++
+                    log(`  imported ${date}`)
+                } else {
+                    log(`  IMPORT FAILED ${date}: ${result.error}`)
+                }
+            }
+            log(`Import: ${importOk}/${importDates.length} date(s) refreshed in dispatch_data`)
         }
 
         syncing = false

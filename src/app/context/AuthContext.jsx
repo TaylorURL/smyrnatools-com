@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { setDatabaseAuth } from '../../services/DatabaseService'
-import APIUtility from '../../utils/APIUtility'
+import APIUtility, { SESSION_INVALID_EVENT } from '../../utils/APIUtility'
 import { getBrowserMetadata } from '../../utils/BrowserUtility'
 import { SESSION_STORAGE_KEYS } from '../constants/authConstants'
 
@@ -177,6 +177,23 @@ export function AuthProvider({ children }) {
         restoreSession().finally(() => setLoading(false))
         return () => clearTimeout(profileTimerRef.current)
     }, [restoreSession])
+
+    /* The edge-function client (APIUtility) fires this event when the
+     * server returns 401 or when client-side credentials are missing. Both
+     * mean the current session is no longer usable — drop user state so the
+     * router falls back to the login screen and pollers (PlanView schedule
+     * probe, presence heartbeat, etc.) stop hammering authenticated
+     * endpoints. clearAllSessionData wipes the stale credentials so the
+     * next render starts from a clean slate. */
+    useEffect(() => {
+        const handleSessionInvalid = () => {
+            clearAllSessionData()
+            setUser(null)
+            setLoading(false)
+        }
+        window.addEventListener(SESSION_INVALID_EVENT, handleSessionInvalid)
+        return () => window.removeEventListener(SESSION_INVALID_EVENT, handleSessionInvalid)
+    }, [])
 
     /* Silent token refresh — only runs when a JWT was actually minted at
      * login (which requires SUPABASE_JWT_SECRET on the edge function side).

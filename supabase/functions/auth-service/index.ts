@@ -547,8 +547,16 @@ Deno.serve(async (req) => {
                     { onConflict: 'id' }
                 )
                 if (error) return errorResponse('Failed to create session', headers, 500)
+                /* JWT minting is optional: this project moved to Supabase's
+                 * asymmetric (JWKS) auth, so a JWT signed with
+                 * SUPABASE_JWT_SECRET isn't accepted by PostgREST anyway
+                 * (see migrations/20260504_rollback_jwt_lockdown.sql).
+                 * Session auth runs entirely off the users_sessions row
+                 * via X-User-Id / X-Session-Id headers. If the secret is
+                 * configured we still mint a JWT for forward-compatibility,
+                 * but its absence is no longer a hard failure. */
                 const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
-                if (!jwtSecret) return errorResponse('Server JWT secret missing', headers, 500)
+                if (!jwtSecret) return jsonResponse({ success: true }, headers)
                 const jwt = await mintSessionJwt(userId, sessionId, jwtSecret, JWT_TTL_SECONDS)
                 return jsonResponse({ success: true, jwt, expiresIn: JWT_TTL_SECONDS }, headers)
             }
@@ -575,8 +583,9 @@ Deno.serve(async (req) => {
                     .eq('id', sessionId)
                     .then(() => {})
                     .catch(() => {})
+                /* Optional JWT mint — see notes on create-session. */
                 const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
-                if (!jwtSecret) return errorResponse('Server JWT secret missing', headers, 500)
+                if (!jwtSecret) return jsonResponse({ success: true }, headers)
                 const jwt = await mintSessionJwt(userId, sessionId, jwtSecret, JWT_TTL_SECONDS)
                 return jsonResponse({ jwt, expiresIn: JWT_TTL_SECONDS }, headers)
             }
