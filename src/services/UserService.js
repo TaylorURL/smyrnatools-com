@@ -217,6 +217,10 @@ class UserServiceImpl {
         const { json } = await postUser('user-plant', { userId: resolveEntityId(userId) })
         return json ?? null
     }
+    async getMyPlant() {
+        const { json } = await postUser('my-plant', {})
+        return json ?? null
+    }
     async getAdditionalAssignedPlants(userId) {
         if (!userId) return []
         const { json } = await postUser(

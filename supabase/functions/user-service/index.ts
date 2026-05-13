@@ -342,6 +342,16 @@ Deno.serve(async (req) => {
                     .single()
                 return jsonResponse(data?.plant_code ?? null, headers)
             }
+            case 'my-plant': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
+                const { data } = await supabase
+                    .from(PROFILES_TABLE)
+                    .select('plant_code')
+                    .eq('id', auth)
+                    .maybeSingle()
+                return jsonResponse(data?.plant_code ?? null, headers)
+            }
             case 'user-additional-plants': {
                 const { userId } = body
                 if (!userId) return jsonResponse([], headers)

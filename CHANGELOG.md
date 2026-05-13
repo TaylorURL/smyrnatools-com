@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026.20.6] - 2026-05-13
+
+- Closed a direct client-side read of `users_profiles` in `src/views/assets/AssetView.jsx`. The view was calling
+  `Database.from('users_profiles').select('plant_code').eq('id', uid)` straight from the browser. Because every
+  RLS policy in this project is `using (true)`, that query was the same security class as a direct write — any
+  caller with the anon key (shipped in the JS bundle) could drop the `.eq()` and read every row in the table.
+  The lookup now goes through an authenticated edge function and the browser cannot specify the target user.
+- `supabase/functions/user-service/index.ts` — added a new `my-plant` endpoint that calls `requireAuthenticated`
+  and returns the `plant_code` for the session-bound `userId` only. Unlike the pre-existing `user-plant`
+  endpoint, `my-plant` ignores any `userId` in the request body, so it cannot be abused to look up another
+  user's plant. Deployed to project `hzudmeptzciqukwlroos`.
+- `src/services/UserService.js` — added `getMyPlant()` which invokes `user-service/my-plant` with an empty body.
+  The existing `getUserPlant(userId)` method is unchanged because 19+ call sites legitimately fetch other users'
+  plants (report ownership lookups, manager detail views, etc.); locking it down requires a separate audit and
+  is tracked as follow-up work.
+- `src/views/assets/AssetView.jsx` — replaced the `Database.auth.getSession()` + `Database.from(...).select(...)`
+  block with a single `UserService.getMyPlant()` call, preserving the existing `cancelled` guard. Removed the
+  now-unused `Database` and `getSessionUserId` imports.
+
 ## [2026.20.5] - 2026-05-13
 
 - Moved the session JWT, session id, user id, and JWT expiry off `sessionStorage` and into a new module-scoped

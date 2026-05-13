@@ -10,9 +10,8 @@ import { usePreferences } from '../../app/context/PreferencesContext'
 import useAssetData from '../../app/hooks/useAssetData'
 import useAssetFilters from '../../app/hooks/useAssetFilters'
 import useAssetVerification from '../../app/hooks/useAssetVerification'
-import { Database } from '../../services/DatabaseService'
 import { PlantService } from '../../services/PlantService'
-import { getSessionUserId } from '../../services/SessionService'
+import { UserService } from '../../services/UserService'
 import AssetStatsUtility from '../../utils/AssetStatsUtility'
 import AssetGridCard from './AssetGridCard'
 import AssetListRow from './AssetListRow'
@@ -50,17 +49,13 @@ function AssetView({
     const [userPlantCode, setUserPlantCode] = useState('')
     useEffect(() => {
         let cancelled = false
-        async function fetchUserPlant() {
-            const { data: sessionData } = await Database.auth.getSession()
-            const uid = sessionData?.session?.user?.id || getSessionUserId() || ''
-            if (!uid || cancelled) return
-            const { data: profile } = await Database.from('users_profiles')
-                .select('plant_code')
-                .eq('id', uid)
-                .maybeSingle()
-            if (!cancelled) setUserPlantCode(profile?.plant_code || '')
-        }
-        fetchUserPlant()
+        UserService.getMyPlant()
+            .then((plantCode) => {
+                if (!cancelled) setUserPlantCode(plantCode || '')
+            })
+            .catch(() => {
+                if (!cancelled) setUserPlantCode('')
+            })
         return () => {
             cancelled = true
         }
