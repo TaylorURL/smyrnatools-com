@@ -663,7 +663,7 @@ function WeeklyTrendsSection({ currentWeekIso, plantCode, user }) {
                                     <div className="flex items-center gap-1.5 text-[12px] font-semibold mb-1 text-text-primary">
                                         {weekLabel}
                                         {report.isCurrentWeek && (
-                                            <span className="rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-[var(--accent, #1e3a5f)] text-white">
+                                            <span className="rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-accent text-white">
                                                 Current
                                             </span>
                                         )}
@@ -1021,7 +1021,7 @@ function OperatorsSentToHelp({ entries, onUpdate, weekIso, readOnly, user, plant
                         <button
                             type="button"
                             onClick={addEntry}
-                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none bg-[var(--accent, #1e3a5f)]"
+                            className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-bold uppercase tracking-wider text-white px-2.5 py-1.5 cursor-pointer border-none bg-accent"
                         >
                             <i className="fas fa-plus text-[10px]" />
                             Add Entry

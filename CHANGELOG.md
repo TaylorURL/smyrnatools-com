@@ -1,5 +1,9 @@
 # Changelog
 
+## [2026.20.4] - 2026-05-13
+
+- Fixed the missing **Add Entry** button in the *Operators Sent to Other Plants* section of the Plant Manager Report (`src/views/reporting/reports/types/WeeklyPlantManagerReport.jsx`). The button was rendered but invisible: its Tailwind class was `bg-[var(--accent, #1e3a5f)]` — a raw space between the comma and `#1e3a5f` inside the arbitrary-value bracket prevents the JIT compiler from generating the utility, so the button shipped with `text-white` on a transparent background and disappeared against the section background. Swapped both occurrences (the Add Entry button + the *Current* week pill in `WeeklyTrendsSection`) to the project's semantic `bg-accent` alias declared in `tailwind.config.js`. Plant managers can again add destination-plant entries when logging operators sent to help.
+
 ## [2026.20.3] - 2026-05-13
 
 - Fixed HTTP 500 `EDGE_FUNCTION_ERROR` (no CORS headers) on every asset mutation endpoint — add-issue,
