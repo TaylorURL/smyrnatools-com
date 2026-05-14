@@ -2,8 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 
 import ConfirmationModal from '../../../app/components/reports/ConfirmationModal'
-import ReportValidationErrorModal from '../../../app/components/reports/ReportValidationErrorModal'
 import OperatorExclusionReasonModal from '../../../app/components/reports/OperatorExclusionReasonModal'
+import ReportValidationErrorModal from '../../../app/components/reports/ReportValidationErrorModal'
 import SubmitHeader from '../../../app/components/reports/SubmitHeader'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useSubmitData } from '../../../app/hooks/useSubmitData'

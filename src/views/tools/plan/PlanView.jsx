@@ -39,37 +39,52 @@ import PlanStatisticsView from './PlanStatisticsView'
  *  to re-enable Plan everywhere. */
 const PLAN_ALLOWED_REGION_NAME = 'Houston Concrete'
 
+/** Out-of-region message — `usePreferences` is the only hook used here so
+ *  the rules-of-hooks check is happy with this returning early. The full
+ *  Plan UI lives in `<PlanViewImpl />` below and is only mounted once the
+ *  region check passes. */
+function PlanRegionBlocker({ accentColor }) {
+    return (
+        <div
+            className="global-dashboard-container dashboard-container global-flush-top flush-top plan-view absolute flex items-center justify-center bg-bg-primary"
+            style={{ inset: 0 }}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="plan-region-blocker-title"
+        >
+            <div className="max-w-md mx-6 rounded-xl border border-border-light bg-bg-secondary px-6 py-8 text-center shadow-lg">
+                <i
+                    className="fas fa-triangle-exclamation text-2xl mb-3"
+                    style={{ color: accentColor }}
+                    aria-hidden="true"
+                />
+                <h2 id="plan-region-blocker-title" className="text-lg font-semibold text-text-primary mb-2">
+                    Plan unavailable
+                </h2>
+                <p className="text-sm text-text-secondary">
+                    This functionality is not available in your region yet.
+                </p>
+            </div>
+        </div>
+    )
+}
+
 function PlanView() {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
     const isDark = preferences.themeMode === 'dark'
-    const isMobile = useIsMobile()
-
     if (preferences.selectedRegion?.name !== PLAN_ALLOWED_REGION_NAME) {
-        return (
-            <div
-                className="global-dashboard-container dashboard-container global-flush-top flush-top plan-view absolute flex items-center justify-center bg-bg-primary"
-                style={{ inset: 0 }}
-                role="alertdialog"
-                aria-modal="true"
-                aria-labelledby="plan-region-blocker-title"
-            >
-                <div className="max-w-md mx-6 rounded-xl border border-border-light bg-bg-secondary px-6 py-8 text-center shadow-lg">
-                    <i
-                        className="fas fa-triangle-exclamation text-2xl mb-3"
-                        style={{ color: accentColor }}
-                        aria-hidden="true"
-                    />
-                    <h2 id="plan-region-blocker-title" className="text-lg font-semibold text-text-primary mb-2">
-                        Plan unavailable
-                    </h2>
-                    <p className="text-sm text-text-secondary">
-                        This functionality is not available in your region yet.
-                    </p>
-                </div>
-            </div>
-        )
+        return <PlanRegionBlocker accentColor={accentColor} />
     }
+    return <PlanViewImpl accentColor={accentColor} isDark={isDark} />
+}
+
+/** Real Plan shell — all heavy hooks live here so they're called in the
+ *  same order on every render of THIS component. The wrapper above only
+ *  mounts this once the region gate passes, so an out-of-region user
+ *  never instantiates these hooks. */
+function PlanViewImpl({ accentColor, isDark }) {
+    const isMobile = useIsMobile()
 
     /* Mobile users get a focused two-tab Plan surface — Dashboard
      * (manager "Your Plant / District / Region" view + clock-ins) and
