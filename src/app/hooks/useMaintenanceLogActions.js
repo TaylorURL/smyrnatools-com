@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
-import { Database } from '../../services/DatabaseService'
 import { MaintenanceService } from '../../services/MaintenanceService'
+import APIUtility from '../../utils/APIUtility'
 
 /**
  * Modal targets and form-rail action handlers for the maintenance log view.
@@ -22,14 +22,10 @@ export function useMaintenanceLogActions({ onFormDataReload }) {
         async (event, submissionId) => {
             event?.stopPropagation()
             if (!window.confirm('Delete this submission?')) return
-            try {
-                await Database.from('maintenance_submission_responses').delete().eq('submission_id', submissionId)
-                await Database.from('maintenance_submissions').delete().eq('id', submissionId)
-                if (selectedFormItem?.id === submissionId) setSelectedFormItem(null)
-                onFormDataReload?.()
-            } catch (err) {
-                console.error('Failed to delete submission:', err)
-            }
+            const { res } = await APIUtility.post('/maintenance-service/delete-submission', { submissionId })
+            if (!res.ok) return
+            if (selectedFormItem?.id === submissionId) setSelectedFormItem(null)
+            onFormDataReload?.()
         },
         [onFormDataReload, selectedFormItem]
     )

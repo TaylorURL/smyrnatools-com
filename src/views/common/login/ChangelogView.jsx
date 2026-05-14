@@ -4,7 +4,6 @@ import changelogText from '../../../../CHANGELOG.md?raw'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 
 const GITHUB_URL = 'https://github.com/bradley-t-t'
-const TURL_URL = 'https://taylorurl.com'
 
 /**
  * Parses markdown changelog into version entries, then fills numeric gaps
@@ -115,15 +114,7 @@ function ChangelogView({ onBack }) {
                     <div>
                         <h1 className="text-[22px] font-bold text-slate-800 m-0 leading-tight">Release Notes</h1>
                         <p className="text-slate-400 text-[12px] mt-1.5 mb-0">
-                            {totalUpdates} releases · updated {getRelativeTime(entries[0]?.date)} · managed by{' '}
-                            <a
-                                href={TURL_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-slate-500 font-medium no-underline hover:text-slate-700 transition-colors"
-                            >
-                                TaylorURL.com
-                            </a>
+                            {totalUpdates} releases · updated {getRelativeTime(entries[0]?.date)}
                         </p>
                     </div>
                     <div className="text-right shrink-0">

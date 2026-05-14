@@ -1,0 +1,291 @@
+import React, { useMemo } from 'react'
+
+import DateUtility from '../../../utils/DateUtility'
+import UserUtility from '../../../utils/UserUtility'
+import { ATTACHMENT_ICONS, FILTER_PILLS, SECTION_LABEL_CLASS } from '../../constants/notificationsConstants'
+
+function SidebarSection({ accentColor, badge, children, icon, label }) {
+    return (
+        <div>
+            <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
+                {icon && <i className={`fas ${icon} text-[10px] text-text-tertiary text-center w-3`} />}
+                <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
+                    {label}
+                </span>
+                {badge != null && badge > 0 && (
+                    <span
+                        className="font-mono tabular-nums rounded px-1 text-[9px] font-bold text-white"
+                        style={{ background: accentColor }}
+                    >
+                        {badge}
+                    </span>
+                )}
+            </div>
+            <div>{children}</div>
+        </div>
+    )
+}
+
+function ConversationRow({ accentColor, active, conversation, displayName, muted = false, onSelect, pinned = false }) {
+    const initials = UserUtility.getInitials(displayName)
+    const latest = conversation.lastMessage
+    const hasUnread = conversation.unread > 0 && !muted
+    /** Most recent attachment in the thread — surfaced as a chip on the row
+     *  so the operator can see "this thread has the M-247 mixer attached"
+     *  without opening it. */
+    const lastAttachment = useMemo(
+        () => (conversation.messages || []).find((m) => m.attachmentType && m.attachmentMeta) || null,
+        [conversation.messages]
+    )
+    const attachmentLabel =
+        lastAttachment?.attachmentMeta?.itemNumber || (lastAttachment?.attachmentType === 'issue' ? 'Issue' : null)
+    const attachmentIcon = lastAttachment ? ATTACHMENT_ICONS[lastAttachment.attachmentType] || 'fas fa-paperclip' : null
+
+    return (
+        <button
+            type="button"
+            onClick={() => onSelect(conversation)}
+            className="flex w-full cursor-pointer items-start gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-bg-tertiary border-b border-border-light"
+            style={{
+                background: active ? `${accentColor}14` : hasUnread ? `${accentColor}0A` : 'transparent',
+                borderLeft: active ? `2px solid ${accentColor}` : '2px solid transparent'
+            }}
+        >
+            <div className="relative shrink-0">
+                <div
+                    className="flex h-9 w-9 items-center justify-center rounded text-[12px] font-bold text-white"
+                    style={{ background: accentColor }}
+                >
+                    {initials}
+                </div>
+                {hasUnread && (
+                    <span
+                        className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold text-white font-mono tabular-nums bg-red-600"
+                        style={{ border: '1.5px solid var(--bg-primary)' }}
+                    >
+                        {conversation.unread}
+                    </span>
+                )}
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                        {pinned && (
+                            <i
+                                className="fas fa-thumbtack text-[9px]"
+                                style={{ color: accentColor, transform: 'rotate(40deg)' }}
+                            />
+                        )}
+                        {muted && <i className="fas fa-bell-slash text-[9px] text-text-tertiary" />}
+                        <span
+                            className={`truncate text-[12.5px] ${hasUnread ? 'font-bold' : 'font-semibold'} text-text-primary`}
+                        >
+                            {displayName}
+                        </span>
+                    </span>
+                    <span className="shrink-0 text-[10px] font-mono tabular-nums text-text-tertiary">
+                        {DateUtility.formatTimeAgo(latest?.createdAt)}
+                    </span>
+                </div>
+                {latest?.subject && (
+                    <p
+                        className="m-0 truncate text-[10.5px] mt-0.5"
+                        style={{ color: hasUnread ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                    >
+                        {latest.subject}
+                    </p>
+                )}
+                <p
+                    className="m-0 truncate text-[11px] mt-0.5"
+                    style={{ color: hasUnread ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                >
+                    {latest?.body}
+                </p>
+                {attachmentLabel && (
+                    <div className="mt-1 flex items-center gap-1.5">
+                        <span
+                            className="inline-flex items-center gap-1 rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5"
+                            style={{ background: `${accentColor}1a`, color: accentColor }}
+                        >
+                            <i className={`${attachmentIcon} text-[8.5px]`} />
+                            <span className="font-mono tabular-nums">{attachmentLabel}</span>
+                        </span>
+                    </div>
+                )}
+            </div>
+        </button>
+    )
+}
+
+function SidebarSkeleton() {
+    return (
+        <div>
+            {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex animate-pulse items-center gap-2.5 px-3 py-2 border-b border-border-light">
+                    <div className="h-7 w-7 shrink-0 rounded bg-bg-tertiary" />
+                    <div className="flex flex-1 min-w-0 flex-col gap-1">
+                        <div className="h-3 rounded bg-bg-tertiary" style={{ width: `${60 + i * 8}%` }} />
+                        <div className="h-2.5 rounded bg-bg-secondary" style={{ width: `${78 - i * 6}%` }} />
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+/** Left rail — fixed-width on desktop, full-width on mobile. Splits the
+ *  conversation list into Pinned / Unread / Recent so high-priority threads
+ *  bubble to the top regardless of recency. Filter pills above the sections
+ *  apply on top of the search box. */
+export default function ConversationSidebar({
+    accentColor,
+    activeConversationId,
+    activeFilter = 'all',
+    conversations,
+    loading,
+    mutedSet,
+    onFilterChange,
+    onSearchChange,
+    onSelect,
+    pinnedSet,
+    search,
+    unreadCount,
+    userNames
+}) {
+    const pinned = conversations.filter((c) => pinnedSet.has(c.otherId))
+    const unread = conversations.filter((c) => c.unread > 0 && !pinnedSet.has(c.otherId))
+    const recent = conversations.filter((c) => c.unread === 0 && !pinnedSet.has(c.otherId))
+
+    const counts = {
+        all: conversations.length,
+        pinned: pinned.length,
+        unread: conversations.reduce((sum, c) => sum + (c.unread > 0 ? 1 : 0), 0)
+    }
+
+    return (
+        <aside className="shrink-0 flex flex-col w-full lg:w-[320px] min-h-0 bg-bg-primary border-r border-border-light">
+            <div className="px-3 py-2 shrink-0 border-b border-border-light">
+                <div className="relative">
+                    <i className="fas fa-magnifying-glass absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary" />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        placeholder="Search conversations…"
+                        className="w-full rounded text-[12px] pl-7 pr-2 py-1.5 outline-none bg-bg-secondary border border-border-light text-text-primary"
+                    />
+                </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap px-3 py-2 shrink-0 border-b border-border-light">
+                {FILTER_PILLS.map(({ icon, id, label }) => {
+                    const isActive = activeFilter === id
+                    const count = counts[id] ?? 0
+                    return (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => onFilterChange?.(id)}
+                            className="inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-colors"
+                            style={{
+                                background: isActive ? accentColor : 'var(--bg-secondary)',
+                                borderColor: isActive ? accentColor : 'var(--border-light)',
+                                color: isActive ? '#fff' : 'var(--text-secondary)'
+                            }}
+                        >
+                            <i className={`fas ${icon} text-[9.5px]`} />
+                            <span>{label}</span>
+                            <span
+                                className="font-mono tabular-nums rounded px-1 text-[10px]"
+                                style={{
+                                    background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--bg-tertiary)',
+                                    color: isActive ? '#fff' : 'var(--text-tertiary)'
+                                }}
+                            >
+                                {count}
+                            </span>
+                        </button>
+                    )
+                })}
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto">
+                {loading ? (
+                    <SidebarSkeleton />
+                ) : conversations.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-text-tertiary">
+                        <i className="fas fa-inbox text-2xl mb-2" />
+                        <span className="text-[12px] font-semibold text-text-primary">
+                            {activeFilter === 'unread'
+                                ? 'No unread messages'
+                                : activeFilter === 'pinned'
+                                  ? 'Nothing pinned yet'
+                                  : 'No conversations'}
+                        </span>
+                        <span className="text-[10.5px] mt-0.5">
+                            {activeFilter === 'pinned' ? 'Pin a thread to keep it on top' : 'Start one with Compose'}
+                        </span>
+                    </div>
+                ) : (
+                    <>
+                        {pinned.length > 0 && (
+                            <SidebarSection
+                                accentColor={accentColor}
+                                badge={pinned.length}
+                                icon="fa-thumbtack"
+                                label="Pinned"
+                            >
+                                {pinned.map((conv) => (
+                                    <ConversationRow
+                                        key={conv.otherId}
+                                        accentColor={accentColor}
+                                        active={conv.otherId === activeConversationId}
+                                        conversation={conv}
+                                        displayName={userNames[conv.otherId] || 'Loading…'}
+                                        muted={mutedSet?.has(conv.otherId)}
+                                        onSelect={onSelect}
+                                        pinned
+                                    />
+                                ))}
+                            </SidebarSection>
+                        )}
+                        {unread.length > 0 && (
+                            <SidebarSection accentColor={accentColor} badge={unreadCount} icon="fa-bell" label="Unread">
+                                {unread.map((conv) => (
+                                    <ConversationRow
+                                        key={conv.otherId}
+                                        accentColor={accentColor}
+                                        active={conv.otherId === activeConversationId}
+                                        conversation={conv}
+                                        displayName={userNames[conv.otherId] || 'Loading…'}
+                                        muted={mutedSet?.has(conv.otherId)}
+                                        onSelect={onSelect}
+                                    />
+                                ))}
+                            </SidebarSection>
+                        )}
+                        {recent.length > 0 && (
+                            <SidebarSection
+                                accentColor={accentColor}
+                                icon="fa-clock-rotate-left"
+                                label={pinned.length || unread.length ? 'Recent' : 'All'}
+                            >
+                                {recent.map((conv) => (
+                                    <ConversationRow
+                                        key={conv.otherId}
+                                        accentColor={accentColor}
+                                        active={conv.otherId === activeConversationId}
+                                        conversation={conv}
+                                        displayName={userNames[conv.otherId] || 'Loading…'}
+                                        muted={mutedSet?.has(conv.otherId)}
+                                        onSelect={onSelect}
+                                    />
+                                ))}
+                            </SidebarSection>
+                        )}
+                    </>
+                )}
+            </div>
+        </aside>
+    )
+}

@@ -16,6 +16,7 @@ import {
     normalize,
     nowIso,
     parseBody,
+    requireAssetAccess,
     requireAuthenticated
 } from '../_shared/asset-helpers.ts'
 
@@ -134,6 +135,15 @@ Deno.serve(async (req) => {
                     .maybeSingle()
                 if (curErr) return errorResponse('Operation failed', headers, 400)
                 if (!current) return errorResponse('Pickup Truck not found', headers, 404)
+                const currentAccessErr = await requireAssetAccess(userId, current.assigned_plant, headers)
+                if (currentAccessErr) return currentAccessErr
+                if (
+                    Object.prototype.hasOwnProperty.call(pickup, 'assignedPlant') &&
+                    pickup.assignedPlant !== current.assigned_plant
+                ) {
+                    const newAccessErr = await requireAssetAccess(userId, pickup.assignedPlant, headers)
+                    if (newAccessErr) return newAccessErr
+                }
                 const has = (key: string) => Object.prototype.hasOwnProperty.call(pickup, key)
                 const normalizedAssigned = has('assigned')
                     ? pickup.assigned == null || (typeof pickup.assigned === 'string' && pickup.assigned.trim() === '')

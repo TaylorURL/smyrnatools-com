@@ -4,6 +4,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts'
 // @ts-ignore
 import { requireAuthenticated } from '../_shared/requireSession.ts'
+// @ts-ignore
+import { isInternalServiceCall } from '../_shared/internalAuth.ts'
 import { type DailyOrderRecord, parseDailyOrderHtml, parseDetailDriverHtml, parseDetailOrderHtml } from './parsers.ts'
 
 // ============================================================================
@@ -65,15 +67,19 @@ Deno.serve(async (req: Request) => {
         body = {}
     }
 
-    /* Accept service role auth from the dispatch bridge userscript (which
-     * runs unattended on the dispatcher's workstation and has no user
-     * session). Otherwise require a valid users_sessions row — the web app
-     * occasionally invokes a manual re-import. */
+    /* The dispatch bridge userscript runs unattended on the dispatcher's
+     * workstation and authenticates with the Supabase service role key.
+     * Edge-function-to-edge-function and future internal callers prefer
+     * the dedicated internal-token shared secret (separate from the service
+     * role key so a leak of that key alone does not grant access to other
+     * internal endpoints). Web-app manual re-imports use the user session.
+     *
+     * Acceptance order: internal token → service role key → user session. */
     const authHeader = req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
     // @ts-ignore Deno env
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    const isServiceCall = serviceRoleKey.length > 0 && authHeader === serviceRoleKey
-    if (!isServiceCall) {
+    const isServiceRoleCall = serviceRoleKey.length > 0 && authHeader === serviceRoleKey
+    if (!isInternalServiceCall(req) && !isServiceRoleCall) {
         const auth = await requireAuthenticated(null, req, headers, body)
         if (auth instanceof Response) return auth
     }

@@ -1,6 +1,6 @@
 /**
  * Browser connectivity detection: checks online status via ping endpoints,
- * with mobile-aware timeouts and dual-strategy (Google 204 + local turl.json) verification.
+ * with mobile-aware timeouts and dual-strategy (Google 204 + local release.json) verification.
  */
 const isMobileDevice = (): boolean => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -26,7 +26,7 @@ const NetworkUtility = {
             }
         }
         try {
-            const res = await fetch(`/nit.json?cb=${Date.now()}`, {
+            const res = await fetch(`/release.json?cb=${Date.now()}`, {
                 cache: 'reload',
                 method: 'GET',
                 signal: controller.signal

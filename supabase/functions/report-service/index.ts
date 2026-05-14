@@ -313,14 +313,14 @@ Deno.serve(async (req) => {
                 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
                     global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
                 })
-                const auth = await requireAuthenticated(supabase, req, headers)
+                const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
                 if (auth instanceof Response) return auth
                 const userId = auth
-                const body = await parseBody(req)
                 const { existingId, upsertData } = body
                 if (!upsertData) return errorResponse('upsertData is required', headers, 400)
                 const selectFields =
-                    'id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week'
+                    'id,report_name,user_id,submitted_at,data,completed,report_date_range_start,report_date_range_end,week,been_reviewed'
                 if (existingId) {
                     // Verify the authenticated user owns this report before overwriting
                     const { data: existing, error: fetchErr } = await supabase
@@ -331,17 +331,53 @@ Deno.serve(async (req) => {
                     if (fetchErr || !existing) return errorResponse('Report not found', headers, 404)
                     if (existing.user_id !== userId)
                         return errorResponse('Forbidden: you can only update your own reports', headers, 403)
+                    // Prevent caller from reassigning ownership / review flag on update
+                    const { user_id: _u, been_reviewed: _b, ...safeUpdate } = upsertData
+                    const { data, error } = await supabase
+                        .from('reports')
+                        .update(safeUpdate)
+                        .eq('id', existingId)
+                        .select(selectFields)
+                        .single()
+                    if (error) return errorResponse('Failed to save report', headers, 500)
+                    return jsonResponse(data, headers)
                 }
-                const { data, error } = existingId
-                    ? await supabase
-                          .from('reports')
-                          .update(upsertData)
-                          .eq('id', existingId)
-                          .select(selectFields)
-                          .single()
-                    : await supabase.from('reports').insert([upsertData]).select(selectFields).single()
+                // On insert force user_id = authenticated caller — never trust body
+                const insertRow = { ...upsertData, user_id: userId, been_reviewed: false }
+                const { data, error } = await supabase
+                    .from('reports')
+                    .insert([insertRow])
+                    .select(selectFields)
+                    .single()
                 if (error) return errorResponse('Failed to save report', headers, 500)
                 return jsonResponse(data, headers)
+            }
+            case 'mark-report-reviewed-flag': {
+                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+                    global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
+                })
+                const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
+                const reportId = body?.reportId != null ? String(body.reportId) : null
+                if (!reportId) return errorResponse('reportId is required', headers, 400)
+                const { data: existing } = await supabase
+                    .from('reports')
+                    .select('user_id')
+                    .eq('id', reportId)
+                    .maybeSingle()
+                if (!existing) return errorResponse('Report not found', headers, 404)
+                if (existing.user_id !== auth) {
+                    const callerWeight = await getUserWeight(null, auth)
+                    if (callerWeight <= 40)
+                        return errorResponse('Forbidden: insufficient privileges', headers, 403)
+                }
+                const { error } = await supabase
+                    .from('reports')
+                    .update({ been_reviewed: true })
+                    .eq('id', reportId)
+                if (error) return errorResponse('Failed to mark reviewed', headers, 500)
+                return jsonResponse(true, headers)
             }
             case 'save-exclusion-reason': {
                 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {

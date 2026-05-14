@@ -26,6 +26,12 @@ export function usePlanData(planDate) {
     const [adjacentPlans, setAdjacentPlans] = useState({})
     const [adjacentProduction, setAdjacentProduction] = useState({})
     const dirtyRef = useRef(false)
+    /* Monotonic counter incremented on every local edit. Each scheduled save
+     * captures the serial at scheduling time; on completion it only clears
+     * dirtyRef if no newer edit has been queued. Without this, an in-flight
+     * save can resolve AFTER a fresh edit, clear dirtyRef prematurely, and
+     * let its realtime echo overwrite the user's newer state. */
+    const editSerialRef = useRef(0)
 
     const getTravelTime = (from, to) => travelTimes[`${from}->${to}`] ?? null
 
@@ -184,10 +190,16 @@ export function usePlanData(planDate) {
         if (!canEdit || !planDate || isLoading) return
         if (loadedForDateRef.current !== planDate || !autosaveEnabledRef.current) return
         dirtyRef.current = true
+        editSerialRef.current += 1
+        const savingSerial = editSerialRef.current
         const timeout = setTimeout(async () => {
             try {
                 await PlanService.savePlan(planDate, assignments, notes, plantProduction)
-                dirtyRef.current = false
+                // Only clear dirty if no newer edit has been queued while this
+                // save was in flight. Otherwise the realtime echo from this
+                // save would see dirtyRef=false and overwrite the newer local
+                // state with stale server data.
+                if (editSerialRef.current === savingSerial) dirtyRef.current = false
             } catch {}
         }, AUTOSAVE_DELAY_MS)
         return () => clearTimeout(timeout)

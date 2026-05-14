@@ -263,6 +263,42 @@ Deno.serve(async (req) => {
                 }
                 return jsonResponse({ submissionId, success: true }, headers)
             }
+            case 'delete-submission': {
+                const body = await parseBody(req)
+                const submissionId = body?.submissionId
+                if (!submissionId) return errorResponse('submissionId is required', headers, 400)
+                const { data: existing, error: fetchErr } = await supabase
+                    .from(SUBMISSIONS_TABLE)
+                    .select('submitted_by')
+                    .eq('id', submissionId)
+                    .maybeSingle()
+                if (fetchErr || !existing) return errorResponse('Submission not found', headers, 404)
+                if (existing.submitted_by !== auth) {
+                    // Allow elevated callers (weight > 75) to delete others' submissions.
+                    const adminClient = createClient(
+                        Deno.env.get('SUPABASE_URL') ?? '',
+                        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+                    )
+                    const { data: perms } = await adminClient
+                        .from('users_permissions')
+                        .select('users_roles(weight)')
+                        .eq('user_id', auth)
+                    const isElevated = perms?.some((p: any) => (p.users_roles?.weight ?? 0) > 75)
+                    if (!isElevated)
+                        return errorResponse('Forbidden: you can only delete your own submissions', headers, 403)
+                }
+                const { error: respErr } = await supabase
+                    .from(RESPONSES_TABLE)
+                    .delete()
+                    .eq('submission_id', submissionId)
+                if (respErr) return errorResponse('Failed to delete responses', headers, 500)
+                const { error: subErr } = await supabase
+                    .from(SUBMISSIONS_TABLE)
+                    .delete()
+                    .eq('id', submissionId)
+                if (subErr) return errorResponse('Failed to delete submission', headers, 500)
+                return jsonResponse({ success: true }, headers)
+            }
             case 'review-submission': {
                 const body = await parseBody(req)
                 const { submissionId, status, notes, userId } = body

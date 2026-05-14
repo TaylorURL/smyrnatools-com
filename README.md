@@ -11,7 +11,7 @@
 <p align="center">
   <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/ci.yml/badge.svg?branch=core" alt="CI Status" />
   <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/test.yml/badge.svg?branch=core" alt="Test Status" />
-  <img src="https://img.shields.io/badge/v2026.20.8-release-c12033" alt="Version" />
+  <img src="https://img.shields.io/badge/v2026.20.9-release-c12033" alt="Version" />
   <img src="https://img.shields.io/badge/React-19.1-61DAFB?logo=react&logoColor=white" alt="React" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind" />
@@ -40,8 +40,8 @@ The dashboard adapts based on scope — plant-level or regional.
 
 **Plant View** uses a split-pane layout. The left side shows actionable alerts: unverified mixers, overdue service, open
 maintenance issues, long-term shop assets, and operator status groups. The right side is an AI analysis pane that
-generates a natural-language summary with a prioritized action plan, informed by the user's role, their plant,
-leaderboard metrics, fleet cleanliness, and current alerts.
+generates a natural-language summary with a prioritized action plan, informed by the user's role, their plant, fleet
+cleanliness, and current alerts.
 
 **Regional View** activates when viewing all plants. Metrics shift to fleet-wide KPIs — total assets, allocation
 percentage, shop count, overdue service, operator coverage, verification rates. The AI analysis identifies cross-plant
@@ -136,27 +136,8 @@ Three one-off report types supplement the weekly cadence: **Lost Load Reports** 
 loads, **Quality Control Strength Reports** for concrete cylinder strength testing data, and **Third Party Lab Reports**
 for flagging issues with external lab results including file upload support.
 
-Reports have submission windows, role-based assignment, manager override capability, and compliance tracking. Missing or
-incomplete reports deduct points on the leaderboard. AI validates metrics for mathematical consistency and flags
-anomalies before submission.
-
----
-
-## Leaderboards
-
-Plant performance rankings based on an efficiency formula:
-
-```
-Efficiency = (adjustedYPH / 3.0 * 90%) + (loadsPerOperatorPerDay / 3.0 * 10%)
-           - (missingReports * 10) - (incompleteReports * 10)
-           capped at 0-100
-```
-
-**Adjusted YPH** (Yards Per Hour) accounts for help exchanges between plants — if Plant A sends operators to help Plant
-B, Plant A's YPH adjusts upward and Plant B's downward to prevent gaming through labor hoarding.
-
-Cleanliness and safety metrics are displayed but excluded from the efficiency score. They're awareness metrics, not
-competitive ones.
+Reports have submission windows, role-based assignment, manager override capability, and compliance tracking. AI
+validates metrics for mathematical consistency and flags anomalies before submission.
 
 ---
 
@@ -169,7 +150,7 @@ specific workflow need:
   manager gets comparative insights
 - **Regional Summaries**: Cross-plant trend identification when viewing aggregated data
 - **Asset History Summaries**: Converts raw change logs into readable narratives
-- **Report Validation**: Catches mathematical inconsistencies before they affect leaderboard data
+- **Report Validation**: Catches mathematical inconsistencies before submission
 - **Efficiency Comment Validation**: When operators are flagged for anomalous metrics, their explanations are checked
   against the specific issues flagged
 - **Task Suggestions**: Auto-completes partial maintenance task descriptions with contextual suggestions
@@ -178,7 +159,6 @@ specific workflow need:
 - **GM Report Analysis**: Executive summary generation for General Manager weekly reviews
 - **GM Report Export Summary**: AI-generated narrative for GM report exports
 - **Task Improvement**: Rewrites maintenance task descriptions to be clearer and more actionable
-- **District Summary**: District-level analysis comparing districts and drilling into per-plant performance
 
 Prompts use a JSON-based registry with dynamic role context injection built from the database, so new roles
 automatically get appropriate AI behavior.
@@ -376,7 +356,7 @@ standalone app on iOS with translucent status bar.
 
 | Metric                | Value                                              |
 |-----------------------|----------------------------------------------------|
-| **Current Version**   | 2026.20.7                                          |
+| **Current Version**   | 2026.20.9                                          |
 | **Views**             | 83 view files across ~23 page modules              |
 | **Services**          | 30 service classes                                 |
 | **Custom Hooks**      | 58 specialized hooks                               |

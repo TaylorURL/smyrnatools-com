@@ -1,5 +1,77 @@
 # Changelog
 
+## [2026.20.9] - 2026-05-13
+
+- Broke down every remaining source file over 1000 lines into focused, single-responsibility modules. No
+  behavior change in any of them — every prop, event handler, conditional render, and side effect was
+  preserved. Each main view / utility was reduced to a thin orchestrator under 500 lines, and all extracted
+  helpers stay under the same cap so the eslint `max-lines` rule passes across `src/views/**` and
+  `src/app/components/**` without per-file `eslint-disable` pragmas.
+- `src/views/reporting/reports/types/WeeklyReadyMixInstructorReport.jsx` (1477 → 496) — split into the
+  `src/app/components/reports/granular/` family (Rmi atoms, sections, tables, Add modals) plus
+  `useRmiLiveData` / `useRmiRegionScope` hooks.
+- `src/views/reporting/reports/types/WeeklyPlantManagerReport.jsx` (1401 → 97) — extracted the YPH metrics
+  card, monthly trends timeline, and operators-sent-to-help section into `granular/Pm*.jsx`, with
+  `usePmTrendsData`, `usePmHelpData`, and `useYphCalculation` hooks for the data flow.
+- `src/views/reporting/reports/types/WeeklyGeneralManagerReport.jsx` (1080 → 90) — split into per-plant
+  summary, efficiency-overview, aggregate-production, and AI-analysis sub-sections under
+  `granular/Gm*.jsx`, with `useGmReportsData` and `useGmAiAnalysis` hooks.
+- `src/views/reporting/reports/types/WeeklySafetyManagerReport.jsx` (742 → 159) — extracted issue card,
+  tag picker, atoms, and the `useSafetyIssues` migration/mutation hook.
+- `src/app/components/modules/export/reports/GeneralManagerExport.js` (1437 → 104) — split the 1200-line
+  `createWeekSheet` function into per-section renderers under
+  `src/app/components/modules/export/reports/generalManager/` (AI summary, weekly/monthly/asset sidebars,
+  plant summary, efficiency overview, aggregate production, RMI training/hiring) plus `gmTotals`,
+  `gmSidebar`, `gmRmiSnapshot`, `gmDataFetch` helpers. Unified the previously-duplicated
+  `addOverviewGroup` / `addMonthlyGroup` into a single `addSidebarGroup`.
+- `src/utils/PlanUtility.ts` (1426 → 127) — converted to a barrel re-export. Implementation moved to
+  `src/utils/plan/{planTime,planAvailability,planBadges,planOrder,planAssignment,planPool,planSlots,planCustomerSat}.ts`
+  and `src/app/constants/planConstants.ts`. All 57 consumer files continue to import from `PlanUtility`
+  unchanged.
+- `src/utils/BookOrderUtility.ts` (1286 → 42) — converted to a barrel re-export. Implementation moved to
+  `src/utils/book-order/{bookOrderAddressing,bookOrderMath,bookOrderRestFloor,bookOrderSlotHelpers,bookOrderRanking,bookOrderStartTimes,bookOrderHelpAvailability,bookOrderBestEffort,bookOrderConflict}.ts`.
+  Domain constants (default load size, pour-method profiles, scan/preferred-window minutes, shift cap,
+  rest hours, etc.) appended to `src/app/constants/bookOrderConstants.js`.
+- `src/app/components/common/Navigation.jsx` (1285 → 283) — split into
+  `src/app/components/common/navigation/{NavigationMobile,NavigationTwoLevel,NavigationTopBar,NavigationParts,NavigationActionButtons}.jsx`
+  with `useNavigationData` / `useNavigationLayout` hooks and `src/app/constants/navigationConstants.js`.
+  The five top-bar dropdowns and five mobile sections are now data-driven config arrays rendered through
+  one component each — same DOM, ~80 fewer copy-pasted lines.
+- `src/views/reporting/list/ListView.jsx` (1276 → 356) — split into
+  `src/app/components/list/{ListFilterBar,ListFilterBarSkeleton,ListActivityFeed,ListItemRow,ListGroupedItems,ListBulkActionsBar,ListEmptyState}.jsx`
+  with `useListData`, `useListRegion`, `useListGroups`, `useListActivityFeed`, `useListBulkActions`,
+  `useListKeyboardShortcuts` hooks and `src/app/constants/listViewConstants.js`.
+- `src/app/components/sections/HistoryViewSection.jsx` (1254 → 272) — every tab (Timeline, Overview,
+  Operators, Service, Plant, Status, Position, Ratings, Mileage, Assignments) extracted into its own
+  file under `src/app/components/history/`. Tab routing now drives off a `HISTORY_TAB_DEFINITIONS`
+  config array in `historyConstants.js` instead of an inline switch. `useHistoryAiTypewriter` and
+  `useHistoryAnalysisScrollCollapse` hooks isolate the AI summary effects.
+- `src/views/assets/mixers/MixerDetailView.jsx` (1253 → 242) — split into `src/app/components/mixer/`
+  cards (truck details, assignment, vehicle info, service info, cleanliness rating) and a modals
+  wrapper, with `useMixerDetailData`, `useMixerDetailEditState`, `useMixerDetailActions`,
+  `useMixerOperatorsModal`, `useMixerDetailModalsState` hooks. Save-flow internals extracted to
+  `mixerSaveHelpers.js`.
+- `src/views/assets/tractors/TractorDetailView.jsx` (1152 → 235) — split into `src/app/components/tractor/`
+  basic-info, maintenance, verification, operator-assignment, and modals components, with
+  `useTractorDetail` and `useTractorDetailActions` hooks. Verification-item construction extracted to
+  a pure helper. Inline `setTimeout(() => setMessage(''))` repetitions collapsed into a single
+  `flashMessage(text, ms)`.
+- `src/app/components/common/VerificationRequirementsModal.jsx` (1005 → 361) — extracted checklist,
+  operator, issues, and comments sections into `src/app/components/verification/` files; data flow into
+  `useVerificationModalData`. The staggered 50/150/250/350/400 ms section-ready reveal was preserved
+  byte-for-byte.
+- `src/views/tools/plan/PlanScheduleView.jsx` (1001 → 347) — split into the title row, grouped-cards
+  view, closed-day banner, and empty state under `src/app/components/plan/tabs/schedule/`, with
+  `usePlanScheduleData`, `usePlanScheduleAdjacentTotals`, `usePlanScheduleFilterSetters`,
+  `usePlanScheduleMaximize`, `usePlanScheduleRoster` hooks.
+- Established a consistent placement convention across the new files: pure constants go in
+  `src/app/constants/<feature>Constants.js`, hooks in `src/app/hooks/use<Feature>.js`, and feature-scoped
+  sub-components in `src/app/components/<feature>/`. Granular sub-components for the redesigned weekly
+  reports live in `src/app/components/reports/granular/` and share design tokens via
+  `weeklyReportConstants.js`.
+- Fixed a pre-existing broken import in `src/app/components/reports/tabs/quality/QualityReportsList.jsx`
+  (`./ReportsViewSkeletons` → `../../ReportsViewSkeletons`) that was blocking the production build.
+
 ## [2026.20.8] - 2026-05-13
 
 - `src/utils/PlanScheduleUtility.ts` — fixed `buildHelpTransfers` so outbound help dispatches no longer drive the

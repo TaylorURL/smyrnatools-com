@@ -3,6 +3,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.55.0' // @ts-ignore
 import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_shared/cors.ts' // @ts-ignore
 import { buildThemeConfig, envOrDefault } from '../_shared/auth-helpers.ts' // @ts-ignore
 import { requireAuthenticated } from '../_shared/requireSession.ts' // @ts-ignore
+import { isInternalServiceCall } from '../_shared/internalAuth.ts' // @ts-ignore
 import { buildReportSubmittedEmail } from '../../../scripts/emails/report-submitted-email.js' // @ts-ignore
 import { buildCommentNotificationEmail } from '../../../scripts/emails/comment-notification-email.js'
 
@@ -205,12 +206,11 @@ Deno.serve(async (req) => {
     const url = new URL(req.url)
     const endpoint = url.pathname.split('/').pop()
 
-    // Allow service-to-service calls using the service role key (e.g. from
-    // asset-helpers comment notifications). Otherwise require a valid session.
-    const authHeader = req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    const isServiceCall = serviceRoleKey && authHeader === serviceRoleKey
-    if (!isServiceCall) {
+    // Allow service-to-service calls using a dedicated internal-token shared
+    // secret (e.g. from asset-helpers comment notifications). Separate from
+    // the Supabase service role key so a leak of that key alone does NOT
+    // open this endpoint. Otherwise require a valid session.
+    if (!isInternalServiceCall(req)) {
         const auth = await requireAuthenticated(null, req, headers)
         if (auth instanceof Response) return auth
     }

@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 const VERSION_POLL_INTERVAL = 60 * 1000 // 1 minute
 async function fetchDeployedVersion() {
-    const res = await fetch('/nit.json', { cache: 'no-store' })
+    const res = await fetch('/release.json', { cache: 'no-store' })
     if (!res.ok) throw new Error('Failed to fetch version')
     const data = await res.json()
     return data.version ?? null
 }
 /**
- * Polls /nit.json every 1 minute and signals when the deployed version
+ * Polls /release.json every 1 minute and signals when the deployed version
  * has changed since the page was first loaded.
  * @returns {{ hasUpdate: boolean, dismiss: () => void }}
  */

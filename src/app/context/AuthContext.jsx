@@ -13,7 +13,6 @@ import { getBrowserMetadata } from '../../utils/BrowserUtility'
 import { SESSION_STORAGE_KEYS } from '../constants/authConstants'
 
 const AUTH_FUNCTION = '/auth-service'
-const SESSION_EXPIRY_DAYS = 2
 
 /* Re-mint the session JWT when it has less than this many seconds of life
  * left. With a 1h server-side TTL and a 10-minute floor we get ~5 silent
@@ -33,11 +32,6 @@ export function useAuth() {
     return useContext(AuthContext)
 }
 // ── Private session helpers ───────────────────────────────────────────
-function generateSessionId() {
-    const array = new Uint8Array(32)
-    crypto.getRandomValues(array)
-    return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('')
-}
 function clearAllSessionData() {
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.CACHED_PLANTS)
     sessionStorage.removeItem(SESSION_STORAGE_KEYS.USER_ROLE)
@@ -52,12 +46,12 @@ function applyJwt(jwt, expiresInSeconds) {
 }
 
 /** Re-mints the session JWT against the current users_sessions row. Returns
- *  true on success. Used both by the periodic timer and by the initial
- *  bootstrap when restore-session can't deliver one. */
+ *  true on success. The cookie carries the actual session credentials, so
+ *  refresh-token works whenever the cookie is present even if memory state
+ *  is empty. */
 async function refreshJwtIfPossible() {
     const userId = getSessionUserId()
     const sessionId = getSessionId()
-    if (!userId || !sessionId) return false
     try {
         const { json, res } = await APIUtility.post(`${AUTH_FUNCTION}/refresh-token`, { sessionId, userId })
         if (!res.ok || !json?.jwt) return false
@@ -68,43 +62,21 @@ async function refreshJwtIfPossible() {
     }
 }
 
-/** Creates a database-tracked session record with browser metadata via auth-service. */
-async function createDbSession(userId) {
-    const sessionId = generateSessionId()
-    const { browser, os, device, userAgent } = getBrowserMetadata()
-    updateSession({ sessionId, userId })
-    try {
-        const { json } = await APIUtility.post(`${AUTH_FUNCTION}/create-session`, {
-            browser,
-            device,
-            os,
-            sessionId,
-            userAgent,
-            userId
-        })
-        if (json?.jwt) applyJwt(json.jwt, json.expiresIn)
-    } catch {}
-}
 /**
- * Validates the current session via auth-service.
- * Expires sessions older than the configured threshold.
+ * Asks the server who the cookie identifies. Returns the userId on success
+ * or null. AuthContext uses this in place of the old localStorage probe.
  */
-async function validateDbSession() {
-    const userId = getSessionUserId()
-    const sessionId = getSessionId()
-    if (!userId || !sessionId) return { userId: null, valid: false }
+async function whoami() {
+    const hasMemory = Boolean(getSessionUserId())
+    const hasCookie =
+        typeof document !== 'undefined' && document.cookie.split(';').some((p) => p.trim().startsWith('smyrna_auth=1'))
+    if (!hasMemory && !hasCookie) return null
     try {
-        const { json } = await APIUtility.post(`${AUTH_FUNCTION}/validate-session`, { sessionId, userId })
-        if (!json?.valid) {
-            const lastActive = json?.lastActive ? new Date(json.lastActive) : null
-            const expiryThreshold = new Date()
-            expiryThreshold.setDate(expiryThreshold.getDate() - SESSION_EXPIRY_DAYS)
-            if (lastActive && lastActive < expiryThreshold) clearAllSessionData()
-            return { userId: null, valid: false }
-        }
-        return { userId, valid: true }
+        const { json, res } = await APIUtility.post(`${AUTH_FUNCTION}/whoami`)
+        if (!res.ok || !json?.userId) return null
+        return json.userId
     } catch {
-        return { userId: null, valid: false }
+        return null
     }
 }
 // ── Provider ──────────────────────────────────────────────────────────
@@ -121,21 +93,21 @@ export function AuthProvider({ children }) {
     const restoreSession = useCallback(async () => {
         setLoading(true)
         setError(null)
-        const { valid, userId } = await validateDbSession()
-        if (!valid || !userId) {
+        const userId = await whoami()
+        if (!userId) {
             clearAllSessionData()
             setUser(null)
             setLoading(false)
             return false
         }
+        updateSession({ userId })
         try {
-            const sessionId = getSessionId()
-            const { json } = await APIUtility.post(`${AUTH_FUNCTION}/restore-session`, { sessionId, userId })
+            const { json } = await APIUtility.post(`${AUTH_FUNCTION}/restore-session`, { userId })
             if (json.success && json.user) {
                 if (json.jwt) applyJwt(json.jwt, json.expiresIn)
                 else await refreshJwtIfPossible()
                 setUser(json.user)
-                updateSession({ userId })
+                window.dispatchEvent(new CustomEvent('authSuccess', { detail: { userId } }))
                 setLoading(false)
                 return true
             }
@@ -180,10 +152,8 @@ export function AuthProvider({ children }) {
      * anon key like it always has, and we don't spam refresh-token. */
     useEffect(() => {
         const tick = () => {
-            const userId = getSessionUserId()
-            const sessionId = getSessionId()
             const existingJwt = getSessionJwt()
-            if (!userId || !sessionId || !existingJwt) return
+            if (!existingJwt) return
             const secondsLeft = (getJwtExpiresAt() - Date.now()) / 1000
             if (secondsLeft > JWT_REFRESH_FLOOR_SECONDS) return
             refreshJwtIfPossible()
@@ -195,19 +165,39 @@ export function AuthProvider({ children }) {
     const loadUserProfile = useCallback(async (userId) => {
         if (!userId) return
         try {
-            const sessionId = getSessionId()
-            const { json } = await APIUtility.post(`${AUTH_FUNCTION}/load-profile`, { sessionId, userId })
+            const { json } = await APIUtility.post(`${AUTH_FUNCTION}/load-profile`, { userId })
             if (json.profile) {
                 setUser((cu) => ({ ...cu, profile: json.profile }))
             }
         } catch {}
     }, [])
+
+    /**
+     * Records the just-signed-in user. Cookies were already set by the
+     * server in the sign-in / sign-up response. The body also carries
+     * `sessionId` so localhost-dev (where the cookie can't cross origins)
+     * still has memory credentials to fall back on.
+     */
+    const acceptAuthResponse = useCallback((json) => {
+        setUser(json)
+        updateSession({ sessionId: json?.sessionId || null, userId: json?.id || null })
+        if (json?.jwt) applyJwt(json.jwt, json.expiresIn)
+    }, [])
+
     const signIn = useCallback(
         async (email, password) => {
             setError(null)
             setLoading(true)
             try {
-                const { res, json } = await APIUtility.post(`${AUTH_FUNCTION}/sign-in`, { email, password })
+                const { browser, os, device, userAgent } = getBrowserMetadata()
+                const { res, json } = await APIUtility.post(`${AUTH_FUNCTION}/sign-in`, {
+                    browser,
+                    device,
+                    email,
+                    os,
+                    password,
+                    userAgent
+                })
                 if (!res.ok) {
                     const errorMsg = json?.error || json?.message || 'Invalid email or password'
                     setError(errorMsg)
@@ -220,8 +210,7 @@ export function AuthProvider({ children }) {
                     setLoading(false)
                     throw new Error(errorMsg)
                 }
-                setUser(json)
-                await createDbSession(json.id)
+                acceptAuthResponse(json)
                 setLoading(false)
                 window.dispatchEvent(new CustomEvent('authSuccess', { detail: { userId: json.id } }))
                 profileTimerRef.current = setTimeout(() => loadUserProfile(json.id).catch(() => {}), 2000)
@@ -233,41 +222,48 @@ export function AuthProvider({ children }) {
                 throw new Error(errorMsg)
             }
         },
-        [loadUserProfile]
+        [acceptAuthResponse, loadUserProfile]
     )
-    const signUp = useCallback(async (email, password, firstName, lastName) => {
-        setError(null)
-        setLoading(true)
-        try {
-            const { res, json } = await APIUtility.post(`${AUTH_FUNCTION}/sign-up`, {
-                email,
-                firstName,
-                lastName,
-                password
-            })
-            if (!res.ok) {
-                setError(json.error || 'Sign up failed')
+    const signUp = useCallback(
+        async (email, password, firstName, lastName) => {
+            setError(null)
+            setLoading(true)
+            try {
+                const { browser, os, device, userAgent } = getBrowserMetadata()
+                const { res, json } = await APIUtility.post(`${AUTH_FUNCTION}/sign-up`, {
+                    browser,
+                    device,
+                    email,
+                    firstName,
+                    lastName,
+                    os,
+                    password,
+                    userAgent
+                })
+                if (!res.ok) {
+                    setError(json.error || 'Sign up failed')
+                    setLoading(false)
+                    throw new Error(json.error || 'Sign up failed')
+                }
+                acceptAuthResponse(json)
                 setLoading(false)
-                throw new Error(json.error || 'Sign up failed')
+                window.dispatchEvent(new CustomEvent('authSuccess', { detail: { userId: json.id } }))
+                return json
+            } catch (e) {
+                setError(e.message)
+                setLoading(false)
+                throw e
             }
-            setUser(json)
-            await createDbSession(json.id)
-            setLoading(false)
-            window.dispatchEvent(new CustomEvent('authSuccess', { detail: { userId: json.id } }))
-            return json
-        } catch (e) {
-            setError(e.message)
-            setLoading(false)
-            throw e
-        }
-    }, [])
+        },
+        [acceptAuthResponse]
+    )
     const signOut = useCallback(async () => {
         clearTimeout(profileTimerRef.current)
+        // sign-out clears the cookies server-side and deletes the row tied
+        // to the cookie. The body-side sessionId argument is only needed
+        // on the localhost-dev fallback path; we send it when present.
         const sessionId = getSessionId()
-        if (sessionId) {
-            await APIUtility.post(`${AUTH_FUNCTION}/delete-session`, { sessionId }).catch(() => {})
-        }
-        await APIUtility.post(`${AUTH_FUNCTION}/sign-out`).catch(() => {})
+        await APIUtility.post(`${AUTH_FUNCTION}/sign-out`, sessionId ? { sessionId } : undefined).catch(() => {})
         clearAllSessionData()
         setUser(null)
         window.dispatchEvent(new CustomEvent('authSignOut'))

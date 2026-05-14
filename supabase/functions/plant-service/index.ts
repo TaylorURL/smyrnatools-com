@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
                 return jsonResponse({ success: true }, headers)
             }
             case 'update-address': {
-                const auth = await requireAuthenticated(supabase, req, headers)
+                const auth = await requireElevatedCaller(supabase, req, headers)
                 if (auth instanceof Response) return auth
                 const body = await parseBody(req)
                 const plantCode = trimString(body?.plantCode)

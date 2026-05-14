@@ -96,7 +96,7 @@ jest.mock(
 )
 
 jest.mock(
-    '../../app/components/reports/ErrorModal',
+    '../../app/components/reports/ReportValidationErrorModal',
     () =>
         function MockErrorModal({ error }) {
             return <div data-testid="error-modal">{error}</div>

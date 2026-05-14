@@ -25,6 +25,7 @@ import {
     normalize,
     nowIso,
     parseBody,
+    requireAssetAccess,
     requireAuthenticated,
     toDbTimestamp
 } from '../_shared/asset-helpers.ts'
@@ -253,6 +254,12 @@ Deno.serve(async (req) => {
                     .maybeSingle()
                 if (currentErr) return errorResponse('Operation failed', headers, 400)
                 if (!current) return errorResponse('Equipment not found', headers, 404)
+                const currentAccessErr = await requireAssetAccess(userId, current.assigned_plant, headers)
+                if (currentAccessErr) return currentAccessErr
+                if ('assignedPlant' in equipment && equipment.assignedPlant !== current.assigned_plant) {
+                    const newAccessErr = await requireAssetAccess(userId, equipment.assignedPlant, headers)
+                    if (newAccessErr) return newAccessErr
+                }
                 const apiData: Record<string, any> = {
                     identifying_number:
                         'identifyingNumber' in equipment ? equipment.identifyingNumber : current.identifying_number,

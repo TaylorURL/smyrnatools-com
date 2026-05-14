@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState, useTransition } from 'react'
 import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'
 import { PlanHeader } from '../../../app/components/plan/PlanHeader'
 import { PlanReadOnlyBanner } from '../../../app/components/plan/PlanReadOnlyBanner'
-import { PlanScheduleStaleBanner } from '../../../app/components/plan/PlanScheduleStaleBanner'
+import { PlanScheduleStaleBanner } from '../../../app/components/plan/tabs/schedule/PlanScheduleStaleBanner'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { usePlanActions } from '../../../app/hooks/usePlanActions'
@@ -34,11 +34,42 @@ import PlanStatisticsView from './PlanStatisticsView'
  * This file is the shell — header, banners, settings modal, and the tab
  * router. Each tab's heavy logic lives in its own dedicated view file.
  */
+/** Temporary region gate — Plan is only available in Houston Concrete while the
+ *  statewide rollout is staged. Remove this constant + the early return below
+ *  to re-enable Plan everywhere. */
+const PLAN_ALLOWED_REGION_NAME = 'Houston Concrete'
+
 function PlanView() {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
     const isDark = preferences.themeMode === 'dark'
     const isMobile = useIsMobile()
+
+    if (preferences.selectedRegion?.name !== PLAN_ALLOWED_REGION_NAME) {
+        return (
+            <div
+                className="global-dashboard-container dashboard-container global-flush-top flush-top plan-view absolute flex items-center justify-center bg-bg-primary"
+                style={{ inset: 0 }}
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="plan-region-blocker-title"
+            >
+                <div className="max-w-md mx-6 rounded-xl border border-border-light bg-bg-secondary px-6 py-8 text-center shadow-lg">
+                    <i
+                        className="fas fa-triangle-exclamation text-2xl mb-3"
+                        style={{ color: accentColor }}
+                        aria-hidden="true"
+                    />
+                    <h2 id="plan-region-blocker-title" className="text-lg font-semibold text-text-primary mb-2">
+                        Plan unavailable
+                    </h2>
+                    <p className="text-sm text-text-secondary">
+                        This functionality is not available in your region yet.
+                    </p>
+                </div>
+            </div>
+        )
+    }
 
     /* Mobile users get a focused two-tab Plan surface — Dashboard
      * (manager "Your Plant / District / Region" view + clock-ins) and

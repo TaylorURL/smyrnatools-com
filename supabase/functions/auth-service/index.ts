@@ -21,6 +21,13 @@ import {
 // @ts-ignore
 import { generateSalt, hashPassword, rehashAndUpdate, verifyPassword } from '../_shared/crypto-helpers.ts'
 // @ts-ignore
+import {
+    buildClearSessionCookieHeaders,
+    buildSessionCookieHeaders,
+    readSessionCookies,
+    respondWithCookies
+} from '../_shared/cookies.ts'
+// @ts-ignore
 import { mintSessionJwt } from '../_shared/jwt.ts'
 // @ts-ignore
 import { requireAuthenticated } from '../_shared/requireSession.ts'
@@ -83,6 +90,20 @@ const SESSIONS_TABLE = 'users_sessions'
 const SESSION_EXPIRY_DAYS = 7
 const ELEVATED_WEIGHT_THRESHOLD = 75
 
+/**
+ * Lightweight caller identity check for bootstrap-phase endpoints where
+ * no session row exists yet (sign-in doesn't create one). Extracts the
+ * caller's userId from cookies, headers, or body fallback fields and
+ * returns it — or null if no identity signal is present. Does NOT
+ * validate against the sessions table, so this is weaker than
+ * requireAuthenticated — use only for endpoints that verify ownership
+ * via other means (e.g. matching body.userId to the caller).
+ */
+function extractCallerUserId(req: Request, body?: any): string | null {
+    const cookies = readSessionCookies(req)
+    return cookies.userId || req.headers.get('x-user-id') || body?.__sessionUserId || null
+}
+
 async function requireElevatedCaller(supabase: any, req: Request, headers: any, body?: any): Promise<Response | null> {
     const auth = await requireAuthenticated(supabase, req, headers, body)
     if (auth instanceof Response) return auth
@@ -114,7 +135,7 @@ Deno.serve(async (req) => {
             // ── Authentication ────────────────────────────────────────
 
             case 'sign-in': {
-                const { email, password } = await req.json()
+                const { email, password, browser, os, device, userAgent } = await req.json()
                 if (!email?.trim() || !password) return errorResponse('Email and password are required', headers, 400)
                 const trimmedEmail = sanitizeEmail(email)
                 if (!isValidEmail(trimmedEmail)) return errorResponse('Invalid email format', headers, 400)
@@ -131,12 +152,10 @@ Deno.serve(async (req) => {
                 const { valid, needsRehash } = await verifyPassword(password, data.salt, data.password_hash)
                 if (!valid) return errorResponse('Invalid credentials', headers, 401)
 
-                // Transparently upgrade legacy SHA-256 hashes to PBKDF2
                 if (needsRehash) {
                     rehashAndUpdate(supabase, data.id, password, USERS_TABLE).catch(() => {})
                 }
 
-                // Stamp last login date (fire-and-forget)
                 supabase
                     .from(USERS_TABLE)
                     .update({ last_login_at: new Date().toISOString().split('T')[0] })
@@ -144,20 +163,56 @@ Deno.serve(async (req) => {
                     .then(() => {})
                     .catch(() => {})
 
+                const now = nowISO()
+                const sessionId = crypto.randomUUID()
+                await supabase.from(SESSIONS_TABLE).insert({
+                    id: sessionId,
+                    user_id: data.id,
+                    browser: browser || null,
+                    os: os || null,
+                    device: device || null,
+                    user_agent: userAgent || null,
+                    created_at: now,
+                    last_active: now
+                })
+
                 const { data: profile } = await supabase
                     .from(PROFILES_TABLE)
                     .select(PROFILE_SELECT_FIELDS)
                     .eq('id', data.id)
                     .single()
-                return jsonResponse({ id: data.id, email: data.email, profile: profile ?? {} }, headers)
+
+                let jwt: string | null = null
+                let expiresIn: number | null = null
+                const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                if (jwtSecret) {
+                    jwt = await mintSessionJwt(data.id, sessionId, jwtSecret, JWT_TTL_SECONDS)
+                    expiresIn = JWT_TTL_SECONDS
+                }
+
+                const responseBody = {
+                    id: data.id,
+                    email: data.email,
+                    profile: profile ?? {},
+                    sessionId,
+                    jwt,
+                    expiresIn
+                }
+                return respondWithCookies(
+                    responseBody,
+                    headers,
+                    buildSessionCookieHeaders(data.id, sessionId)
+                )
             }
 
             case 'sign-up': {
-                const { email, password, firstName, lastName } = await req.json()
+                const { email, password, firstName, lastName, browser, os, device, userAgent } = await req.json()
                 if (!email || !password || !firstName || !lastName)
                     return errorResponse('All fields are required', headers, 400)
                 const trimmedEmail = sanitizeEmail(email)
                 if (!isValidEmail(trimmedEmail)) return errorResponse('Invalid email format', headers, 400)
+                if (await isRateLimited(getRateLimitKey(req, `sign-up:${trimmedEmail}`), supabase))
+                    return errorResponse('Too many sign-up attempts. Please try again later.', headers, 429)
                 if (validatePasswordStrength(password).value === 'weak')
                     return errorResponse('Password is too weak', headers, 400)
 
@@ -219,29 +274,88 @@ Deno.serve(async (req) => {
                     assignGuestRole(supabase, userId, now)
                 ])
 
-                return jsonResponse({ id: userId, email: trimmedEmail, profile }, headers)
+                const signUpSessionId = crypto.randomUUID()
+                await supabase.from(SESSIONS_TABLE).insert({
+                    id: signUpSessionId,
+                    user_id: userId,
+                    browser: browser || null,
+                    os: os || null,
+                    device: device || null,
+                    user_agent: userAgent || null,
+                    created_at: now,
+                    last_active: now
+                })
+
+                let signUpJwt: string | null = null
+                let signUpExpiresIn: number | null = null
+                const signUpJwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                if (signUpJwtSecret) {
+                    signUpJwt = await mintSessionJwt(userId, signUpSessionId, signUpJwtSecret, JWT_TTL_SECONDS)
+                    signUpExpiresIn = JWT_TTL_SECONDS
+                }
+
+                return respondWithCookies(
+                    {
+                        id: userId,
+                        email: trimmedEmail,
+                        profile,
+                        sessionId: signUpSessionId,
+                        jwt: signUpJwt,
+                        expiresIn: signUpExpiresIn
+                    },
+                    headers,
+                    buildSessionCookieHeaders(userId, signUpSessionId)
+                )
             }
 
             case 'sign-out': {
-                await supabase.auth.signOut().catch(() => {})
-                return jsonResponse({ success: true }, headers)
+                const signOutBody = await req.json().catch(() => ({}))
+                const signOutSessionId = signOutBody?.sessionId
+                const signOutCookies = readSessionCookies(req)
+                const signOutUserId = signOutCookies.userId || req.headers.get('x-user-id')
+                const sessToDelete = signOutSessionId || signOutCookies.sessionId
+                if (sessToDelete && signOutUserId) {
+                    await supabase
+                        .from(SESSIONS_TABLE)
+                        .delete()
+                        .eq('id', sessToDelete)
+                        .eq('user_id', signOutUserId)
+                        .then(() => {})
+                        .catch(() => {})
+                }
+                return respondWithCookies(
+                    { success: true },
+                    headers,
+                    buildClearSessionCookieHeaders()
+                )
             }
 
             // ── Session Management ────────────────────────────────────
 
             case 'restore-session': {
-                const { userId, sessionId } = await req.json()
+                const body = await req.json()
+                const cookies = readSessionCookies(req)
+                const userId = body.userId || cookies.userId || req.headers.get('x-user-id')
                 if (!userId) return jsonResponse({ success: false }, headers)
 
-                // Verify the session ID matches the user in the database to prevent IDOR
+                const sessionId =
+                    body.sessionId ||
+                    body.__sessionId ||
+                    cookies.sessionId ||
+                    req.headers.get('x-session-id')
+
                 if (sessionId) {
                     const { data: sessionData } = await supabase
-                        .from('users_sessions')
-                        .select('id')
+                        .from(SESSIONS_TABLE)
+                        .select('id, last_active')
                         .eq('id', sessionId)
                         .eq('user_id', userId)
                         .maybeSingle()
                     if (!sessionData) return jsonResponse({ success: false }, headers)
+                    const lastActive = new Date(sessionData.last_active)
+                    const expiry = new Date()
+                    expiry.setDate(expiry.getDate() - SESSION_EXPIRY_DAYS)
+                    if (lastActive < expiry) return jsonResponse({ success: false }, headers)
                 }
 
                 const timeoutPromise = new Promise((_, reject) =>
@@ -286,19 +400,12 @@ Deno.serve(async (req) => {
             // ── Profile ───────────────────────────────────────────────
 
             case 'load-profile': {
-                const { userId, sessionId } = await req.json()
+                const body = await req.json()
+                const { userId } = body
                 if (!userId) return errorResponse('User ID required', headers, 400)
-
-                // Verify the session ID matches the user to prevent IDOR
-                if (sessionId) {
-                    const { data: sessionData } = await supabase
-                        .from('users_sessions')
-                        .select('id')
-                        .eq('id', sessionId)
-                        .eq('user_id', userId)
-                        .maybeSingle()
-                    if (!sessionData) return errorResponse('Unauthorized', headers, 401)
-                }
+                const callerUserId = extractCallerUserId(req, body)
+                if (!callerUserId || callerUserId !== userId)
+                    return errorResponse('Unauthorized', headers, 401)
 
                 const { data: profileData, error } = await supabase
                     .from(PROFILES_TABLE)
@@ -530,8 +637,12 @@ Deno.serve(async (req) => {
             // ── Session Management ────────────────────────────────────
 
             case 'create-session': {
-                const { userId, sessionId, browser, os, device, userAgent } = await req.json()
+                const body = await req.json()
+                const { userId, sessionId, browser, os, device, userAgent } = body
                 if (!userId || !sessionId) return errorResponse('userId and sessionId are required', headers, 400)
+                const callerCreate = extractCallerUserId(req, body)
+                if (!callerCreate || callerCreate !== userId)
+                    return errorResponse('Unauthorized', headers, 401)
                 const now = nowISO()
                 const { error } = await supabase.from('users_sessions').upsert(
                     {
@@ -591,9 +702,16 @@ Deno.serve(async (req) => {
             }
 
             case 'delete-session': {
-                const { sessionId } = await req.json()
+                const body = await req.json()
+                const { sessionId } = body
                 if (!sessionId) return errorResponse('sessionId is required', headers, 400)
-                await supabase.from('users_sessions').delete().eq('id', sessionId)
+                const callerDelete = extractCallerUserId(req, body)
+                if (!callerDelete) return errorResponse('Unauthorized', headers, 401)
+                await supabase
+                    .from(SESSIONS_TABLE)
+                    .delete()
+                    .eq('id', sessionId)
+                    .eq('user_id', callerDelete)
                 return jsonResponse({ success: true }, headers)
             }
 
@@ -615,6 +733,27 @@ Deno.serve(async (req) => {
                     .then(() => {})
                     .catch(() => {})
                 return jsonResponse({ valid: true, lastActive: data.last_active }, headers)
+            }
+
+            case 'whoami': {
+                const cookies = readSessionCookies(req)
+                const userId = cookies.userId || req.headers.get('x-user-id')
+                if (!userId) return errorResponse('Not authenticated', headers, 401)
+                const sessionId = cookies.sessionId || req.headers.get('x-session-id')
+                if (sessionId) {
+                    const { data: sess } = await supabase
+                        .from(SESSIONS_TABLE)
+                        .select('id, last_active')
+                        .eq('id', sessionId)
+                        .eq('user_id', userId)
+                        .maybeSingle()
+                    if (!sess) return errorResponse('Not authenticated', headers, 401)
+                    const lastActive = new Date(sess.last_active)
+                    const expiry = new Date()
+                    expiry.setDate(expiry.getDate() - SESSION_EXPIRY_DAYS)
+                    if (lastActive < expiry) return errorResponse('Session expired', headers, 401)
+                }
+                return jsonResponse({ userId }, headers)
             }
 
             default:

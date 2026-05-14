@@ -26,7 +26,8 @@ const PUBLIC_AUTH_PATHS = new Set([
     '/auth-service/delete-session',
     '/auth-service/forgot-password',
     '/auth-service/reset-password',
-    '/auth-service/load-profile'
+    '/auth-service/load-profile',
+    '/auth-service/whoami'
 ])
 
 interface SessionCredentials {
@@ -49,6 +50,19 @@ interface PostOptions {
 
 /** Reads in-memory session credentials for edge function authentication. */
 const getSessionCredentials = (): SessionCredentials => getSessionCredentialFields()
+
+/**
+ * Reads the non-HttpOnly companion `smyrna_auth=1` flag cookie that the
+ * server sets alongside the HttpOnly session cookies. The flag carries no
+ * secret — it's just a fast client-side indicator of "the browser believes
+ * it has a valid session." Used in the pre-flight bail so background pollers
+ * stop hammering the API after sign-out, without us having to expose the
+ * session id to JS.
+ */
+const hasAuthFlagCookie = (): boolean => {
+    if (typeof document === 'undefined') return false
+    return document.cookie.split(';').some((part) => part.trim().startsWith('smyrna_auth=1'))
+}
 
 /** Notifies the app that the current session is no longer accepted by the
  *  server. AuthContext listens for this and tears down user state so the
@@ -86,22 +100,23 @@ const APIUtility = {
         const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES
         const retryDelay = options.retryDelay ?? DEFAULT_RETRY_DELAY_MS
 
-        /* Send session credentials BOTH in the body and as headers. The edge
-         * `requireAuthenticated` helper checks the body first, then falls
-         * back to headers — duplicating into both surfaces sidesteps a
-         * subtle bug where some handlers `await req.json()` before calling
-         * the helper, consuming the body and making the helper's
-         * `req.clone().json()` fallback fail silently. Headers don't have
-         * that consumption problem. */
+        /* Primary auth is the HttpOnly session cookie ridden along by
+         * `credentials: 'include'`. Header/body fallbacks (X-User-Id /
+         * X-Session-Id and `__sessionUserId` / `__sessionId`) only get
+         * populated when SessionService has in-memory credentials — which
+         * happens on the localhost-dev path where cookies can't cross
+         * origins, and during the transition window when older clients
+         * still call `create-session` to seed memory. In production the
+         * cookie alone authenticates every call. */
         const credentials = getSessionCredentials()
-        const hasCredentials = Boolean(credentials.__sessionUserId && credentials.__sessionId)
+        const hasMemoryCredentials = Boolean(credentials.__sessionUserId && credentials.__sessionId)
+        const hasSessionSignal = hasMemoryCredentials || hasAuthFlagCookie()
 
-        /* Bail before the network call when the caller already lacks
-         * credentials AND the endpoint isn't one of the auth bootstrap
-         * paths. Otherwise stale pollers (PlanView's 10s schedule probe,
-         * presence heartbeats, etc.) flood the console with predictable
-         * 401s after sessionStorage is cleared. */
-        if (!hasCredentials && !PUBLIC_AUTH_PATHS.has(path)) {
+        /* Bail before the network call when no credential signal is
+         * present AND the endpoint isn't an auth bootstrap path. Otherwise
+         * background pollers flood the console with predictable 401s after
+         * sign-out. */
+        if (!hasSessionSignal && !PUBLIC_AUTH_PATHS.has(path)) {
             dispatchSessionInvalid('missing-credentials')
             return errorResponse('Unauthorized', 401)
         }
@@ -117,7 +132,8 @@ const APIUtility = {
             const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
             try {
                 const res = await fetch(url, {
-                    body: JSON.stringify({ ...data, ...credentials }),
+                    body: JSON.stringify(hasMemoryCredentials ? { ...data, ...credentials } : (data ?? {})),
+                    credentials: 'include',
                     headers: {
                         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
                         'Content-Type': 'application/json',

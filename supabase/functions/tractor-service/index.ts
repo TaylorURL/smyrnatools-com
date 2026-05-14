@@ -26,6 +26,7 @@ import {
     normalizeYear,
     nowIso,
     parseBody,
+    requireAssetAccess,
     requireAuthenticated,
     toDbTimestamp
 } from '../_shared/asset-helpers.ts'
@@ -218,6 +219,12 @@ Deno.serve(async (req) => {
                     .maybeSingle()
                 if (currentErr) return errorResponse('Operation failed', headers, 400)
                 if (!current) return errorResponse('Tractor not found', headers, 404)
+                const currentAccessErr = await requireAssetAccess(userId, current.assigned_plant, headers)
+                if (currentAccessErr) return currentAccessErr
+                if ('assignedPlant' in tractor && tractor.assignedPlant !== current.assigned_plant) {
+                    const newAccessErr = await requireAssetAccess(userId, tractor.assignedPlant, headers)
+                    if (newAccessErr) return newAccessErr
+                }
                 const rawOp = 'assignedOperator' in tractor ? tractor.assignedOperator : current.assigned_operator
                 const rawStatus = 'status' in tractor ? tractor.status : current.status
                 const { operator: assignedOperator, status } = resolveOperatorStatus(rawOp, rawStatus)

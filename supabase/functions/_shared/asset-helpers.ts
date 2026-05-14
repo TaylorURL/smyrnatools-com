@@ -27,6 +27,112 @@ export async function getUserWeight(_supabase: any, userId: string): Promise<num
     return Math.max(...data.map((d: any) => d.users_roles?.weight ?? 0))
 }
 
+const ELEVATED_WEIGHT_THRESHOLD = 75
+
+/**
+ * Returns the full set of plant codes the caller is authorized to act on:
+ *   - their primary plant_code
+ *   - any plants in additional_assigned_plants
+ *   - every plant in any region they belong to (via regions_plants)
+ *
+ * Elevated users (role weight > 75) skip the check entirely — they get a
+ * sentinel `*` set that matches every plant.
+ */
+export async function getCallerPlantScope(userId: string): Promise<{ elevated: boolean; plants: Set<string> }> {
+    const weight = await getUserWeight(null, userId)
+    if (weight > ELEVATED_WEIGHT_THRESHOLD) return { elevated: true, plants: new Set<string>() }
+
+    const admin = getAdminClient()
+    const { data: profile } = await admin
+        .from('users_profiles')
+        .select('plant_code, additional_assigned_plants')
+        .eq('id', userId)
+        .maybeSingle()
+
+    const plants = new Set<string>()
+    const norm = (v: any) => (typeof v === 'string' ? v.trim().toUpperCase() : '')
+    const primary = norm(profile?.plant_code)
+    if (primary) plants.add(primary)
+    if (Array.isArray(profile?.additional_assigned_plants)) {
+        for (const p of profile.additional_assigned_plants) {
+            const n = norm(p)
+            if (n) plants.add(n)
+        }
+    }
+
+    if (plants.size > 0) {
+        const { data: regionLinks } = await admin
+            .from('regions_plants')
+            .select('region_id')
+            .in('plant_code', Array.from(plants))
+        const regionIds = Array.from(new Set((regionLinks || []).map((r: any) => r.region_id).filter(Boolean)))
+        if (regionIds.length) {
+            const { data: regionPlants } = await admin
+                .from('regions_plants')
+                .select('plant_code')
+                .in('region_id', regionIds)
+            for (const r of regionPlants || []) {
+                const n = norm(r?.plant_code)
+                if (n) plants.add(n)
+            }
+        }
+    }
+
+    return { elevated: false, plants }
+}
+
+/**
+ * Authorizes the caller to mutate an asset based on its plant code. Returns
+ * null on success, a 403 Response on failure. Pass `null` for plantCode when
+ * the asset has no plant (treated as elevated-only).
+ */
+export async function requireAssetAccess(
+    userId: string,
+    plantCode: string | null | undefined,
+    headers: Record<string, string>
+): Promise<Response | null> {
+    const scope = await getCallerPlantScope(userId)
+    if (scope.elevated) return null
+    const normalized = typeof plantCode === 'string' ? plantCode.trim().toUpperCase() : ''
+    if (!normalized) return errorResponse('Forbidden: this asset has no plant assignment', headers, 403)
+    if (!scope.plants.has(normalized))
+        return errorResponse("Forbidden: you don't have access to this asset's plant", headers, 403)
+    return null
+}
+
+/**
+ * Convenience: looks up the asset's plant_code by id, then authorizes. Useful
+ * for delete handlers that don't already have the asset row loaded.
+ *
+ * `plantColumn` defaults to `assigned_plant` — pass `plant_code` for operators,
+ * plants, etc.
+ */
+export async function requireAssetAccessById(
+    userId: string,
+    table: string,
+    id: string,
+    idColumn: string,
+    plantColumn: string,
+    headers: Record<string, string>
+): Promise<Response | null> {
+    const admin = getAdminClient()
+    const { data, error } = await admin
+        .from(table)
+        .select(plantColumn)
+        .eq(idColumn, id)
+        .maybeSingle()
+    if (error || !data) return errorResponse('Asset not found', headers, 404)
+    const plantCode = (data as any)?.[plantColumn] as string | null
+    return requireAssetAccess(userId, plantCode, headers)
+}
+
+/** Caller must be elevated (weight > 75). Used for plant/region mutations. */
+export async function requireElevated(userId: string, headers: Record<string, string>): Promise<Response | null> {
+    const weight = await getUserWeight(null, userId)
+    if (weight > ELEVATED_WEIGHT_THRESHOLD) return null
+    return errorResponse('Forbidden: insufficient privileges', headers, 403)
+}
+
 const ALLOWED_SEVERITIES = ['Low', 'Medium', 'High']
 const DEFAULT_HISTORY_LIMIT = 200
 const DEFAULT_SERVICE_THRESHOLD_DAYS = 30
@@ -218,10 +324,15 @@ export async function handleAddComment(
                 ? [authorProfile.first_name, authorProfile.last_name].filter(Boolean).join(' ')
                 : 'A team member'
             const baseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-            const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+            const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+            const internalToken = Deno.env.get('EDGE_INTERNAL_TOKEN') ?? ''
             fetch(`${baseUrl}/functions/v1/email-service/notify-comment-added`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${anonKey}`,
+                    'X-Internal-Token': internalToken
+                },
                 body: JSON.stringify({
                     commenterId: author,
                     commenterName,
@@ -404,17 +515,26 @@ export async function handleDelete(
     historyTable: string,
     historyIdKey: string,
     entityLabel: string,
-    headers: Record<string, string>
+    headers: Record<string, string>,
+    options?: { idColumn?: string; plantColumn?: string }
 ): Promise<Response> {
     const auth = await requireAuthenticated(supabase, req, headers, body)
     if (auth instanceof Response) return auth
+    const idColumn = options?.idColumn ?? 'id'
+    const plantColumn = options?.plantColumn ?? 'assigned_plant'
     const id = typeof body?.id === 'string' ? body.id : null
     if (!id) return errorResponse(`${entityLabel} ID is required`, headers, 400)
-    const { data: entity } = await supabase.from(mainTable).select('id').eq('id', id).maybeSingle()
+    const { data: entity } = await supabase
+        .from(mainTable)
+        .select(`${idColumn}, ${plantColumn}`)
+        .eq(idColumn, id)
+        .maybeSingle()
     if (!entity) return errorResponse(`${entityLabel} not found`, headers, 404)
+    const accessErr = await requireAssetAccess(auth, (entity as any)[plantColumn], headers)
+    if (accessErr) return accessErr
     const { error: hErr } = await supabase.from(historyTable).delete().eq(historyIdKey, id)
     if (hErr) return errorResponse('Operation failed', headers, 400)
-    const { error } = await supabase.from(mainTable).delete().eq('id', id)
+    const { error } = await supabase.from(mainTable).delete().eq(idColumn, id)
     if (error) return errorResponse('Operation failed', headers, 400)
     return jsonResponse({ success: true }, headers)
 }

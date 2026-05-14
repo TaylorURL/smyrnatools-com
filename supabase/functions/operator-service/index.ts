@@ -7,6 +7,8 @@ const HISTORY_TABLE = 'operators_history'
 const COMMENTS_TABLE = 'operators_comments'
 // @ts-ignore
 import { requireAuthenticated } from '../_shared/requireSession.ts'
+// @ts-ignore
+import { requireAssetAccess } from '../_shared/asset-helpers.ts'
 
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
 
@@ -169,6 +171,18 @@ Deno.serve(async (req) => {
                 const input = body?.operator ?? body
                 const employeeId = typeof input?.employee_id === 'string' ? input.employee_id : null
                 if (!employeeId) return errorResponse('Invalid Employee ID', headers, 400)
+                const { data: existing } = await supabase
+                    .from(OPERATORS_TABLE)
+                    .select('plant_code')
+                    .eq('employee_id', employeeId)
+                    .maybeSingle()
+                if (!existing) return errorResponse('Operator not found', headers, 404)
+                const currentAccessErr = await requireAssetAccess(auth, existing.plant_code, headers)
+                if (currentAccessErr) return currentAccessErr
+                if (input?.plant_code !== undefined && input.plant_code !== existing.plant_code) {
+                    const newAccessErr = await requireAssetAccess(auth, input.plant_code, headers)
+                    if (newAccessErr) return newAccessErr
+                }
                 const now = nowTimestamp()
                 const rawStatus = typeof input?.status === 'string' ? input.status.trim() : 'Active'
                 const isActive = rawStatus.toLowerCase() === 'active'
@@ -198,12 +212,52 @@ Deno.serve(async (req) => {
                 if (!data) return errorResponse('Operator not found', headers, 404)
                 return jsonResponse({ data }, headers)
             }
+            case 'patch-phone-rating': {
+                const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
+                const employeeId = typeof body?.employeeId === 'string' ? body.employeeId : null
+                if (!employeeId) return errorResponse('employeeId is required', headers, 400)
+                const { data: existing } = await supabase
+                    .from(OPERATORS_TABLE)
+                    .select('plant_code')
+                    .eq('employee_id', employeeId)
+                    .maybeSingle()
+                if (!existing) return errorResponse('Operator not found', headers, 404)
+                const accessErr = await requireAssetAccess(auth, existing.plant_code, headers)
+                if (accessErr) return accessErr
+                const updateObj: Record<string, any> = { updated_at: nowTimestamp() }
+                if (typeof body?.phone === 'string') updateObj.phone = body.phone
+                if (body?.rating !== undefined) {
+                    const n = typeof body.rating === 'number' ? body.rating : Number(body.rating)
+                    if (!Number.isFinite(n) || n < 0 || n > 5) return errorResponse('Invalid rating', headers, 400)
+                    updateObj.rating = n
+                }
+                if (Object.keys(updateObj).length === 1) return errorResponse('Nothing to update', headers, 400)
+                const { data, error } = await supabase
+                    .from(OPERATORS_TABLE)
+                    .update(updateObj)
+                    .eq('employee_id', employeeId)
+                    .select('*')
+                    .maybeSingle()
+                if (error) return errorResponse('Operation failed', headers, 400)
+                if (!data) return errorResponse('Operator not found', headers, 404)
+                return jsonResponse({ data }, headers)
+            }
             case 'delete': {
                 const auth = await requireAuthenticated(supabase, req, headers)
                 if (auth instanceof Response) return auth
                 const body = await parseBody(req)
                 const employeeId = typeof body?.employeeId === 'string' ? body.employeeId : null
                 if (!employeeId) return errorResponse('Invalid Employee ID', headers, 400)
+                const { data: existing } = await supabase
+                    .from(OPERATORS_TABLE)
+                    .select('plant_code')
+                    .eq('employee_id', employeeId)
+                    .maybeSingle()
+                if (!existing) return errorResponse('Operator not found', headers, 404)
+                const accessErr = await requireAssetAccess(auth, existing.plant_code, headers)
+                if (accessErr) return accessErr
                 const { data, error } = await supabase
                     .from(OPERATORS_TABLE)
                     .delete()

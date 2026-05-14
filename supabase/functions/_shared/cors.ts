@@ -5,19 +5,27 @@ const ALLOWED_ORIGINS = [
     'https://db.smyrnatools.com'
 ]
 
-const DEFAULT_ORIGIN_INDEX = 1
-
+/**
+ * Returns CORS headers scoped to the request's origin. Credentialed requests
+ * (cookies) require an exact-origin ACAO — wildcard or fallback origins are
+ * rejected by the browser. When the origin is not in the allowlist we omit
+ * the ACAO entirely so the browser blocks the response.
+ */
 export function getCorsHeaders(origin: string | null): Record<string, string> {
-    return {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin':
-            origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[DEFAULT_ORIGIN_INDEX],
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, X-User-Id, X-Session-Id',
+        'Access-Control-Allow-Headers':
+            'Content-Type, Authorization, x-client-info, apikey, X-User-Id, X-Session-Id, X-Internal-Token',
         'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Max-Age': '86400',
         Connection: 'keep-alive'
     }
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
+        headers['Access-Control-Allow-Origin'] = origin
+        headers['Vary'] = 'Origin'
+    }
+    return headers
 }
 
 export function handleOptions(origin: string | null): Response {

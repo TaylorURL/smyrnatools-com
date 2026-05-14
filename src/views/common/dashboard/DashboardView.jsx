@@ -20,7 +20,7 @@ import { useDashboardSchedule } from '../../../app/hooks/useDashboardSchedule'
 import { useDashboardStats } from '../../../app/hooks/useDashboardStats'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { usePlanScrollSpy } from '../../../app/hooks/usePlanScrollSpy'
-import { useLeaderboardMetrics, usePlantNotifications } from '../../../app/hooks/usePlantNotifications'
+import { usePlantNotifications } from '../../../app/hooks/usePlantNotifications'
 import { useStatusHistory } from '../../../app/hooks/useStatusHistory'
 import { PlantService } from '../../../services/PlantService'
 
@@ -137,7 +137,7 @@ export default function DashboardView() {
         setOldestHistoryDate,
         updatePlantSet: activeUpdatePlantSet
     })
-    const { plantNotifications, setPlantNotifications } = usePlantNotifications({
+    const { plantNotifications } = usePlantNotifications({
         allEquipmentRef,
         allMixersRef,
         allOperatorsFullRef,
@@ -151,17 +151,6 @@ export default function DashboardView() {
         pendingStartOperators,
         plantSetRef: activePlantSetRef,
         trainingOperators
-    })
-    useLeaderboardMetrics({
-        allEquipmentRef,
-        allMixersRef,
-        allOperatorsFullRef,
-        allTractorsRef,
-        allTrailersRef,
-        dashboardPlant,
-        dashboardRegionCode,
-        dataReady,
-        setPlantNotifications
     })
     const displayStats = useAnimatedStats(stats, regionPlantsLoaded, dashboardRegionCode)
 

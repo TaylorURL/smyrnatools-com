@@ -1,13 +1,16 @@
 /* eslint-disable max-lines */
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
-import PlanDashboardActivityFeed from '../../../app/components/plan/PlanDashboardActivityFeed'
-import { PlanDashboardAtAGlance } from '../../../app/components/plan/PlanDashboardAtAGlance'
-import PlanDashboardClockInBoard from '../../../app/components/plan/PlanDashboardClockInBoard'
-import { PlanInsightsList, PlanYardageByPlantList } from '../../../app/components/plan/PlanDashboardLists'
-import { PlanChecklistRow, PlanFlowSummary } from '../../../app/components/plan/PlanDashboardYourScope'
-import PlanFlowPreview from '../../../app/components/plan/PlanFlowPreview'
-import PlanNotesSection from '../../../app/components/plan/PlanNotesSection'
+import PlanDashboardActivityFeed from '../../../app/components/plan/tabs/dashboard/PlanDashboardActivityFeed'
+import { PlanDashboardAtAGlance } from '../../../app/components/plan/tabs/dashboard/PlanDashboardAtAGlance'
+import PlanDashboardClockInBoard from '../../../app/components/plan/tabs/dashboard/PlanDashboardClockInBoard'
+import {
+    PlanInsightsList,
+    PlanYardageByPlantList
+} from '../../../app/components/plan/tabs/dashboard/PlanDashboardLists'
+import { PlanChecklistRow, PlanFlowSummary } from '../../../app/components/plan/tabs/dashboard/PlanDashboardYourScope'
+import PlanFlowPreview from '../../../app/components/plan/tabs/dashboard/PlanFlowPreview'
+import PlanNotesSection from '../../../app/components/plan/tabs/dashboard/PlanNotesSection'
 import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
 import {
     computeDashboardJobCoverage,
@@ -472,7 +475,7 @@ function PlanDashboardView({
 
                     <Card
                         id="flow-preview"
-                        title="Flow preview"
+                        title="Help Routes"
                         right={
                             onSwitchToPlanner && (
                                 <button

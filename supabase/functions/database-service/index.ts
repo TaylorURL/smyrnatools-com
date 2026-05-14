@@ -53,7 +53,7 @@ const ALLOWED_COLUMNS: Record<string, Set<string>> = {
         'updated_at'
     ]),
     users_presence: new Set(['id', 'user_id', 'status', 'last_seen', 'created_at', 'updated_at']),
-    users_sessions: new Set(['id', 'user_id', 'browser', 'os', 'device', 'user_agent', 'last_active', 'created_at']),
+    users_sessions: new Set(['user_id', 'browser', 'os', 'device', 'user_agent', 'last_active', 'created_at']),
     mixers: new Set([
         'id',
         'truck_number',
@@ -155,7 +155,20 @@ const ALLOWED_COLUMNS: Record<string, Set<string>> = {
         'updated_at'
     ]),
     notifications: new Set(['id', 'user_id', 'title', 'message', 'read', 'type', 'created_at']),
-    documents: new Set(['id', 'name', 'file_path', 'file_type', 'file_size', 'uploaded_by', 'created_at', 'updated_at'])
+    documents: new Set(['id', 'name', 'file_path', 'file_type', 'file_size', 'uploaded_by', 'created_at', 'updated_at']),
+    roles: new Set(['id', 'name', 'weight', 'permissions', 'created_at', 'updated_at']),
+    users_roles: new Set(['id', 'name', 'weight', 'permissions', 'created_at', 'updated_at']),
+    users_pinned_conversations: new Set(['id', 'user_id', 'conversation_id', 'created_at']),
+    mixer_comments: new Set(['id', 'mixer_id', 'user_id', 'comment', 'created_at', 'updated_at']),
+    mixer_history: new Set(['id', 'mixer_id', 'user_id', 'field', 'old_value', 'new_value', 'created_at']),
+    mixer_images: new Set(['id', 'mixer_id', 'image_path', 'uploaded_by', 'created_at']),
+    tractor_comments: new Set(['id', 'tractor_id', 'user_id', 'comment', 'created_at', 'updated_at']),
+    tractor_history: new Set(['id', 'tractor_id', 'user_id', 'field', 'old_value', 'new_value', 'created_at']),
+    trailer_comments: new Set(['id', 'trailer_id', 'user_id', 'comment', 'created_at', 'updated_at']),
+    equipment_comments: new Set(['id', 'equipment_id', 'user_id', 'comment', 'created_at', 'updated_at']),
+    equipment_history: new Set(['id', 'equipment_id', 'user_id', 'field', 'old_value', 'new_value', 'created_at']),
+    operator_history: new Set(['id', 'employee_id', 'user_id', 'field', 'old_value', 'new_value', 'created_at']),
+    pickup_truck_comments: new Set(['id', 'pickup_truck_id', 'user_id', 'comment', 'created_at', 'updated_at'])
 }
 
 function sanitizeTableName(name: string | null): string | null {
@@ -164,23 +177,43 @@ function sanitizeTableName(name: string | null): string | null {
     return ALLOWED_TABLES.has(cleaned) ? cleaned : null
 }
 
-function sanitizeColumns(table: string, columns: string): string {
-    if (columns === '*') return '*'
+// Tables that require row-level scoping to the caller's own user_id.
+// Filters MUST be ('user_id' | 'id') === auth, otherwise the request is rejected.
+const CALLER_SCOPED_TABLES: Record<string, string> = {
+    users: 'id',
+    users_sessions: 'user_id',
+    users_preferences: 'user_id',
+    users_presence: 'user_id',
+    users_pinned_conversations: 'user_id'
+}
+
+// For caller-scoped (sensitive) tables, '*' is expanded to the explicit
+// allowlist — never the raw DB '*' — to guarantee no unlisted column leaks.
+// For other tables, '*' passes through and arbitrary column names are
+// rejected unless they match the table's allowlist.
+function sanitizeColumns(table: string, columns: string): string | null {
     const allowlist = ALLOWED_COLUMNS[table]
-    if (!allowlist) return '*'
+    if (columns === '*') {
+        if (CALLER_SCOPED_TABLES[table]) {
+            if (!allowlist) return null
+            return [...allowlist].join(', ')
+        }
+        return '*'
+    }
+    if (!allowlist) return null
     const requested = columns
         .split(',')
         .map((c) => c.trim().toLowerCase())
         .filter(Boolean)
     const safe = requested.filter((c) => allowlist.has(c))
-    return safe.length > 0 ? safe.join(', ') : '*'
+    return safe.length > 0 ? safe.join(', ') : null
 }
 
 function sanitizeColumnName(table: string, column: string): string | null {
     if (!column || typeof column !== 'string') return null
     const cleaned = column.toLowerCase().replace(/[^a-z0-9_]/g, '')
     const allowlist = ALLOWED_COLUMNS[table]
-    if (!allowlist) return cleaned
+    if (!allowlist) return /^[a-z0-9_]+$/.test(cleaned) ? cleaned : null
     return allowlist.has(cleaned) ? cleaned : null
 }
 
@@ -226,32 +259,42 @@ Deno.serve(async (req) => {
                 return errorResponse('Raw SQL query endpoint has been removed for security', headers, 403)
             }
             case 'fetch-all': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const table = sanitizeTableName(stringField(body, 'table'))
                 if (!table) return errorResponse('Invalid or disallowed table name', headers, 400)
+                if (CALLER_SCOPED_TABLES[table])
+                    return errorResponse('This table requires a scoped fetch — use fetch with the caller filter', headers, 403)
                 const columns = sanitizeColumns(table, stringField(body, 'columns', '*')!)
+                if (!columns) return errorResponse('Invalid or unsupported columns for this table', headers, 400)
                 const orderByRaw = stringField(body, 'orderBy', 'id')!
-                const orderBy = sanitizeColumnName(table, orderByRaw) ?? 'id'
-                const { data, error } = await supabase
-                    .from(table)
-                    .select(columns)
-                    .order(orderBy as any)
+                const orderBy = sanitizeColumnName(table, orderByRaw)
+                let query: any = supabase.from(table).select(columns)
+                if (orderBy) query = query.order(orderBy)
+                const { data, error } = await query
                 if (error) return errorResponse('Failed to fetch records', headers, 400)
                 return jsonResponse({ data: data ?? [] }, headers)
             }
             case 'fetch': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const table = sanitizeTableName(stringField(body, 'table'))
                 const filterColumnRaw = stringField(body, 'filterColumn')
                 if (!table || !filterColumnRaw)
                     return errorResponse('Invalid or disallowed table name or missing filterColumn', headers, 400)
                 const filterColumn = sanitizeColumnName(table, filterColumnRaw)
                 if (!filterColumn) return errorResponse('Invalid filter column', headers, 400)
+                const scopedColumn = CALLER_SCOPED_TABLES[table]
+                if (scopedColumn) {
+                    if (filterColumn !== scopedColumn)
+                        return errorResponse('This table can only be queried by ' + scopedColumn, headers, 403)
+                    if (body?.value !== auth)
+                        return errorResponse('Forbidden: can only query your own records', headers, 403)
+                }
                 const columns = sanitizeColumns(table, stringField(body, 'columns', '*')!)
+                if (!columns) return errorResponse('Invalid or unsupported columns for this table', headers, 400)
                 const { data, error } = await supabase
                     .from(table)
                     .select(columns)

@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { CallListSkeleton } from '../../../app/components/common/PlanSkeletons'
-import CallListDetail from '../../../app/components/plan/CallListDetail'
-import CallListRow from '../../../app/components/plan/CallListRow'
+import CallListDetail from '../../../app/components/plan/tabs/call-list/CallListDetail'
+import CallListRow from '../../../app/components/plan/tabs/call-list/CallListRow'
 import { Stat, StatGroup } from '../../../app/components/ui/Panel'
 import useCallList from '../../../app/hooks/useCallList'
 import {

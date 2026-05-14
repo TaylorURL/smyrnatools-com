@@ -205,6 +205,38 @@ Deno.serve(async (req) => {
                 if (error) return errorResponse('Operation failed', headers, 400)
                 return jsonResponse({ data, success: true }, headers)
             }
+            case 'set-conversation-flag': {
+                const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
+                const otherUserId = body?.otherUserId
+                if (!otherUserId || typeof otherUserId !== 'string')
+                    return errorResponse('otherUserId is required', headers, 400)
+                const { data: existing } = await supabase
+                    .from('users_pinned_conversations')
+                    .select('id, pinned, muted')
+                    .eq('user_id', auth)
+                    .eq('other_user_id', otherUserId)
+                    .maybeSingle()
+                const nextPinned = body?.pinned ?? !!existing?.pinned
+                const nextMuted = body?.muted ?? !!existing?.muted
+                if (existing) {
+                    const { error } = await supabase
+                        .from('users_pinned_conversations')
+                        .update({ muted: nextMuted, pinned: nextPinned })
+                        .eq('id', existing.id)
+                    if (error) return errorResponse('Failed to update conversation flags', headers, 500)
+                } else {
+                    const { error } = await supabase.from('users_pinned_conversations').insert({
+                        muted: nextMuted,
+                        other_user_id: otherUserId,
+                        pinned: nextPinned,
+                        user_id: auth
+                    })
+                    if (error) return errorResponse('Failed to insert conversation flags', headers, 500)
+                }
+                return jsonResponse({ data: { muted: nextMuted, otherUserId, pinned: nextPinned } }, headers)
+            }
             case 'save-all': {
                 const auth = await requireAuthenticated(supabase, req, headers)
                 if (auth instanceof Response) return auth

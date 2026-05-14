@@ -1,98 +1,27 @@
-/* eslint-disable max-lines */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
-import { exportLostLoadReports } from '../../../app/components/modules/export/reports/LostLoadExport'
-import LostLoadDetailModal from '../../../app/components/reports/LostLoadDetailModal'
-import LostLoadReportModal from '../../../app/components/reports/LostLoadReportModal'
-import LostLoadsList from '../../../app/components/reports/LostLoadsList'
-import QCStrengthDetailModal from '../../../app/components/reports/QCStrengthDetailModal'
-import QCStrengthReportModal from '../../../app/components/reports/QCStrengthReportModal'
-import ReportsEmptyState from '../../../app/components/reports/ReportsEmptyState'
-import ReportsToolbar, {
-    LossFilterBar,
-    MobileFilterShell,
-    QcFilterBar,
-    ReportsActionBar,
-    ReviewFilterBar
-} from '../../../app/components/reports/ReportsToolbar'
-import ThirdPartyLabDetailModal from '../../../app/components/reports/ThirdPartyLabDetailModal'
-import ThirdPartyLabReportModal from '../../../app/components/reports/ThirdPartyLabReportModal'
-import DeadlineFuse from '../../../app/components/reports/v2/DeadlineFuse'
-import MergedReviewList from '../../../app/components/reports/v2/MergedReviewList'
-import MissingPanel from '../../../app/components/reports/v2/MissingPanel'
-import MyOneOffRail from '../../../app/components/reports/v2/MyOneOffRail'
-import OverdueBanner from '../../../app/components/reports/v2/OverdueBanner'
-import QuickRail from '../../../app/components/reports/v2/QuickRail'
-import TrackCard from '../../../app/components/reports/v2/TrackCard'
-import WeekRibbon from '../../../app/components/reports/v2/WeekRibbon'
+import ReportsModalsHostConnected from '../../../app/components/reports/ReportsModalsHostConnected'
+import ReportsToolbar, { ReportsActionBar } from '../../../app/components/reports/ReportsToolbar'
+import { ReportsViewSkeleton } from '../../../app/components/reports/ReportsViewSkeletons'
+import LostLoadsTabPanel from '../../../app/components/reports/tabs/lost-loads/LostLoadsTabPanel'
+import MyReportsTabPanel from '../../../app/components/reports/tabs/my-reports/MyReportsTabPanel'
+import QualityTabPanel from '../../../app/components/reports/tabs/quality/QualityTabPanel'
+import ReviewTabPanel from '../../../app/components/reports/tabs/review/ReviewTabPanel'
 import { usePagination } from '../../../app/hooks/usePagination'
 import { useReportsData } from '../../../app/hooks/useReportsData'
+import { useReportsFilters } from '../../../app/hooks/useReportsFilters'
+import { useReportsHandlers } from '../../../app/hooks/useReportsHandlers'
+import { useReportsMissing } from '../../../app/hooks/useReportsMissing'
+import { useReportsModals } from '../../../app/hooks/useReportsModals'
+import { useReportsQc } from '../../../app/hooks/useReportsQc'
+import { useReportsRailCollapse } from '../../../app/hooks/useReportsRailCollapse'
 import { useReportSubmission } from '../../../app/hooks/useReportSubmission'
+import { useReportsWeekTimeline } from '../../../app/hooks/useReportsWeekTimeline'
 import { reportTypeMap, reportTypes } from '../../../app/types/ReportTypes'
-import { Database } from '../../../services/DatabaseService'
-import { ReportService } from '../../../services/ReportService'
-import { UserService } from '../../../services/UserService'
 import { ReportUtility } from '../../../utils/ReportUtility'
-import QualityIssueModal from '../quality/QualityIssueModal'
 import QualityIssuesView from '../quality/QualityIssuesView'
 import ReportsReviewView from './ReportsReviewView'
 import ReportsSubmitView from './ReportsSubmitView'
-
-const _now = new Date()
-const currentMonthStartIso = new Date(_now.getFullYear(), _now.getMonth(), 1).toISOString().slice(0, 10)
-const currentMonthEndIso = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).toISOString().slice(0, 10)
-/* Loss Reports defaults to the full calendar year — incidents are sparse
- * and a month-only window almost always renders an empty list, forcing the
- * user to widen the range manually on every visit. */
-const currentYearStartIso = new Date(_now.getFullYear(), 0, 1).toISOString().slice(0, 10)
-const currentYearEndIso = new Date(_now.getFullYear(), 11, 31).toISOString().slice(0, 10)
-
-const REPORTS_START_DATE = new Date('2025-07-20')
-
-const labelForOffset = (weeksAgo) => {
-    if (weeksAgo === -1) return 'Next Week'
-    if (weeksAgo === 0) return 'This Week'
-    if (weeksAgo === 1) return 'Last Week'
-    if (weeksAgo < 0) return `${Math.abs(weeksAgo)} weeks ahead`
-    return `${weeksAgo} weeks ago`
-}
-
-const formatRange = (weekIso) => {
-    if (!weekIso) return ''
-    const { monday, saturday } = ReportUtility.getWeekDatesFromIso(weekIso)
-    if (!monday || !saturday) return ''
-    const left = monday.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
-    const right = saturday.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
-    return `${left} – ${right}`
-}
-
-const addDays = (date, days) => {
-    const out = new Date(date)
-    out.setDate(out.getDate() + days)
-    return out
-}
-
-const isoOf = (date) => date.toISOString().slice(0, 10)
-
-const weekIsoOffset = (baseIso, weeksOffset) => {
-    if (!baseIso) return ''
-    const base = new Date(baseIso)
-    if (Number.isNaN(base.getTime())) return ''
-    return isoOf(addDays(base, weeksOffset * 7))
-}
-
-/**
- * Two-column split layout for the My Reports / Review tabs. The rail
- * collapses with an animated width interpolation when `data-collapsed="true"`
- * is set on the parent (lg+ only). Below lg the rail stacks beneath the main
- * column. Defined here as constants so the four render sites stay in sync.
- */
-const RV_SPLIT_PARENT = 'group flex flex-col items-stretch gap-4 lg:flex-row lg:items-start'
-const RV_SPLIT_LEFT = 'flex flex-col gap-3 min-w-0 flex-1'
-const RV_SPLIT_RAIL_SLOT =
-    'min-w-0 overflow-hidden lg:w-[320px] lg:opacity-100 lg:translate-x-0 lg:[transform-origin:right_top] lg:[transition:width_900ms_cubic-bezier(0.65,0,0.35,1),margin-left_900ms_cubic-bezier(0.65,0,0.35,1),opacity_650ms_cubic-bezier(0.4,0,0.2,1),transform_900ms_cubic-bezier(0.65,0,0.35,1)] lg:[will-change:width,opacity,transform] group-data-[collapsed=true]:lg:w-0 group-data-[collapsed=true]:lg:-ml-4 group-data-[collapsed=true]:lg:opacity-0 group-data-[collapsed=true]:lg:translate-x-7'
-const RV_RAIL_FIXED = 'w-full lg:w-[320px]'
 
 /**
  * Top-level reports hub. Presents a week-timeline layout for "My Reports",
@@ -150,54 +79,23 @@ function ReportsView() {
         user
     })
 
+    /* ── Tab + form/review nav state ───────────────────────────── */
     const [showForm, setShowForm] = useState(null)
     const [showReview, setShowReview] = useState(null)
     const [reviewData, setReviewData] = useState(null)
     const [tab, setTab] = useState(null)
     const [activeWeekIso, setActiveWeekIso] = useState(null)
-    const [railCollapsed, setRailCollapsed] = useState(false)
-    const railRef = useRef(null)
-    const [showLostLoadModal, setShowLostLoadModal] = useState(false)
-    const [showQCStrengthModal, setShowQCStrengthModal] = useState(false)
-    const [showLabReportModal, setShowLabReportModal] = useState(false)
-    const [showQualityIssueModal, setShowQualityIssueModal] = useState(false)
-    const [editingLostLoad, setEditingLostLoad] = useState(null)
-    const [editingQcReport, setEditingQcReport] = useState(null)
-    const [editingLabReport, setEditingLabReport] = useState(null)
-    const [qcReports, setQcReports] = useState([])
-    const [isLoadingQC, setIsLoadingQC] = useState(false)
-    const [qcLoaded, setQcLoaded] = useState(false)
-    const [missingReports, setMissingReports] = useState([])
-    const [isLoadingMissing, setIsLoadingMissing] = useState(false)
-    const [missingLoaded, setMissingLoaded] = useState(false)
-    const [selectedQCReport, setSelectedQCReport] = useState(null)
-    const [selectedLabReport, setSelectedLabReport] = useState(null)
-    const [currentUserWeight, setCurrentUserWeight] = useState(0)
-    const [userWeights, setUserWeights] = useState({})
-    const [selectedLostLoad, setSelectedLostLoad] = useState(null)
     const [submitInitialData, setSubmitInitialData] = useState(null)
-    const [filterReportType, setFilterReportType] = useState('')
-    const [filterPlant, setFilterPlant] = useState('')
     const [managerEditUser, setManagerEditUser] = useState(null)
-    const [isPlantModalOpen, setIsPlantModalOpen] = useState(false)
+    /* `searchInput` lives here (not in `useReportsFilters`) because the week
+     * timeline hook also depends on it — keeping the source state in the
+     * orchestrator avoids a circular dependency between the two hooks. */
     const [searchInput, setSearchInput] = useState('')
-    const [qcTypeFilter, setQcTypeFilter] = useState('all')
-    const [qcStatusFilter, setQcStatusFilter] = useState('all')
-    const [qcSort, setQcSort] = useState('newest')
-    const [qcDateFrom, setQcDateFrom] = useState(currentMonthStartIso)
-    const [qcDateTo, setQcDateTo] = useState(currentMonthEndIso)
-    const [reviewStatusFilter, setReviewStatusFilter] = useState('all')
-    const [reviewSort, setReviewSort] = useState('newest')
-    const [reviewDateFrom, setReviewDateFrom] = useState(currentMonthStartIso)
-    const [reviewDateTo, setReviewDateTo] = useState(currentMonthEndIso)
-    const [lossSort, setLossSort] = useState('newest')
-    const [lossDateFrom, setLossDateFrom] = useState(currentYearStartIso)
-    const [lossDateTo, setLossDateTo] = useState(currentYearEndIso)
-    const [lossDumpLocation, setLossDumpLocation] = useState('all')
-    const [lossReason, setLossReason] = useState('all')
-
     const searchLower = searchInput.trim().toLowerCase()
 
+    const modals = useReportsModals()
+
+    /* ── Plant scoping ─────────────────────────────────────────── */
     const myPlantCodesSet = useMemo(() => {
         if (!userPlantCode && !userAdditionalPlants.length) return null
         const codes = new Set()
@@ -206,326 +104,7 @@ function ReportsView() {
         return codes
     }, [userPlantCode, userAdditionalPlants])
 
-    const districtPlantSet = useMemo(() => {
-        if (!filterPlant?.startsWith('DISTRICT:')) return null
-        const districtName = filterPlant.slice(9)
-        const codes = new Set()
-        regionPlantsWithDistricts.forEach((p) => {
-            const dists = p.districts || []
-            if (dists.some((d) => (typeof d === 'string' ? d : d?.name) === districtName)) {
-                codes.add(p.plantCode || p.plant_code)
-            }
-        })
-        return codes
-    }, [filterPlant, regionPlantsWithDistricts])
-
-    /* ─────────────────────────────────────────────────────────────
-       Week timeline — derive this/prev/prev2/next week ISOs, plus
-       per-week status hints for the ribbon and day-countdown math
-       for the deadline fuse.
-       ───────────────────────────────────────────────────────────── */
-    const thisWeekIso = useMemo(() => ReportUtility.getLastNWeekIsos(1, new Date())[0] || '', [])
-    const prevWeekIso = useMemo(() => weekIsoOffset(thisWeekIso, -1), [thisWeekIso])
-    const prev2WeekIso = useMemo(() => weekIsoOffset(thisWeekIso, -2), [thisWeekIso])
-    const nextWeekIso = useMemo(() => weekIsoOffset(thisWeekIso, 1), [thisWeekIso])
-
-    const cutoffForWeek = useCallback((weekIso) => ReportUtility.getLateCutoff(weekIso), [])
-
-    const daysLeftThisWeek = useMemo(() => {
-        const cutoff = cutoffForWeek(thisWeekIso)
-        if (!cutoff) return 0
-        const diff = cutoff.getTime() - Date.now()
-        if (diff <= 0) return 0
-        return Math.min(8, Math.max(0, Math.ceil(diff / 86400000)))
-    }, [cutoffForWeek, thisWeekIso])
-
-    const overdueSourceItems = useMemo(() => {
-        const now = Date.now()
-        const pool = []
-        ;[prevWeekIso, prev2WeekIso].forEach((iso) => {
-            const cutoff = ReportUtility.getLateCutoff(iso)
-            if (!cutoff || cutoff.getTime() >= now) return
-            const items = myReportsByWeek?.[iso]
-            if (Array.isArray(items)) {
-                items.forEach((it) => {
-                    if (!it.completed) pool.push({ ...it, weekIso: iso })
-                })
-            }
-        })
-        return pool
-    }, [myReportsByWeek, prevWeekIso, prev2WeekIso])
-
-    const weekRibbonData = useMemo(() => {
-        const now = Date.now()
-        const countUnfinished = (iso) => (myReportsByWeek?.[iso] || []).filter((i) => !i.completed).length
-        const weeksSinceStart = Math.max(4, ReportUtility.getTotalWeeksSince(REPORTS_START_DATE))
-        const pastIsos = ReportUtility.getLastNWeekIsos(weeksSinceStart, new Date())
-        const rows = [
-            {
-                hint: 'Opens Mon',
-                iso: nextWeekIso,
-                label: 'Next Week',
-                range: formatRange(nextWeekIso),
-                status: 'future'
-            }
-        ]
-        pastIsos.forEach((iso, idx) => {
-            const isThis = idx === 0
-            if (isThis) {
-                rows.push({
-                    hint: daysLeftThisWeek === 0 ? 'Closes today' : `${daysLeftThisWeek}d left`,
-                    iso,
-                    label: 'This Week',
-                    range: formatRange(iso),
-                    status: 'open'
-                })
-                return
-            }
-            const cutoff = ReportUtility.getLateCutoff(iso)
-            const cutoffPassed = !cutoff || cutoff.getTime() < now
-            const missing = countUnfinished(iso)
-            const isLate = cutoffPassed && missing > 0
-            rows.push({
-                hint: isLate ? `${missing} overdue` : !cutoffPassed ? 'Grace period' : 'Closed',
-                iso,
-                label: labelForOffset(idx),
-                range: formatRange(iso),
-                status: isLate ? 'late' : 'closed'
-            })
-        })
-        return rows
-    }, [daysLeftThisWeek, myReportsByWeek, nextWeekIso])
-
-    const selectedWeekIso = activeWeekIso || thisWeekIso
-
-    const fuseForSelectedWeek = useMemo(() => {
-        const { monday } = ReportUtility.getWeekDatesFromIso(selectedWeekIso)
-        const cutoff = ReportUtility.getLateCutoff(selectedWeekIso)
-        if (!monday || !cutoff) {
-            return { caption: 'days left', daysLeft: 0, mode: 'current', todayIndex: -1 }
-        }
-        const now = Date.now()
-        if (now < monday.getTime()) {
-            const daysUntil = Math.max(0, Math.ceil((monday.getTime() - now) / 86400000))
-            return { caption: 'until opens', daysLeft: daysUntil, mode: 'future', todayIndex: -1 }
-        }
-        if (now > cutoff.getTime()) {
-            return { caption: 'week closed', daysLeft: 0, mode: 'past', todayIndex: -1 }
-        }
-        const elapsed = Math.max(0, Math.min(6, Math.floor((now - monday.getTime()) / 86400000)))
-        const daysLeft = Math.min(8, Math.max(0, Math.ceil((cutoff.getTime() - now) / 86400000)))
-        return { caption: `day${daysLeft === 1 ? '' : 's'} left`, daysLeft, mode: 'current', todayIndex: elapsed }
-    }, [selectedWeekIso])
-
-    /* If the selected week falls outside a tab's date-range filter,
-       expand that filter to include it. Keeps reports visible when the
-       user scrubs the ribbon to a week outside the default month window. */
-    useEffect(() => {
-        if (!selectedWeekIso) return
-        const { monday, saturday } = ReportUtility.getWeekDatesFromIso(selectedWeekIso)
-        if (!monday || !saturday) return
-        const mondayIso = monday.toISOString().slice(0, 10)
-        const saturdayIso = saturday.toISOString().slice(0, 10)
-        const coversReview = tab === 'review'
-        const coversLoss = tab === 'lost_loads'
-        const coversQuality = tab === 'quality'
-        if (coversReview) {
-            if (reviewDateFrom && mondayIso < reviewDateFrom) setReviewDateFrom(mondayIso)
-            if (reviewDateTo && saturdayIso > reviewDateTo) setReviewDateTo(saturdayIso)
-        }
-        if (coversLoss) {
-            if (lossDateFrom && mondayIso < lossDateFrom) setLossDateFrom(mondayIso)
-            if (lossDateTo && saturdayIso > lossDateTo) setLossDateTo(saturdayIso)
-        }
-        if (coversQuality) {
-            if (qcDateFrom && mondayIso < qcDateFrom) setQcDateFrom(mondayIso)
-            if (qcDateTo && saturdayIso > qcDateTo) setQcDateTo(saturdayIso)
-        }
-    }, [selectedWeekIso, tab, reviewDateFrom, reviewDateTo, lossDateFrom, lossDateTo, qcDateFrom, qcDateTo])
-
-    const myItemsForSelectedWeek = useMemo(() => {
-        const items = myReportsByWeek?.[selectedWeekIso] || []
-        if (!searchLower) return items
-        return items.filter(
-            (item) => item.title?.toLowerCase().includes(searchLower) || item.name?.toLowerCase().includes(searchLower)
-        )
-    }, [myReportsByWeek, selectedWeekIso, searchLower])
-
-    const historyWeekIsos = useMemo(() => ReportUtility.getLastNWeekIsos(5, new Date()).slice(1), [])
-    const historyByReportName = useMemo(() => {
-        const out = {}
-        historyWeekIsos.forEach((iso) => {
-            const items = myReportsByWeek?.[iso] || []
-            items.forEach((item) => {
-                if (!out[item.name]) out[item.name] = {}
-                out[item.name][iso] = item.completed ? 'done' : 'miss'
-            })
-        })
-        return out
-    }, [historyWeekIsos, myReportsByWeek])
-
-    const getHistoryForName = useCallback(
-        (name) => historyWeekIsos.map((iso) => historyByReportName[name]?.[iso] || 'due').reverse(),
-        [historyByReportName, historyWeekIsos]
-    )
-
-    const recentSubmissions = useMemo(() => {
-        const flattened = Object.values(myReportsByWeek || {}).flat()
-        const submitted = flattened
-            .filter((i) => i.completed && (i.report?.submitted_at || i.submittedAt))
-            .map((i) => ({
-                id: i.id,
-                kind:
-                    i.name === 'qc_strength' ? 'qc_strength' : i.name === 'third_party_lab' ? 'third_party_lab' : null,
-                title: i.title || i.name,
-                when: ReportUtility.formatDate(i.report?.submitted_at || i.submittedAt)
-            }))
-            .sort((a, b) => (a.when < b.when ? 1 : -1))
-        return submitted.slice(0, 3)
-    }, [myReportsByWeek])
-
-    /* ─────────────────────────────────────────────────────────────
-       Review & Missing — merged data for the reviewers' tab.
-       ───────────────────────────────────────────────────────────── */
-    const visibleReviewReports = useMemo(
-        () =>
-            reviewableReports.filter((report) => {
-                const reporterPlant = reporterPlantMap[report.userId] || ''
-                const matchPlant =
-                    !filterPlant ||
-                    filterPlant === 'All' ||
-                    (filterPlant === 'MY_PLANTS'
-                        ? myPlantCodesSet?.has(reporterPlant)
-                        : filterPlant.startsWith('DISTRICT:')
-                          ? districtPlantSet?.has(reporterPlant)
-                          : reporterPlant === filterPlant)
-                const matchRegion =
-                    !preferences.selectedRegion?.code ||
-                    !regionPlantCodes ||
-                    regionPlantCodes.has(reporterPlant) ||
-                    report.name === 'general_manager'
-                const matchSearch =
-                    !searchLower ||
-                    report.title?.toLowerCase().includes(searchLower) ||
-                    report.name?.toLowerCase().includes(searchLower) ||
-                    getUserName(report.userId)?.toLowerCase().includes(searchLower)
-                return (
-                    (!filterReportType || report.name === filterReportType) && matchPlant && matchRegion && matchSearch
-                )
-            }),
-        [
-            reviewableReports,
-            filterReportType,
-            filterPlant,
-            preferences.selectedRegion?.code,
-            regionPlantCodes,
-            reporterPlantMap,
-            searchLower,
-            getUserName,
-            myPlantCodesSet,
-            districtPlantSet
-        ]
-    )
-
-    const submittedReviewKeys = useMemo(() => {
-        const keys = new Set()
-        reviewableReports.forEach((r) => {
-            if (!r.userId || !r.name || !r.week) return
-            keys.add(`${r.userId}::${r.name}::${ReportUtility.normalizeWeekStr(r.week)}`)
-        })
-        return keys
-    }, [reviewableReports])
-
-    const visibleMissingReports = useMemo(() => {
-        const selectedNormalized = ReportUtility.normalizeWeekStr(selectedWeekIso)
-        return missingReports.filter((item) => {
-            const plantCode = item.plant_code || ''
-            if (ReportUtility.normalizeWeekStr(item.week) !== selectedNormalized) return false
-            const key = `${item.userId}::${item.report_name}::${ReportUtility.normalizeWeekStr(item.week)}`
-            if (submittedReviewKeys.has(key)) return false
-            if (preferences.selectedRegion?.code && regionPlantCodes && !regionPlantCodes.has(plantCode)) return false
-            if (filterReportType && item.report_name !== filterReportType) return false
-            if (filterPlant && filterPlant !== 'All') {
-                if (filterPlant === 'MY_PLANTS') {
-                    if (!myPlantCodesSet?.has(plantCode)) return false
-                } else if (filterPlant.startsWith('DISTRICT:')) {
-                    if (!districtPlantSet?.has(plantCode)) return false
-                } else if (plantCode !== filterPlant) {
-                    return false
-                }
-            }
-            if (searchLower) {
-                const reporterFull = `${item.first_name || ''} ${item.last_name || ''}`.trim().toLowerCase()
-                const matchSearch =
-                    plantCode.toLowerCase().includes(searchLower) ||
-                    (item.report_name || '').toLowerCase().includes(searchLower) ||
-                    reporterFull.includes(searchLower)
-                if (!matchSearch) return false
-            }
-            return true
-        })
-    }, [
-        missingReports,
-        selectedWeekIso,
-        submittedReviewKeys,
-        preferences.selectedRegion?.code,
-        regionPlantCodes,
-        filterReportType,
-        filterPlant,
-        myPlantCodesSet,
-        districtPlantSet,
-        searchLower
-    ])
-
-    const submittedTsOf = (item) => item.completedDate || item.submitted_at || item.submittedAt || null
-
-    const filteredReviewReports = useMemo(() => {
-        const selectedNormalized = ReportUtility.normalizeWeekStr(selectedWeekIso)
-        let rows = visibleReviewReports.filter((r) => ReportUtility.normalizeWeekStr(r.week) === selectedNormalized)
-        if (reviewStatusFilter === 'pending') rows = rows.filter((r) => !reviewedByCurrentUser.has(r.id))
-        else if (reviewStatusFilter === 'reviewed') rows = rows.filter((r) => reviewedByCurrentUser.has(r.id))
-        if (reviewDateFrom) {
-            const from = new Date(reviewDateFrom + 'T00:00:00')
-            rows = rows.filter((r) => {
-                const ts = submittedTsOf(r)
-                return !ts || new Date(ts) >= from
-            })
-        }
-        if (reviewDateTo) {
-            const to = new Date(reviewDateTo + 'T23:59:59')
-            rows = rows.filter((r) => {
-                const ts = submittedTsOf(r)
-                return !ts || new Date(ts) <= to
-            })
-        }
-        return [...rows].sort((a, b) => {
-            const aTs = new Date(submittedTsOf(a) || 0).getTime()
-            const bTs = new Date(submittedTsOf(b) || 0).getTime()
-            return reviewSort === 'oldest' ? aTs - bTs : bTs - aTs
-        })
-    }, [
-        visibleReviewReports,
-        reviewStatusFilter,
-        reviewDateFrom,
-        reviewDateTo,
-        reviewSort,
-        reviewedByCurrentUser,
-        selectedWeekIso
-    ])
-
-    const reviewHasActiveFilters =
-        reviewStatusFilter !== 'all' ||
-        reviewSort !== 'newest' ||
-        reviewDateFrom !== currentMonthStartIso ||
-        reviewDateTo !== currentMonthEndIso ||
-        !!filterReportType
-    const clearReviewFilters = () => {
-        setReviewStatusFilter('all')
-        setReviewSort('newest')
-        setReviewDateFrom(currentMonthStartIso)
-        setReviewDateTo(currentMonthEndIso)
-        setFilterReportType('')
-    }
+    /* ── Review permission scoping ─────────────────────────────── */
     const reviewTypeOptions = useMemo(
         () =>
             reportTypes.filter(
@@ -535,166 +114,13 @@ function ReportsView() {
             ),
         [hasAssigned, hasReviewPermission, regionType]
     )
-
-    /* ─────────────────────────────────────────────────────────────
-       Loss / QC tab data & pagination (unchanged from prior version)
-       ───────────────────────────────────────────────────────────── */
-    const visibleLostLoads = useMemo(() => {
-        const filtered = lostLoadReports.filter((r) => {
-            const reportPlant = r.data?.plant || ''
-            const matchPlant =
-                !filterPlant ||
-                filterPlant === 'All' ||
-                (filterPlant === 'MY_PLANTS'
-                    ? myPlantCodesSet?.has(reportPlant)
-                    : filterPlant.startsWith('DISTRICT:')
-                      ? districtPlantSet?.has(reportPlant)
-                      : reportPlant === filterPlant)
-            const matchSearch =
-                !searchLower ||
-                reportPlant.toLowerCase().includes(searchLower) ||
-                r.data?.truck_number?.toLowerCase().includes(searchLower) ||
-                r.data?.reason?.toLowerCase().includes(searchLower) ||
-                getUserName(r.userId)?.toLowerCase().includes(searchLower)
-            if (!matchPlant || !matchSearch) return false
-            if (lossDumpLocation && lossDumpLocation !== 'all') {
-                if ((r.data?.dump_location || '') !== lossDumpLocation) return false
-            }
-            if (lossReason && lossReason !== 'all') {
-                const reasonText = r.data?.reason || ''
-                const category = reasonText.split(':')[0]?.trim()
-                if (category !== lossReason) return false
-            }
-            if (lossDateFrom) {
-                const from = new Date(lossDateFrom + 'T00:00:00')
-                const ts = r.submitted_at
-                if (!ts || new Date(ts) < from) return false
-            }
-            if (lossDateTo) {
-                const to = new Date(lossDateTo + 'T23:59:59')
-                const ts = r.submitted_at
-                if (!ts || new Date(ts) > to) return false
-            }
-            return true
-        })
-        return [...filtered].sort((a, b) => {
-            const aTs = new Date(a.submitted_at || 0).getTime()
-            const bTs = new Date(b.submitted_at || 0).getTime()
-            return lossSort === 'oldest' ? aTs - bTs : bTs - aTs
-        })
-    }, [
-        lostLoadReports,
-        filterPlant,
-        myPlantCodesSet,
-        districtPlantSet,
-        searchLower,
-        getUserName,
-        lossDateFrom,
-        lossDateTo,
-        lossSort,
-        lossDumpLocation,
-        lossReason
-    ])
-    const myQualityReports = useMemo(
-        () =>
-            qcReports
-                .filter((r) => r.userId === user?.id)
-                .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
-                .slice(0, 20),
-        [qcReports, user?.id]
-    )
-    const myLostLoadReports = useMemo(
-        () =>
-            (Array.isArray(lostLoadReports) ? lostLoadReports : [])
-                .filter((r) => r.userId === user?.id)
-                .map((r) => ({ ...r, name: 'lost_load' }))
-                .sort((a, b) => new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0))
-                .slice(0, 20),
-        [lostLoadReports, user?.id]
-    )
-    const handleEditMyOneOff = useCallback((report) => {
-        if (!report) return
-        if (report.name === 'qc_strength') setEditingQcReport(report)
-        else if (report.name === 'third_party_lab') setEditingLabReport(report)
-        else if (report.name === 'lost_load') setEditingLostLoad(report)
-    }, [])
-    const lossHasActiveFilters =
-        lossSort !== 'newest' ||
-        lossDateFrom !== currentMonthStartIso ||
-        lossDateTo !== currentMonthEndIso ||
-        lossDumpLocation !== 'all' ||
-        lossReason !== 'all'
-    const clearLossFilters = () => {
-        setLossSort('newest')
-        setLossDateFrom(currentMonthStartIso)
-        setLossDateTo(currentMonthEndIso)
-        setLossDumpLocation('all')
-        setLossReason('all')
-    }
-    const lostLoadsPagination = usePagination({
-        initialPageSize: 25,
-        items: visibleLostLoads,
-        resetDependencies: [filterPlant, searchInput, lossSort, lossDateFrom, lossDateTo, lossDumpLocation, lossReason]
-    })
-    const regionalPlants = useMemo(() => {
-        const filtered = plants.filter(
-            (p) => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code)
-        )
-        if (!regionPlantsWithDistricts.length) return filtered
-        const districtMap = {}
-        regionPlantsWithDistricts.forEach((rp) => {
-            const code = rp.plantCode || rp.plant_code
-            if (code && rp.districts?.length) districtMap[code] = rp.districts
-        })
-        return filtered.map((p) => (districtMap[p.plant_code] ? { ...p, districts: districtMap[p.plant_code] } : p))
-    }, [plants, preferences.selectedRegion?.code, regionPlantCodes, regionPlantsWithDistricts])
-    const selectedPlantObj = regionalPlants.find((p) => p.plant_code === filterPlant)
-    const plantDisplayText = (() => {
-        if (!filterPlant || filterPlant === 'All') return 'All Plants'
-        if (filterPlant === 'MY_PLANTS') return 'My Plants'
-        if (filterPlant.startsWith('DISTRICT:')) return filterPlant.slice(9)
-        if (selectedPlantObj) return `(${selectedPlantObj.plant_code}) ${selectedPlantObj.plant_name}`
-        return 'All Plants'
-    })()
-    const isMyReportsLoading = isLoadingUser || isLoadingMy || isLoadingPermissions
-    const isReviewLoading = isLoadingUser || isLoadingPermissions || loadingReporterPlants || isLoadingReview
-
-    /* ─────────────────────────────────────────────────────────────
-       QC / Missing loaders (unchanged from prior version)
-       ───────────────────────────────────────────────────────────── */
-    const loadQCReports = useCallback(async () => {
-        if (!user || qcLoaded) return
-        setIsLoadingQC(true)
-        try {
-            const { data, error } = await Database.from('reports')
-                .select('id,report_name,user_id,submitted_at,data,completed,week,been_reviewed')
-                .in('report_name', ['qc_strength', 'third_party_lab'])
-                .eq('completed', true)
-                .order('submitted_at', { ascending: false })
-            if (!error && Array.isArray(data)) {
-                const mapped = data.map((r) => ({
-                    data: r.data,
-                    id: r.id,
-                    name: r.report_name,
-                    reviewed: r.been_reviewed,
-                    submittedAt: r.submitted_at,
-                    userId: r.user_id,
-                    week: r.week
-                }))
-                setQcReports(mapped)
-                const uniqueUserIds = [...new Set(mapped.map((r) => r.userId).filter(Boolean))]
-                if (uniqueUserIds.length > 0) fetchProfilesFor(uniqueUserIds)
-            }
-        } catch (err) {
-            console.error('Failed to load QC reports:', err)
-        }
-        setIsLoadingQC(false)
-        setQcLoaded(true)
-        UserService.getUserWeight(user.id)
-            .then(setCurrentUserWeight)
-            .catch(() => {})
-    }, [user, qcLoaded, fetchProfilesFor])
-
+    const allowedReviewReportNames = useMemo(() => {
+        if (isLoadingPermissions) return []
+        if (regionType === 'office') return hasReviewPermission['general_manager'] ? ['general_manager'] : []
+        return reportTypes
+            .filter((rt) => hasReviewPermission[rt.name] && rt.name !== 'general_manager')
+            .map((rt) => rt.name)
+    }, [hasReviewPermission, regionType, isLoadingPermissions])
     const previousTwoWeekIsos = useMemo(() => {
         const now = new Date()
         const candidates = ReportUtility.getLastNWeekIsos(4, now)
@@ -709,49 +135,118 @@ function ReportsView() {
         return completed
     }, [])
 
-    const allowedReviewReportNames = useMemo(() => {
-        if (isLoadingPermissions) return []
-        if (regionType === 'office') return hasReviewPermission['general_manager'] ? ['general_manager'] : []
-        return reportTypes
-            .filter((rt) => hasReviewPermission[rt.name] && rt.name !== 'general_manager')
-            .map((rt) => rt.name)
-    }, [hasReviewPermission, regionType, isLoadingPermissions])
+    /* ── QC + Missing loaders (hooks) ──────────────────────────── */
+    const qc = useReportsQc({ fetchProfilesFor, user })
+    const missing = useReportsMissing({
+        allowedReviewReportNames,
+        isLoadingPermissions,
+        previousTwoWeekIsos,
+        user
+    })
 
-    const loadMissingReports = useCallback(async () => {
-        if (!user || isLoadingPermissions || missingLoaded) return
-        if (allowedReviewReportNames.length === 0) {
-            setMissingReports([])
-            setMissingLoaded(true)
-            return
-        }
-        setIsLoadingMissing(true)
-        try {
-            const overdue = await ReportService.fetchOverdueAssignments(new Date(), {
-                allowedReview: allowedReviewReportNames
-            })
-            const weekSet = new Set(previousTwoWeekIsos)
-            setMissingReports(
-                (Array.isArray(overdue) ? overdue : []).filter((item) => item.week && weekSet.has(item.week))
-            )
-        } catch (err) {
-            console.error('Failed to load missing reports:', err)
-            setMissingReports([])
-        }
-        setIsLoadingMissing(false)
-        setMissingLoaded(true)
-    }, [user, isLoadingPermissions, missingLoaded, allowedReviewReportNames, previousTwoWeekIsos])
+    /* ── Week timeline + my-reports memos (hook) ───────────────── */
+    /* Declared before `filters` because filters needs the resolved
+     * `selectedWeekIso` from the timeline, and the timeline only depends on
+     * `searchLower` which the orchestrator owns. */
+    const timeline = useReportsWeekTimeline({
+        activeWeekIso,
+        myReportsByWeek,
+        searchLower
+    })
 
+    /* ── Filters + visible memos (hook) ────────────────────────── */
+    const filters = useReportsFilters({
+        getUserName,
+        lostLoadReports,
+        missingReports: missing.missingReports,
+        myPlantCodesSet,
+        qcReports: qc.qcReports,
+        regionPlantCodes,
+        regionPlantsWithDistricts,
+        reporterPlantMap,
+        reviewableReports,
+        reviewedByCurrentUser,
+        searchLower,
+        selectedRegionCode: preferences.selectedRegion?.code,
+        selectedWeekIso: timeline.selectedWeekIso,
+        user
+    })
+
+    /* If the selected week falls outside a tab's date-range filter, expand
+     * that filter to include it. Keeps reports visible when the user scrubs
+     * the ribbon to a week outside the default month window. */
+    useEffect(() => {
+        const iso = timeline.selectedWeekIso
+        if (!iso) return
+        const { monday, saturday } = ReportUtility.getWeekDatesFromIso(iso)
+        if (!monday || !saturday) return
+        const mondayIso = monday.toISOString().slice(0, 10)
+        const saturdayIso = saturday.toISOString().slice(0, 10)
+        if (tab === 'review') {
+            if (filters.reviewDateFrom && mondayIso < filters.reviewDateFrom) filters.setReviewDateFrom(mondayIso)
+            if (filters.reviewDateTo && saturdayIso > filters.reviewDateTo) filters.setReviewDateTo(saturdayIso)
+        } else if (tab === 'lost_loads') {
+            if (filters.lossDateFrom && mondayIso < filters.lossDateFrom) filters.setLossDateFrom(mondayIso)
+            if (filters.lossDateTo && saturdayIso > filters.lossDateTo) filters.setLossDateTo(saturdayIso)
+        } else if (tab === 'quality') {
+            if (filters.qcDateFrom && mondayIso < filters.qcDateFrom) filters.setQcDateFrom(mondayIso)
+            if (filters.qcDateTo && saturdayIso > filters.qcDateTo) filters.setQcDateTo(saturdayIso)
+        }
+    }, [timeline.selectedWeekIso, tab, filters])
+
+    /* ── Plant rolldown ────────────────────────────────────────── */
+    const regionalPlants = useMemo(() => {
+        const filtered = plants.filter(
+            (p) => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code)
+        )
+        if (!regionPlantsWithDistricts.length) return filtered
+        const districtMap = {}
+        regionPlantsWithDistricts.forEach((rp) => {
+            const code = rp.plantCode || rp.plant_code
+            if (code && rp.districts?.length) districtMap[code] = rp.districts
+        })
+        return filtered.map((p) => (districtMap[p.plant_code] ? { ...p, districts: districtMap[p.plant_code] } : p))
+    }, [plants, preferences.selectedRegion?.code, regionPlantCodes, regionPlantsWithDistricts])
+
+    const selectedPlantObj = regionalPlants.find((p) => p.plant_code === filters.filterPlant)
+    const plantDisplayText = (() => {
+        if (!filters.filterPlant || filters.filterPlant === 'All') return 'All Plants'
+        if (filters.filterPlant === 'MY_PLANTS') return 'My Plants'
+        if (filters.filterPlant.startsWith('DISTRICT:')) return filters.filterPlant.slice(9)
+        if (selectedPlantObj) return `(${selectedPlantObj.plant_code}) ${selectedPlantObj.plant_name}`
+        return 'All Plants'
+    })()
+
+    /* ── Rail collapse on scroll ───────────────────────────────── */
+    const { railCollapsed, railRef } = useReportsRailCollapse(tab)
+
+    /* ── Pagination (Loss tab) ─────────────────────────────────── */
+    const lostLoadsPagination = usePagination({
+        initialPageSize: 25,
+        items: filters.visibleLostLoads,
+        resetDependencies: [
+            filters.filterPlant,
+            searchInput,
+            filters.lossSort,
+            filters.lossDateFrom,
+            filters.lossDateTo,
+            filters.lossDumpLocation,
+            filters.lossReason
+        ]
+    })
+
+    /* ── Tab loader fan-out ────────────────────────────────────── */
+    const loadMissingReports = missing.loadMissingReports
+    const loadQCReports = qc.loadQCReports
     useEffect(() => {
         if (tab === 'review') {
-            // Prioritize the currently visible week so the list renders fast,
-            // then stream the remaining 52-week history in via the prefetch
-            // effect below.
-            loadReviewReports(selectedWeekIso ? [selectedWeekIso] : null)
+            loadReviewReports(timeline.selectedWeekIso ? [timeline.selectedWeekIso] : null)
             loadMissingReports()
         }
         if (tab === 'lost_loads') loadLostLoadReports()
         if (tab === 'quality') loadQCReports()
-    }, [tab, selectedWeekIso, loadReviewReports, loadLostLoadReports, loadQCReports, loadMissingReports])
+    }, [tab, timeline.selectedWeekIso, loadReviewReports, loadLostLoadReports, loadQCReports, loadMissingReports])
+
     const reviewHistoryPrefetchedRef = useRef(false)
     useEffect(() => {
         if (tab !== 'review') return undefined
@@ -764,56 +259,20 @@ function ReportsView() {
         return () => clearTimeout(handle)
     }, [tab, isLoadingReview, prefetchRemainingReviewWeeks])
 
+    /* ── Initial tab selection (once permissions resolve) ──────── */
     const hasAnyAssigned = Object.values(hasAssigned || {}).some(Boolean)
-
-    // Collapse the right-side rail (fading the column out and letting the
-    // main list span full width) once the user has scrolled past the rail.
-    // Uses scrollHeight (natural content height) so the trigger point stays
-    // stable once collapsed, plus a hysteresis gap so scroll jitter near the
-    // boundary doesn't oscillate the state.
-    useEffect(() => {
-        if (typeof window === 'undefined') return undefined
-        const scrollContainer = document.querySelector('[data-content-scroll]') || window
-        const isWindow = scrollContainer === window
-        const getContainerTop = () => (isWindow ? 0 : scrollContainer.getBoundingClientRect().top)
-        const HYSTERESIS = 48
-        const update = () => {
-            const node = railRef.current
-            if (!node) {
-                setRailCollapsed(false)
-                return
-            }
-            const rect = node.getBoundingClientRect()
-            const naturalBottom = rect.top + node.scrollHeight
-            const threshold = getContainerTop()
-            setRailCollapsed((prev) => {
-                if (prev) return naturalBottom <= threshold + HYSTERESIS
-                return naturalBottom <= threshold + 8
-            })
-        }
-        update()
-        const target = isWindow ? window : scrollContainer
-        target.addEventListener('scroll', update, { passive: true })
-        window.addEventListener('resize', update)
-        const ro = new ResizeObserver(update)
-        if (railRef.current) ro.observe(railRef.current)
-        return () => {
-            target.removeEventListener('scroll', update)
-            window.removeEventListener('resize', update)
-            ro.disconnect()
-        }
-    }, [tab])
     const selectTab = useCallback(
         (nextTab) => {
             setTab(nextTab)
-            setActiveWeekIso(nextTab === 'review' ? prevWeekIso : thisWeekIso)
+            setActiveWeekIso(nextTab === 'review' ? timeline.prevWeekIso : timeline.thisWeekIso)
             if (typeof document !== 'undefined') {
-                const scrollers = document.querySelectorAll('[data-content-scroll]')
-                scrollers.forEach((el) => el.scrollTo({ behavior: 'smooth', top: 0 }))
+                document
+                    .querySelectorAll('[data-content-scroll]')
+                    .forEach((el) => el.scrollTo({ behavior: 'smooth', top: 0 }))
                 if (typeof window !== 'undefined') window.scrollTo({ behavior: 'smooth', top: 0 })
             }
         },
-        [prevWeekIso, thisWeekIso]
+        [timeline.prevWeekIso, timeline.thisWeekIso]
     )
     useEffect(() => {
         if (tab !== null || isLoadingPermissions) return
@@ -832,184 +291,29 @@ function ReportsView() {
         selectTab
     ])
 
-    const fetchWeightForUser = useCallback(
-        async (userId) => {
-            if (userWeights[userId] !== undefined) return userWeights[userId]
-            const weight = await UserService.getUserWeight(userId).catch(() => 0)
-            setUserWeights((prev) => ({ ...prev, [userId]: weight }))
-            return weight
-        },
-        [userWeights]
-    )
-    const handleDeleteQCReport = useCallback(
-        async (report) => {
-            const submitterWeight = await fetchWeightForUser(report.userId)
-            if (currentUserWeight < submitterWeight) return
-            if (!window.confirm('Delete this QC Strength Report?')) return
-            await Database.from('reports').delete().eq('id', report.id)
-            setQcReports((prev) => prev.filter((r) => r.id !== report.id))
-        },
-        [currentUserWeight, fetchWeightForUser]
-    )
-
-    /* ─────────────────────────────────────────────────────────────
-       Navigation handlers (unchanged)
-       ───────────────────────────────────────────────────────────── */
-    const handleSubmitReport = async (formData, completed = true) => {
-        const result = await submitReport({ completed, formData, showForm })
-        if (result.success) setShowForm(null)
-    }
-    const handleManagerEditSubmit = async (formData) => {
-        const result = await submitManagerEdit({ formData, managerEditUser, showForm })
-        if (result.success) {
-            setShowForm(null)
-            setManagerEditUser(null)
-        }
-    }
-    const handleReview = async (report) => {
-        if (report.userId !== user?.id) {
-            const success = await ReportService.markReviewed(report.id, user.id)
-            if (success) markReportReviewed(report.id)
-        }
-        setReviewData(report)
-        setShowReview(reportTypes.find((rt) => rt.name === report.name))
-    }
-    const handleManagerEdit = (reportType, reportData) => {
-        setShowReview(null)
-        setReviewData(null)
-        setShowForm({ ...reportType, name: reportType.name, weekIso: reportData.week || reportData.data?.week })
-        setSubmitInitialData({ ...reportData, data: reportData.data })
-        setManagerEditUser(reportData.userId)
-    }
-    const handleShowForm = useCallback(
-        async (item) => {
-            setSubmitInitialData(null)
-            if (user && item?.name && item.weekIso) {
-                const existingData = await fetchReportForEdit({ item, userId: user.id })
-                if (existingData) setSubmitInitialData(existingData)
-            }
-            setShowForm(item)
-        },
-        [fetchReportForEdit, user]
-    )
-    const handleBack = () => {
-        setShowForm(null)
-        setManagerEditUser(null)
-    }
-    const handleReviewBack = () => {
-        setShowReview(null)
-        setReviewData(null)
-    }
-    const handleFormSubmit = (form, submitType) => {
-        managerEditUser ? handleManagerEditSubmit(form) : handleSubmitReport(form, submitType === 'submit')
-    }
-    const handleTrackAction = useCallback(
-        (item) => {
-            handleShowForm({ ...item, weekIso: item.weekIso || selectedWeekIso })
-        },
-        [handleShowForm, selectedWeekIso]
-    )
-
-    const handleSubmitOldestOverdue = useCallback(() => {
-        const oldest = overdueSourceItems[0]
-        if (!oldest) return
-        handleShowForm({ ...oldest, weekIso: oldest.weekIso })
-    }, [handleShowForm, overdueSourceItems])
-
-    const handleNudge = useCallback(
-        (item) => {
-            const name = item?.submitter || (item?.user_id ? getUserName?.(item.user_id) : 'the submitter')
-            // Nudge is currently a client-side acknowledgement until a notification hook is wired.
-            window.alert(`Nudged ${name} about: ${item?.reportTitle || item?.title || item?.report_name}`)
-        },
-        [getUserName]
-    )
-
-    /* ─────────────────────────────────────────────────────────────
-       Branching: form / review / main layout
-       ───────────────────────────────────────────────────────────── */
-    const visibleQcReports = useMemo(() => {
-        let result = qcReports
-        if (qcTypeFilter !== 'all') result = result.filter((r) => r.name === qcTypeFilter)
-        if (qcStatusFilter === 'pending') result = result.filter((r) => !r.reviewed)
-        else if (qcStatusFilter === 'reviewed') result = result.filter((r) => r.reviewed)
-        if (qcDateFrom) {
-            const from = new Date(qcDateFrom + 'T00:00:00')
-            result = result.filter((r) => r.submittedAt && new Date(r.submittedAt) >= from)
-        }
-        if (qcDateTo) {
-            const to = new Date(qcDateTo + 'T23:59:59')
-            result = result.filter((r) => r.submittedAt && new Date(r.submittedAt) <= to)
-        }
-        if (filterPlant && filterPlant !== 'All') {
-            result = result.filter((r) => {
-                const plant = r.data?.plant || ''
-                if (filterPlant === 'MY_PLANTS') return myPlantCodesSet?.has(plant)
-                if (filterPlant.startsWith('DISTRICT:')) return districtPlantSet?.has(plant)
-                return plant === filterPlant
-            })
-        }
-        if (searchLower) {
-            result = result.filter((r) => {
-                const d = r.data || {}
-                const title = d.contractor || d.project || d.lab_company_name || ''
-                const reporter = getUserName(r.userId) || ''
-                return (
-                    title.toLowerCase().includes(searchLower) ||
-                    reporter.toLowerCase().includes(searchLower) ||
-                    (d.plant || '').toLowerCase().includes(searchLower) ||
-                    (d.customer || '').toLowerCase().includes(searchLower)
-                )
-            })
-        }
-        return [...result].sort((a, b) => {
-            if (qcSort === 'oldest') return new Date(a.submittedAt) - new Date(b.submittedAt)
-            if (qcSort === 'cast_asc') return (a.data?.date_molded || '') < (b.data?.date_molded || '') ? -1 : 1
-            if (qcSort === 'cast_desc') return (a.data?.date_molded || '') > (b.data?.date_molded || '') ? -1 : 1
-            return new Date(b.submittedAt) - new Date(a.submittedAt)
-        })
-    }, [
-        qcReports,
-        qcTypeFilter,
-        qcStatusFilter,
-        qcSort,
-        qcDateFrom,
-        qcDateTo,
-        districtPlantSet,
-        filterPlant,
+    /* ── Handlers ──────────────────────────────────────────────── */
+    const handlers = useReportsHandlers({
+        fetchReportForEdit,
         getUserName,
-        myPlantCodesSet,
-        searchLower
-    ])
-    const qcHasActiveFilters =
-        qcTypeFilter !== 'all' ||
-        qcStatusFilter !== 'all' ||
-        qcSort !== 'newest' ||
-        qcDateFrom !== currentMonthStartIso ||
-        qcDateTo !== currentMonthEndIso
-    const clearQcFilters = () => {
-        setQcTypeFilter('all')
-        setQcStatusFilter('all')
-        setQcSort('newest')
-        setQcDateFrom(currentMonthStartIso)
-        setQcDateTo(currentMonthEndIso)
-    }
+        managerEditUser,
+        markReportReviewed,
+        overdueSourceItems: timeline.overdueSourceItems,
+        selectedWeekIso: timeline.selectedWeekIso,
+        setEditingLabReport: modals.setEditingLabReport,
+        setEditingLostLoad: modals.setEditingLostLoad,
+        setEditingQcReport: modals.setEditingQcReport,
+        setManagerEditUser,
+        setReviewData,
+        setShowForm,
+        setShowReview,
+        setSubmitInitialData,
+        showForm,
+        submitManagerEdit,
+        submitReport,
+        user
+    })
 
-    /** Compact summary metrics shown above the My Reports week ribbon — mirrors
-     *  the PlanView region-totals strip so the two surfaces feel related.
-     *  Declared above any early returns so the hook order stays stable. */
-    const myReportsSummary = useMemo(() => {
-        const items = myReportsByWeek?.[selectedWeekIso] || []
-        const submitted = items.filter((i) => i.completed).length
-        const pending = items.length - submitted
-        return {
-            assigned: items.length,
-            overdueCarryover: overdueSourceItems.length,
-            pending,
-            submitted
-        }
-    }, [myReportsByWeek, selectedWeekIso, overdueSourceItems])
-
+    /* ── Pre-render branches ───────────────────────────────────── */
     if (showForm) {
         const report = reportTypeMap[showForm.name]
             ? { ...reportTypeMap[showForm.name], weekIso: showForm.weekIso }
@@ -1019,8 +323,8 @@ function ReportsView() {
                 <ReportsSubmitView
                     report={report}
                     initialData={submitInitialData}
-                    onBack={handleBack}
-                    onSubmit={handleFormSubmit}
+                    onBack={handlers.handleBack}
+                    onSubmit={handlers.handleFormSubmit}
                     user={user}
                     readOnly={showReview === null && reviewData !== null}
                     managerEditUser={managerEditUser}
@@ -1035,23 +339,29 @@ function ReportsView() {
                 <ReportsReviewView
                     report={reportTypeMap[showReview.name] || showReview}
                     initialData={reviewData}
-                    onBack={handleReviewBack}
+                    onBack={handlers.handleReviewBack}
                     user={user}
                     completedByUser={reviewData?.userId ? userProfiles[reviewData.userId] : undefined}
-                    onManagerEdit={handleManagerEdit}
+                    onManagerEdit={handlers.handleManagerEdit}
                 />
             </div>
         )
     }
 
+    /* ── Tab routing + skeletons ───────────────────────────────── */
+    const isMyReportsLoading = isLoadingUser || isLoadingMy || isLoadingPermissions
+    const isReviewLoading = isLoadingUser || isLoadingPermissions || loadingReporterPlants || isLoadingReview
     const isCurrentTabLoading =
         tab === 'all'
             ? isMyReportsLoading
             : tab === 'review'
               ? isReviewLoading
               : tab === 'quality'
-                ? isLoadingQC
+                ? qc.isLoadingQC
                 : isLoadingLostLoads
+    const showAllSkeleton = tab === 'all' && isMyReportsLoading
+    const showReviewSkeleton = tab === 'review' && (isReviewLoading || missing.isLoadingMissing) && !hasLoadedReviewOnce
+    const showBootSkeleton = tab === null
 
     const pillTabs = [
         ...(hasAnyAssigned ? [{ icon: 'fa-file-alt', key: 'all', label: 'My Reports' }] : []),
@@ -1064,119 +374,8 @@ function ReportsView() {
             ? [{ icon: 'fa-clipboard-list', key: 'quality_issues', label: 'Quality Issues' }]
             : [])
     ]
-
     const accent = preferences.accentColor || '#1e3a5f'
-    const selectedWeekRange = formatRange(selectedWeekIso)
-    const isSelectedWeekFuture = selectedWeekIso === nextWeekIso
-    const isSelectedWeekThis = selectedWeekIso === thisWeekIso
-
-    const ribbonSkeleton = (
-        <div className="flex gap-2.5 py-1">
-            {[1, 2, 3, 4].map((i) => (
-                <div
-                    key={i}
-                    className="flex-1 bg-bg-primary border border-border-light rounded-lg px-4 py-3.5 animate-pulse"
-                >
-                    <div className="h-2.5 w-16 rounded bg-slate-200 mb-2" />
-                    <div className="h-4 w-24 rounded bg-slate-200 mb-2.5" />
-                    <div className="h-2.5 w-20 rounded bg-slate-100" />
-                </div>
-            ))}
-        </div>
-    )
-    const fuseSkeleton = (
-        <div className="bg-bg-primary border border-border-light rounded-lg px-5 py-4 flex items-center gap-5 animate-pulse">
-            <div className="hidden sm:block">
-                <div className="h-2.5 w-14 rounded bg-slate-200 mb-2" />
-                <div className="h-4 w-28 rounded bg-slate-200" />
-            </div>
-            <div className="flex-1 h-2 bg-slate-100 rounded-full" />
-            <div className="hidden sm:block text-right">
-                <div className="h-7 w-10 rounded bg-slate-200 mb-1" />
-                <div className="h-2.5 w-16 rounded bg-slate-100" />
-            </div>
-        </div>
-    )
-    const trackGridSkeleton = (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map((i) => (
-                <div
-                    key={i}
-                    className="bg-bg-primary rounded-lg border border-border-light overflow-hidden animate-pulse"
-                >
-                    <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border-light">
-                        <div className="w-9 h-9 rounded-lg bg-slate-200" />
-                        <div className="flex-1">
-                            <div className="h-3.5 w-48 rounded bg-slate-200 mb-1.5" />
-                            <div className="h-2.5 w-32 rounded bg-slate-100" />
-                        </div>
-                        <div className="h-5 w-16 rounded-full bg-slate-200" />
-                    </div>
-                    <div className="flex gap-1 px-4 py-2.5">
-                        <div className="w-6 h-2 rounded bg-slate-200 mr-1" />
-                        {[1, 2, 3, 4, 5].map((j) => (
-                            <div key={j} className="flex-1 h-1.5 rounded bg-slate-100" />
-                        ))}
-                    </div>
-                    <div className="flex items-center justify-end px-4 pb-3.5 pt-1">
-                        <div className="h-7 w-20 rounded-lg bg-slate-200" />
-                    </div>
-                </div>
-            ))}
-        </div>
-    )
-    const listRowsSkeleton = (
-        <div className="bg-bg-primary rounded-lg border border-border-light overflow-hidden">
-            {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                    key={i}
-                    className="flex items-center gap-3 px-4 py-3 border-b border-border-light last:border-b-0 animate-pulse"
-                >
-                    <div className="w-9 h-9 rounded-lg bg-slate-200" />
-                    <div className="flex-1">
-                        <div className="h-3.5 w-56 rounded bg-slate-200 mb-1.5" />
-                        <div className="h-2.5 w-40 rounded bg-slate-100" />
-                    </div>
-                    <div className="h-5 w-16 rounded-full bg-slate-200" />
-                    <div className="h-7 w-16 rounded-md bg-slate-200 hidden sm:block" />
-                </div>
-            ))}
-        </div>
-    )
-    const railSkeleton = (
-        <aside className="bg-bg-primary border border-border-light rounded-lg p-4 animate-pulse">
-            <div className="flex items-center gap-2 mb-3">
-                <div className="w-4 h-4 rounded bg-slate-200" />
-                <div className="h-3.5 w-28 rounded bg-slate-200" />
-            </div>
-            <div className="flex flex-col gap-2">
-                {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-12 rounded-lg bg-slate-100" />
-                ))}
-            </div>
-        </aside>
-    )
-    const renderV2Skeleton = (variant) => (
-        <div className="flex flex-col gap-4">
-            {ribbonSkeleton}
-            {fuseSkeleton}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
-                <div className="flex flex-col gap-3">
-                    <div className="h-3 w-48 rounded bg-slate-200 animate-pulse" />
-                    {variant === 'list' ? listRowsSkeleton : trackGridSkeleton}
-                </div>
-                {railSkeleton}
-            </div>
-        </div>
-    )
-
-    const showAllSkeleton = tab === 'all' && isMyReportsLoading
-    /** Only swap the review tab body for a skeleton on the FIRST load — once
-     *  any week has been fetched, subsequent reloads (week switches, refresh,
-     *  permission re-checks) keep the existing list visible so the tab
-     *  doesn't appear to disappear and reappear. */
-    const showReviewSkeleton = tab === 'review' && (isReviewLoading || isLoadingMissing) && !hasLoadedReviewOnce
-    const showBootSkeleton = tab === null
+    const onPickWeek = (iso) => iso && setActiveWeekIso(iso)
 
     return (
         <div className="bg-slate-50 min-h-screen w-full pb-16">
@@ -1189,7 +388,7 @@ function ReportsView() {
             <ReportsToolbar
                 isLoading={isCurrentTabLoading}
                 plantDisplayText={plantDisplayText}
-                onPlantModalOpen={() => setIsPlantModalOpen(true)}
+                onPlantModalOpen={() => modals.setIsPlantModalOpen(true)}
                 searchInput={searchInput}
                 onSearchInputChange={setSearchInput}
                 onClearSearch={() => setSearchInput('')}
@@ -1203,469 +402,76 @@ function ReportsView() {
             />
 
             <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-5">
-                {showBootSkeleton && renderV2Skeleton('grid')}
-                {showAllSkeleton && renderV2Skeleton('grid')}
-                {showReviewSkeleton && renderV2Skeleton('list')}
+                {showBootSkeleton && <ReportsViewSkeleton variant="grid" />}
+                {showAllSkeleton && <ReportsViewSkeleton variant="grid" />}
+                {showReviewSkeleton && <ReportsViewSkeleton variant="list" />}
+
                 {!showBootSkeleton && !showAllSkeleton && tab === 'all' && (
-                    <div className="flex flex-col gap-4">
-                        <MyReportsSummaryBar
-                            accent={accent}
-                            cutoffLabel={ReportUtility.getLateCutoffLabel()}
-                            daysLeft={fuseForSelectedWeek.daysLeft}
-                            isFuture={fuseForSelectedWeek.mode === 'future'}
-                            isPast={fuseForSelectedWeek.mode === 'past'}
-                            overdueCarryover={myReportsSummary.overdueCarryover}
-                            pending={myReportsSummary.pending}
-                            submitted={myReportsSummary.submitted}
-                            weekLabel={
-                                isSelectedWeekFuture ? 'Next week' : isSelectedWeekThis ? 'This week' : 'Archived week'
-                            }
-                            weekRange={selectedWeekRange}
-                        />
-                        <WeekRibbon
-                            weeks={weekRibbonData}
-                            activeIso={selectedWeekIso}
-                            onPick={(iso) => iso && setActiveWeekIso(iso)}
-                        />
-                        <DeadlineFuse
-                            daysLeft={fuseForSelectedWeek.daysLeft}
-                            cutoffLabel={ReportUtility.getLateCutoffLabel()}
-                            todayIndex={fuseForSelectedWeek.todayIndex}
-                            mode={fuseForSelectedWeek.mode}
-                            caption={fuseForSelectedWeek.caption}
-                        />
-                        {overdueSourceItems.length > 0 && (
-                            <OverdueBanner
-                                count={overdueSourceItems.length}
-                                title={overdueSourceItems[0]?.title}
-                                dueLabel={
-                                    overdueSourceItems[0]?.weekIso
-                                        ? `week of ${formatRange(overdueSourceItems[0].weekIso)}`
-                                        : ''
-                                }
-                                onSubmit={handleSubmitOldestOverdue}
-                            />
-                        )}
-                        <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
-                            <div className={RV_SPLIT_LEFT}>
-                                <div className="text-[10px] font-bold uppercase tracking-[.08em] text-text-secondary font-heading">
-                                    {isSelectedWeekFuture
-                                        ? `Next Week · ${selectedWeekRange}`
-                                        : isSelectedWeekThis
-                                          ? `Weekly reports · Track · ${selectedWeekRange}`
-                                          : `${selectedWeekRange} · Archive`}
-                                </div>
-                                {isSelectedWeekFuture ? (
-                                    <div className="rounded-lg border py-12 px-4 text-center text-sm bg-bg-primary border-border-light text-text-secondary">
-                                        Next week opens Monday — nothing to file yet.
-                                    </div>
-                                ) : myItemsForSelectedWeek.length === 0 ? (
-                                    <ReportsEmptyState
-                                        tab="all"
-                                        hasAssigned={hasAssigned}
-                                        hasOneOffAccess={hasLostLoadsPermission || hasQCStrengthPermission}
-                                    />
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {myItemsForSelectedWeek.map((item) => (
-                                            <TrackCard
-                                                key={`${item.name}-${item.weekIso}`}
-                                                item={item}
-                                                history={getHistoryForName(item.name)}
-                                                onStart={handleTrackAction}
-                                                onContinue={handleTrackAction}
-                                                onView={handleTrackAction}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                            <div ref={railRef} className={RV_SPLIT_RAIL_SLOT}>
-                                <div className={RV_RAIL_FIXED}>
-                                    <QuickRail
-                                        hasQCStrengthPermission={hasQCStrengthPermission}
-                                        hasLostLoadsPermission={hasLostLoadsPermission}
-                                        onOpenQCStrength={() => setShowQCStrengthModal(true)}
-                                        onOpenThirdPartyLab={() => setShowLabReportModal(true)}
-                                        onOpenLostLoad={() => setShowLostLoadModal(true)}
-                                        recentItems={recentSubmissions}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <MyReportsTabPanel
+                        accent={accent}
+                        handlers={handlers}
+                        hasAssigned={hasAssigned}
+                        hasLostLoadsPermission={hasLostLoadsPermission}
+                        hasQCStrengthPermission={hasQCStrengthPermission}
+                        onOpenLostLoad={() => modals.setShowLostLoadModal(true)}
+                        onOpenQCStrength={() => modals.setShowQCStrengthModal(true)}
+                        onOpenThirdPartyLab={() => modals.setShowLabReportModal(true)}
+                        onPickWeek={onPickWeek}
+                        railCollapsed={railCollapsed}
+                        railRef={railRef}
+                        timeline={timeline}
+                    />
                 )}
 
                 {!showReviewSkeleton && tab === 'review' && (
-                    <div className="flex flex-col gap-4">
-                        <WeekRibbon
-                            weeks={weekRibbonData}
-                            activeIso={selectedWeekIso}
-                            onPick={(iso) => iso && setActiveWeekIso(iso)}
-                        />
-                        <DeadlineFuse
-                            daysLeft={fuseForSelectedWeek.daysLeft}
-                            cutoffLabel={ReportUtility.getLateCutoffLabel()}
-                            todayIndex={fuseForSelectedWeek.todayIndex}
-                            mode={fuseForSelectedWeek.mode}
-                            caption={fuseForSelectedWeek.caption}
-                        />
-                        <MobileFilterShell
-                            label="Filters"
-                            activeCount={
-                                (reviewStatusFilter !== 'all' ? 1 : 0) +
-                                (filterReportType ? 1 : 0) +
-                                (reviewDateFrom ? 1 : 0) +
-                                (reviewDateTo ? 1 : 0)
-                            }
-                        >
-                            <div className="bg-bg-primary border border-border-light rounded-lg px-3 py-2.5">
-                                <ReviewFilterBar
-                                    statusFilter={reviewStatusFilter}
-                                    onStatusFilterChange={setReviewStatusFilter}
-                                    reportTypeFilter={filterReportType}
-                                    onReportTypeFilterChange={setFilterReportType}
-                                    reportTypeOptions={reviewTypeOptions}
-                                    sort={reviewSort}
-                                    onSortChange={setReviewSort}
-                                    dateFrom={reviewDateFrom}
-                                    onDateFromChange={setReviewDateFrom}
-                                    dateTo={reviewDateTo}
-                                    onDateToChange={setReviewDateTo}
-                                    hasActiveFilters={reviewHasActiveFilters}
-                                    onClear={clearReviewFilters}
-                                />
-                            </div>
-                        </MobileFilterShell>
-                        <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
-                            <div className={RV_SPLIT_LEFT}>
-                                <div className="text-xs font-bold uppercase tracking-[.06em] text-slate-500 font-heading">
-                                    Submitted · {selectedWeekRange}
-                                </div>
-                                <MergedReviewList
-                                    missing={[]}
-                                    review={filteredReviewReports}
-                                    reviewedByCurrentUser={reviewedByCurrentUser}
-                                    getUserName={getUserName}
-                                    onReview={handleReview}
-                                    onNudge={handleNudge}
-                                />
-                            </div>
-                            <div ref={railRef} className={RV_SPLIT_RAIL_SLOT}>
-                                <div className={RV_RAIL_FIXED}>
-                                    <MissingPanel
-                                        missing={visibleMissingReports}
-                                        getUserName={getUserName}
-                                        onNudge={handleNudge}
-                                        weekRangeLabel={selectedWeekRange}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <ReviewTabPanel
+                        filters={filters}
+                        getUserName={getUserName}
+                        handlers={handlers}
+                        onPickWeek={onPickWeek}
+                        railCollapsed={railCollapsed}
+                        railRef={railRef}
+                        reviewTypeOptions={reviewTypeOptions}
+                        reviewedByCurrentUser={reviewedByCurrentUser}
+                        timeline={timeline}
+                    />
                 )}
 
                 {tab === 'lost_loads' && (
-                    <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
-                        <div className={RV_SPLIT_LEFT}>
-                            {hasLostLoadsPermission && (
-                                <div className="flex flex-wrap gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowLostLoadModal(true)}
-                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
-                                        style={{ background: accent }}
-                                    >
-                                        <i className="fas fa-truck text-[10px]" /> Submit Lost Load
-                                    </button>
-                                </div>
-                            )}
-                            <MobileFilterShell
-                                label="Filters"
-                                activeCount={
-                                    (lossDumpLocation !== 'all' ? 1 : 0) +
-                                    (lossReason !== 'all' ? 1 : 0) +
-                                    (lossDateFrom ? 1 : 0) +
-                                    (lossDateTo ? 1 : 0)
-                                }
-                            >
-                                <div className="bg-bg-primary border border-border-light rounded-lg px-3 py-2.5">
-                                    <LossFilterBar
-                                        dumpLocationFilter={lossDumpLocation}
-                                        onDumpLocationFilterChange={setLossDumpLocation}
-                                        reasonFilter={lossReason}
-                                        onReasonFilterChange={setLossReason}
-                                        sort={lossSort}
-                                        onSortChange={setLossSort}
-                                        dateFrom={lossDateFrom}
-                                        onDateFromChange={setLossDateFrom}
-                                        dateTo={lossDateTo}
-                                        onDateToChange={setLossDateTo}
-                                        hasActiveFilters={lossHasActiveFilters}
-                                        onClear={clearLossFilters}
-                                        onExport={
-                                            visibleLostLoads.length > 0
-                                                ? () =>
-                                                      exportLostLoadReports({
-                                                          getUserName,
-                                                          plants: regionalPlants,
-                                                          reports: visibleLostLoads
-                                                      })
-                                                : undefined
-                                        }
-                                    />
-                                </div>
-                            </MobileFilterShell>
-                            <LostLoadsList
-                                isLoading={isLoadingLostLoads}
-                                items={lostLoadsPagination.paginatedItems}
-                                pageSize={lostLoadsPagination.pageSize}
-                                currentPage={lostLoadsPagination.currentPage}
-                                totalPages={lostLoadsPagination.totalPages}
-                                onPageSizeChange={lostLoadsPagination.changePageSize}
-                                onPageChange={lostLoadsPagination.goToPage}
-                                getUserName={getUserName}
-                                canDelete={hasLostLoadsDeletePermission}
-                                onDelete={deleteLostLoadReport}
-                                onRowClick={setSelectedLostLoad}
-                            />
-                        </div>
-                        <div ref={railRef} className={RV_SPLIT_RAIL_SLOT}>
-                            <div className={RV_RAIL_FIXED}>
-                                <MyOneOffRail
-                                    reports={myLostLoadReports}
-                                    title="Your Lost Loads"
-                                    emptyLabel="You haven't submitted a lost load yet"
-                                    onEdit={handleEditMyOneOff}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    <LostLoadsTabPanel
+                        accent={accent}
+                        deleteLostLoadReport={deleteLostLoadReport}
+                        filters={filters}
+                        getUserName={getUserName}
+                        handlers={handlers}
+                        hasLostLoadsDeletePermission={hasLostLoadsDeletePermission}
+                        hasLostLoadsPermission={hasLostLoadsPermission}
+                        isLoadingLostLoads={isLoadingLostLoads}
+                        lostLoadsPagination={lostLoadsPagination}
+                        onOpenLostLoadModal={() => modals.setShowLostLoadModal(true)}
+                        onSetSelectedLostLoad={modals.setSelectedLostLoad}
+                        railCollapsed={railCollapsed}
+                        railRef={railRef}
+                        regionalPlants={regionalPlants}
+                    />
                 )}
 
                 {tab === 'quality' && (
-                    <div className={RV_SPLIT_PARENT} data-collapsed={railCollapsed}>
-                        <div className={RV_SPLIT_LEFT}>
-                            {hasQCStrengthPermission && (
-                                <div className="flex flex-wrap gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowQCStrengthModal(true)}
-                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider"
-                                        style={{ background: accent }}
-                                    >
-                                        <i className="fas fa-flask text-[10px]" /> Submit QC Strength
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowLabReportModal(true)}
-                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider bg-[#e11d48]"
-                                    >
-                                        <i className="fas fa-vial text-[10px]" /> Submit Lab Report
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowQualityIssueModal(true)}
-                                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-white text-[10.5px] font-semibold uppercase tracking-wider bg-red-600"
-                                        title="Log a new quality dispute / follow-up. Tracked in the Quality Issues tab."
-                                    >
-                                        <i className="fas fa-clipboard-list text-[10px]" /> New Quality Issue
-                                    </button>
-                                </div>
-                            )}
-                            <MobileFilterShell
-                                label="Filters"
-                                activeCount={
-                                    (qcTypeFilter !== 'all' ? 1 : 0) +
-                                    (qcStatusFilter !== 'all' ? 1 : 0) +
-                                    (qcDateFrom ? 1 : 0) +
-                                    (qcDateTo ? 1 : 0)
-                                }
-                            >
-                                <div className="bg-bg-primary border border-border-light rounded-lg px-3 py-2.5">
-                                    <QcFilterBar
-                                        qcTypeFilter={qcTypeFilter}
-                                        onQcTypeFilterChange={setQcTypeFilter}
-                                        qcStatusFilter={qcStatusFilter}
-                                        onQcStatusFilterChange={setQcStatusFilter}
-                                        qcSort={qcSort}
-                                        onQcSortChange={setQcSort}
-                                        qcDateFrom={qcDateFrom}
-                                        onQcDateFromChange={setQcDateFrom}
-                                        qcDateTo={qcDateTo}
-                                        onQcDateToChange={setQcDateTo}
-                                        qcHasActiveFilters={qcHasActiveFilters}
-                                        onClearQcFilters={clearQcFilters}
-                                    />
-                                </div>
-                            </MobileFilterShell>
-                            {isLoadingQC ? (
-                                <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                                    {[1, 2, 3, 4, 5].map((i) => (
-                                        <div
-                                            key={i}
-                                            className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light"
-                                        >
-                                            <div className="w-6 h-6 rounded animate-pulse shrink-0 bg-bg-tertiary" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="h-3 w-44 rounded animate-pulse mb-1 bg-bg-tertiary" />
-                                                <div className="h-2.5 w-56 rounded animate-pulse bg-bg-secondary" />
-                                            </div>
-                                            <div className="h-4 w-16 rounded animate-pulse shrink-0 bg-bg-tertiary" />
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : qcReports.length === 0 ? (
-                                <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                                    <div className="flex flex-col items-center justify-center py-10 px-4 text-text-tertiary">
-                                        <i className="fas fa-flask text-2xl mb-2" />
-                                        <div className="text-[12px]">No quality reports submitted yet</div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2 px-1">
-                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                                            Quality Reports
-                                        </span>
-                                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono tabular-nums bg-bg-tertiary text-text-secondary">
-                                            {qcHasActiveFilters
-                                                ? `${visibleQcReports.length} / ${qcReports.length}`
-                                                : qcReports.length}
-                                        </span>
-                                    </div>
-                                    {visibleQcReports.length === 0 ? (
-                                        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                                            <div className="flex flex-col items-center justify-center py-10 px-4 text-text-tertiary">
-                                                <i className="fas fa-filter text-2xl mb-2" />
-                                                <div className="text-[12px]">No reports match your filters</div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                                            {visibleQcReports.map((report) => {
-                                                const submittedLabel = report.submittedAt
-                                                    ? new Date(report.submittedAt).toLocaleDateString(undefined, {
-                                                          day: 'numeric',
-                                                          month: 'short'
-                                                      })
-                                                    : ''
-                                                const submitterName = getUserName(report.userId) || 'Unknown'
-                                                const d = report.data || {}
-                                                const isLabReport = report.name === 'third_party_lab'
-                                                const meaningfulStr = (val) =>
-                                                    val && typeof val === 'string' && val.trim() && val.trim() !== 'N/A'
-                                                        ? val.trim()
-                                                        : null
-                                                const title = isLabReport
-                                                    ? meaningfulStr(d.lab_company_name) || 'Third Party Lab Report'
-                                                    : meaningfulStr(d.contractor) ||
-                                                      meaningfulStr(d.project) ||
-                                                      'QC Strength Report'
-                                                const iconClass = isLabReport ? 'fa-vial' : 'fa-flask'
-                                                /* color-mix tints adapt to whatever the page background
-                                                 * is, so the same value reads well in both light and
-                                                 * dark mode without a separate dark-mode override. */
-                                                const iconTint = isLabReport
-                                                    ? {
-                                                          bg: 'color-mix(in srgb, #f43f5e 14%, transparent)',
-                                                          fg: '#f43f5e'
-                                                      }
-                                                    : {
-                                                          bg: 'color-mix(in srgb, #8b5cf6 14%, transparent)',
-                                                          fg: '#8b5cf6'
-                                                      }
-                                                return (
-                                                    <div
-                                                        key={report.id}
-                                                        className="flex items-center px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary border-b border-border-light"
-                                                        onClick={() =>
-                                                            isLabReport
-                                                                ? setSelectedLabReport(report)
-                                                                : setSelectedQCReport(report)
-                                                        }
-                                                    >
-                                                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                                                            <div
-                                                                className="w-6 h-6 rounded flex items-center justify-center shrink-0"
-                                                                style={{
-                                                                    background: iconTint.bg,
-                                                                    color: iconTint.fg
-                                                                }}
-                                                            >
-                                                                <i className={`fas ${iconClass} text-[11px]`} />
-                                                            </div>
-                                                            <div className="min-w-0">
-                                                                <span className="text-[12px] font-semibold block truncate text-text-primary">
-                                                                    {title}
-                                                                </span>
-                                                                <div className="flex items-center gap-1.5 mt-0.5 text-[10.5px] text-text-secondary">
-                                                                    <span className="truncate">{submitterName}</span>
-                                                                    {submittedLabel && (
-                                                                        <>
-                                                                            <span className="text-text-tertiary">
-                                                                                ·
-                                                                            </span>
-                                                                            <span className="font-mono tabular-nums">
-                                                                                {submittedLabel}
-                                                                            </span>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        {report.reviewed ? (
-                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-green-100 text-green-800">
-                                                                Reviewed
-                                                            </span>
-                                                        ) : (
-                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-amber-100 text-amber-800">
-                                                                Pending
-                                                            </span>
-                                                        )}
-                                                        <button
-                                                            className="ml-2 px-2 py-1 rounded text-white text-[10.5px] font-semibold shrink-0 hidden sm:inline-flex uppercase tracking-wider"
-                                                            style={{ background: accent }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                isLabReport
-                                                                    ? setSelectedLabReport(report)
-                                                                    : setSelectedQCReport(report)
-                                                            }}
-                                                        >
-                                                            {report.reviewed ? 'View' : 'Review'}
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                handleDeleteQCReport(report)
-                                                            }}
-                                                            className="w-6 h-6 flex items-center justify-center rounded shrink-0 ml-1.5 hidden sm:flex transition-colors hover:bg-bg-tertiary text-text-tertiary"
-                                                            title="Delete"
-                                                        >
-                                                            <i className="fas fa-trash-alt text-[10px]" />
-                                                        </button>
-                                                        <i className="fas fa-chevron-right text-[10px] ml-2 sm:hidden text-text-tertiary" />
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                        <div ref={railRef} className={RV_SPLIT_RAIL_SLOT}>
-                            <div className={RV_RAIL_FIXED}>
-                                <MyOneOffRail
-                                    reports={myQualityReports}
-                                    title="Your Quality Reports"
-                                    emptyLabel="You haven't submitted a quality report yet"
-                                    onEdit={handleEditMyOneOff}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    <QualityTabPanel
+                        accent={accent}
+                        filters={filters}
+                        getUserName={getUserName}
+                        handlers={handlers}
+                        hasQCStrengthPermission={hasQCStrengthPermission}
+                        onOpenLabReportModal={() => modals.setShowLabReportModal(true)}
+                        onOpenQcStrengthModal={() => modals.setShowQCStrengthModal(true)}
+                        onOpenQualityIssueModal={() => modals.setShowQualityIssueModal(true)}
+                        onSetSelectedLabReport={modals.setSelectedLabReport}
+                        onSetSelectedQCReport={modals.setSelectedQCReport}
+                        qc={qc}
+                        railCollapsed={railCollapsed}
+                        railRef={railRef}
+                    />
                 )}
 
                 {tab === 'quality_issues' && (
@@ -1673,229 +479,21 @@ function ReportsView() {
                 )}
             </div>
 
-            {isPlantModalOpen && (
-                <PlantDropdownModal
-                    isOpen={isPlantModalOpen}
-                    onClose={() => setIsPlantModalOpen(false)}
-                    plants={regionalPlants}
-                    onSelect={(plantCode) => {
-                        setFilterPlant(plantCode)
-                        setIsPlantModalOpen(false)
-                    }}
-                    showAllPlants={true}
-                    showMyPlants={false}
-                    userPlantCode={userPlantCode}
-                />
-            )}
-            {(showLostLoadModal || editingLostLoad) && (
-                <LostLoadReportModal
-                    onClose={() => {
-                        setShowLostLoadModal(false)
-                        setEditingLostLoad(null)
-                    }}
-                    onSubmitted={(report) => {
-                        addLostLoadReport(report)
-                        if (!editingLostLoad && tab !== 'lost_loads') setTab('lost_loads')
-                    }}
-                    plants={regionalPlants}
-                    user={user}
-                    initialReport={editingLostLoad}
-                />
-            )}
-            {selectedLostLoad && (
-                <LostLoadDetailModal
-                    report={selectedLostLoad}
-                    getUserName={getUserName}
-                    onClose={() => setSelectedLostLoad(null)}
-                />
-            )}
-            {(showQCStrengthModal || editingQcReport) && (
-                <QCStrengthReportModal
-                    onClose={() => {
-                        setShowQCStrengthModal(false)
-                        setEditingQcReport(null)
-                    }}
-                    onSubmitted={() => {
-                        setQcLoaded(false)
-                        if (tab === 'quality') loadQCReports()
-                        if (!editingQcReport) triggerRefresh()
-                    }}
-                    user={user}
-                    initialReport={editingQcReport}
-                />
-            )}
-            {selectedLabReport && (
-                <ThirdPartyLabDetailModal
-                    report={selectedLabReport}
-                    getUserName={getUserName}
-                    onClose={() => setSelectedLabReport(null)}
-                    onReviewed={(id) => {
-                        setQcReports((prev) => prev.map((r) => (r.id === id ? { ...r, reviewed: true } : r)))
-                        setSelectedLabReport(null)
-                    }}
-                />
-            )}
-            {(showLabReportModal || editingLabReport) && (
-                <ThirdPartyLabReportModal
-                    onClose={() => {
-                        setShowLabReportModal(false)
-                        setEditingLabReport(null)
-                    }}
-                    onSubmitted={() => {
-                        setQcLoaded(false)
-                        if (tab === 'quality') loadQCReports()
-                    }}
-                    user={user}
-                    initialReport={editingLabReport}
-                />
-            )}
-            {showQualityIssueModal && (
-                <QualityIssueModal
-                    issue={null}
-                    onClose={() => setShowQualityIssueModal(false)}
-                    onSaved={() => {
-                        setShowQualityIssueModal(false)
-                        // Jump to the Quality Issues tab so the user sees the
-                        // newly created issue in the live list.
-                        selectTab('quality_issues')
-                    }}
-                    plants={regionalPlants}
-                    regionCode={preferences?.selectedRegion?.code || ''}
-                />
-            )}
-            {selectedQCReport && (
-                <QCStrengthDetailModal
-                    report={selectedQCReport}
-                    getUserName={getUserName}
-                    onClose={() => setSelectedQCReport(null)}
-                    onReviewed={(id) => {
-                        setQcReports((prev) => prev.map((r) => (r.id === id ? { ...r, reviewed: true } : r)))
-                        setSelectedQCReport(null)
-                    }}
-                />
-            )}
-        </div>
-    )
-}
-/* ── My Reports summary bar ─────────────────────────────────────────────── */
-
-/** A single stat cell — mirrors PlanView's RegionTotalCell layout (icon box +
- *  uppercase label + mono value) so the two surfaces share a visual rhythm. */
-function SummaryCell({ accent, color, hint, icon, label, value, valueColor, warning }) {
-    const accentTint = `${accent}14`
-    return (
-        <div
-            className="rounded-lg px-3 py-1.5 flex items-center gap-2.5 shrink-0"
-            style={{
-                background: warning ? `${color || '#dc2626'}12` : 'var(--bg-primary)',
-                border: `1px solid ${warning ? `${color || '#dc2626'}66` : 'var(--border-light)'}`
-            }}
-        >
-            <div
-                className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-                style={{
-                    background: warning ? color || '#dc2626' : accentTint,
-                    color: warning ? '#fff' : accent
-                }}
-            >
-                <i className={`fas ${icon} text-[11px]`} />
-            </div>
-            <div className="flex flex-col leading-tight">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-text-secondary">{label}</span>
-                <span
-                    className="text-[14px] font-bold font-mono tabular-nums font-heading"
-                    style={{ color: valueColor || 'var(--text-primary)' }}
-                >
-                    {value}
-                </span>
-                {hint && <span className="text-[10px] text-text-secondary">{hint}</span>}
-            </div>
-        </div>
-    )
-}
-
-function MyReportsSummaryBar({
-    accent,
-    cutoffLabel,
-    daysLeft,
-    isFuture,
-    isPast,
-    overdueCarryover,
-    pending,
-    submitted,
-    weekLabel,
-    weekRange
-}) {
-    const totalAssigned = submitted + pending
-    const completionPct = totalAssigned > 0 ? Math.round((submitted / totalAssigned) * 100) : null
-    const allDone = totalAssigned > 0 && pending === 0
-    const urgent = !isFuture && !isPast && daysLeft <= 1 && pending > 0
-    const daysValue = isPast ? 'Closed' : isFuture ? `${daysLeft}d` : `${daysLeft}d`
-    const daysHint = isPast ? 'cutoff passed' : isFuture ? 'until opens' : `to ${cutoffLabel}`
-    return (
-        <div
-            className="shrink-0 flex items-center gap-2 overflow-x-auto px-3 py-2 rounded-lg border"
-            style={{
-                background: urgent ? 'linear-gradient(90deg, #fee2e240, #fef3c740)' : 'var(--bg-primary)',
-                borderColor: urgent ? '#fbbf24' : 'var(--border-light)'
-            }}
-        >
-            <span className="text-[9px] font-semibold uppercase tracking-wider shrink-0 mr-1 text-text-secondary">
-                {weekLabel}
-                {weekRange ? ` · ${weekRange}` : ''}
-            </span>
-
-            <SummaryCell
-                accent={accent}
-                icon="fa-circle-check"
-                label="Submitted"
-                value={totalAssigned > 0 ? `${submitted}/${totalAssigned}` : '—'}
-                valueColor={allDone ? '#16a34a' : undefined}
-                hint={completionPct != null ? `${completionPct}% complete` : undefined}
+            <ReportsModalsHostConnected
+                addLostLoadReport={addLostLoadReport}
+                filters={filters}
+                getUserName={getUserName}
+                modals={modals}
+                qc={qc}
+                regionCode={preferences?.selectedRegion?.code || ''}
+                regionalPlants={regionalPlants}
+                selectTab={selectTab}
+                setTab={setTab}
+                tab={tab}
+                triggerRefresh={triggerRefresh}
+                user={user}
+                userPlantCode={userPlantCode}
             />
-
-            <SummaryCell
-                accent={accent}
-                color="#dc2626"
-                icon="fa-hourglass-half"
-                label="Pending"
-                value={pending > 0 ? String(pending) : '—'}
-                valueColor={pending > 0 && urgent ? '#dc2626' : undefined}
-                hint={pending > 0 ? 'still due' : totalAssigned > 0 ? 'all in' : undefined}
-                warning={urgent}
-            />
-
-            <SummaryCell
-                accent={accent}
-                color="#d97706"
-                icon="fa-clock"
-                label="Window"
-                value={daysValue}
-                valueColor={urgent ? '#dc2626' : undefined}
-                hint={daysHint}
-                warning={urgent}
-            />
-
-            {overdueCarryover > 0 && (
-                <SummaryCell
-                    accent={accent}
-                    color="#dc2626"
-                    icon="fa-triangle-exclamation"
-                    label="Overdue"
-                    value={String(overdueCarryover)}
-                    hint="prior weeks"
-                    warning
-                />
-            )}
-
-            <div className="flex-1" />
-
-            {allDone && !isPast && (
-                <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-[#16a34a14] text-green-600">
-                    <i className="fas fa-check-circle text-[12px]" />
-                    All caught up
-                </div>
-            )}
         </div>
     )
 }

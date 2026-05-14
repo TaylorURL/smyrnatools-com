@@ -10,6 +10,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 // @ts-ignore
 import { errorResponse } from './cors.ts'
+// @ts-ignore
+import { readSessionCookies } from './cookies.ts'
 
 const SESSIONS_TABLE = 'users_sessions'
 const SESSION_EXPIRY_DAYS = 7
@@ -22,10 +24,21 @@ function getAdminClient(): any {
     )
 }
 
-/** Extracts session credentials from body (preferred) or request headers (fallback). */
+/**
+ * Extracts session credentials. Precedence:
+ *   1. HttpOnly session cookies (production path)
+ *   2. X-User-Id / X-Session-Id headers (transition + non-cookie clients)
+ *   3. __sessionUserId / __sessionId body fields (transition fallback)
+ *
+ * The header/body fallbacks exist so localhost dev (different registrable
+ * domain from the API) and the rolling deploy window keep working. After
+ * all clients are migrated and verified, the fallbacks can be removed.
+ */
 function extractSessionCredentials(req: Request, body?: any): { userId: string | null; sessionId: string | null } {
-    const userId = body?.__sessionUserId || req.headers.get('x-user-id') || null
-    const sessionId = body?.__sessionId || req.headers.get('x-session-id') || null
+    const fromCookies = readSessionCookies(req)
+    if (fromCookies.userId && fromCookies.sessionId) return fromCookies
+    const userId = fromCookies.userId || req.headers.get('x-user-id') || body?.__sessionUserId || null
+    const sessionId = fromCookies.sessionId || req.headers.get('x-session-id') || body?.__sessionId || null
     return { userId, sessionId }
 }
 

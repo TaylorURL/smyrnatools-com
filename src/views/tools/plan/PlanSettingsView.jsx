@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import PlanSettings from '../../../app/components/plan/PlanSettings'
+import PlanSettings from '../../../app/components/plan/tabs/settings/PlanSettings'
 import { BookOrderLogService } from '../../../services/BookOrderLogService'
 import { UserService } from '../../../services/UserService'
 

@@ -1,0 +1,9 @@
+{
+  "version": "2026.20.9",
+  "projectName": "smyrnatools.com",
+  "branch": "core",
+  "provider": "claude-code",
+  "cleanLogs": true,
+  "cleanCss": true,
+  "hooks": {}
+}

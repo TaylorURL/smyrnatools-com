@@ -1,21 +1,21 @@
 import React, { useMemo, useState } from 'react'
 
 import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons'
-import { PlanStatisticsControls } from '../../../app/components/plan/PlanStatisticsControls'
-import { PlanStatisticsKpiStrip } from '../../../app/components/plan/PlanStatisticsKpiStrip'
+import { PlanStatisticsControls } from '../../../app/components/plan/tabs/statistics/PlanStatisticsControls'
+import { PlanStatisticsKpiStrip } from '../../../app/components/plan/tabs/statistics/PlanStatisticsKpiStrip'
 import {
     PlanStatisticsBigPoursPage,
     PlanStatisticsCustomersPage,
     PlanStatisticsOverviewPage,
     PlanStatisticsPlantsPage,
     PlanStatisticsYardagePage
-} from '../../../app/components/plan/PlanStatisticsPages'
-import { PlanStatisticsSatisfactionPage } from '../../../app/components/plan/PlanStatisticsSatisfactionPage'
+} from '../../../app/components/plan/tabs/statistics/PlanStatisticsPages'
+import { PlanStatisticsSatisfactionPage } from '../../../app/components/plan/tabs/statistics/PlanStatisticsSatisfactionPage'
 import {
     PLAN_STATS_SECTIONS,
     PlanStatisticsSectionTabs,
     PlanStatisticsSidebar
-} from '../../../app/components/plan/PlanStatisticsSidebar'
+} from '../../../app/components/plan/tabs/statistics/PlanStatisticsSidebar'
 import { usePlanStatistics } from '../../../app/hooks/usePlanStatistics'
 import { buildScheduleCsv } from '../../../utils/PlanStatisticsUtility'
 

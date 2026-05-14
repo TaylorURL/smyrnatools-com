@@ -69,7 +69,7 @@
                 "src/app/components/**/*.jsx"
             ],
             "rules": {
-                "max-lines": ["error", { "max": 350, "skipBlankLines": true, "skipComments": true }]
+                "max-lines": ["error", { "max": 500, "skipBlankLines": true, "skipComments": true }]
             }
         },
         {

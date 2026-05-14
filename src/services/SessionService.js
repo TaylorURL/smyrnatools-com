@@ -1,16 +1,33 @@
 /**
  * In-memory store for the active user's session credentials and JWT.
  *
- * Credentials live only in module-scoped variables — never in
- * sessionStorage/localStorage — so they are discarded when the tab closes
- * and cannot be exfiltrated by a stored XSS payload that fires on a future
- * visit. A hard refresh therefore drops the user back to the login screen;
- * that is the deliberate trade-off for not persisting bearer tokens to a
- * JS-readable storage surface.
+ * Session authentication primarily rides on HttpOnly cookies set by
+ * auth-service. The browser sends them automatically on every request to
+ * `db.smyrnatools.com` (via `credentials: 'include'`), so the session id
+ * never enters JavaScript. The only thing JS has is a non-HttpOnly
+ * `smyrna_auth=1` flag cookie used as a fast "probably-logged-in" hint.
  *
- * Realtime auth is updated whenever the JWT changes — pulled in lazily to
- * avoid a hard import cycle with DatabaseService.
+ * Memory-held `userId` is still useful for read-only display (Sentry user
+ * scoping, "createdBy" stamps, etc.). It is populated by AuthContext on
+ * boot via `/auth-service/whoami` and cleared on sign-out — NOT persisted.
+ * If the tab is reloaded, AuthContext re-derives it from the cookie.
+ *
+ * The header/body credential surface (`__sessionUserId` / `__sessionId`,
+ * `X-User-Id` / `X-Session-Id`) is retained for the localhost-dev path
+ * where the cookie can't cross origins. It only gets populated when sign-in
+ * explicitly returns a sessionId in the body and the caller asks
+ * SessionService to remember it.
  */
+
+// One-time cleanup: previous versions stored the session id and user id in
+// localStorage. Cookies now own the session; the lingering keys would still
+// satisfy the old "has-credentials" heuristic and confuse the new flow.
+try {
+    if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('smyrnaSessionUserId')
+        window.localStorage.removeItem('smyrnaSessionId')
+    }
+} catch {}
 
 let currentJwt = null
 let currentJwtExpiresAt = 0
@@ -34,8 +51,9 @@ const applyRealtimeAuth = () => {
 }
 
 /**
- * Updates any subset of the in-memory session fields. Pass an explicit
- * `null`/`0` to clear an individual field.
+ * Updates any subset of the session fields. Pass an explicit `null`/`0` to
+ * clear an individual field. No values are persisted — the cookie is the
+ * source of truth across reloads.
  */
 export const updateSession = ({ jwt, expiresAt, userId, sessionId } = {}) => {
     let jwtChanged = false
@@ -52,7 +70,7 @@ export const updateSession = ({ jwt, expiresAt, userId, sessionId } = {}) => {
     if (jwtChanged) applyRealtimeAuth()
 }
 
-/** Clears every in-memory session field and resets realtime auth. */
+/** Clears every session field and resets realtime auth. */
 export const clearSession = () => {
     const hadJwt = currentJwt !== null
     currentJwt = null
@@ -66,9 +84,12 @@ export const getSessionJwt = () => currentJwt
 export const getJwtExpiresAt = () => currentJwtExpiresAt
 export const getSessionUserId = () => currentSessionUserId
 export const getSessionId = () => currentSessionId
-export const hasActiveSession = () => Boolean(currentSessionUserId && currentSessionId)
+export const hasActiveSession = () => Boolean(currentSessionUserId)
 
-/** Body fields recognised by `requireAuthenticated` on every edge function. */
+/**
+ * Body fields recognised by `requireAuthenticated` on every edge function.
+ * Empty when running off cookies — the dev path keeps these populated.
+ */
 export const getSessionCredentialFields = () => ({
     __sessionUserId: currentSessionUserId || undefined,
     __sessionId: currentSessionId || undefined

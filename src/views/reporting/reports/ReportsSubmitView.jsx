@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 
 import ConfirmationModal from '../../../app/components/reports/ConfirmationModal'
-import ErrorModal from '../../../app/components/reports/ErrorModal'
+import ReportValidationErrorModal from '../../../app/components/reports/ReportValidationErrorModal'
 import OperatorExclusionReasonModal from '../../../app/components/reports/OperatorExclusionReasonModal'
 import SubmitHeader from '../../../app/components/reports/SubmitHeader'
 import { usePreferences } from '../../../app/context/PreferencesContext'
@@ -824,7 +824,9 @@ function ReportsSubmitView({
                     onConfirm={handleConfirmedSubmit}
                 />
             )}
-            {showErrorModal && error && <ErrorModal error={error} onClose={() => setShowErrorModal(false)} />}
+            {showErrorModal && error && (
+                <ReportValidationErrorModal error={error} onClose={() => setShowErrorModal(false)} />
+            )}
             {showExclusionReasonModal && (
                 <OperatorExclusionReasonModal
                     onConfirm={handleExclusionReasonConfirm}

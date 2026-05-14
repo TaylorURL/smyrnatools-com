@@ -124,14 +124,14 @@ class UserPreferencesService {
     }
 
     /**
-     * Fetches the current app version from nit.json with a 60-second cache TTL.
+     * Fetches the current app version from release.json with a 60-second cache TTL.
      * Falls back to an empty string on network or parse failure.
      */
     static async getVersion() {
         const cached = CacheUtility.get(VERSION_CACHE_KEY)
         if (cached) return cached
         try {
-            const response = await fetch('/nit.json', { cache: 'no-store' })
+            const response = await fetch('/release.json', { cache: 'no-store' })
             if (!response.ok) throw new Error('failed')
             const { version = '' } = await response.json()
             return CacheUtility.set(VERSION_CACHE_KEY, version, VERSION_CACHE_TTL_MS)

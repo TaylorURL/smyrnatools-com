@@ -116,25 +116,19 @@ Deno.serve(async (req) => {
 
         switch (endpoint) {
             case 'current-user': {
-                const { userId } = body
-                if (userId) {
-                    try {
-                        const { data } = await supabase.from(USERS_TABLE).select('id').eq('id', userId).single()
-                        if (data?.id) return jsonResponse({ id: userId }, headers)
-                    } catch (_) {}
-                }
                 const headerUserId = req.headers.get('x-user-id')
                 const headerSessionId = req.headers.get('x-session-id')
-                if (headerUserId && headerSessionId) {
-                    const admin = getAdminClient()
-                    const { data: sessionData } = await admin
-                        .from(SESSIONS_TABLE)
-                        .select('id')
-                        .eq('id', headerSessionId)
-                        .eq('user_id', headerUserId)
-                        .maybeSingle()
-                    if (sessionData) return jsonResponse({ id: headerUserId }, headers)
-                }
+                const sessionUserId = headerUserId || body.__sessionUserId
+                const sessionId = headerSessionId || body.__sessionId
+                if (!sessionUserId || !sessionId) return jsonResponse(null, headers)
+                const admin = getAdminClient()
+                const { data: sessionData } = await admin
+                    .from(SESSIONS_TABLE)
+                    .select('id')
+                    .eq('id', sessionId)
+                    .eq('user_id', sessionUserId)
+                    .maybeSingle()
+                if (sessionData) return jsonResponse({ id: sessionUserId }, headers)
                 return jsonResponse(null, headers)
             }
             case 'user-by-id': {
@@ -154,6 +148,8 @@ Deno.serve(async (req) => {
                 )
             }
             case 'display-name': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId } = body
                 if (!userId) return jsonResponse('System', headers)
                 if (userId === 'anonymous') return jsonResponse('Anonymous', headers)
@@ -176,34 +172,46 @@ Deno.serve(async (req) => {
                 return jsonResponse(userId.slice(0, 8), headers)
             }
             case 'all-roles': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { data } = await supabase.from(ROLES_TABLE).select('*').order('weight', { ascending: false })
                 return jsonResponse(data ?? [], headers)
             }
             case 'role-by-id': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { roleId } = body
                 if (!roleId) return errorResponse('Role ID is required', headers)
                 const { data } = await supabase.from(ROLES_TABLE).select('*').eq('id', roleId).single()
                 return jsonResponse(data ?? null, headers)
             }
             case 'role-by-name': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { roleName } = body
                 if (!roleName) return errorResponse('Role name is required', headers)
                 const { data } = await supabase.from(ROLES_TABLE).select('*').eq('name', roleName).single()
                 return jsonResponse(data ?? null, headers)
             }
             case 'user-roles': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId } = body
                 if (!userId) return errorResponse('User ID is required', headers)
                 const roles = await fetchUserRoles(supabase, resolveUserId(userId))
                 return jsonResponse(roles, headers)
             }
             case 'user-permissions': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId } = body
                 if (!userId) return errorResponse('User ID is required', headers)
                 const roles = await fetchUserRoles(supabase, resolveUserId(userId))
                 return jsonResponse([...collectPermissions(roles)], headers)
             }
             case 'user-profile': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId } = body
                 if (!userId) return errorResponse('User ID is required', headers)
                 const { data } = await supabase
@@ -214,17 +222,25 @@ Deno.serve(async (req) => {
                 return jsonResponse(data ?? null, headers)
             }
             case 'has-permission': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId, permission } = body
-                if (!userId || !permission) return jsonResponse(false, headers)
+                const targetId = resolveUserId(userId)
+                if (!targetId || !permission) return jsonResponse(false, headers)
+                if (targetId !== auth) return jsonResponse(false, headers)
                 if (permission === UNIVERSAL_PERMISSION) return jsonResponse(true, headers)
-                const roles = await fetchUserRoles(supabase, resolveUserId(userId))
+                const roles = await fetchUserRoles(supabase, targetId)
                 if (isElevatedUser(roles)) return jsonResponse(true, headers)
                 return jsonResponse(collectPermissions(roles).has(permission), headers)
             }
             case 'has-any-permission': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId, permissions } = body
-                if (!userId || !permissions?.length) return jsonResponse(false, headers)
-                const roles = await fetchUserRoles(supabase, resolveUserId(userId))
+                const targetId = resolveUserId(userId)
+                if (!targetId || !permissions?.length) return jsonResponse(false, headers)
+                if (targetId !== auth) return jsonResponse(false, headers)
+                const roles = await fetchUserRoles(supabase, targetId)
                 if (isElevatedUser(roles)) return jsonResponse(true, headers)
                 const userPermissions = collectPermissions(roles)
                 return jsonResponse(
@@ -233,9 +249,13 @@ Deno.serve(async (req) => {
                 )
             }
             case 'has-all-permissions': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId, permissions } = body
-                if (!userId || !permissions?.length) return jsonResponse(false, headers)
-                const roles = await fetchUserRoles(supabase, resolveUserId(userId))
+                const targetId = resolveUserId(userId)
+                if (!targetId || !permissions?.length) return jsonResponse(false, headers)
+                if (targetId !== auth) return jsonResponse(false, headers)
+                const roles = await fetchUserRoles(supabase, targetId)
                 if (isElevatedUser(roles)) return jsonResponse(true, headers)
                 const userPermissions = collectPermissions(roles)
                 return jsonResponse(
@@ -244,9 +264,12 @@ Deno.serve(async (req) => {
                 )
             }
             case 'menu-visibility': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId, requiredPermissions } = body
-                if (!userId) return jsonResponse({}, headers)
-                const roles = await fetchUserRoles(supabase, resolveUserId(userId))
+                const targetId = resolveUserId(userId)
+                if (!targetId || targetId !== auth) return jsonResponse({}, headers)
+                const roles = await fetchUserRoles(supabase, targetId)
                 const menuEntries = Object.entries(requiredPermissions || {})
                 if (isElevatedUser(roles)) {
                     return jsonResponse(Object.fromEntries(menuEntries.map(([key]) => [key, true])), headers)
@@ -263,6 +286,8 @@ Deno.serve(async (req) => {
                 )
             }
             case 'highest-role': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId } = body
                 if (!userId) return jsonResponse(null, headers)
                 const roles = await fetchUserRoles(supabase, resolveUserId(userId))
@@ -333,6 +358,8 @@ Deno.serve(async (req) => {
                 return jsonResponse(true, headers)
             }
             case 'user-plant': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId } = body
                 if (!userId) return jsonResponse(null, headers)
                 const { data } = await supabase
@@ -353,6 +380,8 @@ Deno.serve(async (req) => {
                 return jsonResponse(data?.plant_code ?? null, headers)
             }
             case 'user-additional-plants': {
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const { userId } = body
                 if (!userId) return jsonResponse([], headers)
                 const { data } = await supabase

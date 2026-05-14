@@ -21,7 +21,7 @@
 - **Versioning: CalVer `YYYY.WW.PATCH`.** This project uses calendar versioning, not semver. `YYYY` is the four-digit
   year, `WW` is the zero-padded ISO week number, and `PATCH` is a sequential counter within that week (starting at 0).
   Example: `2026.20.0` → `2026.20.1` → (next week) `2026.21.0`. During a `/release`, run `node scripts/calver.js` for
-  the version bump step — it computes the next CalVer version and writes it to both `package.json` and `public/nit.json`.
+  the version bump step — it computes the next CalVer version and writes it to both `package.json` and `public/release.json`.
   Do NOT manually pick semver bump types (patch/minor/major). The calver script handles week/year rollovers
   automatically.
 - **SQL delivery: always do BOTH.** Whenever you produce SQL, paste it inline in chat in a fenced ```sql block AND write

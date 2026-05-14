@@ -18,7 +18,8 @@ import {
     handleFetchIssues,
     handleSearchByField,
     nowIso,
-    parseBody
+    parseBody,
+    requireAssetAccess
 } from '../_shared/asset-helpers.ts'
 // @ts-ignore
 import { requireAuthenticated } from '../_shared/requireSession.ts'
@@ -176,6 +177,12 @@ Deno.serve(async (req) => {
                     .maybeSingle()
                 if (currentErr) return errorResponse('Operation failed', headers, 400)
                 if (!current) return errorResponse('Trailer not found', headers, 404)
+                const currentAccessErr = await requireAssetAccess(userId, current.assigned_plant, headers)
+                if (currentAccessErr) return currentAccessErr
+                if (trailer?.assignedPlant !== undefined && trailer.assignedPlant !== current.assigned_plant) {
+                    const newAccessErr = await requireAssetAccess(userId, trailer.assignedPlant, headers)
+                    if (newAccessErr) return newAccessErr
+                }
                 const apiData: Record<string, any> = {
                     trailer_number: trailer?.trailerNumber ?? current.trailer_number,
                     assigned_plant: trailer?.assignedPlant ?? current.assigned_plant,

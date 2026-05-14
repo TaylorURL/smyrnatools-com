@@ -7,7 +7,7 @@
  *   PATCH - sequential counter within the week, starting at 0
  *
  * Computes the next CalVer version and writes it to package.json
- * and public/nit.json. Called by the /release skill during the
+ * and public/release.json. Called by the /release skill during the
  * version bump step.
  *
  * Usage: node scripts/calver.js          (bump and write)
@@ -19,7 +19,7 @@ const { join } = require("path");
 
 const ROOT = join(__dirname, "..");
 const PACKAGE_JSON = join(ROOT, "package.json");
-const NIT_JSON = join(ROOT, "public", "nit.json");
+const RELEASE_JSON = join(ROOT, "public", "release.json");
 
 function isoWeek(date) {
   const d = new Date(
@@ -69,6 +69,6 @@ if (dryRun) {
 pkg.version = newVersion;
 writeFileSync(PACKAGE_JSON, JSON.stringify(pkg, null, 2) + "\n");
 
-const nit = JSON.parse(readFileSync(NIT_JSON, "utf-8"));
-nit.version = newVersion;
-writeFileSync(NIT_JSON, JSON.stringify(nit, null, 2) + "\n");
+const versionManifest = JSON.parse(readFileSync(RELEASE_JSON, "utf-8"));
+versionManifest.version = newVersion;
+writeFileSync(RELEASE_JSON, JSON.stringify(versionManifest, null, 2) + "\n");

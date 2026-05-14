@@ -1,3 +1,4 @@
+import APIUtility from '../utils/APIUtility'
 import { Database } from './DatabaseService'
 import { UserService } from './UserService'
 
@@ -180,41 +181,17 @@ const MessageService = {
 
     /**
      * Upserts pin/mute flags for a single conversation partner. Pass only
-     * the fields that should change; omitted flags are preserved by reading
-     * the current row first so we never accidentally clear the other flag.
+     * the fields that should change; omitted flags are preserved server-side.
      */
     async setConversationFlag(userId, otherUserId, { muted, pinned }) {
-        const resolvedId = await resolveUserId(userId)
-        if (!resolvedId || !otherUserId) return null
-        const { data: existing } = await Database.from('users_pinned_conversations')
-            .select('*')
-            .eq('user_id', resolvedId)
-            .eq('other_user_id', otherUserId)
-            .maybeSingle()
-        const nextPinned = pinned ?? !!existing?.pinned
-        const nextMuted = muted ?? !!existing?.muted
-
-        if (existing) {
-            const { error } = await Database.from('users_pinned_conversations')
-                .update({ muted: nextMuted, pinned: nextPinned })
-                .eq('id', existing.id)
-            if (error) {
-                console.error('Failed to update conversation flags:', error)
-                return null
-            }
-        } else {
-            const { error } = await Database.from('users_pinned_conversations').insert({
-                muted: nextMuted,
-                other_user_id: otherUserId,
-                pinned: nextPinned,
-                user_id: resolvedId
-            })
-            if (error) {
-                console.error('Failed to insert conversation flags:', error)
-                return null
-            }
-        }
-        return { muted: nextMuted, otherUserId, pinned: nextPinned }
+        if (!otherUserId) return null
+        const { json, res } = await APIUtility.post('/user-preferences-service/set-conversation-flag', {
+            muted,
+            otherUserId,
+            pinned
+        })
+        if (!res.ok) return null
+        return json?.data ?? null
     }
 }
 

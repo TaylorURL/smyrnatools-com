@@ -11,9 +11,9 @@ import {
     StackedHourlyAreaChart,
     TopCustomersBarChart,
     YardageSharePieChart
-} from '../../../app/components/plan/PlanDemandCharts'
-import { PlanChartModeToggle, PlanTimeOfDayBar } from '../../../app/components/plan/PlanDemandControls'
-import { PlanDemandPerPlantTable } from '../../../app/components/plan/PlanDemandPerPlantTable'
+} from '../../../app/components/plan/tabs/demand/PlanDemandCharts'
+import { PlanChartModeToggle, PlanTimeOfDayBar } from '../../../app/components/plan/tabs/demand/PlanDemandControls'
+import { PlanDemandPerPlantTable } from '../../../app/components/plan/tabs/demand/PlanDemandPerPlantTable'
 import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
 import PlantFilterButton from '../../../app/components/ui/PlantFilterButton'
 import {

@@ -80,7 +80,6 @@ export const INITIAL_PLANT_NOTIFICATIONS = {
     aiSummaryFailed: false,
     aiSummaryLoading: false,
     assetsWithMostIssues: [],
-    leaderboardMetrics: null,
     longTermShopAssets: [],
     overdueService: [],
     pendingOperators: [],

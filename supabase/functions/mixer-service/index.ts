@@ -26,6 +26,7 @@ import {
     normalizeYear,
     nowIso,
     parseBody,
+    requireAssetAccess,
     requireAuthenticated,
     toDbTimestamp
 } from '../_shared/asset-helpers.ts'
@@ -192,6 +193,12 @@ Deno.serve(async (req) => {
                     .maybeSingle()
                 if (currentErr) return errorResponse('Operation failed', headers, 400)
                 if (!current) return errorResponse('Mixer not found', headers, 404)
+                const currentAccessErr = await requireAssetAccess(userId, current.assigned_plant, headers)
+                if (currentAccessErr) return currentAccessErr
+                if ('assignedPlant' in mixer && mixer.assignedPlant !== current.assigned_plant) {
+                    const newAccessErr = await requireAssetAccess(userId, mixer.assignedPlant, headers)
+                    if (newAccessErr) return newAccessErr
+                }
                 const rawOp = 'assignedOperator' in mixer ? mixer.assignedOperator : current.assigned_operator
                 const rawStatus = 'status' in mixer ? mixer.status : current.status
                 const { operator: assignedOperator, status } = resolveOperatorStatus(rawOp, rawStatus)
