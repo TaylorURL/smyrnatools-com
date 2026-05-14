@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026.20.10] - 2026-05-13
+
+- `src/views/tools/plan/PlanView.jsx` — fixed the 14 `react-hooks/rules-of-hooks` errors CI surfaced after
+  the v2026.20.9 release. The region gate (`if (preferences.selectedRegion?.name !== 'Houston Concrete')
+  return <blocker/>`) was sitting above 14 hook calls (`useState`, `usePlanDate`, `useTransition`,
+  `useCallback`, `usePlanData`, `usePlanActions`, `usePlanInsights`, `usePlanUserContext`, `useEffect`,
+  `usePlanLookups`, …), so React's rules-of-hooks rule fired on every one of them. Split the file into a
+  wrapper `PlanView` (uses only `usePreferences` + the region check, then conditionally returns either
+  `<PlanRegionBlocker />` or `<PlanViewImpl />`) and a `PlanViewImpl` component that owns every other hook.
+  Behavior unchanged: out-of-region users still see the blocker, in-region users still see the full Plan
+  shell — but each component now calls its hooks in the same order on every render.
+- `src/views/reporting/reports/ReportsSubmitView.jsx` — reordered imports to satisfy
+  `simple-import-sort`. No behavior change.
+
 ## [2026.20.9] - 2026-05-13
 
 - Broke down every remaining source file over 1000 lines into focused, single-responsibility modules. No
