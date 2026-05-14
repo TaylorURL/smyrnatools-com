@@ -1,5 +1,40 @@
 # Changelog
 
+## [2026.20.14] - 2026-05-14
+
+- `src/app/components/list/ListCardsBoard.jsx`, `src/app/components/list/ListCardItem.jsx` — added a
+  horizontal "Cards" board view of the Tasks List with one column per status. Column order follows
+  `STATUS_OPTIONS` (Pending → In Progress → Ordered Materials → Waiting → Overdue → Completed). Each
+  column has a tinted header (status color + icon + label + count) and stacks compact `ListCardItem`
+  cards showing description, comments preview, priority pill, deadline (red bold when overdue), plant,
+  and assigned role. The status pill itself is omitted from the card since it's implied by the column
+  the card sits in. On mobile the board uses `snap-x snap-mandatory` so each column snaps into view.
+  Honors the active status-filter chip — when a filter is set, only that one column renders.
+- `src/app/components/list/ListFilterBar.jsx` — added a List/Cards segmented toggle at the start of
+  the filter bar (`fa-list` / `fa-columns` icons). When Cards is active the view-mode chips
+  (priority/status/date/role/activity) are hidden since they don't apply to the board layout.
+- `src/views/reporting/list/ListView.jsx` — new `layout` state (`'list' | 'cards'`, default `'list'`)
+  wired through to `ListFilterBar` via `onLayoutChange`. When `layout === 'cards'` the renderer swaps
+  `ListGroupedItems`/`ListActivityFeed` for `ListCardsBoard` and reuses the existing `groupedByStatus`
+  data so selection state, bulk actions, and the status-filter chip behave identically across layouts.
+- `src/app/constants/listViewConstants.js` — removed `blocked` from `STATUS_MAP`, `STATUS_OPTIONS`,
+  `STATUS_COLORS`, and `BULK_STATUS_OPTIONS`. Blocked was redundant with Waiting and confused users
+  who saw both as the same "stalled" state. Added a `normalizeListStatus(status)` helper that coerces
+  legacy `'blocked'` values to `'waiting'` on read, and threaded it into `getItemStatusStyle` so
+  pre-existing records still render with the correct chip color instead of falling back to pending.
+- `src/app/hooks/useListGroups.js` — dropped the `blocked` group from `buildStatusGroups` and removed
+  `'blocked'` from the `activeStatuses` allowlist. `item.status` is now normalized before routing,
+  so legacy blocked items land in the Waiting bucket instead of falling through to Pending. This is
+  also what fixes the Cards board: legacy blocked items now appear under the Waiting column.
+- `src/services/ListService.js` — removed the `blocked` entry from `STATUS_CONFIG`. `getStatusLabel`,
+  `getStatusIcon`, `getStatusColor`, `calculateStatusInfo`, and `computeDeterministicScore` all read
+  through `normalizeListStatus` so legacy blocked rows render, score, and badge as Waiting. The
+  `getFilteredItems` status-filter branch also normalizes `item.status` before comparison, so
+  selecting "Waiting" in the filter dropdown catches any pre-existing blocked rows in the DB.
+- `src/views/reporting/list/ListAddView.jsx`, `src/views/reporting/list/ListDetailView.jsx` —
+  removed the "Blocked" option from both status pickers. Users can no longer create or transition a
+  task into Blocked; the natural replacement is Waiting.
+
 ## [2026.20.13] - 2026-05-14
 
 - `src/services/ListService.js` — fixed the Tasks List status filter so picking `In Progress`, `Blocked`,

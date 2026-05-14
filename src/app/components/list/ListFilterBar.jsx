@@ -30,8 +30,10 @@ const setHoverBg = (color) => (e) => (e.currentTarget.style.background = color)
 export default function ListFilterBar({
     accentColor,
     isMobile,
+    layout,
     onClearRoleFilter,
     onClearStatusFilter,
+    onLayoutChange,
     onRoleDropdownToggle,
     onRoleFilterChange,
     onStatusDropdownToggle,
@@ -46,27 +48,54 @@ export default function ListFilterBar({
     summaryStats,
     viewMode
 }) {
+    const isCards = layout === 'cards'
     const statusDisplayValue = STATUS_MAP[statusFilter] || 'All Statuses'
     const roleDisplayValue = ROLE_MAP[roleFilter] || 'All Roles'
 
     return (
         <div className="flex items-center flex-wrap gap-2 bg-bg-secondary border border-border-light rounded-[10px] px-3.5 py-2.5">
-            <div className="flex items-center gap-1.5">
-                {VIEW_MODES.map((mode) => (
-                    <button
-                        key={mode.id}
-                        onClick={() => onViewModeChange(mode.id)}
-                        className={`flex items-center rounded-md text-xs font-medium gap-1.5 px-3 py-1.5 cursor-pointer ${
-                            viewMode === mode.id
-                                ? 'bg-gray-900 text-white border-none'
-                                : 'bg-transparent text-gray-500 border border-border-light'
-                        }`}
-                    >
-                        <i className={`fas ${mode.icon} text-[11px]`} />
-                        {mode.label}
-                    </button>
-                ))}
+            <div className="inline-flex items-center rounded-md border border-border-light overflow-hidden">
+                <button
+                    onClick={() => onLayoutChange('list')}
+                    className={`flex items-center text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer ${
+                        !isCards ? 'bg-gray-900 text-white' : 'bg-transparent text-gray-500'
+                    }`}
+                    aria-label="List view"
+                    aria-pressed={!isCards}
+                >
+                    <i className="fas fa-list text-[11px]" />
+                    {isMobile ? '' : 'List'}
+                </button>
+                <button
+                    onClick={() => onLayoutChange('cards')}
+                    className={`flex items-center text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer ${
+                        isCards ? 'bg-gray-900 text-white' : 'bg-transparent text-gray-500'
+                    }`}
+                    aria-label="Cards view"
+                    aria-pressed={isCards}
+                >
+                    <i className="fas fa-columns text-[11px]" />
+                    {isMobile ? '' : 'Cards'}
+                </button>
             </div>
+            {!isCards && (
+                <div className="flex items-center gap-1.5">
+                    {VIEW_MODES.map((mode) => (
+                        <button
+                            key={mode.id}
+                            onClick={() => onViewModeChange(mode.id)}
+                            className={`flex items-center rounded-md text-xs font-medium gap-1.5 px-3 py-1.5 cursor-pointer ${
+                                viewMode === mode.id
+                                    ? 'bg-gray-900 text-white border-none'
+                                    : 'bg-transparent text-gray-500 border border-border-light'
+                            }`}
+                        >
+                            <i className={`fas ${mode.icon} text-[11px]`} />
+                            {mode.label}
+                        </button>
+                    ))}
+                </div>
+            )}
             <div className="h-5 w-px bg-[var(--border-light)]" />
             {statusFilter ? (
                 <button

@@ -38,7 +38,6 @@ function ListDetailView({ itemId, onClose }) {
         { label: 'In Progress', value: 'in_progress' },
         { label: 'Ordered Materials / Parts', value: 'ordered_materials' },
         { label: 'Waiting', value: 'waiting' },
-        { label: 'Blocked', value: 'blocked' },
         { label: 'Completed', value: 'completed' }
     ]
     const priorityOptions = ListService.getPriorityOptions()

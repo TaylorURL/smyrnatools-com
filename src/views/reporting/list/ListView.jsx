@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ConfirmDialog from '../../../app/components/common/ConfirmDialog'
 import ListActivityFeed from '../../../app/components/list/ListActivityFeed'
 import ListBulkActionsBar from '../../../app/components/list/ListBulkActionsBar'
+import ListCardsBoard from '../../../app/components/list/ListCardsBoard'
 import ListEmptyState from '../../../app/components/list/ListEmptyState'
 import ListFilterBar from '../../../app/components/list/ListFilterBar'
 import ListFilterBarSkeleton from '../../../app/components/list/ListFilterBarSkeleton'
@@ -49,6 +50,7 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
     const [statusFilter, setStatusFilter] = useState('')
     const [roleFilter, setRoleFilter] = useState('')
     const [viewMode, setViewMode] = useState('priority')
+    const [layout, setLayout] = useState('list')
     const [showAddSheet, setShowAddSheet] = useState(false)
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
     const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
@@ -268,8 +270,10 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                     <ListFilterBar
                         accentColor={accentColor}
                         isMobile={isMobile}
+                        layout={layout}
                         onClearRoleFilter={() => setRoleFilter('')}
                         onClearStatusFilter={clearStatusFilter}
+                        onLayoutChange={setLayout}
                         onRoleDropdownToggle={toggleRoleDropdown}
                         onRoleFilterChange={handleRoleFilterChange}
                         onStatusDropdownToggle={toggleStatusDropdown}
@@ -299,6 +303,16 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
                             accentColor={accentColor}
                             hasSearchOrPlant={!!(searchText || selectedPlant)}
                             onAddClick={openAddSheet}
+                            statusFilter={statusFilter}
+                        />
+                    ) : layout === 'cards' ? (
+                        <ListCardsBoard
+                            accentColor={accentColor}
+                            groupedByStatus={groupedByStatus}
+                            isMobile={isMobile}
+                            onSelectItem={onSelectItem}
+                            onToggleSelect={toggleSelect}
+                            selectedIds={selectedIds}
                             statusFilter={statusFilter}
                         />
                     ) : viewMode === 'activity' ? (

@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 
+import { normalizeListStatus } from '../constants/listViewConstants'
+
 /** Computes time-relative groups (Overdue / Today / Tomorrow / This Week / Later / Completed). */
 function buildDateGroups(items) {
     const groups = {
@@ -36,7 +38,6 @@ function buildDateGroups(items) {
 /** Items past deadline that are not actively being worked are promoted to Overdue. */
 function buildStatusGroups(items) {
     const groups = {
-        blocked: { color: 'danger', icon: 'fa-ban', items: [], label: 'Blocked', priority: 3 },
         completed: { color: 'success', icon: 'fa-check-circle', items: [], label: 'Completed', priority: 7 },
         in_progress: { color: 'accent', icon: 'fa-spinner', items: [], label: 'In Progress', priority: 2 },
         ordered_materials: {
@@ -52,17 +53,18 @@ function buildStatusGroups(items) {
     }
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const activeStatuses = ['in_progress', 'blocked', 'waiting', 'ordered_materials']
+    const activeStatuses = ['in_progress', 'waiting', 'ordered_materials']
     items.forEach((item) => {
         if (item.completed || item.status === 'completed') {
             groups.completed.items.push(item)
             return
         }
+        const status = normalizeListStatus(item.status)
         const deadline = new Date(item.deadline)
         deadline.setHours(0, 0, 0, 0)
-        const isOverdue = deadline < today && !activeStatuses.includes(item.status)
+        const isOverdue = deadline < today && !activeStatuses.includes(status)
         if (isOverdue) groups.overdue.items.push(item)
-        else if (groups[item.status]) groups[item.status].items.push(item)
+        else if (groups[status]) groups[status].items.push(item)
         else groups.pending.items.push(item)
     })
     Object.values(groups).forEach((g) => g.items.sort((a, b) => new Date(a.deadline) - new Date(b.deadline)))

@@ -49,8 +49,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
         { label: 'Pending', value: 'pending' },
         { label: 'In Progress', value: 'in_progress' },
         { label: 'Ordered Materials / Parts', value: 'ordered_materials' },
-        { label: 'Waiting', value: 'waiting' },
-        { label: 'Blocked', value: 'blocked' }
+        { label: 'Waiting', value: 'waiting' }
     ]
     const responsibleRoleOptions = [
         { label: 'Unassigned', value: '' },

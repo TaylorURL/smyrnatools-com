@@ -1,3 +1,4 @@
+import { normalizeListStatus } from '../app/constants/listViewConstants'
 import APIUtility from '../utils/APIUtility'
 import CacheUtility from '../utils/CacheUtility'
 import DateUtility from '../utils/DateUtility'
@@ -65,7 +66,6 @@ const DEFAULT_PRIORITY = PRIORITY_CONFIG.none
  * Consolidated status configuration — single source of truth for label, icon, and Tailwind color per status.
  */
 const STATUS_CONFIG = {
-    blocked: { color: 'text-red-500', cssClass: 'blocked', icon: 'fa-ban', label: 'Blocked' },
     completed: { color: 'text-green-500', cssClass: 'completed', icon: 'fa-check-circle', label: 'Completed' },
     in_progress: { color: 'text-blue-400', cssClass: 'in-progress', icon: 'fa-spinner', label: 'In Progress' },
     ordered_materials: {
@@ -263,7 +263,7 @@ class ListServiceImpl {
                 (item) => (!item.status || item.status === 'pending') && !this.isOverdue(item) && !item.completed
             )
         } else if (statusFilter) {
-            items = items.filter((item) => item.status === statusFilter && !item.completed)
+            items = items.filter((item) => normalizeListStatus(item.status) === statusFilter && !item.completed)
         }
         if (showCompleted) {
             items.sort((a, b) => {
@@ -303,11 +303,11 @@ class ListServiceImpl {
         if (!item) return { color: 'text-gray-500', icon: 'question-circle', label: 'Unknown' }
         if (item.completed || item.status === 'completed')
             return { color: 'text-green-500', icon: 'check-circle', label: 'Completed' }
-        if (item.status === 'in_progress') return { color: 'text-blue-400', icon: 'spinner', label: 'In Progress' }
-        if (item.status === 'ordered_materials')
+        const status = normalizeListStatus(item.status)
+        if (status === 'in_progress') return { color: 'text-blue-400', icon: 'spinner', label: 'In Progress' }
+        if (status === 'ordered_materials')
             return { color: 'text-sky-400', icon: 'truck-loading', label: 'Ordered Materials' }
-        if (item.status === 'blocked') return { color: 'text-red-500', icon: 'ban', label: 'Blocked' }
-        if (item.status === 'waiting') return { color: 'text-yellow-500', icon: 'hourglass-half', label: 'Waiting' }
+        if (status === 'waiting') return { color: 'text-yellow-500', icon: 'hourglass-half', label: 'Waiting' }
         const deadline = new Date(item.deadline)
         const now = new Date()
         if (isNaN(deadline.getTime())) return { color: 'text-gray-500', icon: 'calendar-times', label: 'No Deadline' }
@@ -319,15 +319,15 @@ class ListServiceImpl {
     }
     /** Maps a status key to its human-readable label via STATUS_CONFIG. */
     getStatusLabel(status) {
-        return (STATUS_CONFIG[status] ?? DEFAULT_STATUS).label
+        return (STATUS_CONFIG[normalizeListStatus(status)] ?? DEFAULT_STATUS).label
     }
     /** Maps a status key to its FontAwesome icon class via STATUS_CONFIG. */
     getStatusIcon(status) {
-        return (STATUS_CONFIG[status] ?? DEFAULT_STATUS).icon
+        return (STATUS_CONFIG[normalizeListStatus(status)] ?? DEFAULT_STATUS).icon
     }
     /** Maps a status key to its CSS color class name via STATUS_CONFIG. */
     getStatusColor(status) {
-        return (STATUS_CONFIG[status] ?? DEFAULT_STATUS).cssClass
+        return (STATUS_CONFIG[normalizeListStatus(status)] ?? DEFAULT_STATUS).cssClass
     }
     /** Maps a responsible role key to its display label. */
     getResponsibleRoleLabel(role) {
@@ -593,12 +593,12 @@ class ListServiceImpl {
      */
     computeDeterministicScore(item) {
         let score = 5
-        if (item.status === 'blocked') score = 9
-        else if (item.status === 'overdue' || this.isOverdue(item)) score = 9
-        else if (item.status === 'in_progress') score = 7
-        else if (item.status === 'ordered_materials') score = 6
-        else if (item.status === 'waiting') score = 4
-        else if (item.status === 'pending') score = 5
+        const status = normalizeListStatus(item.status)
+        if (status === 'overdue' || this.isOverdue(item)) score = 9
+        else if (status === 'in_progress') score = 7
+        else if (status === 'ordered_materials') score = 6
+        else if (status === 'waiting') score = 4
+        else if (status === 'pending') score = 5
         if (item.deadline) {
             const daysUntilDeadline = (new Date(item.deadline) - new Date()) / (1000 * 60 * 60 * 24)
             if (daysUntilDeadline < 0) score = Math.max(score, 9)

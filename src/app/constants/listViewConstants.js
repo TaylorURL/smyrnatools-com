@@ -1,6 +1,5 @@
 /** Maps internal status keys to their user-facing display labels. */
 export const STATUS_MAP = {
-    blocked: 'Blocked',
     completed: 'Completed',
     in_progress: 'In Progress',
     ordered_materials: 'Ordered Materials',
@@ -9,15 +8,15 @@ export const STATUS_MAP = {
     waiting: 'Waiting'
 }
 
-export const STATUS_OPTIONS = [
-    'Pending',
-    'In Progress',
-    'Ordered Materials',
-    'Blocked',
-    'Waiting',
-    'Overdue',
-    'Completed'
-]
+export const STATUS_OPTIONS = ['Pending', 'In Progress', 'Ordered Materials', 'Waiting', 'Overdue', 'Completed']
+
+/**
+ * Coerces legacy `blocked` status to `waiting` since the two are now treated identically.
+ * Apply this anywhere we read a raw `item.status` before mapping it to a label, icon, color,
+ * group, or filter comparison. Newly created items never use `blocked` — this exists solely
+ * for records that pre-date the merge.
+ */
+export const normalizeListStatus = (status) => (status === 'blocked' ? 'waiting' : status)
 
 /** Maps internal role keys to their user-facing display labels. */
 export const ROLE_MAP = {
@@ -39,7 +38,6 @@ export const VIEW_MODES = [
 ]
 
 export const STATUS_COLORS = {
-    blocked: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', text: '#ef4444' },
     completed: { bg: 'rgba(22,163,74,0.1)', border: 'rgba(22,163,74,0.3)', text: '#16a34a' },
     in_progress: { bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.3)', text: '#3b82f6' },
     ordered_materials: { bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.3)', text: '#3b82f6' },
@@ -59,8 +57,7 @@ export const BULK_STATUS_OPTIONS = [
     { label: 'Pending', value: 'pending' },
     { label: 'In Progress', value: 'in_progress' },
     { label: 'Ordered Materials', value: 'ordered_materials' },
-    { label: 'Waiting', value: 'waiting' },
-    { label: 'Blocked', value: 'blocked' }
+    { label: 'Waiting', value: 'waiting' }
 ]
 
 export const mapStatusValue = (value) => {
@@ -76,7 +73,7 @@ export const normalizeToUpperCase = (str) =>
         .toUpperCase()
 
 export const getItemStatusStyle = (statusType) => {
-    const color = STATUS_COLORS[statusType] || STATUS_COLORS.pending
+    const color = STATUS_COLORS[normalizeListStatus(statusType)] || STATUS_COLORS.pending
     return {
         background: color.bg,
         border: `1px solid ${color.border}`,
