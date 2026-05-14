@@ -1,5 +1,34 @@
 # Changelog
 
+## [2026.20.16] - 2026-05-14
+
+- `src/app/hooks/usePlanScheduleData.js` — fixed the Schedule tab's plant pool numbers double-counting
+  operators that the planner has assigned to outbound help. Previously each plant's `baseByPlant[code]`
+  was passed straight to `computeClockInRows`, which ramped the local pool up by the full base for the
+  plant's own orders. `buildHelpTransfers` then ADDITIONALLY emitted `+row.count` clock-in events at
+  the same plant for the outbound trip — modelling the same operators twice. A plant with a base of 7
+  that was sending all 7 to another plant would peak at a phantom 14 ops on its own schedule, plus any
+  inbound help on top. Reordered the memos so `helpRows` is built before `clockInRows`, then derived
+  two new maps: `outboundByPlant` (sum of `row.count` keyed by `row.fromPlant` for every
+  `direction === 'outbound'` row) and `localWorkBaseByPlant` (`max(0, baseByPlant − outboundByPlant)`).
+  `computeClockInRows` now consumes `localWorkBaseByPlant`, so a plant sending its full base out emits
+  zero local clock-ins. `initialPoolByCode` was also extended to treat any plant with outbound help as
+  "ramping" (starts at 0, builds up via help-transfer events) so the morning outbound `+N` event
+  doesn't compound on top of a still-base-seeded initial value. Net effect on a 402 → 401 (7) +
+  403 → 402 (6) day: 402's working pool peaks at the realistic 6 ops on loan from 403 instead of the
+  previously inflated 20+, and the `X/Y` figure in the Trucks column subtracts dispatched trucks from
+  that 6 rather than a phantom 14.
+- `src/utils/PlanScheduleUtility.ts` — extended the pending branch of `evaluateOrderService` to surface
+  a `startLateness` (minutes between scheduled start and `nowMin`) plus an `isLate` flag when that gap
+  exceeds `BAD_SERVICE_LATE_THRESHOLD_MIN` (15 minutes). Today's-schedule orders with no tickets loaded
+  yet now distinguish "softly past start" from "definitively missed pour."
+- `src/app/components/plan/tabs/schedule/PlanScheduleBadges.jsx` — `ServiceBadge`'s pending branch now
+  promotes the soft amber `Awaiting Truck` chip to a red `Late · Xh Ym` chip when `service.isLate` is
+  true. Same red palette as the existing late/bad-experience badge; tooltip reads
+  `Scheduled start was Xh Ym ago — no trucks loaded yet.` so the dispatcher sees the exact magnitude.
+  A noon order viewed at 11:50pm on today's schedule now reads `Late · 11h 50m` instead of the
+  understated `Awaiting Truck`.
+
 ## [2026.20.15] - 2026-05-14
 
 - `src/utils/PlanScheduleUtility.ts` — fixed the 14h DOT-shift badge throwing absurd `LIMIT EXCEEDED ·

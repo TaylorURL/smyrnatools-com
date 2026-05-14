@@ -84,6 +84,27 @@ export function ServiceBadge({ service }) {
         )
     }
     if (service.status === 'pending') {
+        /* Pending + late (start was more than `BAD_SERVICE_LATE_THRESHOLD_MIN`
+         * ago with no trucks loaded) escalates to a red Late chip. The
+         * soft amber "Awaiting Truck" still applies in the 5–15 min
+         * grace window — dispatchers see a gentle nudge first, an
+         * urgent flag once it's unambiguously a missed pour. */
+        if (service.isLate) {
+            const minutesLate = Math.max(0, Math.round(service.startLateness || 0))
+            const hoursLate = Math.floor(minutesLate / 60)
+            const remainderMin = minutesLate % 60
+            const lateText = hoursLate > 0 ? `${hoursLate}h ${remainderMin}m` : `${remainderMin}m`
+            return (
+                <span
+                    className={SERVICE_BADGE_BASE}
+                    style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
+                    title={`Scheduled start was ${lateText} ago — no trucks loaded yet.`}
+                >
+                    <i className="fas fa-circle-exclamation text-[9px]" />
+                    Late · {lateText}
+                </span>
+            )
+        }
         return (
             <span
                 className={SERVICE_BADGE_BASE}

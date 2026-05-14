@@ -201,8 +201,21 @@ export const evaluateOrderService = (order, detail, nowMin) => {
     if (!loadedTimes.length) {
         // No tickets yet. Only flag "pending" once the start time is at
         // least a few minutes past — otherwise the row is just upcoming.
+        // When the gap blows past `BAD_SERVICE_LATE_THRESHOLD_MIN` the
+        // pending state escalates to "late" so the badge can switch from
+        // a soft "Awaiting Truck" to a red "Late · Xh Ym". `startLateness`
+        // here is `nowMin - startMin` (clock time since scheduled start)
+        // because no truck has loaded — there's no actual load time to
+        // measure lateness against.
         if (Number.isFinite(nowMin) && Number.isFinite(startMin) && nowMin > startMin + 5) {
-            return { expectedTrucks: expectedTrucks ?? null, status: 'pending', ticketsLoaded: 0 }
+            const startLateness = Math.max(0, nowMin - startMin)
+            return {
+                expectedTrucks: expectedTrucks ?? null,
+                isLate: startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN,
+                startLateness,
+                status: 'pending',
+                ticketsLoaded: 0
+            }
         }
         return null
     }
