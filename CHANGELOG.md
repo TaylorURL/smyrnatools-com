@@ -1,5 +1,20 @@
 # Changelog
 
+## [2026.20.15] - 2026-05-14
+
+- `src/utils/PlanScheduleUtility.ts` — fixed the 14h DOT-shift badge throwing absurd `LIMIT EXCEEDED ·
+  44.6H` readings on individual Schedule-tab rows. Dispatch was sending `toJobTime` values shaped as a
+  clock time on some orders (e.g. `"18:20"`), which `parseDurationMinutes` correctly parsed as 1100
+  minutes of one-way travel — 18+ hours of drive time then propagated through `evaluateHoursLimit`,
+  producing the 44.6h elapsed reading on a 10-yard order. Added `MAX_TRAVEL_MINUTES = 180` (3 hours,
+  well above any realistic ready-mix run since concrete sets in ~90 min) plus a `sanitizeTravelMinutes`
+  helper that returns null for values outside `[0, 180]`. `evaluateHoursLimit` now runs both legs
+  through the sanitizer; when one leg is null but the other is finite it mirrors the finite leg into
+  both (assumes return ≈ outbound, realistic for delivery), and bails entirely when both legs are
+  unusable. Net effect on the affected Iracheta `#644` row: badge no longer renders, since the
+  realistic 60-min round-trip projects back-at-yard around 14:55, well under the 14h shift cap from
+  the plant's 05:00 first-load.
+
 ## [2026.20.14] - 2026-05-14
 
 - `src/app/components/list/ListCardsBoard.jsx`, `src/app/components/list/ListCardItem.jsx` — added a

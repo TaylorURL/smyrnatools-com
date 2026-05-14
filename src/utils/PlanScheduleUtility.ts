@@ -33,6 +33,23 @@ export const HOURS_LIMIT_SLUMP_MINUTES = 15
  *  pour-time estimate isn't available. */
 export const HOURS_LIMIT_POUR_MINUTES = 60
 
+/** Maximum plausible one-way travel duration (minutes) between a plant and
+ *  a job site. Ready-mix concrete sets in ~90 min from water contact, so
+ *  no realistic delivery ever exceeds this; anything bigger is dispatch
+ *  data shaped as a clock time instead of an HH:MM duration (e.g.
+ *  `toJobTime: "18:20"` parsing as 1100 min). Treating that as a real
+ *  18-hour drive produced an absurd 44.6h badge on the Schedule tab. */
+export const MAX_TRAVEL_MINUTES = 180
+
+/** Discards parsed travel values that exceed the realistic ceiling. Returns
+ *  null on any non-finite or out-of-range input so callers can fall back to
+ *  the other leg or skip the calculation entirely. */
+const sanitizeTravelMinutes = (min) => {
+    if (!Number.isFinite(min)) return null
+    if (min < 0 || min > MAX_TRAVEL_MINUTES) return null
+    return min
+}
+
 /** Trim/normalize any value to a string. Empty / null / undefined → ''. */
 export const clean = (value) => (value == null ? '' : String(value).trim())
 
@@ -369,9 +386,17 @@ export const evaluateHoursLimit = (order, firstLoadOutMin) => {
     if (!Number.isFinite(firstLoadOutMin)) return null
     const startMin = timeToMinutes(order?.startTime)
     if (!Number.isFinite(startMin)) return null
-    const travelOut = parseDurationMinutes(order?.toJobTime)
-    const travelBackRaw = parseDurationMinutes(order?.toPlantTime)
-    const travelBack = Number.isFinite(travelBackRaw) ? travelBackRaw : travelOut
+    /* Travel legs run through `sanitizeTravelMinutes` so dispatch values
+     * mis-shaped as clock times (e.g. "18:20" → 1100 min) get clamped to
+     * null instead of producing absurd elapsed-hour readings. Symmetric
+     * fallback: when one leg is null but the other is finite, mirror the
+     * finite leg into both — assumes return time ≈ outbound time, which
+     * is realistic for ready-mix delivery. Bails entirely when both
+     * legs are null (no usable signal to compute against). */
+    const rawOut = sanitizeTravelMinutes(parseDurationMinutes(order?.toJobTime))
+    const rawBack = sanitizeTravelMinutes(parseDurationMinutes(order?.toPlantTime))
+    const travelOut = Number.isFinite(rawOut) ? rawOut : rawBack
+    const travelBack = Number.isFinite(rawBack) ? rawBack : rawOut
     if (!Number.isFinite(travelOut) && !Number.isFinite(travelBack)) return null
     const segments = {
         load: LOAD_MINUTES,
