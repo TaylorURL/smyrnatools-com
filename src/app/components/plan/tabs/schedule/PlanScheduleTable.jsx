@@ -2,11 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import {
-    buildOrderCoveragePayload,
-    getFirstLoadOutMinutes,
-    getScheduleRowDelay
-} from '../../../../../utils/PlanScheduleUtility'
+import { buildOrderCoveragePayload, getScheduleRowDelay } from '../../../../../utils/PlanScheduleUtility'
 import { timeToMinutes } from '../../../../../utils/PlanUtility'
 import OrderInfoModal from '../../../schedule/OrderInfoModal'
 import OrderTicketsModal from '../../../schedule/OrderTicketsModal'
@@ -292,6 +288,7 @@ export default function PlanScheduleTable({
     clockInRows = [],
     detailByOrderId = {},
     filteredPlantCode = null,
+    firstLoadOutByPlant = null,
     getCloserPlantForOrder,
     getTravelOverrides,
     helpRows = [],
@@ -361,11 +358,6 @@ export default function PlanScheduleTable({
         () => (extrasActive ? groupClockInRows(clockInRows, visiblePlantCodes) : []),
         [clockInRows, visiblePlantCodes, extrasActive]
     )
-
-    /* Anchor for the per-row 14h driver-shift check — earliest valid start
-     * time across all visible orders. Memoised so it doesn't recompute on
-     * every row render. */
-    const firstLoadOutMin = useMemo(() => getFirstLoadOutMinutes(orders), [orders])
 
     const tableRows = useMemo(
         () =>
@@ -449,13 +441,16 @@ export default function PlanScheduleTable({
                                 default: {
                                     const o = row.order
                                     const rowKey = keyForOrder(o)
+                                    /* Per-plant 14h anchor — THIS row's
+                                     * plant, not the global earliest. */
+                                    const rowFirstLoadOutMin = firstLoadOutByPlant?.get(o.plantCode) ?? null
                                     return (
                                         <PlanScheduleOrderRow
                                             key={`${o.plantCode}-${o.orderId || idx}`}
                                             accentColor={accentColor}
                                             animationDelayMs={animationDelayMs}
                                             detail={o.orderId ? detailByOrderId[o.orderId] : null}
-                                            firstLoadOutMin={firstLoadOutMin}
+                                            firstLoadOutMin={rowFirstLoadOutMin}
                                             getCloserPlantForOrder={getCloserPlantForOrder}
                                             isPastDay={isPastDay}
                                             isToday={isToday}

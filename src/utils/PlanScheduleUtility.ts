@@ -314,20 +314,45 @@ export const SERVICE_BADGE_BASE =
 export const CLOSER_PLANT_MIN_SAVINGS = 5
 
 /**
- * Earliest "load-out" minute of the day across a list of dispatch orders.
- * Equivalent to "when the first concrete left a plant today" — used as the
- * anchor for the 14-hour driver-shift check. Excluded orders (cancelled /
- * test) don't anchor the day; they'd otherwise inflate the elapsed window.
+ * Earliest "load-out" minute of the day PER PLANT — the anchor for each
+ * plant's 14-hour DOT shift check. For plant P this is the earliest of:
+ * (1) P's first own order start time, and (2) P's first outbound help
+ * dispatch clock-in (when a P operator first clocked in to drive to
+ * another plant). Inbound help arriving at P does NOT anchor P's day —
+ * those operators clocked in at their source plant, not at P. Return
+ * events similarly don't anchor — they're just an operator coming back.
+ * Excluded orders (cancelled / test) are skipped.
+ *
+ * Returns `Map<plantCode, anchorMin>`. Plants with no qualifying activity
+ * are absent from the map — callers should treat that as "no anchor" and
+ * skip the 14h badge for those orders.
+ *
+ * The fix: previously this was a single scalar across ALL orders, so an
+ * order at plant A could get anchored by plant B's earlier first job
+ * when the dispatcher viewed the schedule unfiltered. Each plant now
+ * gets its own day-start, so the badge only fires when THIS plant's
+ * operator actually exceeds 14h.
  */
-export const getFirstLoadOutMinutes = (orders) => {
-    let earliest = null
+export const getFirstLoadOutByPlant = (orders, helpRows) => {
+    const byPlant = new Map()
+    const consider = (code, min) => {
+        if (!code || !Number.isFinite(min)) return
+        const existing = byPlant.get(code)
+        if (existing == null || min < existing) byPlant.set(code, min)
+    }
     for (const order of orders || []) {
         if (!order || isExcludedOrder(order)) continue
-        const startMin = timeToMinutes(order?.startTime)
-        if (!Number.isFinite(startMin)) continue
-        if (earliest == null || startMin < earliest) earliest = startMin
+        consider(order.plantCode, timeToMinutes(order?.startTime))
     }
-    return earliest
+    for (const row of helpRows || []) {
+        if (!row || row.direction !== 'outbound') continue
+        /* Only count outbound help when we can pin the operator's actual
+         * clock-in at the FROM plant. Without travel data we'd otherwise
+         * fall back to the arrival time at the destination, which is
+         * later than the real clock-in and would shorten the 14h window. */
+        consider(row.fromPlant, row.clockInRangeStart)
+    }
+    return byPlant
 }
 
 /**

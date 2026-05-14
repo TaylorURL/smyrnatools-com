@@ -9,7 +9,7 @@ import {
     compareOrders,
     evaluateScheduleSatisfaction,
     extractCityFromFullAddress,
-    getFirstLoadOutMinutes,
+    getFirstLoadOutByPlant,
     getOrderStatus,
     sumField
 } from '../../utils/PlanScheduleUtility'
@@ -405,18 +405,21 @@ export function usePlanScheduleData({
             .sort((a, b) => String(a.code).localeCompare(String(b.code)))
     }, [filtered])
 
-    /* Anchor for the per-card 14h driver-shift check — computed once per
-     * filtered order set and shared across every order card. */
-    const cardFirstLoadOutMin = useMemo(() => getFirstLoadOutMinutes(filtered), [filtered])
+    /* Per-plant anchor for the 14h driver-shift check. Each plant's
+     * badge is computed against THAT plant's own day-start (first own
+     * order or first outbound help) — never against the day's earliest
+     * job at a different plant. Built from the unfiltered order set so
+     * the anchor stays stable when the user filters the schedule down. */
+    const firstLoadOutByPlant = useMemo(() => getFirstLoadOutByPlant(allOrders, helpRows), [allOrders, helpRows])
 
     return {
         activeFilterCount,
         allOrders,
-        cardFirstLoadOutMin,
         clockInRows,
         customerSatisfaction,
         earliestTime,
         filtered,
+        firstLoadOutByPlant,
         getCloserPlantForOrder,
         getTravelOverrides,
         groupedByPlant,

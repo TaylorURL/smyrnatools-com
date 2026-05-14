@@ -96,8 +96,8 @@ function PlanScheduleView({
     const {
         activeFilterCount,
         allOrders,
-        cardFirstLoadOutMin,
         clockInRows,
+        firstLoadOutByPlant,
         customerSatisfaction,
         earliestTime,
         filtered,
@@ -286,6 +286,7 @@ function PlanScheduleView({
                                     clockInRows={clockInRows}
                                     detailByOrderId={detailByOrderId}
                                     filteredPlantCode={singlePlant}
+                                    firstLoadOutByPlant={firstLoadOutByPlant}
                                     getCloserPlantForOrder={getCloserPlantForOrder}
                                     getTravelOverrides={getTravelOverrides}
                                     helpRows={helpRows}
@@ -310,8 +311,8 @@ function PlanScheduleView({
                             ) : (
                                 <PlanScheduleGroupedCards
                                     accentColor={accentColor}
-                                    cardFirstLoadOutMin={cardFirstLoadOutMin}
                                     detailByOrderId={detailByOrderId}
+                                    firstLoadOutByPlant={firstLoadOutByPlant}
                                     getCloserPlantForOrder={getCloserPlantForOrder}
                                     getTravelOverrides={getTravelOverrides}
                                     groupedByPlant={groupedByPlant}

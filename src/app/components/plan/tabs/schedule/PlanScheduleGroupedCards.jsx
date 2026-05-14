@@ -12,8 +12,8 @@ import PlanScheduleOrderCard from './PlanScheduleOrderCard'
  */
 export default function PlanScheduleGroupedCards({
     accentColor,
-    cardFirstLoadOutMin,
     detailByOrderId,
+    firstLoadOutByPlant,
     getCloserPlantForOrder,
     getTravelOverrides,
     groupedByPlant,
@@ -28,46 +28,58 @@ export default function PlanScheduleGroupedCards({
 }) {
     return (
         <div className="flex flex-col gap-4">
-            {groupedByPlant.map(({ code, orders }) => (
-                <div key={code} className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2 px-1 text-[13px]">
-                        <button
-                            type="button"
-                            onClick={() => onPickPlant(code)}
-                            className="border-none bg-transparent p-0 cursor-pointer"
-                            title={
-                                plantFilterSet.has(code) ? 'Tap to remove plant from filter' : `Filter to plant ${code}`
-                            }
-                        >
-                            <PlantBadge code={code} fallback={accentColor} name={plantNameByCode?.[code]} />
-                        </button>
-                        <span className="text-text-tertiary">
-                            {orders.length} order{orders.length === 1 ? '' : 's'} ·{' '}
-                            {sumField(orders, 'yardage').toLocaleString()} yd
-                        </span>
+            {groupedByPlant.map(({ code, orders }) => {
+                /* Per-plant 14h anchor — only THIS plant's first job /
+                 * first outbound help. Looked up once per group so every
+                 * card in the group shares the same scalar. */
+                const groupFirstLoadOutMin = firstLoadOutByPlant?.get(code) ?? null
+                return (
+                    <div key={code} className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 px-1 text-[13px]">
+                            <button
+                                type="button"
+                                onClick={() => onPickPlant(code)}
+                                className="border-none bg-transparent p-0 cursor-pointer"
+                                title={
+                                    plantFilterSet.has(code)
+                                        ? 'Tap to remove plant from filter'
+                                        : `Filter to plant ${code}`
+                                }
+                            >
+                                <PlantBadge code={code} fallback={accentColor} name={plantNameByCode?.[code]} />
+                            </button>
+                            <span className="text-text-tertiary">
+                                {orders.length} order{orders.length === 1 ? '' : 's'} ·{' '}
+                                {sumField(orders, 'yardage').toLocaleString()} yd
+                            </span>
+                        </div>
+                        <div className="grid gap-2 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                            {orders.map((o, idx) => (
+                                <PlanScheduleOrderCard
+                                    key={`${code}-${o.orderId || idx}`}
+                                    accentColor={accentColor}
+                                    closerPlant={getCloserPlantForOrder(o)}
+                                    firstLoadOutMin={groupFirstLoadOutMin}
+                                    isToday={isViewingToday}
+                                    onOpenLocation={onOpenLocation}
+                                    onPickPlant={onPickPlant}
+                                    onPickProduct={onPickProduct}
+                                    onPickStatus={onPickStatus}
+                                    order={o}
+                                    plantCode={code}
+                                    plantName={plantNameByCode?.[code]}
+                                    service={evaluateOrderService(
+                                        o,
+                                        o.orderId ? detailByOrderId[o.orderId] : null,
+                                        nowMin
+                                    )}
+                                    travelOverrides={getTravelOverrides(o)}
+                                />
+                            ))}
+                        </div>
                     </div>
-                    <div className="grid gap-2 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-                        {orders.map((o, idx) => (
-                            <PlanScheduleOrderCard
-                                key={`${code}-${o.orderId || idx}`}
-                                accentColor={accentColor}
-                                closerPlant={getCloserPlantForOrder(o)}
-                                firstLoadOutMin={cardFirstLoadOutMin}
-                                isToday={isViewingToday}
-                                onOpenLocation={onOpenLocation}
-                                onPickPlant={onPickPlant}
-                                onPickProduct={onPickProduct}
-                                onPickStatus={onPickStatus}
-                                order={o}
-                                plantCode={code}
-                                plantName={plantNameByCode?.[code]}
-                                service={evaluateOrderService(o, o.orderId ? detailByOrderId[o.orderId] : null, nowMin)}
-                                travelOverrides={getTravelOverrides(o)}
-                            />
-                        ))}
-                    </div>
-                </div>
-            ))}
+                )
+            })}
         </div>
     )
 }

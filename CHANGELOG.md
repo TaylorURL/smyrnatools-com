@@ -1,5 +1,33 @@
 # Changelog
 
+## [2026.20.12] - 2026-05-14
+
+- `src/utils/PlanScheduleUtility.ts` — fixed the 14h DOT-shift badge on the Schedule tab so each plant's
+  orders are evaluated against THAT plant's own day-start, not the earliest first-load anywhere in the
+  schedule. Replaced `getFirstLoadOutMinutes(orders)` (a single scalar across all visible orders) with
+  `getFirstLoadOutByPlant(orders, helpRows)` (a `Map<plantCode, anchorMin>`). For each plant P the anchor
+  is the earliest of: (1) P's first own non-excluded order `startTime`, and (2) P's first outbound help
+  row's `clockInRangeStart` — i.e. when a P operator first clocked in at P to drive to another plant
+  ("first help of the day"). Inbound help arriving at P does NOT anchor P's day because those operators
+  clocked in at their source plant. Return events similarly don't anchor. Outbound rows without
+  travel-data-derived `clockInRangeStart` are skipped instead of approximated by the arrival time at the
+  destination — that would land later than the real clock-in and incorrectly shorten the 14h window.
+- `src/app/hooks/usePlanScheduleData.js` — exposes `firstLoadOutByPlant` (the new per-plant Map) in place
+  of `cardFirstLoadOutMin`. Built from `allOrders` + `helpRows` (not the filtered subset) so the anchor
+  stays stable even when the dispatcher filters the schedule down. The underlying operator shift hasn't
+  changed just because the dispatcher hid some rows.
+- `src/app/components/plan/tabs/schedule/PlanScheduleGroupedCards.jsx` — looks up
+  `firstLoadOutByPlant.get(code)` once per plant group and passes that scalar to every card in the group.
+  Previously every card across every plant received the same `cardFirstLoadOutMin`, which caused a
+  401 order to get flagged as exceeding 14h based on 410's earlier first-job when the schedule wasn't
+  plant-filtered.
+- `src/app/components/plan/tabs/schedule/PlanScheduleTable.jsx` — dropped the local
+  `getFirstLoadOutMinutes(orders)` computation. Accepts the per-plant map as a `firstLoadOutByPlant`
+  prop and resolves `firstLoadOutByPlant.get(o.plantCode)` per row when rendering each
+  `PlanScheduleOrderRow`. Same cross-plant contamination is gone in table mode.
+- `src/views/tools/plan/PlanScheduleView.jsx` — pulls `firstLoadOutByPlant` from `usePlanScheduleData`
+  and threads it down to both `<PlanScheduleTable>` and `<PlanScheduleGroupedCards>`.
+
 ## [2026.20.11] - 2026-05-14
 
 - `src/views/reporting/reports/ReportsSubmitView.jsx` — added a hard 15-second budget on every pre-submit AI
