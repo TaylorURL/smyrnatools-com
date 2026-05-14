@@ -249,7 +249,14 @@ class AIServiceImpl {
             issues.excessiveHours && `Total hours: ${issues.hours.toFixed(1)} (expected: <=14)`
         ].filter(Boolean)
         const userPrompt = `Performance Issues:\n${issueLines.join('\n')}\n\nOperator Comment: "${comment}"\n\nIs this a valid explanation?`
-        const result = await this.callAPI(PROMPTS.validateEfficiencyComment, userPrompt, { temperature: 0.1 })
+        /* 30s timeout so a single slow / hung AI request can't stall the
+         * whole Plant Efficiency submit flow. The validator loop in
+         * `validatePlantProduction` runs sequentially; one stuck call
+         * previously locked the AI-validating modal open indefinitely. */
+        const result = await this.callAPI(PROMPTS.validateEfficiencyComment, userPrompt, {
+            temperature: 0.1,
+            timeout: 30000
+        })
         if (result?.error) return { error: true }
         const response = result?.content?.trim() ?? ''
         if (response.startsWith('VALID')) return { valid: true }
@@ -275,7 +282,10 @@ class AIServiceImpl {
             '',
             'Does this data make sense or should the plant manager double-check their entries?'
         ].join('\n')
-        const result = await this.callAPI(PROMPTS.validatePlantManagerMetrics, userPrompt, { temperature: 0.2 })
+        const result = await this.callAPI(PROMPTS.validatePlantManagerMetrics, userPrompt, {
+            temperature: 0.2,
+            timeout: 30000
+        })
         if (result?.error) return { error: true }
         try {
             return JSON.parse(result?.content?.trim() || '{"needsReview": false}')

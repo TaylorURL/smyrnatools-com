@@ -1,5 +1,38 @@
 # Changelog
 
+## [2026.20.11] - 2026-05-14
+
+- `src/views/reporting/reports/ReportsSubmitView.jsx` — added a hard 15-second budget on every pre-submit AI
+  validation. Both `plant_manager` (yardage/hours sanity check) and `plant_production` (operator-comment
+  detail check) now run through a `raceAiValidation` helper that races the validation promise against a
+  15s timer. When the timer wins, the helper logs
+  `[<reportName>] AI validation did not complete within 15s — bypassing and proceeding with submit.` to
+  the browser console and resolves `{ timedOut: true }`. The submit flow falls through to the normal
+  `onSubmit` path. Thrown errors are also bypassed: the catch block logs to `console.error`, reports to
+  Sentry via `ErrorReporterUtility`, and lets the user submit. Blocking submission on an unresponsive
+  external service is worse than letting a borderline comment through.
+- `src/views/reporting/reports/ReportsSubmitView.jsx` — `AIValidatingModal` redesigned for restraint. The
+  amber-gradient spinning robot icon is gone; the modal now uses a small `fa-circle-notch fa-spin` in
+  the user's accent color on a neutral `var(--bg-tertiary)` chip. Marketing copy (`"AI Validation in
+  Progress"`, `"AI is ensuring all comments…"`) replaced with `"Validating report"` /
+  `"Running pre-submission checks"`. The progress bar uses the accent color on a neutral track and
+  shows `N of M operators` plus a tabular-nums percentage. Theme-aware via CSS custom properties so
+  dark mode picks up automatically. Overlay tightened from `bg-black/70` to `bg-black/40`, card from
+  `max-w-md p-8` to `max-w-sm` with a softer shadow. The `reportName` prop is no longer needed and was
+  dropped.
+- `src/services/AIService.js` — added `timeout: 30000` to the `callAPI` invocations inside
+  `validateEfficiencyComment` and `validatePlantManagerMetrics`. These calls previously inherited the
+  SDK's default timeout (~10 minutes), which is what allowed the modal to appear stuck. The orchestrator's
+  15s race is the user-facing limit; this per-call ceiling is a defence-in-depth fallback for callsites
+  that bypass the race wrapper.
+- `src/utils/ReportUtility.ts` — `validatePlantProduction(form, operatorOptions, { onProgress })` now
+  separates synchronous field validation from the async AI loop. A new private `_planPlantProductionRows`
+  helper walks every row, bails on the first cheap-check failure (missing time, invalid loads,
+  comments-required-but-empty), and collects the subset of rows that need an AI call. The async loop
+  then iterates only that subset, emitting `onProgress({ current, total })` after each call so the
+  modal's progress bar can fill. `onProgress({ current: 0, total })` fires once upfront so the bar
+  renders immediately with a real denominator instead of hiding for the first AI round-trip.
+
 ## [2026.20.10] - 2026-05-13
 
 - `src/views/tools/plan/PlanView.jsx` — fixed the 14 `react-hooks/rules-of-hooks` errors CI surfaced after

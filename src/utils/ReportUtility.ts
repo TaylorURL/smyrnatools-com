@@ -225,6 +225,74 @@ const ReportUtility = {
         return monday ? monday.toISOString().slice(0, 10) : ''
     },
 
+    /** Walks every row's basic numeric / time fields and returns either an
+     *  error string for the first row that fails, or a structured plan of
+     *  AI-validation work for rows that have flagged issues + a comment.
+     *  Pure synchronous validation lives here so the async AI loop below
+     *  can skip rows that already failed cheap checks. */
+    _planPlantProductionRows(form, operatorOptions) {
+        const rows = Array.isArray(form.rows) ? form.rows : []
+        const aiPlan = []
+        for (let i = 0; i < rows.length; i++) {
+            const r = rows[i]
+            const label = Array.isArray(operatorOptions)
+                ? operatorOptions.find((o) => o.value === r.name)?.label || `Operator ${i + 1}`
+                : `Operator ${i + 1}`
+            const start = this.parseTimeToMinutes(r.start_time)
+            const first = this.parseTimeToMinutes(r.first_load)
+            const eod = this.parseTimeToMinutes(r.eod_in_yard)
+            const punch = this.parseTimeToMinutes(r.punch_out)
+            if (!r.start_time || start === null)
+                return { error: `${label}: Start Time is required and must be a valid time.` }
+            if (!r.first_load || first === null)
+                return { error: `${label}: 1st Load time is required and must be a valid time.` }
+            if (!r.eod_in_yard || eod === null)
+                return { error: `${label}: EOD In Yard time is required and must be a valid time.` }
+            if (!r.punch_out || punch === null)
+                return { error: `${label}: Punch Out time is required and must be a valid time.` }
+            // Wrap past midnight so overnight shifts (e.g. start 23:00 →
+            // punch 11:00) read as the real elapsed duration. A typoed
+            // pair just lands in the >14h "excessive hours" tier below.
+            const dStart = this.diffMinutesWrapping(start, first)
+            const dEnd = this.diffMinutesWrapping(eod, punch)
+            const totalMinutes = this.diffMinutesWrapping(start, punch)
+            if (totalMinutes != null && totalMinutes <= 0)
+                return { error: `${label}: Total hours must be greater than 0.` }
+            const loadsVal = r.loads
+            if (loadsVal === undefined || loadsVal === null || String(loadsVal) === '')
+                return { error: `${label}: Total Loads is required.` }
+            const loadsNum = Number(loadsVal)
+            if (!Number.isFinite(loadsNum) || loadsNum < 0 || !Number.isInteger(loadsNum))
+                return { error: `${label}: Total Loads must be a non-negative whole number.` }
+            const hours = totalMinutes != null ? totalMinutes / 60 : null
+            const startDelayed = dStart !== null && dStart > 15
+            const endDelayed = dEnd !== null && dEnd > 20
+            const lowLoads = loadsNum < 3
+            const excessiveHours = hours !== null && hours > 14
+            const hasIssues = startDelayed || endDelayed || lowLoads || excessiveHours
+            if (hasIssues && (!r.comments || String(r.comments).trim() === '')) {
+                return {
+                    error: `${label}: Comments are required when there are performance issues (e.g., delayed start/load, low loads, or excessive hours).`
+                }
+            }
+            if (hasIssues && r.comments && String(r.comments).trim()) {
+                aiPlan.push({
+                    comments: r.comments,
+                    dEnd,
+                    dStart,
+                    endDelayed,
+                    excessiveHours,
+                    hours,
+                    label,
+                    loadsNum,
+                    lowLoads,
+                    startDelayed
+                })
+            }
+        }
+        return { aiPlan }
+    },
+
     getTodayISODate() {
         return new Date().toISOString().slice(0, 10)
     },
@@ -327,72 +395,48 @@ const ReportUtility = {
         if (!Number.isFinite(h) || !Number.isFinite(m)) return null
         return h * 60 + m
     },
-    async validatePlantProduction(form, operatorOptions) {
+    /** Validates a Plant Efficiency (plant_production) report. Returns an empty
+     *  string when everything is valid, or a human-readable error string for
+     *  the first failure. The optional `onProgress` callback fires after each
+     *  AI-validated row so the caller can show a progress bar. */
+    async validatePlantProduction(form, operatorOptions, options = {}) {
+        const { onProgress } = options
         if (!form || typeof form !== 'object') return 'Invalid form'
         if (!form.plant) return 'Please select a plant before submitting.'
         if (!form.report_date) return 'Please select a report date before submitting.'
-        const rows = Array.isArray(form.rows) ? form.rows : []
-        for (let i = 0; i < rows.length; i++) {
-            const r = rows[i]
-            const label = Array.isArray(operatorOptions)
-                ? operatorOptions.find((o) => o.value === r.name)?.label || `Operator ${i + 1}`
-                : `Operator ${i + 1}`
-            const start = this.parseTimeToMinutes(r.start_time)
-            const first = this.parseTimeToMinutes(r.first_load)
-            const eod = this.parseTimeToMinutes(r.eod_in_yard)
-            const punch = this.parseTimeToMinutes(r.punch_out)
-            if (!r.start_time || start === null) return `${label}: Start Time is required and must be a valid time.`
-            if (!r.first_load || first === null) return `${label}: 1st Load time is required and must be a valid time.`
-            if (!r.eod_in_yard || eod === null)
-                return `${label}: EOD In Yard time is required and must be a valid time.`
-            if (!r.punch_out || punch === null) return `${label}: Punch Out time is required and must be a valid time.`
-            // Wrap past midnight so overnight shifts (e.g. start 23:00 →
-            // punch 11:00) read as the real elapsed duration. A typoed
-            // pair just lands in the >14h "excessive hours" tier below.
-            const dStart = this.diffMinutesWrapping(start, first)
-            const dEnd = this.diffMinutesWrapping(eod, punch)
-            const totalMinutes = this.diffMinutesWrapping(start, punch)
-            if (totalMinutes != null && totalMinutes <= 0) return `${label}: Total hours must be greater than 0.`
-            const loadsVal = r.loads
-            if (loadsVal === undefined || loadsVal === null || String(loadsVal) === '')
-                return `${label}: Total Loads is required.`
-            const loadsNum = Number(loadsVal)
-            if (!Number.isFinite(loadsNum) || loadsNum < 0 || !Number.isInteger(loadsNum))
-                return `${label}: Total Loads must be a non-negative whole number.`
-            const hours = totalMinutes != null ? totalMinutes / 60 : null
-            const startDelayed = dStart !== null && dStart > 15
-            const endDelayed = dEnd !== null && dEnd > 20
-            const lowLoads = loadsNum < 3
-            const excessiveHours = hours !== null && hours > 14
-            const hasIssues = startDelayed || endDelayed || lowLoads || excessiveHours
-            if (hasIssues && (!r.comments || String(r.comments).trim() === '')) {
-                return `${label}: Comments are required when there are performance issues (e.g., delayed start/load, low loads, or excessive hours).`
+        const planResult = this._planPlantProductionRows(form, operatorOptions)
+        if (planResult.error) return planResult.error
+        const aiPlan = planResult.aiPlan
+        const total = aiPlan.length
+        // Surface the denominator before the first AI call lands so the modal
+        // can render its progress bar immediately.
+        if (typeof onProgress === 'function') onProgress({ current: 0, total })
+        if (total === 0) return ''
+        const { AIService } = await import('../services/AIService')
+        for (let i = 0; i < aiPlan.length; i++) {
+            const row = aiPlan[i]
+            const validation = await AIService.validateEfficiencyComment(row.comments, {
+                endDelayed: row.endDelayed,
+                endMinutes: row.dEnd,
+                excessiveHours: row.excessiveHours,
+                hours: row.hours,
+                loads: row.loadsNum,
+                lowLoads: row.lowLoads,
+                startDelayed: row.startDelayed,
+                startMinutes: row.dStart
+            })
+            if (typeof onProgress === 'function') onProgress({ current: i + 1, total })
+            if (validation.error) {
+                return `${row.label}: Unable to validate comment. Please ensure your explanation is detailed and specific.`
             }
-            if (hasIssues && r.comments && String(r.comments).trim()) {
-                const { AIService } = await import('../services/AIService')
-                const issues = {
-                    endDelayed,
-                    endMinutes: dEnd,
-                    excessiveHours,
-                    hours,
-                    loads: loadsNum,
-                    lowLoads,
-                    startDelayed,
-                    startMinutes: dStart
-                }
-                const validation = await AIService.validateEfficiencyComment(r.comments, issues)
-                if (validation.error) {
-                    return `${label}: Unable to validate comment. Please ensure your explanation is detailed and specific.`
-                }
-                if (!validation.valid) {
-                    const guidance = validation.guidance || 'Provide a specific reason for the timing issues.'
-                    const issuesList = []
-                    if (startDelayed) issuesList.push(`Punch-in to 1st load: ${dStart} min (max 15)`)
-                    if (endDelayed) issuesList.push(`Washout to punch-out: ${dEnd} min (max 20)`)
-                    if (lowLoads) issuesList.push(`Loads: ${loadsNum} (min 3)`)
-                    if (excessiveHours) issuesList.push(`Hours: ${hours.toFixed(1)} (max 14)`)
-                    return `${label}: Comment needs improvement.\n\n${guidance}\n\nYour comment: ${r.comments}\n\nIssues: ${issuesList.join(' | ')}`
-                }
+            if (!validation.valid) {
+                const guidance = validation.guidance || 'Provide a specific reason for the timing issues.'
+                const issuesList = []
+                if (row.startDelayed) issuesList.push(`Punch-in to 1st load: ${row.dStart} min (max 15)`)
+                if (row.endDelayed) issuesList.push(`Washout to punch-out: ${row.dEnd} min (max 20)`)
+                if (row.lowLoads) issuesList.push(`Loads: ${row.loadsNum} (min 3)`)
+                if (row.excessiveHours) issuesList.push(`Hours: ${row.hours.toFixed(1)} (max 14)`)
+                return `${row.label}: Comment needs improvement.\n\n${guidance}\n\nYour comment: ${row.comments}\n\nIssues: ${issuesList.join(' | ')}`
             }
         }
         return ''

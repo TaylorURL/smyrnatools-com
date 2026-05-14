@@ -20,6 +20,34 @@ import { QualityControlManagerSubmitPlugin } from './types/WeeklyQualityControlM
 import { ReadyMixInstructorSubmitPlugin } from './types/WeeklyReadyMixInstructorReport'
 import { SafetyManagerSubmitPlugin } from './types/WeeklySafetyManagerReport'
 
+/** Pre-submit AI validation gets a hard 15s budget. If the AI service
+ *  hangs or rejects, we log the failure and let the user submit anyway —
+ *  blocking submission on an external service that isn't responding is
+ *  worse than letting a borderline comment through. */
+const AI_VALIDATION_TIMEOUT_MS = 15000
+const AI_VALIDATION_TIMEOUT = Symbol('ai-validation-timeout')
+
+/** Races `promise` against `AI_VALIDATION_TIMEOUT_MS`. On timeout, logs a
+ *  console error tagged with `label` and resolves `{ timedOut: true }`.
+ *  Caller is responsible for falling through to submit on timeout. */
+async function raceAiValidation(promise, label) {
+    let timer
+    const result = await Promise.race([
+        promise,
+        new Promise((resolve) => {
+            timer = setTimeout(() => resolve(AI_VALIDATION_TIMEOUT), AI_VALIDATION_TIMEOUT_MS)
+        })
+    ])
+    clearTimeout(timer)
+    if (result === AI_VALIDATION_TIMEOUT) {
+        console.error(
+            `[${label}] AI validation did not complete within ${AI_VALIDATION_TIMEOUT_MS / 1000}s — bypassing and proceeding with submit.`
+        )
+        return { timedOut: true, value: null }
+    }
+    return { timedOut: false, value: result }
+}
+
 /** Maps report type keys to their submit-mode plugin components. */
 const PLUGINS = {
     aggregate_production: AggregateProductionSubmitPlugin,
@@ -209,22 +237,26 @@ function ReportsSubmitView({
             setAiValidationProgress({ current: 0, total: 1 })
             try {
                 const { AIService } = await import('../../../services/AIService')
-                const validation = await AIService.validatePlantManagerMetrics(form)
-                setAiValidating(false)
-                if (validation.error) {
-                    ErrorReporterUtility.reportError(new Error('AI validation failed for plant manager report'), {
-                        context: `validatePlantManagerMetrics returned error — yardage: ${form.yardage}, total_hours: ${form.total_hours}`
-                    })
-                } else if (validation.needsReview) {
-                    showError(
-                        'AI analysis flagged a potential data entry issue — please double-check your yardage and total hours before confirming.'
-                    )
+                const raceResult = await raceAiValidation(AIService.validatePlantManagerMetrics(form), 'plant_manager')
+                if (!raceResult.timedOut) {
+                    const validation = raceResult.value
+                    if (validation.error) {
+                        ErrorReporterUtility.reportError(new Error('AI validation failed for plant manager report'), {
+                            context: `validatePlantManagerMetrics returned error — yardage: ${form.yardage}, total_hours: ${form.total_hours}`
+                        })
+                    } else if (validation.needsReview) {
+                        showError(
+                            'AI analysis flagged a potential data entry issue — please double-check your yardage and total hours before confirming.'
+                        )
+                    }
                 }
             } catch (error) {
-                setAiValidating(false)
+                console.error('[plant_manager] AI validation threw — bypassing:', error)
                 ErrorReporterUtility.reportError(error instanceof Error ? error : new Error(String(error)), {
                     context: 'Unexpected error during AI validation of plant manager report'
                 })
+            } finally {
+                setAiValidating(false)
             }
             setShowConfirmationModal(true)
             return
@@ -248,9 +280,29 @@ function ReportsSubmitView({
             }
             if (!allExcluded) {
                 setAiValidating(true)
-                const v = await ReportUtility.validatePlantProduction(form, operatorOptions)
-                setAiValidating(false)
-                if (v) return showError(v)
+                setAiValidationProgress({ current: 0, total: 0 })
+                /* Hard 15s budget — beyond that we bypass and let the user
+                 * submit, logging to console + Sentry. Blocking submission
+                 * on an unresponsive external service is worse than letting
+                 * the occasional borderline comment through. The try/finally
+                 * guarantees the modal closes on every path (success,
+                 * timeout, thrown error). */
+                try {
+                    const raceResult = await raceAiValidation(
+                        ReportUtility.validatePlantProduction(form, operatorOptions, {
+                            onProgress: ({ current, total }) => setAiValidationProgress({ current, total })
+                        }),
+                        'plant_production'
+                    )
+                    if (!raceResult.timedOut && raceResult.value) return showError(raceResult.value)
+                } catch (err) {
+                    console.error('[plant_production] AI validation threw — bypassing:', err)
+                    ErrorReporterUtility.reportError(err instanceof Error ? err : new Error(String(err)), {
+                        context: 'Unexpected error during AI validation of plant_production report'
+                    })
+                } finally {
+                    setAiValidating(false)
+                }
             }
         }
         setSubmitting(true)
@@ -839,60 +891,76 @@ function ReportsSubmitView({
                     }}
                 />
             )}
-            {aiValidating && (
-                <AIValidatingModal progress={aiValidationProgress} reportName={report.name} accentColor={accentColor} />
-            )}
+            {aiValidating && <AIValidatingModal progress={aiValidationProgress} accentColor={accentColor} />}
         </div>
     )
 }
-const AIValidatingModal = ({ progress, reportName, accentColor }) => (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4">
-        <div className="bg-bg-primary rounded p-8 max-w-md w-full shadow-2xl">
-            <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-amber-200 border-3 border-amber-500 text-amber-500 text-2xl animate-spin">
-                    <i className="fas fa-robot"></i>
-                </div>
-                <div className="flex-1">
-                    <h2 className="text-xl font-bold m-0 mb-1" style={{ color: accentColor }}>
-                        AI Validation in Progress
-                    </h2>
-                    <p className="text-slate-500 text-sm m-0">Analyzing efficiency report comments...</p>
-                </div>
-            </div>
-            <div className="bg-slate-50 border border-border-light rounded-lg mb-4 p-4">
-                <div className="flex items-center gap-3 mb-3">
-                    <i className="fas fa-clipboard-check text-amber-500 text-lg"></i>
-                    <span className="text-gray-700 text-sm font-semibold">
-                        Validating operator explanations for timing issues
-                    </span>
-                </div>
-                {progress.total > 0 && (
-                    <div>
-                        <div className="text-slate-500 text-xs mb-2">
-                            Checking {progress.total} operator{progress.total !== 1 ? 's' : ''} with performance issues
+
+/** Pre-submit validation modal — single accent color, compact typography,
+ *  no marketing copy. Progress bar fills as each operator's comment is
+ *  checked; for the plant_manager path the row count is just 1 so the
+ *  bar reads as a generic loader. */
+const AIValidatingModal = ({ progress, accentColor }) => {
+    const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0
+    return (
+        <div
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+        >
+            <div
+                className="w-full max-w-sm rounded-lg overflow-hidden bg-bg-primary border border-border-light"
+                style={{ boxShadow: '0 12px 32px rgba(0, 0, 0, 0.18)' }}
+            >
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
+                    <div
+                        className="flex h-9 w-9 items-center justify-center rounded shrink-0"
+                        style={{ background: 'var(--bg-tertiary)' }}
+                    >
+                        <i
+                            className="fas fa-circle-notch fa-spin text-[14px]"
+                            style={{ color: accentColor }}
+                            aria-hidden="true"
+                        />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="text-[13px] font-semibold leading-tight text-text-primary">
+                            Validating report
                         </div>
-                        <div className="bg-slate-200 rounded-lg h-2 overflow-hidden w-full">
+                        <div className="text-[11px] mt-0.5 text-text-tertiary">Running pre-submission checks</div>
+                    </div>
+                </div>
+                <div className="px-5 py-4">
+                    {progress.total > 0 ? (
+                        <>
+                            <div className="flex items-center justify-between text-[11px] mb-2 text-text-tertiary tabular-nums">
+                                <span>
+                                    {progress.current} of {progress.total} operator
+                                    {progress.total === 1 ? '' : 's'}
+                                </span>
+                                <span className="font-mono">{pct}%</span>
+                            </div>
                             <div
-                                className="bg-gradient-to-r from-amber-500 to-amber-400 h-full transition-all duration-300"
-                                style={{
-                                    width: progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : '0%'
-                                }}
-                            ></div>
+                                className="h-1.5 w-full rounded-full overflow-hidden"
+                                style={{ background: 'var(--bg-tertiary)' }}
+                            >
+                                <div
+                                    className="h-full transition-all duration-300"
+                                    style={{ background: accentColor, width: `${pct}%` }}
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex items-center gap-2 text-[12px] text-text-tertiary">
+                            <i className="fas fa-circle-notch fa-spin text-[10px]" aria-hidden="true" />
+                            <span>Preparing…</span>
                         </div>
-                    </div>
-                )}
-            </div>
-            <div className="bg-gradient-to-br from-amber-100 to-amber-200 border border-amber-300 border-l-4 border-l-amber-500 rounded-md text-amber-800 text-xs p-3">
-                <div className="flex gap-2">
-                    <i className="fas fa-info-circle text-amber-500 flex-shrink-0 mt-0.5"></i>
-                    <div>
-                        {reportName === 'plant_manager'
-                            ? 'AI is checking if your hours, yardage, lost yardage, and resold yardage values make sense together. This helps catch data entry errors.'
-                            : 'AI is ensuring all comments provide specific explanations for delayed starts, delayed washouts, low loads, or excessive hours.'}
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
-    </div>
-)
+    )
+}
+
 export default ReportsSubmitView

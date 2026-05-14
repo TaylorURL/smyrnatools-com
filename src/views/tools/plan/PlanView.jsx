@@ -61,9 +61,7 @@ function PlanRegionBlocker({ accentColor }) {
                 <h2 id="plan-region-blocker-title" className="text-lg font-semibold text-text-primary mb-2">
                     Plan unavailable
                 </h2>
-                <p className="text-sm text-text-secondary">
-                    This functionality is not available in your region yet.
-                </p>
+                <p className="text-sm text-text-secondary">This functionality is not available in your region yet.</p>
             </div>
         </div>
     )
