@@ -216,70 +216,35 @@ export function usePlanScheduleData({
         return out
     }, [stats, plantProduction, planDate])
 
+    /** Operator clock-in events per plant. Uses the full `baseByPlant`
+     *  cap — the outbound subtraction now happens as a `−N` event in
+     *  `buildHelpTransfers` at the actual outbound departure minute, so
+     *  the local clock-in ramp doesn't need to know about help trips. */
+    const clockInRows = useMemo(
+        () => computeClockInRows(allOrders, baseByPlant, getTravelOverrides),
+        [allOrders, baseByPlant, getTravelOverrides]
+    )
+
     /** Per-driver help rows — grouped into 30-minute buckets per assignment +
      *  direction so a staggered crew arriving over an hour reads as two rows.
      *  Return rows honor the assignment's `returnPlant` so trucks can be sent
-     *  back to a different plant after pouring. Computed BEFORE `clockInRows`
-     *  because the outbound count subtracts from each from-plant's
-     *  local-work base. */
+     *  back to a different plant after pouring. */
     const helpRows = useMemo(
         () => buildHelpRows(assignments, plantProduction, getTravelTime),
         [assignments, plantProduction, getTravelTime]
     )
 
-    /** Outbound operator count per from-plant — sum across every outbound
-     *  help row. Used to shrink each plant's local-work base so the same
-     *  operator isn't counted twice (once for the plant's own orders via
-     *  `computeClockInRows`, once for the outbound trip via
-     *  `buildHelpTransfers`). */
-    const outboundByPlant = useMemo(() => {
-        const out = {}
-        helpRows.forEach((row) => {
-            if (row.direction !== 'outbound') return
-            if (!row.fromPlant) return
-            const count = Number.isFinite(row.count) ? row.count : 0
-            out[row.fromPlant] = (out[row.fromPlant] || 0) + count
-        })
-        return out
-    }, [helpRows])
-
-    /** Base operators a plant has available to staff its OWN orders, after
-     *  subtracting the ones the planner is sending out as help. Clamped at
-     *  zero so an oversold help assignment (sending more than base) doesn't
-     *  drive the local-work base negative — the dispatcher sees a deficit
-     *  on the schedule rows themselves. */
-    const localWorkBaseByPlant = useMemo(() => {
-        const out = {}
-        Object.entries(baseByPlant).forEach(([code, base]) => {
-            const outbound = outboundByPlant[code] || 0
-            out[code] = Math.max(0, base - outbound)
-        })
-        return out
-    }, [baseByPlant, outboundByPlant])
-
-    /** Operator clock-in events per plant. Uses the outbound-adjusted base
-     *  so a plant sending all its operators out doesn't ALSO ramp up local
-     *  clock-ins for them — the outbound trip already accounts for those
-     *  bodies via `buildHelpTransfers`. */
-    const clockInRows = useMemo(
-        () => computeClockInRows(allOrders, localWorkBaseByPlant, getTravelOverrides),
-        [allOrders, localWorkBaseByPlant, getTravelOverrides]
-    )
-
-    /** Plants whose pool ramps up via clock-ins OR outbound help start the
-     *  simulation at 0 — the +/- events of each clock-in / departure /
-     *  arrival drive the timeline from there. Plants with no orders AND
-     *  no outbound help keep their full base so suggested slots and
-     *  send-home math still work for idle yards. */
+    /** Plants whose pool ramps up via clock-ins start the simulation at 0;
+     *  plants with no orders today keep their effective base so suggested
+     *  slots and send-home math still work for idle yards. */
     const initialPoolByCode = useMemo(() => {
         const plantsWithClockIns = new Set(clockInRows.map((r) => r.plantCode))
         const out = {}
         Object.entries(baseByPlant).forEach(([code, base]) => {
-            const ramping = plantsWithClockIns.has(code) || (outboundByPlant[code] || 0) > 0
-            out[code] = ramping ? 0 : base
+            out[code] = plantsWithClockIns.has(code) ? 0 : base
         })
         return out
-    }, [baseByPlant, clockInRows, outboundByPlant])
+    }, [baseByPlant, clockInRows])
 
     /** Help transfers in the format expected by `computePlantPoolTimeline`. */
     const helpTransfers = useMemo(() => buildHelpTransfers(helpRows, clockInRows), [helpRows, clockInRows])

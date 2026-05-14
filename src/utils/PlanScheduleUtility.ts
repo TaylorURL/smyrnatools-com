@@ -651,30 +651,38 @@ export const evaluateScheduleSatisfaction = ({ detailByOrderId, isPastDay, isTod
 
 /**
  * Convert help rows into the `(plantCode, time, delta)` events that
- * `computePlantPoolTimeline` consumes — outbound subtracts from `fromPlant`
- * and adds to `toPlant`; return subtracts from `toPlant` and adds to
- * `returnPlant` (which defaults to `fromPlant` when not overridden).
+ * `computePlantPoolTimeline` consumes.
  *
- * Clock-in rows ramp the pool up over the day. The simulator handles them as
- * positive-delta inbound events identical in shape to inter-plant help
- * arrivals — just sourced from the operator showing up rather than another
- * plant.
+ * **Outbound (fromPlant → toPlant)** — strict event-based subtraction:
+ *   - `−row.count at fromPlant at row.time` — the operators physically
+ *     leave the source plant at departure time. The pool drops then,
+ *     not earlier. Orders that fire BEFORE the outbound time see the
+ *     full local pool; orders that fire AFTER see the reduced pool.
+ *   - `+row.count at toPlant at row.time` — they arrive at the
+ *     destination and join its working pool.
  *
- * **Outbound clock-ins**: when an operator drives from `fromPlant` to help
- * another plant, that operator clocked in at `fromPlant` first. Without an
- * explicit +clock-in event, the simulator's `-row.count` outbound dispatch
- * drives `fromPlant`'s pool negative because the schedule's local clock-in
- * roster (`computeClockInRows`) only covers operators needed for the
- * from-plant's own orders. Emit a +delta event at `clockInRangeStart`
- * (or `time` as a same-minute fallback when travel time is unknown) so the
- * operator is accounted for before they leave.
+ * **Return** — symmetric reversal:
+ *   - `+row.count at fromPlant at row.time` — operators are back at
+ *     the source plant and available for any remaining afternoon work.
+ *     (`returnPlant` overrides `fromPlant` when the planner sends the
+ *     truck somewhere else after the help shift.)
+ *   - `−row.count at toPlant at row.time` — they leave the destination.
+ *
+ * No `+ at clockInRangeStart` pre-stage event — that previously inflated
+ * the source plant's pool for hours before the operators actually left,
+ * making morning orders appear to have help "already deducted." When a
+ * plant's `clockInRows` ramp doesn't cover the outbound count (because
+ * local orders need fewer ops than the outbound trip uses), the pool
+ * may briefly go negative at the outbound departure minute — that's a
+ * faithful overbooking signal, not a bug.
+ *
+ * **Clock-in rows** still ramp each plant's pool up over the day as
+ * positive-delta inbound events.
  */
 export const buildHelpTransfers = (helpRows, clockInRows) => {
     const out = []
     helpRows.forEach((row) => {
         if (row.direction === 'outbound') {
-            const clockInTime = Number.isFinite(row.clockInRangeStart) ? row.clockInRangeStart : row.time
-            out.push({ delta: row.count, plantCode: row.fromPlant, time: clockInTime })
             out.push({ delta: -row.count, plantCode: row.fromPlant, time: row.time })
             out.push({ delta: row.count, plantCode: row.toPlant, time: row.time })
         } else {

@@ -1,5 +1,32 @@
 # Changelog
 
+## [2026.20.17] - 2026-05-14
+
+- `src/app/hooks/usePlanScheduleData.js` — reverted the `outboundByPlant` / `localWorkBaseByPlant`
+  baseline subtraction added in v2026.20.16. That fix pre-baked the outbound deduction into the
+  morning baseline, so a plant sending 5 operators out at 14:00 had its 05:00 orders evaluated against
+  a pool 5 short. `clockInRows` now uses the full `baseByPlant` cap again, and `initialPoolByCode` is
+  back to the pre-v2026.20.16 logic (plants with local clock-ins start at 0, idle plants keep their
+  full base). Outbound subtraction is now strictly event-based — it fires at the actual departure
+  minute via `buildHelpTransfers`.
+- `src/utils/PlanScheduleUtility.ts` — rewrote `buildHelpTransfers` to do strict event-based outbound:
+  - Outbound row: `−row.count at fromPlant at row.time` (operators leave the source at departure
+    time) and `+row.count at toPlant at row.time` (they arrive at the destination). No
+    `+ at clockInRangeStart` pre-stage event — that was inflating the source plant's morning pool
+    for hours before the actual trip.
+  - Return row: `+row.count at fromPlant (or returnPlant) at row.time` and
+    `−row.count at toPlant at row.time` — symmetric reversal.
+  The two prior attempts at this — v2026.20.8's pre-stage clock-in event AND v2026.20.16's baseline
+  subtraction — were both wrong in different ways. Pool now reflects physical reality at each
+  minute: full base in the morning, the actual loss at the moment of departure, the actual gain at
+  return.
+- Net effect on `Plant 401` shipping 5 outbound at 14:00 and receiving 2 inbound: the 05:00 order
+  #383 (15-truck big pour) now reads `15/-3` (short by 3, just the 15-vs-12-base deficit) instead
+  of `15/-6` (which had the outbound's 5 ops wrongly pre-deducted). Orders that fire AFTER 14:00
+  see the reduced pool; orders BEFORE see the full base. The outbound's `−5` event at 14:00 may
+  briefly drive the pool negative if the plant is overbooked at that minute — that's a faithful
+  signal, not a bug.
+
 ## [2026.20.16] - 2026-05-14
 
 - `src/app/hooks/usePlanScheduleData.js` — fixed the Schedule tab's plant pool numbers double-counting
