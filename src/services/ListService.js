@@ -237,7 +237,10 @@ class ListServiceImpl {
     }
     /**
      * Filters and sorts list items by plant, search term, completion status, and status type.
-     * Overdue items are prioritized in non-completed views.
+     * Supported `statusFilter` values: `completed`, `overdue` (derived from deadline), `pending`
+     * (no explicit status or explicit `pending`, not overdue), or any explicit `item.status` value
+     * (`in_progress`, `blocked`, `waiting`, `ordered_materials`). Overdue items are prioritized in
+     * non-completed views.
      */
     getFilteredItems({ plantCode, searchTerm, showCompleted, statusFilter }) {
         let items = [...this.listItems]
@@ -251,10 +254,18 @@ class ListServiceImpl {
             )
         }
         if (!showCompleted) items = items.filter((item) => !item.completed)
-        if (statusFilter === 'completed') items = items.filter((item) => item.completed)
-        if (statusFilter === 'overdue') items = items.filter((item) => this.isOverdue(item) && !item.completed)
-        if (statusFilter === 'pending') items = items.filter((item) => !this.isOverdue(item) && !item.completed)
         if (statusFilter === 'completed') {
+            items = items.filter((item) => item.completed)
+        } else if (statusFilter === 'overdue') {
+            items = items.filter((item) => this.isOverdue(item) && !item.completed)
+        } else if (statusFilter === 'pending') {
+            items = items.filter(
+                (item) => (!item.status || item.status === 'pending') && !this.isOverdue(item) && !item.completed
+            )
+        } else if (statusFilter) {
+            items = items.filter((item) => item.status === statusFilter && !item.completed)
+        }
+        if (showCompleted) {
             items.sort((a, b) => {
                 const aCompletedAt = new Date(a.completed_at).getTime() || 0
                 const bCompletedAt = new Date(b.completed_at).getTime() || 0

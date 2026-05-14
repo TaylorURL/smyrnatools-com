@@ -1,5 +1,20 @@
 # Changelog
 
+## [2026.20.13] - 2026-05-14
+
+- `src/services/ListService.js` — fixed the Tasks List status filter so picking `In Progress`, `Blocked`,
+  `Waiting`, or `Ordered Materials` from the ListView dropdown actually narrows the result set. The
+  filter branch in `getFilteredItems` only handled `completed`, `overdue`, and `pending`; any other
+  mapped status value silently fell through and returned every non-completed item, which is why the
+  dropdown looked like a no-op for four of the seven options. Added an `else if (statusFilter)` branch
+  that matches `item.status === statusFilter && !item.completed`, so any explicit stored status now
+  filters correctly. Tightened the `pending` branch to require `!item.status || item.status === 'pending'`
+  (in addition to `!isOverdue` and `!completed`) — previously `pending` returned every non-overdue
+  non-completed task regardless of stored status, which made `in_progress`/`blocked`/`waiting`
+  effectively invisible as their own buckets. Reworked the filter/sort cascade to use mutually
+  exclusive `if/else if` branches and switched the sort selector to read `showCompleted` instead of
+  re-checking `statusFilter === 'completed'`. JSDoc updated to enumerate the supported filter values.
+
 ## [2026.20.12] - 2026-05-14
 
 - `src/utils/PlanScheduleUtility.ts` — fixed the 14h DOT-shift badge on the Schedule tab so each plant's
