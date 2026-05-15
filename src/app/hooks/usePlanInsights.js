@@ -4,6 +4,7 @@ import {
     addMinutesToTime,
     DEFAULT_STAGGER_MINUTES,
     GAP_THRESHOLD_MINUTES,
+    getDayAdjustedBase,
     OVERTIME_THRESHOLD_HOURS,
     parseTime
 } from '../../utils/PlanUtility'
@@ -12,17 +13,26 @@ export function usePlanInsights({
     assignments,
     calcClockIn,
     mixerCountsByPlant,
+    planDate,
+    plantProduction,
     plants,
     getTravelTime,
     travelTimes: _travelTimes,
     shiftSpanHours: _shiftSpanOverride
 }) {
     const getStats = () => {
+        // `stat.base` is the day-adjusted working count, not the roster:
+        // Sundays read 0, Saturdays read either the per-plant override or
+        // floor(roster / 2), every other day reads the roster as-is. This
+        // way the pin headcount, side panel `eff`, and downstream pool
+        // math all share a single source of truth for "how many ops do we
+        // actually have today".
         const statsMap = Object.fromEntries(
-            plants.map((p) => [
-                p.plant_code,
-                { base: mixerCountsByPlant[p.plant_code] || 0, code: p.plant_code, recv: 0, send: 0 }
-            ])
+            plants.map((p) => {
+                const rawRoster = mixerCountsByPlant[p.plant_code] || 0
+                const base = getDayAdjustedBase(rawRoster, p.plant_code, plantProduction, planDate)
+                return [p.plant_code, { base, code: p.plant_code, rawBase: rawRoster, recv: 0, send: 0 }]
+            })
         )
         assignments.forEach((a) => {
             if (!a.fromPlant || !a.toPlant || a.driverCount <= 0) return
@@ -30,8 +40,12 @@ export function usePlanInsights({
             if (statsMap[a.fromPlant]) statsMap[a.fromPlant].send += count
             if (statsMap[a.toPlant]) statsMap[a.toPlant].recv += count
         })
+        // Filter against the raw roster (not the day-adjusted base) so
+        // plants still surface on Sundays / Saturdays even when the
+        // effective working count is 0 — otherwise the closed-day pool
+        // math would silently drop every plant from the planner.
         return Object.values(statsMap)
-            .filter((x) => x.base > 0 || x.send > 0 || x.recv > 0)
+            .filter((x) => x.rawBase > 0 || x.send > 0 || x.recv > 0)
             .map((x) => ({ ...x, eff: x.base - x.send + x.recv }))
             .sort((a, b) => a.code.localeCompare(b.code))
     }

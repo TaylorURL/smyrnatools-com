@@ -16,8 +16,11 @@ import { yphColorFor } from '../../../utils/PlanFlowLayoutUtility'
 import {
     buildAssignmentDriverTimes,
     getMissingOperators,
+    getSaturdayOverride,
+    isSaturday,
     PRE_TRIP_MINUTES,
-    setMissingOperators
+    setMissingOperators,
+    setSaturdayOverride
 } from '../../../utils/PlanUtility'
 import { getCachedRoute, getDrivingRoute } from '../../../utils/RoutingUtility'
 
@@ -181,12 +184,18 @@ function pointAlongPath(coords, fraction) {
     return null
 }
 
-/** Average progress (0 → 1) along the named leg's transit window across
- *  every driver who is actively on the road right now. Returns null when
- *  nobody is currently transiting this leg. */
+/** Progress (0 → 1) along the named leg's UNION transit window — earliest
+ *  driver's start to latest driver's end. Using the union (not a per-
+ *  driver average) keeps the fraction strictly monotonic across the
+ *  whole window: staggered drivers entering at fraction 0 or finishing
+ *  at fraction 1 no longer drag the average backward, which used to
+ *  show as the arrow "rewinding" each time a driver cycled in or out.
+ *  Returns null when nobody is currently transiting this leg. */
 function legProgressFraction({ drivers, leg, travel, viewTime }) {
     if (!Number.isFinite(viewTime) || !Array.isArray(drivers) || drivers.length === 0) return null
-    const fractions = []
+    let earliestStart = Infinity
+    let latestEnd = -Infinity
+    let anyInWindow = false
     for (const driver of drivers) {
         if (!Number.isFinite(driver.arriveMin)) continue
         let startMin
@@ -202,11 +211,13 @@ function legProgressFraction({ drivers, leg, travel, viewTime }) {
             endMin = leave + travel
         }
         if (endMin <= startMin) continue
-        if (viewTime < startMin || viewTime >= endMin) continue
-        fractions.push((viewTime - startMin) / (endMin - startMin))
+        if (startMin < earliestStart) earliestStart = startMin
+        if (endMin > latestEnd) latestEnd = endMin
+        if (viewTime >= startMin && viewTime < endMin) anyInWindow = true
     }
-    if (fractions.length === 0) return null
-    return fractions.reduce((a, b) => a + b, 0) / fractions.length
+    if (!anyInWindow || !Number.isFinite(earliestStart) || !Number.isFinite(latestEnd)) return null
+    if (latestEnd <= earliestStart) return null
+    return Math.max(0, Math.min(1, (viewTime - earliestStart) / (latestEnd - earliestStart)))
 }
 
 /** Decide where (and whether) to anchor the leg's directional arrow. The
@@ -224,28 +235,48 @@ function resolveLegAnchor({ activity, coords, drivers, leg, travel, viewTime }) 
 }
 
 /** Build a Leaflet DivIcon containing a single `▶` glyph rotated to point
- *  along the route at the marker's location. Inactive legs render an
- *  empty icon (no glyph, no dim ghost) so the map stays clean when the
- *  leg isn't currently moving. */
+ *  along the route at the marker's location. The inner element is ALWAYS
+ *  rendered (opacity drives visibility) so tick-level updates can mutate
+ *  the existing DOM via `updateArrow` instead of rebuilding the icon —
+ *  rebuilding resets the CSS transitions on rotation / position and is
+ *  what makes the arrow jump between frames. */
 function makeArrowIcon({ active, color, rotationDeg }) {
-    if (!active) {
-        return L.divIcon({
-            className: 'plan-flow-arrow-marker',
-            html: '',
-            iconAnchor: [10, 10],
-            iconSize: [20, 20]
-        })
-    }
     return L.divIcon({
         className: 'plan-flow-arrow-marker',
         html:
             `<div class="pf-route-arrow" ` +
-            `style="color:${color};transform:rotate(${rotationDeg.toFixed(1)}deg)">` +
+            `style="color:${color};transform:rotate(${rotationDeg.toFixed(1)}deg);opacity:${active ? 1 : 0}">` +
             `<i class="fas fa-play"></i>` +
             `</div>`,
         iconAnchor: [10, 10],
         iconSize: [20, 20]
     })
+}
+
+/** Mutate an existing arrow marker in-place without rebuilding its DOM.
+ *  Lets CSS transitions on `transform` (rotation) and `opacity` actually
+ *  fire — `setIcon` would replace the inner element and snap-reset every
+ *  in-flight transition, which is the visible "jump" between ticks.
+ *  Rotation is normalized to the nearest equivalent angle within ±180°
+ *  of the previously displayed value so a bearing flip across ±180°
+ *  (a 2° real-world turn) doesn't make the CSS transition spin the arrow
+ *  ~358° the long way around. */
+function updateArrow(marker, { active, color, rotationDeg }) {
+    if (!marker?._icon) return
+    const inner = marker._icon.querySelector('.pf-route-arrow')
+    if (!inner) {
+        marker.setIcon(makeArrowIcon({ active, color, rotationDeg }))
+        return
+    }
+    const prev = Number.isFinite(marker._pfArrowRotation) ? marker._pfArrowRotation : rotationDeg
+    let normalized = rotationDeg
+    while (normalized - prev > 180) normalized -= 360
+    while (normalized - prev < -180) normalized += 360
+    marker._pfArrowRotation = normalized
+    inner.style.transform = `rotate(${normalized.toFixed(1)}deg)`
+    const desiredOpacity = active ? '1' : '0'
+    if (inner.style.opacity !== desiredOpacity) inner.style.opacity = desiredOpacity
+    if (inner.style.color !== color) inner.style.color = color
 }
 
 /** Translate one assignment's `{ outbound, returning }` activity state
@@ -265,15 +296,22 @@ function makeLegStyles({ activity, isInvolved, selectedCode }) {
         const baseColor = isTransit ? activeColor : ROUTE_IDLE_COLOR
         return {
             base: {
-                className: 'help-route-base',
+                // Long-dash pattern on the active base so the colored route
+                // itself visibly flows toward the destination — the dashes
+                // are large enough to read as nearly-solid, but their
+                // forward shift gives the route real motion. Idle / at-dest
+                // legs keep the original solid base so they sit quietly.
+                className: isTransit ? 'help-route-base help-route-base-active' : 'help-route-base',
                 color: baseColor,
+                dashArray: isTransit ? '60 6' : null,
+                lineCap: 'round',
                 opacity: (isTransit ? 0.95 : 0.62) * opacityScale,
                 weight: isInvolved ? 7 : 6
             },
             flow: {
                 className: isTransit ? 'help-route-flow' : 'help-route-flow-static',
                 color: '#ffffff',
-                dashArray: '12 24',
+                dashArray: '16 16',
                 lineCap: 'round',
                 opacity: (isTransit ? 1 : isAtDest ? 0 : 0.5) * opacityScale,
                 weight: isInvolved ? 4 : 3
@@ -319,6 +357,7 @@ function buildPlantStatus({
     maxYph,
     minPoolByCode,
     pickingDestination,
+    planDate,
     plantProduction,
     poolAtViewTime,
     selectedCode,
@@ -327,7 +366,12 @@ function buildPlantStatus({
     yphByCode
 }) {
     const { eff = 0, recv = 0, send = 0, base = 0 } = stat
-    const missingAtPlant = getMissingOperators(plantProduction, stat.code)
+    /* On Saturdays with a per-plant override, the override IS the
+     * working count — the dispatcher already factored sick / vacation
+     * into that number, so skip the missing-operator subtraction.
+     * Other days fall back to the normal getMissingOperators path. */
+    const saturdayOverrideActive = isSaturday(planDate) && getSaturdayOverride(plantProduction, stat.code) != null
+    const missingAtPlant = saturdayOverrideActive ? 0 : getMissingOperators(plantProduction, stat.code)
     /* When the scrubber is active, the headcount on the pin walks the
      * help schedule minute-by-minute (subtracted while operators are en
      * route, credited at the destination once they arrive, returned home
@@ -645,6 +689,7 @@ function PlanFlowMapView({
                 maxYph: thresholds.MAX_YPH,
                 minPoolByCode,
                 pickingDestination,
+                planDate,
                 plantProduction,
                 poolAtViewTime,
                 selectedCode,
@@ -1081,24 +1126,20 @@ function PlanFlowMapView({
                 if (existing.outArrow) {
                     const anchor = outArrowAnchor || arrowFallback
                     if (anchor) existing.outArrow.setLatLng([anchor.lat, anchor.lng])
-                    existing.outArrow.setIcon(
-                        makeArrowIcon({
-                            active: outActive,
-                            color: ROUTE_OUTBOUND_COLOR,
-                            rotationDeg: outArrowAnchor?.angleDeg ?? anchor?.angleDeg ?? 0
-                        })
-                    )
+                    updateArrow(existing.outArrow, {
+                        active: outActive,
+                        color: ROUTE_OUTBOUND_COLOR,
+                        rotationDeg: outArrowAnchor?.angleDeg ?? anchor?.angleDeg ?? 0
+                    })
                 }
                 if (existing.backArrow) {
                     const anchor = backArrowAnchor || arrowFallbackBack
                     if (anchor) existing.backArrow.setLatLng([anchor.lat, anchor.lng])
-                    existing.backArrow.setIcon(
-                        makeArrowIcon({
-                            active: backActive,
-                            color: ROUTE_RETURN_COLOR,
-                            rotationDeg: backArrowAnchor?.angleDeg ?? anchor?.angleDeg ?? 0
-                        })
-                    )
+                    updateArrow(existing.backArrow, {
+                        active: backActive,
+                        color: ROUTE_RETURN_COLOR,
+                        rotationDeg: backArrowAnchor?.angleDeg ?? anchor?.angleDeg ?? 0
+                    })
                 }
             } else {
                 const group = L.layerGroup()
@@ -1383,6 +1424,34 @@ function PlanFlowMapView({
         return () => ro.disconnect()
     }, [])
 
+    /* ── Suspend arrow position transitions during pan / zoom ─────
+     * The arrow markers carry a `transition: transform` so their per-
+     * tick lat/lng updates lerp smoothly between ticks. During a map
+     * drag or zoom, every marker's projection shifts at once — without
+     * this guard each arrow would slide a frame behind the basemap.
+     * We toggle a body-level class so all arrows can opt out via CSS
+     * specificity, then re-enable the transition on the next animation
+     * frame after the move settles. */
+    useEffect(() => {
+        const map = mapRef.current
+        if (!map) return undefined
+        const cls = 'pf-map-moving'
+        const disable = () => document.body.classList.add(cls)
+        const enable = () => {
+            // rAF defer so the transform Leaflet just wrote lands before
+            // we re-enable transitions — otherwise the next tick would
+            // animate from the pre-pan position.
+            requestAnimationFrame(() => document.body.classList.remove(cls))
+        }
+        map.on('movestart zoomstart', disable)
+        map.on('moveend zoomend', enable)
+        return () => {
+            map.off('movestart zoomstart', disable)
+            map.off('moveend zoomend', enable)
+            document.body.classList.remove(cls)
+        }
+    }, [])
+
     /* ── Autoplay: cycle viewTime through the day on a loop ──────
      * Runs only while `isPlaying` is true. Every tick advances by
      * `AUTOPLAY_STEP_MINUTES` and wraps from 23:45 back to 00:00 so the
@@ -1473,16 +1542,21 @@ function PlanFlowMapView({
                 html.dark .leaflet-control-attribution a {
                     color: #93c5fd !important;
                 }
-                /* Help-route lines — a deep slate base under a glossy
-                 * white dashed overlay that marches along the route on
-                 * a continuous loop. Reads like premium GPS routing,
-                 * neutral against any accent the user has set. */
+                /* Help-route lines — the colored base itself flows toward
+                 * the destination via a long-dash stroke-dashoffset
+                 * animation, with a faster white dashed overlay on top
+                 * for high-frequency texture. Two layers of motion at
+                 * different rates read as a continuous river of traffic
+                 * rather than a static line with a marching overlay. */
                 .help-route-base {
                     stroke-linecap: round;
                     filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.55));
                 }
+                .help-route-base-active {
+                    animation: help-route-base-flow 1.4s linear infinite;
+                }
                 .help-route-flow {
-                    animation: help-route-flow 1.6s linear infinite;
+                    animation: help-route-flow 0.9s linear infinite;
                     filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9))
                             drop-shadow(0 0 14px rgba(148, 163, 184, 0.55));
                 }
@@ -1493,8 +1567,11 @@ function PlanFlowMapView({
                     stroke-linecap: round;
                     filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
                 }
+                @keyframes help-route-base-flow {
+                    to { stroke-dashoffset: -66; }
+                }
                 @keyframes help-route-flow {
-                    to { stroke-dashoffset: -36; }
+                    to { stroke-dashoffset: -32; }
                 }
                 html.dark .help-route-base {
                     filter: drop-shadow(0 0 5px rgba(15, 23, 42, 0.85));
@@ -1549,16 +1626,35 @@ function PlanFlowMapView({
                 }
                 /* Direction arrows that walk the route while operators
                  * are in transit. Color is set inline so the same icon
-                 * component renders green for outbound and orange for the
-                 * return. */
-                .plan-flow-arrow-marker { background: transparent !important; border: none !important; pointer-events: none; }
+                 * component renders green for outbound and orange for
+                 * the return. The marker container carries a transform
+                 * transition so per-tick lat/lng updates lerp smoothly
+                 * between frames instead of snapping (the React autoplay
+                 * tick runs at ~240ms; without the transition the arrow
+                 * visibly hops between positions). The inner glyph
+                 * carries its own transition for the rotation + color +
+                 * visibility changes. */
+                .plan-flow-arrow-marker {
+                    background: transparent !important;
+                    border: none !important;
+                    pointer-events: none;
+                    transition: transform 240ms linear;
+                    will-change: transform;
+                }
+                /* Suppress the marker transform transition during a map
+                 * pan or zoom — otherwise every arrow lags a frame
+                 * behind the basemap as the projection reflows. */
+                body.pf-map-moving .plan-flow-arrow-marker {
+                    transition: none;
+                }
                 .pf-route-arrow {
                     width: 20px; height: 20px;
                     display: flex; align-items: center; justify-content: center;
                     font-size: 12px; line-height: 1;
                     filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.55));
-                    transition: transform 200ms ease, opacity 200ms ease;
+                    transition: transform 240ms linear, color 240ms linear, opacity 200ms ease;
                     transform-origin: 50% 50%;
+                    will-change: transform, opacity;
                 }
             `}</style>
 
@@ -1660,6 +1756,11 @@ function PlanFlowMapView({
                         missingOperators={getMissingOperators(plantProduction, selected.code)}
                         onMissingOperatorsChange={(count) =>
                             setMissingOperators(setPlantProduction, selected.code, count)
+                        }
+                        isSaturday={isSaturday(planDate)}
+                        saturdayOverride={getSaturdayOverride(plantProduction, selected.code)}
+                        onSaturdayOverrideChange={(count) =>
+                            setSaturdayOverride(setPlantProduction, selected.code, count)
                         }
                         yphByCode={yphByCode}
                         yphColorFor={yphColorFor}

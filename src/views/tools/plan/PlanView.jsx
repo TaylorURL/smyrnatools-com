@@ -187,6 +187,8 @@ function PlanViewImpl({ accentColor, isDark }) {
         calcClockIn,
         getTravelTime,
         mixerCountsByPlant,
+        planDate,
+        plantProduction,
         plants,
         travelTimes
     })

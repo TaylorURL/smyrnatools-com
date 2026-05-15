@@ -16,35 +16,47 @@ export function PlanFlowEmptyPanel({ accentColor }) {
     )
 }
 
-/** Selected-plant overview: stats, missing-operator editor, route list. */
+/** Selected-plant overview: stats, missing-operator (or Saturday
+ *  override) editor, route list. On Saturdays the half-fleet rule
+ *  applies, so the side panel swaps the "missing operators" editor for
+ *  a "Saturday operator count" field — the dispatcher sets the actual
+ *  count for the day directly rather than subtracting from the full
+ *  roster (which would be the wrong baseline on a half-crew day). */
 export function PlanFlowPlantOverview({
     accentColor,
     calcClockIn,
     canEdit,
     getTravelTime,
     inbound,
+    isSaturday = false,
     missingOperators = 0,
     mixerCountsByPlant,
     onAddRoute,
     onDeleteRoute,
     onEditRoute,
     onMissingOperatorsChange,
+    onSaturdayOverrideChange,
     outbound,
     production,
+    saturdayOverride = null,
     selected,
     yphByCode,
     yphColorFor
 }) {
     const yph = yphByCode[selected.code]
-    const baseCount = mixerCountsByPlant[selected.code] || 0
+    const rosterCount = mixerCountsByPlant[selected.code] || 0
+    const halfFleetDefault = Math.floor(rosterCount / 2)
     const hasMissing = missingOperators > 0
-    const remaining = Math.max(0, baseCount - missingOperators)
+    const remaining = Math.max(0, rosterCount - missingOperators)
     return (
         <div className="px-4 py-4 flex flex-col gap-4">
             <PlantHeader
                 accentColor={accentColor}
-                baseCount={baseCount}
+                halfFleetDefault={halfFleetDefault}
+                isSaturday={isSaturday}
                 missingOperators={missingOperators}
+                rosterCount={rosterCount}
+                saturdayOverride={saturdayOverride}
                 selected={selected}
             />
 
@@ -59,14 +71,24 @@ export function PlanFlowPlantOverview({
                 />
             </StatRow>
 
-            {canEdit && onMissingOperatorsChange && (
-                <MissingOperatorsEditor
-                    baseCount={baseCount}
-                    hasMissing={hasMissing}
-                    missingOperators={missingOperators}
-                    onChange={onMissingOperatorsChange}
-                    remaining={remaining}
+            {canEdit && isSaturday && onSaturdayOverrideChange ? (
+                <SaturdayOverrideEditor
+                    halfFleetDefault={halfFleetDefault}
+                    onChange={onSaturdayOverrideChange}
+                    override={saturdayOverride}
+                    rosterCount={rosterCount}
                 />
+            ) : (
+                canEdit &&
+                onMissingOperatorsChange && (
+                    <MissingOperatorsEditor
+                        baseCount={rosterCount}
+                        hasMissing={hasMissing}
+                        missingOperators={missingOperators}
+                        onChange={onMissingOperatorsChange}
+                        remaining={remaining}
+                    />
+                )
             )}
 
             {canEdit && (
@@ -109,8 +131,17 @@ export function PlanFlowPlantOverview({
     )
 }
 
-function PlantHeader({ accentColor, baseCount, missingOperators, selected }) {
-    const hasMissing = missingOperators > 0
+function PlantHeader({
+    accentColor,
+    halfFleetDefault,
+    isSaturday,
+    missingOperators,
+    rosterCount,
+    saturdayOverride,
+    selected
+}) {
+    const hasMissing = !isSaturday && missingOperators > 0
+    const hasSaturdayOverride = isSaturday && saturdayOverride != null
     return (
         <div className="flex items-center gap-3">
             <div
@@ -123,8 +154,17 @@ function PlantHeader({ accentColor, baseCount, missingOperators, selected }) {
                 <div className="font-semibold text-[15px] leading-tight text-text-primary">Plant {selected.code}</div>
                 <div className="text-[11.5px] mt-0.5 text-text-secondary flex flex-wrap items-center gap-x-2">
                     <span>
-                        <span className="font-mono tabular-nums font-semibold text-text-primary">{baseCount}</span> base
+                        <span className="font-mono tabular-nums font-semibold text-text-primary">{rosterCount}</span>{' '}
+                        roster
                     </span>
+                    {isSaturday && (
+                        <span className="inline-flex items-baseline gap-1">
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                {hasSaturdayOverride ? saturdayOverride : halfFleetDefault}
+                            </span>
+                            <span>{hasSaturdayOverride ? 'Sat override' : 'Sat default'}</span>
+                        </span>
+                    )}
                     {hasMissing && <SubtleDelta color="#dc2626" value={`-${missingOperators}`} label="missing" />}
                     {selected.send > 0 && <SubtleDelta color="#dc2626" value={`-${selected.send}`} label="sent" />}
                     {selected.recv > 0 && <SubtleDelta color="#16a34a" value={`+${selected.recv}`} label="recv" />}
@@ -223,12 +263,80 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
 }
 
 /**
+ * Saturday operator-count override editor. Replaces the missing-operators
+ * editor on Saturdays — the half-crew rule is a default, not a fact, so
+ * the dispatcher needs to pin the real number for the day. When set,
+ * the override IS the working count (no separate missing subtraction);
+ * clearing it falls back to floor(roster / 2).
+ */
+function SaturdayOverrideEditor({ halfFleetDefault, onChange, override, rosterCount }) {
+    const max = rosterCount > 0 ? rosterCount : 50
+    const hasOverride = override != null
+    const displaySeed = hasOverride ? String(override) : ''
+    const [inputValue, setInputValue] = useState(displaySeed)
+    useEffect(() => {
+        setInputValue(hasOverride ? String(override) : '')
+    }, [override, hasOverride])
+    const commit = (raw) => {
+        const digits = String(raw).replace(/\D/g, '')
+        setInputValue(digits)
+        if (digits === '') {
+            onChange(null)
+            return
+        }
+        const parsed = Math.max(0, Math.min(max, parseInt(digits, 10) || 0))
+        onChange(parsed)
+    }
+    const handleBlur = () => {
+        if (inputValue === '') onChange(null)
+    }
+    const resolved = hasOverride ? override : halfFleetDefault
+    return (
+        <div className="rounded-lg p-3 bg-bg-primary border border-border-light">
+            <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                    <i
+                        className="fas fa-calendar-day text-[12px] shrink-0"
+                        style={{ color: hasOverride ? '#0ea5e9' : 'var(--text-tertiary)' }}
+                    />
+                    <SectionLabel>Saturday operator count</SectionLabel>
+                </div>
+                {hasOverride && (
+                    <button
+                        type="button"
+                        onClick={() => onChange(null)}
+                        className="bg-transparent border-none cursor-pointer text-[11px] font-semibold text-text-secondary hover:text-text-primary"
+                        title="Clear — fall back to half-fleet default"
+                    >
+                        Reset
+                    </button>
+                )}
+            </div>
+            <CountStepperInput
+                ariaLabel="Saturday operator count"
+                max={max}
+                min={0}
+                onBlur={handleBlur}
+                onChange={commit}
+                placeholder={String(halfFleetDefault)}
+                value={inputValue}
+            />
+            <div className="text-[11px] mt-2 text-text-secondary">
+                {hasOverride
+                    ? `Running ${resolved} active mixer${resolved === 1 ? '' : 's'} today (override of the ${halfFleetDefault}-mixer half-fleet default from a ${rosterCount}-mixer roster).`
+                    : `Default: ${halfFleetDefault} mixer${halfFleetDefault === 1 ? '' : 's'} (half the ${rosterCount}-mixer roster). Type the actual count to override.`}
+            </div>
+        </div>
+    )
+}
+
+/**
  * Numeric stepper styled to match the site's flat input + table chrome.
  * Free-form typing via `type="text"` so the value can be cleared by
  * backspacing; the +/− buttons are flush-borderless and read as part of
  * the same field.
  */
-function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, value }) {
+function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, placeholder = '', value }) {
     const numericValue = parseInt(value, 10)
     const safeNumeric = Number.isFinite(numericValue) ? numericValue : 0
     const atMax = max != null && safeNumeric >= max
@@ -251,12 +359,13 @@ function CountStepperInput({ ariaLabel, max, min = 0, onBlur, onChange, value })
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoComplete="off"
+                placeholder={placeholder}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 onBlur={onBlur}
                 onFocus={(event) => event.target.select()}
                 aria-label={ariaLabel}
-                className="flex-1 px-3 py-1.5 text-sm font-mono tabular-nums text-center bg-transparent border-none outline-none text-text-primary"
+                className="flex-1 px-3 py-1.5 text-sm font-mono tabular-nums text-center bg-transparent border-none outline-none text-text-primary placeholder:text-text-tertiary"
             />
             <button
                 type="button"

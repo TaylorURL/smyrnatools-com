@@ -195,24 +195,28 @@ export function usePlanScheduleData({
         const out = {}
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
-            const rawBase = Number.isFinite(s.base) ? s.base : 0
+            // Pass the raw roster into getEffectiveBase — the function
+            // reapplies the day-of-week multiplier (and Saturday override)
+            // itself, so feeding it the already-adjusted `s.base` would
+            // double-halve the count on Saturdays.
+            const roster = Number.isFinite(s.rawBase) ? s.rawBase : Number.isFinite(s.base) ? s.base : 0
             const missing = getMissingOperators(plantProduction, s.code)
-            const base = getEffectiveBase(rawBase, s.code, plantProduction, planDate)
+            const base = getEffectiveBase(roster, s.code, plantProduction, planDate)
             const send = Number.isFinite(s.send) ? s.send : 0
             const recv = Number.isFinite(s.recv) ? s.recv : 0
-            out[s.code] = { base, missing, rawBase, recv, send, starting: base - send + recv }
+            out[s.code] = { base, missing, rawBase: roster, recv, send, starting: base - send + recv }
         })
         return out
     }, [stats, plantProduction, planDate])
 
     /** Effective base operator count per plant — accounts for day-of-week
-     *  multiplier and any missing-operator markers. */
+     *  multiplier, Saturday override, and any missing-operator markers. */
     const baseByPlant = useMemo(() => {
         const out = {}
         ;(stats || []).forEach((s) => {
             if (!s?.code) return
-            const base = Number.isFinite(s.base) ? s.base : 0
-            out[s.code] = getEffectiveBase(base, s.code, plantProduction, planDate)
+            const roster = Number.isFinite(s.rawBase) ? s.rawBase : Number.isFinite(s.base) ? s.base : 0
+            out[s.code] = getEffectiveBase(roster, s.code, plantProduction, planDate)
         })
         return out
     }, [stats, plantProduction, planDate])

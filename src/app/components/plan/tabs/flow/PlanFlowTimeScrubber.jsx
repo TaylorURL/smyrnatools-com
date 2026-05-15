@@ -1,7 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { minutesToTime } from '../../../../../utils/PlanUtility'
+import { minutesToTime, timeToMinutes } from '../../../../../utils/PlanUtility'
+import { MilitaryTimeInput } from '../../../common/MilitaryTimeInput'
 
 const SCRUB_MIN_MINUTES = 0
 const SCRUB_MAX_MINUTES = 24 * 60 - 1
@@ -14,6 +15,12 @@ const SCRUB_STEP_MINUTES = 5
  * no outer padding and only rounds the top-left corner. Play / Pause
  * runs the autoplay loop; the parent owns the interval and this
  * component just renders the control surface.
+ *
+ * The time read-out doubles as a manual editor — type `HH:MM` (or any
+ * partial form the `MilitaryTimeInput` resolves on blur) to jump the
+ * view straight to that minute. The slider and the input round-trip
+ * through the same `onChange(minutes)` so dragging or typing both
+ * advance the cycle identically.
  */
 export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onChange, onPlayToggle, viewTime }) {
     const displayValue = Number.isFinite(viewTime) ? viewTime : 0
@@ -26,6 +33,13 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
               : `${hasActivity} plant${hasActivity === 1 ? '' : 's'} actively pouring`
 
     const handleSlide = (event) => onChange(parseInt(event.target.value, 10))
+    const handleTypedTime = (hhmm) => {
+        if (!hhmm) return
+        const minutes = timeToMinutes(hhmm)
+        if (Number.isFinite(minutes) && minutes >= SCRUB_MIN_MINUTES && minutes <= SCRUB_MAX_MINUTES) {
+            onChange(minutes)
+        }
+    }
 
     return (
         <div
@@ -59,12 +73,13 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
                     style={{ accentColor }}
                     title={`Viewing ${clockLabel}`}
                 />
-                <div
-                    className="font-mono font-bold text-[13px] shrink-0 min-w-[62px] text-right"
-                    style={{ color: accentColor }}
-                >
-                    {clockLabel}
-                </div>
+                <MilitaryTimeInput
+                    ariaLabel="Jump to time (HH:MM, 24-hour)"
+                    compact
+                    extraClass="w-[68px] text-right font-bold"
+                    onChange={handleTypedTime}
+                    value={clockLabel}
+                />
             </div>
             {activityNote && (
                 <span

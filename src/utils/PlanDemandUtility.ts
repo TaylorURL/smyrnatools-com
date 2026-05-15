@@ -256,7 +256,9 @@ const buildPlantAccumulators = ({
     const plants = new Map<string, PlantAccumulator>()
     ;(stats || []).forEach((s) => {
         if (!s?.code || !passesPlantFilter(s.code)) return
-        const rawBase = Number.isFinite(s.base) ? s.base! : 0
+        // Roster (raw mixer count) → getEffectiveBase. Passing the
+        // day-adjusted `s.base` would re-halve on Saturdays.
+        const rawBase = Number.isFinite(s.rawBase) ? s.rawBase! : Number.isFinite(s.base) ? s.base! : 0
         const effectiveBase = getEffectiveBase(rawBase, s.code, plantProduction, planDate)
         const send = Number.isFinite(s.send) ? s.send! : 0
         const recv = Number.isFinite(s.recv) ? s.recv! : 0

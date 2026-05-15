@@ -282,8 +282,11 @@ export default function PlanDashboardClockInBoard({
         const out = {}
         ;(stats || []).forEach((s) => {
             if (!s?.code || !plantSet.has(s.code)) return
-            const base = Number.isFinite(s.base) ? s.base : 0
-            out[s.code] = getEffectiveBase(base, s.code, plantProduction, planDate)
+            // Feed the raw roster — getEffectiveBase reapplies the
+            // day-of-week multiplier internally; passing the already-
+            // adjusted `s.base` would double-halve on Saturdays.
+            const roster = Number.isFinite(s.rawBase) ? s.rawBase : Number.isFinite(s.base) ? s.base : 0
+            out[s.code] = getEffectiveBase(roster, s.code, plantProduction, planDate)
         })
         // Plants in scope without a `stats` entry still get a 0 base so the
         // breakdown isn't silently dropped — they'll fall out of the filter

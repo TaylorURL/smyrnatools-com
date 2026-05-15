@@ -68,11 +68,15 @@ export {
 } from './plan/planAssignment'
 export {
     adjustPoolForDate,
+    getDayAdjustedBase,
     getEffectiveBase,
     getMissingOperators,
     getPoolDayMultiplier,
+    getSaturdayOverride,
     isClosedDay,
-    setMissingOperators
+    isSaturday,
+    setMissingOperators,
+    setSaturdayOverride
 } from './plan/planAvailability'
 export { plantBadgeColor } from './plan/planBadges'
 export {

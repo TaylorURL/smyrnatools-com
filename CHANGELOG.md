@@ -1,5 +1,52 @@
 # Changelog
 
+## [2026.20.21] - 2026-05-15
+
+- Saturday operator-count override — dispatchers can now set the actual fleet count per plant on Saturdays
+  (the half-fleet default is a starting point, not a fact). The override propagates everywhere the day-adjusted
+  pool flows: Schedule pool math, Planner pin headcounts, Dashboard clock-in board, demand projections, and the
+  runtime simulation.
+  - `src/utils/plan/planAvailability.ts` — new `isSaturday`, `getSaturdayOverride`, `setSaturdayOverride`, and
+    `getDayAdjustedBase` helpers. Override storage lives in `plantProduction[PLAN_META_KEY].saturdayOverrideByPlant`
+    so it persists through the existing `PlanService.savePlan` call with no new endpoint. Updated `getEffectiveBase`
+    to honour the override on Saturdays AND skip the missing-operator subtraction in that case — the override IS
+    the working count, the dispatcher already accounted for sick / vacation in the number they typed.
+  - `src/utils/PlanUtility.ts` — re-exports for the new helpers so existing import paths keep working.
+  - `src/app/hooks/usePlanInsights.js` — `stat.base` is now the day-adjusted working count (Sundays → 0,
+    Saturdays → override or floor(roster/2), other days → roster). Added `stat.rawBase` carrying the unfiltered
+    mixer count so consumers that still need the roster have an explicit field. Filter switched to `rawBase > 0`
+    so closed-day plants still surface in the list. Threaded `planDate` + `plantProduction` from `PlanView.jsx`.
+  - `src/app/hooks/usePlanFlowMetrics.js`, `src/app/hooks/usePlanScheduleData.js`,
+    `src/app/components/plan/tabs/dashboard/PlanDashboardClockInBoard.jsx`, `src/utils/PlanRuntimeUtility.ts`,
+    `src/utils/PlanDemandUtility.ts` — every `getEffectiveBase` callsite now passes `stat.rawBase` (the literal
+    roster) instead of `stat.base` (the already-day-adjusted value). Prevents the Saturday default from being
+    halved twice.
+  - `src/views/tools/plan/PlanFlowMapView.jsx` — `buildPlantStatus` takes `planDate` and detects when a Saturday
+    override is active. When active, the pin's missing-operator subtraction is suppressed so the pin shows the
+    override directly; on non-Saturdays the existing missing-operator behaviour is preserved. Wired
+    `isSaturday(planDate)`, `getSaturdayOverride(plantProduction, code)`, and `setSaturdayOverride` callback into
+    the side-panel render site.
+  - `src/app/components/plan/tabs/flow/PlanFlowSidePanel.jsx` — on Saturdays the side panel swaps the "missing
+    operators" editor for a new `SaturdayOverrideEditor` (fa-calendar-day icon, "Saturday operator count" label,
+    stepper input seeded with the half-fleet default as placeholder, Reset button to fall back to default). The
+    header now reads "roster" instead of "base" and shows a Saturday context chip with either the override (when
+    set) or the half-fleet default. Missing-operator deltas are suppressed on Saturdays since they aren't
+    applied there.
+- Time scrubber accepts manual time entry — bottom-right scrubber on the Planner map now lets the user type a
+  time in addition to dragging the slider.
+  - `src/app/components/common/MilitaryTimeInput.jsx` — extracted the previously private `MilitaryTimeInput`
+    from `PlanFlowRouteEditor.jsx` into a reusable common component. Same behaviour (auto-colon, blur
+    autocomplete, locale-proof 24-hour rendering) with added `ariaLabel` + `extraClass` props so callers can
+    layer width / alignment classes without losing the base styling.
+  - `src/app/components/plan/tabs/flow/PlanFlowTimeScrubber.jsx` — replaced the static clock label with a
+    `MilitaryTimeInput`. Typed entries parse through `timeToMinutes` and feed back into the same `onChange`
+    the slider drives, so dragging and typing round-trip identically. Auto-colon, on-blur autocomplete
+    (`"930"` → `09:30`), and clamp to `[0, 1439]` mean partial input still resolves cleanly.
+  - `src/app/components/plan/tabs/flow/PlanFlowRouteEditor.jsx` — now imports `MilitaryTimeInput` from the new
+    common module and drops the ~100-line local copy plus the now-unused `useState` / `useEffect` imports.
+    All four call sites pass `extraClass="w-full"` so the route-editor time inputs continue to fill their grid
+    cells the same way.
+
 ## [2026.20.20] - 2026-05-15
 
 - `src/views/tools/plan/PlanFlowMapView.jsx` — Planner-tab map polish pass.

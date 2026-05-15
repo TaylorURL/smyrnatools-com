@@ -168,8 +168,11 @@ export const buildInitialPoolByCode = (
     const out: Record<string, number> = {}
     ;(stats || []).forEach((stat) => {
         if (!stat?.code) return
-        const base = Number.isFinite(stat.base) ? stat.base! : 0
-        out[stat.code] = getEffectiveBase(base, stat.code, plantProduction, planDate)
+        // Use the raw roster so getEffectiveBase can apply the day-of-week
+        // multiplier (and Saturday override) without doubling up on an
+        // already-adjusted `stat.base`.
+        const roster = Number.isFinite(stat.rawBase) ? stat.rawBase! : Number.isFinite(stat.base) ? stat.base! : 0
+        out[stat.code] = getEffectiveBase(roster, stat.code, plantProduction, planDate)
     })
     return out
 }

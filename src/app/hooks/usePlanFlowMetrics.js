@@ -46,8 +46,11 @@ export function usePlanFlowMetrics({ assignments, getTravelTime, planDate, plant
         const out = {}
         ;(stats || []).forEach((stat) => {
             if (!stat?.code) return
-            const base = Number.isFinite(stat.base) ? stat.base : 0
-            out[stat.code] = getEffectiveBase(base, stat.code, plantProduction, planDate)
+            // `rawBase` is the unfiltered roster — getEffectiveBase reapplies
+            // the day-of-week multiplier (and Saturday override) internally,
+            // so we must NOT feed it the already-adjusted `stat.base`.
+            const rawBase = Number.isFinite(stat.rawBase) ? stat.rawBase : Number.isFinite(stat.base) ? stat.base : 0
+            out[stat.code] = getEffectiveBase(rawBase, stat.code, plantProduction, planDate)
         })
         return out
     }, [stats, plantProduction, planDate])
