@@ -13,11 +13,13 @@ export default function PlanScheduleTitleRow({
     accentColor,
     activeFilterCount,
     allOrdersCount,
+    compareMode = false,
     filteredCount,
     filtersOpen,
     hasAnyOrders,
     isMobile,
     onSwitchToPlanner,
+    onToggleCompare,
     onToggleFilters,
     onToggleMaximized,
     setViewMode,
@@ -75,6 +77,25 @@ export default function PlanScheduleTitleRow({
                                 {activeFilterCount}
                             </span>
                         )}
+                    </button>
+                )}
+                {!isMobile && hasAnyOrders && onToggleCompare && (
+                    <button
+                        type="button"
+                        onClick={onToggleCompare}
+                        className="px-3 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer flex items-center gap-1.5"
+                        style={{
+                            background: compareMode ? accentColor : 'var(--bg-secondary)',
+                            color: compareMode ? '#fff' : 'var(--text-secondary)'
+                        }}
+                        title={
+                            compareMode
+                                ? 'Exit the side-by-side comparison and return to the standard schedule view'
+                                : 'Split the schedule into two columns — the original 5:30 PM snapshot vs. live'
+                        }
+                    >
+                        <i className={`fas ${compareMode ? 'fa-table-columns' : 'fa-clock-rotate-left'} text-[10px]`} />
+                        {compareMode ? 'Exit comparison' : 'View original schedule'}
                     </button>
                 )}
                 {!isMobile && hasAnyOrders && (

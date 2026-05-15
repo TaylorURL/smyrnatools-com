@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 
 import Skeleton, { SkeletonStack } from '../../../app/components/common/Skeleton'
+import PlantManagersQuickEditModal from '../../../app/components/plants/PlantManagersQuickEditModal'
 import TopSection from '../../../app/components/sections/TopSection'
 import { PlantService } from '../../../services/PlantService'
 import PlantsAddView from './PlantsAddView'
@@ -15,6 +16,10 @@ const REGION_TYPE_TO_PLANT_TYPE = {
 const PLANT_TYPE_OPTIONS = ['Concrete Plant', 'Aggregate Location', 'Office Location']
 const getPlantCode = (plant) => plant?.plant_code || plant?.plantCode || ''
 const getPlantName = (plant) => plant?.plant_name || plant?.plantName || ''
+const getPlantManagerIds = (plant) => {
+    const raw = plant?.manager_user_ids ?? plant?.managerUserIds
+    return Array.isArray(raw) ? raw : []
+}
 const getPlantType = (region) => REGION_TYPE_TO_PLANT_TYPE[region?.type] || 'N/A'
 const PLANT_TYPE_BADGE_CLASSES = {
     'Aggregate Location': 'bg-amber-100 text-amber-700',
@@ -26,7 +31,8 @@ const CUSTOM_SELECT_CLS =
 /**
  * List view for all plants. Builds a plant-to-region map on load to display
  * each plant's type (Concrete/Aggregate/Office). Supports search by code/name,
- * region filter, plant type filter, and drill-down into PlantsDetailView.
+ * region filter, plant type filter, an inline manager-edit modal triggered
+ * from each row, and drill-down into PlantsDetailView for full edit.
  */
 function PlantsView({ title = 'Plants' }) {
     const [plants, setPlants] = useState([])
@@ -36,6 +42,7 @@ function PlantsView({ title = 'Plants' }) {
     const [searchText, setSearchText] = useState('')
     const [showAddSheet, setShowAddSheet] = useState(false)
     const [selectedPlant, setSelectedPlant] = useState(null)
+    const [managersEditPlant, setManagersEditPlant] = useState(null)
     const [selectedRegion, setSelectedRegion] = useState('')
     const [selectedPlantType, setSelectedPlantType] = useState('')
     const headerRef = useRef(null)
@@ -76,6 +83,16 @@ function PlantsView({ title = 'Plants' }) {
         const updatedPlants = await PlantService.fetchPlants()
         setPlants(updatedPlants)
         setSelectedPlant(updatedPlants.find((p) => getPlantCode(p) === plantCode) || null)
+    }
+    /** Patches the local plants array with a new manager list for one plant
+     *  so the row's count badge flips immediately when the modal saves. */
+    const handleManagersSaved = (plantCode, managerIds) => {
+        setPlants((prev) =>
+            prev.map((p) => {
+                if (getPlantCode(p) !== plantCode) return p
+                return { ...p, managerUserIds: managerIds, manager_user_ids: managerIds }
+            })
+        )
     }
     const filteredPlants = plants.filter((plant) => {
         const normalizedSearch = searchText.trim().toLowerCase()
@@ -150,8 +167,8 @@ function PlantsView({ title = 'Plants' }) {
                 forwardedRef={headerRef}
                 hideViewModeToggle={true}
                 viewMode="list"
-                listLabels={['Plant Code', 'Name', 'Region', 'Type']}
-                colWidths={['20%', '30%', '25%', '25%']}
+                listLabels={['Plant Code', 'Name', 'Region', 'Type', 'Managers']}
+                colWidths={['16%', '26%', '20%', '20%', '18%']}
                 customFilters={customFilters}
                 showReset={!!(searchText || selectedRegion || selectedPlantType)}
                 onReset={resetFilters}
@@ -167,6 +184,7 @@ function PlantsView({ title = 'Plants' }) {
                                     <Skeleton className="h-4 flex-1" />
                                     <Skeleton className="h-4 w-32" />
                                     <Skeleton className="h-5 w-20" rounded="rounded-full" />
+                                    <Skeleton className="h-5 w-24" rounded="rounded-full" />
                                 </div>
                             )}
                         </SkeletonStack>
@@ -199,6 +217,7 @@ function PlantsView({ title = 'Plants' }) {
                                     const plantType = getPlantType(region)
                                     const badgeClass =
                                         PLANT_TYPE_BADGE_CLASSES[plantType] || 'bg-slate-100 text-slate-600'
+                                    const managerCount = getPlantManagerIds(plant).length
                                     return (
                                         <tr
                                             key={code}
@@ -219,6 +238,25 @@ function PlantsView({ title = 'Plants' }) {
                                                     {plantType}
                                                 </span>
                                             </td>
+                                            <td className="px-5 py-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation()
+                                                        setManagersEditPlant(plant)
+                                                    }}
+                                                    className="inline-flex items-center gap-2 rounded-full border border-border-light bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:border-accent"
+                                                    title="Attach or remove managers for this plant"
+                                                >
+                                                    <i className="fas fa-user-tie text-[10px] text-accent" />
+                                                    <span>
+                                                        {managerCount === 0
+                                                            ? 'No managers'
+                                                            : `${managerCount} manager${managerCount === 1 ? '' : 's'}`}
+                                                    </span>
+                                                    <i className="fas fa-pen text-[9px] text-slate-400" />
+                                                </button>
+                                            </td>
                                         </tr>
                                     )
                                 })}
@@ -228,6 +266,13 @@ function PlantsView({ title = 'Plants' }) {
                 )}
             </div>
             {showAddSheet && <PlantsAddView onClose={() => setShowAddSheet(false)} onPlantAdded={handlePlantAdded} />}
+            {managersEditPlant && (
+                <PlantManagersQuickEditModal
+                    plant={managersEditPlant}
+                    onClose={() => setManagersEditPlant(null)}
+                    onSaved={(persistedIds) => handleManagersSaved(getPlantCode(managersEditPlant), persistedIds)}
+                />
+            )}
         </div>
     )
 }

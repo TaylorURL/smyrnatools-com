@@ -298,6 +298,7 @@ export default function PlanScheduleTable({
     isToday = false,
     keyForOrder,
     nowMin = null,
+    onOpenAudit,
     onOpenLocation,
     orders,
     plantCityByCode,
@@ -510,6 +511,19 @@ export default function PlanScheduleTable({
                                 <i className="fas fa-ticket text-[12px] text-text-tertiary" />
                                 View tickets
                             </button>
+                            {onOpenAudit && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onOpenAudit(rowMenu.order)
+                                        setRowMenu(null)
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-[12.5px] font-semibold flex items-center gap-2 bg-transparent border-0 cursor-pointer hover:bg-[color:var(--bg-tertiary)] text-text-primary"
+                                >
+                                    <i className="fas fa-clock-rotate-left text-[12px] text-text-tertiary" />
+                                    Order audit
+                                </button>
+                            )}
                         </div>,
                         document.body
                     )}

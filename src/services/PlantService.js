@@ -53,27 +53,39 @@ class PlantServiceImpl {
         await this.fetchAllPlants()
         return true
     }
-    /** Updates a plant's name and refreshes the cache. */
-    async updatePlant(plantCode, plantName) {
+    /** Updates a plant's name plus any of address / latitude / longitude in
+     *  one round trip. Address and lat/lng fields are independently
+     *  optional — pass only what you want changed (the edge function only
+     *  writes columns explicitly present on the payload). Busts the shared
+     *  `plants:all` cache so callers picking up via `useAddressDistances`
+     *  / `useCloserPlantLookup` see the new coords right away. */
+    async updatePlant(plantCode, plantName, { plantAddress, latitude, longitude } = {}) {
         if (!plantCode?.trim() || !plantName?.trim()) throw new Error('Plant code and name are required')
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/update`, { plantCode, plantName })
+        const payload = { plantCode, plantName }
+        if (plantAddress !== undefined) payload.plantAddress = plantAddress
+        if (latitude !== undefined) payload.latitude = latitude
+        if (longitude !== undefined) payload.longitude = longitude
+        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/update`, payload)
         if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update plant')
-        await this.fetchAllPlants()
-        return true
-    }
-    /** Updates only the plant's street address — used by the Plan settings modal.
-     *  Busts the shared `plants:all` cache so the next render picks up the new
-     *  address without waiting for the 10-min TTL. */
-    async updatePlantAddress(plantCode, plantAddress) {
-        if (!plantCode?.trim()) throw new Error('Plant code is required')
-        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/update-address`, {
-            plantAddress: plantAddress || '',
-            plantCode
-        })
-        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update plant address')
         CacheUtility.delete('plants:all')
         await this.fetchAllPlants()
         return true
+    }
+    /** Replaces the plant's manager-user-ids array with the supplied list.
+     *  Caller passes the FULL desired list of user ids (not a delta) — the
+     *  edge function dedupes + uuid-validates before writing. Returns the
+     *  server-cleaned list so the UI can resync optimistic state. */
+    async updatePlantManagers(plantCode, managerUserIds) {
+        if (!plantCode?.trim()) throw new Error('Plant code is required')
+        const payload = Array.isArray(managerUserIds) ? managerUserIds : []
+        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/update-managers`, {
+            managerUserIds: payload,
+            plantCode
+        })
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update plant managers')
+        CacheUtility.delete('plants:all')
+        await this.fetchAllPlants()
+        return Array.isArray(json?.managerUserIds) ? json.managerUserIds : payload
     }
     /** Deletes a plant and refreshes the cache. */
     async deletePlant(plantCode) {

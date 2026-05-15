@@ -1,5 +1,86 @@
 # Changelog
 
+## [2026.20.19] - 2026-05-15
+
+- Schedule snapshot system — new daily capture of the dispatch schedule at 5:30 PM Central so the team can diff
+  next-day moves, additions, and removals against the version they planned the evening before.
+  - `supabase/migrations/20260515120000_add_plan_schedule_snapshots.sql` — created `plan_schedule_snapshots`
+    (one row per `schedule_date`, JSONB `plant_production` blob, `order_count`, `total_yardage`, never expires).
+    Enabled `pg_cron` + `pg_net` and scheduled two cron entries (`22:30 UTC` and `23:30 UTC`) so the snapshot
+    lands at 17:30 Chicago year-round regardless of DST. The edge function self-checks the Chicago wall clock and
+    exits early on the off-hour call, and the `schedule_date` unique constraint makes any double-fire a cheap no-op.
+  - `supabase/migrations/20260515120001_configure_schedule_snapshot_cron.sql` — added `plan_schedule_snapshot_config`
+    (single-row config table behind `using (false)` RLS so the token never leaks via the anon REST API) and rewrote
+    `trigger_schedule_snapshot()` to read `edge_url` + `edge_internal_token` from that row. Settings live in the
+    DB (not `ALTER DATABASE ... SET`) because `current_setting` doesn't propagate to pg_cron's worker session.
+  - `supabase/functions/schedule-snapshot-service/index.ts` — new edge function with `capture`, `get-by-date`,
+    `list-recent`, and `bootstrap` endpoints. All four gates on `isInternalServiceCall` (the same shared-secret
+    helper `dispatch-import` and `email-service` use). `capture` groups `dispatch_data` rows by `home_plant_code`
+    into the same per-plant production shape the live Schedule reads, computes order/yardage totals, and upserts
+    by `schedule_date`. Accepts an optional `scheduleDate` body param to bypass the 17:30-Chicago gate for manual
+    backfills.
+  - `src/services/ScheduleSnapshotService.js` — client wrapper with `getSnapshot(date)` + in-memory cache and
+    `listRecent(limit)`. Uses `APIUtility.post` so the existing session-auth + retry stack carries over.
+  - `src/utils/ScheduleDiffUtility.ts` — `diffOrderAgainstSnapshot` + `diffScheduleAgainstSnapshot` covering 18
+    tracked fields (start time, yardage, address, product code, etc.) so the audit popup can surface every
+    meaningful drift between snapshot and live.
+- `src/views/tools/plan/PlanScheduleView.jsx` — added a "View Original Schedule" toggle in the title row that
+  loads the 5:30 PM snapshot for the current `planDate` and flips the Schedule tab into a two-column side-by-side
+  comparison. The header strip and the table reuse the existing components in both modes, so no separate styling
+  to drift.
+- `src/app/components/plan/tabs/schedule/PlanScheduleSplitView.jsx` — new split view that renders two copies of
+  `PlanScheduleTable`: snapshot orders on the left, live orders on the right. Both columns are fed through the
+  same `applyFilters` pipeline (`usePlanScheduleData`'s filter logic copied verbatim) so chips, search, sort,
+  status / product / min-yardage / cancelled-orders filters change them in lockstep. The snapshot side runs with
+  empty arrays / nulls for clock-ins, pool timelines, help rows, ticket detail, send-home / suggested-slot rows
+  — pure order rows only, since synthetic rows derive from live state that doesn't exist for a frozen
+  snapshot. Loading + missing-snapshot states surface inline rather than as a modal.
+- `src/app/components/plan/tabs/schedule/PlanScheduleStatStrip.jsx` — added `compareBaseline` prop. In compare
+  mode every numeric stat (Orders, Plants, Yardage, Loads, Window) picks up an inline `CompareDeltaBadge` that
+  shows the percent delta vs. the 5:30 PM snapshot (falls back to a count delta when the baseline is zero) and
+  the hint line is rewritten to surface the baseline number. Tone (green / red / neutral) tracks direction so a
+  dispatcher can read the strip and know how far the day has drifted from the plan at a glance.
+- `src/utils/PlanScheduleUtility.ts` — exported `computeScheduleHeadlineMetrics(plantProduction, filters, isToday)`
+  that mirrors the live filter pipeline so the split view can compute snapshot-side totals (filtered orders,
+  unique plants/customers, total yardage, earliest/latest start) without duplicating the gates inside the view.
+- `src/app/components/plan/tabs/schedule/PlanScheduleTable.jsx`, `PlanScheduleTitleRow.jsx`,
+  `PlanScheduleFilterDrawer.jsx` — minor plumbing so the compare-mode toggle and snapshot timestamp flow through
+  without touching the live render path.
+- `src/app/components/schedule/OrderAuditModal.jsx` — right-click an order in the Schedule tab to open an audit
+  popup that runs `diffOrderAgainstSnapshot` against the captured 5:30 PM row and renders every changed field
+  side-by-side with a labeled badge. Reads the snapshot via `ScheduleSnapshotService` so the panel inherits the
+  same caching.
+- Plant managers — many-to-many attachment of users to plants for routing manager-scoped emails / lookups.
+  - `supabase/migrations/20260515_add_plants_manager_user_ids.sql` — added `manager_user_ids uuid[]` to
+    `plants` (defaulted to `'{}'`) and a GIN index for fast `?|` lookups by manager.
+  - `supabase/functions/plant-service/index.ts` — added an `update-managers` action that validates the array
+    server-side (no UUID regex, letting Postgres reject malformed values directly so silent rejections can't
+    happen) and reports errors verbosely so the UI can show what actually broke.
+  - `src/services/PlantService.js`, `src/app/models/plants/Plant.js` — plumbed `managerUserIds` through the
+    model + service, including a `setManagers` helper that calls the new edge function action.
+  - `src/app/components/plants/PlantManagersEditor.jsx` — reusable user picker. Uses `createPortal` to render
+    the dropdown into `document.body` with fixed positioning + `getBoundingClientRect` measurement so the
+    dropdown escapes parent `overflow:hidden` containers (the bug where the dropdown was clipped inside the
+    Plants list row).
+  - `src/app/components/plants/PlantManagersQuickEditModal.jsx` — modal triggered from the Plants list with
+    a small icon button, so managers can be reassigned without opening the full Plants detail view.
+  - `src/views/admin/plants/PlantsView.jsx` — adds the quick-edit button per row and surfaces the count of
+    attached managers in the list.
+- `src/views/admin/plants/PlantsDetailView.jsx` — Plants detail view now owns address + lat/long editing and
+  the inline managers picker, replacing the removed Plan Settings panel. Adds form state, dirty-tracking, a
+  save handler that writes through `PlantService.updatePlant` (address + lat/long) and `PlantService.setManagers`
+  (manager array) in one trip, and inline validation for the coordinate fields.
+- `src/app/components/plan/tabs/settings/PlanSettings.jsx` /
+  `src/app/components/plan/tabs/settings/PlanSettingsAddressesPanel.jsx` (deleted) — removed the Plan Settings
+  "Plant Addresses" panel. Address editing belongs to the Plants admin, not the Plan tab. The settings tab now
+  surfaces only the Find-a-Spot audit log and route configuration; plant address management is one click away
+  via the Plants admin view.
+- `src/services/DispatchDataService.js` — fixed the "70 yd" duplicate cross-plant ticket bug in
+  `buildDetailByOrderId`. The estimate-only ticket builder was stuffing the entire remaining yardage of an
+  order into the last truck slot (producing impossible 70-yd loads on a 10-yd-max plant). Each estimate ticket
+  is now capped at the order's `loadSize`, so the synthetic tickets respect the same physical limit a real
+  ticket would.
+
 ## [2026.20.18] - 2026-05-14
 
 - `src/views/tools/plan/PlanFlowMapView.jsx` — major upgrade to the Planner tab map.

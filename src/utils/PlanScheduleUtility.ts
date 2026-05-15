@@ -12,6 +12,7 @@ import {
     computeRequestedYardsPerHour,
     estimateOrderTiming,
     findNextViableStart,
+    formatMinutesClock,
     getCalculatedTruckCount,
     isBigPourOrder,
     isExcludedOrder,
@@ -847,4 +848,97 @@ export const applyLoadingPlantReassignment = (plantProduction, detailByOrderId) 
         next[plant] = { ...existing, orders, ...recomputePlantBlockTotals(orders) }
     })
     return next
+}
+
+/* ── Schedule headline-stat snapshotter ────────────────────────────
+ * Mirrors the aggregates surfaced by `usePlanScheduleData` (orders,
+ * plants, customers, yardage, trucks, window) but runs against any
+ * `plant_production` blob — used by the schedule snapshot compare flow
+ * to derive baseline numbers for the 5:30 PM snapshot so the stat strip
+ * can render delta % against the live values. Filters honored match
+ * `usePlanScheduleData.filtered` exactly so the comparison is
+ * apples-to-apples.
+ */
+const flattenPlantProductionOrders = (plantProduction) => {
+    if (!plantProduction || typeof plantProduction !== 'object') return []
+    const out = []
+    Object.entries(plantProduction).forEach(([code, data]) => {
+        if (code === PLAN_META_KEY) return
+        if (!Array.isArray(data?.orders)) return
+        data.orders.forEach((order) => out.push({ ...order, plantCode: order?.plantCode || code }))
+    })
+    return out
+}
+
+export const computeScheduleHeadlineMetrics = (plantProduction, filters = {}, isViewingToday = false) => {
+    const {
+        minYards = 0,
+        plantFilterSet,
+        productFilter = 'all',
+        query = '',
+        showCancelled = false,
+        showTest = false,
+        statusFilter = 'all'
+    } = filters
+    const q = String(query || '')
+        .trim()
+        .toLowerCase()
+    const minYd = parseFloat(minYards) || 0
+    const all = flattenPlantProductionOrders(plantProduction)
+    const filtered = all.filter((o) => {
+        if (plantFilterSet?.size > 0 && !plantFilterSet.has(o.plantCode)) return false
+        const kind = getOrderStatus(o.startTime, { isToday: isViewingToday })?.kind || 'scheduled'
+        if (kind === 'cancelled' && !showCancelled) return false
+        if (kind === 'test' && !showTest) return false
+        if (statusFilter && statusFilter !== 'all' && kind !== statusFilter) return false
+        if (productFilter && productFilter !== 'all' && clean(o.productCode) !== productFilter) return false
+        if (minYd > 0 && (parseFloat(o.yardage) || 0) < minYd) return false
+        if (q) {
+            const haystack = [
+                o.orderNum,
+                o.customer,
+                o.customerNum,
+                o.address,
+                o.city,
+                o.productCode,
+                o.description,
+                o.contact,
+                o.phone,
+                o.poNumber,
+                o.jobNumber,
+                o.plantCode
+            ]
+                .filter(Boolean)
+                .map((v) => String(v).toLowerCase())
+                .join(' | ')
+            if (!haystack.includes(q)) return false
+        }
+        return true
+    })
+    /* "live orders" mirror — same filter the stat strip uses (cancelled
+     * + test sentinel orders are excluded from the totals even though
+     * the schedule still renders them when those toggles are on). */
+    const liveOrders = filtered.filter((o) => {
+        const kind = getOrderStatus(o.startTime)?.kind
+        return kind !== 'cancelled' && kind !== 'test'
+    })
+    const yardage = sumField(liveOrders, 'yardage')
+    const trucks = liveOrders.reduce((sum, o) => {
+        const n = getCalculatedTruckCount(o)
+        return sum + (Number.isFinite(n) ? n : 0)
+    }, 0)
+    const plants = new Set(liveOrders.map((o) => o.plantCode)).size
+    const customers = new Set(liveOrders.map((o) => (clean(o.customer) || '').toLowerCase()).filter(Boolean)).size
+    const startMinutes = liveOrders.map((o) => timeToMinutes(o.startTime)).filter((t) => t != null)
+    const earliest = startMinutes.length ? Math.min(...startMinutes) : null
+    const latest = startMinutes.length ? Math.max(...startMinutes) : null
+    return {
+        customers,
+        earliestTime: earliest != null ? formatMinutesClock(earliest) : null,
+        latestTime: latest != null ? formatMinutesClock(latest) : null,
+        orders: liveOrders.length,
+        plants,
+        trucks,
+        yardage
+    }
 }

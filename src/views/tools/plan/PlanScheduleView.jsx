@@ -1,19 +1,23 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import PlanScheduleClosedBanner from '../../../app/components/plan/tabs/schedule/PlanScheduleClosedBanner'
 import PlanScheduleEmptyState from '../../../app/components/plan/tabs/schedule/PlanScheduleEmptyState'
 import PlanScheduleFilterDrawer from '../../../app/components/plan/tabs/schedule/PlanScheduleFilterDrawer'
 import PlanScheduleGroupedCards from '../../../app/components/plan/tabs/schedule/PlanScheduleGroupedCards'
+import PlanScheduleSplitView from '../../../app/components/plan/tabs/schedule/PlanScheduleSplitView'
 import PlanScheduleStatStrip from '../../../app/components/plan/tabs/schedule/PlanScheduleStatStrip'
 import PlanScheduleTable from '../../../app/components/plan/tabs/schedule/PlanScheduleTable'
 import PlanScheduleTitleRow from '../../../app/components/plan/tabs/schedule/PlanScheduleTitleRow'
 import JobMapModal from '../../../app/components/schedule/JobMapModal'
+import OrderAuditModal from '../../../app/components/schedule/OrderAuditModal'
 import { DEFAULT_SCHEDULE_FILTERS } from '../../../app/constants/planScheduleViewConstants'
 import { usePlanScheduleAdjacentTotals } from '../../../app/hooks/usePlanScheduleAdjacentTotals'
 import { usePlanScheduleData } from '../../../app/hooks/usePlanScheduleData'
 import { usePlanScheduleFilterSetters } from '../../../app/hooks/usePlanScheduleFilterSetters'
 import { usePlanScheduleMaximize } from '../../../app/hooks/usePlanScheduleMaximize'
 import { usePlanScheduleRoster } from '../../../app/hooks/usePlanScheduleRoster'
+import { ScheduleSnapshotService } from '../../../services/ScheduleSnapshotService'
+import { computeScheduleHeadlineMetrics } from '../../../utils/PlanScheduleUtility'
 
 /**
  * Schedule view — flat, filterable, sortable table (or grouped cards) of every
@@ -168,6 +172,63 @@ function PlanScheduleView({
     // persist across date changes — closing this view should drop the open
     // map modal (the order it points at no longer exists in the new day).
     const [mapOrder, setMapOrder] = useState(null)
+    // Order audit (right-click → diff this order against the 5:30 PM
+    // snapshot) is still a modal — per-order popup. The compare flow is
+    // NOT modal: `compareMode` flips the whole schedule body into a
+    // two-column split view that respects the same filter drawer state.
+    const [auditOrder, setAuditOrder] = useState(null)
+    const [compareMode, setCompareMode] = useState(false)
+    /** When compareMode is on, load the snapshot once here so the stat
+     *  strip can show before/after deltas AND the split view can read
+     *  the same in-memory copy (ScheduleSnapshotService caches by date,
+     *  so the second `getSnapshot` call from the split view is a no-op). */
+    const [compareSnapshot, setCompareSnapshot] = useState(null)
+    useEffect(() => {
+        if (!compareMode || !planDate) {
+            setCompareSnapshot(null)
+            return undefined
+        }
+        let cancelled = false
+        ;(async () => {
+            const result = await ScheduleSnapshotService.getSnapshot(planDate)
+            if (!cancelled) setCompareSnapshot(result)
+        })()
+        return () => {
+            cancelled = true
+        }
+    }, [compareMode, planDate])
+
+    /** Schedule headline metrics computed off the snapshot's plant
+     *  production, run through the SAME filter pipeline the live stats
+     *  use so the strip's `-20%` reads as an apples-to-apples delta and
+     *  not "snapshot saw 50 orders, live filtered down to 12, somehow -76%." */
+    const compareBaseline = useMemo(() => {
+        if (!compareMode || !compareSnapshot?.plant_production) return null
+        return computeScheduleHeadlineMetrics(
+            compareSnapshot.plant_production,
+            {
+                minYards,
+                plantFilterSet,
+                productFilter,
+                query,
+                showCancelled,
+                showTest,
+                statusFilter
+            },
+            isViewingToday
+        )
+    }, [
+        compareMode,
+        compareSnapshot,
+        minYards,
+        plantFilterSet,
+        productFilter,
+        query,
+        showCancelled,
+        showTest,
+        statusFilter,
+        isViewingToday
+    ])
 
     const clearAllFilters = () => {
         setQuery('')
@@ -196,11 +257,13 @@ function PlanScheduleView({
                             accentColor={accentColor}
                             activeFilterCount={activeFilterCount}
                             allOrdersCount={allOrders.length}
+                            compareMode={compareMode}
                             filteredCount={filtered.length}
                             filtersOpen={filtersOpen}
                             hasAnyOrders={hasAnyOrders}
                             isMobile={isMobile}
                             onSwitchToPlanner={onSwitchToPlanner}
+                            onToggleCompare={() => setCompareMode((v) => !v)}
                             onToggleFilters={() => setFiltersOpen((v) => !v)}
                             onToggleMaximized={() => setMaximized(true)}
                             setViewMode={setViewMode}
@@ -215,6 +278,7 @@ function PlanScheduleView({
                             {!effectiveMaximized && (
                                 <PlanScheduleStatStrip
                                     allOrdersCount={allOrders.length}
+                                    compareBaseline={compareBaseline}
                                     customerSatisfaction={customerSatisfaction}
                                     earliestTime={earliestTime}
                                     filteredCount={filtered.length}
@@ -245,6 +309,7 @@ function PlanScheduleView({
                                 <PlanScheduleFilterDrawer
                                     accent={accentColor}
                                     activePlantName={activePlantName}
+                                    compareMode={compareMode}
                                     minYards={minYards}
                                     onChangeMinYards={setMinYards}
                                     onChangeProduct={setProductFilter}
@@ -256,6 +321,7 @@ function PlanScheduleView({
                                     onClearFilters={hasActiveFilters ? clearAllFilters : null}
                                     onCopyRoster={copyOperatorRoster}
                                     onExitMaximized={effectiveMaximized ? () => setMaximized(false) : null}
+                                    onToggleCompare={() => setCompareMode((v) => !v)}
                                     onToggleExtraRows={() => setShowExtraRows((v) => !v)}
                                     onTogglePlantFilter={togglePlantFilter}
                                     operatorRosterCopied={operatorRosterCopied}
@@ -278,7 +344,41 @@ function PlanScheduleView({
                                 />
                             )}
 
-                            {filtered.length === 0 ? (
+                            {compareMode ? (
+                                <PlanScheduleSplitView
+                                    accentColor={accentColor}
+                                    detailByOrderId={detailByOrderId}
+                                    filters={{
+                                        minYards,
+                                        planDate,
+                                        plantFilterSet,
+                                        productFilter,
+                                        query,
+                                        showCancelled,
+                                        showTest,
+                                        sortKey,
+                                        statusFilter
+                                    }}
+                                    snapshot={compareSnapshot}
+                                    firstLoadOutByPlant={firstLoadOutByPlant}
+                                    getCloserPlantForOrder={getCloserPlantForOrder}
+                                    getTravelOverrides={getTravelOverrides}
+                                    isMaximized={effectiveMaximized}
+                                    isPastDay={isPastDay}
+                                    isToday={isViewingToday}
+                                    keyForOrder={keyForOrder}
+                                    nowMin={nowMin}
+                                    onOpenAudit={setAuditOrder}
+                                    onOpenLocation={setMapOrder}
+                                    plantCityByCode={plantCityByCode}
+                                    plantNameByCode={plantNameByCode}
+                                    poolSourceByCode={poolSourceByCode}
+                                    poolTimeline={poolTimeline}
+                                    poolTimelinesByPlant={poolTimelinesByPlant}
+                                    rawPlantProduction={rawPlantProduction}
+                                    singlePlant={singlePlant}
+                                />
+                            ) : filtered.length === 0 ? (
                                 <div className="rounded-xl p-10 text-center italic bg-bg-primary border border-border-medium text-text-tertiary">
                                     No orders match the current filters.
                                 </div>
@@ -298,6 +398,7 @@ function PlanScheduleView({
                                     isToday={isViewingToday}
                                     keyForOrder={keyForOrder}
                                     nowMin={nowMin}
+                                    onOpenAudit={setAuditOrder}
                                     onOpenLocation={setMapOrder}
                                     orders={filtered}
                                     plantCityByCode={plantCityByCode}
@@ -341,6 +442,14 @@ function PlanScheduleView({
                     plantCode={mapOrder?.plantCode}
                     plantName={plantNameByCode?.[mapOrder?.plantCode] || ''}
                     plants={plantOptionsForMap}
+                />
+            )}
+            {auditOrder && (
+                <OrderAuditModal
+                    accentColor={accentColor}
+                    onClose={() => setAuditOrder(null)}
+                    order={auditOrder}
+                    planDate={planDate}
                 />
             )}
         </div>

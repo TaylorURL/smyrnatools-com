@@ -98,9 +98,11 @@ export default function PlanScheduleFilterDrawer({
     onChangeShowTest,
     onChangeSort,
     onChangeStatus,
+    compareMode = false,
     onClearFilters,
     onCopyRoster,
     onExitMaximized,
+    onToggleCompare,
     onTogglePlantFilter,
     onToggleExtraRows,
     operatorRosterCopied,
@@ -360,6 +362,25 @@ export default function PlanScheduleFilterDrawer({
                 >
                     <i className="fas fa-rotate-left mr-1" />
                     Reset
+                </button>
+            )}
+            {typeof onToggleCompare === 'function' && (
+                <button
+                    type="button"
+                    onClick={onToggleCompare}
+                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer"
+                    style={{
+                        background: compareMode ? accentColor : 'var(--bg-secondary)',
+                        color: compareMode ? '#fff' : 'var(--text-secondary)'
+                    }}
+                    title={
+                        compareMode
+                            ? 'Exit the side-by-side comparison and return to the standard schedule view'
+                            : 'Split the schedule into two columns — the original 5:30 PM snapshot vs. live'
+                    }
+                >
+                    <i className={`fas ${compareMode ? 'fa-table-columns' : 'fa-clock-rotate-left'} mr-1`} />
+                    {compareMode ? 'Exit comparison' : 'View original schedule'}
                 </button>
             )}
             {typeof onExitMaximized === 'function' && (

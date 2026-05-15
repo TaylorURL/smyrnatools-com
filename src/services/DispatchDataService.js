@@ -159,21 +159,26 @@ const buildDetailByOrderId = (ticketRows, orderRows) => {
         const confirmedTotal = order.tickets.reduce((sum, t) => sum + t._confirmedQuantity, 0)
         let remaining = Math.max(0, meta.scheduledYardage - confirmedTotal)
         const estimateTickets = order.tickets.filter((t) => t._isEstimateOnly)
-        const lastIdx = estimateTickets.length - 1
 
-        estimateTickets.forEach((t, i) => {
+        // Cross-plant (DetailDriver-only) tickets don't carry a confirmed
+        // quantity, so we estimate each at the order's `loadSize`. The
+        // previous version stuffed the entire remaining order yardage into
+        // the LAST estimate ticket to force the displayed total to equal
+        // `scheduledYardage` — which broke ongoing pours: a 150 yd order
+        // with 6 cross-plant trucks reported so far ended up with the
+        // last truck showing 70 yd (impossible — trucks max out at
+        // ~10 yd). For an in-flight order, missing yardage just means
+        // missing trucks; we shouldn't fabricate over-capacity loads to
+        // balance the sum.
+        const perTruckCap = meta.loadSize > 0 ? meta.loadSize : null
+        estimateTickets.forEach((t) => {
             if (remaining <= 0) {
                 t.quantity = 0
-            } else if (i === lastIdx) {
-                t.quantity = remaining
-                remaining = 0
-            } else if (meta.loadSize > 0 && remaining >= meta.loadSize) {
-                t.quantity = meta.loadSize
-                remaining -= meta.loadSize
-            } else {
-                t.quantity = remaining
-                remaining = 0
+                return
             }
+            const allocation = perTruckCap != null ? Math.min(perTruckCap, remaining) : remaining
+            t.quantity = allocation
+            remaining -= allocation
         })
 
         for (const t of order.tickets) {

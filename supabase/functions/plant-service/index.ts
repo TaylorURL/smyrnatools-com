@@ -20,6 +20,25 @@ function trimString(val: unknown): string {
     return typeof val === 'string' ? val.trim() : ''
 }
 
+/** Sentinel returned by `parseCoordinate` when the caller's payload can't
+ *  be reduced to a finite number in the requested range. Callers compare
+ *  identity (`=== COORDINATE_INVALID`) so they can tell the rejection
+ *  case apart from a legitimate clear-to-null. */
+const COORDINATE_INVALID = Symbol('invalid coordinate')
+
+/** Parses a latitude / longitude value off the request body:
+ *   - `null`, `''`, or absent → `null` (clears the column)
+ *   - finite number in `[min, max]` → that number
+ *   - anything else → `COORDINATE_INVALID` (caller responds 400) */
+function parseCoordinate(value: unknown, min: number, max: number): number | null | typeof COORDINATE_INVALID {
+    if (value === null) return null
+    if (typeof value === 'string' && value.trim() === '') return null
+    const num = typeof value === 'number' ? value : parseFloat(String(value))
+    if (!Number.isFinite(num)) return COORDINATE_INVALID
+    if (num < min || num > max) return COORDINATE_INVALID
+    return num
+}
+
 function nowISO(): string {
     return new Date().toISOString()
 }
@@ -115,6 +134,21 @@ Deno.serve(async (req) => {
                     const address = trimString(body.plantAddress)
                     updateFields.plant_address = address.length > 0 ? address : null
                 }
+                // Lat / lng are independent of address — accept them whenever
+                // the caller passes them. Empty string / null clears the
+                // column; any other value must parse to a finite number in
+                // the legal range (or we reject the whole request rather
+                // than silently dropping the value).
+                if (body?.latitude !== undefined) {
+                    const lat = parseCoordinate(body.latitude, -90, 90)
+                    if (lat === COORDINATE_INVALID) return errorResponse('Latitude must be between -90 and 90', headers, 400)
+                    updateFields.latitude = lat
+                }
+                if (body?.longitude !== undefined) {
+                    const lng = parseCoordinate(body.longitude, -180, 180)
+                    if (lng === COORDINATE_INVALID) return errorResponse('Longitude must be between -180 and 180', headers, 400)
+                    updateFields.longitude = lng
+                }
                 const { error } = await supabase.from(PLANTS_TABLE).update(updateFields).eq('plant_code', plantCode)
                 if (error) return errorResponse('Operation failed', headers, 400)
                 return jsonResponse({ success: true }, headers)
@@ -132,6 +166,41 @@ Deno.serve(async (req) => {
                     .eq('plant_code', plantCode)
                 if (error) return errorResponse('Operation failed', headers, 400)
                 return jsonResponse({ success: true }, headers)
+            }
+            case 'update-managers': {
+                // Replaces the plant's `manager_user_ids` array wholesale.
+                // Caller supplies the full desired list. We trim + dedupe
+                // but leave authoritative uuid-shape validation to Postgres
+                // (the column is `uuid[]`, so invalid ids surface as a
+                // real database error instead of being silently dropped —
+                // the previous regex filter was eating valid ids in edge
+                // cases). Elevated permission required.
+                const auth = await requireElevatedCaller(supabase, req, headers)
+                if (auth instanceof Response) return auth
+                const body = await parseBody(req)
+                const plantCode = trimString(body?.plantCode)
+                if (!plantCode) return errorResponse('Plant code is required', headers, 400)
+                const raw = Array.isArray(body?.managerUserIds) ? body.managerUserIds : []
+                const cleaned = Array.from(
+                    new Set(raw.map((id: unknown) => trimString(id)).filter((id: string) => id.length > 0))
+                )
+                const { error } = await supabase
+                    .from(PLANTS_TABLE)
+                    .update({ manager_user_ids: cleaned, updated_at: nowISO() })
+                    .eq('plant_code', plantCode)
+                // Surface the Postgres / PostgREST error verbatim so callers
+                // can tell apart "column doesn't exist" (migration unrun)
+                // from "permission denied" (RLS) from "invalid uuid" (bad
+                // payload). Without this, the modal just shows "Operation
+                // failed" and we can't debug it from the frontend.
+                if (error) {
+                    return errorResponse(error.message || 'Operation failed', headers, 400, {
+                        code: (error as { code?: string }).code ?? null,
+                        details: (error as { details?: string }).details ?? null,
+                        hint: (error as { hint?: string }).hint ?? null
+                    })
+                }
+                return jsonResponse({ managerUserIds: cleaned, success: true }, headers)
             }
             case 'delete': {
                 const auth = await requireElevatedCaller(supabase, req, headers)
