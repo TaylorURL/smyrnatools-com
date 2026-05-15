@@ -558,6 +558,18 @@ export const buildHelpRows = (assignments, plantProduction, getTravelTime) => {
         // in the copyable plan brief — keeps the two sources aligned.
         const travelMin = typeof getTravelTime === 'function' ? getTravelTime(a.fromPlant, a.toPlant) : null
         const clockInOffsetMin = Number.isFinite(travelMin) ? travelMin + PRE_TRIP_MINUTES + BUFFER_MINUTES : null
+        // Return-leg travel from the destination plant back to the operator's
+        // home plant. Without this, the help-return event credits the home
+        // plant the moment the driver leaves the destination — too early,
+        // since they're still on the road. The fallback to the outbound
+        // travel time covers the common case where return travel isn't
+        // measured separately (most plant-pair travel tables are symmetric).
+        const returnTravelMin = typeof getTravelTime === 'function' ? getTravelTime(a.toPlant, returnPlant) : null
+        const returnTravelEffective = Number.isFinite(returnTravelMin)
+            ? returnTravelMin
+            : Number.isFinite(travelMin)
+              ? travelMin
+              : 0
         const driverTimes = buildAssignmentDriverTimes(a)
         driverTimes.forEach((dt) => {
             if (Number.isFinite(dt.arriveMin)) {
@@ -582,20 +594,29 @@ export const buildHelpRows = (assignments, plantProduction, getTravelTime) => {
                 )
             }
             if (Number.isFinite(dt.leaveMin) && dt.leaveMin > dt.arriveMin) {
-                const bucket = Math.floor(dt.leaveMin / HELP_BUCKET_MIN) * HELP_BUCKET_MIN
+                // `arriveHomeMin` is when the driver actually rolls back into
+                // the home yard — `leaveMin` + return-leg drive. This is the
+                // moment the home plant's pool should regain the operator;
+                // crediting at `leaveMin` (the OLD behavior) was off by the
+                // length of the return trip and made the operators look like
+                // they never came back when the next order kicked off.
+                const arriveHomeMin = dt.leaveMin + returnTravelEffective
+                const bucket = Math.floor(arriveHomeMin / HELP_BUCKET_MIN) * HELP_BUCKET_MIN
                 bump(
                     `rt-${idx}-${bucket}`,
                     {
+                        arriveHomeMin,
                         assignmentIndex: idx,
                         direction: 'return',
                         forOrder,
                         forOrderId: a.forOrderId || '',
                         fromPlant: a.fromPlant,
+                        leaveDestMin: dt.leaveMin,
                         returnPlant,
                         time: bucket,
                         toPlant: a.toPlant
                     },
-                    dt.leaveMin
+                    arriveHomeMin
                 )
             }
         })
@@ -722,12 +743,14 @@ export const predictScheduleSatisfaction = ({ getTravelOverrides, keyForOrder, l
  *   - `+row.count at toPlant at row.time` — they arrive at the
  *     destination and join its working pool.
  *
- * **Return** — symmetric reversal:
- *   - `+row.count at fromPlant at row.time` — operators are back at
- *     the source plant and available for any remaining afternoon work.
- *     (`returnPlant` overrides `fromPlant` when the planner sends the
- *     truck somewhere else after the help shift.)
- *   - `−row.count at toPlant at row.time` — they leave the destination.
+ * **Return** — the two sides happen at DIFFERENT times because the drive
+ * home isn't instantaneous:
+ *   - `−row.count at toPlant at row.leaveDestMin` — the operators leave
+ *     the help destination. Pool there drops immediately.
+ *   - `+row.count at home at row.arriveHomeMin` — `home = returnPlant ||
+ *     fromPlant`. Pool here credits ONLY after the return drive lands;
+ *     otherwise an order kicking off in that gap window would see the
+ *     operators credited at home before they were physically present.
  *
  * Clock-in rows used to also feed `+1` events here so the pool ramped up
  * from zero over the day. That model double-counted operators: the same
@@ -746,8 +769,16 @@ export const buildHelpTransfers = (helpRows, _clockInRows) => {
             out.push({ delta: row.count, plantCode: row.toPlant, time: row.time })
         } else {
             const home = row.returnPlant || row.fromPlant
-            out.push({ delta: -row.count, plantCode: row.toPlant, time: row.time })
-            out.push({ delta: row.count, plantCode: home, time: row.time })
+            // toPlant loses the operators the moment they leave the help
+            // destination (`leaveDestMin`); home plant gains them when they
+            // physically land back in the yard (`arriveHomeMin`, which the
+            // builder set as `row.time` after adding the return-leg drive).
+            // Falling back to `row.time` for either keeps older callers that
+            // don't populate the explicit fields working.
+            const leaveAt = Number.isFinite(row.leaveDestMin) ? row.leaveDestMin : row.time
+            const homeAt = Number.isFinite(row.arriveHomeMin) ? row.arriveHomeMin : row.time
+            out.push({ delta: -row.count, plantCode: row.toPlant, time: leaveAt })
+            out.push({ delta: row.count, plantCode: home, time: homeAt })
         }
     })
     return out

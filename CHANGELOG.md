@@ -1,5 +1,33 @@
 # Changelog
 
+## [2026.20.22] - 2026-05-15
+
+- Schedule help-return pool now credits the home plant at the right time AND surfaces the resulting headcount.
+  Previously the dispatcher saw a "HELP RETURNING" narrative row but no visible confirmation that the operators
+  landed back in the home plant's pool, and the simulation credited the home plant the moment the operators
+  LEFT the help destination — before they had physically driven home.
+  - `src/utils/PlanScheduleUtility.ts` (`buildHelpRows`) — return rows now compute
+    `arriveHomeMin = leaveMin + getTravelTime(toPlant, returnPlant)` and use that (bucketed) as the row's `time`.
+    The row also carries `arriveHomeMin` and `leaveDestMin` explicitly. When the return-leg travel time isn't
+    measured separately (most plant-pair tables are symmetric), the helper falls back to the outbound travel
+    time so the math stays accurate for the common case and degrades gracefully for the rare one.
+  - `src/utils/PlanScheduleUtility.ts` (`buildHelpTransfers`) — the destination plant loses operators at
+    `leaveDestMin` (when they actually leave) while the home plant credits them at `arriveHomeMin` (when they
+    actually land). Two timestamps for the same return row instead of collapsing both to one. Doc comment
+    rewritten to describe the new semantics; old callers that don't populate the explicit fields fall back to
+    `row.time` so the behaviour change is opt-in via the builder.
+  - `src/app/hooks/usePlanScheduleData.js` — after `poolTimelinesByPlant` is built, enrich each help-return row
+    with `poolAfterAtHome` by sampling the home plant's timeline at the bucketed arrive-home minute. Exports
+    the enriched list as `helpRows` so every downstream consumer sees the new fields. Adds `poolAtTime` to the
+    `PlanUtility` import set.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleTable.jsx` — threads `homePlant` and `poolAfterAtHome`
+    from the enriched help row onto the synthetic-row payload.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleSyntheticRows.jsx` — the `HelpRow` for
+    `direction='return'` now reads "**406** now has **N** operators available" (matching the order-cycle
+    ReturnRow's voice) instead of the prior generic "heading home" narrative. Secondary line explains that
+    the pool credits the operators the moment they land at the home plant, making it obvious when the +N
+    actually applies and at which yard.
+
 ## [2026.20.21] - 2026-05-15
 
 - Saturday operator-count override — dispatchers can now set the actual fleet count per plant on Saturdays

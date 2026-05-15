@@ -315,8 +315,17 @@ export function HelpRow({ accentColor, animationDelayMs, plantNameByCode, row })
                     </>
                 ) : (
                     <>
-                        <b>{row.count}</b> help truck{row.count === 1 ? '' : 's'} heading{' '}
-                        {returnsHome ? 'home' : 'over'} to <b>{homePlant}</b>.
+                        <b>{homePlant}</b>{' '}
+                        {Number.isFinite(row.poolAfterAtHome) ? (
+                            <>
+                                now has <b>{row.poolAfterAtHome}</b> operator{row.poolAfterAtHome === 1 ? '' : 's'}{' '}
+                                available
+                            </>
+                        ) : (
+                            <>
+                                gets <b>{row.count}</b> operator{row.count === 1 ? '' : 's'} back
+                            </>
+                        )}
                     </>
                 )
             }
@@ -350,7 +359,12 @@ export function HelpRow({ accentColor, animationDelayMs, plantNameByCode, row })
                         )}
                     </>
                 ) : (
-                    `${homePlant}'s pool goes up by ${row.count}.`
+                    <>
+                        <b>{row.count}</b> help truck{row.count === 1 ? '' : 's'} home from <b>{row.toPlant}</b>
+                        {!returnsHome && <> (not back to {row.fromPlant})</>}
+                        {' · '}pool credits the <b>{row.count}</b> operator{row.count === 1 ? '' : 's'} the moment they
+                        land at <b>{homePlant}</b>.
+                    </>
                 )
             }
             time={row.time}

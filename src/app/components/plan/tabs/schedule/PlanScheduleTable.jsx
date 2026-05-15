@@ -120,7 +120,9 @@ function buildTableRows({
             forOrder: row.forOrder || null,
             fromPlant: row.fromPlant,
             helpKey: `${row.assignmentIndex}-${row.direction}-${row.time}`,
+            homePlant: row.homePlant ?? null,
             kind: 'help',
+            poolAfterAtHome: Number.isFinite(row.poolAfterAtHome) ? row.poolAfterAtHome : null,
             returnPlant: row.returnPlant,
             time: row.time,
             toPlant: row.toPlant

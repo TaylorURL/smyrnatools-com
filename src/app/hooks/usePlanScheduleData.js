@@ -30,6 +30,7 @@ import {
     isClosedDay,
     isExcludedOrder,
     PLAN_META_KEY,
+    poolAtTime,
     timeToMinutes
 } from '../../utils/PlanUtility'
 import useCloserPlantLookup from './useCloserPlantLookup'
@@ -273,6 +274,22 @@ export function usePlanScheduleData({
         [allOrders, initialPoolByCode, getTravelOverrides, helpTransfers]
     )
 
+    /** Help rows enriched with the resulting pool at the home plant for
+     *  return legs. Lets the schedule render "HELP RETURNING · 406 now has
+     *  N operators available" so the dispatcher SEES the +N credited
+     *  back into the home pool (the previous narrative said "+N goes to
+     *  the home plant" but never showed the resulting number). */
+    const enrichedHelpRows = useMemo(() => {
+        return helpRows.map((row) => {
+            if (row.direction !== 'return') return row
+            const home = row.returnPlant || row.fromPlant
+            const timeline = poolTimelinesByPlant?.[home]
+            if (!Array.isArray(timeline)) return row
+            const poolAfter = poolAtTime(timeline, row.time)
+            return Number.isFinite(poolAfter) ? { ...row, homePlant: home, poolAfterAtHome: poolAfter } : row
+        })
+    }, [helpRows, poolTimelinesByPlant])
+
     const sendHomeRows = useMemo(
         () => computeSendHomeRows(allOrders, initialPoolByCode, getTravelOverrides, helpTransfers),
         [allOrders, initialPoolByCode, getTravelOverrides, helpTransfers]
@@ -451,7 +468,7 @@ export function usePlanScheduleData({
         groupedByPlant,
         hasActiveFilters,
         hasAnyOrders,
-        helpRows,
+        helpRows: enrichedHelpRows,
         isPastDay,
         isSaturday,
         isViewingToday,
