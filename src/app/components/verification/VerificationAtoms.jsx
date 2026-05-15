@@ -5,38 +5,69 @@ import {
     FIELD_LABEL_CLASS,
     FIELD_STYLE,
     PILL_BASE,
-    SECTION_LABEL_CLASS
+    SECTION_SUBTITLE_CLASS,
+    SECTION_TITLE_CLASS
 } from '../../constants/verificationModalConstants'
 
-/** Collapsible accordion section with icon chip, title, status pill, and chevron. */
-export function Section({ accentColor, children, expanded, icon, onToggle, pill, title }) {
+const STATUS_TONES = {
+    done: { color: '#16a34a', icon: 'fa-check' },
+    attention: { color: '#dc2626', icon: 'fa-circle' },
+    warn: { color: '#d97706', icon: 'fa-circle' },
+    info: { color: 'var(--text-tertiary)', icon: 'fa-circle' }
+}
+
+/** Small leading indicator next to a section title. Replaces verbose colored pills. */
+export function StatusMarker({ tone = 'info', count }) {
+    if (typeof count === 'number') {
+        return (
+            <span
+                className="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10.5px] font-semibold leading-none bg-bg-tertiary text-text-secondary"
+                aria-label={`${count} item${count === 1 ? '' : 's'}`}
+            >
+                {count}
+            </span>
+        )
+    }
+    const { color, icon } = STATUS_TONES[tone] ?? STATUS_TONES.info
+    const size = tone === 'done' ? 'text-[11px]' : 'text-[7px]'
     return (
-        <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+        <span
+            className="inline-flex h-5 w-5 items-center justify-center rounded-full"
+            style={{ background: tone === 'done' ? 'rgba(22, 163, 74, 0.12)' : 'transparent', color }}
+            aria-hidden="true"
+        >
+            <i className={`fas ${icon} ${size}`} />
+        </span>
+    )
+}
+
+/** Collapsible accordion section — calmer treatment: marker + title + subtitle, chevron right. */
+export function Section({ children, expanded, onToggle, status, subtitle, title }) {
+    return (
+        <div className="rounded-md overflow-hidden bg-bg-primary border border-border-light">
             <button
                 type="button"
                 onClick={onToggle}
-                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left cursor-pointer border-none transition-colors hover:bg-bg-tertiary bg-transparent"
+                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left cursor-pointer border-none transition-colors hover:bg-bg-tertiary bg-transparent"
+                aria-expanded={expanded}
             >
-                <div className="flex items-center gap-2 min-w-0">
-                    <div
-                        className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
-                        style={{ color: accentColor }}
-                    >
-                        <i className={`fas ${icon} text-[11px]`} />
-                    </div>
-                    <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                        {title}
-                    </span>
-                    {pill}
-                </div>
-                <i className={`fas fa-chevron-${expanded ? 'up' : 'down'} text-[10px] text-text-tertiary`} />
+                <span className="shrink-0">{status}</span>
+                <span className="flex-1 min-w-0">
+                    <span className={SECTION_TITLE_CLASS}>{title}</span>
+                    {subtitle && <span className={`${SECTION_SUBTITLE_CLASS} block truncate`}>{subtitle}</span>}
+                </span>
+                <i
+                    className={`fas fa-chevron-down text-[10px] text-text-tertiary transition-transform ${
+                        expanded ? 'rotate-180' : ''
+                    }`}
+                />
             </button>
-            {expanded && <div className="px-3 py-2.5 bg-bg-primary border-t border-border-light">{children}</div>}
+            {expanded && <div className="px-3.5 py-3 bg-bg-primary border-t border-border-light">{children}</div>}
         </div>
     )
 }
 
-/** Status pill used in section headers and severity chips. */
+/** Status pill — kept for severity badges (High/Medium/Low) in issue cards. */
 export function Pill({ bg, children, fg }) {
     return (
         <span className={PILL_BASE} style={{ background: bg, color: fg }}>
@@ -45,14 +76,14 @@ export function Pill({ bg, children, fg }) {
     )
 }
 
-/** Form field label with optional "Required" badge. */
+/** Form field label with a subtle red asterisk for required fields. */
 export function FieldLabel({ children, required }) {
     return (
         <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
             {children}
             {required && (
-                <span className="ml-1.5 inline-flex items-center rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white bg-red-600">
-                    Required
+                <span className="text-red-600" aria-label="required">
+                    *
                 </span>
             )}
         </label>
@@ -69,7 +100,7 @@ export function SimpleField({ label, onChange, placeholder, required, value }) {
                 placeholder={placeholder}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                className="w-full rounded-md px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-offset-0 transition-shadow"
                 style={FIELD_STYLE}
             />
         </div>
@@ -78,35 +109,37 @@ export function SimpleField({ label, onChange, placeholder, required, value }) {
 
 /** Small helper text rendered beneath inputs. */
 export function Hint({ children }) {
-    return <p className="mt-1 text-[10.5px] leading-snug text-text-tertiary">{children}</p>
+    return <p className="mt-1.5 text-[11.5px] leading-snug text-text-tertiary">{children}</p>
 }
 
-/** Red error-style hint for missing required values. */
+/** Inline error hint for missing required values. */
 export function RequiredHint({ children }) {
     return (
-        <div className="mt-1 flex items-center gap-1 text-[10.5px] text-red-600">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-red-600">
             <i className="fas fa-exclamation-circle text-[10px]" />
             {children}
         </div>
     )
 }
 
-/** Inline banner with warn/danger tone — used for service-overdue and high-severity callouts. */
+/** Inline callout with a left accent stripe — softer than a fully filled block. */
 export function Banner({ children, icon, tone = 'warn' }) {
     const palette =
         tone === 'danger'
-            ? { bg: '#fee2e2', border: '#fca5a5', fg: '#b91c1c' }
-            : { bg: '#fef3c7', border: '#fcd34d', fg: '#92400e' }
+            ? { stripe: '#dc2626', bg: 'rgba(220, 38, 38, 0.06)', fg: '#b91c1c' }
+            : tone === 'info'
+              ? { stripe: 'var(--text-tertiary)', bg: 'var(--bg-secondary)', fg: 'var(--text-secondary)' }
+              : { stripe: '#d97706', bg: 'rgba(217, 119, 6, 0.06)', fg: '#92400e' }
     return (
         <div
-            className="flex items-start gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium leading-snug mb-2"
+            className="flex items-start gap-2 rounded-md px-3 py-2 text-[12px] leading-snug mb-2.5"
             style={{
                 background: palette.bg,
-                border: `1px solid ${palette.border}`,
+                borderLeft: `3px solid ${palette.stripe}`,
                 color: palette.fg
             }}
         >
-            <i className={`fas ${icon} text-[11px] mt-0.5 shrink-0`} />
+            {icon && <i className={`fas ${icon} text-[11px] mt-0.5 shrink-0`} />}
             <span>{children}</span>
         </div>
     )
@@ -116,20 +149,20 @@ export function Banner({ children, icon, tone = 'warn' }) {
 export function OperatorRow({ label, last, mono, required, value }) {
     return (
         <div
-            className="flex items-start gap-3 py-2"
+            className="flex items-start gap-3 py-2.5"
             style={{ borderBottom: last ? 'none' : '1px solid var(--border-light)' }}
         >
-            <div className="w-[40%] shrink-0">
-                <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
+            <div className="w-[38%] shrink-0 pt-0.5">
+                <span className="text-[12px] font-medium text-text-secondary">
                     {label}
-                </div>
-                {required && (
-                    <span className="mt-1 inline-flex items-center rounded px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wider text-white bg-red-600">
-                        Required
-                    </span>
-                )}
+                    {required && (
+                        <span className="ml-1 text-red-600" aria-label="required">
+                            *
+                        </span>
+                    )}
+                </span>
             </div>
-            <div className={`flex-1 min-w-0 text-[12.5px] ${mono ? 'font-mono tabular-nums' : ''} text-text-primary`}>
+            <div className={`flex-1 min-w-0 text-[13px] ${mono ? 'font-mono tabular-nums' : ''} text-text-primary`}>
                 {value}
             </div>
         </div>
@@ -144,10 +177,10 @@ export function IconButton({ bg, fg, icon, onClick, title }) {
             onClick={onClick}
             title={title}
             aria-label={title}
-            className="flex h-6 w-6 items-center justify-center rounded border-none cursor-pointer transition-colors hover:brightness-95"
+            className="flex h-7 w-7 items-center justify-center rounded-md border-none cursor-pointer transition-colors hover:brightness-95"
             style={{ background: bg, color: fg }}
         >
-            <i className={`fas ${icon} text-[10px]`} />
+            <i className={`fas ${icon} text-[11px]`} />
         </button>
     )
 }

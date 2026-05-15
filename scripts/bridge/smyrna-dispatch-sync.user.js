@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Smyrna Dispatch Sync
 // @namespace    smyrna-tools
-// @version      2.12.0
-// @description  Syncs today + next 7 days of DailyOrder, per-plant DetailOrderAnalysis, and per-plant DetailDriver reports to Supabase storage every 5 minutes, triggers dispatch-import to parse uploads into dispatch_data, backfills missing files for the current year, and auto re-authenticates when the dispatch session expires
+// @version      2.13.0
+// @description  Syncs today + next 7 days of DailyOrder, per-plant DetailOrderAnalysis, and per-plant DetailDriver reports to Supabase storage every 5 minutes during the active dispatch window (Central 00:00–17:30), triggers dispatch-import to parse uploads into dispatch_data, backfills missing files for the current year, and auto re-authenticates when the dispatch session expires
 // @match        http://srm-c03.aujs.local:8181/*
 // @match        http://srm-h.aujs.local:8181/*
 // @grant        GM_xmlhttpRequest
@@ -23,6 +23,11 @@
         'REDACTED-ROTATED-CREDENTIAL'
     const BUCKET = 'dispatch-reports'
     const INTERVAL_MS = 5 * 60 * 1000
+    // Active sync window in America/Chicago (Central Time, handles CST/CDT
+    // automatically). Ticks fired outside this window no-op so the dispatch
+    // server isn't hit after operations close for the day.
+    // Window: 00:00 inclusive → 17:30 exclusive (midnight through 5:30pm CT).
+    const SYNC_WINDOW_END_MINUTES = 17 * 60 + 30
     // Concurrent workers in the task pool. The dispatch server runs locally
     // on the same workstation as this script, so it tolerates a handful of
     // simultaneous report generations comfortably. Tune down if the server
@@ -210,6 +215,25 @@
 
     const log = (...args) => console.log('[Smyrna Sync]', ...args)
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+    // Current minute-of-day in America/Chicago (CST/CDT). Uses Intl rather
+    // than Date arithmetic so DST shifts are handled by the platform.
+    function getCentralMinutesOfDay() {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            hour: '2-digit',
+            hourCycle: 'h23',
+            minute: '2-digit',
+            timeZone: 'America/Chicago'
+        }).formatToParts(new Date())
+        const hour = Number(parts.find((p) => p.type === 'hour')?.value)
+        const minute = Number(parts.find((p) => p.type === 'minute')?.value)
+        if (!Number.isFinite(hour) || !Number.isFinite(minute)) return 0
+        return (hour % 24) * 60 + minute
+    }
+
+    function isWithinSyncWindow() {
+        return getCentralMinutesOfDay() < SYNC_WINDOW_END_MINUTES
+    }
 
     // RFC4122 v4 UUID. Prefers crypto.randomUUID when present (modern browsers),
     // falls back to crypto.getRandomValues, then Math.random as a last resort
@@ -972,6 +996,11 @@
             log('Already syncing, skipping tick')
             return
         }
+        if (!isWithinSyncWindow()) {
+            log('Outside Central sync window (00:00–17:30), skipping tick')
+            updateBadge('paused', 'outside 00:00–17:30 CT')
+            return
+        }
         // No seat yet? Mint one ourselves instead of stalling forever waiting
         // for the UI to make a call. This also covers the case where the user
         // is sitting on /security/login — the UI fires zero requests there.
@@ -1092,6 +1121,9 @@
         } else if (state === 'waiting') {
             badge.style.background = '#666'
             badge.textContent = `SYNC waiting for token...`
+        } else if (state === 'paused') {
+            badge.style.background = '#444'
+            badge.textContent = `SYNC paused — ${detail || 'outside window'} | last ok ${ts}`
         } else if (state === 'reauth') {
             badge.style.background = '#4a5fb0'
             badge.textContent = `SYNC re-authenticating...`
@@ -1115,7 +1147,7 @@
     // KICKOFF
     // ============================================================
     log(
-        `Smyrna Dispatch Sync v2.11.0 loaded - host ${DISPATCH_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, completeness check + retry on truncated reports, current-year backfill, multi-strategy auto re-auth (captured seat → fresh seat → page reload + auto-login)`
+        `Smyrna Dispatch Sync v2.13.0 loaded - host ${DISPATCH_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, active window 00:00–17:30 CT, completeness check + retry on truncated reports, current-year backfill, multi-strategy auto re-auth (captured seat → fresh seat → page reload + auto-login)`
     )
 
     // Run the login-page auto-submit as soon as the DOM is available.

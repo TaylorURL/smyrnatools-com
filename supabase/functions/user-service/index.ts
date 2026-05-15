@@ -109,9 +109,7 @@ Deno.serve(async (req) => {
     try {
         const url = new URL(req.url)
         const endpoint = url.pathname.split('/').pop()
-        const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
-            global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
-        })
+        const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', { auth: { autoRefreshToken: false, persistSession: false } })
         const body = await req.json().catch(() => ({}))
 
         switch (endpoint) {

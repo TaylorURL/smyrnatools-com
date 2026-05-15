@@ -11,7 +11,7 @@
 <p align="center">
   <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/ci.yml/badge.svg?branch=core" alt="CI Status" />
   <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/test.yml/badge.svg?branch=core" alt="Test Status" />
-  <img src="https://img.shields.io/badge/v2026.20.17-release-c12033" alt="Version" />
+  <img src="https://img.shields.io/badge/v2026.20.18-release-c12033" alt="Version" />
   <img src="https://img.shields.io/badge/React-19.1-61DAFB?logo=react&logoColor=white" alt="React" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind" />
@@ -38,18 +38,14 @@ training, who's pending, and where the gaps are.
 
 The dashboard adapts based on scope — plant-level or regional.
 
-**Plant View** uses a split-pane layout. The left side shows actionable alerts: unverified mixers, overdue service, open
-maintenance issues, long-term shop assets, and operator status groups. The right side is an AI analysis pane that
-generates a natural-language summary with a prioritized action plan, informed by the user's role, their plant, fleet
-cleanliness, and current alerts.
+**Plant View** uses a split-pane layout showing actionable alerts: unverified mixers, overdue service, open
+maintenance issues, long-term shop assets, and operator status groups.
 
 **Regional View** activates when viewing all plants. Metrics shift to fleet-wide KPIs — total assets, allocation
-percentage, shop count, overdue service, operator coverage, verification rates. The AI analysis identifies cross-plant
-patterns and fleet-wide concerns.
+percentage, shop count, overdue service, operator coverage, verification rates.
 
-Both views skeleton-load while fetching data, then animate in section by section. The AI summary types in character by
-character, action plan items slide in individually. Switching plants resets everything to skeletons — no stale data, no
-layout jumps.
+Both views skeleton-load while fetching data so the layout doesn't jump on plant switches, then reveal each section as
+its data resolves.
 
 Below the summary:
 
@@ -121,16 +117,16 @@ assignments across the organization.
 
 Weekly reporting is mandatory and feeds into plant efficiency scores. Eight weekly report types:
 
-| Report                                    | Submitted By                         | Contains                                                          |
-|-------------------------------------------|--------------------------------------|-------------------------------------------------------------------|
-| **Plant Manager**                         | Plant managers                       | Yardage, hours, loads lost/resold, operator help exchanges        |
-| **General Manager**                       | Regional managers                    | Per-plant metrics, runnable/down trucks, operator counts, yardage |
-| **Efficiency**                            | Efficiency reviewers                 | Loads, hours, loads-per-hour by plant                             |
-| **Safety Manager**                        | Safety officers                      | Incident tracking and reporting                                   |
-| **Aggregate Production**                  | Aggregate locations                  | Material quantities (sand, concrete, limestone, etc.)             |
-| **Ready Mix Instructor**                  | Training managers                    | Trainee counts, hiring pipeline, training progress                |
-| **District Manager**                      | District managers                    | Daily recaps (Monday through Saturday)                            |
-| **Safety / Environmental Representative** | Safety/environmental representatives | Environmental compliance and safety incident tracking             |
+| Report                       | Submitted By           | Contains                                                          |
+|------------------------------|------------------------|-------------------------------------------------------------------|
+| **Plant Manager**            | Plant managers         | Yardage, hours, loads lost/resold, operator help exchanges        |
+| **General Manager**          | Regional managers      | Per-plant metrics, runnable/down trucks, operator counts, yardage |
+| **Efficiency**               | Efficiency reviewers   | Loads, hours, loads-per-hour by plant                             |
+| **Safety Manager**           | Safety officers        | Incident tracking and reporting                                   |
+| **Aggregate Production**     | Aggregate locations    | Material quantities (sand, concrete, limestone, etc.)             |
+| **Ready Mix Instructor**     | Training managers      | Trainee counts, hiring pipeline, training progress                |
+| **District Manager**         | District managers      | Daily recaps (Monday through Saturday)                            |
+| **Quality Control Manager**  | QC managers            | Concrete quality metrics and corrective actions                   |
 
 Three one-off report types supplement the weekly cadence: **Lost Load Reports** for documenting spilled or lost concrete
 loads, **Quality Control Strength Reports** for concrete cylinder strength testing data, and **Third Party Lab Reports**
@@ -143,22 +139,17 @@ validates metrics for mathematical consistency and flags anomalies before submis
 
 ## AI Integration
 
-The AI layer uses xAI's Grok API routed through edge functions (no direct client-to-API calls). Each feature addresses a
-specific workflow need:
+The AI layer uses xAI's Grok API routed through the `ai-service` edge function (no direct client-to-API calls). Eight
+registered prompt categories live in `src/app/ai/context.json` and are referenced by key from `AIService.js`:
 
-- **Plant Summaries**: Role-aware analysis — a plant manager gets actionable advice about their plant, a regional
-  manager gets comparative insights
-- **Regional Summaries**: Cross-plant trend identification when viewing aggregated data
-- **Asset History Summaries**: Converts raw change logs into readable narratives
-- **Report Validation**: Catches mathematical inconsistencies before submission
-- **Efficiency Comment Validation**: When operators are flagged for anomalous metrics, their explanations are checked
-  against the specific issues flagged
-- **Task Suggestions**: Auto-completes partial maintenance task descriptions with contextual suggestions
-- **Follow-up Q&A**: Multi-turn conversations with targeted context selection — asking about a specific truck pulls that
-  truck's data, operator history, and recent changes without sending the full database
-- **GM Report Analysis**: Executive summary generation for General Manager weekly reviews
-- **GM Report Export Summary**: AI-generated narrative for GM report exports
-- **Task Improvement**: Rewrites maintenance task descriptions to be clearer and more actionable
+- **Asset History Summary** (`historySummary`) — converts raw change logs into readable narratives
+- **GM Report Analysis** (`gmReportAnalysis`) — executive summary generation for General Manager weekly reviews
+- **GM Report Export Summary** (`gmReportExportSummary`) — narrative for GM report exports
+- **List Item Improvement** (`improveListItem`) — rewrites task descriptions to be clearer and more actionable
+- **List Item Suggestions** (`suggestListItems`) — auto-completes partial task descriptions
+- **Efficiency Comment Validation** (`validateEfficiencyComment`) — checks operator explanations against flagged issues
+- **List Item Prioritization** (`prioritizeListItems`) — orders task lists by importance
+- **Plant Manager Metric Validation** (`validatePlantManagerMetrics`) — flags mathematical inconsistencies in submissions
 
 Prompts use a JSON-based registry with dynamic role context injection built from the database, so new roles
 automatically get appropriate AI behavior.
@@ -222,8 +213,8 @@ shell, accessible from the main navigation.
 Custom-built authentication:
 
 - Session-based with cryptographically secure 64-character hex session IDs
-- Database-backed sessions with browser fingerprinting (OS, device type, user agent)
-- Configurable expiry (2-7 days)
+- Database-backed sessions with user-agent fingerprinting captured at sign-in
+- Sessions stay valid for up to 7 days of inactivity; the short-lived JWT issued alongside each session refreshes every hour
 - Credential management: email change, password change (server-side bcrypt), profile updates
 
 Authorization uses a weighted role hierarchy:
@@ -246,9 +237,11 @@ The Roles & Permissions view displays all permissions as a spreadsheet-style gri
 
 ### Frontend
 
-React 19, React Router 7, Tailwind CSS 3.4, FontAwesome 7. Functional components with a custom hook library. Code
-splitting via React.lazy with a retry mechanism for chunk failures. State management through context (Auth, Preferences,
-Tutorials, Messages) and ref-based caching in data hooks.
+React 19, React Router 7, Tailwind CSS 3.4, FontAwesome 7, Recharts, Leaflet. Built with Vite 6; tests run on Vitest 2.
+Functional components with a custom hook library. Code splitting via React.lazy with a `lazyWithRetry` wrapper that
+retries chunk fetches once before surfacing a load failure. State management through context (Auth, Preferences,
+Tutorials, Messages) and ref-based caching in data hooks. Error tracking via Sentry; analytics via Vercel Analytics and
+Speed Insights.
 
 ### Backend
 
@@ -356,13 +349,13 @@ standalone app on iOS with translucent status bar.
 
 | Metric                | Value                                              |
 |-----------------------|----------------------------------------------------|
-| **Current Version**   | 2026.20.17                                         |
-| **Views**             | 83 view files across ~23 page modules              |
+| **Current Version**   | 2026.20.18                                         |
+| **Views**             | 86 view files across 23 page modules               |
 | **Services**          | 30 service classes                                 |
-| **Custom Hooks**      | 58 specialized hooks                               |
+| **Custom Hooks**      | 99 specialized hooks                               |
 | **Domain Models**     | 22 model classes                                   |
-| **Edge Functions**    | 35 Supabase edge functions                         |
-| **AI Prompt Types**   | 11 registered prompt categories                    |
+| **Edge Functions**    | 38 Supabase edge functions                         |
+| **AI Prompt Types**   | 8 registered prompt categories                     |
 | **Report Types**      | 8 weekly + 3 one-off report formats                |
 | **Fleet Asset Types** | 5 (Mixers, Tractors, Trailers, Equipment, Pickups) |
 | **Plan Tabs**         | 8 (Dashboard, Schedule, Planner, Demand, Statistics, Call List, Find a Spot, Settings) |

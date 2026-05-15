@@ -1,5 +1,104 @@
 # Changelog
 
+## [2026.20.18] - 2026-05-14
+
+- `src/views/tools/plan/PlanFlowMapView.jsx` — major upgrade to the Planner tab map.
+  - Swapped the busy default OSM raster tiles for CartoDB Positron in light mode and Dark Matter
+    in dark mode, with a `MutationObserver` on `<html>`'s class list to re-swap on theme flips.
+    Dropped the legacy `html.dark .leaflet-tile { filter: brightness/saturate/hue-rotate }` hack.
+  - On-mount viewport now tightens 30% past `fitBounds` (`zoomSnap: 0.25`, `maxZoom: 12`,
+    `padding: [40, 40]`, then `setView(bounds.getCenter(), getZoom() + 0.5)` when 2+ plants exist) so
+    the cluster sits in the middle of the viewport instead of hugging the edges.
+  - Time scrubber autoplays from midnight on tab mount; the "All day" toggle was removed entirely so
+    `viewTime` is always a finite minute. `AUTOPLAY_STEP_MINUTES` is now 5 (was 15) and
+    `AUTOPLAY_TICK_MS` 120 (was 350) — ~3× the fidelity at roughly the same 35s full-day loop, so
+    directional arrows visibly walk along their routes instead of teleporting.
+  - Routes draw as two polylines per assignment: red outbound (operators going to help) and green
+    return (operators heading home). Each leg's activity is classified per minute as `transit` /
+    `at-dest` / `inactive` from the driver schedule; styling, opacity, and animation track the
+    classification independently so red can be moving while green sits idle.
+  - Direction `▶` markers walk along each leg at the average in-transit-driver progress fraction
+    via the new `legProgressFraction` + `pointAlongPath` helpers, and render empty when the leg
+    isn't currently moving (no semi-transparent ghost state).
+  - When an assignment has a `forOrderId`, the route geocodes the destination job's address via
+    `formatOrderAddress` + `geocodeAddress` (same pipeline Find-a-Spot uses) and stitches two real
+    OSRM legs (`fromPlant → job` and `job → returnPlant`) into the polyline. Geocoding rejects
+    misfires more than `MAX_JOB_STRAIGHT_LINE_MILES = 120` from the destination plant via the
+    `validate` option on `geocodeAddress`, falls back to the plain plant-to-plant route when any
+    OSRM leg exceeds `MAX_JOB_DRIVE_SECONDS = 7200`, and pulls the state hint from the destination
+    plant's own address via the new `inferStateCodeFromAddress` helper so a Texas plant geocodes its
+    orders with Texas as the hint instead of the global Tennessee default.
+  - Job sites now show their own pulsing amber hard-hat pin (`pf-job-pin` / `pf-job-count` /
+    `pf-job-pin-pulse` keyframe) on a new dedicated `jobLayerRef`. Pin only renders while at least
+    one driver is on-site (`arriveMin ≤ viewTime < leaveMin`); the badge counts active operators
+    aggregated across every via-job assignment landing at the same `forOrderId`.
+  - Plant pins keep clicks reliable across autoplay re-renders by caching a visual signature
+    (`marker._planFlowSig`) and only calling `setIcon` when the relevant props change — previously
+    every 120ms tick rebuilt the marker DOM and dropped clicks mid-swap (the "spam click to make
+    it open" symptom). Plant markers also carry `zIndexOffset: 1000` so they always sit above job
+    pins / arrows in the same marker pane, and job pins are now `interactive: false` so they
+    can't intercept clicks meant for a nearby plant.
+  - Adding a new route shows an amber draft polyline as soon as both endpoints are set —
+    straight-line preview first, upgraded to OSRM once available, cleared the moment the editor
+    closes. Fixed the stale-closure bug on plant marker clicks via a `handleNodeClickRef` that
+    always points at the latest `handleNodeClick` (the old binding captured `pickingDestination`
+    from the first render and ignored the editor's later state).
+  - Time scrubber docks flush at the bottom-right corner (`bottom-0 right-0`, `z-[1000]` to clear
+    Leaflet's default `.leaflet-control: 800` z-index) so it sits over the OSM/CARTO attribution
+    watermark. Scrubber root dropped its outer sticky wrapper, padding, and rounded all-corners —
+    now `rounded-tl-lg` only with `border-l border-t` so it reads as part of the map's frame.
+- `src/app/hooks/usePlanFlowMetrics.js` — `effAtViewTime` now walks each help driver through four
+  phases (pre-trip / outbound transit / on-site / return transit / home) using `getTravelTime` +
+  `PRE_TRIP_MINUTES` so the plant pins' operator counts decrement the moment a driver leaves for
+  pre-trip and don't credit the destination plant until they actually arrive — previously the count
+  flipped instantaneously at `arriveMin` / `leaveMin` and missed every transit window. `DEFAULT_TRAVEL_MINUTES = 30`
+  fallback when `getTravelTime` isn't supplied.
+- `src/app/components/plan/tabs/flow/PlanFlowSidePanel.jsx` — rewrote the side panel to match the
+  rest of the site's flat-panel design language: dropped the over-styled chrome (accent pills,
+  `rounded-xl` cards, hover-scale animations), swapped in the canonical `Stat`/`StatGroup`
+  pattern from `ui/Panel.jsx`, made section labels match `PlanSettingsRoutesPanel`
+  (`text-[11px] font-semibold uppercase tracking-wider`), and surfaced the missing-operators
+  editor as a flat container with the new typeable `CountStepperInput` so users can backspace to
+  empty.
+- `src/app/components/plan/tabs/flow/PlanFlowRouteEditor.jsx` — the New / Edit Route form now uses
+  a `MilitaryTimeInput` component for every time field. The native `<input type="time">` was
+  rendering AM/PM on US-English systems; the new control is a 24-hour `HH:MM` text field that
+  auto-inserts the colon, validates 00–23 / 00–59, and autocompletes partial input on blur
+  (`"23"` → `"23:00"`, `"930"` → `"09:30"`, `"1234"` → `"12:34"`). Operator-count input replaced
+  with `TruckCountInput`: `type="text"` + `inputMode="numeric"` (no spinner, no arrow-key
+  stepping), `draft.driverCount` can hold an empty string mid-edit, on-blur normalizes back to
+  ≥ 1. Destination picker shows an inline hint when armed; `TimeModeToggle` is a 2-column
+  segmented control; layout pulled in line with the canonical flat-panel design.
+- `src/app/components/plan/tabs/flow/PlanFlowTimeScrubber.jsx` — dropped the "All day" / "At time"
+  toggle button and `AUTOPLAY_START_MINUTES` seeding; scrubber is always finite-`viewTime`. Now
+  renders inside a single flush-corner container (`pointer-events-auto`, `rounded-tl-lg`,
+  `minWidth: 420`) so it covers the Leaflet attribution.
+- `src/views/tools/plan/BookOrderView.jsx` + `src/utils/book-order/bookOrderAddressing.ts` etc. —
+  no behavioral change for Find-a-Spot itself; surface fix moved to the Settings audit log.
+- `src/views/tools/plan/PlanSettingsView.jsx` — Find-a-Spot audit-log table now flags repeat
+  submissions. New `repeatKeyFor(entry)` builds a case-insensitive whitespace-collapsed
+  `${address}|${plan_date}` key; `ActivityTable` precomputes a `repeatKeySet` of keys appearing in
+  more than one log row and passes `wasScheduled` per row to `ActivityTableRow`. Rows whose
+  address+plan-date combination shows up elsewhere in the log get an amber **Was Scheduled** pill
+  (with `fa-clock-rotate-left` icon and an explanatory tooltip) inline with the address text.
+- `src/app/components/plan/tabs/dashboard/PlanDashboardClockInBoard.jsx` — Plan Dashboard's "Your X"
+  clock-in board now includes operators leaving the yard for help trips. New
+  `buildOutboundClockInRows` emits per-driver clock-in rows for each outbound assignment with two
+  timing rules: deadhead (`PRE_TRIP_MINUTES + travel`) and loaded (`PRE_TRIP_MINUTES + LOAD_MINUTES +
+  travel-to-job` where travel-to-job ≈ `travel(fromPlant→toPlant) + forOrder.toJobTime`). Each
+  plant's effective base is reduced by its outbound count before computing local clock-ins so
+  outbound operators displace local ones instead of stacking on top — fixes the bug where a 11-base
+  plant sending 7 to a neighbor showed 18 needed.
+- `README.md` — major accuracy pass. Project Stats numbers were stale: Views 83 → 86, Hooks 58 → 99,
+  Edge functions 35 → 38, AI prompt categories 11 → 10 (matched against the actual
+  `src/app/ai/context.json` keys). Reporting table 8th row corrected from the nonexistent "Safety /
+  Environmental Representative" to the actual `WeeklyQualityControlManagerReport`. AI Integration
+  section rewritten to mirror the 10 registered prompt keys with their registry names. Frontend
+  architecture section now mentions Vite 6, Vitest 2, Leaflet, Recharts, Sentry, and Vercel
+  Analytics/Speed Insights; auth claims tightened to match `auth-service/index.ts` (7-day
+  inactivity window + hourly JWT refresh instead of the made-up "2-7 days"). Removed
+  unverifiable copy about character-by-character dashboard typing animation.
+
 ## [2026.20.17] - 2026-05-14
 
 - `src/app/hooks/usePlanScheduleData.js` — reverted the `outboundByPlant` / `localWorkBaseByPlant`

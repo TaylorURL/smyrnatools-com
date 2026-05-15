@@ -650,6 +650,66 @@ export const evaluateScheduleSatisfaction = ({ detailByOrderId, isPastDay, isTod
 }
 
 /**
+ * Forecast customer satisfaction for a future-day schedule based on the
+ * `NEEDS HELP` orders the pool simulation surfaces. For each order we read
+ * `poolAfterDispatchEffective` from the timeline — when it's negative the
+ * pour will run short by that many trucks, and the matching yardage is
+ * considered "at-risk" (it ships, but slower than scheduled, eroding
+ * service quality).
+ *
+ * The score is yardage-weighted:
+ *   penalty = sum(orderYardage × trucksShort / trucksNeeded)
+ *   score   = 1 − penalty / totalYardage
+ *
+ * Each big order under-trucked drags the score harder than a tiny one,
+ * which matches how a dispatcher would size up the day. Returns the same
+ * envelope as `evaluateScheduleSatisfaction` so the badge / strip render
+ * paths reuse cleanly (`isLive: false`, `isPrediction: true`).
+ */
+export const predictScheduleSatisfaction = ({ getTravelOverrides, keyForOrder, liveOrders, poolTimeline }) => {
+    if (!Array.isArray(liveOrders) || liveOrders.length === 0) return null
+    if (!poolTimeline) return null
+    let totalYards = 0
+    let weightedPenalty = 0
+    let goodService = 0
+    let badService = 0
+    let totalTrucksShort = 0
+    for (const order of liveOrders) {
+        if (!order || isExcludedOrder(order)) continue
+        const yardage = parseFloat(order.yardage) || 0
+        if (yardage <= 0) continue
+        const overrides = typeof getTravelOverrides === 'function' ? getTravelOverrides(order) || {} : {}
+        const truckCount = getCalculatedTruckCount(order, overrides)
+        if (!Number.isFinite(truckCount) || truckCount <= 0) continue
+        const key = typeof keyForOrder === 'function' ? keyForOrder(order) : order.orderId
+        const entry = poolTimeline[key]
+        const afterEff = entry?.poolAfterDispatchEffective
+        const trucksShort = Number.isFinite(afterEff) && afterEff < 0 ? -afterEff : 0
+        totalYards += yardage
+        if (trucksShort > 0) {
+            badService += 1
+            totalTrucksShort += trucksShort
+            const lateFraction = Math.min(1, trucksShort / truckCount)
+            weightedPenalty += yardage * lateFraction
+        } else {
+            goodService += 1
+        }
+    }
+    if (totalYards <= 0) return null
+    const score = Math.max(0, Math.min(1, 1 - weightedPenalty / totalYards))
+    return {
+        badService,
+        goodService,
+        inProgress: 0,
+        isLive: false,
+        isPrediction: true,
+        samples: goodService + badService,
+        score,
+        trucksShort: totalTrucksShort
+    }
+}
+
+/**
  * Convert help rows into the `(plantCode, time, delta)` events that
  * `computePlantPoolTimeline` consumes.
  *
@@ -668,18 +728,16 @@ export const evaluateScheduleSatisfaction = ({ detailByOrderId, isPastDay, isTod
  *     truck somewhere else after the help shift.)
  *   - `−row.count at toPlant at row.time` — they leave the destination.
  *
- * No `+ at clockInRangeStart` pre-stage event — that previously inflated
- * the source plant's pool for hours before the operators actually left,
- * making morning orders appear to have help "already deducted." When a
- * plant's `clockInRows` ramp doesn't cover the outbound count (because
- * local orders need fewer ops than the outbound trip uses), the pool
- * may briefly go negative at the outbound departure minute — that's a
- * faithful overbooking signal, not a bug.
- *
- * **Clock-in rows** still ramp each plant's pool up over the day as
- * positive-delta inbound events.
+ * Clock-in rows used to also feed `+1` events here so the pool ramped up
+ * from zero over the day. That model double-counted operators: the same
+ * person showed up as a positive clock-in delta AND was subtracted as an
+ * outbound trip, leaving the morning pool reading 0 even when the lot
+ * was full of trucks. The pool now starts at the effective base instead
+ * (every active mixer is on the lot at start-of-day) and outbound trips
+ * drain it at the actual trip minute. `clockInRows` stays in the
+ * signature so callers don't churn, but no longer contributes deltas.
  */
-export const buildHelpTransfers = (helpRows, clockInRows) => {
+export const buildHelpTransfers = (helpRows, _clockInRows) => {
     const out = []
     helpRows.forEach((row) => {
         if (row.direction === 'outbound') {
@@ -690,9 +748,6 @@ export const buildHelpTransfers = (helpRows, clockInRows) => {
             out.push({ delta: -row.count, plantCode: row.toPlant, time: row.time })
             out.push({ delta: row.count, plantCode: home, time: row.time })
         }
-    })
-    clockInRows.forEach((row) => {
-        out.push({ delta: row.count, plantCode: row.plantCode, time: row.time })
     })
     return out
 }

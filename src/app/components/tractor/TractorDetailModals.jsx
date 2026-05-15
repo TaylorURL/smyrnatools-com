@@ -72,6 +72,7 @@ export function TractorInlineModals({
     fetchOperatorsForModal,
     handleSave,
     handleSaveMissingFields,
+    hours,
     lastServiceDate,
     make,
     missingFields,
@@ -80,6 +81,7 @@ export function TractorInlineModals({
     refreshOperators,
     setAssignedOperator,
     setHasUnsavedChanges,
+    setHours,
     setLastServiceDate,
     setLastUnassignedOperatorId,
     setMake,
@@ -146,11 +148,13 @@ export function TractorInlineModals({
                     make={make}
                     model={model}
                     year={year}
+                    hours={hours}
                     lastServiceDate={lastServiceDate}
                     setVin={setVin}
                     setMake={setMake}
                     setModel={setModel}
                     setYear={setYear}
+                    setHours={setHours}
                     setLastServiceDate={setLastServiceDate}
                     onSaveAndVerify={handleSaveMissingFields}
                     isServiceOverdue={AssetStatsUtility.isServiceOverdue}

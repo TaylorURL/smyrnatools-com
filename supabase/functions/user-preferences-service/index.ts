@@ -46,15 +46,13 @@ Deno.serve(async (req) => {
     try {
         const url = new URL(req.url)
         const endpoint = url.pathname.split('/').pop()
-        const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
-            global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
-        })
+        const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', { auth: { autoRefreshToken: false, persistSession: false } })
 
         switch (endpoint) {
             case 'get': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 if (!userId) return errorResponse('User ID is required', headers, 400)
                 if (auth !== userId) return errorResponse('Forbidden', headers, 403)
@@ -67,9 +65,9 @@ Deno.serve(async (req) => {
                 return jsonResponse({ data: data ?? null }, headers)
             }
             case 'save-mixer-filters': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 if (!userId) return errorResponse('User ID is required', headers, 400)
                 if (auth !== userId) return errorResponse('Forbidden', headers, 403)
@@ -77,9 +75,9 @@ Deno.serve(async (req) => {
                 return upsertPreference(supabase, userId, 'mixer_filters', body.filters, headers)
             }
             case 'save-last-viewed-filters': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 if (!userId) return errorResponse('User ID is required', headers, 400)
                 if (auth !== userId) return errorResponse('Forbidden', headers, 403)
@@ -87,9 +85,9 @@ Deno.serve(async (req) => {
                 return upsertPreference(supabase, userId, 'last_viewed_filters', body.filters, headers)
             }
             case 'dismiss-tutorial': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 const tutorialId = body?.tutorialId
                 if (!userId) return errorResponse('User ID is required', headers, 400)
@@ -113,9 +111,9 @@ Deno.serve(async (req) => {
                 return jsonResponse({ success: true }, headers)
             }
             case 'get-dismissed-tutorials': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 if (!userId) return errorResponse('User ID is required', headers, 400)
                 if (auth !== userId) return errorResponse('Forbidden', headers, 403)
@@ -127,9 +125,9 @@ Deno.serve(async (req) => {
                 return jsonResponse({ data: data ? data.map((d: any) => d.tutorial_id) : [] }, headers)
             }
             case 'reset-all-tutorials': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 if (!userId) return errorResponse('User ID is required', headers, 400)
                 if (auth !== userId) return errorResponse('Forbidden', headers, 403)
@@ -138,9 +136,9 @@ Deno.serve(async (req) => {
                 return jsonResponse({ success: true }, headers)
             }
             case 'reset-tutorial': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 const tutorialId = body?.tutorialId
                 if (!userId) return errorResponse('User ID is required', headers, 400)
@@ -155,9 +153,9 @@ Deno.serve(async (req) => {
                 return jsonResponse({ success: true }, headers)
             }
             case 'should-show-prompt': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 const promptType = body?.promptType
                 if (!userId || !promptType) return jsonResponse({ show: true }, headers)
@@ -180,9 +178,9 @@ Deno.serve(async (req) => {
                 return jsonResponse({ show: false }, headers)
             }
             case 'record-prompt-action': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 const promptType = body?.promptType
                 const action = body?.action
@@ -238,9 +236,9 @@ Deno.serve(async (req) => {
                 return jsonResponse({ data: { muted: nextMuted, otherUserId, pinned: nextPinned } }, headers)
             }
             case 'save-all': {
-                const auth = await requireAuthenticated(supabase, req, headers)
-                if (auth instanceof Response) return auth
                 const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
                 const userId = requireStringId(body, 'userId')
                 if (!userId) return errorResponse('User ID is required', headers, 400)
                 if (auth !== userId) return errorResponse('Forbidden', headers, 403)

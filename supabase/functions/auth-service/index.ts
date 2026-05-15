@@ -118,7 +118,7 @@ function createSupabaseClient(req: Request) {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY')
     if (!supabaseUrl || !supabaseKey) throw new Error('Server configuration error')
     return createClient(supabaseUrl, supabaseKey, {
-        global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
+        auth: { autoRefreshToken: false, persistSession: false }
     })
 }
 
@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
 
                 let jwt: string | null = null
                 let expiresIn: number | null = null
-                const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                const jwtSecret = (Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('JWT_SECRET'))
                 if (jwtSecret) {
                     jwt = await mintSessionJwt(data.id, sessionId, jwtSecret, JWT_TTL_SECONDS)
                     expiresIn = JWT_TTL_SECONDS
@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
 
                 let signUpJwt: string | null = null
                 let signUpExpiresIn: number | null = null
-                const signUpJwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                const signUpJwtSecret = (Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('JWT_SECRET'))
                 if (signUpJwtSecret) {
                     signUpJwt = await mintSessionJwt(userId, signUpSessionId, signUpJwtSecret, JWT_TTL_SECONDS)
                     signUpExpiresIn = JWT_TTL_SECONDS
@@ -377,7 +377,7 @@ Deno.serve(async (req) => {
                     let jwt: string | null = null
                     let expiresIn: number | null = null
                     if (sessionId) {
-                        const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                        const jwtSecret = (Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('JWT_SECRET'))
                         if (jwtSecret) {
                             jwt = await mintSessionJwt(data.id, sessionId, jwtSecret, JWT_TTL_SECONDS)
                             expiresIn = JWT_TTL_SECONDS
@@ -666,7 +666,7 @@ Deno.serve(async (req) => {
                  * via X-User-Id / X-Session-Id headers. If the secret is
                  * configured we still mint a JWT for forward-compatibility,
                  * but its absence is no longer a hard failure. */
-                const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                const jwtSecret = (Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('JWT_SECRET'))
                 if (!jwtSecret) return jsonResponse({ success: true }, headers)
                 const jwt = await mintSessionJwt(userId, sessionId, jwtSecret, JWT_TTL_SECONDS)
                 return jsonResponse({ success: true, jwt, expiresIn: JWT_TTL_SECONDS }, headers)
@@ -695,7 +695,7 @@ Deno.serve(async (req) => {
                     .then(() => {})
                     .catch(() => {})
                 /* Optional JWT mint — see notes on create-session. */
-                const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+                const jwtSecret = (Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('JWT_SECRET'))
                 if (!jwtSecret) return jsonResponse({ success: true }, headers)
                 const jwt = await mintSessionJwt(userId, sessionId, jwtSecret, JWT_TTL_SECONDS)
                 return jsonResponse({ jwt, expiresIn: JWT_TTL_SECONDS }, headers)

@@ -123,6 +123,7 @@ function PlanScheduleView({
         poolSourceByCode,
         poolTimeline,
         poolTimelinesByPlant,
+        predictedSatisfaction,
         productOptions,
         pullUpRows,
         sendHomeRows,
@@ -220,6 +221,7 @@ function PlanScheduleView({
                                     hasActiveFilters={hasActiveFilters}
                                     latestTime={latestTime}
                                     liveOrdersCount={liveOrders.length}
+                                    predictedSatisfaction={predictedSatisfaction}
                                     previousBusinessDayLabel={previousBusinessDayLabel}
                                     previousBusinessDayYardage={previousBusinessDayYardage}
                                     totalTrucks={totalTrucks}

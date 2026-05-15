@@ -3,55 +3,16 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { formatFullAddress, formatOrderAddress } from '../../../utils/AddressUtility'
 
-// Run order addresses through the shared normalizer so the popup matches
-// the schedule table — no more `.lady Leslie Lane …` or `RD .` artifacts.
 const composeAddress = (order) => formatOrderAddress(order, ', ')
 
-function RoutePoint({ children, color, icon, label, primary, sub, warn }) {
-    return (
-        <div
-            className="rounded-lg px-3 py-2 flex items-start gap-2.5 min-w-0 bg-bg-primary"
-            style={{ border: `1px solid ${warn ? '#fbbf24' : 'var(--border-light)'}` }}
-        >
-            <div
-                className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-                style={{ background: warn ? '#fef3c7' : `${color}14`, color: warn ? '#92400e' : color }}
-            >
-                <i className={`fas ${icon} text-[11px]`} />
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</div>
-                <div
-                    className="text-[12.5px] font-semibold leading-tight mt-0.5 truncate uppercase tracking-wide"
-                    style={{ color: warn ? '#92400e' : 'var(--text-primary)' }}
-                    title={primary}
-                >
-                    {primary || '—'}
-                </div>
-                {sub && (
-                    <div className="text-[11px] mt-0.5 truncate text-text-tertiary" title={sub}>
-                        {sub}
-                    </div>
-                )}
-                {children}
-            </div>
-        </div>
-    )
-}
-
 /**
- * Full-screen map modal for a single dispatch order. Shows the route as an
- * embedded Google Maps iframe with the assigned plant as the default origin.
- * The dispatcher can switch the origin via a dropdown to compare any plant
- * visually on the map.
- *
- * Travel-time metrics are intentionally NOT displayed — the project doesn't
- * provision a Google Maps API key, so live traffic data isn't available and
- * dispatch-report estimates only meaningfully apply to the assigned plant.
- * Without a clean number to show for every origin, the map alone is more
- * honest than a partial / fallback metric strip.
+ * Full-screen map modal for a single dispatch order. Embeds a Google Maps
+ * iframe routed from the assigned plant to the job site; an inline plant
+ * picker lets dispatch compare other plants visually without leaving the
+ * modal. No travel-time metrics — the project doesn't carry a Maps API key
+ * so live numbers aren't available and stale numbers are worse than none.
  */
-export default function JobMapModal({ accentColor, onClose, order, plantAddress, plantCode, plantName, plants = [] }) {
+export default function JobMapModal({ onClose, order, plantAddress, plantCode, plantName, plants = [] }) {
     const jobAddress = composeAddress(order)
     const hasJob = !!jobAddress
     const assignedPlantCode = plantCode || order?.plantCode || ''
@@ -93,9 +54,9 @@ export default function JobMapModal({ accentColor, onClose, order, plantAddress,
     const isAssignedPlant = selected.code === assignedPlantCode
     const originAddress = selected.address
     const originCode = selected.code
-    const originName = selected.name
     const hasPlant = !!originAddress
     const canRoute = hasJob && hasPlant
+    const hasMultiplePlants = plantOptions.length > 1
 
     const jobQuery = encodeURIComponent(jobAddress || order?.customer || '')
     const plantQuery = hasPlant ? encodeURIComponent(originAddress) : null
@@ -128,109 +89,91 @@ export default function JobMapModal({ accentColor, onClose, order, plantAddress,
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="rounded-2xl flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light"
+                className="rounded-lg flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light"
                 style={{
                     boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.35))',
                     maxHeight: '90vh',
                     maxWidth: 1000
                 }}
             >
-                <div className="flex items-start gap-3 px-5 py-3 border-b border-border-light">
-                    <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: `${accentColor}14`, color: accentColor }}
-                    >
-                        <i className="fas fa-route text-[14px]" />
-                    </div>
+                <div className="flex items-center gap-3 px-5 py-3 border-b border-border-light bg-bg-primary">
                     <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-bold leading-tight text-text-primary font-heading">
-                            {(order?.customer || 'Job location').toUpperCase()}
+                        <div className="flex items-baseline gap-2 min-w-0">
+                            <span className="text-[15px] font-semibold text-text-primary truncate font-heading">
+                                {order?.customer || 'Job location'}
+                            </span>
+                            {order?.orderNum && (
+                                <span className="text-[12px] text-text-tertiary font-mono">#{order.orderNum}</span>
+                            )}
                         </div>
-                        <div className="text-[12px] mt-0.5 uppercase tracking-wider text-text-secondary">
+                        <div className="text-[12px] text-text-secondary truncate mt-0.5" title={jobAddress}>
                             {jobAddress || 'Address not provided'}
                         </div>
-                        {(order?.orderNum || assignedPlantCode) && (
-                            <div className="text-[11px] mt-0.5 text-text-tertiary">
-                                {assignedPlantCode && (
-                                    <span>
-                                        Assigned Plant {assignedPlantCode}
-                                        {plantName ? ` · ${plantName}` : ''}
-                                    </span>
-                                )}
-                                {assignedPlantCode && order?.orderNum && <span> · </span>}
-                                {order?.orderNum && <span>Order #{order.orderNum}</span>}
-                            </div>
-                        )}
                     </div>
                     <a
                         href={externalUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-2.5 py-1.5 rounded-lg text-[11.5px] font-semibold border-none cursor-pointer flex items-center gap-1.5 bg-bg-secondary text-text-secondary"
+                        className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary no-underline hover:text-text-primary hover:bg-bg-tertiary"
+                        title={canRoute ? 'Open route in Google Maps' : 'Open in Google Maps'}
                     >
-                        <i className="fas fa-arrow-up-right-from-square text-[10px]" />
-                        {canRoute ? 'Open route' : 'Open in Maps'}
+                        Open in Maps
                     </a>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-8 h-8 rounded-lg border-none cursor-pointer flex items-center justify-center bg-bg-secondary text-text-secondary"
+                        className="w-7 h-7 rounded flex items-center justify-center bg-transparent border-0 cursor-pointer text-text-tertiary hover:text-text-primary"
                         aria-label="Close"
+                        title="Close (Esc)"
                     >
-                        <i className="fas fa-times text-[12px]" />
+                        <i className="fas fa-xmark text-[14px]" />
                     </button>
                 </div>
 
                 {hasJob && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-3 border-b bg-bg-secondary border-border-light">
-                        <RoutePoint
-                            color={accentColor}
-                            icon="fa-industry"
-                            label={
-                                hasPlant
-                                    ? `Plant ${originCode}${isAssignedPlant ? ' · Assigned' : ' · Comparing'}`
-                                    : 'Plant address missing'
-                            }
-                            primary={
-                                hasPlant
-                                    ? formatFullAddress(originAddress)
-                                    : 'Add an address in Plan Settings → Plant Addresses'
-                            }
-                            sub={!hasPlant ? 'Required to draw the route' : originName || ''}
-                            warn={!hasPlant}
-                        >
-                            {plantOptions.length > 1 && (
-                                <div className="mt-2">
-                                    <label className="block text-[9.5px] font-semibold uppercase tracking-wider mb-1 text-text-tertiary">
-                                        Origin Plant
-                                    </label>
-                                    <select
-                                        value={selectedCode}
-                                        onChange={(e) => setSelectedCode(e.target.value)}
-                                        className="w-full rounded outline-none px-2 py-1 text-[11.5px] font-semibold cursor-pointer bg-bg-secondary border border-border-light text-text-primary"
-                                    >
-                                        {plantOptions.map((p) => (
-                                            <option key={p.code} value={p.code}>
-                                                {p.code === assignedPlantCode ? '★ ' : ''}
-                                                {p.code}
-                                                {p.name ? ` — ${p.name}` : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                    <div className="flex items-center gap-3 flex-wrap px-5 py-2 border-b border-border-light bg-bg-secondary text-[12px]">
+                        <div className="flex items-baseline gap-2 min-w-0 flex-1">
+                            <span className="text-[10.5px] uppercase tracking-wider text-text-tertiary shrink-0">
+                                From
+                            </span>
+                            {hasMultiplePlants ? (
+                                <select
+                                    value={selectedCode}
+                                    onChange={(e) => setSelectedCode(e.target.value)}
+                                    className="text-[12px] font-mono font-semibold bg-transparent border-0 outline-none cursor-pointer text-text-primary"
+                                    title="Switch origin plant to compare routes"
+                                >
+                                    {plantOptions.map((p) => (
+                                        <option key={p.code} value={p.code}>
+                                            Plant {p.code}
+                                            {p.code === assignedPlantCode ? ' (assigned)' : ''}
+                                            {p.name ? ` — ${p.name}` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <span className="font-mono font-semibold text-text-primary">
+                                    Plant {originCode || '—'}
+                                    {isAssignedPlant ? '' : ' (comparing)'}
+                                </span>
                             )}
-                        </RoutePoint>
-                        <RoutePoint
-                            color="#16a34a"
-                            icon="fa-flag-checkered"
-                            label="Job site"
-                            primary={jobAddress}
-                            sub={order?.customer || ''}
-                        />
+                            <span className="text-text-tertiary truncate" title={originAddress}>
+                                {hasPlant ? formatFullAddress(originAddress) : 'address missing'}
+                            </span>
+                        </div>
+                        <span className="text-text-tertiary shrink-0">→</span>
+                        <div className="flex items-baseline gap-2 min-w-0 flex-1">
+                            <span className="text-[10.5px] uppercase tracking-wider text-text-tertiary shrink-0">
+                                To
+                            </span>
+                            <span className="font-semibold text-text-primary truncate" title={jobAddress}>
+                                {jobAddress}
+                            </span>
+                        </div>
                     </div>
                 )}
 
-                <div className="relative bg-bg-secondary" style={{ minHeight: 360 }}>
+                <div className="relative bg-bg-secondary flex-1" style={{ minHeight: 360 }}>
                     {hasJob ? (
                         <iframe
                             title={canRoute ? `Route from ${originCode} to ${jobAddress}` : `Map of ${jobAddress}`}
@@ -242,9 +185,8 @@ export default function JobMapModal({ accentColor, onClose, order, plantAddress,
                             allowFullScreen
                         />
                     ) : (
-                        <div className="flex flex-col items-center justify-center text-center p-10 text-text-tertiary">
-                            <i className="fas fa-map-location-dot text-3xl mb-2 opacity-60" />
-                            <div className="text-[13px]">No address on this order — nothing to map.</div>
+                        <div className="flex items-center justify-center text-center p-10 text-[13px] text-text-tertiary">
+                            No address on this order — nothing to map.
                         </div>
                     )}
                 </div>

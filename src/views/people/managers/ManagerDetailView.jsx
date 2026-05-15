@@ -71,7 +71,7 @@ function ManagerDetailView({ managerId, onClose }) {
                     { data: profileData, error: profileError },
                     { data: permissionData, error: permissionError }
                 ] = await Promise.all([
-                    Database.from('users').select('*').eq('id', managerId).single(),
+                    Database.from('users').select('id, email').eq('id', managerId).single(),
                     Database.from('users_profiles').select('*').eq('id', managerId).single(),
                     Database.from('users_permissions').select('role_id').eq('user_id', managerId).single()
                 ])

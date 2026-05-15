@@ -1,9 +1,11 @@
-export const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
+export const SECTION_TITLE_CLASS = 'text-[13.5px] font-semibold leading-tight text-text-primary'
+
+export const SECTION_SUBTITLE_CLASS = 'text-[11.5px] leading-tight text-text-tertiary mt-0.5'
 
 export const PILL_BASE =
-    'inline-flex items-center rounded text-[9.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 shrink-0'
+    'inline-flex items-center rounded text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 shrink-0'
 
-export const FIELD_LABEL_CLASS = 'block text-[10px] font-semibold uppercase tracking-wider mb-1.5'
+export const FIELD_LABEL_CLASS = 'inline-flex items-center gap-1 text-[12px] font-medium mb-1.5'
 
 export const FIELD_STYLE = {
     background: 'var(--bg-secondary)',

@@ -2,24 +2,44 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import ReactDOM from 'react-dom'
 
+import { UserService } from '../../../services/UserService'
 import APIUtility from '../../../utils/APIUtility'
 import GrammarUtility from '../../../utils/GrammarUtility'
 import { ValidationUtility } from '../../../utils/ValidationUtility'
-import { SECTION_LABEL_CLASS } from '../../constants/verificationModalConstants'
 import { useAccentColor } from '../../hooks/useAccentColor'
 import useVerificationModalData from '../../hooks/useVerificationModalData'
 import { Banner } from '../verification/VerificationAtoms'
-import VerificationChecklistSection from '../verification/VerificationChecklistSection'
+import VerificationChecklistSection, { parseHoursValue } from '../verification/VerificationChecklistSection'
 import VerificationCommentsSection from '../verification/VerificationCommentsSection'
 import VerificationIssuesSection from '../verification/VerificationIssuesSection'
 import VerificationOperatorSection from '../verification/VerificationOperatorSection'
 import ConfirmDialog from './ConfirmDialog'
 
+function ProgressTrack({ accentColor, blockers, total }) {
+    const completed = total - blockers
+    const percent = total === 0 ? 100 : Math.round((completed / total) * 100)
+    return (
+        <div className="mt-3">
+            <div className="flex items-baseline justify-between mb-1.5">
+                <span className="text-[11.5px] font-medium text-text-secondary">
+                    {blockers === 0 ? 'Ready to verify' : `${completed} of ${total} requirements met`}
+                </span>
+                <span className="text-[11px] font-mono tabular-nums text-text-tertiary">{percent}%</span>
+            </div>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-bg-tertiary">
+                <div
+                    className="h-full rounded-full transition-[width] duration-300"
+                    style={{ background: blockers === 0 ? '#16a34a' : accentColor, width: `${percent}%` }}
+                />
+            </div>
+        </div>
+    )
+}
+
 /**
  * Multi-section verification checklist modal for asset verification workflows.
- * Collects and validates required fields (VIN, make, model, year, service dates),
- * operator information (phone, rating), displays open maintenance issues and comments,
- * and enforces business rules before allowing verification.
+ * Collects and validates required fields, operator information, displays open
+ * maintenance issues and comments, and enforces business rules before verifying.
  */
 export default function VerificationRequirementsModal({
     open,
@@ -30,12 +50,14 @@ export default function VerificationRequirementsModal({
     make,
     model,
     year,
+    hours,
     lastServiceDate,
     lastChipDate,
     setVin,
     setMake,
     setModel,
     setYear,
+    setHours,
     setLastServiceDate,
     setLastChipDate,
     isServiceOverdue,
@@ -84,10 +106,9 @@ export default function VerificationRequirementsModal({
         }
         const allSectionsReady = Object.values(sectionsReady).every((ready) => ready)
         if (!allSectionsReady) return
-        // Auto-expand the highest-priority section that needs attention.
-        // Only one section is open at a time so the modal stays scannable.
         let priority = null
-        if (missingFields.length > 0 || serviceOverdue) priority = 'checklist'
+        const needsHoursAttention = typeof setHours === 'function' && !parseHoursValue(hours).valid
+        if (missingFields.length > 0 || serviceOverdue || needsHoursAttention) priority = 'checklist'
         else if (!operatorOk) priority = 'operator'
         else if (openIssues.length > 0) priority = 'issues'
         else if (comments.length > 0) priority = 'comments'
@@ -104,7 +125,9 @@ export default function VerificationRequirementsModal({
         itemId,
         service,
         serviceOverdue,
-        comments.length
+        comments.length,
+        hours,
+        setHours
     ])
 
     const handleSaveOperatorPhone = async () => {
@@ -138,6 +161,26 @@ export default function VerificationRequirementsModal({
         } catch (error) {
             console.error('Failed to complete issue:', error)
         }
+    }
+
+    const handleAddIssue = async ({ severity, text }) => {
+        if (!service?.addIssue || !itemId) return
+        const trimmed = text.trim()
+        if (!trimmed) return
+        const currentUser = await UserService.getCurrentUser()
+        const userId = currentUser?.id || currentUser || null
+        await service.addIssue(itemId, trimmed, severity, userId)
+        await fetchIssues()
+    }
+
+    const handleAddComment = async (text) => {
+        if (!service?.addComment || !itemId) return
+        const trimmed = text.trim()
+        if (!trimmed) return
+        const currentUser = await UserService.getCurrentUser()
+        const userId = currentUser?.id || currentUser || null
+        await service.addComment(itemId, trimmed, userId)
+        await fetchComments()
     }
 
     const handleDeleteIssue = (issueId) => setPendingDeleteIssueId(issueId)
@@ -176,70 +219,76 @@ export default function VerificationRequirementsModal({
     const needsMake = missingFields.includes('Make')
     const needsModel = missingFields.includes('Model')
     const needsYear = missingFields.includes('Year')
+    const needsHours = typeof setHours === 'function'
     const vinOk = needsVin ? vinInfo.valid : true
     const makeOk = needsMake ? !!String(make).trim() : true
     const modelOk = needsModel ? !!String(model).trim() : true
     const yearOk = needsYear ? !!String(year).trim() : true
-    const requiredFieldsOk = vinOk && makeOk && modelOk && yearOk
+    const hoursOk = needsHours ? parseHoursValue(hours).valid : true
+    const requiredFieldsOk = vinOk && makeOk && modelOk && yearOk && hoursOk
     const hasHighSeverityIssues = openIssues.some((issue) => issue.severity === 'High')
     const isMixerInShopWithoutIssues =
         itemType?.toLowerCase() === 'mixer' && status === 'In Shop' && openIssues.length === 0
     const canVerify = requiredFieldsOk && operatorOk && !isMixerInShopWithoutIssues
 
-    // Single-section accordion: clicking an open section closes it, clicking
-    // another swaps the open one.
+    const totalRequirements = 2 + (isMixerInShopWithoutIssues ? 1 : 0)
+    const blockers = (requiredFieldsOk ? 0 : 1) + (operatorOk ? 0 : 1) + (isMixerInShopWithoutIssues ? 1 : 0)
+
     const toggleSection = (sectionName) => setExpandedSection((prev) => (prev === sectionName ? null : sectionName))
     const isSectionExpanded = (sectionName) => expandedSection === sectionName
 
     if (typeof document === 'undefined' || !document.body) return null
 
+    const itemTypeDisplay = itemType ? itemType.charAt(0).toUpperCase() + itemType.slice(1).toLowerCase() : 'Asset'
+
     return (
         <>
             {ReactDOM.createPortal(
                 <div
-                    className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
+                    className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[rgba(15,23,42,0.55)] backdrop-blur-sm"
                     role="dialog"
                     aria-modal="true"
+                    aria-labelledby="verification-modal-title"
                 >
-                    <div className="flex w-full max-w-[600px] flex-col overflow-hidden rounded max-h-[90vh] bg-bg-primary border border-border-light">
-                        <div className="flex items-center justify-between gap-2.5 px-3 py-2 shrink-0 border-b border-border-light">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                                <div
-                                    className="flex h-7 w-7 items-center justify-center rounded shrink-0 bg-bg-tertiary"
-                                    style={{ color: accentColor }}
-                                >
-                                    <i className="fas fa-clipboard-check text-[12px]" />
-                                </div>
+                    <div className="flex w-full max-w-[560px] flex-col overflow-hidden rounded-lg max-h-[90vh] bg-bg-primary border border-border-light shadow-2xl">
+                        <div className="px-5 pt-4 pb-3 shrink-0 border-b border-border-light">
+                            <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
-                                        Verification Checklist
-                                    </div>
-                                    <div className="text-[11px] truncate text-text-tertiary">
-                                        Review requirements before verifying this {itemType?.toLowerCase()}
-                                    </div>
+                                    <h2
+                                        id="verification-modal-title"
+                                        className="text-[16px] font-semibold leading-tight text-text-primary"
+                                    >
+                                        Verify {itemTypeDisplay}
+                                    </h2>
+                                    <p className="mt-0.5 text-[12px] leading-snug text-text-tertiary">
+                                        Review the items below before confirming verification.
+                                    </p>
                                 </div>
+                                <button
+                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-bg-tertiary text-text-secondary"
+                                    onClick={onClose}
+                                    title="Close"
+                                    aria-label="Close"
+                                >
+                                    <i className="fas fa-times text-[13px]" />
+                                </button>
                             </div>
-                            <button
-                                className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-bg-tertiary text-text-secondary"
-                                onClick={onClose}
-                                title="Close"
-                                aria-label="Close"
-                            >
-                                <i className="fas fa-times text-[11px]" />
-                            </button>
+                            <ProgressTrack accentColor={accentColor} blockers={blockers} total={totalRequirements} />
                         </div>
 
-                        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2 bg-bg-secondary">
+                        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-2.5 bg-bg-secondary">
                             {sectionsReady.checklist && (
                                 <VerificationChecklistSection
-                                    accentColor={accentColor}
                                     expanded={isSectionExpanded('checklist')}
+                                    hours={hours}
+                                    hoursOk={hoursOk}
                                     lastChipDate={lastChipDate}
                                     lastServiceDate={lastServiceDate}
                                     make={make}
                                     makeOk={makeOk}
                                     model={model}
                                     modelOk={modelOk}
+                                    needsHours={needsHours}
                                     needsMake={needsMake}
                                     needsModel={needsModel}
                                     needsVin={needsVin}
@@ -247,6 +296,7 @@ export default function VerificationRequirementsModal({
                                     onToggle={() => toggleSection('checklist')}
                                     requiredFieldsOk={requiredFieldsOk}
                                     serviceOverdue={serviceOverdue}
+                                    setHours={setHours}
                                     setLastChipDate={setLastChipDate}
                                     setLastServiceDate={setLastServiceDate}
                                     setMake={setMake}
@@ -283,10 +333,12 @@ export default function VerificationRequirementsModal({
                             {itemId && service && sectionsReady.issues && (
                                 <VerificationIssuesSection
                                     accentColor={accentColor}
+                                    canAddIssue={typeof service?.addIssue === 'function'}
                                     canDelete={canDelete}
                                     expanded={isSectionExpanded('issues')}
                                     hasHighSeverityIssues={hasHighSeverityIssues}
                                     isLoadingIssues={isLoadingIssues}
+                                    onAddIssue={handleAddIssue}
                                     onCompleteIssue={handleCompleteIssue}
                                     onDeleteIssue={handleDeleteIssue}
                                     onToggle={() => toggleSection('issues')}
@@ -298,40 +350,40 @@ export default function VerificationRequirementsModal({
                             {itemId && service && sectionsReady.comments && (
                                 <VerificationCommentsSection
                                     accentColor={accentColor}
+                                    canAddComment={typeof service?.addComment === 'function'}
                                     comments={comments}
                                     expanded={isSectionExpanded('comments')}
                                     isLoadingComments={isLoadingComments}
+                                    onAddComment={handleAddComment}
                                     onDeleteComment={handleDeleteComment}
                                     onToggle={() => toggleSection('comments')}
                                     userNames={userNames}
                                 />
                             )}
+
+                            {isMixerInShopWithoutIssues && (
+                                <Banner tone="danger" icon="fa-exclamation-triangle">
+                                    Mixers in &quot;In Shop&quot; status need at least one active issue before they can
+                                    be verified. Add an issue describing why this mixer is in the shop.
+                                </Banner>
+                            )}
                         </div>
 
-                        {isMixerInShopWithoutIssues && (
-                            <div className="mx-3 mb-2">
-                                <Banner tone="danger" icon="fa-exclamation-triangle">
-                                    Mixers in &quot;In Shop&quot; status must have at least one active issue before they
-                                    can be verified. Please add an issue describing why this mixer is in the shop.
-                                </Banner>
-                            </div>
-                        )}
-
-                        <div className="flex gap-2 px-3 py-2 shrink-0 bg-bg-secondary border-t border-border-light">
+                        <div className="flex gap-2 px-4 py-3 shrink-0 bg-bg-primary border-t border-border-light">
                             <button
                                 onClick={onClose}
-                                className="flex-1 rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider cursor-pointer transition-colors hover:brightness-95 bg-bg-primary border border-border-light text-text-secondary"
+                                className="rounded-md px-4 py-2 text-[12.5px] font-medium cursor-pointer transition-colors hover:bg-bg-tertiary text-text-secondary"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSaveAndVerify}
                                 disabled={!canVerify}
-                                className="flex-[2] flex items-center justify-center gap-1.5 rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                style={{ background: accentColor }}
+                                className="flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2 text-[12.5px] font-semibold text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-[filter] hover:brightness-105"
+                                style={{ background: canVerify ? accentColor : 'var(--text-tertiary)' }}
                             >
-                                <i className="fas fa-check-circle text-[10px]" />
-                                {canVerify ? 'Save & Verify' : 'Complete Requirements'}
+                                <i className="fas fa-check text-[11px]" />
+                                {canVerify ? `Verify ${itemTypeDisplay.toLowerCase()}` : 'Complete required items'}
                             </button>
                         </div>
                     </div>

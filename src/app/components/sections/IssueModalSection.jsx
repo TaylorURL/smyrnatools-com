@@ -5,8 +5,42 @@ import ReactDOM from 'react-dom'
 import MessageService from '../../../services/MessageService'
 import { UserService } from '../../../services/UserService'
 import { usePreferences } from '../../context/PreferencesContext'
+import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
-import LoadingScreen from '../common/LoadingScreen'
+import Skeleton, { SkeletonStack } from '../common/Skeleton'
+
+function TeamMemberSkeleton() {
+    return (
+        <div className="flex items-center gap-2.5 py-1.5">
+            <Skeleton className="h-7 w-7 shrink-0" />
+            <div className="flex-1 min-w-0">
+                <Skeleton className="h-3 w-32 mb-1" />
+                <Skeleton className="h-3 w-20" />
+            </div>
+        </div>
+    )
+}
+
+function IssueRowSkeleton() {
+    return (
+        <div className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light last:border-b-0">
+            <Skeleton className="h-7 w-7 shrink-0" />
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                    <Skeleton className="h-4 w-14" />
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="h-3 w-full mb-1" />
+                <Skeleton className="h-3 w-4/5" />
+            </div>
+            <div className="flex gap-1 shrink-0">
+                <Skeleton className="h-7 w-7" />
+                <Skeleton className="h-7 w-7" />
+            </div>
+        </div>
+    )
+}
 
 const SEVERITY_PALETTE = {
     High: { bg: '#fee2e2', fg: '#b91c1c', icon: 'fa-fire' },
@@ -211,7 +245,9 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                 </label>
                                 {loading ? (
                                     <div className="rounded px-3 py-2 bg-bg-secondary border border-border-light">
-                                        <LoadingScreen message="Loading team members..." inline />
+                                        <SkeletonStack count={3} gapClassName="gap-0">
+                                            {() => <TeamMemberSkeleton />}
+                                        </SkeletonStack>
                                     </div>
                                 ) : (
                                     <div ref={dropdownRef} className="relative">
@@ -387,6 +423,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
     const [canDelete, setCanDelete] = useState(false)
     const [activeTab, setActiveTab] = useState('open')
     const [messageIssue, setMessageIssue] = useState(null)
+    const [pendingDeleteId, setPendingDeleteId] = useState(null)
 
     useEffect(() => {
         async function checkDeletePermission() {
@@ -440,8 +477,11 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
         if (itemId) fetchIssues()
     }, [itemId, fetchIssues])
 
-    const handleDeleteIssue = async (issueId) => {
-        if (!window.confirm('Are you sure you want to delete this issue?')) return
+    const handleDeleteIssue = (issueId) => setPendingDeleteId(issueId)
+
+    const confirmDeleteIssue = async () => {
+        const issueId = pendingDeleteId
+        setPendingDeleteId(null)
         try {
             await service.deleteIssue(issueId)
             fetchIssues()
@@ -627,8 +667,10 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                         )}
 
                         {isLoading ? (
-                            <div className="flex items-center justify-center py-8">
-                                <LoadingScreen message="Loading issues..." inline={true} />
+                            <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+                                <SkeletonStack count={3} gapClassName="gap-0">
+                                    {() => <IssueRowSkeleton />}
+                                </SkeletonStack>
                             </div>
                         ) : displayIssues.length === 0 ? (
                             <div className="flex flex-col items-center py-8 px-4 text-center text-text-tertiary">
@@ -749,6 +791,15 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                     onClose={() => setMessageIssue(null)}
                 />
             )}
+            <ConfirmDialog
+                isOpen={pendingDeleteId !== null}
+                onConfirm={confirmDeleteIssue}
+                onCancel={() => setPendingDeleteId(null)}
+                title="Delete Issue"
+                message="Are you sure you want to delete this issue?"
+                confirmLabel="Delete"
+                variant="danger"
+            />
         </>,
         document.body
     )

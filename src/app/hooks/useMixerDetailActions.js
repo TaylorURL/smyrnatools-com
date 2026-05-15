@@ -48,6 +48,7 @@ export default function useMixerDetailActions({
     const {
         assignedOperator,
         hasUnsavedChanges,
+        hours,
         lastChipDate,
         lastServiceDate,
         make,
@@ -228,12 +229,13 @@ export default function useMixerDetailActions({
 
     const handleSaveMissingFields = useCallback(async () => {
         try {
-            const requirements = computeVerificationRequirements({ make, mixer, model, vin, year })
+            const requirements = computeVerificationRequirements({ hours, make, mixer, model, vin, year })
             if (!requirements.allOk) {
                 flashMessage(requirements.errorMessage, 4000)
                 return
             }
             const overrides = buildVerificationOverrides({
+                hours,
                 lastChipDate,
                 lastServiceDate,
                 make,
@@ -280,6 +282,7 @@ export default function useMixerDetailActions({
         getOperatorName,
         handleSave,
         hasUnsavedChanges,
+        hours,
         lastChipDate,
         lastServiceDate,
         make,

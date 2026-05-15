@@ -509,8 +509,39 @@ function KindBar({ buckets, total }) {
     )
 }
 
+/** Case-insensitive, whitespace-collapsed key for grouping audit rows
+ *  by their `(job_address, plan_date)` pair. Same address typed with
+ *  different casing should collapse into one bucket. */
+const repeatKeyFor = (entry) => {
+    const address = String(entry?.job_address || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+    const date = entry?.plan_date
+    if (!address || !date) return null
+    return `${address}|${date}`
+}
+
 function ActivityTable({ accentColor, isLoading, logs }) {
     const [expandedId, setExpandedId] = useState(null)
+
+    /* Set of `(address, date)` keys that show up in more than one log
+     * row. Any row whose key lives in this set picks up the "Was
+     * Scheduled" badge — same address + same plan date as another
+     * Find-a-Spot submission in the visible history. */
+    const repeatKeySet = useMemo(() => {
+        const counts = new Map()
+        for (const row of logs) {
+            const key = repeatKeyFor(row)
+            if (!key) continue
+            counts.set(key, (counts.get(key) || 0) + 1)
+        }
+        const out = new Set()
+        for (const [key, count] of counts) {
+            if (count > 1) out.add(key)
+        }
+        return out
+    }, [logs])
 
     if (isLoading && logs.length === 0) {
         return (
@@ -562,15 +593,19 @@ function ActivityTable({ accentColor, isLoading, logs }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {logs.map((entry) => (
-                            <ActivityTableRow
-                                key={entry.id}
-                                accentColor={accentColor}
-                                entry={entry}
-                                expanded={expandedId === entry.id}
-                                onToggle={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
-                            />
-                        ))}
+                        {logs.map((entry) => {
+                            const key = repeatKeyFor(entry)
+                            return (
+                                <ActivityTableRow
+                                    key={entry.id}
+                                    accentColor={accentColor}
+                                    entry={entry}
+                                    expanded={expandedId === entry.id}
+                                    onToggle={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
+                                    wasScheduled={!!key && repeatKeySet.has(key)}
+                                />
+                            )
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -578,7 +613,7 @@ function ActivityTable({ accentColor, isLoading, logs }) {
     )
 }
 
-function ActivityTableRow({ accentColor, entry, expanded, onToggle }) {
+function ActivityTableRow({ accentColor, entry, expanded, onToggle, wasScheduled = false }) {
     const [copied, setCopied] = useState(false)
     const createdLabel = formatLogTimestamp(entry?.created_at)
     const suggestedTime = entry?.recommended_start_time || ''
@@ -629,11 +664,19 @@ function ActivityTableRow({ accentColor, entry, expanded, onToggle }) {
                 <td className="px-3 py-2 text-[12px] text-text-primary text-right font-mono">
                     {entry?.estimated_trucks ?? '—'}
                 </td>
-                <td
-                    className="px-3 py-2 text-[12px] text-text-secondary max-w-[260px] truncate"
-                    title={entry?.job_address}
-                >
-                    {entry?.job_address || '—'}
+                <td className="px-3 py-2 text-[12px] text-text-secondary max-w-[260px]" title={entry?.job_address}>
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate flex-1 min-w-0">{entry?.job_address || '—'}</span>
+                        {wasScheduled && (
+                            <span
+                                className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider shrink-0 bg-amber-100 text-amber-800 border border-amber-300"
+                                title="This address + plan date appears in another Find a Spot submission"
+                            >
+                                <i className="fas fa-clock-rotate-left text-[8px]" />
+                                Was Scheduled
+                            </span>
+                        )}
+                    </div>
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button

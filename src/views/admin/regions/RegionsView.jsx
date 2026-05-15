@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-import LoadingScreen from '../../../app/components/common/LoadingScreen'
+import Skeleton, { SkeletonStack } from '../../../app/components/common/Skeleton'
 import RegionsAddView from '../../../app/components/regions/RegionsAddView'
 import RegionsDetailView from '../../../app/components/regions/RegionsDetailView'
 import TopSection from '../../../app/components/sections/TopSection'
@@ -106,8 +106,16 @@ function RegionsView({ title = 'Regions' }) {
                     />
                     <div className="px-6 py-6">
                         {isLoading ? (
-                            <div className="flex items-center justify-center py-16">
-                                <LoadingScreen message="Loading regions..." inline={true} />
+                            <div className="bg-white border border-border-light overflow-hidden">
+                                <SkeletonStack count={6} gapClassName="gap-0">
+                                    {() => (
+                                        <div className="flex items-center gap-4 px-5 py-4 border-b border-slate-100 last:border-b-0">
+                                            <Skeleton className="h-4 w-[25%]" />
+                                            <Skeleton className="h-4 w-[50%]" />
+                                            <Skeleton className="h-5 w-20" rounded="rounded-full" />
+                                        </div>
+                                    )}
+                                </SkeletonStack>
                             </div>
                         ) : filteredRegions.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-16 px-6 text-center">

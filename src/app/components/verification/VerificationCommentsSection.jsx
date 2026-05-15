@@ -1,28 +1,41 @@
 /* eslint-disable react/forbid-dom-props */
-import React from 'react'
+import React, { useState } from 'react'
 
 import { FIELD_STYLE, formatVerificationDate } from '../../constants/verificationModalConstants'
-import LoadingScreen from '../common/LoadingScreen'
-import { Banner, IconButton, Pill, Section } from './VerificationAtoms'
+import Skeleton, { SkeletonStack } from '../common/Skeleton'
+import { IconButton, Section, StatusMarker } from './VerificationAtoms'
+
+function CommentSkeleton() {
+    return (
+        <div className="rounded-md p-3" style={FIELD_STYLE}>
+            <div className="mb-2 flex items-center justify-between">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-6 w-6" rounded="rounded-md" />
+            </div>
+            <Skeleton className="h-3 w-full mb-1.5" />
+            <Skeleton className="h-3 w-3/5" />
+        </div>
+    )
+}
 
 function CommentCard({ comment, onDelete, userNames }) {
     return (
-        <div className="rounded p-2.5" style={FIELD_STYLE}>
+        <div className="rounded-md p-3" style={FIELD_STYLE}>
             <div className="mb-1.5 flex items-center justify-between gap-2">
-                <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
+                <span className="text-[11px] font-mono tabular-nums text-text-tertiary">
                     {formatVerificationDate(comment.createdAt)}
                 </span>
                 <IconButton
                     icon="fa-trash"
-                    bg="#fee2e2"
+                    bg="rgba(220, 38, 38, 0.1)"
                     fg="#b91c1c"
                     onClick={() => onDelete(comment.id)}
                     title="Delete comment"
                 />
             </div>
-            <div className="text-[12px] leading-snug text-text-primary">{comment.text}</div>
+            <div className="text-[12.5px] leading-relaxed text-text-primary">{comment.text}</div>
             {comment.author && userNames[comment.author] && (
-                <div className="mt-1.5 flex items-center gap-1 text-[10.5px] text-text-secondary">
+                <div className="mt-2 flex items-center gap-1 text-[11px] text-text-secondary">
                     <i className="fas fa-user text-[9px]" />
                     {userNames[comment.author]}
                 </div>
@@ -31,56 +44,125 @@ function CommentCard({ comment, onDelete, userNames }) {
     )
 }
 
-/** "Comments" section — read-only with delete actions. */
+function AddCommentComposer({ accentColor, onAddComment }) {
+    const [isOpen, setIsOpen] = useState(false)
+    const [text, setText] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const reset = () => {
+        setText('')
+        setIsOpen(false)
+    }
+
+    const handleSubmit = async () => {
+        if (!text.trim() || isSubmitting) return
+        setIsSubmitting(true)
+        try {
+            await onAddComment(text)
+            reset()
+        } catch (error) {
+            console.error('Failed to add comment:', error)
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    if (!isOpen) {
+        return (
+            <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border-light bg-transparent px-3 py-2 text-[12px] font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+            >
+                <i className="fas fa-plus text-[10px]" />
+                Add a comment
+            </button>
+        )
+    }
+
+    return (
+        <div className="rounded-md p-3" style={FIELD_STYLE}>
+            <textarea
+                rows={3}
+                placeholder="Write a comment..."
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                className="w-full resize-none rounded-md px-3 py-2 text-[13px] outline-none bg-bg-primary border border-border-light text-text-primary"
+                autoFocus
+            />
+            <div className="mt-2 flex justify-end gap-1.5">
+                <button
+                    type="button"
+                    onClick={reset}
+                    className="rounded-md px-2.5 py-1.5 text-[11.5px] font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={!text.trim() || isSubmitting}
+                    className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11.5px] font-semibold text-white transition-[filter] hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ background: accentColor }}
+                >
+                    <i className={`fas ${isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-[10px]`} />
+                    {isSubmitting ? 'Posting' : 'Post comment'}
+                </button>
+            </div>
+        </div>
+    )
+}
+
+function commentsStatus(comments) {
+    if (comments.length === 0) return <StatusMarker tone="info" />
+    return <StatusMarker count={comments.length} />
+}
+
+function commentsSubtitle(comments) {
+    if (comments.length === 0) return 'No prior comments'
+    return `${comments.length} prior ${comments.length === 1 ? 'comment' : 'comments'}`
+}
+
+/** "Comments" section — read-only with delete actions plus inline composer. Informational. */
 export default function VerificationCommentsSection({
     accentColor,
+    canAddComment,
     comments,
     expanded,
     isLoadingComments,
+    onAddComment,
     onDeleteComment,
     onToggle,
     userNames
 }) {
-    const pill =
-        comments.length === 0 ? (
-            <Pill bg="#dcfce7" fg="#166534">
-                Complete
-            </Pill>
-        ) : (
-            <Pill bg="#dbeafe" fg="#1e40af">
-                {comments.length}
-            </Pill>
-        )
-
     return (
         <Section
-            icon="fa-comments"
             title="Comments"
-            accentColor={accentColor}
+            subtitle={commentsSubtitle(comments)}
+            status={commentsStatus(comments)}
             expanded={expanded}
             onToggle={onToggle}
-            pill={pill}
         >
-            <Banner tone="warn" icon="fa-info-circle">
-                Comments are shown for awareness only. Deleting them is optional.
-            </Banner>
             {isLoadingComments ? (
-                <LoadingScreen message="Loading comments..." inline={true} />
-            ) : comments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-6 text-text-tertiary">
-                    <i className="fas fa-info-circle text-2xl mb-1.5" />
-                    <span className="text-[12px]">No comments</span>
-                </div>
+                <SkeletonStack count={2}>{() => <CommentSkeleton />}</SkeletonStack>
             ) : (
-                <div className="flex flex-col gap-1.5">
-                    {comments.map((comment) => (
-                        <CommentCard
-                            key={comment.id}
-                            comment={comment}
-                            onDelete={onDeleteComment}
-                            userNames={userNames}
-                        />
-                    ))}
+                <div className="flex flex-col gap-2">
+                    {comments.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-4 text-text-tertiary">
+                            <i className="fas fa-comment-slash text-[20px] mb-1.5" />
+                            <span className="text-[12.5px]">No comments yet</span>
+                        </div>
+                    ) : (
+                        comments.map((comment) => (
+                            <CommentCard
+                                key={comment.id}
+                                comment={comment}
+                                onDelete={onDeleteComment}
+                                userNames={userNames}
+                            />
+                        ))
+                    )}
+                    {canAddComment && <AddCommentComposer accentColor={accentColor} onAddComment={onAddComment} />}
                 </div>
             )}
         </Section>

@@ -12,6 +12,7 @@ export default function useAssetVerification({ config, items, setItems, allItems
     const [verifyMake, setVerifyMake] = useState('')
     const [verifyModel, setVerifyModel] = useState('')
     const [verifyYear, setVerifyYear] = useState('')
+    const [verifyHours, setVerifyHours] = useState('')
     const [verifyLastServiceDate, setVerifyLastServiceDate] = useState(null)
     const [verifyLastChipDate, setVerifyLastChipDate] = useState(null)
 
@@ -28,6 +29,7 @@ export default function useAssetVerification({ config, items, setItems, allItems
             setVerifyMake(fieldValues.make)
             setVerifyModel(fieldValues.model)
             setVerifyYear(fieldValues.year)
+            setVerifyHours(fieldValues.hours ?? '')
             setVerifyLastServiceDate(fieldValues.lastServiceDate)
             setVerifyLastChipDate(fieldValues.lastChipDate ?? null)
             setShowVerifyModal(true)
@@ -46,6 +48,13 @@ export default function useAssetVerification({ config, items, setItems, allItems
             if (verifyMake?.trim() && verifyMake !== fieldValues.make) updates.make = verifyMake
             if (verifyModel?.trim() && verifyModel !== fieldValues.model) updates.model = verifyModel
             if (verifyYear && String(verifyYear).trim() && verifyYear !== fieldValues.year) updates.year = verifyYear
+            if (config.verification.hasHours) {
+                const trimmedHours = String(verifyHours ?? '').trim()
+                if (trimmedHours && trimmedHours !== String(fieldValues.hours ?? '')) {
+                    const parsed = Number(trimmedHours)
+                    if (Number.isFinite(parsed) && parsed >= 0) updates.hours = parsed
+                }
+            }
             if (verifyLastServiceDate && verifyLastServiceDate !== fieldValues.lastServiceDate) {
                 updates.lastServiceDate = verifyLastServiceDate
             }
@@ -77,6 +86,7 @@ export default function useAssetVerification({ config, items, setItems, allItems
         verifyMake,
         verifyModel,
         verifyYear,
+        verifyHours,
         verifyLastServiceDate,
         verifyLastChipDate,
         config,
@@ -88,6 +98,7 @@ export default function useAssetVerification({ config, items, setItems, allItems
         handleSaveAndVerify,
         handleVerify,
         setShowVerifyModal,
+        setVerifyHours,
         setVerifyItem,
         setVerifyLastChipDate,
         setVerifyLastServiceDate,
@@ -96,6 +107,7 @@ export default function useAssetVerification({ config, items, setItems, allItems
         setVerifyVin,
         setVerifyYear,
         showVerifyModal,
+        verifyHours,
         verifyItem,
         verifyLastChipDate,
         verifyLastServiceDate,

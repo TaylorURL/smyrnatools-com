@@ -391,6 +391,7 @@ const mixerConfig = {
         cleanupCheck: (items, operators) =>
             CleanupUtility.verificationCheck(items, MixerService.updateMixer, 'mixer', operators),
         getFieldValues: (item) => ({
+            hours: item.hours != null ? String(item.hours) : '',
             lastChipDate: item.lastChipDate || null,
             lastServiceDate: item.lastServiceDate || null,
             make: item.make || '',
@@ -404,6 +405,7 @@ const mixerConfig = {
             ...(!item.model ? ['Model'] : []),
             ...(!item.year ? ['Year'] : [])
         ],
+        hasHours: true,
         hasLastChipDate: true,
         isServiceOverdueFn: AssetStatsUtility.isServiceOverdue,
         itemType: 'mixer',

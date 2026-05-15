@@ -12,9 +12,9 @@ const ALLOWED_STATUSES = ['active', 'follow_up', 'holding', 'closed']
 const ALLOWED_SEVERITIES = ['low', 'medium', 'high', 'critical']
 const TRACKED_FIELDS = ['title', 'description', 'status', 'severity', 'plant_code', 'cost_to_close']
 
-function createSupabaseClient(auth: string) {
-    return createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
-        global: { headers: { Authorization: auth } }
+function createSupabaseClient() {
+    return createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', {
+        auth: { autoRefreshToken: false, persistSession: false }
     })
 }
 
@@ -89,8 +89,7 @@ Deno.serve(async (req) => {
         const sessionAuth = await requireAuthenticated(null, req, headers)
         if (sessionAuth instanceof Response) return sessionAuth
 
-        const authHeader = req.headers.get('Authorization') || ''
-        const supabase = createSupabaseClient(authHeader)
+        const supabase = createSupabaseClient()
 
         switch (endpoint) {
             // ── Reads ───────────────────────────────────────────────

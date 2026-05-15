@@ -2,51 +2,46 @@
 import React from 'react'
 
 import { FIELD_STYLE, RATING_LABELS } from '../../constants/verificationModalConstants'
-import LoadingScreen from '../common/LoadingScreen'
-import { OperatorRow, Pill, RequiredHint, Section } from './VerificationAtoms'
+import Skeleton, { SkeletonStack } from '../common/Skeleton'
+import { OperatorRow, RequiredHint, Section, StatusMarker } from './VerificationAtoms'
 
-function operatorStatusPill({ operatorOk, phoneOk, ratingOk }) {
-    if (operatorOk) {
-        return (
-            <Pill bg="#dcfce7" fg="#166534">
-                Complete
-            </Pill>
-        )
-    }
-    if (!phoneOk && !ratingOk) {
-        return (
-            <Pill bg="#fee2e2" fg="#b91c1c">
-                Phone & Rating
-            </Pill>
-        )
-    }
-    if (!phoneOk) {
-        return (
-            <Pill bg="#fee2e2" fg="#b91c1c">
-                Phone Required
-            </Pill>
-        )
-    }
+function OperatorRowSkeleton({ valueWidth = 'w-2/3' }) {
     return (
-        <Pill bg="#fee2e2" fg="#b91c1c">
-            Rating Required
-        </Pill>
+        <div className="flex items-start gap-3 py-2.5 border-b border-border-light last:border-b-0">
+            <div className="w-[38%] shrink-0 pt-0.5">
+                <Skeleton className="h-3 w-20" />
+            </div>
+            <div className="flex-1">
+                <Skeleton className={`h-3.5 ${valueWidth}`} />
+            </div>
+        </div>
     )
+}
+
+function operatorStatus({ operatorOk }) {
+    return operatorOk ? <StatusMarker tone="done" /> : <StatusMarker tone="attention" />
+}
+
+function buildSubtitle({ operatorOk, phoneOk, ratingOk, operatorData }) {
+    if (!operatorData) return 'Operator details unavailable'
+    if (operatorOk) return operatorData.name || 'Phone and rating confirmed'
+    const missing = [!phoneOk && 'phone', !ratingOk && 'rating'].filter(Boolean)
+    return `Needs ${missing.join(' and ')}`
 }
 
 function RatingStars({ onSelect, rating }) {
     return (
-        <div className="flex gap-0.5">
+        <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
                 <button
                     key={star}
                     type="button"
                     onClick={() => onSelect(star)}
-                    className="border-none bg-transparent p-0 cursor-pointer"
+                    className="border-none bg-transparent p-0 cursor-pointer transition-transform hover:scale-110"
                     aria-label={`Rate ${star} of 5`}
                 >
                     <i
-                        className="fas fa-star text-[14px]"
+                        className="fas fa-star text-[16px]"
                         style={{ color: star <= rating ? '#f59e0b' : 'var(--bg-tertiary)' }}
                     />
                 </button>
@@ -60,11 +55,11 @@ function RatingControl({ onSelect, ratingOk, value }) {
         <div>
             <div className="flex items-center gap-2.5">
                 <RatingStars rating={value} onSelect={onSelect} />
-                <span className="text-[11px] text-text-secondary">
-                    {value > 0 ? `${value}/5 · ${RATING_LABELS[value]}` : 'Not yet rated'}
+                <span className="text-[12px] text-text-secondary">
+                    {value > 0 ? `${RATING_LABELS[value]}` : 'Not yet rated'}
                 </span>
             </div>
-            {!ratingOk && <RequiredHint>Rating required for verification</RequiredHint>}
+            {!ratingOk && <RequiredHint>Rating is required to verify</RequiredHint>}
         </div>
     )
 }
@@ -78,7 +73,7 @@ function PhoneControl({ accentColor, isSavingPhone, onChange, onSave, phoneOk, v
                     placeholder="(555) 555-5555"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none font-mono tabular-nums"
+                    className="flex-1 rounded-md px-3 py-2 text-[13px] outline-none font-mono tabular-nums"
                     style={{
                         ...FIELD_STYLE,
                         borderColor: !phoneOk ? '#dc2626' : 'var(--border-light)'
@@ -87,19 +82,19 @@ function PhoneControl({ accentColor, isSavingPhone, onChange, onSave, phoneOk, v
                 <button
                     onClick={onSave}
                     disabled={isSavingPhone || !value.trim()}
-                    className="flex h-7 w-7 items-center justify-center rounded text-white border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-white border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95"
                     style={{ background: accentColor }}
                     aria-label="Save phone"
                 >
-                    <i className={`fas ${isSavingPhone ? 'fa-spinner fa-spin' : 'fa-save'} text-[11px]`} />
+                    <i className={`fas ${isSavingPhone ? 'fa-spinner fa-spin' : 'fa-save'} text-[12px]`} />
                 </button>
             </div>
-            {!phoneOk && <RequiredHint>Phone required for verification</RequiredHint>}
+            {!phoneOk && <RequiredHint>Phone is required to verify</RequiredHint>}
         </div>
     )
 }
 
-/** "Operator Information" section — name/position/id rows plus editable rating + phone. */
+/** "Operator" section — name/position/id rows plus editable rating + phone. */
 export default function VerificationOperatorSection({
     accentColor,
     expanded,
@@ -118,27 +113,28 @@ export default function VerificationOperatorSection({
 }) {
     return (
         <Section
-            icon="fa-user"
-            title="Operator Information"
-            accentColor={accentColor}
+            title="Operator"
+            subtitle={buildSubtitle({ operatorData, operatorOk, phoneOk, ratingOk })}
+            status={operatorStatus({ operatorOk })}
             expanded={expanded}
             onToggle={onToggle}
-            pill={operatorStatusPill({ operatorOk, phoneOk, ratingOk })}
         >
             {isLoadingOperator ? (
-                <LoadingScreen message="Loading operator data..." inline={true} />
+                <SkeletonStack count={4} gapClassName="gap-0">
+                    {(i) => <OperatorRowSkeleton valueWidth={['w-1/2', 'w-2/3', 'w-1/3', 'w-3/5'][i]} />}
+                </SkeletonStack>
             ) : operatorData ? (
                 <div>
                     <OperatorRow label="Name" value={operatorData.name || 'N/A'} />
                     {operatorData.position && <OperatorRow label="Position" value={operatorData.position} />}
                     {operatorData.smyrna_id && <OperatorRow label="Employee ID" value={operatorData.smyrna_id} mono />}
                     <OperatorRow
-                        label="Performance Rating"
+                        label="Performance rating"
                         required={!ratingOk}
                         value={<RatingControl onSelect={onSaveRating} ratingOk={ratingOk} value={operatorRating} />}
                     />
                     <OperatorRow
-                        label="Phone Number"
+                        label="Phone number"
                         required={!phoneOk}
                         last
                         value={
@@ -154,13 +150,11 @@ export default function VerificationOperatorSection({
                     />
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-6 px-3 text-center text-text-tertiary">
-                    <i className="fas fa-exclamation-triangle text-2xl mb-2" />
-                    <div className="text-[12px] font-semibold text-text-primary">
-                        Unable to load operator information
-                    </div>
-                    <div className="text-[11px] mt-0.5">
-                        The operator may have been removed or there was a connection issue
+                <div className="flex flex-col items-center justify-center py-6 px-3 text-center">
+                    <i className="fas fa-user-slash text-[22px] text-text-tertiary mb-2" />
+                    <div className="text-[13px] font-medium text-text-primary">Operator details unavailable</div>
+                    <div className="text-[11.5px] text-text-tertiary mt-1">
+                        The operator may have been removed, or the connection failed.
                     </div>
                 </div>
             )}

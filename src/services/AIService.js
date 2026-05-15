@@ -6,31 +6,10 @@ const FAST_MODEL = 'grok-3-mini-fast'
 const MAX_SUGGESTIONS = 5
 const MAX_RECENT_CHANGES = 10
 const EXCLUDED_AGGREGATE_KEYS = ['report_date', 'notes']
-/** Matches known plant codes in user questions for context scoping. */
-const PLANT_CODE_PATTERN = /\b(40[1-8]|410|45[35]|46[18]|455)\b/
-/** Formats fleet statistics (active/spare/in-shop counts) into readable summary lines. */
-const formatFleetStatLine = (label, stats) => {
-    if (!stats) return []
-    const lines = [`\n${label}: ${stats.total} total`]
-    lines.push(`  Active: ${stats.active} | Spare: ${stats.spare} | In Shop: ${stats.inShop}`)
-    if (stats.total > 0) {
-        lines.push(`  Utilization: ${Math.round((stats.active / stats.total) * 100)}%`)
-    }
-    return lines
-}
-/** Returns a single-line fleet stat summary, or null if stats are unavailable. */
-const formatFleetStatSummary = (label, stats) =>
-    stats
-        ? `${label}: ${stats.total} total, ${stats.active} active${stats.inShop !== undefined ? `, ${stats.inShop} in shop` : ''}${stats.spare !== undefined ? `, ${stats.spare} spare` : ''}`
-        : null
-const findByTruckNumber = (list, truckNum) =>
-    list?.find((item) => String(item.truckNumber) === truckNum || String(item.truckNumber).includes(truckNum))
-const filterByTruckNumber = (list, truckNum) =>
-    list?.filter((item) => String(item.truckNumber) === truckNum || String(item.truckNumber).includes(truckNum)) ?? []
 /**
- * AI-powered insights service using the Grok API.
- * Provides dashboard analysis, history summaries, report validation,
- * follow-up conversations, and content generation for fleet management.
+ * AI-powered content service using the Grok API. Provides history summaries,
+ * GM report analysis, report validation, list-item suggestions/improvements,
+ * task prioritization, and plan-notes formatting.
  */
 class AIServiceImpl {
     /**
@@ -60,14 +39,6 @@ class AIServiceImpl {
     async callAPI(systemPrompt, userPrompt, options = {}) {
         return this.fetchFromAPI(systemPrompt, [{ content: userPrompt, role: 'user' }], options)
     }
-    /** Multi-message conversation call with user-friendly error fallback strings. */
-    async callAPIWithMessages(systemPrompt, messages, options = {}) {
-        const result = await this.fetchFromAPI(systemPrompt, messages, options)
-        if (!result) return 'Error connecting to AI service.'
-        if (result.error === 'rate_limited') return 'Rate limited. Please wait a moment and try again.'
-        if (result.error) return 'Error connecting to AI service.'
-        return result.content ?? 'Could not process that question.'
-    }
     /** Generic prompt-driven content generator using a registered prompt key and data formatter. */
     async generateContentFromPrompt(promptKey, dataFormatter, context, options = {}) {
         const userPrompt = dataFormatter.call(this, context)
@@ -77,28 +48,6 @@ class AIServiceImpl {
             ...options
         })
         return result?.content ?? null
-    }
-    /** Generates strategic insights from aggregated dashboard fleet/operator/maintenance data. */
-    async generateDashboardInsights(dashboardData) {
-        const userPrompt = this.formatDashboardData(dashboardData)
-        const result = await this.callAPI(PROMPTS.dashboardInsights, userPrompt)
-        if (result?.error) {
-            throw new Error(
-                result.error === 'api_error' && result.status
-                    ? `API Error: ${result.status}`
-                    : 'Failed to generate insights'
-            )
-        }
-        return result?.content ?? 'Unable to generate insights at this time.'
-    }
-    /** Handles follow-up questions within an ongoing conversation, selecting relevant context. */
-    async askFollowUp(question, conversationHistory, contextData) {
-        const formattedContext = this.selectRelevantContext(question, contextData)
-        const messages = [
-            { content: formattedContext, role: 'user' },
-            ...conversationHistory.map(({ content, role }) => ({ content, role }))
-        ]
-        return this.callAPIWithMessages(PROMPTS.followUp, messages)
     }
     async generateHistorySummary(historyContext) {
         return this.generateContentFromPrompt('historySummary', this.formatHistoryData, historyContext)
@@ -291,189 +240,6 @@ class AIServiceImpl {
             return JSON.parse(result?.content?.trim() || '{"needsReview": false}')
         } catch {
             return { needsReview: false }
-        }
-    }
-    /**
-     * Selects the most relevant context data based on the user's question keywords.
-     * Avoids sending the entire dataset to the API for better token efficiency.
-     */
-    selectRelevantContext(question, ctx) {
-        const q = question.toLowerCase()
-        const parts = [
-            `Region: ${ctx.regionName || 'Unknown'}, Date: ${ctx.currentDate || new Date().toISOString().slice(0, 10)}`
-        ]
-        this.appendTruckContext(q, ctx, parts)
-        this.appendOperatorContext(q, ctx, parts)
-        this.appendFleetContext(q, ctx, parts)
-        this.appendPlantOperatorContext(q, ctx, parts)
-        this.appendShopContext(q, ctx, parts)
-        this.appendReportContext(q, ctx, parts)
-        return parts.join('\n')
-    }
-    /** Appends truck-specific context (mixer/tractor details, operator history) when a truck number is detected. */
-    appendTruckContext(q, ctx, parts) {
-        const truckMatch = q.match(/\b\d{3,5}\b/)
-        if (!truckMatch) return
-        const truckNum = truckMatch[0]
-        const mixer = findByTruckNumber(ctx.allMixersList, truckNum)
-        if (mixer) {
-            parts.push(
-                `Mixer ${mixer.truckNumber}: ${mixer.status} at Plant ${mixer.plant}, Operator: ${mixer.operatorName || 'Unassigned'}, VIN: ${mixer.vin || 'N/A'}, Make: ${mixer.make || 'N/A'}, Model: ${mixer.model || 'N/A'}, Year: ${mixer.year || 'N/A'}, Last Service: ${mixer.lastServiceDate?.slice(0, 10) || 'N/A'}`
-            )
-        }
-        const tractor = findByTruckNumber(ctx.allTractorsList, truckNum)
-        if (tractor) {
-            parts.push(
-                `Tractor ${tractor.truckNumber}: ${tractor.status} at Plant ${tractor.plant}, Operator: ${tractor.operatorName || 'Unassigned'}, Type: ${tractor.type || 'N/A'}`
-            )
-        }
-        const history = filterByTruckNumber(ctx.operatorAssignmentHistory, truckNum)
-        const operators = [
-            ...new Set(history.map((h) => h.newOperator).filter((o) => o && o !== 'None' && o !== 'Unknown Operator'))
-        ]
-        if (operators.length > 0) parts.push(`Operators who have driven ${truckNum}: ${operators.join(', ')}`)
-    }
-    appendOperatorContext(q, ctx, parts) {
-        const op = ctx.allOperatorsList?.find((o) => q.includes(o.name?.toLowerCase()))
-        if (!op) return
-        parts.push(`Operator ${op.name}: ${op.status} at Plant ${op.plant}, Position: ${op.position || 'Operator'}`)
-        const assignedMixer = ctx.allMixersList?.find((m) => m.operatorName === op.name)
-        if (assignedMixer)
-            parts.push(
-                `${op.name} is currently driving Mixer ${assignedMixer.truckNumber} at Plant ${assignedMixer.plant}`
-            )
-        const assignedTractor = ctx.allTractorsList?.find((t) => t.operatorName === op.name)
-        if (assignedTractor)
-            parts.push(
-                `${op.name} is currently driving Tractor ${assignedTractor.truckNumber} at Plant ${assignedTractor.plant}`
-            )
-    }
-    appendFleetContext(q, ctx, parts) {
-        if (!q.includes('fleet') && !q.includes('status') && !q.includes('how many') && !q.includes('total')) return
-        const summaries = [
-            formatFleetStatSummary('Mixers', ctx.mixerStats),
-            formatFleetStatSummary('Tractors', ctx.tractorStats),
-            formatFleetStatSummary('Trailers', ctx.trailerStats),
-            ctx.operatorStats && `Operators: ${ctx.operatorStats.total} total, ${ctx.operatorStats.active} active`
-        ].filter(Boolean)
-        parts.push(...summaries)
-    }
-    appendPlantOperatorContext(q, ctx, parts) {
-        if (!q.includes('operator')) return
-        const plantMatch = q.match(PLANT_CODE_PATTERN)
-        if (!plantMatch) return
-        const plantCode = plantMatch[0]
-        const ops = ctx.allOperatorsList?.filter((o) => String(o.plant) === plantCode) ?? []
-        if (ops.length > 0) parts.push(`Operators at Plant ${plantCode}: ${ops.map((o) => o.name).join(', ')}`)
-    }
-    appendShopContext(q, ctx, parts) {
-        if (!q.includes('shop') || !ctx.mixersInShop?.length) return
-        parts.push(`Mixers in shop: ${ctx.mixersInShop.map((m) => `${m.truckNumber} (${m.plant})`).join(', ')}`)
-    }
-    appendReportContext(q, ctx, parts) {
-        if (!q.includes('yard') && !q.includes('report') && !q.includes('production')) return
-        const plantMatch = q.match(PLANT_CODE_PATTERN)
-        if (plantMatch) {
-            const reports = ctx.plantManagerReports?.filter((r) => String(r.plant) === plantMatch[0]).slice(0, 5) ?? []
-            reports.forEach((r) =>
-                parts.push(`Week ${r.week} Plant ${r.plant}: ${r.yardage} yards, ${r.totalHours} hours`)
-            )
-            return
-        }
-        const latestWeek = ctx.plantManagerReports?.[0]?.week
-        if (!latestWeek) return
-        const weekReports = ctx.plantManagerReports.filter((r) => r.week === latestWeek)
-        const totalYards = weekReports.reduce((sum, r) => sum + (r.yardage || 0), 0)
-        parts.push(`Week ${latestWeek}: ${totalYards} total yards across ${weekReports.length} plants`)
-    }
-    /** Composes the full dashboard data prompt with fleet, operator, maintenance, and historical sections. */
-    formatDashboardData(data) {
-        const parts = [`Analysis Date: ${new Date().toLocaleDateString()}`]
-        if (data.regionName) parts.push(`Region: ${data.regionName}`)
-        if (data.selectedPlant) parts.push(`Viewing Plant: ${data.selectedPlant}`)
-        parts.push('\n=== FLEET STATUS ===')
-        parts.push(...formatFleetStatLine('MIXERS', data.mixerStats))
-        parts.push(...formatFleetStatLine('TRACTORS', data.tractorStats))
-        parts.push(...formatFleetStatLine('TRAILERS', data.trailerStats))
-        parts.push(...formatFleetStatLine('EQUIPMENT', data.equipmentStats))
-        parts.push('\n=== OPERATORS ===')
-        if (data.operatorStats) {
-            const os = data.operatorStats
-            parts.push(
-                `Total Operators: ${os.total}`,
-                `Active: ${os.active}`,
-                `  - Mixer Operators (assigned to mixers): ${os.mixerOperators || 0}`,
-                `  - Tractor Operators (assigned to tractors): ${os.tractorOperators || 0}`,
-                `  - Unassigned Active: ${os.unassigned || 0}`,
-                `Training: ${os.training || 0}`,
-                `Pending Start: ${os.pendingStart || 0}`,
-                `Light Duty: ${os.lightDuty || 0}`
-            )
-        }
-        parts.push('\n=== MAINTENANCE ===')
-        parts.push(`Service Overdue: ${data.overdueCount || 0} assets`)
-        parts.push(`Open Issues: ${data.openIssuesCount || 0}`)
-        this.appendHistoricalTrends(data, parts)
-        this.appendRecentReports(data, parts)
-        parts.push(
-            '\nAnalyze this data and provide 3-5 specific issues or concerns. Focus on problems, not positives. Consider production trends, yardage, hours, efficiency, and staffing levels.'
-        )
-        return parts.join('\n')
-    }
-    appendHistoricalTrends(data, parts) {
-        if (!data.statusHistory) return
-        parts.push(`\n=== HISTORICAL TRENDS (${data.historyDateRange || 'all time'}) ===`)
-        const appendDistribution = (label, items) => {
-            if (!items?.length) return
-            parts.push(`${label} Time Distribution:`)
-            items.slice(0, 3).forEach((s) => parts.push(`  ${s.status}: ${s.percentage}%`))
-        }
-        appendDistribution('Mixer', data.statusHistory.mixers)
-        appendDistribution('Tractor', data.statusHistory.tractors)
-    }
-    appendRecentReports(data, parts) {
-        if (!data.recentReports) return
-        parts.push('\n=== RECENT REPORTS (Last 4 Weeks) ===')
-        parts.push(`Total Completed Reports: ${data.recentReports.totalReportsLast4Weeks || 0}`)
-        const reportFormatters = [
-            {
-                format: (r) =>
-                    `  Week ${r.week} - Plant ${r.plant}: ${r.yardage || 0} yards, ${r.hours || 0} hours, ${r.operatorCount || 0} operators, ${r.loadsLost || 0} loads lost`,
-                key: 'plantManagerReports',
-                label: 'PLANT MANAGER REPORTS'
-            },
-            {
-                format: (r) =>
-                    `  Week ${r.week}: ${r.totalYardage || 0} total yards, ${r.totalHours || 0} hours, ${r.operatorsActive || 0} active operators, ${r.mixersRunnable || 0} runnable/${r.mixersDown || 0} down`,
-                key: 'generalManagerReports',
-                label: 'GENERAL MANAGER REPORTS'
-            },
-            {
-                format: (r) =>
-                    `  Week ${r.week} - Plant ${r.plant}: Start ${r.avgStartTime || 'N/A'}, End ${r.avgEndTime || 'N/A'}, ${r.loadsPerHour || 'N/A'} loads/hr`,
-                key: 'efficiencyReports',
-                label: 'EFFICIENCY REPORTS'
-            },
-            {
-                format: (r) =>
-                    `  Week ${r.week}: ${r.trainersActive || 0} active trainers, ${r.pendingHires || 0} pending hires, goal: ${r.hiringGoal || 0}`,
-                key: 'rmiReports',
-                label: 'RMI (TRAINING/HIRING) REPORTS'
-            }
-        ]
-        reportFormatters.forEach(({ key, label, format }) => {
-            const items = data.recentReports[key]
-            if (!items?.length) return
-            parts.push(`\n${label}:`)
-            items.forEach((r) => parts.push(format(r)))
-        })
-        if (data.recentReports.aggregateReports?.length > 0) {
-            parts.push('\nAGGREGATE PRODUCTION REPORTS:')
-            data.recentReports.aggregateReports.slice(0, 4).forEach((r) => {
-                parts.push(
-                    `  Week ${r.week}: ${Array.isArray(r.materials) ? r.materials.length : 0} materials reported`
-                )
-            })
         }
     }
     /** Formats asset history data (status changes, cleanliness trends, service records) for AI analysis. */

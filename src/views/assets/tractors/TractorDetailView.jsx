@@ -143,6 +143,7 @@ function TractorDetailView({ tractorId, onClose }) {
                         fetchOperatorsForModal={fetchOperatorsForModal}
                         handleSave={actions.handleSave}
                         handleSaveMissingFields={actions.handleSaveMissingFields}
+                        hours={state.hours}
                         lastServiceDate={state.lastServiceDate}
                         make={state.make}
                         missingFields={actions.missingFields}
@@ -151,6 +152,7 @@ function TractorDetailView({ tractorId, onClose }) {
                         refreshOperators={refreshOperators}
                         setAssignedOperator={state.setAssignedOperator}
                         setHasUnsavedChanges={state.setHasUnsavedChanges}
+                        setHours={state.setHours}
                         setLastServiceDate={state.setLastServiceDate}
                         setLastUnassignedOperatorId={setLastUnassignedOperatorId}
                         setMake={state.setMake}

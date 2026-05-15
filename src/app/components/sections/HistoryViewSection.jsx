@@ -6,7 +6,7 @@ import { HISTORY_TAB_DEFINITIONS } from '../../constants/historyConstants'
 import useHistoryAiTypewriter from '../../hooks/useHistoryAiTypewriter'
 import useHistoryAnalysisScrollCollapse from '../../hooks/useHistoryAnalysisScrollCollapse'
 import useHistoryData from '../../hooks/useHistoryData'
-import LoadingScreen from '../common/LoadingScreen'
+import Skeleton, { SkeletonStack } from '../common/Skeleton'
 import HistoryAssignmentsTab from '../history/HistoryAssignmentsTab'
 import HistoryMileageTab from '../history/HistoryMileageTab'
 import HistoryOperatorsTab from '../history/HistoryOperatorsTab'
@@ -134,8 +134,21 @@ function HistoryViewSection({ item, onClose, type }) {
     const renderContent = () => {
         if (isLoading) {
             return (
-                <div className="flex flex-col items-center justify-center py-12 px-6 text-slate-500">
-                    <LoadingScreen message="Loading history..." inline />
+                <div className="px-6 py-6">
+                    <SkeletonStack count={5} gapClassName="gap-3">
+                        {(i) => (
+                            <div className="rounded-md p-4 bg-bg-secondary border border-border-light">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Skeleton className="h-8 w-8" rounded="rounded-full" />
+                                    <div className="flex-1">
+                                        <Skeleton className="h-3.5 w-40 mb-1.5" />
+                                        <Skeleton className="h-3 w-24" />
+                                    </div>
+                                </div>
+                                <Skeleton className={`h-3 ${['w-full', 'w-3/4', 'w-5/6', 'w-2/3', 'w-1/2'][i % 5]}`} />
+                            </div>
+                        )}
+                    </SkeletonStack>
                 </div>
             )
         }

@@ -17,7 +17,21 @@ const databaseKey = import.meta.env.REACT_APP_SUPABASE_ANON_KEY
  *  (see SessionService), never in sessionStorage. */
 const sessionJwtFetch = (input, init = {}) => {
     const jwt = getSessionJwt()
-    if (!jwt) return fetch(input, init)
+    if (!jwt) {
+        /* Pre-auth: PostgREST will reject anon with 401 because RLS denies
+         * every table to the anon role. Skip the doomed network round-trip
+         * and synthesize the same shape PostgREST would return — keeps the
+         * Supabase client's error path intact without flooding the console
+         * with predictable "Failed to load resource" entries while
+         * AuthContext is still restoring the session. */
+        return Promise.resolve(
+            new Response(JSON.stringify({ code: 'PGRST301', message: 'Not authenticated' }), {
+                status: 401,
+                statusText: 'Unauthorized',
+                headers: { 'Content-Type': 'application/json' }
+            })
+        )
+    }
     const mergedHeaders = new Headers(init.headers || {})
     if (input instanceof Request) {
         const requestHeaders = new Headers(input.headers)

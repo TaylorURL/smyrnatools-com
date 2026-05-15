@@ -11,9 +11,9 @@ const RESPONSES_TABLE = 'maintenance_submission_responses'
 const LOG_EQUIPMENT_TABLE = 'maintenance_log_equipment'
 const LOG_ENTRIES_TABLE = 'maintenance_log_entries'
 
-function createSupabaseClient(auth: string) {
-    return createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
-        global: { headers: { Authorization: auth } }
+function createSupabaseClient() {
+    return createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', {
+        auth: { autoRefreshToken: false, persistSession: false }
     })
 }
 
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
         const auth = await requireAuthenticated(null, req, headers)
         if (auth instanceof Response) return auth
 
-        const supabase = createSupabaseClient(req.headers.get('Authorization') || '')
+        const supabase = createSupabaseClient()
 
         switch (endpoint) {
             // ── Form mutations ─────────────────────────────────────

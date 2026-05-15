@@ -5,75 +5,76 @@ import { minutesToTime } from '../../../../../utils/PlanUtility'
 
 const SCRUB_MIN_MINUTES = 0
 const SCRUB_MAX_MINUTES = 24 * 60 - 1
-const SCRUB_STEP_MINUTES = 15
-const SCRUB_DEFAULT_MINUTES = 12 * 60
+const SCRUB_STEP_MINUTES = 5
 
 /**
- * 24-hour horizontal slider that drives the point-in-time "needs help"
- * view. Sticky below the main toolbar. `viewTime` is minutes since
- * midnight (or null for the whole-day view).
+ * 24-hour horizontal slider that drives the point-in-time view. Mounted
+ * flush against the bottom-right corner of the map so it sits on top of
+ * the Leaflet attribution watermark — that's why this component carries
+ * no outer padding and only rounds the top-left corner. Play / Pause
+ * runs the autoplay loop; the parent owns the interval and this
+ * component just renders the control surface.
  */
-export function PlanFlowTimeScrubber({ accentColor, hasActivity, onChange, viewTime }) {
-    const isActive = Number.isFinite(viewTime)
-    const displayValue = isActive ? viewTime : SCRUB_DEFAULT_MINUTES
-    const clockLabel = isActive ? minutesToTime(displayValue) : 'All day'
-    const activityNote = !isActive
-        ? null
-        : hasActivity === 0
-          ? 'No plants active at this time'
-          : `${hasActivity} plant${hasActivity === 1 ? '' : 's'} actively pouring`
+export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onChange, onPlayToggle, viewTime }) {
+    const displayValue = Number.isFinite(viewTime) ? viewTime : 0
+    const clockLabel = minutesToTime(displayValue)
+    const activityNote =
+        hasActivity == null
+            ? null
+            : hasActivity === 0
+              ? 'No plants active at this time'
+              : `${hasActivity} plant${hasActivity === 1 ? '' : 's'} actively pouring`
 
-    const handleToggle = () => onChange(isActive ? null : SCRUB_DEFAULT_MINUTES)
     const handleSlide = (event) => onChange(parseInt(event.target.value, 10))
 
     return (
-        <div className="sticky z-20 flex justify-center px-4 pb-3 pointer-events-none" style={{ top: '60px' }}>
-            <div
-                className="pointer-events-auto w-full max-w-2xl rounded-lg flex items-center gap-3 px-3 py-2 bg-bg-primary border border-border-light"
-                style={{ boxShadow: 'var(--shadow-sm)' }}
-            >
+        <div
+            className="pointer-events-auto flex items-center gap-3 px-3 py-2 rounded-tl-lg bg-bg-primary border-l border-t border-border-light"
+            style={{ boxShadow: 'var(--shadow-sm)', minWidth: 420 }}
+        >
+            {onPlayToggle && (
                 <button
                     type="button"
-                    onClick={handleToggle}
-                    className="border-none rounded cursor-pointer px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
+                    onClick={onPlayToggle}
+                    className="border-none rounded cursor-pointer w-8 h-8 flex items-center justify-center"
                     style={{
-                        background: isActive ? accentColor : 'var(--bg-secondary)',
-                        color: isActive ? '#fff' : 'var(--text-secondary)'
+                        background: isPlaying ? accentColor : 'var(--bg-secondary)',
+                        color: isPlaying ? '#fff' : 'var(--text-secondary)'
                     }}
-                    title={isActive ? 'Return to whole-day view' : 'Enable point-in-time view'}
+                    title={isPlaying ? 'Pause cycle' : 'Cycle through the day'}
+                    aria-label={isPlaying ? 'Pause cycle' : 'Play cycle'}
                 >
-                    <i className={`fas ${isActive ? 'fa-clock' : 'fa-calendar-day'} mr-1 text-[9px]`} />
-                    {isActive ? 'At time' : 'All day'}
+                    <i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'} text-[11px]`} />
                 </button>
-                <div className="flex-1 flex items-center gap-3 min-w-0">
-                    <input
-                        type="range"
-                        min={SCRUB_MIN_MINUTES}
-                        max={SCRUB_MAX_MINUTES}
-                        step={SCRUB_STEP_MINUTES}
-                        value={displayValue}
-                        onChange={handleSlide}
-                        className="flex-1"
-                        style={{ accentColor }}
-                        title={isActive ? `Viewing ${clockLabel}` : 'Drag to pick a time'}
-                    />
-                    <div
-                        className="font-mono font-bold text-[13px] shrink-0 min-w-[62px] text-right"
-                        style={{ color: isActive ? accentColor : 'var(--text-tertiary)' }}
-                    >
-                        {clockLabel}
-                    </div>
+            )}
+            <div className="flex-1 flex items-center gap-3 min-w-0">
+                <input
+                    type="range"
+                    min={SCRUB_MIN_MINUTES}
+                    max={SCRUB_MAX_MINUTES}
+                    step={SCRUB_STEP_MINUTES}
+                    value={displayValue}
+                    onChange={handleSlide}
+                    className="flex-1"
+                    style={{ accentColor }}
+                    title={`Viewing ${clockLabel}`}
+                />
+                <div
+                    className="font-mono font-bold text-[13px] shrink-0 min-w-[62px] text-right"
+                    style={{ color: accentColor }}
+                >
+                    {clockLabel}
                 </div>
-                {isActive && activityNote && (
-                    <span
-                        className="text-[10.5px] font-semibold whitespace-nowrap hidden sm:inline"
-                        style={{ color: hasActivity === 0 ? 'var(--text-tertiary)' : '#16a34a' }}
-                    >
-                        <i className={`fas ${hasActivity === 0 ? 'fa-moon' : 'fa-truck'} mr-1 text-[9px]`} />
-                        {activityNote}
-                    </span>
-                )}
             </div>
+            {activityNote && (
+                <span
+                    className="text-[10.5px] font-semibold whitespace-nowrap hidden sm:inline"
+                    style={{ color: hasActivity === 0 ? 'var(--text-tertiary)' : '#16a34a' }}
+                >
+                    <i className={`fas ${hasActivity === 0 ? 'fa-moon' : 'fa-truck'} mr-1 text-[9px]`} />
+                    {activityNote}
+                </span>
+            )}
         </div>
     )
 }

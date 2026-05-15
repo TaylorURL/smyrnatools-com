@@ -142,22 +142,24 @@ export function buildHistoryMixer(mixer, overrideValues) {
     }
 }
 
-export function computeVerificationRequirements({ make, mixer, model, vin, year }) {
-    const needVin = !mixer.vin || !ValidationUtility.isVIN(mixer.vin)
-    const needMake = !mixer.make
-    const needModel = !mixer.model
-    const needYear = !mixer.year
-    const vinOk = needVin ? ValidationUtility.isVIN(vin) : true
-    const makeOk = needMake ? !!String(make).trim() : true
-    const modelOk = needModel ? !!String(model).trim() : true
-    const yearOk = needYear ? !!String(year).trim() : true
-    const allOk = vinOk && makeOk && modelOk && yearOk
-    return {
-        allOk,
-        errorMessage: !vinOk
-            ? 'Invalid VIN. Please enter a valid 17-character VIN.'
-            : 'Please fill all required fields before verifying.'
-    }
+export function computeVerificationRequirements({ hours, make, mixer: _mixer, model, vin, year }) {
+    const vinOk = ValidationUtility.isVIN(vin)
+    const makeOk = !!String(make ?? '').trim()
+    const modelOk = !!String(model ?? '').trim()
+    const yearOk = !!String(year ?? '').trim()
+    const hoursOk = isValidHoursValue(hours)
+    const allOk = vinOk && makeOk && modelOk && yearOk && hoursOk
+    let errorMessage = 'Please fill all required fields before verifying.'
+    if (!vinOk) errorMessage = 'Invalid VIN. Please enter a valid 17-character VIN.'
+    else if (!hoursOk) errorMessage = 'Please enter a valid engine hours reading (0 or greater).'
+    return { allOk, errorMessage }
+}
+
+function isValidHoursValue(value) {
+    const raw = String(value ?? '').trim()
+    if (!raw) return false
+    const num = Number(raw)
+    return Number.isFinite(num) && num >= 0
 }
 
 /**
@@ -165,12 +167,19 @@ export function computeVerificationRequirements({ make, mixer, model, vin, year 
  * model/year and any updated service/chip dates that differ from the persisted
  * values.
  */
-export function buildVerificationOverrides({ lastChipDate, lastServiceDate, make, mixer, model, vin, year }) {
+export function buildVerificationOverrides({ hours, lastChipDate, lastServiceDate, make, mixer, model, vin, year }) {
     const overrides = { silent: true }
     if (vin && vin.trim()) overrides.vin = String(vin).trim().toUpperCase()
     if (make && make.trim()) overrides.make = String(make).trim()
     if (model && model.trim()) overrides.model = String(model).trim()
     if (year && year.trim()) overrides.year = String(year).trim()
+    const trimmedHours = String(hours ?? '').trim()
+    if (trimmedHours) {
+        const parsedHours = Number(trimmedHours)
+        if (Number.isFinite(parsedHours) && parsedHours >= 0 && parsedHours !== mixer.hours) {
+            overrides.hours = parsedHours
+        }
+    }
     const existingService = mixer.lastServiceDate ? new Date(mixer.lastServiceDate) : null
     const existingChip = mixer.lastChipDate ? new Date(mixer.lastChipDate) : null
     const incomingService = lastServiceDate

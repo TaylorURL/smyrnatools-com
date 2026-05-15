@@ -14,6 +14,7 @@ export default function PlanScheduleStatStrip({
     hasActiveFilters,
     latestTime,
     liveOrdersCount,
+    predictedSatisfaction,
     previousBusinessDayLabel,
     previousBusinessDayYardage,
     totalTrucks,
@@ -103,6 +104,35 @@ export default function PlanScheduleStatStrip({
                     })()}
                     label={customerSatisfaction.isLive ? 'Customer satisfaction · so far' : 'Customer satisfaction'}
                     value={`${Math.round(customerSatisfaction.score * 100)}%`}
+                />
+            )}
+            {predictedSatisfaction && predictedSatisfaction.samples > 0 && (
+                <PlanScheduleStat
+                    badge={
+                        <span className="inline-flex items-center gap-1.5">
+                            <span
+                                className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[rgba(14,_165,_233,_0.14)] text-[#0ea5e9]"
+                                title="Forecast — based on which orders the pool simulation flags as NEEDS HELP"
+                            >
+                                <i className="fas fa-wand-magic-sparkles text-[8px]" />
+                                PREDICTED
+                            </span>
+                            <SatisfactionBadge score={predictedSatisfaction.score} />
+                        </span>
+                    }
+                    hint={(() => {
+                        if (predictedSatisfaction.badService === 0) {
+                            return `${predictedSatisfaction.goodService} on pace · no shortages forecast`
+                        }
+                        const truckLabel = predictedSatisfaction.trucksShort === 1 ? 'truck' : 'trucks'
+                        return [
+                            `${predictedSatisfaction.goodService} on pace`,
+                            `${predictedSatisfaction.badService} needs help`,
+                            `${predictedSatisfaction.trucksShort} ${truckLabel} short`
+                        ].join(' · ')
+                    })()}
+                    label="Customer satisfaction · predicted"
+                    value={`${Math.round(predictedSatisfaction.score * 100)}%`}
                 />
             )}
         </div>

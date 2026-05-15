@@ -11,6 +11,7 @@ import {
     extractCityFromFullAddress,
     getFirstLoadOutByPlant,
     getOrderStatus,
+    predictScheduleSatisfaction,
     sumField
 } from '../../utils/PlanScheduleUtility'
 import {
@@ -216,13 +217,21 @@ export function usePlanScheduleData({
         return out
     }, [stats, plantProduction, planDate])
 
-    /** Operator clock-in events per plant. Uses the full `baseByPlant`
-     *  cap — the outbound subtraction now happens as a `−N` event in
-     *  `buildHelpTransfers` at the actual outbound departure minute, so
-     *  the local clock-in ramp doesn't need to know about help trips. */
+    /** Operator clock-in events per plant. Capped at the effective LOCAL
+     *  truck count (`base − send + recv`) so the staffing ramp only counts
+     *  operators staying at this plant — helpers leaving for other plants
+     *  are scheduled separately via `helpRows`. */
+    const localBaseByPlant = useMemo(() => {
+        const out = {}
+        Object.entries(poolSourceByCode).forEach(([code, ps]) => {
+            out[code] = Math.max(0, ps.starting ?? ps.base ?? 0)
+        })
+        return out
+    }, [poolSourceByCode])
+
     const clockInRows = useMemo(
-        () => computeClockInRows(allOrders, baseByPlant, getTravelOverrides),
-        [allOrders, baseByPlant, getTravelOverrides]
+        () => computeClockInRows(allOrders, localBaseByPlant, getTravelOverrides),
+        [allOrders, localBaseByPlant, getTravelOverrides]
     )
 
     /** Per-driver help rows — grouped into 30-minute buckets per assignment +
@@ -234,17 +243,18 @@ export function usePlanScheduleData({
         [assignments, plantProduction, getTravelTime]
     )
 
-    /** Plants whose pool ramps up via clock-ins start the simulation at 0;
-     *  plants with no orders today keep their effective base so suggested
-     *  slots and send-home math still work for idle yards. */
+    /** Each plant starts the day with every active assigned mixer physically
+     *  on its lot — the "11 active − 3 out" number the tooltip surfaces.
+     *  Outbound help trips subtract from this pool at their actual trip
+     *  time (via `helpTransfers`), so mid-day pool reflects "trucks at
+     *  plant right now" rather than ramping up from zero. */
     const initialPoolByCode = useMemo(() => {
-        const plantsWithClockIns = new Set(clockInRows.map((r) => r.plantCode))
         const out = {}
         Object.entries(baseByPlant).forEach(([code, base]) => {
-            out[code] = plantsWithClockIns.has(code) ? 0 : base
+            out[code] = base
         })
         return out
-    }, [baseByPlant, clockInRows])
+    }, [baseByPlant])
 
     /** Help transfers in the format expected by `computePlantPoolTimeline`. */
     const helpTransfers = useMemo(() => buildHelpTransfers(helpRows, clockInRows), [helpRows, clockInRows])
@@ -370,6 +380,15 @@ export function usePlanScheduleData({
         [detailByOrderId, isPastDay, isToday, liveOrders, nowMin]
     )
 
+    /** Predicted customer satisfaction for FUTURE days — derived from the
+     *  pool simulation's NEEDS HELP signals (orders where the effective
+     *  pool goes negative). For past / today we rely on the actual
+     *  `customerSatisfaction` score from ticket data instead. */
+    const predictedSatisfaction = useMemo(() => {
+        if (isPastDay || isToday) return null
+        return predictScheduleSatisfaction({ getTravelOverrides, keyForOrder, liveOrders, poolTimeline })
+    }, [isPastDay, isToday, getTravelOverrides, keyForOrder, liveOrders, poolTimeline])
+
     const uniquePlants = new Set(liveOrders.map((o) => o.plantCode)).size
     const uniqueCustomers = new Set(liveOrders.map((o) => (clean(o.customer) || '').toLowerCase()).filter(Boolean)).size
     const startMinutes = liveOrders.map((o) => timeToMinutes(o.startTime)).filter((t) => t != null)
@@ -445,6 +464,7 @@ export function usePlanScheduleData({
         poolSourceByCode,
         poolTimeline,
         poolTimelinesByPlant,
+        predictedSatisfaction,
         productOptions,
         pullUpRows,
         sendHomeRows,

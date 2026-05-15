@@ -52,11 +52,11 @@ function ConfirmDialog({
     const v = variantStyles[variant] || variantStyles.danger
     return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[10100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]"
             onClick={onCancel}
         >
             <div
-                className="w-full max-w-[380px] overflow-hidden rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] animate-confirm-slide-in bg-[var(--bg-primary, #fff)]"
+                className="w-full max-w-[380px] overflow-hidden rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] animate-confirm-slide-in bg-bg-primary border border-border-light"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex flex-col items-center px-6 pt-7 pb-2">
@@ -66,19 +66,15 @@ function ConfirmDialog({
                     >
                         <i className={`fas ${v.icon} text-xl`} style={{ color: v.iconColor }} />
                     </div>
-                    <h3 className="m-0 mb-2 text-center text-lg font-bold text-[var(--text-primary, #1e293b)]">
-                        {title}
-                    </h3>
+                    <h3 className="m-0 mb-2 text-center text-lg font-bold text-text-primary">{title}</h3>
                     {message && (
-                        <p className="m-0 text-center text-sm leading-relaxed text-[var(--text-secondary, #64748b)]">
-                            {message}
-                        </p>
+                        <p className="m-0 text-center text-sm leading-relaxed text-text-secondary">{message}</p>
                     )}
                 </div>
                 <div className="flex gap-3 px-6 pt-4 pb-6">
                     <button
                         onClick={onCancel}
-                        className="flex-1 cursor-pointer rounded-xl border py-3 text-sm font-semibold transition-colors duration-150 hover:brightness-95 bg-[var(--bg-secondary, #f8fafc)] border-[var(--border-light, #e2e8f0)] text-[var(--text-primary, #1e293b)]"
+                        className="flex-1 cursor-pointer rounded-xl border py-3 text-sm font-semibold transition-colors duration-150 hover:brightness-95 bg-bg-secondary border-border-light text-text-primary"
                     >
                         {cancelLabel}
                     </button>

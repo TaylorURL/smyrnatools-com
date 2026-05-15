@@ -175,6 +175,7 @@ const AssetModals = forwardRef(function AssetModals(
             {verification.showVerifyModal && verification.verifyItem && config.verification && (
                 <VerificationRequirementsModal
                     assignedOperator={verification.verifyItem.assignedOperator}
+                    hours={config.verification.hasHours ? verification.verifyHours : undefined}
                     isServiceOverdue={config.verification.isServiceOverdueFn}
                     itemId={verification.verifyItem.id}
                     itemType={config.verification.itemType}
@@ -190,6 +191,7 @@ const AssetModals = forwardRef(function AssetModals(
                     onSaveAndVerify={verification.handleSaveAndVerify}
                     open={verification.showVerifyModal}
                     service={service}
+                    setHours={config.verification.hasHours ? verification.setVerifyHours : undefined}
                     setLastChipDate={
                         config.verification.hasLastChipDate ? verification.setVerifyLastChipDate : undefined
                     }

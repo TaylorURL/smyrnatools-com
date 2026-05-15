@@ -261,6 +261,7 @@ const tractorConfig = {
         cleanupCheck: (items, operators) =>
             CleanupUtility.verificationCheck(items, TractorService.updateTractor, 'tractor', operators),
         getFieldValues: (item) => ({
+            hours: item.hours != null ? String(item.hours) : '',
             lastServiceDate: item.lastServiceDate || null,
             make: item.make || '',
             model: item.model || '',
@@ -273,6 +274,7 @@ const tractorConfig = {
             ...(!item.model ? ['Model'] : []),
             ...(!item.year ? ['Year'] : [])
         ],
+        hasHours: true,
         hasLastChipDate: false,
         isServiceOverdueFn: AssetStatsUtility.isServiceOverdue,
         itemType: 'tractor',

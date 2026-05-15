@@ -2,10 +2,14 @@
 import React, { useMemo } from 'react'
 
 import {
+    buildAssignmentDriverTimes,
     computeClockInRows,
     formatMinutesClock,
     getEffectiveBase,
-    PLAN_META_KEY
+    LOAD_MINUTES,
+    parseDurationMinutes,
+    PLAN_META_KEY,
+    PRE_TRIP_MINUTES
 } from '../../../../../utils/PlanUtility'
 
 /** Flatten `plantProduction` into a single orders list filtered to the
@@ -21,29 +25,106 @@ const flattenOrders = (plantProduction, plantSet) => {
     return out
 }
 
+/** Round a minute-of-day value to the nearest 5-minute slot, mirroring the
+ *  rounding already applied inside `computeClockInRows` so local and outbound
+ *  rows can be merged on a common grid. */
+const snapToFiveMin = (minutes) => (Number.isFinite(minutes) ? Math.round(minutes / 5) * 5 : null)
+
+/**
+ * Per-driver clock-in rows for operators leaving an in-scope plant to back up
+ * another plant. Two timing rules, matching how the operator's day actually
+ * unfolds:
+ *   - Deadheading (`loadFromPlant` falsy): clock-in = arrival-at-toPlant minus
+ *     `PRE_TRIP_MINUTES + travel(fromPlant → toPlant)`.
+ *   - Loaded (`loadFromPlant` truthy, taking a load to the destination job):
+ *     clock-in = arrival minus `PRE_TRIP_MINUTES + LOAD_MINUTES + travel-to-job`.
+ *     Travel-to-job is approximated as `travel(fromPlant → toPlant) + the
+ *     destination order's toJobTime` — a conservative upper bound when the
+ *     operator goes via the destination plant (the only direct data we have).
+ */
+const buildOutboundClockInRows = ({ assignments, getTravelTime, plantProduction, scopePlantSet }) => {
+    const rows = []
+    ;(assignments || []).forEach((assignment) => {
+        if (!assignment?.fromPlant || !assignment?.toPlant) return
+        if (assignment.fromPlant === assignment.toPlant) return
+        if (scopePlantSet && scopePlantSet.size > 0 && !scopePlantSet.has(assignment.fromPlant)) return
+        const travelMinutes =
+            typeof getTravelTime === 'function' ? getTravelTime(assignment.fromPlant, assignment.toPlant) : null
+        if (!Number.isFinite(travelMinutes)) return
+
+        const isLoadedFromPlant = !!assignment.loadFromPlant
+        let destinationOrder = null
+        if (assignment.forOrderId) {
+            const destinationOrders = plantProduction?.[assignment.toPlant]?.orders || []
+            destinationOrder =
+                destinationOrders.find((o) => (o.orderId || o.orderNum) === assignment.forOrderId) || null
+        }
+
+        const toJobMinutes = parseDurationMinutes(destinationOrder?.toJobTime)
+        const loadedTravelToJob = travelMinutes + (Number.isFinite(toJobMinutes) ? toJobMinutes : 0)
+        const clockInOffset = isLoadedFromPlant
+            ? PRE_TRIP_MINUTES + LOAD_MINUTES + loadedTravelToJob
+            : PRE_TRIP_MINUTES + travelMinutes
+
+        const driverTimes = buildAssignmentDriverTimes(assignment)
+        driverTimes.forEach((driver) => {
+            if (!Number.isFinite(driver.arriveMin)) return
+            const rawClockIn = Math.max(0, driver.arriveMin - clockInOffset)
+            const time = snapToFiveMin(rawClockIn)
+            rows.push({
+                isLoadedFromPlant,
+                plantCode: assignment.fromPlant,
+                time,
+                toPlant: assignment.toPlant
+            })
+        })
+    })
+    return rows
+}
+
 /** Per-plant clock-in roster + leave-off summary. Slot N is filled with
- *  the Nth-earliest clock-in time; slots beyond the day's needed count are
- *  marked off so the plant manager sees exactly who to send home. */
-const buildPlantBreakdowns = ({ clockInRows, effectiveBaseByCode, plantCodes, plantNameByCode, plantProduction }) => {
+ *  the Nth-earliest clock-in time across local + outbound-help rows; slots
+ *  beyond the day's needed count are marked off so the plant manager sees
+ *  exactly who to send home. Outbound slots carry destination + load info
+ *  so they render with a "→ XXX" tag. */
+const buildPlantBreakdowns = ({
+    clockInRows,
+    effectiveBaseByCode,
+    outboundClockInRows,
+    plantCodes,
+    plantNameByCode,
+    plantProduction
+}) => {
     return plantCodes
         .map((code) => {
             const data = plantProduction?.[code] || {}
             const totalYardage = parseFloat(data.totalYardage) || 0
             const firstJob = data.firstJobTime || ''
             const base = effectiveBaseByCode[code] || 0
-            const sortedTimes = clockInRows
+
+            const localSlots = clockInRows
                 .filter((row) => row.plantCode === code)
-                .map((row) => (Number.isFinite(row.time) ? Math.round(row.time / 5) * 5 : null))
-                .filter((t) => t != null)
-                .sort((a, b) => a - b)
-            const slotCount = Math.max(base, sortedTimes.length)
+                .map((row) => ({ outbound: null, time: snapToFiveMin(row.time) }))
+            const outboundSlots = outboundClockInRows
+                .filter((row) => row.plantCode === code)
+                .map((row) => ({
+                    outbound: { isLoadedFromPlant: row.isLoadedFromPlant, toPlant: row.toPlant },
+                    time: snapToFiveMin(row.time)
+                }))
+            const combined = [...localSlots, ...outboundSlots]
+                .filter((entry) => entry.time != null)
+                .sort((a, b) => a.time - b.time)
+
+            const slotCount = Math.max(base, combined.length)
             const slots = Array.from({ length: slotCount }, (_, i) => ({
                 index: i + 1,
-                time: sortedTimes[i] ?? null
+                outbound: combined[i]?.outbound ?? null,
+                time: combined[i]?.time ?? null
             }))
-            const needed = sortedTimes.length
+            const needed = combined.length
             const leaveOffCount = Math.max(0, base - needed)
-            const earliestMinutes = sortedTimes[0] ?? null
+            const earliestMinutes = combined[0]?.time ?? null
+            const outboundCount = outboundSlots.length
             return {
                 base,
                 code,
@@ -52,6 +133,7 @@ const buildPlantBreakdowns = ({ clockInRows, effectiveBaseByCode, plantCodes, pl
                 leaveOffCount,
                 name: plantNameByCode?.[code] || '',
                 needed,
+                outboundCount,
                 slots,
                 totalYardage
             }
@@ -73,11 +155,27 @@ function KeyStat({ accent, label, value }) {
     )
 }
 
+/** Compact destination chip rendered on outbound-help operator rows so the
+ *  manager can tell at a glance which clock-ins are leaving the yard.
+ *  "LD" suffix flags loaded help (operator pulls a load from this plant). */
+function OutboundDestinationTag({ outbound }) {
+    if (!outbound) return null
+    return (
+        <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider rounded px-1.5 py-0.5 inline-flex items-center gap-1 bg-bg-tertiary text-text-secondary border border-border-light">
+            <i className="fas fa-arrow-right-from-bracket text-[7px] opacity-70" />
+            {outbound.toPlant}
+            {outbound.isLoadedFromPlant ? ' · LD' : ''}
+        </span>
+    )
+}
+
 /** Single plant's clock-in board — header, KPIs, and a row-per-operator
  *  roster. Leave-off slots render with a dashed border so they're visually
- *  distinct from active clock-ins. */
+ *  distinct from active clock-ins. Outbound-help slots show a destination
+ *  tag so the manager spots operators leaving the yard. */
 function ClockInPlantCard({ accentColor, breakdown }) {
-    const { base, code, earliestClockIn, firstJob, leaveOffCount, name, needed, slots, totalYardage } = breakdown
+    const { base, code, earliestClockIn, firstJob, leaveOffCount, name, needed, outboundCount, slots, totalYardage } =
+        breakdown
     return (
         <div className="rounded-lg overflow-hidden flex flex-col bg-bg-secondary border border-border-light">
             <div className="flex items-center gap-2 px-3 py-2 border-b border-border-light">
@@ -92,6 +190,9 @@ function ClockInPlantCard({ accentColor, breakdown }) {
                     <div className="text-[10.5px] text-text-tertiary">
                         {firstJob ? `First job ${firstJob}` : 'No production'}
                         {totalYardage > 0 ? ` · ${totalYardage.toLocaleString()} yd` : ''}
+                        {outboundCount > 0
+                            ? ` · ${outboundCount} outbound operator${outboundCount === 1 ? '' : 's'}`
+                            : ''}
                     </div>
                 </div>
                 {leaveOffCount > 0 && (
@@ -130,8 +231,11 @@ function ClockInPlantCard({ accentColor, breakdown }) {
                                 key={`${code}-op-${slot.index}`}
                                 className="flex items-center justify-between gap-2 text-[11.5px] px-2 py-1 rounded bg-bg-primary border border-border-light text-text-primary"
                             >
-                                <span className="font-semibold">Operator {slot.index}</span>
-                                <span className="font-mono font-bold font-heading">
+                                <span className="font-semibold flex items-center gap-2 min-w-0">
+                                    <span className="shrink-0">Operator {slot.index}</span>
+                                    <OutboundDestinationTag outbound={slot.outbound} />
+                                </span>
+                                <span className="font-mono font-bold font-heading shrink-0">
                                     {formatMinutesClock(slot.time)}
                                 </span>
                             </div>
@@ -155,10 +259,14 @@ function ClockInPlantCard({ accentColor, breakdown }) {
  * Each card surfaces the day's earliest clock-in, the count of operators
  * actually needed vs effective fleet base, and a numbered slot roster
  * that fills earliest clock-in times first and marks the surplus `off` so
- * the manager sees who to leave home.
+ * the manager sees who to leave home. Outbound-help operators (going to
+ * another plant) appear in the same roster with a destination tag so the
+ * manager spots them at a glance.
  */
 export default function PlanDashboardClockInBoard({
     accentColor,
+    assignments,
+    getTravelTime,
     kind,
     planDate,
     plantNameByCode,
@@ -186,26 +294,64 @@ export default function PlanDashboardClockInBoard({
         return out
     }, [stats, plantProduction, planDate, plantSet, scopePlantCodes])
 
+    /** Per-driver clock-ins for operators leaving any in-scope plant. Each
+     *  outbound assignment contributes one row per driver, with timing tied
+     *  to whether the operator is deadheading or pulling a load. Computed
+     *  first so the local base can be reduced by committed outbound trips
+     *  below. */
+    const outboundClockInRows = useMemo(
+        () =>
+            buildOutboundClockInRows({
+                assignments,
+                getTravelTime,
+                plantProduction,
+                scopePlantSet: plantSet
+            }),
+        [assignments, getTravelTime, plantProduction, plantSet]
+    )
+
+    /** Operators already committed to outbound help per plant. They come out
+     *  of the plant's base, so the local clock-in calc must use a reduced
+     *  base — otherwise a plant sending 7 operators to a neighbor would
+     *  appear to clock in 7 + (local need) people, double-counting the same
+     *  bodies. */
+    const outboundCountByPlant = useMemo(() => {
+        const out = {}
+        outboundClockInRows.forEach((row) => {
+            out[row.plantCode] = (out[row.plantCode] || 0) + 1
+        })
+        return out
+    }, [outboundClockInRows])
+
+    /** Effective base minus outbound commitments — the headcount actually
+     *  available to staff local orders today. */
+    const localBaseByCode = useMemo(() => {
+        const out = {}
+        Object.entries(effectiveBaseByCode).forEach(([code, base]) => {
+            const reserved = outboundCountByPlant[code] || 0
+            out[code] = Math.max(0, base - reserved)
+        })
+        return out
+    }, [effectiveBaseByCode, outboundCountByPlant])
+
     /* `getTravelOverrides` is undefined here — the dashboard doesn't run
      * the live-traffic prefetch, so `computeClockInRows` falls back to the
      * order's own `toJobTime` (the dispatch report's estimate). That keeps
      * the math consistent without requiring the dashboard to subscribe to
      * the heavier travel-time hook chain. */
-    const clockInRows = useMemo(
-        () => computeClockInRows(orders, effectiveBaseByCode, undefined),
-        [orders, effectiveBaseByCode]
-    )
+    const clockInRows = useMemo(() => computeClockInRows(orders, localBaseByCode, undefined), [orders, localBaseByCode])
 
     const breakdowns = useMemo(
         () =>
             buildPlantBreakdowns({
                 clockInRows,
                 effectiveBaseByCode,
+                outboundClockInRows,
                 plantCodes: scopePlantCodes || [],
                 plantNameByCode,
                 plantProduction
             }),
-        [clockInRows, effectiveBaseByCode, scopePlantCodes, plantNameByCode, plantProduction]
+        [clockInRows, effectiveBaseByCode, outboundClockInRows, scopePlantCodes, plantNameByCode, plantProduction]
     )
 
     if (breakdowns.length === 0) return null

@@ -281,28 +281,28 @@ export default function useTractorDetailActions(state, tractorId, onClose) {
     }
 
     async function handleSaveMissingFields() {
-        const needVin = !tractor.vin || !ValidationUtility.isVIN(tractor.vin)
-        const needMake = !tractor.make
-        const needModel = !tractor.model
-        const needYear = !tractor.year
-        const vinOk = needVin ? ValidationUtility.isVIN(vin) : true
-        const makeOk = needMake ? !!String(make).trim() : true
-        const modelOk = needModel ? !!String(model).trim() : true
-        const yearOk = needYear ? !!String(year).trim() : true
-        if (!(vinOk && makeOk && modelOk && yearOk)) {
-            flashMessage(
-                !vinOk
-                    ? 'Invalid VIN. Please enter a valid 17-character VIN.'
-                    : 'Please fill all required fields before verifying.',
-                4000
-            )
+        const vinOk = ValidationUtility.isVIN(vin)
+        const makeOk = !!String(make ?? '').trim()
+        const modelOk = !!String(model ?? '').trim()
+        const yearOk = !!String(year ?? '').trim()
+        const trimmedHours = String(hours ?? '').trim()
+        const parsedHours = Number(trimmedHours)
+        const hoursOk = trimmedHours !== '' && Number.isFinite(parsedHours) && parsedHours >= 0
+        if (!(vinOk && makeOk && modelOk && yearOk && hoursOk)) {
+            const errorMessage = !vinOk
+                ? 'Invalid VIN. Please enter a valid 17-character VIN.'
+                : !hoursOk
+                  ? 'Please enter a valid engine hours reading (0 or greater).'
+                  : 'Please fill all required fields before verifying.'
+            flashMessage(errorMessage, 4000)
             return
         }
         const overrides = { silent: true }
-        if (needVin) overrides.vin = String(vin).trim().toUpperCase()
-        if (needMake) overrides.make = String(make).trim()
-        if (needModel) overrides.model = String(model).trim()
-        if (needYear) overrides.year = String(year).trim()
+        if (vin && vin.trim()) overrides.vin = String(vin).trim().toUpperCase()
+        if (make && String(make).trim()) overrides.make = String(make).trim()
+        if (model && String(model).trim()) overrides.model = String(model).trim()
+        if (year && String(year).trim()) overrides.year = String(year).trim()
+        if (parsedHours !== tractor.hours) overrides.hours = parsedHours
         const parseDate = (d) => (d ? new Date(d) : null)
         const existingService = parseDate(tractor.lastServiceDate)
         const incomingService = lastServiceDate

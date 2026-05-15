@@ -8,9 +8,9 @@ import { requireAuthenticated } from '../_shared/requireSession.ts'
 const PRESENCE_TABLE = 'users_presence'
 const STALE_THRESHOLD_MS = 2 * 60 * 1000
 
-function createSupabaseClient(auth: string) {
-    return createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
-        global: { headers: { Authorization: auth } }
+function createSupabaseClient() {
+    return createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', {
+        auth: { autoRefreshToken: false, persistSession: false }
     })
 }
 
@@ -37,8 +37,7 @@ Deno.serve(async (req) => {
         const sessionAuth = await requireAuthenticated(null, req, headers)
         if (sessionAuth instanceof Response) return sessionAuth
 
-        const headerAuth = req.headers.get('Authorization') || ''
-        const supabase = createSupabaseClient(headerAuth)
+        const supabase = createSupabaseClient()
 
         switch (endpoint) {
             case 'set-online':

@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import LoadingScreen from '../../../app/components/common/LoadingScreen'
+import Skeleton, { SkeletonStack } from '../../../app/components/common/Skeleton'
 import TopSection from '../../../app/components/sections/TopSection'
 import RoleModal, {
     RoleFormField,
@@ -639,7 +639,21 @@ function RolesView() {
     if (isLoading && roles.length === 0) {
         return (
             <div className="min-h-screen bg-slate-50 p-6">
-                <LoadingScreen inline message="Loading roles..." />
+                <div className="max-w-5xl mx-auto">
+                    <Skeleton className="h-8 w-48 mb-6" />
+                    <SkeletonStack count={6} gapClassName="gap-3">
+                        {() => (
+                            <div className="rounded-lg p-4 bg-white border border-border-light">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <Skeleton className="h-5 w-40" />
+                                    <Skeleton className="h-5 w-16" rounded="rounded-full" />
+                                </div>
+                                <Skeleton className="h-3 w-full mb-1.5" />
+                                <Skeleton className="h-3 w-3/4" />
+                            </div>
+                        )}
+                    </SkeletonStack>
+                </div>
             </div>
         )
     }

@@ -49,7 +49,6 @@ module.exports = {
                 'slide-in-row': 'slideInRow 0.4s ease-out both',
                 'comment-slide-in': 'commentSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                 'comment-fade-in': 'fadeIn 0.2s ease',
-                'progress-slide': 'progressSlide 1.5s ease-in-out infinite',
                 'confirm-slide-in': 'confirmSlideIn 0.2s ease-out',
                 shimmer: 'shimmer 1.5s infinite',
                 'plan-overbook-glow': 'planOverbookGlow 2.4s ease-in-out infinite',
@@ -159,11 +158,6 @@ module.exports = {
                 commentSlideIn: {
                     '0%': { opacity: '0', transform: 'translateY(20px) scale(0.98)' },
                     '100%': { opacity: '1', transform: 'translateY(0) scale(1)' }
-                },
-                progressSlide: {
-                    '0%': { transform: 'translateX(-100%)' },
-                    '50%': { transform: 'translateX(250%)' },
-                    '100%': { transform: 'translateX(450%)' }
                 },
                 confirmSlideIn: {
                     '0%': { opacity: '0', transform: 'scale(0.95) translateY(10px)' },

@@ -310,9 +310,7 @@ Deno.serve(async (req) => {
                 return jsonResponse({ data: { monday: toISO(monday), saturday: toISO(saturday) } }, headers)
             }
             case 'save-report': {
-                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
-                    global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
-                })
+                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { autoRefreshToken: false, persistSession: false } })
                 const body = await parseBody(req)
                 const auth = await requireAuthenticated(supabase, req, headers, body)
                 if (auth instanceof Response) return auth
@@ -353,9 +351,7 @@ Deno.serve(async (req) => {
                 return jsonResponse(data, headers)
             }
             case 'mark-report-reviewed-flag': {
-                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
-                    global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
-                })
+                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { autoRefreshToken: false, persistSession: false } })
                 const body = await parseBody(req)
                 const auth = await requireAuthenticated(supabase, req, headers, body)
                 if (auth instanceof Response) return auth
@@ -380,9 +376,7 @@ Deno.serve(async (req) => {
                 return jsonResponse(true, headers)
             }
             case 'save-exclusion-reason': {
-                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
-                    global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
-                })
+                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { autoRefreshToken: false, persistSession: false } })
                 const auth = await requireAuthenticated(supabase, req, headers)
                 if (auth instanceof Response) return auth
                 const body = await parseBody(req)
@@ -395,9 +389,7 @@ Deno.serve(async (req) => {
                 return jsonResponse(true, headers)
             }
             case 'delete-report': {
-                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
-                    global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
-                })
+                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { autoRefreshToken: false, persistSession: false } })
                 const auth = await requireAuthenticated(supabase, req, headers)
                 if (auth instanceof Response) return auth
                 const userId = auth
@@ -421,9 +413,7 @@ Deno.serve(async (req) => {
                 return jsonResponse(true, headers)
             }
             case 'mark-reviewed': {
-                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
-                    global: { headers: { Authorization: req.headers.get('Authorization') || '' } }
-                })
+                const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { autoRefreshToken: false, persistSession: false } })
                 const auth = await requireAuthenticated(supabase, req, headers)
                 if (auth instanceof Response) return auth
                 const body = await parseBody(req)

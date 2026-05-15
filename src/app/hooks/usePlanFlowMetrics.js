@@ -12,13 +12,19 @@ import {
     TARGET_YPH,
     timeToMinutes
 } from '../../utils/PlanUtility'
+import { PRE_TRIP_MINUTES } from '../constants/planConstants'
+
+/** Default travel-time assumption when the hook caller doesn't supply
+ *  `getTravelTime`. 30 min covers the typical plant-to-plant hop and is
+ *  the same fallback `pushOrderEvents` uses for missing `toJobTime`. */
+const DEFAULT_TRAVEL_MINUTES = 30
 
 /**
  * Per-plant derived metrics for the flow canvas: YPH, pool timelines,
  * leave-off slack, and point-in-time view (active orders, pool, eff)
  * driven by an optional `viewTime` (minutes since midnight; null = all-day).
  */
-export function usePlanFlowMetrics({ assignments, planDate, plantProduction, stats, viewTime }) {
+export function usePlanFlowMetrics({ assignments, getTravelTime, planDate, plantProduction, stats, viewTime }) {
     const yphByCode = useMemo(() => {
         const out = {}
         stats.forEach((stat) => {
@@ -145,6 +151,13 @@ export function usePlanFlowMetrics({ assignments, planDate, plantProduction, sta
         return out
     }, [viewTime, poolTimelinesByPlant])
 
+    /** Live operator headcount per plant at `viewTime`. Each help driver
+     *  walks through four phases — pre-trip (still home), outbound
+     *  transit, on-site at destination, return transit, then back home.
+     *  We subtract from the origin plant the moment they leave for the
+     *  pre-trip + drive and we don't credit the destination plant until
+     *  they actually arrive — so the headcount on the map matches what's
+     *  physically at each yard, not what's scheduled for the whole day. */
     const effAtViewTime = useMemo(() => {
         if (!Number.isFinite(viewTime)) return null
         const out = {}
@@ -154,20 +167,41 @@ export function usePlanFlowMetrics({ assignments, planDate, plantProduction, sta
         ;(assignments || []).forEach((assignment) => {
             if (!assignment?.fromPlant || !assignment?.toPlant || assignment.fromPlant === assignment.toPlant) return
             const home = assignment.returnPlant || assignment.fromPlant
+            const lookedUpTravel =
+                typeof getTravelTime === 'function' ? getTravelTime(assignment.fromPlant, assignment.toPlant) : null
+            const travel = Number.isFinite(lookedUpTravel) ? lookedUpTravel : DEFAULT_TRAVEL_MINUTES
             buildAssignmentDriverTimes(assignment).forEach((driverTime) => {
-                if (!Number.isFinite(driverTime.arriveMin) || viewTime < driverTime.arriveMin) return
-                const stillOut = !Number.isFinite(driverTime.leaveMin) || viewTime < driverTime.leaveMin
-                if (stillOut) {
+                const arrive = driverTime.arriveMin
+                if (!Number.isFinite(arrive)) return
+                const leave =
+                    Number.isFinite(driverTime.leaveMin) && driverTime.leaveMin > arrive ? driverTime.leaveMin : null
+                const transitStart = Math.max(0, arrive - travel - PRE_TRIP_MINUTES)
+                const returnArrival = leave != null ? leave + travel : null
+
+                const leftSource = viewTime >= transitStart
+                const arrivedAtDest = viewTime >= arrive
+                const leftDest = leave != null && viewTime >= leave
+                const returnedHome = returnArrival != null && viewTime >= returnArrival
+
+                if (!leftSource) return
+                // Operator subtracts from the source plant as soon as
+                // they leave for pre-trip — they're gone, just not yet
+                // at the destination.
+                if (returnedHome && home === assignment.fromPlant) {
+                    // Round-trip closed, no net change.
+                } else {
                     out[assignment.fromPlant] = (out[assignment.fromPlant] ?? 0) - 1
+                }
+                if (arrivedAtDest && !leftDest) {
                     out[assignment.toPlant] = (out[assignment.toPlant] ?? 0) + 1
-                } else if (home !== assignment.fromPlant) {
-                    out[assignment.fromPlant] = (out[assignment.fromPlant] ?? 0) - 1
+                }
+                if (returnedHome && home !== assignment.fromPlant) {
                     out[home] = (out[home] ?? 0) + 1
                 }
             })
         })
         return out
-    }, [viewTime, stats, assignments])
+    }, [viewTime, stats, assignments, getTravelTime])
 
     return {
         activeOrdersAtTime,

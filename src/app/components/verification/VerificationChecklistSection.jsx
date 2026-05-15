@@ -3,28 +3,20 @@ import React from 'react'
 
 import DateUtility from '../../../utils/DateUtility'
 import { FIELD_STYLE } from '../../constants/verificationModalConstants'
-import { Banner, FieldLabel, Hint, Pill, Section, SimpleField } from './VerificationAtoms'
+import { Banner, FieldLabel, Hint, Section, SimpleField, StatusMarker } from './VerificationAtoms'
 
-function checklistStatusPill({ requiredFieldsOk, serviceOverdue }) {
-    if (serviceOverdue) {
-        return (
-            <Pill bg="#fef3c7" fg="#92400e">
-                Service Overdue
-            </Pill>
-        )
+function checklistStatus({ requiredFieldsOk, serviceOverdue }) {
+    if (!requiredFieldsOk) return <StatusMarker tone="attention" />
+    if (serviceOverdue) return <StatusMarker tone="warn" />
+    return <StatusMarker tone="done" />
+}
+
+function buildSubtitle({ missingLabels, requiredFieldsOk, serviceOverdue }) {
+    if (!requiredFieldsOk && missingLabels.length > 0) {
+        return `Needs ${missingLabels.join(', ')}`
     }
-    if (!requiredFieldsOk) {
-        return (
-            <Pill bg="#fee2e2" fg="#b91c1c">
-                Incomplete
-            </Pill>
-        )
-    }
-    return (
-        <Pill bg="#dcfce7" fg="#166534">
-            Complete
-        </Pill>
-    )
+    if (serviceOverdue) return 'Service is overdue'
+    return 'All required details are present'
 }
 
 function dateInputValue(value) {
@@ -33,16 +25,27 @@ function dateInputValue(value) {
     return String(value).split('T')[0]
 }
 
-/** "Required Information" section — VIN/make/model/year and last service/chip dates. */
+/** Parses the hours input value and returns the trimmed string and a finite-number check. */
+export function parseHoursValue(value) {
+    if (value === null || value === undefined) return { raw: '', valid: false }
+    const raw = String(value).trim()
+    if (!raw) return { raw, valid: false }
+    const num = Number(raw)
+    return { raw, valid: Number.isFinite(num) && num >= 0 }
+}
+
+/** "Asset details" section — VIN/make/model/year, last service/chip dates, and engine hours. */
 export default function VerificationChecklistSection({
-    accentColor,
     expanded,
+    hours,
+    hoursOk,
     lastChipDate,
     lastServiceDate,
     make,
     makeOk,
     model,
     modelOk,
+    needsHours,
     needsMake,
     needsModel,
     needsVin,
@@ -50,6 +53,7 @@ export default function VerificationChecklistSection({
     onToggle,
     requiredFieldsOk,
     serviceOverdue,
+    setHours,
     setLastChipDate,
     setLastServiceDate,
     setMake,
@@ -62,16 +66,23 @@ export default function VerificationChecklistSection({
     year,
     yearOk
 }) {
+    const missingLabels = [
+        needsVin && !vinOk && 'VIN',
+        needsMake && !makeOk && 'Make',
+        needsModel && !modelOk && 'Model',
+        needsYear && !yearOk && 'Year',
+        needsHours && !hoursOk && 'Hours'
+    ].filter(Boolean)
+
     return (
         <Section
-            icon="fa-tasks"
-            title="Required Information"
-            accentColor={accentColor}
+            title="Asset details"
+            subtitle={buildSubtitle({ missingLabels, requiredFieldsOk, serviceOverdue })}
+            status={checklistStatus({ requiredFieldsOk, serviceOverdue })}
             expanded={expanded}
             onToggle={onToggle}
-            pill={checklistStatusPill({ requiredFieldsOk, serviceOverdue })}
         >
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3.5">
                 {needsVin && (
                     <div>
                         <FieldLabel required={!vinOk}>VIN</FieldLabel>
@@ -80,7 +91,7 @@ export default function VerificationChecklistSection({
                             placeholder="17 characters (no I, O, Q)"
                             value={vin}
                             onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[IOQ]/g, ''))}
-                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none font-mono tabular-nums"
+                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none font-mono tabular-nums"
                             style={{
                                 ...FIELD_STYLE,
                                 borderColor: vin && !vinOk ? '#dc2626' : 'var(--border-light)'
@@ -88,9 +99,9 @@ export default function VerificationChecklistSection({
                         />
                         <Hint>17 characters. Letters I, O, and Q are not used.</Hint>
                         {vin && !vinOk && (
-                            <div className="mt-1">
+                            <div className="mt-1.5 space-y-0.5">
                                 {vinInfo.reasons.map((reason) => (
-                                    <div key={reason} className="text-[10.5px] text-red-600">
+                                    <div key={reason} className="text-[11.5px] text-red-600">
                                         {reason}
                                     </div>
                                 ))}
@@ -113,39 +124,65 @@ export default function VerificationChecklistSection({
                 {needsYear && (
                     <SimpleField label="Year" required={!yearOk} value={year} onChange={setYear} placeholder="Year" />
                 )}
+                {needsHours && (
+                    <div>
+                        <FieldLabel required={!hoursOk}>Engine hours</FieldLabel>
+                        <input
+                            type="number"
+                            inputMode="numeric"
+                            min="0"
+                            step="1"
+                            placeholder="Current reading"
+                            value={hours ?? ''}
+                            onChange={(e) => setHours(e.target.value)}
+                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none font-mono tabular-nums"
+                            style={{
+                                ...FIELD_STYLE,
+                                borderColor: !hoursOk && String(hours ?? '').trim() ? '#dc2626' : 'var(--border-light)'
+                            }}
+                        />
+                        <Hint>Read the meter on the asset and confirm the current hours.</Hint>
+                        {!hoursOk && String(hours ?? '').trim() && (
+                            <div className="mt-1.5 text-[11.5px] text-red-600">
+                                Enter a valid number (0 or greater).
+                            </div>
+                        )}
+                    </div>
+                )}
                 {(!lastServiceDate || serviceOverdue) && (
                     <div>
-                        <FieldLabel>Last Service Date</FieldLabel>
+                        <FieldLabel>Last service date</FieldLabel>
                         <input
                             type="date"
                             value={dateInputValue(lastServiceDate)}
                             onChange={(e) =>
                                 setLastServiceDate(e.target.value ? DateUtility.parseLocalDate(e.target.value) : null)
                             }
-                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none"
                             style={FIELD_STYLE}
                         />
                         {lastServiceDate && serviceOverdue && (
-                            <Banner tone="warn" icon="fa-exclamation-triangle">
-                                Service is overdue. You can still verify but service is recommended.
-                            </Banner>
+                            <div className="mt-2">
+                                <Banner tone="warn" icon="fa-clock">
+                                    Service is overdue — verification is still allowed, but service is recommended.
+                                </Banner>
+                            </div>
                         )}
                         <Hint>
-                            Service will show as overdue if it has been more than 6 months since last serviced. Service
-                            is determined by hours on the asset — check hours of service.
+                            Service is overdue after six months. Verify by checking hours of service on the asset.
                         </Hint>
                     </div>
                 )}
                 {typeof lastChipDate !== 'undefined' && !lastChipDate && (
                     <div>
-                        <FieldLabel>Last Chip Date</FieldLabel>
+                        <FieldLabel>Last chip date</FieldLabel>
                         <input
                             type="date"
                             value={dateInputValue(lastChipDate)}
                             onChange={(e) =>
                                 setLastChipDate(e.target.value ? DateUtility.parseLocalDate(e.target.value) : null)
                             }
-                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                            className="w-full rounded-md px-3 py-2 text-[13px] outline-none"
                             style={FIELD_STYLE}
                         />
                     </div>

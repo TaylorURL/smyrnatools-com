@@ -9,7 +9,6 @@ import {
     PlanYardageByPlantList
 } from '../../../app/components/plan/tabs/dashboard/PlanDashboardLists'
 import { PlanChecklistRow, PlanFlowSummary } from '../../../app/components/plan/tabs/dashboard/PlanDashboardYourScope'
-import PlanFlowPreview from '../../../app/components/plan/tabs/dashboard/PlanFlowPreview'
 import PlanNotesSection from '../../../app/components/plan/tabs/dashboard/PlanNotesSection'
 import { Panel as SharedPanel, Stat as SharedStat } from '../../../app/components/ui/Panel'
 import {
@@ -132,22 +131,6 @@ function PlanDashboardView({
         () => Object.values(mixerCountsByPlant || {}).reduce((sum, count) => sum + (count || 0), 0),
         [mixerCountsByPlant]
     )
-
-    // Merge `stats` with every plant known to the region so the flow
-    // preview mirrors what's on the full Planner tab.
-    const allPlantStats = useMemo(() => {
-        const existing = new Map(stats.map((stat) => [stat.code, stat]))
-        const list = (plants || []).map((plant) => {
-            const code = plant.plant_code
-            if (existing.has(code)) return existing.get(code)
-            const base = mixerCountsByPlant?.[code] || 0
-            return { base, code, eff: base, recv: 0, send: 0 }
-        })
-        stats.forEach((stat) => {
-            if (!list.some((entry) => entry.code === stat.code)) list.push(stat)
-        })
-        return list.sort((a, b) => (a.code || '').localeCompare(b.code || ''))
-    }, [plants, stats, mixerCountsByPlant])
 
     const regionPlantCount = (plants || []).length
     const movementPct = totalOperatorsFleet > 0 ? Math.round((totalOps / totalOperatorsFleet) * 100) : 0
@@ -450,6 +433,8 @@ function PlanDashboardView({
                             <div className="mt-4">
                                 <PlanDashboardClockInBoard
                                     accentColor={accentColor}
+                                    assignments={assignments}
+                                    getTravelTime={getTravelTime}
                                     kind={yourSectionKind}
                                     planDate={planDate}
                                     plantNameByCode={plantNameByCode}
@@ -470,33 +455,6 @@ function PlanDashboardView({
                             notes={notes}
                             onFormattedChange={setFormattedNotes}
                             setNotes={setNotes}
-                        />
-                    </Card>
-
-                    <Card
-                        id="flow-preview"
-                        title="Help Routes"
-                        right={
-                            onSwitchToPlanner && (
-                                <button
-                                    onClick={onSwitchToPlanner}
-                                    className="text-[11px] font-semibold px-3 py-1.5 rounded-md border-none cursor-pointer flex items-center gap-1.5 shrink-0 text-white"
-                                    style={{ background: accentColor }}
-                                    title="Open Planner"
-                                >
-                                    <i className="fas fa-up-right-from-square text-[9px]" />
-                                    <span className="hidden sm:inline">Open Planner</span>
-                                </button>
-                            )
-                        }
-                    >
-                        <PlanFlowPreview
-                            accentColor={accentColor}
-                            allPlantStats={allPlantStats}
-                            assignments={assignments}
-                            onOpenPlanner={onSwitchToPlanner}
-                            plantProduction={plantProduction}
-                            plants={plants}
                         />
                     </Card>
 

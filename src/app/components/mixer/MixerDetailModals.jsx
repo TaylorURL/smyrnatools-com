@@ -93,12 +93,14 @@ export default function MixerDetailModals({
                     make={editState.make}
                     model={editState.model}
                     year={editState.year}
+                    hours={editState.hours}
                     lastServiceDate={editState.lastServiceDate}
                     lastChipDate={editState.lastChipDate}
                     setVin={editState.setVin}
                     setMake={editState.setMake}
                     setModel={editState.setModel}
                     setYear={editState.setYear}
+                    setHours={editState.setHours}
                     setLastServiceDate={editState.setLastServiceDate}
                     setLastChipDate={editState.setLastChipDate}
                     onSaveAndVerify={onSaveMissingFields}
