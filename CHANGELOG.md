@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026.20.20] - 2026-05-15
+
+- `src/views/tools/plan/PlanFlowMapView.jsx` — Planner-tab map polish pass.
+  - New dotted "loaded direct" line. Whenever an assignment routes to a specific job (`forOrderId` set, address
+    geocodes cleanly) the renderer now draws a thin slate dashed straight line from the geocoded job pin to the
+    plant the order is assigned to (`toPlant`). Pure relationship indicator — sits in `routeLayerRef` below the
+    animated transit polylines, deduped by `${forOrderId}@${toPlant}` so multiple help routes converging on the
+    same job collapse to a single edge. New `directLinesByKeyRef` cache + dedicated render effect keep it cheap
+    on re-renders, and the line is non-interactive so it can't intercept clicks meant for a nearby plant pin.
+  - Route-leg color swap. Outbound (going to help) is now green `#16a34a` (was red), return (heading home) is
+    now orange `#f97316` (was green). Constants `ROUTE_OUTBOUND_COLOR` / `ROUTE_RETURN_COLOR` flow into the base
+    polyline, the animated white flow overlay, the at-rest dimmed states, and the inline `▶` direction arrows
+    in one place. Doc comments on `makeLegStyles`, `classifyAssignmentActivity`, the render-route effect, and
+    the direction-arrow CSS block updated to match.
+  - Autoplay slowed to half speed. `AUTOPLAY_TICK_MS` doubled from `120` to `240` (step minutes unchanged at 5)
+    so the full-day loop is ~70 seconds instead of ~35 seconds. Same per-tick fidelity — the directional arrows
+    still walk smoothly along their routes — just paced so a dispatcher can read the route activity, job-pin
+    counts, and pool/eff numbers without feeling rushed.
+
 ## [2026.20.19] - 2026-05-15
 
 - Schedule snapshot system — new daily capture of the dispatch schedule at 5:30 PM Central so the team can diff

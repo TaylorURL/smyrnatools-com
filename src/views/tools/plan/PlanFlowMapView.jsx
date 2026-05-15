@@ -73,12 +73,13 @@ function buildTileLayer() {
 }
 
 /* Autoplay timing — how fast the cycle ticks through the day. 5-minute
- * steps every 120ms keeps the same ~35-second full-day loop the larger
- * 15-min tick used to land, but with three times the fidelity so the
- * directional arrows visibly walk along their routes instead of
- * jumping between sparse waypoints. */
+ * steps every 240ms gives a ~70-second full-day loop, half the original
+ * 35-second pace so a dispatcher can read the chrome (route activity,
+ * pin counts, arrow positions) without feeling rushed. Same per-tick
+ * fidelity as before — the slowdown comes from the tick interval, not
+ * a coarser step. */
 const AUTOPLAY_STEP_MINUTES = 5
-const AUTOPLAY_TICK_MS = 120
+const AUTOPLAY_TICK_MS = 240
 const MINUTES_IN_DAY = 24 * 60
 
 const REGION_STATE_HINTS = {
@@ -137,11 +138,11 @@ function inferStateCodeFromAddress(address) {
     return match ? match[1] : null
 }
 
-/** Route-leg color tokens. Outbound (going to help) is red, return
- *  (heading home) is green. Slate is the at-rest base used when a leg's
+/** Route-leg color tokens. Outbound (going to help) is green, return
+ *  (heading home) is orange. Slate is the at-rest base used when a leg's
  *  drivers haven't started moving on it yet. */
-const ROUTE_OUTBOUND_COLOR = '#dc2626'
-const ROUTE_RETURN_COLOR = '#16a34a'
+const ROUTE_OUTBOUND_COLOR = '#16a34a'
+const ROUTE_RETURN_COLOR = '#f97316'
 const ROUTE_IDLE_COLOR = '#0f172a'
 
 /** Sample a polyline at the given path fraction (0 → 1). Returns the
@@ -249,8 +250,8 @@ function makeArrowIcon({ active, color, rotationDeg }) {
 
 /** Translate one assignment's `{ outbound, returning }` activity state
  *  into the Leaflet style objects for both legs. The outbound polyline
- *  reads red while operators are en-route to help and tones down once
- *  they've arrived; the return polyline reads green only while they're
+ *  reads green while operators are en-route to help and tones down once
+ *  they've arrived; the return polyline reads orange only while they're
  *  actually heading home, otherwise it sits muted so the geometry stays
  *  readable without competing with the active leg. */
 function makeLegStyles({ activity, isInvolved, selectedCode }) {
@@ -426,6 +427,13 @@ function PlanFlowMapView({
     const jobMarkersByKeyRef = useRef({})
     const polylinesByEdgeRef = useRef({})
     const draftPolylineRef = useRef(null)
+    /* Dotted "loaded direct" edges. One Leaflet polyline per
+     * `${forOrderId}@${toPlant}` pair — a thin slate dashed line
+     * from the geocoded job location to the plant the order belongs
+     * to. Independent of the transit polylines so a route can show
+     * its green outbound + orange return chrome AND a quiet relationship
+     * indicator to the order's home plant at the same time. */
+    const directLinesByKeyRef = useRef({})
     const initiallyFitRef = useRef(false)
 
     const [geocodedPlants, setGeocodedPlants] = useState([])
@@ -892,8 +900,8 @@ function PlanFlowMapView({
 
     /** Classify each leg of an assignment's day at the given minute. The
      *  outbound and return legs are tracked separately so the renderer can
-     *  show the outbound polyline as "in transit" red while the return
-     *  polyline reads as "idle" green (and vice-versa during the back leg).
+     *  show the outbound polyline as "in transit" green while the return
+     *  polyline reads as "idle" orange (and vice-versa during the back leg).
      *
      *  Returns `{ outbound, returning }`, each one of:
      *   - 'transit'  — at least one driver is on that leg right now
@@ -937,8 +945,8 @@ function PlanFlowMapView({
 
     /* ── Render route polylines ───────────────────────────────────
      * Each assignment gets TWO polyline pairs in a single layer group:
-     *   - Outbound (going to help) — red base + animated white flow.
-     *   - Return (heading home) — green base + animated white flow,
+     *   - Outbound (going to help) — green base + animated white flow.
+     *   - Return (heading home) — orange base + animated white flow,
      *     with the coords reversed so the dash flow reads as travelling
      *     toward the home plant.
      *
@@ -1227,6 +1235,63 @@ function PlanFlowMapView({
         return undefined
     }, [jobNodes])
 
+    /* ── Dotted "loaded direct" job → home-plant lines ───────────
+     * For every assignment that loads direct to a specific job
+     * (`forOrderId` set, address geocoded), draw a thin dotted
+     * straight line from the geocoded job location to the plant the
+     * order is assigned to (`toPlant`). Pure relationship indicator —
+     * sits below the animated transit polylines so the dispatcher
+     * can see at a glance which plant owns each job pin without the
+     * line competing visually with the active route chrome. Dedupe
+     * is keyed by `${forOrderId}@${toPlant}` so multiple help routes
+     * converging on the same job collapse to a single line. */
+    useEffect(() => {
+        const layer = routeLayerRef.current
+        if (!layer) return undefined
+        const plantsByCode = new Map(geocodedPlants.map((p) => [p.code, p]))
+        const wanted = new Map()
+        Object.entries(jobRoutesByIdx).forEach(([idxStr, entry]) => {
+            const assignment = assignments[Number(idxStr)]
+            if (!assignment?.toPlant || assignment.forOrderId !== entry.forOrderId) return
+            if (!entry.jobCoords) return
+            const dest = plantsByCode.get(assignment.toPlant)
+            if (!dest) return
+            const key = `${entry.forOrderId}@${assignment.toPlant}`
+            if (wanted.has(key)) return
+            wanted.set(key, {
+                coords: [
+                    [entry.jobCoords.lat, entry.jobCoords.lng],
+                    [dest.lat, dest.lng]
+                ]
+            })
+        })
+        Object.keys(directLinesByKeyRef.current).forEach((k) => {
+            if (!wanted.has(k)) {
+                layer.removeLayer(directLinesByKeyRef.current[k])
+                delete directLinesByKeyRef.current[k]
+            }
+        })
+        wanted.forEach(({ coords }, key) => {
+            const existing = directLinesByKeyRef.current[key]
+            if (existing) {
+                existing.setLatLngs(coords)
+                return
+            }
+            const line = L.polyline(coords, {
+                className: 'pf-direct-load-line',
+                color: '#64748b',
+                dashArray: '2 6',
+                interactive: false,
+                lineCap: 'round',
+                opacity: 0.7,
+                weight: 2
+            })
+            line.addTo(layer)
+            directLinesByKeyRef.current[key] = line
+        })
+        return undefined
+    }, [assignments, geocodedPlants, jobRoutesByIdx])
+
     /* ── Resolve coords for the in-progress draft route ──────────
      * As soon as the user has both a fromPlant and a toPlant on the
      * draft (whether they're adding a new route or editing an existing
@@ -1472,9 +1537,19 @@ function PlanFlowMapView({
                     0%, 100% { box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 0 rgba(245, 158, 11, 0.55); }
                     50%      { box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 6px rgba(245, 158, 11, 0); }
                 }
+                /* Direct-load line — thin dotted slate edge connecting
+                 * a geocoded job location to the plant the order is
+                 * assigned to. Reads as a quiet "owned by" indicator
+                 * under the animated transit polylines. */
+                .pf-direct-load-line {
+                    stroke-linecap: round;
+                }
+                html.dark .pf-direct-load-line {
+                    filter: drop-shadow(0 0 2px rgba(15, 23, 42, 0.85));
+                }
                 /* Direction arrows that walk the route while operators
                  * are in transit. Color is set inline so the same icon
-                 * component renders red for outbound and green for the
+                 * component renders green for outbound and orange for the
                  * return. */
                 .plan-flow-arrow-marker { background: transparent !important; border: none !important; pointer-events: none; }
                 .pf-route-arrow {
