@@ -42,6 +42,12 @@ export const PLAN_STATS_SECTIONS = [
         icon: 'fa-truck-monster',
         id: 'bigPours',
         label: 'Big pours'
+    },
+    {
+        description: 'Load counts per driver across the selected window.',
+        icon: 'fa-id-badge',
+        id: 'operators',
+        label: 'Operators'
     }
 ]
 

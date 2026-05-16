@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { parseDurationMinutes, timeToMinutes } from '../../../utils/PlanUtility'
+import { useOperatorNameLookup } from '../../hooks/useOperatorNameLookup'
 
 const clean = (value) => (value == null ? '' : String(value).trim())
 
@@ -33,6 +34,7 @@ function MetricTile({ hint, label, value }) {
  * Conroe 408/409).
  */
 function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, plantNameByCode }) {
+    const { resolve: resolveDriverName } = useOperatorNameLookup()
     useEffect(() => {
         const onKey = (e) => {
             if (e.key === 'Escape') onClose?.()
@@ -278,8 +280,11 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                             <td className="px-3 py-2 font-mono whitespace-nowrap text-text-primary">
                                                 {t.truckNum || '—'}
                                             </td>
-                                            <td className="px-3 py-2 font-mono whitespace-nowrap text-text-secondary">
-                                                {t.driverNum || '—'}
+                                            <td className="px-3 py-2 whitespace-nowrap text-text-primary">
+                                                {(() => {
+                                                    const name = resolveDriverName(t.driverName, t.driverNum)
+                                                    return name || '—'
+                                                })()}
                                             </td>
                                             <td
                                                 className="px-3 py-2 font-mono whitespace-nowrap text-text-primary"

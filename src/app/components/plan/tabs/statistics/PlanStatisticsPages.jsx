@@ -919,3 +919,234 @@ export function PlanStatisticsBigPoursPage({
         </Panel>
     )
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Operators sub-page — per-driver load count + yardage across the active
+ * window, derived from ticket-level data. Each row cross-references the
+ * driven truck(s) against the operator's assigned-active mixer so the page
+ * surfaces wrong-truck / wrong-plant / unassigned / multi-truck mismatches.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+const MISMATCH_BADGES = {
+    multiTruck: { bg: 'rgba(194, 65, 12, 0.16)', fg: '#9a3412', icon: 'fa-shuffle', label: 'Multi-truck' },
+    unassigned: { bg: 'rgba(220, 38, 38, 0.14)', fg: '#b91c1c', icon: 'fa-user-slash', label: 'Unassigned' },
+    wrongPlant: { bg: 'rgba(217, 119, 6, 0.14)', fg: '#92400e', icon: 'fa-industry', label: 'Wrong plant' },
+    wrongTruck: { bg: 'rgba(234, 179, 8, 0.18)', fg: '#854d0e', icon: 'fa-truck', label: 'Wrong truck' }
+}
+
+function MismatchBadge({ tone }) {
+    const cfg = MISMATCH_BADGES[tone]
+    if (!cfg) return null
+    return (
+        <span
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+            style={{ background: cfg.bg, color: cfg.fg }}
+            title={cfg.label}
+        >
+            <i className={`fas ${cfg.icon} text-[9px]`} />
+            {cfg.label}
+        </span>
+    )
+}
+
+function TruckCell({ assignedTruck, trucksDriven }) {
+    if (trucksDriven.length === 0) {
+        return (
+            <span className="text-[11px] italic text-text-tertiary">
+                {assignedTruck ? `#${assignedTruck} (none driven)` : '—'}
+            </span>
+        )
+    }
+    return (
+        <div className="flex flex-wrap items-center gap-1">
+            {trucksDriven.map((truck) => {
+                const isAssigned = assignedTruck === truck
+                return (
+                    <span
+                        key={truck}
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums font-semibold"
+                        style={{
+                            background: isAssigned ? 'rgba(22, 163, 74, 0.12)' : 'var(--bg-tertiary)',
+                            color: isAssigned ? '#15803d' : 'var(--text-primary)'
+                        }}
+                        title={
+                            isAssigned
+                                ? `#${truck} · matches assigned mixer`
+                                : assignedTruck
+                                  ? `#${truck} · assigned mixer is #${assignedTruck}`
+                                  : `#${truck} · operator has no assigned mixer`
+                        }
+                    >
+                        #{truck}
+                    </span>
+                )
+            })}
+            {assignedTruck && !trucksDriven.includes(assignedTruck) && (
+                <span
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums text-text-tertiary"
+                    title={`Assigned mixer #${assignedTruck} — not driven this window`}
+                >
+                    <i className="fas fa-arrow-right-arrow-left text-[8.5px]" />#{assignedTruck}
+                </span>
+            )}
+        </div>
+    )
+}
+
+export function PlanStatisticsOperatorsPage({
+    accentColor,
+    currentDays,
+    loading,
+    loadsByOperator = [],
+    range,
+    selectedPlant
+}) {
+    const totals = useMemo(() => {
+        let loads = 0
+        let yardage = 0
+        let mismatched = 0
+        loadsByOperator.forEach((row) => {
+            loads += row.loads
+            yardage += row.yardage
+            if (row.mismatches.length > 0) mismatched += 1
+        })
+        return { drivers: loadsByOperator.length, loads, mismatched, yardage }
+    }, [loadsByOperator])
+
+    if (loading && currentDays.length === 0) {
+        return <div className="rounded animate-pulse bg-bg-secondary border border-border-light h-[320px]" />
+    }
+    if (!loading && currentDays.length === 0) {
+        return (
+            <Panel title="Operators" innerClassName="p-0">
+                <EmptySection
+                    icon="fa-id-badge"
+                    message={`No saved schedules in ${fmtRange(range.start, range.end)}.`}
+                />
+            </Panel>
+        )
+    }
+    const maxLoads = loadsByOperator.length > 0 ? loadsByOperator[0].loads : 0
+    return (
+        <Panel
+            title="Loads per operator"
+            innerClassName="p-0"
+            right={
+                loading ? (
+                    <RefreshingHint when />
+                ) : totals.drivers > 0 ? (
+                    <span className="text-[11px] text-text-tertiary">
+                        {fmtInt(totals.drivers)} driver{totals.drivers === 1 ? '' : 's'} · {fmtInt(totals.loads)} load
+                        {totals.loads === 1 ? '' : 's'} · {fmtInt(totals.yardage)} yd³
+                        {totals.mismatched > 0 && (
+                            <>
+                                {' · '}
+                                <span className="font-semibold text-red-600">
+                                    {fmtInt(totals.mismatched)} mismatch{totals.mismatched === 1 ? '' : 'es'}
+                                </span>
+                            </>
+                        )}
+                    </span>
+                ) : null
+            }
+        >
+            {loadsByOperator.length === 0 ? (
+                <EmptySection
+                    icon="fa-id-badge"
+                    loading={loading}
+                    message={(() => {
+                        if (loading) return 'Loading tickets…'
+                        if (selectedPlant) {
+                            return `No active mixer operators assigned to plant ${selectedPlant} drove a load in ${fmtRange(range.start, range.end)}.`
+                        }
+                        return `No ticket data available for ${fmtRange(range.start, range.end)}.`
+                    })()}
+                />
+            ) : (
+                <div className="flex flex-col">
+                    <div className="grid grid-cols-[2.25rem_minmax(0,1.1fr)_minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_5.5rem_6rem] gap-3 items-center px-3 py-2 text-[10px] font-bold uppercase tracking-wider border-b border-border-light bg-bg-secondary text-text-tertiary">
+                        <span className="text-right">#</span>
+                        <span>Operator</span>
+                        <span>Loads by plant</span>
+                        <span>Trucks</span>
+                        <span>Flags</span>
+                        <span className="text-right">Loads</span>
+                        <span className="text-right">Yardage</span>
+                    </div>
+                    {loadsByOperator.map((row, idx) => (
+                        <div
+                            key={row.key}
+                            className="grid grid-cols-[2.25rem_minmax(0,1.1fr)_minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_5.5rem_6rem] gap-3 items-center px-3 py-2 text-[12.5px]"
+                            style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
+                        >
+                            <span className="font-mono tabular-nums text-right text-text-tertiary">{idx + 1}</span>
+                            <div className="min-w-0">
+                                <div className="truncate font-semibold text-text-primary">{row.name}</div>
+                                {row.homePlant && (
+                                    <div className="text-[10.5px] truncate text-text-tertiary">
+                                        home {row.homePlant}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1 min-w-0">
+                                {row.plantLoads.length === 0 ? (
+                                    <span className="text-[11px] text-text-tertiary">—</span>
+                                ) : (
+                                    row.plantLoads.map(({ plant, loads }) => {
+                                        const isHome = plant === row.homePlant
+                                        return (
+                                            <span
+                                                key={plant}
+                                                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11.5px] font-mono tabular-nums"
+                                                style={{
+                                                    background: isHome
+                                                        ? 'rgba(22, 163, 74, 0.14)'
+                                                        : 'var(--bg-tertiary)',
+                                                    color: isHome ? '#15803d' : 'var(--text-primary)'
+                                                }}
+                                                title={
+                                                    isHome
+                                                        ? `${plant} · home plant · ${loads} load${loads === 1 ? '' : 's'}`
+                                                        : `${plant} · ${loads} load${loads === 1 ? '' : 's'}`
+                                                }
+                                            >
+                                                <span className="font-semibold">{plant}</span>
+                                                <span className="text-text-tertiary">×</span>
+                                                <span className="font-semibold">{loads}</span>
+                                            </span>
+                                        )
+                                    })
+                                )}
+                            </div>
+                            <TruckCell assignedTruck={row.assignedTruck} trucksDriven={row.trucksDriven} />
+                            <div className="flex flex-wrap items-center gap-1 min-w-0">
+                                {row.mismatches.length === 0 ? (
+                                    <span className="text-[11px] text-text-tertiary">—</span>
+                                ) : (
+                                    row.mismatches.map((tone) => <MismatchBadge key={tone} tone={tone} />)
+                                )}
+                            </div>
+                            <div className="flex flex-col items-end gap-1 min-w-0">
+                                <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                    {fmtInt(row.loads)}
+                                </span>
+                                <div className="h-1.5 rounded-sm overflow-hidden relative bg-bg-tertiary w-12">
+                                    <div
+                                        className="h-full rounded-sm"
+                                        style={{
+                                            background: accentColor,
+                                            width: `${maxLoads > 0 ? (row.loads / maxLoads) * 100 : 0}%`
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <span className="font-mono tabular-nums text-right text-text-secondary">
+                                {fmtInt(row.yardage)} yd³
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </Panel>
+    )
+}

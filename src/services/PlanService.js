@@ -59,11 +59,22 @@ class PlanServiceImpl {
         }
         return map
     }
-    /** Fetches the shared plan for a specific date. */
+    /** Fetches the shared plan for a specific date.
+     *
+     *  Returns the plan record on success, or `null` when the backend confirms
+     *  no plan exists for that date (a 2xx with no data). **Throws** on any
+     *  transport / auth / server failure — callers must NOT treat a thrown
+     *  error the same as "no plan exists", because that's how the empty
+     *  placeholder used to silently overwrite real saved plans whenever the
+     *  fetch hit a transient 401 / 5xx / timeout. */
     async fetchPlan(planDate) {
         if (!planDate) return null
         const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/fetch-plan`, { planDate })
-        if (!res.ok) return null
+        if (!res.ok) {
+            const status = res.status ?? 'unknown'
+            const reason = json?.error || res.statusText || 'request failed'
+            throw new Error(`fetch-plan failed (${status}): ${reason}`)
+        }
         return json?.data ?? null
     }
     /**

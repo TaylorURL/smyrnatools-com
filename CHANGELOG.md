@@ -1,5 +1,52 @@
 # Changelog
 
+## [2026.20.23] - 2026-05-15
+
+- Fixed the silent plan-wipe data-loss bug. When the planner's initial fetch failed for any transient reason
+  (auth token refresh race, 5xx, network timeout, cold edge-function start), the hook used to silently replace
+  local assignments with the empty placeholder; the moment the dispatcher touched anything the autosave
+  persisted that empty placeholder over the real saved plan — which is exactly the "I have to re-do the entire
+  plan" the team has been hitting.
+  - `src/services/PlanService.js` (`fetchPlan`) — now throws on `!res.ok` with a descriptive message instead of
+    returning `null` for every failure mode. A 2xx response with no plan record still returns `null` (legitimate
+    "no plan exists for this date") so the no-plan-yet code path is unaffected. Callers that use
+    `Promise.allSettled` (adjacent-days fetch, bulk range fallback) handle thrown errors as "rejected" and
+    filter them out, so no other call site needs updating.
+  - `src/app/hooks/usePlanData.js` — `loadPlan` now catches the throw and does NOT touch `assignments`,
+    `notes`, or `plantProduction`. Holds `loadedForDateRef` at `null` so the autosave guard never passes — the
+    empty placeholder can no longer be silently persisted. Adds a `cancelled` flag wired into the effect cleanup
+    so an in-flight fetch from a previous `planDate` can't overwrite the new date's data when it resolves late.
+    New `planLoadError` state surfaces the failure and a new `retryPlanLoad` callback re-runs the load without
+    forcing a page reload.
+  - `src/app/components/plan/PlanLoadErrorBanner.jsx` (new) — red-tinted banner with a Retry button that tells
+    the dispatcher their saved data is still on the server and autosave is paused. Matches the layout of the
+    existing `PlanReadOnlyBanner` so it slots into the same banner row.
+  - `src/views/tools/plan/PlanView.jsx` — pulls `planLoadError` + `retryPlanLoad` from `usePlanData` and renders
+    the banner above the read-only banner whenever a load fails.
+- `src/views/tools/plan/PlanFlowMapView.jsx` — Planner map now renders ONE animated arrow per truck per leg
+  instead of a single average-of-the-pack arrow. Replaced `legProgressFraction` (union window) with
+  `driverLegFraction` (per-driver fraction) and `resolveDriverLegAnchor`, so a staggered 3-driver help route
+  now reads as three outbound arrows + three return arrows, each walking their own fraction of the route.
+  Each marker's position, rotation, and visibility update independently via the existing `updateArrow` DOM-mutation
+  path, so the smooth-transition + rotation-shortest-arc fixes carry over.
+- Statistics tab — new Operators sub-page surfacing per-driver load counts and yardage for the visible window.
+  - `src/app/hooks/useOperatorNameLookup.js` (new) — shared name-resolution helper. Resolves a dispatch
+    ticket's `driver_num` (= `smyrna_id`) to the canonical operator record so every surface shows the same
+    "First Last" string the rest of the app already uses (Mixer detail, history, etc).
+  - `src/app/hooks/usePlanStatistics.js` — added an `operatorsEnabled` flag mirroring the existing
+    `satisfactionEnabled` pattern. When the Operators sub-page is open, fetches the full operator roster + the
+    currently-active mixers once (cached in memory), pulls per-day ticket detail via the same
+    `DispatchDataService` path the satisfaction page uses, then aggregates loads + yardage per driver across the
+    selected window. Independent of satisfaction so loading one page doesn't pay for the other's memos.
+  - `src/app/components/plan/tabs/statistics/PlanStatisticsPages.jsx` — Operators page implementation: per-plant
+    columns with each driver's load count and yardage, sorted by yardage desc. Reuses the existing card chrome
+    so the layout reads as a peer of the satisfaction / yardage / yph pages.
+  - `src/app/components/plan/tabs/statistics/PlanStatisticsSidebar.jsx`,
+    `src/views/tools/plan/PlanStatisticsView.jsx` — wire the new Operators sub-page into the sidebar and the
+    view's `operatorsEnabled` flag so it only fires the extra fetches when the page is actually visible.
+  - `src/app/components/schedule/OrderTicketsModal.jsx` — minor: surface the resolved operator name (via the
+    new lookup) on each ticket row so the modal reads consistently with the Operators stats page.
+
 ## [2026.20.22] - 2026-05-15
 
 - Schedule help-return pool now credits the home plant at the right time AND surfaces the resulting headcount.

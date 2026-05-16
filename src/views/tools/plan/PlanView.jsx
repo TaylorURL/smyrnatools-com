@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState, useTransition } from 'react'
 
 import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'
 import { PlanHeader } from '../../../app/components/plan/PlanHeader'
+import { PlanLoadErrorBanner } from '../../../app/components/plan/PlanLoadErrorBanner'
 import { PlanReadOnlyBanner } from '../../../app/components/plan/PlanReadOnlyBanner'
 import { PlanScheduleStaleBanner } from '../../../app/components/plan/tabs/schedule/PlanScheduleStaleBanner'
 import { usePreferences } from '../../../app/context/PreferencesContext'
@@ -155,11 +156,13 @@ function PlanViewImpl({ accentColor, isDark }) {
         isSchedulesSyncing,
         mixerCountsByPlant,
         notes,
+        planLoadError,
         plantProduction,
         plants,
         refreshSchedule,
         refreshTravelTimes,
         regionPlants,
+        retryPlanLoad,
         scheduleFileUpdatedAt,
         scheduleLastSyncedAt,
         setAssignments,
@@ -265,6 +268,7 @@ function PlanViewImpl({ accentColor, isDark }) {
                     <PlanTabSkeleton mode={effectiveViewMode} />
                 ) : (
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden animate-fade-in-fast">
+                        {planLoadError && <PlanLoadErrorBanner message={planLoadError} onRetry={retryPlanLoad} />}
                         {!canEdit && <PlanReadOnlyBanner accentColor={accentColor} />}
                         <PlanScheduleStaleBanner planDate={planDate} scheduleFileUpdatedAt={scheduleFileUpdatedAt} />
 

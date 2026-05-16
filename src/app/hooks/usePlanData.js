@@ -25,6 +25,17 @@ export function usePlanData(planDate) {
     const [plantProduction, setPlantProduction] = useState({})
     const [adjacentPlans, setAdjacentPlans] = useState({})
     const [adjacentProduction, setAdjacentProduction] = useState({})
+    /** Surfaces a transient plan-load failure to the UI. Stays null on
+     *  success (including the "no plan exists for this date" case, which
+     *  is a successful empty load) and holds an error message when the
+     *  fetch itself failed — auth blip, 5xx, network timeout. */
+    const [planLoadError, setPlanLoadError] = useState(null)
+    /** Bumping this triggers the plan-load effect to re-run without
+     *  forcing a hard page reload. Wired to the error banner's Retry
+     *  button so the user can recover from a transient failure without
+     *  losing the rest of their planner session. */
+    const [planLoadAttempt, setPlanLoadAttempt] = useState(0)
+    const retryPlanLoad = useCallback(() => setPlanLoadAttempt((n) => n + 1), [])
     const dirtyRef = useRef(false)
     /* Monotonic counter incremented on every local edit. Each scheduled save
      * captures the serial at scheduling time; on completion it only clears
@@ -132,9 +143,12 @@ export function usePlanData(planDate) {
         if (!planDate || isLoading) return
         loadedForDateRef.current = null
         autosaveEnabledRef.current = false
+        let cancelled = false
         const loadPlan = async () => {
+            setPlanLoadError(null)
             try {
                 const plan = await PlanService.fetchPlan(planDate)
+                if (cancelled) return
                 if (plan?.assignments?.length) {
                     setAssignments(ensureUniqueIds(plan.assignments))
                 } else {
@@ -142,18 +156,31 @@ export function usePlanData(planDate) {
                 }
                 setNotes(plan?.notes || '')
                 setPlantProduction(plan?.plant_production || {})
-            } catch {
-                setAssignments([createEmptyAssignment()])
-                setNotes('')
-                setPlantProduction({})
+                loadedForDateRef.current = planDate
+                requestAnimationFrame(() => {
+                    if (cancelled) return
+                    autosaveEnabledRef.current = true
+                })
+            } catch (err) {
+                if (cancelled) return
+                // Critical: DO NOT wipe local state on a transport failure.
+                // The server still has the real plan — a transient 401 /
+                // 5xx / timeout shouldn't make the planner replace local
+                // assignments with the empty placeholder. The previous
+                // behaviour primed an empty autosave that overwrote the
+                // saved plan as soon as the dispatcher touched anything.
+                // We leave assignments / notes / plantProduction alone, hold
+                // `loadedForDateRef` at null (which keeps autosave DISARMED),
+                // and surface an error the UI can render as a retry banner.
+                console.warn('[usePlanData] plan load failed:', err?.message || err)
+                setPlanLoadError(err?.message || 'Failed to load plan')
             }
-            loadedForDateRef.current = planDate
-            requestAnimationFrame(() => {
-                autosaveEnabledRef.current = true
-            })
         }
         loadPlan()
-    }, [planDate, isLoading])
+        return () => {
+            cancelled = true
+        }
+    }, [planDate, isLoading, planLoadAttempt])
 
     // Fetch adjacent days for timeline view
     const adjacentFetchRef = useRef(0)
@@ -304,11 +331,13 @@ export function usePlanData(planDate) {
         isSchedulesSyncing,
         mixerCountsByPlant,
         notes,
+        planLoadError,
         plantProduction,
         plants,
         refreshSchedule,
         refreshTravelTimes,
         regionPlants,
+        retryPlanLoad,
         scheduleFileUpdatedAt,
         scheduleLastSyncedAt,
         setAssignments,

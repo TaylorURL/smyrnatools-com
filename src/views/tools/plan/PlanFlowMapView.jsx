@@ -184,54 +184,39 @@ function pointAlongPath(coords, fraction) {
     return null
 }
 
-/** Progress (0 → 1) along the named leg's UNION transit window — earliest
- *  driver's start to latest driver's end. Using the union (not a per-
- *  driver average) keeps the fraction strictly monotonic across the
- *  whole window: staggered drivers entering at fraction 0 or finishing
- *  at fraction 1 no longer drag the average backward, which used to
- *  show as the arrow "rewinding" each time a driver cycled in or out.
- *  Returns null when nobody is currently transiting this leg. */
-function legProgressFraction({ drivers, leg, travel, viewTime }) {
-    if (!Number.isFinite(viewTime) || !Array.isArray(drivers) || drivers.length === 0) return null
-    let earliestStart = Infinity
-    let latestEnd = -Infinity
-    let anyInWindow = false
-    for (const driver of drivers) {
-        if (!Number.isFinite(driver.arriveMin)) continue
-        let startMin
-        let endMin
-        if (leg === 'outbound') {
-            startMin = Math.max(0, driver.arriveMin - travel - PRE_TRIP_MINUTES)
-            endMin = driver.arriveMin
-        } else {
-            const leave =
-                Number.isFinite(driver.leaveMin) && driver.leaveMin > driver.arriveMin ? driver.leaveMin : null
-            if (leave == null) continue
-            startMin = leave
-            endMin = leave + travel
-        }
-        if (endMin <= startMin) continue
-        if (startMin < earliestStart) earliestStart = startMin
-        if (endMin > latestEnd) latestEnd = endMin
-        if (viewTime >= startMin && viewTime < endMin) anyInWindow = true
+/** Per-driver progress fraction (0 → 1) along the named leg's transit
+ *  window. Returns null when this specific driver isn't currently on the
+ *  road for this leg — staggered crews share a polyline, but each driver
+ *  occupies their own fraction of it at any given minute. */
+function driverLegFraction({ driver, leg, travel, viewTime }) {
+    if (!driver || !Number.isFinite(viewTime)) return null
+    if (!Number.isFinite(driver.arriveMin)) return null
+    let startMin
+    let endMin
+    if (leg === 'outbound') {
+        startMin = Math.max(0, driver.arriveMin - travel - PRE_TRIP_MINUTES)
+        endMin = driver.arriveMin
+    } else {
+        const leave = Number.isFinite(driver.leaveMin) && driver.leaveMin > driver.arriveMin ? driver.leaveMin : null
+        if (leave == null) return null
+        startMin = leave
+        endMin = leave + travel
     }
-    if (!anyInWindow || !Number.isFinite(earliestStart) || !Number.isFinite(latestEnd)) return null
-    if (latestEnd <= earliestStart) return null
-    return Math.max(0, Math.min(1, (viewTime - earliestStart) / (latestEnd - earliestStart)))
+    if (endMin <= startMin) return null
+    if (viewTime < startMin || viewTime >= endMin) return null
+    return Math.max(0, Math.min(1, (viewTime - startMin) / (endMin - startMin)))
 }
 
-/** Decide where (and whether) to anchor the leg's directional arrow. The
- *  arrow only shows while the leg is actually in transit — it sits at the
- *  average driver's progress fraction so the marker visibly walks along
- *  the route as `viewTime` ticks forward. */
-function resolveLegAnchor({ activity, coords, drivers, leg, travel, viewTime }) {
+/** Anchor for a single driver on one leg — returns the position + bearing
+ *  to render their arrow, or null when they aren't on that leg right now.
+ *  Used to render one ▶ marker per truck so a staggered crew of N reads
+ *  as N arrows walking the route at different fractions, not one
+ *  average-of-the-pack arrow. */
+function resolveDriverLegAnchor({ coords, driver, leg, travel, viewTime }) {
     if (!coords || coords.length < 2) return null
-    if (activity !== 'transit') return null
-    const fraction = legProgressFraction({ drivers, leg, travel, viewTime })
+    const fraction = driverLegFraction({ driver, leg, travel, viewTime })
     if (fraction == null) return null
-    const point = pointAlongPath(coords, fraction)
-    if (!point) return null
-    return point
+    return pointAlongPath(coords, fraction)
 }
 
 /** Build a Leaflet DivIcon containing a single `▶` glyph rotated to point
@@ -1081,33 +1066,61 @@ function PlanFlowMapView({
                 jobLine +
                 distanceLine
 
-            // Directional ▶ glyphs that walk the route as time advances:
-            // outbound from source → destination, return from destination
-            // → home. Position is resampled each render from each leg's
-            // average driver progress, so the autoplay tick visibly
-            // marches the arrow forward. Hidden entirely when the leg
-            // isn't in motion.
+            // Directional ▶ glyphs — ONE per truck on each leg, so a 3-driver
+            // crew renders three outbound arrows and three return arrows.
+            // Each marker is positioned at its own driver's progress fraction
+            // (not the leg-wide union) so staggered crews visibly spread out
+            // along the route instead of stacking at the average. Arrows
+            // whose driver isn't on the leg right now stay in place with
+            // opacity 0 — that preserves the marker DOM across ticks so the
+            // CSS transitions on transform / opacity actually fire (the
+            // old single-arrow rebuild-every-tick path is what caused the
+            // jump-then-rewind motion we hit earlier).
             const drivers = buildAssignmentDriverTimes(a)
-            const outArrowAnchor = resolveLegAnchor({
-                activity: activity.outbound,
-                coords: outCoords,
-                drivers,
-                leg: 'outbound',
-                travel: travelHint,
-                viewTime
-            })
-            const backArrowAnchor = resolveLegAnchor({
-                activity: activity.returning,
-                coords: backCoords,
-                drivers,
-                leg: 'returning',
-                travel: travelHint,
-                viewTime
-            })
-            const outActive = !!outArrowAnchor
-            const backActive = !!backArrowAnchor
+            const driverCount = Math.max(0, drivers.length)
             const arrowFallback = pointAlongPath(outCoords, 0.5)
             const arrowFallbackBack = pointAlongPath(backCoords, 0.5)
+            const outAnchors = drivers.map((driver) =>
+                resolveDriverLegAnchor({ coords: outCoords, driver, leg: 'outbound', travel: travelHint, viewTime })
+            )
+            const backAnchors = drivers.map((driver) =>
+                resolveDriverLegAnchor({ coords: backCoords, driver, leg: 'returning', travel: travelHint, viewTime })
+            )
+
+            const syncArrows = (group, existingArrows, anchors, fallbackAnchor, color) => {
+                const arrows = Array.isArray(existingArrows) ? [...existingArrows] : []
+                // Trim arrows beyond the current driver count.
+                while (arrows.length > driverCount) {
+                    const stale = arrows.pop()
+                    if (stale && group) group.removeLayer(stale)
+                }
+                // Add arrows for new drivers (created hidden; positioned on the
+                // fallback point so the very first tick starts from somewhere
+                // sensible without a fly-in animation).
+                while (arrows.length < driverCount) {
+                    const seed = fallbackAnchor
+                    if (!seed) break
+                    const marker = L.marker([seed.lat, seed.lng], {
+                        icon: makeArrowIcon({ active: false, color, rotationDeg: seed.angleDeg }),
+                        interactive: false
+                    })
+                    if (group) marker.addTo(group)
+                    arrows.push(marker)
+                }
+                // Update each driver's arrow to its own anchor (or hide it if
+                // that driver isn't on this leg right now).
+                anchors.forEach((anchor, idx) => {
+                    const marker = arrows[idx]
+                    if (!marker) return
+                    if (anchor) marker.setLatLng([anchor.lat, anchor.lng])
+                    updateArrow(marker, {
+                        active: !!anchor,
+                        color,
+                        rotationDeg: anchor?.angleDeg ?? 0
+                    })
+                })
+                return arrows
+            }
 
             const existing = polylinesByEdgeRef.current[key]
             if (existing) {
@@ -1123,24 +1136,20 @@ function PlanFlowMapView({
                 existing.backFlow.setStyle(styles.returnFlow)
                 existing.backFlow.unbindTooltip()
                 existing.backFlow.bindTooltip(tipContent, { sticky: true })
-                if (existing.outArrow) {
-                    const anchor = outArrowAnchor || arrowFallback
-                    if (anchor) existing.outArrow.setLatLng([anchor.lat, anchor.lng])
-                    updateArrow(existing.outArrow, {
-                        active: outActive,
-                        color: ROUTE_OUTBOUND_COLOR,
-                        rotationDeg: outArrowAnchor?.angleDeg ?? anchor?.angleDeg ?? 0
-                    })
-                }
-                if (existing.backArrow) {
-                    const anchor = backArrowAnchor || arrowFallbackBack
-                    if (anchor) existing.backArrow.setLatLng([anchor.lat, anchor.lng])
-                    updateArrow(existing.backArrow, {
-                        active: backActive,
-                        color: ROUTE_RETURN_COLOR,
-                        rotationDeg: backArrowAnchor?.angleDeg ?? anchor?.angleDeg ?? 0
-                    })
-                }
+                existing.outArrows = syncArrows(
+                    existing.group,
+                    existing.outArrows,
+                    outAnchors,
+                    arrowFallback,
+                    ROUTE_OUTBOUND_COLOR
+                )
+                existing.backArrows = syncArrows(
+                    existing.group,
+                    existing.backArrows,
+                    backAnchors,
+                    arrowFallbackBack,
+                    ROUTE_RETURN_COLOR
+                )
             } else {
                 const group = L.layerGroup()
                 const outBase = L.polyline(outCoords, styles.outboundBase)
@@ -1153,32 +1162,18 @@ function PlanFlowMapView({
                 outFlow.addTo(group)
                 backBase.addTo(group)
                 backFlow.addTo(group)
-                const outSeed = outArrowAnchor || arrowFallback
-                const backSeed = backArrowAnchor || arrowFallbackBack
-                const outArrow = outSeed
-                    ? L.marker([outSeed.lat, outSeed.lng], {
-                          icon: makeArrowIcon({
-                              active: outActive,
-                              color: ROUTE_OUTBOUND_COLOR,
-                              rotationDeg: outSeed.angleDeg
-                          }),
-                          interactive: false
-                      })
-                    : null
-                const backArrow = backSeed
-                    ? L.marker([backSeed.lat, backSeed.lng], {
-                          icon: makeArrowIcon({
-                              active: backActive,
-                              color: ROUTE_RETURN_COLOR,
-                              rotationDeg: backSeed.angleDeg
-                          }),
-                          interactive: false
-                      })
-                    : null
-                if (outArrow) outArrow.addTo(group)
-                if (backArrow) backArrow.addTo(group)
                 group.addTo(layer)
-                polylinesByEdgeRef.current[key] = { backArrow, backBase, backFlow, group, outArrow, outBase, outFlow }
+                const outArrows = syncArrows(group, [], outAnchors, arrowFallback, ROUTE_OUTBOUND_COLOR)
+                const backArrows = syncArrows(group, [], backAnchors, arrowFallbackBack, ROUTE_RETURN_COLOR)
+                polylinesByEdgeRef.current[key] = {
+                    backArrows,
+                    backBase,
+                    backFlow,
+                    group,
+                    outArrows,
+                    outBase,
+                    outFlow
+                }
             }
         })
         // eslint-disable-next-line react-hooks/exhaustive-deps

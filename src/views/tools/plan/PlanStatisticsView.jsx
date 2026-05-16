@@ -6,6 +6,7 @@ import { PlanStatisticsKpiStrip } from '../../../app/components/plan/tabs/statis
 import {
     PlanStatisticsBigPoursPage,
     PlanStatisticsCustomersPage,
+    PlanStatisticsOperatorsPage,
     PlanStatisticsOverviewPage,
     PlanStatisticsPlantsPage,
     PlanStatisticsYardagePage
@@ -43,8 +44,10 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
      *  them eagerly was running thousands of operations per render for
      *  nothing. */
     const satisfactionEnabled = activeSection === 'satisfaction' || activeSection === 'overview'
+    const operatorsEnabled = activeSection === 'operators'
     const stats = usePlanStatistics({
         liveProduction,
+        operatorsEnabled,
         planDate,
         satisfactionEnabled
     })
@@ -58,6 +61,7 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         customStart,
         isSingleDay,
         loading,
+        loadsByOperator,
         perPlantLoadAttribution,
         perPlantSatisfaction,
         period,
@@ -187,6 +191,8 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         if (activeSection === 'plants') return <PlanStatisticsPlantsPage {...commonProps} />
         if (activeSection === 'customers') return <PlanStatisticsCustomersPage {...commonProps} />
         if (activeSection === 'bigPours') return <PlanStatisticsBigPoursPage {...commonProps} />
+        if (activeSection === 'operators')
+            return <PlanStatisticsOperatorsPage {...commonProps} loadsByOperator={loadsByOperator} />
         // Overview is the default landing page.
         return (
             <PlanStatisticsOverviewPage
