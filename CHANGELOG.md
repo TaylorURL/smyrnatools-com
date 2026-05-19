@@ -1,5 +1,22 @@
 # Changelog
 
+## [2026.21.2] - 2026-05-19
+
+- Switched the Daily Plan email pipeline to target **tomorrow's** plan instead of today's. At 4 PM Central
+  the dispatcher is finalizing the next day's dispatch sheet, not revisiting the day that's already
+  wrapping up — emailing managers today's plan at 4 PM was the wrong artifact for the operational moment.
+  - `src/app/components/plan/PlanActionButtons.jsx` — the "Review & Send" button now enables only when
+    the Plan view is showing **tomorrow's** Chicago date (was today). `getChicagoNow` now returns both
+    `dateIso` and `tomorrowIso` so the gate compares against the right anchor. UTC date math is anchored
+    at noon UTC so a DST hour-shift across the day boundary can't bump tomorrow's date off by one. The
+    4:00 PM – 6:00 PM Central time window is unchanged; the disabled-state tooltip now reads "only
+    available for tomorrow's plan."
+  - `supabase/functions/daily-plan-email/index.ts` — `/cron-send` defaults `planDate` to
+    `chicagoTomorrowDate(now)` instead of `chicagoTodayDate(now)`. Mirrors the schedule-snapshot pattern
+    (also captures tomorrow at 5:30 PM). The new `chicagoTomorrowDate` helper uses the same noon-UTC
+    anchoring as the schedule-snapshot service. Callers can still pass an explicit `planDate` in the body
+    to override (used by `force` smoke tests).
+
 ## [2026.21.1] - 2026-05-19
 
 - Shipped the Daily Plan email pipeline end-to-end. Every weekday at 4:00 PM Chicago each plant manager

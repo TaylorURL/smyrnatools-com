@@ -456,6 +456,17 @@ function chicagoTodayDate(now = chicagoNow()): string {
     return `${yyyy}-${mm}-${dd}`
 }
 
+/** Returns `tomorrow` in Chicago wall-clock days as `YYYY-MM-DD`. Anchored
+ *  at noon UTC so DST hour-shifts can't bump the date off by one. */
+function chicagoTomorrowDate(now = chicagoNow()): string {
+    const base = new Date(Date.UTC(now.year, now.month - 1, now.day, 12, 0, 0))
+    base.setUTCDate(base.getUTCDate() + 1)
+    const yyyy = base.getUTCFullYear()
+    const mm = String(base.getUTCMonth() + 1).padStart(2, '0')
+    const dd = String(base.getUTCDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+}
+
 /* -- Small pure helpers ported from `src/utils/plan/*` ----------------------
  * Kept inline so this edge function has no transitive dep on the React
  * source tree. They match the originals one-for-one; if any of these
@@ -742,7 +753,7 @@ async function handleCronSend(req: Request, headers: any): Promise<Response> {
         return jsonResponse({ reason: 'sunday', skipped: true }, headers)
     }
 
-    const planDate = isFiniteString(body?.planDate) ? body.planDate.trim() : chicagoTodayDate(now)
+    const planDate = isFiniteString(body?.planDate) ? body.planDate.trim() : chicagoTomorrowDate(now)
     const supabase = createAdminClient()
 
     const { data: planRow, error: planErr } = await supabase

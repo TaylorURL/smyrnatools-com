@@ -22,9 +22,11 @@ function RefreshButton({ isMobile, isSyncing, lastSyncedAt, onRefresh }) {
     )
 }
 
-/** Snapshot of the Chicago wall clock used by the review/send gate. The
- *  hour-only resolution is enough for the 4–6 PM window — finer granularity
- *  would add re-renders the rest of the header doesn't need. */
+/** Snapshot of the Chicago wall clock used by the review/send gate.
+ *  Returns both today's and tomorrow's Chicago dates as `YYYY-MM-DD` —
+ *  the button only enables for tomorrow's plan because the 4–6 PM review
+ *  window is for finalizing the next day's dispatch sheet, not revisiting
+ *  the day that's already wrapping up. */
 function getChicagoNow() {
     const fmt = new Intl.DateTimeFormat('en-US', {
         day: '2-digit',
@@ -39,8 +41,16 @@ function getChicagoNow() {
         return acc
     }, {})
     const hour = parts.hour === '24' ? 0 : parseInt(parts.hour, 10)
+    const year = parseInt(parts.year, 10)
+    const month = parseInt(parts.month, 10)
+    const day = parseInt(parts.day, 10)
+    /* Anchor UTC date math at noon UTC so any DST hour-shift across the
+     * boundary can't bump the date off by one. */
+    const base = new Date(Date.UTC(year, month - 1, day, 12, 0, 0))
+    base.setUTCDate(base.getUTCDate() + 1)
+    const tomorrow = `${base.getUTCFullYear()}-${String(base.getUTCMonth() + 1).padStart(2, '0')}-${String(base.getUTCDate()).padStart(2, '0')}`
     const dateIso = `${parts.year}-${parts.month}-${parts.day}`
-    return { dateIso, hour }
+    return { dateIso, hour, tomorrowIso: tomorrow }
 }
 
 /** Live Chicago-wall-clock snapshot. Ticks every 30 s so the button flips
@@ -62,13 +72,13 @@ function useChicagoNow() {
  *  5 PM updates window. */
 function ReviewSendButton({ isMobile, onReviewSend, planDate }) {
     const now = useChicagoNow()
-    const isToday = planDate === now.dateIso
+    const isTomorrow = planDate === now.tomorrowIso
     const inWindow = now.hour >= REVIEW_SEND_OPEN_HOUR_CT && now.hour < REVIEW_SEND_CLOSE_HOUR_CT
-    const disabled = !isToday || !inWindow
+    const disabled = !isTomorrow || !inWindow
 
     let title
-    if (!isToday) {
-        title = 'Review & Send is only available for today’s plan.'
+    if (!isTomorrow) {
+        title = 'Review & Send is only available for tomorrow’s plan.'
     } else if (!inWindow) {
         title = 'Review & Send is only available between 4:00 PM and 6:00 PM Central.'
     } else {
