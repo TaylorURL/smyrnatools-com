@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Daily Plan Email — Mockup</title>
+        <!--
+            Production rendering note: this file uses a <style> block so it's
+            easy to review and tweak. When wired to the Supabase email-service
+            edge function we'll inline every rule with juice (or write inline
+            from the start) since Gmail / Outlook strip <style> blocks. The
+            tables-for-layout pattern below already covers the harder
+            cross-client compatibility constraint.
+        -->
+        <style>
+            body {
+                margin: 0;
+                padding: 24px 12px;
+                background: #f3f4f6;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                color: #1e293b;
+            }
+            .wrapper {
+                max-width: 720px;
+                margin: 0 auto;
+            }
+            .card {
+                background: #ffffff;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04);
+            }
+            .brand-bar {
+                background: #c12033;
+                color: #ffffff;
+                padding: 18px 28px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .brand-title {
+                font-size: 18px;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+                margin: 0;
+            }
+            .brand-tag {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+                opacity: 0.85;
+                margin: 2px 0 0;
+            }
+            .brand-date {
+                font-size: 13px;
+                font-weight: 500;
+                text-align: right;
+                opacity: 0.95;
+            }
+            .test-banner {
+                background: #fef3c7;
+                border-bottom: 1px solid #fcd34d;
+                padding: 14px 28px;
+                font-size: 12.5px;
+                color: #78350f;
+                line-height: 1.5;
+            }
+            .test-banner strong {
+                display: block;
+                font-size: 12px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                margin-bottom: 6px;
+                color: #92400e;
+            }
+            .test-recipients {
+                font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+                font-size: 11.5px;
+                margin-top: 4px;
+                color: #451a03;
+            }
+            .body {
+                padding: 28px;
+            }
+            .greeting {
+                font-size: 15px;
+                margin: 0 0 6px;
+            }
+            .subtitle {
+                font-size: 13px;
+                color: #64748b;
+                margin: 0 0 24px;
+                line-height: 1.5;
+            }
+            .summary-grid {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 8px;
+                margin: 0 -8px 24px;
+            }
+            .summary-cell {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 12px 14px;
+                text-align: left;
+            }
+            .summary-label {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: #64748b;
+                margin: 0 0 4px;
+            }
+            .summary-value {
+                font-size: 18px;
+                font-weight: 700;
+                color: #0f172a;
+                font-variant-numeric: tabular-nums;
+                margin: 0;
+            }
+            .summary-hint {
+                font-size: 11px;
+                color: #94a3b8;
+                margin: 2px 0 0;
+            }
+            h2.section {
+                font-size: 13px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: #1e3a5f;
+                margin: 28px 0 12px;
+                padding-bottom: 6px;
+                border-bottom: 2px solid #1e3a5f;
+            }
+            .orders-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 12.5px;
+            }
+            .orders-table th {
+                background: #f1f5f9;
+                color: #475569;
+                font-weight: 700;
+                font-size: 10.5px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                text-align: left;
+                padding: 9px 10px;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .orders-table td {
+                padding: 10px;
+                border-bottom: 1px solid #f1f5f9;
+                vertical-align: top;
+            }
+            .orders-table tr:last-child td {
+                border-bottom: 0;
+            }
+            .num {
+                font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+                font-variant-numeric: tabular-nums;
+                text-align: right;
+            }
+            .order-num {
+                font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+                color: #475569;
+                font-weight: 600;
+            }
+            .customer {
+                font-weight: 600;
+                color: #0f172a;
+            }
+            .customer-location {
+                font-size: 11px;
+                color: #64748b;
+                margin-top: 2px;
+            }
+            .pill {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 999px;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+            }
+            .pill-needs-help {
+                background: rgba(220, 38, 38, 0.12);
+                color: #b91c1c;
+            }
+            .pill-covered {
+                background: rgba(22, 163, 74, 0.12);
+                color: #15803d;
+            }
+            .pill-big {
+                background: rgba(79, 70, 229, 0.12);
+                color: #4338ca;
+            }
+            .help-grid {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 12px;
+                margin: 0 -12px;
+            }
+            .help-cell {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 14px 16px;
+                vertical-align: top;
+            }
+            .help-direction {
+                font-size: 10.5px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                margin: 0 0 8px;
+            }
+            .help-direction.in {
+                color: #15803d;
+            }
+            .help-direction.out {
+                color: #c2410c;
+            }
+            .help-row {
+                font-size: 12.5px;
+                color: #1e293b;
+                padding: 5px 0;
+                border-top: 1px solid #e2e8f0;
+            }
+            .help-row:first-of-type {
+                border-top: 0;
+            }
+            .help-row .mono {
+                font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+                color: #475569;
+            }
+            .roster-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 12.5px;
+            }
+            .roster-table th {
+                background: #f1f5f9;
+                color: #475569;
+                font-weight: 700;
+                font-size: 10.5px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                text-align: left;
+                padding: 9px 10px;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .roster-table td {
+                padding: 9px 10px;
+                border-bottom: 1px solid #f1f5f9;
+            }
+            .roster-table tr:last-child td {
+                border-bottom: 0;
+            }
+            .roster-flag {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                color: #b45309;
+                background: rgba(217, 119, 6, 0.12);
+                padding: 2px 7px;
+                border-radius: 999px;
+                margin-left: 6px;
+            }
+            .notes {
+                background: #fffbeb;
+                border-left: 3px solid #f59e0b;
+                padding: 14px 18px;
+                font-size: 13px;
+                line-height: 1.55;
+                color: #78350f;
+                border-radius: 0 8px 8px 0;
+                white-space: pre-wrap;
+            }
+            .notes em {
+                font-style: italic;
+                color: #92400e;
+            }
+            .footer {
+                background: #f8fafc;
+                border-top: 1px solid #e2e8f0;
+                padding: 18px 28px;
+                font-size: 11.5px;
+                color: #64748b;
+                line-height: 1.55;
+                text-align: center;
+            }
+            .footer a {
+                color: #1e3a5f;
+                text-decoration: none;
+            }
+            .footer .meta {
+                margin-top: 6px;
+                font-size: 10.5px;
+                color: #94a3b8;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrapper">
+            <div class="card">
+                <div class="brand-bar">
+                    <div>
+                        <p class="brand-title">Smyrna Ready Mix</p>
+                        <p class="brand-tag">Daily Dispatch Plan</p>
+                    </div>
+                    <div class="brand-date">
+                        Tuesday, May 19, 2026<br />
+                        <span style="font-size: 11px; opacity: 0.8">Plant 403 · Baytown</span>
+                    </div>
+                </div>
+
+                <!-- ────────────────────────────────────────────────────────
+                     TEST MODE BANNER — prominent yellow band. In production,
+                     this section is omitted entirely. While we're testing,
+                     every email gets redirected to a single inbox and this
+                     panel lists the recipients the routing logic produced,
+                     so the dispatcher can verify the manager + DM lookup is
+                     finding the right people before we flip the redirect off.
+                     ──────────────────────────────────────────────────────── -->
+                <div class="test-banner">
+                    <strong>⚠ Test mode — message redirected</strong>
+                    This message would have been delivered in production to the recipients below. While we&apos;re
+                    testing the daily-plan pipeline, every email is being redirected to
+                    <span class="test-recipients">tbtaylor@smyrnareadymix.com</span> so the routing logic can be
+                    validated before we send to real managers.
+                    <div class="test-recipients" style="margin-top: 10px">
+                        <strong style="color: #78350f; font-size: 11.5px; letter-spacing: 0.04em">Intended TO:</strong>
+                        Mike Rodriguez &lt;mrodriguez@smyrnareadymix.com&gt;
+                        <span style="color: #92400e">(Plant Manager · 403 Baytown)</span><br />
+                        <strong style="color: #78350f; font-size: 11.5px; letter-spacing: 0.04em">Intended CC:</strong>
+                        Sarah Chen &lt;schen@smyrnareadymix.com&gt;
+                        <span style="color: #92400e">(District Manager · Houston Concrete)</span>
+                    </div>
+                </div>
+
+                <div class="body">
+                    <p class="greeting">Hi Mike,</p>
+                    <p class="subtitle">
+                        Here&apos;s the dispatch plan for <strong>Plant 403 — Baytown</strong> for Tuesday, May 19,
+                        2026. The plan auto-generated at 4:00 PM CST from today&apos;s schedule.
+                    </p>
+
+                    <!-- ────────────────────────────────────────────────────────
+                         KPI SUMMARY — three tiles, plant-scoped. Same numbers
+                         the dispatcher sees in the Schedule tab's headline
+                         strip but trimmed to this plant.
+                         ──────────────────────────────────────────────────── -->
+                    <table class="summary-grid" role="presentation">
+                        <tr>
+                            <td class="summary-cell" style="width: 33.3%">
+                                <p class="summary-label">Orders</p>
+                                <p class="summary-value">11</p>
+                                <p class="summary-hint">96 customers · 192 yd³</p>
+                            </td>
+                            <td class="summary-cell" style="width: 33.3%">
+                                <p class="summary-label">Loads</p>
+                                <p class="summary-value">19</p>
+                                <p class="summary-hint">truck loads scheduled</p>
+                            </td>
+                            <td class="summary-cell" style="width: 33.3%">
+                                <p class="summary-label">Window</p>
+                                <p class="summary-value">07:00 – 13:00</p>
+                                <p class="summary-hint">first → last start</p>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <h2 class="section">Orders for today</h2>
+                    <table class="orders-table" role="presentation">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px">Start</th>
+                                <th style="width: 78px">Order #</th>
+                                <th>Customer</th>
+                                <th class="num" style="width: 56px">Yards</th>
+                                <th class="num" style="width: 60px">Trucks</th>
+                                <th style="width: 100px">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="num">07:00</td>
+                                <td class="order-num">#496</td>
+                                <td>
+                                    <div class="customer">Triple C Project Services LLC</div>
+                                    <div class="customer-location">602 W Winfree Rd, Mont Belvieu · 4000 PSI Air</div>
+                                </td>
+                                <td class="num">50</td>
+                                <td class="num">4</td>
+                                <td><span class="pill pill-needs-help">Needs help</span></td>
+                            </tr>
+                            <tr>
+                                <td class="num">08:00</td>
+                                <td class="order-num">#565</td>
+                                <td>
+                                    <div class="customer">Anmar Mechanical &amp; Electrical Contractors</div>
+                                    <div class="customer-location">5200 E McKinney Rd, Baytown · 5000 PSI NA</div>
+                                </td>
+                                <td class="num">18</td>
+                                <td class="num">2</td>
+                                <td><span class="pill pill-needs-help">Needs help</span></td>
+                            </tr>
+                            <tr>
+                                <td class="num">08:30</td>
+                                <td class="order-num">#111</td>
+                                <td>
+                                    <div class="customer">Brooks Concrete — Pasadena</div>
+                                    <div class="customer-location">3000 PSI Gravel Air</div>
+                                </td>
+                                <td class="num">10</td>
+                                <td class="num">1</td>
+                                <td><span class="pill pill-needs-help">Needs help</span></td>
+                            </tr>
+                            <tr>
+                                <td class="num">09:00</td>
+                                <td class="order-num">#512</td>
+                                <td>
+                                    <div class="customer">M &amp; R Concrete</div>
+                                    <div class="customer-location">235 CO RD 4110, Dayton · 3000 PSI Air</div>
+                                </td>
+                                <td class="num">10</td>
+                                <td class="num">1</td>
+                                <td><span class="pill pill-needs-help">Needs help</span></td>
+                            </tr>
+                            <tr>
+                                <td class="num">11:00</td>
+                                <td class="order-num">#504</td>
+                                <td>
+                                    <div class="customer">Non-Typical Pipeline, LLC</div>
+                                    <div class="customer-location">5100 FM 1413, Dayton · 4000 PSI Air</div>
+                                </td>
+                                <td class="num">10</td>
+                                <td class="num">1</td>
+                                <td><span class="pill pill-covered">Covered</span></td>
+                            </tr>
+                            <tr>
+                                <td class="num">11:00</td>
+                                <td class="order-num">#534</td>
+                                <td>
+                                    <div class="customer">Arnold Construction Co, Inc</div>
+                                    <div class="customer-location">12310 Hatcherville Rd, Baytown · 4000 PSI Air</div>
+                                </td>
+                                <td class="num">20</td>
+                                <td class="num">2</td>
+                                <td><span class="pill pill-needs-help">Needs help</span></td>
+                            </tr>
+                            <tr>
+                                <td class="num">12:00</td>
+                                <td class="order-num">#669</td>
+                                <td>
+                                    <div class="customer">LWL Inc</div>
+                                    <div class="customer-location">602 W Winfree Rd, Mont Belvieu · 4000 PSI Air</div>
+                                </td>
+                                <td class="num">10</td>
+                                <td class="num">1</td>
+                                <td><span class="pill pill-needs-help">Needs help</span></td>
+                            </tr>
+                            <tr>
+                                <td class="num">12:30</td>
+                                <td class="order-num">#276</td>
+                                <td>
+                                    <div class="customer">Gemma Power Systems LLC</div>
+                                    <div class="customer-location">7700 W Bay Rd, Baytown · 3000 PSI Pea Gravel</div>
+                                </td>
+                                <td class="num">20</td>
+                                <td class="num">2</td>
+                                <td><span class="pill pill-needs-help">Needs help</span></td>
+                            </tr>
+                            <tr>
+                                <td class="num">13:00</td>
+                                <td class="order-num">#746</td>
+                                <td>
+                                    <div class="customer">Montgomery County Concrete</div>
+                                    <div class="customer-location">7349 John Martin Rd, Baytown · 3500 PSI Air</div>
+                                </td>
+                                <td class="num">28</td>
+                                <td class="num">3</td>
+                                <td><span class="pill pill-needs-help">Needs help</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 class="section">Cross-plant help</h2>
+                    <table class="help-grid" role="presentation">
+                        <tr>
+                            <td class="help-cell" style="width: 50%">
+                                <p class="help-direction in">↘ Help coming IN</p>
+                                <div class="help-row">
+                                    <strong>2 drivers from 402 Channelview</strong><br />
+                                    <span class="mono">Arriving 06:50 · for #496 (07:00 pour)</span>
+                                </div>
+                                <div class="help-row">
+                                    <strong>1 driver from 401 Houston Central</strong><br />
+                                    <span class="mono">Arriving 10:45 · for #534 (11:00 pour)</span>
+                                </div>
+                            </td>
+                            <td class="help-cell" style="width: 50%">
+                                <p class="help-direction out">↗ Help going OUT</p>
+                                <div class="help-row">
+                                    <strong>4 drivers to 401 Houston Central</strong><br />
+                                    <span class="mono">Leaving 06:30 · returning 12:15</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <h2 class="section">Operator clock-in roster</h2>
+                    <table class="roster-table" role="presentation">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th class="num" style="width: 90px">Clock in</th>
+                                <th style="width: 110px">Assigned truck</th>
+                                <th style="width: 120px">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Bobby Johnson</td>
+                                <td class="num">06:10</td>
+                                <td class="num">#501</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Carlos Mendoza</td>
+                                <td class="num">06:25</td>
+                                <td class="num">#503</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Dale Henderson</td>
+                                <td class="num">06:40</td>
+                                <td class="num">#507</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Eduardo Ramos</td>
+                                <td class="num">06:55</td>
+                                <td class="num">#509</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Frank Owens</td>
+                                <td class="num">07:10</td>
+                                <td class="num">#512</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Greg Patel</td>
+                                <td class="num">07:15</td>
+                                <td class="num">#515</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Hector Vega</td>
+                                <td class="num">12:40</td>
+                                <td class="num">#518</td>
+                                <td><span class="roster-flag">PM shift</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 class="section">Dispatcher notes</h2>
+                    <div class="notes">
+                        Watch the morning rush — Bobby out half day (doctor appt). Three pours at 11:00 will need
+                        tight cycling on #503 and #507. <em>Sarah</em> heads up about the cross-plant help to 401
+                        — they have a 30-yd commercial pour at 09:30.
+                    </div>
+                </div>
+
+                <div class="footer">
+                    Auto-generated by Smyrna Plan Tools · 4:00 PM CST · Tuesday, May 19, 2026<br />
+                    <a href="https://db.smyrnatools.com">View live plan</a>
+                    <div class="meta">
+                        This is a generated sample — production messages omit the test banner and route to the
+                        intended TO + CC above.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

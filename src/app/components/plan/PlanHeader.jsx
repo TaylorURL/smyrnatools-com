@@ -22,15 +22,14 @@ import { PlanTabSwitcher } from './PlanTabSwitcher'
 export function PlanHeader({
     accentColor,
     canSeeSettings = false,
-    copied,
     isDark,
     isMobile,
     isRealtime,
     isSchedulesSyncing,
     onChangeDate,
     onChangeViewMode,
-    onCopyPlan,
     onRefresh,
+    onReviewSend,
     planDate,
     scheduleLastSyncedAt,
     syncStatus = 'idle',
@@ -57,11 +56,11 @@ export function PlanHeader({
             <div className="flex-1 min-w-[8px]" />
             <PlanActionButtons
                 accentColor={accentColor}
-                copied={copied}
                 isMobile={isMobile}
                 isSchedulesSyncing={isSchedulesSyncing}
-                onCopy={onCopyPlan}
                 onRefresh={onRefresh}
+                onReviewSend={onReviewSend}
+                planDate={planDate}
                 scheduleLastSyncedAt={scheduleLastSyncedAt}
             />
             <PlanTabSwitcher

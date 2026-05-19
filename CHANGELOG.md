@@ -1,5 +1,55 @@
 # Changelog
 
+## [2026.21.1] - 2026-05-19
+
+- Shipped the Daily Plan email pipeline end-to-end. Every weekday at 4:00 PM Chicago each plant manager
+  receives a tailored dispatch sheet for their plant; the district manager who owns the plant is CC'd
+  automatically based on the regions / districts model. A "Review & Send" button on the Plan header lets
+  a dispatcher manually fire the same emails between 4:00 PM and 6:00 PM Central for today's plan only.
+  - `scripts/emails/daily-plan-email.js` (new) — pure template module returning `{ subject, html, text }`.
+    Inline-styled HTML (Gmail / Outlook strip `<style>` blocks); table-driven layout that survives every
+    major mail client. Includes a yellow "heads-up" banner reminding managers that plans may be updated
+    through 5:00 PM and they're responsible for reading any updates after clocking out. Renders a per-driver
+    cross-plant help table (driver N of M, exact arrive / leave times, direct-load order chip, return-plant
+    callout when different from origin) so the manager can see exactly which seat is theirs and when. Orders
+    table now has a Spacing column derived from `order.rate` next to Trucks.
+  - `supabase/functions/daily-plan-email/index.ts` (new) — five endpoints:
+    - `/preview` + `/send` for the manual Review & Send modal (frontend pre-builds payloads with full
+      pool-sim derivatives).
+    - `/cron-send` for the unattended 4:00 PM Chicago run — self-checks Chicago wall clock, loads today's
+      `plans` row, derives per-plant payloads server-side (orders + KPI + per-driver help + notes), resolves
+      recipients, ships through `email-service/send`. Supports `force: true` (skip time gate) and
+      `dryRun: true` (return resolved recipients without actually emailing) for SQL-editor smoke tests.
+    - `/bootstrap` — internal-token-only, populates the cron config table with this function's edge URL +
+      token (same pattern as `schedule-snapshot-service/bootstrap`).
+    - Recipient resolver reads `plants.manager_user_ids` for TO (plant managers) and joins
+      `regions_plants.districts` (jsonb[]) + `users_roles` (`District Manager`) for CC. Diagnostic block
+      (`dmDebug`) returns the per-plant lookup state when CC is empty so misconfigured plants surface in
+      the UI instead of getting buried in logs.
+  - `supabase/migrations/20260519_daily_plan_email_cron.sql` (new) — `daily_plan_email_config` table
+    (service-role-only RLS), `public.trigger_daily_plan_email()` SQL function that fires the edge function
+    via `net.http_post`, and two pg_cron entries (`0 21 * * *` for CDT + `0 22 * * *` for CST). The edge
+    function self-checks the Chicago wall clock so only the matching run does work; the off-season call is
+    a free no-op. Sundays are skipped to match the rest of the plan pipeline.
+  - `src/services/DailyPlanEmailService.js` (new) — client-side wrapper. `buildPerPlantEmailPayload`
+    extracts orders, KPI, per-driver help, and the operator clock-in roster from the in-memory plan +
+    `usePlanScheduleData`'s `poolTimeline` / `clockInRows`. `buildAllPlantEmailPayloads` runs across every
+    plant with at least one live order. `DailyPlanEmailService.preview` / `.send` call the matching edge
+    endpoints.
+  - `src/app/components/plan/PlanReviewSendModal.jsx` (new) — per-plant accordion that runs
+    `usePlanScheduleData` against the live plan so the preview inherits the same coverage classification +
+    roster the Schedule tab shows. Each row shows the resolved TO (plant manager) + CC (district manager)
+    pills, the rendered HTML in a Blob-URL iframe (avoids the about:srcdoc / Vite HMR script-blocked
+    warning), and surfaces the `dmDebug` diagnostic when no DM was resolved. Single "Send all" button calls
+    `/daily-plan-email/send`.
+  - `src/app/components/plan/PlanActionButtons.jsx` — swapped the old "Copy Plan" button for
+    "Review & Send". The new button is hard-gated to (a) the current Chicago date and (b) the 4:00 PM –
+    6:00 PM Central window. Tooltip explains why the button is disabled when outside either gate, and a
+    30-second internal ticker re-evaluates so it flips on at 4:00 and off at 6:00 without a page refresh.
+  - `src/app/components/plan/PlanHeader.jsx` + `src/views/tools/plan/PlanView.jsx` — wire `planDate`
+    through to `PlanActionButtons`, mount `PlanReviewSendModal` when the button is clicked, and drop the
+    old `copied` / `onCopyPlan` props that the manual-clipboard flow used.
+
 ## [2026.21.0] - 2026-05-19
 
 - Made the Planner tab actually collaborative in real time. Two dispatchers viewing the same `plan_date` will now

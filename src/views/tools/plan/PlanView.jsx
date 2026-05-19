@@ -4,6 +4,7 @@ import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'
 import { PlanHeader } from '../../../app/components/plan/PlanHeader'
 import { PlanLoadErrorBanner } from '../../../app/components/plan/PlanLoadErrorBanner'
 import { PlanReadOnlyBanner } from '../../../app/components/plan/PlanReadOnlyBanner'
+import { PlanReviewSendModal } from '../../../app/components/plan/PlanReviewSendModal'
 import { PlanScheduleStaleBanner } from '../../../app/components/plan/tabs/schedule/PlanScheduleStaleBanner'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
@@ -13,7 +14,6 @@ import { usePlanDate } from '../../../app/hooks/usePlanDate'
 import { usePlanInsights } from '../../../app/hooks/usePlanInsights'
 import { usePlanLookups } from '../../../app/hooks/usePlanLookups'
 import { usePlanUserContext } from '../../../app/hooks/usePlanUserContext'
-import { buildPlanDispatchText } from '../../../utils/PlanCopyUtility'
 import { PLAN_META_KEY } from '../../../utils/PlanUtility'
 import BookOrderView from './BookOrderView'
 import CallListView from './CallListView'
@@ -173,18 +173,17 @@ function PlanViewImpl({ accentColor, isDark }) {
         userId
     } = usePlanData(planDate)
 
-    const { addTravelTime, calcClockIn, copied, copyToClipboard, newTravelTime, removeTravelTime, setNewTravelTime } =
-        usePlanActions({
-            assignments,
-            getTravelTime,
-            notes,
-            planDate,
-            refreshTravelTimes,
-            setAssignments,
-            setNotes,
-            setPlantProduction,
-            userId
-        })
+    const { addTravelTime, calcClockIn, newTravelTime, removeTravelTime, setNewTravelTime } = usePlanActions({
+        assignments,
+        getTravelTime,
+        notes,
+        planDate,
+        refreshTravelTimes,
+        setAssignments,
+        setNotes,
+        setPlantProduction,
+        userId
+    })
 
     const { earliestClockIn, planInsights, shiftSpanHours, stats, totalOps, validAssignmentCount } = usePlanInsights({
         assignments,
@@ -214,10 +213,14 @@ function PlanViewImpl({ accentColor, isDark }) {
         userRoleNames
     })
 
-    const handleCopyPlan = useCallback(
-        () => copyToClipboard(buildPlanDispatchText({ assignments, planDate, plantProduction })),
-        [assignments, copyToClipboard, planDate, plantProduction]
-    )
+    /* Review & Send modal — the daily-plan email pipeline. Replaces the
+     * old "Copy Plan" affordance: the dispatcher reviews each plant's
+     * rendered message + resolved recipients, then ships them in one
+     * confirm. While testing every send routes to the redirect inbox
+     * baked into the edge function. */
+    const [reviewSendOpen, setReviewSendOpen] = useState(false)
+    const openReviewSend = useCallback(() => setReviewSendOpen(true), [])
+    const closeReviewSend = useCallback(() => setReviewSendOpen(false), [])
 
     return (
         <div
@@ -227,15 +230,14 @@ function PlanViewImpl({ accentColor, isDark }) {
             <PlanHeader
                 accentColor={accentColor}
                 canSeeSettings={canSeeSettingsTab}
-                copied={copied}
                 isDark={isDark}
                 isMobile={isMobile}
                 isRealtime={false}
                 isSchedulesSyncing={isSchedulesSyncing}
                 onChangeDate={setPlanDate}
                 onChangeViewMode={setViewMode}
-                onCopyPlan={handleCopyPlan}
                 onRefresh={refreshSchedule}
+                onReviewSend={openReviewSend}
                 planDate={planDate}
                 scheduleLastSyncedAt={scheduleLastSyncedAt}
                 syncStatus={syncStatus}
@@ -392,6 +394,21 @@ function PlanViewImpl({ accentColor, isDark }) {
                     </div>
                 )}
             </div>
+            {reviewSendOpen && (
+                <PlanReviewSendModal
+                    accentColor={accentColor}
+                    assignments={assignments}
+                    detailByOrderId={detailByOrderId}
+                    getTravelTime={getTravelTime}
+                    notes={notes}
+                    onClose={closeReviewSend}
+                    planDate={planDate}
+                    plantAddressByCode={plantAddressByCode}
+                    plantNameByCode={plantNameByCode}
+                    plantProduction={plantProduction}
+                    stats={stats}
+                />
+            )}
         </div>
     )
 }
