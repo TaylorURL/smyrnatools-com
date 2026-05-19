@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { PlanService } from '../../services/PlanService'
 import { PlantService } from '../../services/PlantService'
@@ -9,6 +9,27 @@ import { usePreferences } from '../context/PreferencesContext'
 import { useDetailOrders } from './useDetailOrders'
 import { useRealtimeSubscription } from './useRealtimeSubscription'
 import { useScheduleSync } from './useScheduleSync'
+
+const PLAN_EDIT_TIME_ZONE = 'America/Chicago'
+
+/** Today's date in the planner's authoritative time zone (Chicago) as
+ *  `YYYY-MM-DD`. Used to gate edits — past-day plans are read-only no
+ *  matter what permission the user holds. Computed via Intl so the
+ *  string lines up with the `planDate` values already produced by
+ *  `usePlanDate` (which also formats Chicago dates). */
+function chicagoTodayDate() {
+    const fmt = new Intl.DateTimeFormat('en-US', {
+        day: '2-digit',
+        month: '2-digit',
+        timeZone: PLAN_EDIT_TIME_ZONE,
+        year: 'numeric'
+    })
+    const parts = fmt.formatToParts(new Date()).reduce((acc, p) => {
+        acc[p.type] = p.value
+        return acc
+    }, {})
+    return `${parts.year}-${parts.month}-${parts.day}`
+}
 
 export function usePlanData(planDate) {
     const { preferences } = usePreferences()
@@ -175,6 +196,20 @@ export function usePlanData(planDate) {
                     : [createEmptyAssignment()]
                 const loadedNotes = plan?.notes || ''
                 const loadedProduction = plan?.plant_production || {}
+                /* Diagnostic for the intermittent tomorrow-wipe report — log
+                 * what the server returned for the plan we just loaded so
+                 * we can correlate "DB has my saved data" claims against
+                 * what the load actually received. Remove once the wipe
+                 * culprit is identified. */
+                console.info('[usePlanData] plan loaded', {
+                    assignmentCount: loadedAssignments.length,
+                    hasMeaningfulAssignments: loadedAssignments.some(
+                        (a) => a?.fromPlant || a?.toPlant || a?.forOrderId
+                    ),
+                    planDate,
+                    rawAssignmentsLength: plan?.assignments?.length ?? null,
+                    rawPlanWasNull: plan === null
+                })
                 setAssignments(loadedAssignments)
                 setNotes(loadedNotes)
                 setPlantProduction(loadedProduction)
@@ -255,6 +290,39 @@ export function usePlanData(planDate) {
         if (loadedForDateRef.current !== planDate || !autosaveEnabledRef.current) return
         const snapshot = JSON.stringify({ assignments, notes, plantProduction })
         if (snapshot === lastSyncedSnapshotRef.current) return
+        /* Diagnostic tripwire for the intermittent "DB row got wiped"
+         * report. If we're about to autosave a state where every
+         * assignment is empty (no fromPlant / toPlant / forOrderId) AND
+         * the last-known-saved state had at least one real route, log
+         * a stack trace so the next occurrence in the wild captures
+         * exactly which call path triggered the wipe. Doesn't block the
+         * save — a legitimate "delete every route" flow would also trip
+         * this, and the dispatcher's confirm dialog already protects
+         * against accidental clicks there. Remove this block once the
+         * culprit is identified. */
+        const hasMeaningful = (list) =>
+            Array.isArray(list) && list.some((a) => a?.fromPlant || a?.toPlant || a?.forOrderId)
+        const newSnapshotEffectivelyEmpty = !hasMeaningful(assignments)
+        let prevSnapshotWasMeaningful = false
+        if (lastSyncedSnapshotRef.current) {
+            try {
+                const prev = JSON.parse(lastSyncedSnapshotRef.current)
+                prevSnapshotWasMeaningful = hasMeaningful(prev?.assignments)
+            } catch {
+                prevSnapshotWasMeaningful = false
+            }
+        }
+        if (newSnapshotEffectivelyEmpty && prevSnapshotWasMeaningful) {
+            console.warn(
+                '[usePlanData] AUTOSAVE about to write an EMPTY plan over a previously non-empty plan. Stack trace follows.',
+                {
+                    nowAssignments: assignments,
+                    planDate,
+                    prevSnapshot: lastSyncedSnapshotRef.current,
+                    stack: new Error('wipe-trace').stack
+                }
+            )
+        }
         dirtyRef.current = true
         editSerialRef.current += 1
         const savingSerial = editSerialRef.current
@@ -298,7 +366,29 @@ export function usePlanData(planDate) {
         onChange: useCallback((payload) => {
             const record = payload.new
             if (!record || record.plan_date !== planDateRef.current) return
-            const incomingAssignments = record.assignments?.length
+            /* Realtime payloads with a null / missing / empty `assignments`
+             * column used to wipe the local map: the old code coerced
+             * them to `[createEmptyAssignment()]`, which has no
+             * fromPlant/toPlant, which made the route-render effect's
+             * `wanted` diff delete every polyline on the map for a
+             * second or two before the next legitimate save corrected
+             * state. Real-world triggers seen: another dispatcher's
+             * autosave briefly serializing a transient mid-edit, a DB
+             * row whose `assignments` column was null from a legacy
+             * insert path, a partial save that didn't include the
+             * assignments key. Guard skips those payloads when the
+             * local user has meaningful assignments to lose. */
+            const localAssignments = assignmentsRef.current || []
+            const localHasMeaningfulAssignments =
+                localAssignments.length > 1 || localAssignments.some((a) => a?.fromPlant || a?.toPlant || a?.forOrderId)
+            const incomingHasAssignments = !!record.assignments?.length
+            if (!incomingHasAssignments && localHasMeaningfulAssignments) {
+                console.warn(
+                    '[usePlanData] Skipping realtime apply: incoming `assignments` was empty / null while local plan has live routes. Preserving local state.'
+                )
+                return
+            }
+            const incomingAssignments = incomingHasAssignments
                 ? ensureUniqueIds(record.assignments)
                 : [createEmptyAssignment()]
             const incomingNotes = record.notes || ''
@@ -381,11 +471,26 @@ export function usePlanData(planDate) {
     // PlanView can hold its skeleton until tickets actually land.
     const { detailByOrderId, isLoading: isDetailOrdersLoading } = useDetailOrders(planDate)
 
+    /* Effective edit-capability: the user must both hold the
+     * `plan.edit` permission AND be viewing a current or future plan.
+     * Past-day plans are read-only across every Plan tab — no
+     * route edits, no notes edits, no driver-count adjustments —
+     * so a manager can reference yesterday's schedule without
+     * accidentally rewriting history. Falsy `planDate` (transient
+     * load state) stays editable so the initial render doesn't
+     * flicker the read-only banner before the date string lands. */
+    const isPastPlanDate = useMemo(() => {
+        if (!planDate || typeof planDate !== 'string') return false
+        return planDate < chicagoTodayDate()
+    }, [planDate])
+    const canEditEffective = useMemo(() => canEdit && !isPastPlanDate, [canEdit, isPastPlanDate])
+
     return {
         adjacentPlans,
         adjacentProduction,
         assignments,
-        canEdit,
+        canEdit: canEditEffective,
+        isPastPlanDate,
         detailByOrderId,
         dirtyRef,
         getTravelTime,

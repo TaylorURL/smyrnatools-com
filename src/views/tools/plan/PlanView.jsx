@@ -151,6 +151,7 @@ function PlanViewImpl({ accentColor, isDark }) {
         adjacentProduction,
         assignments,
         canEdit,
+        isPastPlanDate,
         detailByOrderId,
         getTravelTime,
         isDetailOrdersLoading,
@@ -283,7 +284,12 @@ function PlanViewImpl({ accentColor, isDark }) {
                 ) : (
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden animate-fade-in-fast">
                         {planLoadError && <PlanLoadErrorBanner message={planLoadError} onRetry={retryPlanLoad} />}
-                        {!canEdit && <PlanReadOnlyBanner accentColor={accentColor} />}
+                        {!canEdit && (
+                            <PlanReadOnlyBanner
+                                accentColor={accentColor}
+                                reason={isPastPlanDate ? 'past-day' : 'permission'}
+                            />
+                        )}
                         <PlanScheduleStaleBanner planDate={planDate} scheduleFileUpdatedAt={scheduleFileUpdatedAt} />
 
                         {effectiveViewMode === 'dashboard' && (

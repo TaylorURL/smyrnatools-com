@@ -1,5 +1,53 @@
 # Changelog
 
+## [2026.21.5] - 2026-05-19
+
+- Guarded the planner's realtime handler against empty-payload wipes. When another client's transient
+  mid-edit (or a row whose `assignments` column ended up null from a legacy save path) echoed an empty
+  payload onto the bus, the local handler used to coerce it to `[createEmptyAssignment()]` and replace
+  the open plan with a single placeholder — wiping every route on the map until the next legitimate
+  save corrected it.
+  - `src/app/hooks/usePlanData.js` (realtime `onChange`) — added an `incomingHasAssignments` precheck
+    against the local `assignmentsRef`. When the inbound payload's `assignments` is empty/null AND the
+    local user already has meaningful assignments (more than one entry, or any single entry with
+    `fromPlant` / `toPlant` / `forOrderId` set), the apply is skipped with a `console.warn` so the case
+    is visible in DevTools. Legitimate clears still propagate: a genuinely empty plan on first load or
+    a local-initiated clear both pass through normally.
+- Made past-day plans read-only across every Plan tab. Same permission gate that drives the read-only
+  banner now also locks routes, notes, and per-plant overrides on yesterday's plan and earlier so a
+  manager can reference history without accidentally rewriting it. Today and any future date remain
+  fully editable for the `plan.edit` cohort.
+  - `src/app/hooks/usePlanData.js` — added `chicagoTodayDate()` helper and an `isPastPlanDate` memo
+    comparing the current `planDate` against today's CT calendar date. `canEdit` exposed to consumers
+    is now `canEdit && !isPastPlanDate`; the hook also returns `isPastPlanDate` so the banner can pick
+    the right copy. Falsy `planDate` (transient load state) doesn't flip the gate so the read-only
+    banner doesn't flicker on first paint.
+  - `src/app/components/plan/PlanReadOnlyBanner.jsx` — accepts a `reason` prop. New "past-day" reason
+    reads "View only — past plans cannot be edited. Switch to today or a future date to make changes."
+    The default "permission" reason keeps the existing copy.
+  - `src/views/tools/plan/PlanView.jsx` — destructures `isPastPlanDate` from `usePlanData` and passes
+    the matching reason to the banner.
+- Fixed direct-load truck animation on the Planner map. When operators are dispatched to a specific job
+  (loading direct rather than backing up a plant), the return-leg animation now turns away from the job
+  site after a fixed `DIRECT_LOAD_HOLD_MINUTES = 60` hold and uses the OSRM-resolved job→returnPlant
+  travel time. The assignment's `leaveTime` field (which refers to leaving the destination plant in the
+  help-the-plant flow, not a job site) is no longer consulted for direct-load assignments.
+  - `src/views/tools/plan/PlanFlowMapView.jsx` — `driverLegFraction`, `resolveDriverLegAnchor`, and
+    `classifyAssignmentActivity` now accept `directLoadHoldMin` + `returnTravelMinutes`. The return-leg
+    window for direct-load drivers anchors on `driver.arriveMin + DIRECT_LOAD_HOLD_MINUTES` and ends at
+    `start + cachedJob.backLegMinutes`. The polyline `activity.returning` state flips to `transit` over
+    the same window so the orange flow animation lights up while trucks are heading from the job to
+    their return plant.
+- Added focused diagnostic logging in `usePlanData` to capture the intermittent "tomorrow's saved plan
+  appears blank after viewing" report.
+  - `src/app/hooks/usePlanData.js` — every plan load now emits a `[usePlanData] plan loaded` console.info
+    with the planDate, raw assignment count from the server, and whether any of them carry real route
+    data. The autosave path emits a `[usePlanData] AUTOSAVE about to write an EMPTY plan over a
+    previously non-empty plan` console.warn (with a JS stack trace, the would-be assignments payload,
+    and the previously-synced snapshot) when it's about to push an effectively-empty state over saved
+    real data. Save still proceeds — the goal is to capture the culprit on the next reproduction without
+    blocking legitimate "delete every route" flows.
+
 ## [2026.21.4] - 2026-05-19
 
 - Polished the Planner tab's map: trucks, routes, plant pins, and the time scrubber all got an

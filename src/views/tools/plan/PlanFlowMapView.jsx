@@ -184,11 +184,27 @@ function pointAlongPath(coords, fraction) {
     return null
 }
 
+/** Minutes a direct-load driver holds at the job site before turning to
+ *  their return plant. Real pours land somewhere between 30 and 90
+ *  minutes; an hour is a sensible average that lines up with how
+ *  dispatchers verbally estimate "pour out" on the radio. Only used
+ *  when the assignment is loading-direct for a specific order — the
+ *  per-driver `leaveTime` field is the leave time for the destination
+ *  PLANT (the help-the-plant flow), not the leave time for a job. */
+const DIRECT_LOAD_HOLD_MINUTES = 60
+
 /** Per-driver progress fraction (0 → 1) along the named leg's transit
  *  window. Returns null when this specific driver isn't currently on the
  *  road for this leg — staggered crews share a polyline, but each driver
- *  occupies their own fraction of it at any given minute. */
-function driverLegFraction({ driver, leg, travel, viewTime }) {
+ *  occupies their own fraction of it at any given minute.
+ *
+ *  `directLoadHoldMin` overrides the return-leg start timing. In the
+ *  non-direct flow the driver "leaves" the destination plant at
+ *  `driver.leaveMin`; in the direct-load flow they pour out at the job
+ *  site `DIRECT_LOAD_HOLD_MINUTES` after arrival and turn directly to
+ *  their return plant from there — `leaveMin` doesn't apply because the
+ *  destination plant was never their endpoint. */
+function driverLegFraction({ directLoadHoldMin, driver, leg, travel, viewTime }) {
     if (!driver || !Number.isFinite(viewTime)) return null
     if (!Number.isFinite(driver.arriveMin)) return null
     let startMin
@@ -196,6 +212,9 @@ function driverLegFraction({ driver, leg, travel, viewTime }) {
     if (leg === 'outbound') {
         startMin = Math.max(0, driver.arriveMin - travel - PRE_TRIP_MINUTES)
         endMin = driver.arriveMin
+    } else if (Number.isFinite(directLoadHoldMin)) {
+        startMin = driver.arriveMin + directLoadHoldMin
+        endMin = startMin + travel
     } else {
         const leave = Number.isFinite(driver.leaveMin) && driver.leaveMin > driver.arriveMin ? driver.leaveMin : null
         if (leave == null) return null
@@ -212,9 +231,9 @@ function driverLegFraction({ driver, leg, travel, viewTime }) {
  *  Used to render one ▶ marker per truck so a staggered crew of N reads
  *  as N arrows walking the route at different fractions, not one
  *  average-of-the-pack arrow. */
-function resolveDriverLegAnchor({ coords, driver, leg, travel, viewTime }) {
+function resolveDriverLegAnchor({ coords, directLoadHoldMin, driver, leg, travel, viewTime }) {
     if (!coords || coords.length < 2) return null
-    const fraction = driverLegFraction({ driver, leg, travel, viewTime })
+    const fraction = driverLegFraction({ directLoadHoldMin, driver, leg, travel, viewTime })
     if (fraction == null) return null
     return pointAlongPath(coords, fraction)
 }
@@ -960,11 +979,17 @@ function PlanFlowMapView({
      *                   between legs (only the outbound leg uses this)
      *   - 'inactive' — nobody is on this leg at the moment
      */
-    const classifyAssignmentActivity = (assignment, atMinute, travelMinutes) => {
+    const classifyAssignmentActivity = (
+        assignment,
+        atMinute,
+        travelMinutes,
+        { directLoadHoldMin = null, returnTravelMinutes = null } = {}
+    ) => {
         if (!Number.isFinite(atMinute)) return { outbound: 'inactive', returning: 'inactive' }
         const drivers = buildAssignmentDriverTimes(assignment)
         if (drivers.length === 0) return { outbound: 'inactive', returning: 'inactive' }
         const travel = Number.isFinite(travelMinutes) ? travelMinutes : 30
+        const returnTravel = Number.isFinite(returnTravelMinutes) ? returnTravelMinutes : travel
         let outboundInTransit = false
         let outboundAtDest = false
         let returningInTransit = false
@@ -972,8 +997,20 @@ function PlanFlowMapView({
             if (!Number.isFinite(driver.arriveMin)) continue
             const transitStart = Math.max(0, driver.arriveMin - travel - PRE_TRIP_MINUTES)
             const transitEnd = driver.arriveMin
-            const leaveMin = Number.isFinite(driver.leaveMin) ? driver.leaveMin : null
-            const returnArrival = leaveMin != null ? leaveMin + travel : null
+            /* Direct-load assignments turn back to the return plant
+             * after a fixed hold at the job, NOT at `driver.leaveMin`
+             * (that field is the leave time at a destination plant in
+             * the non-direct help flow). For direct-load we anchor the
+             * return-leg window on `arriveMin + DIRECT_LOAD_HOLD_MINUTES`
+             * and use the job→return travel time rather than the
+             * symmetric plant→plant one. */
+            const usingDirectLoad = Number.isFinite(directLoadHoldMin)
+            const leaveMin = usingDirectLoad
+                ? driver.arriveMin + directLoadHoldMin
+                : Number.isFinite(driver.leaveMin)
+                  ? driver.leaveMin
+                  : null
+            const returnArrival = leaveMin != null ? leaveMin + returnTravel : null
             if (atMinute >= transitStart && atMinute < transitEnd) {
                 outboundInTransit = true
                 continue
@@ -1061,7 +1098,19 @@ function PlanFlowMapView({
                   ? Math.round(route.duration / 60)
                   : null
             const travelHint = outDriveMinutes ?? getTravelTime?.(a.fromPlant, a.toPlant)
-            const activity = classifyAssignmentActivity(a, viewTime, travelHint)
+            /* Return-leg travel for direct-load assignments runs from the
+             * job site to the return plant, NOT from the destination
+             * plant — `cachedJob.backLegMinutes` is the OSRM-resolved
+             * duration for that leg. Falls back to `travelHint` for
+             * non-direct help routes where the return path mirrors the
+             * outbound geometry. */
+            const returnTravelHint =
+                useJobRoute && Number.isFinite(cachedJob.backLegMinutes) ? cachedJob.backLegMinutes : travelHint
+            const directLoadHoldMin = useJobRoute ? DIRECT_LOAD_HOLD_MINUTES : null
+            const activity = classifyAssignmentActivity(a, viewTime, travelHint, {
+                directLoadHoldMin,
+                returnTravelMinutes: returnTravelHint
+            })
 
             const styles = makeLegStyles({ activity, isInvolved, selectedCode })
 
@@ -1105,7 +1154,14 @@ function PlanFlowMapView({
                 resolveDriverLegAnchor({ coords: outCoords, driver, leg: 'outbound', travel: travelHint, viewTime })
             )
             const backAnchors = drivers.map((driver) =>
-                resolveDriverLegAnchor({ coords: backCoords, driver, leg: 'returning', travel: travelHint, viewTime })
+                resolveDriverLegAnchor({
+                    coords: backCoords,
+                    directLoadHoldMin,
+                    driver,
+                    leg: 'returning',
+                    travel: returnTravelHint,
+                    viewTime
+                })
             )
 
             const syncArrows = (group, existingArrows, anchors, fallbackAnchor, color) => {
