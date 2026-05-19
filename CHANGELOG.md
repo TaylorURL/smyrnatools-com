@@ -1,5 +1,46 @@
 # Changelog
 
+## [2026.21.4] - 2026-05-19
+
+- Polished the Planner tab's map: trucks, routes, plant pins, and the time scrubber all got an
+  animation pass without touching the routing or arrow-anchoring engine.
+  - `src/views/tools/plan/PlanFlowMapView.jsx` — replaced the per-driver `▶` glyph with a clean
+    inline-SVG chevron (renders crisp at marker resolution; the previous `fa-truck-fast` glyph
+    didn't render cleanly at 28px). Each truck now carries a colored halo behind it (radial
+    gradient driven by `currentColor` so green outbound and orange-returning trucks glow in their
+    own route color) and a small headlight on the leading edge that pulses on a 1.4s cycle.
+    The headlight is positioned at the right of the un-rotated icon so it always lands at the
+    front of the cab regardless of the bearing rotation.
+  - `src/views/tools/plan/PlanFlowMapView.jsx` (`syncArrows`) — fixed the truck "fly-in" bug.
+    Markers used to be mounted at the route's fallback midpoint and then `setLatLng`-d to their
+    actual driver anchor in the same tick, producing a visible slide from the destination plant
+    to the start of the route on activation. Markers now mount directly at the driver's current
+    anchor when the driver is already on the leg, and a per-marker `_pfArrowActive` tracker
+    suppresses the outer-wrapper CSS transform transition for one frame on every inactive→active
+    transition so subsequent activations also pop directly into place instead of streaking.
+  - `src/views/tools/plan/PlanFlowMapView.jsx` — active route polylines now layer a 1.8s
+    `help-route-flow-breath` filter animation on top of the existing linear dash flow so the
+    glow intensity breathes; an in-transit route reads as "electric" rather than just dashed.
+  - `src/views/tools/plan/PlanFlowMapView.jsx` — active pour pins (job markers where trucks
+    deliver) get a second concentric ring out of phase with the existing box-shadow pulse so the
+    pin reads as a continuous outward wave, plus a subtle 2px vertical bob (2.4s) so the pin
+    feels alive against the stationary basemap.
+  - `src/views/tools/plan/PlanFlowMapView.jsx` — selected plant pins now carry an outward halo
+    pulse (1.8s loop, expanding accent-color ring) so the focused plant stays visually anchored
+    while the rest of the map animates. Toolbar pills got rounded-full styling with entrance
+    animations; the "picking destination" pill glows softly to keep the dispatcher's eye on the
+    active task.
+  - `src/app/components/plan/tabs/flow/PlanFlowTimeScrubber.jsx` — full rebuild. Bigger 22px
+    monospace HH:MM clock split into two segments with a faded separator; 36px round play button
+    with an expanding pulse ring while playing; custom slider thumb that scales 1.18× on hover
+    and 1.25× while dragged; waypoint icons sprinkled along the track (coffee at 6am, sun at
+    noon, cloud-sun at 6pm, moon at 10pm) that light up from grey to accent color as the scrub
+    passes them; hour ticks underneath (`12a / 6a / 12p / 6p / 12a`) for orientation; activity
+    pill animates a pulsing green dot when plants are pouring and a moon icon when idle.
+  - `src/views/tools/plan/PlanFlowMapView.jsx` — soft 320ms `opacity + translateY` mount-in on
+    the flow shell so the first paint of map + chrome lands as one staged fade instead of three
+    separate flashes.
+
 ## [2026.21.3] - 2026-05-19
 
 - Added a live presence overlay to the Planner tab so dispatchers can see who else is viewing or editing

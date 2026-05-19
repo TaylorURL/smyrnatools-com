@@ -219,22 +219,38 @@ function resolveDriverLegAnchor({ coords, driver, leg, travel, viewTime }) {
     return pointAlongPath(coords, fraction)
 }
 
-/** Build a Leaflet DivIcon containing a single `▶` glyph rotated to point
- *  along the route at the marker's location. The inner element is ALWAYS
- *  rendered (opacity drives visibility) so tick-level updates can mutate
- *  the existing DOM via `updateArrow` instead of rebuilding the icon —
- *  rebuilding resets the CSS transitions on rotation / position and is
- *  what makes the arrow jump between frames. */
+/** Build a Leaflet DivIcon for a single driver moving along their route.
+ *  Visuals — a soft colored halo behind the marker so each driver has
+ *  presence against the basemap, a clean rounded-corner chevron rendered
+ *  as inline SVG (renders crisp at any pixel scale and avoids relying on
+ *  a font-icon glyph at marker resolution), and a small bright
+ *  leading-edge dot that reads as a headlight. The outer
+ *  `.pf-route-arrow` class stays as the rotation / opacity target so
+ *  `updateArrow` can keep mutating the DOM in place across ticks without
+ *  rebuilding the icon (rebuilding resets the in-flight CSS transition
+ *  and produces the visible "jump" between frames). The chevron points
+ *  to the right by default, so the existing `bearing - 90` rotation lands
+ *  the tip pointing toward the destination. */
 function makeArrowIcon({ active, color, rotationDeg }) {
+    const svg = `
+        <svg class="pf-truck-glyph" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path d="M5 4.5 C5 3.4 6.1 2.7 7.1 3.2 L20.3 11 C21.2 11.5 21.2 12.5 20.3 13 L7.1 20.8 C6.1 21.3 5 20.6 5 19.5 Z"
+                  fill="currentColor"
+                  stroke="rgba(255, 255, 255, 0.85)"
+                  stroke-width="1.5"
+                  stroke-linejoin="round" />
+        </svg>`
     return L.divIcon({
         className: 'plan-flow-arrow-marker',
         html:
             `<div class="pf-route-arrow" ` +
             `style="color:${color};transform:rotate(${rotationDeg.toFixed(1)}deg);opacity:${active ? 1 : 0}">` +
-            `<i class="fas fa-play"></i>` +
+            `<span class="pf-truck-halo"></span>` +
+            svg +
+            `<span class="pf-truck-headlight"></span>` +
             `</div>`,
-        iconAnchor: [10, 10],
-        iconSize: [20, 20]
+        iconAnchor: [14, 14],
+        iconSize: [28, 28]
     })
 }
 
@@ -409,10 +425,15 @@ function makePlantIcon(stat, status, accentColor) {
     const r = radiusForOps(status.effWithMissing)
     const codeFontSize = Math.max(13, Math.min(18, Math.round(r * 0.32)))
     const ringWidth = status.isSelected ? 4 : status.isDestinationCandidate ? 4 : 3
+    /* The `pf-plant-pin-selected` modifier turns on the halo pulse CSS so
+     * the focused plant keeps a soft ring expanding around it while the
+     * dispatcher works the side panel — much easier to keep track of
+     * "which plant am I editing?" when the map is animating routes. */
+    const pinClass = `pf-plant-pin${status.isSelected ? ' pf-plant-pin-selected' : ''}`
     return L.divIcon({
         className: 'plan-flow-map-marker',
         html: `
-            <div class="pf-plant-pin" style="
+            <div class="${pinClass}" style="
                 width:${r}px;height:${r}px;
                 box-shadow:0 0 0 ${ringWidth}px ${status.ringColor}, 0 2px 6px rgba(0,0,0,0.35);
                 background:${status.isSelected ? accentColor : 'var(--bg-primary)'};
@@ -1094,30 +1115,64 @@ function PlanFlowMapView({
                     const stale = arrows.pop()
                     if (stale && group) group.removeLayer(stale)
                 }
-                // Add arrows for new drivers (created hidden; positioned on the
-                // fallback point so the very first tick starts from somewhere
-                // sensible without a fly-in animation).
+                /* Add markers for new drivers. When the driver is already
+                 * on this leg at the current viewTime, mount the marker
+                 * directly at their per-driver anchor (start-of-leg if
+                 * they just entered, mid-leg if they were partway when
+                 * the view first loaded) so it appears in place. When the
+                 * driver isn't on the leg yet, fall back to the route
+                 * midpoint — the marker is hidden (opacity 0) and will
+                 * snap to the start of the leg on activation without
+                 * sliding across the map. */
                 while (arrows.length < driverCount) {
-                    const seed = fallbackAnchor
+                    const idx = arrows.length
+                    const driverAnchor = anchors[idx]
+                    const seed = driverAnchor || fallbackAnchor
                     if (!seed) break
                     const marker = L.marker([seed.lat, seed.lng], {
-                        icon: makeArrowIcon({ active: false, color, rotationDeg: seed.angleDeg }),
+                        icon: makeArrowIcon({
+                            active: !!driverAnchor,
+                            color,
+                            rotationDeg: seed.angleDeg
+                        }),
                         interactive: false
                     })
                     if (group) marker.addTo(group)
+                    marker._pfArrowActive = !!driverAnchor
                     arrows.push(marker)
                 }
-                // Update each driver's arrow to its own anchor (or hide it if
-                // that driver isn't on this leg right now).
+                /* Update each driver's arrow. The `_pfArrowActive` flag
+                 * tracks whether this driver was on the leg in the
+                 * previous tick. The first frame a driver becomes active
+                 * (inactive → active) the marker's previous translate3d
+                 * still points at the fallback / last-active position; if
+                 * we let the CSS transition run, the truck visibly streaks
+                 * from there to the start of its route. Pinning
+                 * `transition:none` inline around that one setLatLng makes
+                 * the marker pop into place at the leg start; the rAF
+                 * restores the transition so the next tick's lerp keeps
+                 * the smooth in-leg motion. */
                 anchors.forEach((anchor, idx) => {
                     const marker = arrows[idx]
                     if (!marker) return
+                    const wasActive = marker._pfArrowActive === true
+                    const willActivate = !!anchor && !wasActive
+                    if (willActivate && marker._icon) {
+                        marker._icon.style.transition = 'none'
+                    }
                     if (anchor) marker.setLatLng([anchor.lat, anchor.lng])
                     updateArrow(marker, {
                         active: !!anchor,
                         color,
                         rotationDeg: anchor?.angleDeg ?? 0
                     })
+                    marker._pfArrowActive = !!anchor
+                    if (willActivate && marker._icon) {
+                        const iconEl = marker._icon
+                        requestAnimationFrame(() => {
+                            iconEl.style.transition = ''
+                        })
+                    }
                 })
                 return arrows
             }
@@ -1551,9 +1606,20 @@ function PlanFlowMapView({
                     animation: help-route-base-flow 1.4s linear infinite;
                 }
                 .help-route-flow {
-                    animation: help-route-flow 0.9s linear infinite;
-                    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9))
-                            drop-shadow(0 0 14px rgba(148, 163, 184, 0.55));
+                    animation: help-route-flow 0.9s linear infinite,
+                               help-route-flow-breath 1.8s ease-in-out infinite;
+                    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 1))
+                            drop-shadow(0 0 18px rgba(186, 230, 253, 0.7));
+                }
+                /* Subtle brightness breathing on the overlay so an active
+                 * route has its own internal rhythm on top of the linear
+                 * dash flow — reads as "the road has a pulse" instead of
+                 * a perfectly mechanical dashed line. */
+                @keyframes help-route-flow-breath {
+                    0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.85))
+                                       drop-shadow(0 0 14px rgba(186, 230, 253, 0.55)); }
+                    50%      { filter: drop-shadow(0 0 14px rgba(255, 255, 255, 1))
+                                       drop-shadow(0 0 22px rgba(186, 230, 253, 0.85)); }
                 }
                 /* Static variant — same look minus the animation. Used by
                  * routes whose operators are pouring at the destination or
@@ -1591,7 +1657,23 @@ function PlanFlowMapView({
                     display: flex; align-items: center; justify-content: center;
                     box-shadow: 0 0 0 2px var(--bg-primary), 0 2px 6px rgba(0,0,0,0.35);
                     font-size: 12px;
-                    animation: pf-job-pin-pulse 1.6s ease-in-out infinite;
+                    animation: pf-job-pin-pulse 1.6s ease-in-out infinite,
+                               pf-job-pin-bob 2.4s ease-in-out infinite;
+                }
+                /* Second concentric ring out of phase with the box-shadow
+                 * pulse so the pin reads as a continuous "wave" outward
+                 * rather than a single beat. Lives as a pseudo-element so
+                 * it stays pinned to the marker geometry through Leaflet
+                 * pans without needing extra DOM. */
+                .pf-job-pin::after {
+                    content: '';
+                    position: absolute;
+                    inset: -8px;
+                    border-radius: 50%;
+                    border: 2px solid rgba(245, 158, 11, 0.85);
+                    opacity: 0;
+                    animation: pf-job-pin-ring 1.6s ease-in-out infinite 0.8s;
+                    pointer-events: none;
                 }
                 .pf-job-count {
                     position: absolute;
@@ -1604,10 +1686,22 @@ function PlanFlowMapView({
                     font-family: 'Exo 2', system-ui, sans-serif;
                     font-size: 10px; font-weight: 800; line-height: 13px;
                     text-align: center;
+                    z-index: 1;
                 }
                 @keyframes pf-job-pin-pulse {
                     0%, 100% { box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 0 rgba(245, 158, 11, 0.55); }
                     50%      { box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 6px rgba(245, 158, 11, 0); }
+                }
+                @keyframes pf-job-pin-ring {
+                    0%   { opacity: 0.7; transform: scale(0.85); }
+                    100% { opacity: 0;   transform: scale(1.6);  }
+                }
+                /* Subtle vertical bob so the active pour pin reads as
+                 * "alive" against a stationary basemap — concrete is
+                 * flowing, work is happening here. */
+                @keyframes pf-job-pin-bob {
+                    0%, 100% { transform: translateY(0); }
+                    50%      { transform: translateY(-2px); }
                 }
                 /* Direct-load line — thin dotted slate edge connecting
                  * a geocoded job location to the plant the order is
@@ -1643,42 +1737,148 @@ function PlanFlowMapView({
                     transition: none;
                 }
                 .pf-route-arrow {
-                    width: 20px; height: 20px;
+                    width: 28px; height: 28px;
                     display: flex; align-items: center; justify-content: center;
-                    font-size: 12px; line-height: 1;
-                    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.55));
+                    position: relative;
                     transition: transform 240ms linear, color 240ms linear, opacity 200ms ease;
                     transform-origin: 50% 50%;
                     will-change: transform, opacity;
                 }
+                /* Pulsing colored halo so each driver has a glowing
+                 * presence on the map; the halo inherits the truck's
+                 * route color via currentColor (radial gradient is
+                 * driven by the inline color on .pf-route-arrow). */
+                .pf-truck-halo {
+                    position: absolute;
+                    inset: -3px;
+                    border-radius: 50%;
+                    background: radial-gradient(circle, currentColor 0%, transparent 65%);
+                    opacity: 0.55;
+                    animation: pf-truck-halo 1.3s ease-in-out infinite;
+                    pointer-events: none;
+                }
+                @keyframes pf-truck-halo {
+                    0%, 100% { opacity: 0.25; transform: scale(0.82); }
+                    50%      { opacity: 0.65; transform: scale(1.18); }
+                }
+                /* The truck glyph itself — drop-shadow gives it a slight
+                 * lift off the map so it doesn't fight with the polyline
+                 * underneath. font-size matches the 28x28 icon box. */
+                .pf-truck-glyph {
+                    position: relative;
+                    font-size: 16px;
+                    line-height: 1;
+                    filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.55));
+                    z-index: 1;
+                }
+                /* Headlight sits on the right edge of the un-rotated
+                 * icon. Because the marker is rotated by (bearing - 90),
+                 * "right" after rotation is the truck's leading edge —
+                 * the headlight always ends up at the front of the cab
+                 * regardless of bearing. */
+                .pf-truck-headlight {
+                    position: absolute;
+                    right: 1px;
+                    top: 50%;
+                    width: 5px; height: 5px;
+                    border-radius: 50%;
+                    background: #fffbeb;
+                    box-shadow: 0 0 6px 2px rgba(254, 240, 138, 0.9),
+                                0 0 12px 4px rgba(254, 240, 138, 0.35);
+                    transform: translateY(-50%);
+                    animation: pf-truck-headlight 1.4s ease-in-out infinite;
+                    pointer-events: none;
+                    z-index: 2;
+                }
+                @keyframes pf-truck-headlight {
+                    0%, 100% { opacity: 0.55; }
+                    50%      { opacity: 1;    }
+                }
+                html.dark .pf-truck-headlight {
+                    box-shadow: 0 0 8px 3px rgba(254, 240, 138, 0.95),
+                                0 0 16px 6px rgba(254, 240, 138, 0.45);
+                }
+                /* Soft mount-in for the entire Planner shell so the first
+                 * paint of the map + chrome feels like a single staged
+                 * fade rather than three separate flashes. */
+                .pf-flow-shell {
+                    animation: pf-flow-mount 320ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+                }
+                @keyframes pf-flow-mount {
+                    0%   { opacity: 0; transform: translateY(4px); }
+                    100% { opacity: 1; transform: translateY(0); }
+                }
+                /* Animated entrance for the dynamic toolbar pills (picking
+                 * banner, selected-plant chip, routing spinner) so they
+                 * don't snap in mid-flight. */
+                .pf-tool-pill {
+                    animation: pf-tool-pill-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+                }
+                @keyframes pf-tool-pill-in {
+                    0%   { opacity: 0; transform: translateY(-3px) scale(0.96); }
+                    100% { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                .pf-tool-pill-picking {
+                    animation: pf-tool-pill-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both,
+                               pf-picking-glow 1.4s ease-in-out infinite 220ms;
+                }
+                @keyframes pf-picking-glow {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                    50%      { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.18); }
+                }
+                /* Selected plant pin — soft halo pulse so the dispatcher
+                 * keeps track of which plant is focused while the rest of
+                 * the map animates. Only applies when the parent marker
+                 * carries the .pf-plant-pin-selected class. */
+                .pf-plant-pin-selected::after {
+                    content: '';
+                    position: absolute;
+                    inset: -8px;
+                    border-radius: 50%;
+                    border: 2px solid currentColor;
+                    opacity: 0.55;
+                    animation: pf-plant-halo 1.8s ease-in-out infinite;
+                    pointer-events: none;
+                }
+                @keyframes pf-plant-halo {
+                    0%, 100% { transform: scale(1);     opacity: 0.55; }
+                    50%      { transform: scale(1.18);  opacity: 0;    }
+                }
             `}</style>
 
-            <div className="relative flex-1 flex flex-col">
-                {/* Toolbar overlay */}
+            <div className="pf-flow-shell relative flex-1 flex flex-col">
+                {/* Toolbar — stat chips on the left, transient state pills on
+                 * the right. Hover-elevate transitions on the chips and a
+                 * subtle inset border for the surrounding bar give the
+                 * Planner its polished header without crowding the map. */}
                 <div className="shrink-0 flex items-center flex-wrap gap-2 px-3 sm:px-4 py-2 bg-bg-primary border-b border-border-light">
-                    <span className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1 bg-bg-secondary border border-border-light">
-                        <i className="fas fa-building text-[10px] text-text-tertiary" />
-                        <span className="font-mono tabular-nums font-bold text-text-primary">
-                            {allPlantStats.length}
+                    <div className="inline-flex rounded-lg border border-border-light bg-bg-secondary overflow-hidden shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 transition-colors hover:bg-bg-tertiary">
+                            <i className="fas fa-building text-[10px] text-text-tertiary" />
+                            <span className="font-mono tabular-nums font-bold text-text-primary">
+                                {allPlantStats.length}
+                            </span>
+                            <span className="text-text-secondary text-[11.5px]">plants</span>
                         </span>
-                        <span className="text-text-secondary">plants</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1 bg-bg-secondary border border-border-light">
-                        <i className="fas fa-route text-[10px] text-text-tertiary" />
-                        <span className="font-mono tabular-nums font-bold text-text-primary">
-                            {Object.keys(polylinesByEdgeRef.current).length ||
-                                assignments.filter((a) => a.fromPlant && a.toPlant && a.fromPlant !== a.toPlant).length}
+                        <span className="w-px self-stretch bg-border-light" aria-hidden="true" />
+                        <span className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 transition-colors hover:bg-bg-tertiary">
+                            <i className="fas fa-route text-[10px] text-text-tertiary" />
+                            <span className="font-mono tabular-nums font-bold text-text-primary">
+                                {Object.keys(polylinesByEdgeRef.current).length ||
+                                    assignments.filter((a) => a.fromPlant && a.toPlant && a.fromPlant !== a.toPlant)
+                                        .length}
+                            </span>
+                            <span className="text-text-secondary text-[11.5px]">help routes</span>
                         </span>
-                        <span className="text-text-secondary">help routes</span>
-                    </span>
+                    </div>
                     {pickingDestination && (
-                        <span className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1 bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.4)] text-[#b45309]">
+                        <span className="pf-tool-pill pf-tool-pill-picking inline-flex items-center gap-1.5 rounded-full text-[11px] font-semibold px-2.5 py-1 bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.4)] text-[#b45309]">
                             <i className="fas fa-crosshairs text-[10px]" />
                             Click a plant to set the destination
                             <button
                                 type="button"
                                 onClick={() => setPickingDestination(false)}
-                                className="ml-1 border-none bg-transparent cursor-pointer p-0 text-[#b45309] font-bold"
+                                className="ml-1 border-none bg-transparent cursor-pointer p-0 text-[#b45309] font-bold transition-transform hover:scale-110"
                                 aria-label="Cancel picking"
                             >
                                 ×
@@ -1687,7 +1887,7 @@ function PlanFlowMapView({
                     )}
                     {selectedCode && !pickingDestination && (
                         <span
-                            className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1"
+                            className="pf-tool-pill inline-flex items-center gap-1.5 rounded-full text-[12px] font-semibold px-2.5 py-1 transition-all"
                             style={{
                                 background: `${accentColor}1a`,
                                 border: `1px solid ${accentColor}55`,
@@ -1699,7 +1899,7 @@ function PlanFlowMapView({
                             <button
                                 type="button"
                                 onClick={() => setSelectedCode(null)}
-                                className="ml-1 border-none bg-transparent cursor-pointer p-0 font-bold"
+                                className="ml-1 border-none bg-transparent cursor-pointer p-0 font-bold transition-transform hover:scale-110"
                                 style={{ color: accentColor }}
                                 aria-label="Clear selection"
                             >
@@ -1708,7 +1908,7 @@ function PlanFlowMapView({
                         </span>
                     )}
                     {(pendingPlantGeocodes > 0 || pendingRoutes > 0) && (
-                        <span className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1 bg-[rgba(37,99,235,0.12)] border border-[rgba(37,99,235,0.35)] text-blue-600">
+                        <span className="pf-tool-pill inline-flex items-center gap-1.5 rounded-full text-[11px] font-semibold px-2.5 py-1 bg-[rgba(37,99,235,0.12)] border border-[rgba(37,99,235,0.35)] text-blue-600">
                             <i className="fas fa-circle-notch fa-spin text-[10px]" />
                             {pendingPlantGeocodes > 0 ? `Locating ${pendingPlantGeocodes}` : `Routing ${pendingRoutes}`}
                             …
