@@ -58,6 +58,15 @@ export function usePlanData(planDate) {
     const [planLoadAttempt, setPlanLoadAttempt] = useState(0)
     const retryPlanLoad = useCallback(() => setPlanLoadAttempt((n) => n + 1), [])
     const dirtyRef = useRef(false)
+    /** Wall-clock ms timestamp set every time the load effect commits a
+     *  fresh plan. The autosave race guard compares against this to
+     *  decide whether an empty-over-meaningful save looks like a load
+     *  race (suspicious — block) vs a deliberate user-initiated clear
+     *  (allow through). 10 s is wide enough to catch the realtime / sync
+     *  / scheduleSync timing path but tight enough that a dispatcher who
+     *  manually deletes every route after reading the plan still gets
+     *  their save through. */
+    const loadedAtMsRef = useRef(0)
     /* Monotonic counter incremented on every local edit. Each scheduled save
      * captures the serial at scheduling time; on completion it only clears
      * dirtyRef if no newer edit has been queued. Without this, an in-flight
@@ -223,6 +232,7 @@ export function usePlanData(planDate) {
                     plantProduction: loadedProduction
                 })
                 loadedForDateRef.current = planDate
+                loadedAtMsRef.current = Date.now()
                 requestAnimationFrame(() => {
                     if (cancelled) return
                     autosaveEnabledRef.current = true
@@ -313,9 +323,40 @@ export function usePlanData(planDate) {
             }
         }
         if (newSnapshotEffectivelyEmpty && prevSnapshotWasMeaningful) {
+            /* Hard guard: when the new state goes from meaningful to
+             * effectively-empty WITHIN ~10s of the last load, treat it as
+             * a race (realtime echo, schedule sync, etc.) and refuse to
+             * persist. The wipes the dispatcher has been hitting on
+             * tomorrow's plan all happen in this window — the load races
+             * with secondary state updates and the autosave ships an
+             * empty payload before the dispatcher has time to react. A
+             * legitimate "delete every route" workflow takes longer than
+             * 10 s after page load (user has to read the plan, click
+             * Delete, confirm each one), so those still pass through.
+             * Block + log so the next reproduction tells us where the
+             * stale empty state came from. */
+            const RACE_WINDOW_MS = 10000
+            const elapsedSinceLoad = Date.now() - loadedAtMsRef.current
+            if (elapsedSinceLoad < RACE_WINDOW_MS) {
+                console.error(
+                    '[usePlanData] BLOCKED autosave: would write EMPTY plan over previously non-empty state within ' +
+                        `${elapsedSinceLoad}ms of load — treating as a race and preserving the saved plan.`,
+                    {
+                        elapsedSinceLoad,
+                        nowAssignments: assignments,
+                        planDate,
+                        prevSnapshot: lastSyncedSnapshotRef.current,
+                        stack: new Error('wipe-block-trace').stack
+                    }
+                )
+                dirtyRef.current = false
+                setSyncStatus('saved')
+                return
+            }
             console.warn(
                 '[usePlanData] AUTOSAVE about to write an EMPTY plan over a previously non-empty plan. Stack trace follows.',
                 {
+                    elapsedSinceLoad,
                     nowAssignments: assignments,
                     planDate,
                     prevSnapshot: lastSyncedSnapshotRef.current,
@@ -490,12 +531,12 @@ export function usePlanData(planDate) {
         adjacentProduction,
         assignments,
         canEdit: canEditEffective,
-        isPastPlanDate,
         detailByOrderId,
         dirtyRef,
         getTravelTime,
         isDetailOrdersLoading,
         isLoading,
+        isPastPlanDate,
         isSchedulesSyncing,
         mixerCountsByPlant,
         notes,

@@ -204,7 +204,7 @@ const DIRECT_LOAD_HOLD_MINUTES = 60
  *  site `DIRECT_LOAD_HOLD_MINUTES` after arrival and turn directly to
  *  their return plant from there — `leaveMin` doesn't apply because the
  *  destination plant was never their endpoint. */
-function driverLegFraction({ directLoadHoldMin, driver, leg, travel, viewTime }) {
+function driverLegFraction({ directLoadHoldMin, driver, leg, returnStaggerMin, travel, viewTime }) {
     if (!driver || !Number.isFinite(viewTime)) return null
     if (!Number.isFinite(driver.arriveMin)) return null
     let startMin
@@ -218,8 +218,18 @@ function driverLegFraction({ directLoadHoldMin, driver, leg, travel, viewTime })
     } else {
         const leave = Number.isFinite(driver.leaveMin) && driver.leaveMin > driver.arriveMin ? driver.leaveMin : null
         if (leave == null) return null
-        startMin = leave
-        endMin = leave + travel
+        /* Visual stagger for the return-leg chevrons. In stagger mode
+         * the assignment carries a SINGLE `leaveTime` field that
+         * applies to every driver, so without an offset every chevron
+         * ends up at the identical fraction of the return polyline and
+         * the crew renders as ONE visible truck. We back-stagger by the
+         * driver's index × the assignment's `staggerMinutes` so the
+         * convoy reads as the same number of trucks heading home as
+         * went out. Direct-load case is handled above (arriveMin is
+         * already staggered, so the hold window stagger is natural). */
+        const offset = Number.isFinite(returnStaggerMin) ? (driver.driverIndex || 0) * returnStaggerMin : 0
+        startMin = leave + offset
+        endMin = startMin + travel
     }
     if (endMin <= startMin) return null
     if (viewTime < startMin || viewTime >= endMin) return null
@@ -231,9 +241,9 @@ function driverLegFraction({ directLoadHoldMin, driver, leg, travel, viewTime })
  *  Used to render one ▶ marker per truck so a staggered crew of N reads
  *  as N arrows walking the route at different fractions, not one
  *  average-of-the-pack arrow. */
-function resolveDriverLegAnchor({ coords, directLoadHoldMin, driver, leg, travel, viewTime }) {
+function resolveDriverLegAnchor({ coords, directLoadHoldMin, driver, leg, returnStaggerMin, travel, viewTime }) {
     if (!coords || coords.length < 2) return null
-    const fraction = driverLegFraction({ directLoadHoldMin, driver, leg, travel, viewTime })
+    const fraction = driverLegFraction({ directLoadHoldMin, driver, leg, returnStaggerMin, travel, viewTime })
     if (fraction == null) return null
     return pointAlongPath(coords, fraction)
 }
@@ -983,7 +993,7 @@ function PlanFlowMapView({
         assignment,
         atMinute,
         travelMinutes,
-        { directLoadHoldMin = null, returnTravelMinutes = null } = {}
+        { directLoadHoldMin = null, returnStaggerMin = null, returnTravelMinutes = null } = {}
     ) => {
         if (!Number.isFinite(atMinute)) return { outbound: 'inactive', returning: 'inactive' }
         const drivers = buildAssignmentDriverTimes(assignment)
@@ -1005,11 +1015,21 @@ function PlanFlowMapView({
              * and use the job→return travel time rather than the
              * symmetric plant→plant one. */
             const usingDirectLoad = Number.isFinite(directLoadHoldMin)
-            const leaveMin = usingDirectLoad
+            const baseLeave = usingDirectLoad
                 ? driver.arriveMin + directLoadHoldMin
                 : Number.isFinite(driver.leaveMin)
                   ? driver.leaveMin
                   : null
+            /* Match the same visual stagger applied to the per-driver
+             * chevrons in `driverLegFraction`. Without this, the
+             * polyline's `transit` window only covers the single
+             * shared `leaveMin` window — when the LAST driver in the
+             * staggered crew is still on the road, the polyline would
+             * already have switched back to `inactive`, dimming the
+             * route even though trucks are visibly on it. */
+            const staggerOffset =
+                !usingDirectLoad && Number.isFinite(returnStaggerMin) ? (driver.driverIndex || 0) * returnStaggerMin : 0
+            const leaveMin = baseLeave != null ? baseLeave + staggerOffset : null
             const returnArrival = leaveMin != null ? leaveMin + returnTravel : null
             if (atMinute >= transitStart && atMinute < transitEnd) {
                 outboundInTransit = true
@@ -1107,8 +1127,20 @@ function PlanFlowMapView({
             const returnTravelHint =
                 useJobRoute && Number.isFinite(cachedJob.backLegMinutes) ? cachedJob.backLegMinutes : travelHint
             const directLoadHoldMin = useJobRoute ? DIRECT_LOAD_HOLD_MINUTES : null
+            /* Visual stagger applied to the return-leg chevrons (and to
+             * the polyline's `transit` window). In stagger mode every
+             * driver shares the assignment's single `leaveTime`, so we
+             * fan their return-leg start times out by the same per-driver
+             * stagger the outbound leg uses — otherwise the convoy
+             * collapses to a single visible chevron on the return road.
+             * Custom-time mode keeps each driver's per-row leave time
+             * intact (no extra stagger). Direct-load is naturally
+             * staggered via `arriveMin`. */
+            const isCustomTimeMode = a?.timeMode === 'custom' && Array.isArray(a?.customTimes)
+            const returnStaggerMin = useJobRoute || isCustomTimeMode ? 0 : parseInt(a?.staggerMinutes, 10) || 0
             const activity = classifyAssignmentActivity(a, viewTime, travelHint, {
                 directLoadHoldMin,
+                returnStaggerMin,
                 returnTravelMinutes: returnTravelHint
             })
 
@@ -1159,6 +1191,7 @@ function PlanFlowMapView({
                     directLoadHoldMin,
                     driver,
                     leg: 'returning',
+                    returnStaggerMin,
                     travel: returnTravelHint,
                     viewTime
                 })

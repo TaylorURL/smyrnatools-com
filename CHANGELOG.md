@@ -1,5 +1,30 @@
 # Changelog
 
+## [2026.21.6] - 2026-05-19
+
+- Hard-blocked the autosave race that was wiping the planner's saved assignments on tomorrow's plan
+  shortly after open. The dispatcher's theory was correct: a secondary state update (realtime echo,
+  schedule sync) was racing against the load and the autosave was shipping an effectively-empty payload
+  before the load committed its real data. The previous release only logged a warning; this one
+  refuses the write within a 10 s post-load window so the saved plan is preserved no matter where the
+  empty state came from.
+  - `src/app/hooks/usePlanData.js` — added `loadedAtMsRef` and stamped it inside the load completion
+    block. The autosave path checks the elapsed-since-load delta when the current snapshot is
+    effectively empty and the previous-synced snapshot held real routes: under 10 s it logs a
+    `console.error` with a stack trace and returns without saving (also clears `dirtyRef` and snaps
+    `syncStatus` to `saved` so the spinner doesn't hang). After the window passes the previous
+    warning-only behavior remains so legitimate "delete every route" workflows still persist.
+- Fixed the return-leg chevron stacking on the Planner map. In stagger mode the assignment carries a
+  single `leaveTime` field that applies to every driver, so without an offset every driver computed
+  the same fraction along the return polyline and the chevrons rendered as one truck instead of N.
+  - `src/views/tools/plan/PlanFlowMapView.jsx` — added a `returnStaggerMin` parameter to
+    `driverLegFraction`, `resolveDriverLegAnchor`, and `classifyAssignmentActivity`. The non-direct
+    return-leg start time is offset by `driverIndex × returnStaggerMin` so each chevron renders at a
+    distinct fraction. The polyline's `transit` window now covers the staggered convoy end-to-end so
+    the orange flow stays on while the last truck is still rolling home. Direct-load assignments
+    naturally stagger via `arriveMin + DIRECT_LOAD_HOLD_MINUTES` and skip the extra offset; custom-time
+    mode (per-driver `leaveTime`) also skips so the dispatcher's hand-entered times stay authoritative.
+
 ## [2026.21.5] - 2026-05-19
 
 - Guarded the planner's realtime handler against empty-payload wipes. When another client's transient
