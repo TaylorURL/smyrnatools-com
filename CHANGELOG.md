@@ -1,5 +1,29 @@
 # Changelog
 
+## [2026.21.3] - 2026-05-19
+
+- Added a live presence overlay to the Planner tab so dispatchers can see who else is viewing or editing
+  the same `plan_date`. Avatar chips appear in the top-right of the Flow map; each chip shows initials in
+  a deterministic per-user color, with a red ring + bottom-right dot while that user is actively saving.
+  Hover any chip for full name + role + viewing/editing state. Self is included with a "(You)" label.
+  Up to 6 chips visible, the rest collapse into a `+N` overflow that expands on click.
+  - `src/app/hooks/usePlanPresence.js` (new) — joins a Supabase Realtime Presence channel keyed by
+    `plan-presence:${planDate}` and tracks `{ userId, name, role, editing, joinedAt }`. Switching dates
+    re-subscribes so chip rosters never leak across days. Multi-tab connections are deduped by `userId`.
+    Re-tracks on `isEditing` change so remote chips ring red within heartbeat-time. Pulls display name +
+    primary role for the local user once via `UserService`; other clients' metadata rides on their own
+    track payloads, no extra fetches.
+  - `src/app/components/plan/PlanPresenceOverlay.jsx` (new) — floating chip row component. Color per
+    chip is hashed from `userId` for stable identity. Tooltip pill renders below each chip with
+    name / role / viewing-or-editing dot. Pill button collapses long rosters behind a `+N` chip.
+  - `src/views/tools/plan/PlanView.jsx` — calls `usePlanPresence(planDate, { isEditing: syncStatus ===
+    'saving', userId })` so the local user's chip rings while their autosave is in flight. Mounts
+    `<PlanPresenceOverlay users={presenceUsers} />` inside the `flow` block.
+- Fixed the Planner tab page collapsing to a 3/4-blank canvas after the overlay was first wired in.
+  The wrapping div used `h-full w-full`, which does not grow inside a flex column parent — replaced with
+  `flex flex-1 min-h-0 w-full flex-col` so `PlanFlowMapView` fills the remaining height again and the
+  absolute-positioned overlay still anchors to the top-right corner.
+
 ## [2026.21.2] - 2026-05-19
 
 - Switched the Daily Plan email pipeline to target **tomorrow's** plan instead of today's. At 4 PM Central

@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState, useTransition } from 'react'
 import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'
 import { PlanHeader } from '../../../app/components/plan/PlanHeader'
 import { PlanLoadErrorBanner } from '../../../app/components/plan/PlanLoadErrorBanner'
+import { PlanPresenceOverlay } from '../../../app/components/plan/PlanPresenceOverlay'
 import { PlanReadOnlyBanner } from '../../../app/components/plan/PlanReadOnlyBanner'
 import { PlanReviewSendModal } from '../../../app/components/plan/PlanReviewSendModal'
 import { PlanScheduleStaleBanner } from '../../../app/components/plan/tabs/schedule/PlanScheduleStaleBanner'
@@ -13,6 +14,7 @@ import { usePlanData } from '../../../app/hooks/usePlanData'
 import { usePlanDate } from '../../../app/hooks/usePlanDate'
 import { usePlanInsights } from '../../../app/hooks/usePlanInsights'
 import { usePlanLookups } from '../../../app/hooks/usePlanLookups'
+import { usePlanPresence } from '../../../app/hooks/usePlanPresence'
 import { usePlanUserContext } from '../../../app/hooks/usePlanUserContext'
 import { PLAN_META_KEY } from '../../../utils/PlanUtility'
 import BookOrderView from './BookOrderView'
@@ -198,6 +200,14 @@ function PlanViewImpl({ accentColor, isDark }) {
 
     const { canSeeSettingsTab, canSeeYourTab, userPlantCode, userRoleNames } = usePlanUserContext(userId)
 
+    /* Live "who's on this plan right now" roster — feeds the avatar
+     * overlay on the Planner tab. `editing` mirrors the autosave bus so
+     * remote chips ring red while a teammate is actively saving. */
+    const { users: presenceUsers } = usePlanPresence(planDate, {
+        isEditing: syncStatus === 'saving',
+        userId
+    })
+
     /* Bounce a user off the Settings tab if they ever land there without
      * the `plan.settings` permission (revoked mid-session, deep link, etc.).
      * Belt-and-suspenders — the tab is already hidden from the switcher. */
@@ -304,20 +314,23 @@ function PlanViewImpl({ accentColor, isDark }) {
                         )}
 
                         {effectiveViewMode === 'flow' && (
-                            <PlanFlowMapView
-                                accentColor={accentColor}
-                                assignments={assignments}
-                                calcClockIn={calcClockIn}
-                                canEdit={canEdit}
-                                getTravelTime={getTravelTime}
-                                mixerCountsByPlant={mixerCountsByPlant}
-                                planDate={planDate}
-                                plantProduction={plantProduction}
-                                plants={plants}
-                                setAssignments={setAssignments}
-                                setPlantProduction={setPlantProduction}
-                                stats={stats}
-                            />
+                            <div className="relative flex flex-1 min-h-0 w-full flex-col">
+                                <PlanFlowMapView
+                                    accentColor={accentColor}
+                                    assignments={assignments}
+                                    calcClockIn={calcClockIn}
+                                    canEdit={canEdit}
+                                    getTravelTime={getTravelTime}
+                                    mixerCountsByPlant={mixerCountsByPlant}
+                                    planDate={planDate}
+                                    plantProduction={plantProduction}
+                                    plants={plants}
+                                    setAssignments={setAssignments}
+                                    setPlantProduction={setPlantProduction}
+                                    stats={stats}
+                                />
+                                <PlanPresenceOverlay users={presenceUsers} />
+                            </div>
                         )}
 
                         {effectiveViewMode === 'schedule' && (
