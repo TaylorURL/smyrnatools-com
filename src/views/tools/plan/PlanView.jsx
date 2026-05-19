@@ -168,6 +168,7 @@ function PlanViewImpl({ accentColor, isDark }) {
         setAssignments,
         setNotes,
         setPlantProduction,
+        syncStatus,
         travelTimes,
         userId
     } = usePlanData(planDate)
@@ -237,6 +238,7 @@ function PlanViewImpl({ accentColor, isDark }) {
                 onRefresh={refreshSchedule}
                 planDate={planDate}
                 scheduleLastSyncedAt={scheduleLastSyncedAt}
+                syncStatus={syncStatus}
                 viewMode={viewMode}
             />
             <div className="w-full max-w-full overflow-x-hidden flex flex-1 flex-col min-h-0 overflow-hidden">

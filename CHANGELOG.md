@@ -1,5 +1,48 @@
 # Changelog
 
+## [2026.21.0] - 2026-05-19
+
+- Made the Planner tab actually collaborative in real time. Two dispatchers viewing the same `plan_date` will now
+  see each other's edits land in under half a second, with the latest server version always the one displayed —
+  no more stale local state silently overwriting a teammate's work.
+  - `supabase/migrations/20260519_enable_realtime_for_plans.sql` (new) — adds `public.plans` to the
+    `supabase_realtime` publication and switches its `replica identity` to `full` so the existing
+    `useRealtimeSubscription` for `plans` actually receives change events. The client wiring was correct;
+    the database was simply never streaming. Idempotent membership check via `pg_publication_tables` so
+    re-running the migration in environments where someone added the table via Studio is a no-op.
+  - `src/app/hooks/usePlanData.js` — overhauled the autosave / realtime pipeline:
+    - New `lastSyncedSnapshotRef` carries the JSON of the most recent payload we either saved or received.
+      Both sides of the bus consult it so an incoming realtime event that matches our own just-written
+      snapshot is recognised as a self-echo and skipped, and the autosave effect re-firing after a remote
+      apply short-circuits instead of re-saving the same bytes back to the bus.
+    - Replaced the bare `catch {}` on the save with proper error handling. The old swallow left `dirtyRef`
+      stuck `true` forever after any transient transport failure — and the realtime onChange short-circuited
+      while `dirtyRef` was true, so a single auth blip would permanently block this user from receiving
+      anyone else's updates. The new catch logs the error, clears `dirtyRef`, and flips the sync indicator
+      to `error` so the user knows their last write didn't ship.
+    - Dropped the `if (dirtyRef.current) return` gate at the top of the realtime handler. Incoming payloads
+      now apply unconditionally (other than self-echo), so a user mid-edit immediately sees their
+      collaborator's saves and converges on the latest authoritative state. The stamp-snapshot-before-setState
+      pattern prevents the resulting autosave effect from echoing the remote payload right back.
+    - Plan-load now seeds `lastSyncedSnapshotRef` with the server's fetched state and resets it on every
+      `planDate` change, so the very first effect run after a fresh load is a no-op instead of racing
+      every other dispatcher who just opened the same page.
+    - New `syncStatus` ref (`idle` / `saving` / `saved` / `error`) returned from the hook so the UI can
+      surface the pipeline's live status.
+  - `src/app/constants/planConstants.ts` — `AUTOSAVE_DELAY_MS` cut from `1000` → `250`. Edits propagate to
+    other browsers in roughly a quarter-second instead of waiting a full second to even start the round
+    trip; the debounce still collapses bursts of keystrokes (notes typing, slider scrubs) into a single
+    save when the burst settles.
+  - `src/app/components/plan/PlanSyncStatusPill.jsx` (new) — small status pill that renders only on the
+    Planner tab. Amber spinning arrows while a save is in flight, green check after the write succeeds
+    OR a remote update lands locally, red exclamation if the most recent save threw. Renders nothing on
+    idle so the header doesn't churn with a perpetual "Saved" badge.
+  - `src/app/components/plan/PlanHeader.jsx` — accepts the new `syncStatus` prop and slots
+    `PlanSyncStatusPill` next to the date stepper. Visible only when `viewMode === 'flow'` so the rest
+    of the plan tabs stay quiet.
+  - `src/views/tools/plan/PlanView.jsx` — destructures `syncStatus` from `usePlanData` and pipes it to
+    `PlanHeader`.
+
 ## [2026.20.23] - 2026-05-15
 
 - Fixed the silent plan-wipe data-loss bug. When the planner's initial fetch failed for any transient reason

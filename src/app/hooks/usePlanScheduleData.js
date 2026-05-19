@@ -180,6 +180,28 @@ export function usePlanScheduleData({
         [getLiveTravelMinutes, plantCityByCode]
     )
 
+    /** Live travel-time lookup for ANY plant against this order's job
+     *  address. Same key shape as `getTravelOverrides` but parameterised
+     *  on the loading plant instead of assuming the order's home plant —
+     *  used by the Tickets modal to compute the effective gap between
+     *  consecutive loads at the JOB (not at the plant) so cross-plant
+     *  loads from a closer yard read as a smaller gap and from a farther
+     *  yard as a bigger gap. Returns null when no live measurement is
+     *  available for that plant + address pair so callers can degrade
+     *  gracefully. */
+    const getJobTravelMin = useCallback(
+        (order, loadingPlant) => {
+            if (!order || !loadingPlant) return null
+            const fallbackCity = clean(order.city) ? '' : plantCityByCode?.[order.plantCode] || ''
+            const orderForKey = fallbackCity ? { ...order, city: fallbackCity } : order
+            const jobAddr = composeAddress(orderForKey)
+            if (!jobAddr) return null
+            const mins = getLiveTravelMinutes(`${loadingPlant}::${jobAddr}`)
+            return Number.isFinite(mins) ? mins : null
+        },
+        [getLiveTravelMinutes, plantCityByCode]
+    )
+
     /** Canonical orderKey, mirroring what `computePlantPoolTimeline` builds. */
     const keyForOrder = useCallback((order) => {
         if (order.orderId) return order.orderId
@@ -464,6 +486,7 @@ export function usePlanScheduleData({
         filtered,
         firstLoadOutByPlant,
         getCloserPlantForOrder,
+        getJobTravelMin,
         getTravelOverrides,
         groupedByPlant,
         hasActiveFilters,

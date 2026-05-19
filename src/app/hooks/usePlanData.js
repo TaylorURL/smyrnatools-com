@@ -43,6 +43,22 @@ export function usePlanData(planDate) {
      * save can resolve AFTER a fresh edit, clear dirtyRef prematurely, and
      * let its realtime echo overwrite the user's newer state. */
     const editSerialRef = useRef(0)
+    /* Stringified snapshot of the most recent payload we either saved or
+     * received from realtime. Used for two-way echo suppression:
+     *   - When realtime fires, if the incoming payload matches this snapshot
+     *     it's our own save echoing back — skip applying it.
+     *   - When the autosave effect re-fires after applying a remote update,
+     *     the next-save snapshot matches → we skip the redundant write so
+     *     the bus doesn't ping-pong on every collaborator's edit.
+     * Cleared on date change so a stale snapshot from a different day's plan
+     * never gets compared against the next day's payload. */
+    const lastSyncedSnapshotRef = useRef('')
+    /** UI-facing live status of the autosave pipeline: 'idle' before any
+     *  user edit on this date, 'saving' while a write is in flight, 'saved'
+     *  after a successful save (or after a remote update lands and the
+     *  local state matches the server), and 'error' when the most recent
+     *  write threw. Drives the small indicator next to the planner header. */
+    const [syncStatus, setSyncStatus] = useState('idle')
 
     const getTravelTime = (from, to) => travelTimes[`${from}->${to}`] ?? null
 
@@ -143,19 +159,34 @@ export function usePlanData(planDate) {
         if (!planDate || isLoading) return
         loadedForDateRef.current = null
         autosaveEnabledRef.current = false
+        /* Reset the sync snapshot on every date change — a stale snapshot
+         * from yesterday's plan would compare false against today's payload
+         * and immediately re-save the freshly-loaded data back to the bus. */
+        lastSyncedSnapshotRef.current = ''
+        setSyncStatus('idle')
         let cancelled = false
         const loadPlan = async () => {
             setPlanLoadError(null)
             try {
                 const plan = await PlanService.fetchPlan(planDate)
                 if (cancelled) return
-                if (plan?.assignments?.length) {
-                    setAssignments(ensureUniqueIds(plan.assignments))
-                } else {
-                    setAssignments([createEmptyAssignment()])
-                }
-                setNotes(plan?.notes || '')
-                setPlantProduction(plan?.plant_production || {})
+                const loadedAssignments = plan?.assignments?.length
+                    ? ensureUniqueIds(plan.assignments)
+                    : [createEmptyAssignment()]
+                const loadedNotes = plan?.notes || ''
+                const loadedProduction = plan?.plant_production || {}
+                setAssignments(loadedAssignments)
+                setNotes(loadedNotes)
+                setPlantProduction(loadedProduction)
+                /* Seed the snapshot with the server's current state so the
+                 * first autosave effect fire (caused by setState above) is
+                 * a no-op — otherwise we'd immediately write the same data
+                 * we just read, racing every collaborator's open. */
+                lastSyncedSnapshotRef.current = JSON.stringify({
+                    assignments: loadedAssignments,
+                    notes: loadedNotes,
+                    plantProduction: loadedProduction
+                })
                 loadedForDateRef.current = planDate
                 requestAnimationFrame(() => {
                     if (cancelled) return
@@ -212,22 +243,42 @@ export function usePlanData(planDate) {
         loadAdjacentPlans()
     }, [planDate, isLoading])
 
-    // Autosave
+    // Autosave — debounced, snapshot-gated. Every local edit OR remote-applied
+    // update re-fires this effect via the state deps, but we only actually
+    // write when the stringified snapshot differs from the last one we sync'd
+    // (saved OR received). That single check makes the pipeline symmetric:
+    // local edits flush to the server, remote updates DON'T turn around and
+    // re-save the same bytes back, and saves that fail leave `dirtyRef` in a
+    // recoverable state instead of being silently stuck forever.
     useEffect(() => {
         if (!canEdit || !planDate || isLoading) return
         if (loadedForDateRef.current !== planDate || !autosaveEnabledRef.current) return
+        const snapshot = JSON.stringify({ assignments, notes, plantProduction })
+        if (snapshot === lastSyncedSnapshotRef.current) return
         dirtyRef.current = true
         editSerialRef.current += 1
         const savingSerial = editSerialRef.current
+        setSyncStatus('saving')
         const timeout = setTimeout(async () => {
             try {
                 await PlanService.savePlan(planDate, assignments, notes, plantProduction)
-                // Only clear dirty if no newer edit has been queued while this
-                // save was in flight. Otherwise the realtime echo from this
-                // save would see dirtyRef=false and overwrite the newer local
-                // state with stale server data.
-                if (editSerialRef.current === savingSerial) dirtyRef.current = false
-            } catch {}
+                /* Stamp the snapshot of WHAT WE JUST SAVED so the realtime
+                 * echo of our own write doesn't trigger an apply and so the
+                 * next autosave run sees "nothing changed" and short-
+                 * circuits. */
+                lastSyncedSnapshotRef.current = snapshot
+                if (editSerialRef.current === savingSerial) {
+                    dirtyRef.current = false
+                    setSyncStatus('saved')
+                }
+            } catch (err) {
+                console.error('[usePlanData] plan save failed:', err?.message || err)
+                /* Always clear `dirtyRef` on failure so a transient blip
+                 * doesn't permanently block incoming realtime updates. The
+                 * next local edit will set it again and retry the save. */
+                dirtyRef.current = false
+                setSyncStatus('error')
+            }
         }, AUTOSAVE_DELAY_MS)
         return () => clearTimeout(timeout)
     }, [canEdit, planDate, assignments, notes, plantProduction, isLoading])
@@ -245,26 +296,38 @@ export function usePlanData(planDate) {
     useRealtimeSubscription({
         enabled: !isLoading,
         onChange: useCallback((payload) => {
-            if (dirtyRef.current) return
             const record = payload.new
             if (!record || record.plan_date !== planDateRef.current) return
-            const incoming = JSON.stringify(record.assignments ?? [])
-            const local = JSON.stringify(assignmentsRef.current)
-            if (incoming !== local) {
-                setAssignments(
-                    record.assignments?.length ? ensureUniqueIds(record.assignments) : [createEmptyAssignment()]
-                )
+            const incomingAssignments = record.assignments?.length
+                ? ensureUniqueIds(record.assignments)
+                : [createEmptyAssignment()]
+            const incomingNotes = record.notes || ''
+            const incomingProduction = record.plant_production || {}
+            const incomingSnapshot = JSON.stringify({
+                assignments: incomingAssignments,
+                notes: incomingNotes,
+                plantProduction: incomingProduction
+            })
+            /* Skip our own save echo. The autosave loop stores its
+             * just-written snapshot in `lastSyncedSnapshotRef`; a realtime
+             * payload that matches it is the bus reflecting our own write
+             * back at us — applying it would just bounce state for no
+             * reason. */
+            if (incomingSnapshot === lastSyncedSnapshotRef.current) return
+            /* Stamp the snapshot BEFORE applying so the autosave effect
+             * that fires from the setState calls below short-circuits
+             * instead of immediately re-saving what we just received. */
+            lastSyncedSnapshotRef.current = incomingSnapshot
+            if (JSON.stringify(incomingAssignments) !== JSON.stringify(assignmentsRef.current)) {
+                setAssignments(incomingAssignments)
             }
-            if ((record.notes || '') !== notesRef.current) {
-                setNotes(record.notes || '')
+            if (incomingNotes !== notesRef.current) {
+                setNotes(incomingNotes)
             }
-            if (record.plant_production && Object.keys(record.plant_production).length > 0) {
-                const incomingProd = JSON.stringify(record.plant_production)
-                const localProd = JSON.stringify(plantProductionRef.current)
-                if (incomingProd !== localProd) {
-                    setPlantProduction(record.plant_production)
-                }
+            if (JSON.stringify(incomingProduction) !== JSON.stringify(plantProductionRef.current)) {
+                setPlantProduction(incomingProduction)
             }
+            setSyncStatus('saved')
         }, []),
         table: 'plans'
     })
@@ -343,6 +406,7 @@ export function usePlanData(planDate) {
         setAssignments,
         setNotes,
         setPlantProduction,
+        syncStatus,
         travelTimes,
         userId
     }

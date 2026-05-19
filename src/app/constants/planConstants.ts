@@ -14,7 +14,11 @@ export const SLUMP_MINUTES = 5
  *  time so the operator isn't pulling up at the same moment concrete is
  *  expected on the ground. */
 export const EARLY_ARRIVAL_MINUTES = 5
-export const AUTOSAVE_DELAY_MS = 1000
+/** Debounce window before flushing the planner autosave. Short enough that
+ *  edits propagate to other browsers in under a second via realtime, long
+ *  enough that a burst of keystrokes (typing notes, scrubbing a slider) only
+ *  produces one save when the burst settles. */
+export const AUTOSAVE_DELAY_MS = 250
 export const DEFAULT_STAGGER_MINUTES = 5
 export const OVERTIME_THRESHOLD_HOURS = 12
 export const GAP_THRESHOLD_MINUTES = 30

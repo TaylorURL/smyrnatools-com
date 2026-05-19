@@ -292,6 +292,7 @@ export default function PlanScheduleTable({
     filteredPlantCode = null,
     firstLoadOutByPlant = null,
     getCloserPlantForOrder,
+    getJobTravelMin,
     getTravelOverrides,
     helpRows = [],
     isMaximized = false,
@@ -533,6 +534,7 @@ export default function PlanScheduleTable({
                     <OrderTicketsModal
                         accentColor={accentColor}
                         detail={ticketsOrder.orderId ? detailByOrderId[ticketsOrder.orderId] : null}
+                        getJobTravelMin={getJobTravelMin}
                         onClose={() => setTicketsOrder(null)}
                         order={ticketsOrder}
                         plantNameByCode={plantNameByCode}

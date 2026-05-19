@@ -2,6 +2,7 @@ import React from 'react'
 
 import { PlanActionButtons } from './PlanActionButtons'
 import { PlanDateNav } from './PlanDateNav'
+import { PlanSyncStatusPill } from './PlanSyncStatusPill'
 import { PlanTabSwitcher } from './PlanTabSwitcher'
 
 /**
@@ -32,6 +33,7 @@ export function PlanHeader({
     onRefresh,
     planDate,
     scheduleLastSyncedAt,
+    syncStatus = 'idle',
     viewMode
 }) {
     /** Statistics manages its own from/to range + range-mode tab — the
@@ -51,6 +53,7 @@ export function PlanHeader({
                 onChange={onChangeDate}
                 planDate={planDate}
             />
+            {viewMode === 'flow' && <PlanSyncStatusPill status={syncStatus} />}
             <div className="flex-1 min-w-[8px]" />
             <PlanActionButtons
                 accentColor={accentColor}

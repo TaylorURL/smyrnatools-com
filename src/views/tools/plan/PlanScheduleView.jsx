@@ -106,6 +106,7 @@ function PlanScheduleView({
         earliestTime,
         filtered,
         getCloserPlantForOrder,
+        getJobTravelMin,
         getTravelOverrides,
         groupedByPlant,
         hasActiveFilters,
@@ -362,6 +363,7 @@ function PlanScheduleView({
                                     snapshot={compareSnapshot}
                                     firstLoadOutByPlant={firstLoadOutByPlant}
                                     getCloserPlantForOrder={getCloserPlantForOrder}
+                                    getJobTravelMin={getJobTravelMin}
                                     getTravelOverrides={getTravelOverrides}
                                     isMaximized={effectiveMaximized}
                                     isPastDay={isPastDay}
@@ -390,6 +392,7 @@ function PlanScheduleView({
                                     filteredPlantCode={singlePlant}
                                     firstLoadOutByPlant={firstLoadOutByPlant}
                                     getCloserPlantForOrder={getCloserPlantForOrder}
+                                    getJobTravelMin={getJobTravelMin}
                                     getTravelOverrides={getTravelOverrides}
                                     helpRows={helpRows}
                                     isMaximized={effectiveMaximized}

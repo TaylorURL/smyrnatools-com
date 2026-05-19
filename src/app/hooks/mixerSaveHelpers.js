@@ -1,4 +1,3 @@
-import { Database } from '../../services/DatabaseService'
 import { MixerService } from '../../services/MixerService'
 import { OperatorService } from '../../services/OperatorService'
 import { UserService } from '../../services/UserService'
@@ -33,11 +32,8 @@ export function reconcileOperatorAndStatus({ assignedOperatorValue, originalStat
 }
 
 export async function hasOpenMaintenanceIssues(mixerId) {
-    const { data: openIssues } = await Database.from('mixers_maintenance')
-        .select('id')
-        .eq('mixer_id', mixerId)
-        .is('time_completed', null)
-    return Array.isArray(openIssues) && openIssues.length > 0
+    const issues = await MixerService.fetchIssues(mixerId)
+    return Array.isArray(issues) && issues.some((issue) => !issue?.time_completed)
 }
 
 function parsePositiveHours(raw) {

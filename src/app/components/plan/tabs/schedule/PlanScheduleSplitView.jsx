@@ -92,6 +92,7 @@ export default function PlanScheduleSplitView({
     filters,
     firstLoadOutByPlant,
     getCloserPlantForOrder,
+    getJobTravelMin,
     getTravelOverrides,
     isMaximized,
     isPastDay,
@@ -230,6 +231,7 @@ export default function PlanScheduleSplitView({
                             detailByOrderId={detailByOrderId || {}}
                             firstLoadOutByPlant={firstLoadOutByPlant || null}
                             getCloserPlantForOrder={getCloserPlantForOrder}
+                            getJobTravelMin={getJobTravelMin}
                             getTravelOverrides={getTravelOverrides}
                             helpRows={[]}
                             nowMin={nowMin}

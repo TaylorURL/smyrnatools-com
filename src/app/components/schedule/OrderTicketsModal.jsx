@@ -33,7 +33,7 @@ function MetricTile({ hint, label, value }) {
  * for orders that pulled trucks from a sibling plant (Baytown 403/404,
  * Conroe 408/409).
  */
-function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, plantNameByCode }) {
+function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, onClose, order, plantNameByCode }) {
     const { resolve: resolveDriverName } = useOperatorNameLookup()
     useEffect(() => {
         const onKey = (e) => {
@@ -224,6 +224,13 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                         { align: 'left', label: 'Driver' },
                                         { align: 'left', label: 'Ticket time' },
                                         { align: 'left', label: 'Load time' },
+                                        // Minutes between this ticket's load time and the
+                                        // PREVIOUS ticket's load time. Surfaces pour spacing
+                                        // at a glance — bunched-up loads and oversized gaps
+                                        // both jump out without the dispatcher having to do
+                                        // mental math on every row. Blank for the first row
+                                        // (nothing to compare against).
+                                        { align: 'right', label: 'Gap' },
                                         { align: 'right', label: 'Yards' }
                                     ].map((h) => (
                                         <th
@@ -241,6 +248,47 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                     const plantCode = t.plantId
                                     const isHomePlant = plantCode === homePlantCode
                                     const plantName = plantNameByCode?.[plantCode] || ''
+                                    /** Minutes between this ticket's effective arrival
+                                     *  at the JOB site and the previous ticket's. Built
+                                     *  from each ticket's own loading-plant-to-job
+                                     *  travel time (via `getJobTravelMin`), so a truck
+                                     *  loaded at a yard that's CLOSER to the job arrives
+                                     *  sooner and a truck loaded FARTHER away arrives
+                                     *  later — the gap reads as "how staggered are the
+                                     *  trucks landing at the pour" not "how spaced are
+                                     *  the loadouts at their respective plants". When
+                                     *  the live travel table doesn't have a measurement
+                                     *  for either plant against this job, we silently
+                                     *  fall back to the raw load-time delta so the
+                                     *  number is never blank just because traffic data
+                                     *  is still warming up. */
+                                    const prevTicket = idx > 0 ? tickets[idx - 1] : null
+                                    const currTravel =
+                                        typeof getJobTravelMin === 'function' ? getJobTravelMin(order, t.plantId) : null
+                                    const prevTravel =
+                                        prevTicket && typeof getJobTravelMin === 'function'
+                                            ? getJobTravelMin(order, prevTicket.plantId)
+                                            : null
+                                    const haveBothTravels = Number.isFinite(currTravel) && Number.isFinite(prevTravel)
+                                    const gapMin = (() => {
+                                        if (idx === 0) return null
+                                        const curr = timeToMinutes(t.loadedTime)
+                                        const prev = timeToMinutes(prevTicket?.loadedTime)
+                                        if (!Number.isFinite(curr) || !Number.isFinite(prev)) return null
+                                        if (!haveBothTravels) return curr - prev
+                                        return curr + currTravel - (prev + prevTravel)
+                                    })()
+                                    /** Did the cross-plant geography actually shift the
+                                     *  number this row shows? True when the two tickets'
+                                     *  loading plants differ AND we had travel data for
+                                     *  both — those are the rows where the displayed
+                                     *  gap is NOT just the raw load-time delta. */
+                                    const gapAdjustsForCrossPlant =
+                                        gapMin != null &&
+                                        haveBothTravels &&
+                                        prevTicket?.plantId &&
+                                        t.plantId &&
+                                        prevTicket.plantId !== t.plantId
                                     return (
                                         <tr
                                             className="border-t border-border-light"
@@ -297,6 +345,21 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, onClose, order, pl
                                                 style={{ fontVariantNumeric: 'tabular-nums' }}
                                             >
                                                 {t.loadedTime || '—'}
+                                            </td>
+                                            <td
+                                                className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-tertiary"
+                                                style={{ fontVariantNumeric: 'tabular-nums' }}
+                                                title={
+                                                    gapMin == null
+                                                        ? 'First load — no prior ticket to compare against'
+                                                        : gapAdjustsForCrossPlant
+                                                          ? `${gapMin} min effective gap at the job (load-time delta adjusted for plant-to-plant travel because at least one of these tickets loaded from a non-home plant)`
+                                                          : `${gapMin} min since the previous load`
+                                                }
+                                            >
+                                                {gapMin == null
+                                                    ? '—'
+                                                    : `${gapMin >= 0 ? '+' : ''}${gapMin}m${gapAdjustsForCrossPlant ? '*' : ''}`}
                                             </td>
                                             <td
                                                 className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap text-text-primary"
