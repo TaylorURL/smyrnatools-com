@@ -1,5 +1,23 @@
 # Changelog
 
+## [2026.21.10] - 2026-05-20
+
+- Production hot-fix for the live site. Vercel was building the
+  bundle with React's dev JSX runtime, which exports `jsxDEV` —
+  production React doesn't, so every page crashed with
+  `TypeError: y.jsxDEV is not a function` at the top-level
+  `Sentry.ErrorBoundary` element and rendered a white screen. Local
+  builds did NOT exhibit the issue, isolating the cause to Vercel's
+  build environment (most likely a `NODE_ENV=development` project env
+  var, a stale build cache, or framework auto-detection overriding
+  Vite's mode).
+  - `package.json` — `build` script pinned to
+    `cross-env NODE_ENV=production vite build --mode production` so
+    both `NODE_ENV` and Vite's mode are forced to production regardless
+    of what the host CI/CD platform injects. `cross-env` was already
+    a dependency via the `analyze` script. Verified locally: the
+    rebuilt bundle has zero `jsxDEV` references.
+
 ## [2026.21.9] - 2026-05-20
 
 - Plant Manager Report stripped down to a single field. Yardage,
