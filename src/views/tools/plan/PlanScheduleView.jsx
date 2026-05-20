@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import PlanScheduleChangeStrip from '../../../app/components/plan/tabs/schedule/PlanScheduleChangeStrip'
 import PlanScheduleClosedBanner from '../../../app/components/plan/tabs/schedule/PlanScheduleClosedBanner'
 import PlanScheduleEmptyState from '../../../app/components/plan/tabs/schedule/PlanScheduleEmptyState'
 import PlanScheduleFilterDrawer from '../../../app/components/plan/tabs/schedule/PlanScheduleFilterDrawer'
@@ -199,6 +200,17 @@ function PlanScheduleView({
         }
     }, [compareMode, planDate])
 
+    /* If the dispatcher is in compare mode and then navigates forward
+     * to a future date, the toggle button hides — but `compareMode` is
+     * sticky, so without this effect they'd be stuck looking at an
+     * empty split view with no way out. Flip the flag off the moment
+     * we land on a date with no snapshot to compare against. */
+    useEffect(() => {
+        if (compareMode && !isViewingToday && !isPastDay) {
+            setCompareMode(false)
+        }
+    }, [compareMode, isViewingToday, isPastDay])
+
     /** Schedule headline metrics computed off the snapshot's plant
      *  production, run through the SAME filter pipeline the live stats
      *  use so the strip's `-20%` reads as an apples-to-apples delta and
@@ -264,7 +276,16 @@ function PlanScheduleView({
                             hasAnyOrders={hasAnyOrders}
                             isMobile={isMobile}
                             onSwitchToPlanner={onSwitchToPlanner}
-                            onToggleCompare={() => setCompareMode((v) => !v)}
+                            /* The compare flow diffs against the 5:30 PM snapshot
+                             * that captured this date's schedule the evening
+                             * before. Future plans haven't been snapshotted yet,
+                             * so there's nothing to compare against — hide the
+                             * toggle entirely instead of letting the dispatcher
+                             * land on an empty split view. Today + past dates
+                             * keep the button. */
+                            onToggleCompare={
+                                !isViewingToday && !isPastDay ? undefined : () => setCompareMode((v) => !v)
+                            }
                             onToggleFilters={() => setFiltersOpen((v) => !v)}
                             onToggleMaximized={() => setMaximized(true)}
                             setViewMode={setViewMode}
@@ -295,6 +316,22 @@ function PlanScheduleView({
                                     uniquePlants={uniquePlants}
                                     weekYardage={weekYardage}
                                     yardageDeltaPct={yardageDeltaPct}
+                                />
+                            )}
+                            {!effectiveMaximized && compareMode && compareSnapshot && (
+                                <PlanScheduleChangeStrip
+                                    filters={{
+                                        minYards,
+                                        plantFilterSet,
+                                        productFilter,
+                                        query,
+                                        showCancelled,
+                                        showTest,
+                                        statusFilter
+                                    }}
+                                    isViewingToday={isViewingToday}
+                                    rawPlantProduction={rawPlantProduction}
+                                    snapshot={compareSnapshot}
                                 />
                             )}
 

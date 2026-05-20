@@ -6,7 +6,6 @@ import DashboardAlertsPanel from '../../../app/components/dashboard/DashboardAle
 import { DashboardAtAGlance } from '../../../app/components/dashboard/DashboardAtAGlance'
 import DashboardHeader from '../../../app/components/dashboard/DashboardHeader'
 import DashboardPeopleSection from '../../../app/components/dashboard/DashboardPeopleSection'
-import DashboardScheduleSection from '../../../app/components/dashboard/DashboardScheduleSection'
 import { DASHBOARD_NAV_SECTIONS, DashboardScrollSpyNav } from '../../../app/components/dashboard/DashboardScrollSpyNav'
 import DashboardSkeleton from '../../../app/components/dashboard/DashboardSkeleton'
 import EmbeddedViewModal from '../../../app/components/dashboard/EmbeddedViewModal'
@@ -16,7 +15,6 @@ import { useDashboardAssets, useIssueCommentCounts, usePlantFilter } from '../..
 import { useAnimatedStats, useDateFilter } from '../../../app/hooks/useDashboardEffects'
 import { useDashboardInit } from '../../../app/hooks/useDashboardInit'
 import { useDashboardManagers } from '../../../app/hooks/useDashboardManagers'
-import { useDashboardSchedule } from '../../../app/hooks/useDashboardSchedule'
 import { useDashboardStats } from '../../../app/hooks/useDashboardStats'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { usePlanScrollSpy } from '../../../app/hooks/usePlanScrollSpy'
@@ -186,7 +184,6 @@ export default function DashboardView() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dashboardPlant, dashboardRegionCode, stats.fleetTotal])
     const managerStats = useDashboardManagers({ plantSet: activePlantSet })
-    const scheduleData = useDashboardSchedule({ plantSet: activePlantSet, refreshKey })
 
     const regionDisplayName = (() => {
         if (selectedRegion?.type === 'Office') return 'Home Office'
@@ -225,7 +222,7 @@ export default function DashboardView() {
         (stats.equipment?.issues || 0)
 
     const [activeSection, jumpTo] = usePlanScrollSpy({
-        deps: [showSkeleton, alertCount, peopleCount, scheduleData.loading],
+        deps: [showSkeleton, alertCount, peopleCount],
         scrollContainerRef,
         sections: DASHBOARD_NAV_SECTIONS
     })
@@ -279,7 +276,6 @@ export default function DashboardView() {
                                     setEmbeddedView={setEmbeddedView}
                                     setEmbeddedViewSearch={setEmbeddedViewSearch}
                                 />
-                                <DashboardScheduleSection schedule={scheduleData} />
                                 <FleetOverviewSection
                                     accentColor={accentColor}
                                     displayStats={displayStats}

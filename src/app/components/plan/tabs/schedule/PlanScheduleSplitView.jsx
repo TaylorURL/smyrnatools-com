@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { ScheduleSnapshotService } from '../../../../../services/ScheduleSnapshotService'
 import { clean, compareOrders, getOrderStatus } from '../../../../../utils/PlanScheduleUtility'
 import { PLAN_META_KEY } from '../../../../../utils/PlanUtility'
-import PlanScheduleTable from './PlanScheduleTable'
+import PlanScheduleTable, { SCHEDULE_ALL_COLUMN_KEYS, SCHEDULE_COMPARE_DEFAULT_COLUMNS } from './PlanScheduleTable'
 
 const formatTimestamp = (iso) => {
     if (!iso) return ''
@@ -30,6 +30,59 @@ const flattenProduction = (plantProduction) => {
         data.orders.forEach((order) => out.push({ ...order, plantCode: order?.plantCode || code }))
     })
     return out
+}
+
+/** Build the dedupe key used to pair an order across snapshot + live.
+ *  Prefer `orderId` (the canonical dispatch UUID); fall back to a
+ *  best-effort composite when an order doesn't have one yet. */
+const orderPairKey = (order) => {
+    if (!order) return ''
+    if (order.orderId) return String(order.orderId)
+    return `${order.plantCode || ''}|${order.orderNum || ''}|${order.startTime || ''}`
+}
+
+/** Build a placeholder pseudo-order. The schedule table recognises the
+ *  `__placeholder` marker and routes these to `PlaceholderRow` instead of
+ *  the normal order row. We carry over enough fields from the reference
+ *  order (the one on the OTHER side) so the placeholder reads as
+ *  "this is what the missing row was". */
+const buildPlaceholder = (kind, reference, key) => ({
+    __placeholder: kind,
+    customer: reference?.customer || '',
+    orderId: `__placeholder__${key}`,
+    orderNum: reference?.orderNum || '',
+    plantCode: reference?.plantCode || '',
+    startTime: reference?.startTime || '',
+    yardage: reference?.yardage || ''
+})
+
+/** Pair snapshot + live orders by `orderId` (or composite fallback) and
+ *  return two row-aligned arrays. Sort runs once over the union so the
+ *  two arrays guarantee the same row sequence — index `i` on the left
+ *  describes the same pour as index `i` on the right. Orders missing on
+ *  one side land as placeholders so the heights line up. */
+function pairAlignedOrders(snapshotOrders, liveOrders, sortKey) {
+    const snapMap = new Map()
+    snapshotOrders.forEach((order) => snapMap.set(orderPairKey(order), order))
+    const liveMap = new Map()
+    liveOrders.forEach((order) => liveMap.set(orderPairKey(order), order))
+    const pairs = []
+    const seen = new Set()
+    const addPair = (key) => {
+        if (seen.has(key)) return
+        seen.add(key)
+        const snap = snapMap.get(key) || null
+        const live = liveMap.get(key) || null
+        const sortRef = live || snap
+        pairs.push({ key, live, snap, sortRef })
+    }
+    snapMap.forEach((_value, key) => addPair(key))
+    liveMap.forEach((_value, key) => addPair(key))
+    pairs.sort((a, b) => compareOrders(a.sortRef, b.sortRef, sortKey))
+    return {
+        liveAligned: pairs.map((p) => p.live || buildPlaceholder('removed', p.snap, p.key)),
+        snapAligned: pairs.map((p) => p.snap || buildPlaceholder('added', p.live, p.key))
+    }
 }
 
 /** Filter + sort one production map using the same gates `usePlanScheduleData`
@@ -115,6 +168,12 @@ export default function PlanScheduleSplitView({
 }) {
     const [snapshot, setSnapshot] = useState(providedSnapshot ?? null)
     const [loading, setLoading] = useState(providedSnapshot === undefined)
+    /** Compare-mode column toggle. Default keeps the table narrow (Start /
+     *  Plant / Order / Customer / Location / Yards / Spacing) so two
+     *  schedules fit side-by-side without horizontal scroll. Toggle to
+     *  the full set when the dispatcher needs the extra columns. */
+    const [showAllColumns, setShowAllColumns] = useState(false)
+    const visibleColumns = showAllColumns ? SCHEDULE_ALL_COLUMN_KEYS : SCHEDULE_COMPARE_DEFAULT_COLUMNS
     const planDate = filters?.planDate
 
     useEffect(() => {
@@ -146,6 +205,18 @@ export default function PlanScheduleSplitView({
         [snapshotOrders, filters, isToday]
     )
 
+    /** Row-aligned snapshot + live arrays. For every order that exists on
+     *  EITHER side, both arrays get an entry at the same index — either
+     *  the real order or a placeholder marker. The two tables then render
+     *  with identical row counts and the dispatcher can read pair-by-pair
+     *  down the screen instead of hunting for the matching row on the
+     *  other side. Sort is single-pass over the union so both arrays
+     *  guarantee the same row sequence. */
+    const { liveAligned, snapAligned } = useMemo(
+        () => pairAlignedOrders(filteredSnapshot, filteredLive, filters?.sortKey),
+        [filteredSnapshot, filteredLive, filters?.sortKey]
+    )
+
     if (loading) {
         return (
             <div className="rounded-xl p-10 text-center bg-bg-primary border border-border-light text-text-secondary">
@@ -166,6 +237,11 @@ export default function PlanScheduleSplitView({
 
     const tableShared = {
         accentColor,
+        // Compare mode hides annotation badges (status / service / hours
+        // limit / needs-help) and routes placeholder rows through the
+        // ghost renderer — keeps row heights consistent so the pairs read
+        // side-by-side at the same Y.
+        compareMode: true,
         filteredPlantCode: singlePlant,
         isMaximized,
         isPastDay,
@@ -173,7 +249,8 @@ export default function PlanScheduleSplitView({
         isToday,
         keyForOrder,
         plantCityByCode,
-        plantNameByCode
+        plantNameByCode,
+        visibleColumns
     }
 
     return (
@@ -181,6 +258,8 @@ export default function PlanScheduleSplitView({
             <SummaryStrip
                 accentColor={accentColor}
                 liveCount={filteredLive.length}
+                onToggleShowAllColumns={() => setShowAllColumns((prev) => !prev)}
+                showAllColumns={showAllColumns}
                 snapshot={snapshot}
                 snapshotCount={filteredSnapshot.length}
             />
@@ -207,7 +286,7 @@ export default function PlanScheduleSplitView({
                             nowMin={null}
                             onOpenAudit={undefined}
                             onOpenLocation={onOpenLocation}
-                            orders={filteredSnapshot}
+                            orders={snapAligned}
                             poolSourceByCode={{}}
                             poolTimeline={{}}
                             poolTimelinesByPlant={{}}
@@ -237,7 +316,7 @@ export default function PlanScheduleSplitView({
                             nowMin={nowMin}
                             onOpenAudit={onOpenAudit}
                             onOpenLocation={onOpenLocation}
-                            orders={filteredLive}
+                            orders={liveAligned}
                             poolSourceByCode={poolSourceByCode || {}}
                             poolTimeline={poolTimeline || {}}
                             poolTimelinesByPlant={poolTimelinesByPlant || {}}
@@ -253,7 +332,7 @@ export default function PlanScheduleSplitView({
     )
 }
 
-function SummaryStrip({ accentColor, liveCount, snapshot, snapshotCount }) {
+function SummaryStrip({ accentColor, liveCount, onToggleShowAllColumns, showAllColumns, snapshot, snapshotCount }) {
     return (
         <div className="rounded-xl flex flex-wrap items-center gap-3 px-3 py-2 bg-bg-secondary border border-border-light">
             <span className="text-[11.5px] font-semibold text-text-secondary">
@@ -266,6 +345,19 @@ function SummaryStrip({ accentColor, liveCount, snapshot, snapshotCount }) {
                 )}
             </span>
             <span className="flex-1 min-w-[8px]" />
+            <button
+                type="button"
+                onClick={onToggleShowAllColumns}
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-semibold cursor-pointer transition-colors bg-bg-primary border border-border-light text-text-secondary hover:bg-bg-tertiary"
+                title={
+                    showAllColumns
+                        ? 'Collapse to the compact comparison columns (Start, Plant, Order, Customer, Location, Yards, Spacing)'
+                        : 'Show every schedule column on both sides'
+                }
+            >
+                <i className={`fas ${showAllColumns ? 'fa-compress' : 'fa-table-columns'} text-[10px]`} />
+                {showAllColumns ? 'Compact columns' : 'Show all columns'}
+            </button>
             <span className="inline-flex items-center gap-1.5 text-[11.5px] text-text-secondary">
                 Original
                 <span className="font-mono tabular-nums rounded px-1.5 bg-bg-tertiary text-text-primary">

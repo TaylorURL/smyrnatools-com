@@ -104,7 +104,16 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
  *  The "Needs Help" badge is suppressed for past days and for orders the
  *  service evaluator already considers completed (`good`/`bad`) — once a pour
  *  is finished, calling for help is moot and the badge is just noise. */
-function TrucksCell({ isNonProduction, isPastDay, order, poolTimeline, rowKey, service, travelOverrides }) {
+function TrucksCell({
+    compareMode = false,
+    isNonProduction,
+    isPastDay,
+    order,
+    poolTimeline,
+    rowKey,
+    service,
+    travelOverrides
+}) {
     if (isNonProduction) {
         return <td className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-tertiary">—</td>
     }
@@ -153,7 +162,7 @@ function TrucksCell({ isNonProduction, isPastDay, order, poolTimeline, rowKey, s
                             )
                         })()}
                 </span>
-                {overbooked && (
+                {overbooked && !compareMode && (
                     <span
                         className="status-badge-warning inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
                         title="Fewer trucks than needed to hold the scheduled pour rate — send help from another plant to pour on pace."
@@ -175,6 +184,13 @@ function TrucksCell({ isNonProduction, isPastDay, order, poolTimeline, rowKey, s
 export default function PlanScheduleOrderRow({
     accentColor,
     animationDelayMs,
+    /** Compact comparison-view mode. When true, every "annotation" badge
+     *  (order status, service good/bad, hours-limit warning, needs-help
+     *  pill) is suppressed and the row renders with only the column-level
+     *  data. Used by the Schedule split view so each pair of left/right
+     *  rows reads as the same height — annotation badges wrap and would
+     *  otherwise desync the row heights between snapshot and live. */
+    compareMode = false,
     detail,
     firstLoadOutMin,
     getCloserPlantForOrder,
@@ -188,8 +204,13 @@ export default function PlanScheduleOrderRow({
     plantNameByCode,
     poolTimeline,
     rowKey,
-    travelOverrides
+    travelOverrides,
+    /** Optional Set<string> of column keys to render. `null` / undefined
+     *  renders the full set (the normal Schedule tab). The split view
+     *  passes a narrower set for its compact side-by-side layout. */
+    visibleColumns = null
 }) {
+    const showColumn = (key) => !visibleColumns || visibleColumns.has(key)
     const yardage = parseFloat(order.yardage) || 0
     const loadSize = parseFloat(order.loadSize) || 0
     const plantName = plantNameByCode?.[order.plantCode] || ''
@@ -209,90 +230,117 @@ export default function PlanScheduleOrderRow({
                 opacity: isNonProduction ? 0.7 : 1
             }}
         >
-            <td
-                className="px-3 py-2 font-mono font-bold whitespace-nowrap"
-                style={{
-                    color: isCancelled ? 'var(--text-tertiary)' : 'var(--text-primary)',
-                    textDecoration: isCancelled ? 'line-through' : 'none'
-                }}
-            >
-                {formatHhmm(order.startTime) || '—'}
-            </td>
-            <td className="px-3 py-2 whitespace-nowrap">
-                <PlantBadge code={order.plantCode} fallback={accentColor} name={plantName} />
-            </td>
-            <td className="px-3 py-2 whitespace-nowrap font-semibold text-text-primary">
-                {order.orderNum ? `#${order.orderNum}` : '—'}
-            </td>
-            <td className="px-3 py-2 max-w-[260px] text-text-primary" title={clean(order.customer)}>
-                <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                    <span
-                        className="font-semibold truncate"
-                        style={{
-                            textDecoration: isCancelled ? 'line-through' : 'none'
-                        }}
-                    >
-                        {clean(order.customer) || '—'}
-                    </span>
-                    {status && <OrderStatusBadge status={status} />}
-                    {!isCancelled && !isTest && <ServiceBadge service={service} />}
-                    {!isCancelled && !isTest && <HoursLimitBadge limit={hoursLimit} />}
-                </div>
-            </td>
-            <td className="px-3 py-2 max-w-[280px]">
-                <AddressCell
-                    getCloserPlantForOrder={getCloserPlantForOrder}
-                    onOpenLocation={onOpenLocation}
+            {showColumn('start') && (
+                <td
+                    className="px-3 py-2 font-mono font-bold whitespace-nowrap"
+                    style={{
+                        color: isCancelled ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                        textDecoration: isCancelled ? 'line-through' : 'none'
+                    }}
+                >
+                    {formatHhmm(order.startTime) || '—'}
+                </td>
+            )}
+            {showColumn('plant') && (
+                <td className="px-3 py-2 whitespace-nowrap">
+                    <PlantBadge code={order.plantCode} fallback={accentColor} name={plantName} />
+                </td>
+            )}
+            {showColumn('order') && (
+                <td className="px-3 py-2 whitespace-nowrap font-semibold text-text-primary">
+                    {order.orderNum ? `#${order.orderNum}` : '—'}
+                </td>
+            )}
+            {showColumn('customer') && (
+                <td className="px-3 py-2 max-w-[260px] text-text-primary" title={clean(order.customer)}>
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                        <span
+                            className="font-semibold truncate"
+                            style={{
+                                textDecoration: isCancelled ? 'line-through' : 'none'
+                            }}
+                        >
+                            {clean(order.customer) || '—'}
+                        </span>
+                        {!compareMode && status && <OrderStatusBadge status={status} />}
+                        {!compareMode && !isCancelled && !isTest && <ServiceBadge service={service} />}
+                        {!compareMode && !isCancelled && !isTest && <HoursLimitBadge limit={hoursLimit} />}
+                    </div>
+                </td>
+            )}
+            {showColumn('location') && (
+                <td className="px-3 py-2 max-w-[280px]">
+                    <AddressCell
+                        getCloserPlantForOrder={getCloserPlantForOrder}
+                        onOpenLocation={onOpenLocation}
+                        order={order}
+                        plantCityByCode={plantCityByCode}
+                    />
+                </td>
+            )}
+            {showColumn('product') && (
+                <td className="px-3 py-2 whitespace-nowrap text-text-primary" title={clean(order.description)}>
+                    <span className="font-mono font-semibold">{clean(order.productCode) || '—'}</span>
+                    {order.description && (
+                        <span className="ml-1 max-w-[180px] truncate inline-block align-middle text-text-tertiary">
+                            {clean(order.description)}
+                        </span>
+                    )}
+                </td>
+            )}
+            {showColumn('yards') && (
+                <td className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap text-text-primary">
+                    {yardage > 0 ? yardage : '—'}
+                </td>
+            )}
+            {showColumn('loaded') && (
+                <PlanScheduleLoadedCell detail={detail} homePlantCode={order.plantCode} total={yardage} />
+            )}
+            {showColumn('load') && (
+                <td className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-secondary">
+                    {loadSize > 0 ? loadSize : '—'}
+                </td>
+            )}
+            {showColumn('trucks') && (
+                <TrucksCell
+                    compareMode={compareMode}
+                    isNonProduction={isNonProduction}
+                    isPastDay={isPastDay}
                     order={order}
-                    plantCityByCode={plantCityByCode}
+                    poolTimeline={poolTimeline}
+                    rowKey={rowKey}
+                    service={service}
+                    travelOverrides={travelOverrides}
                 />
-            </td>
-            <td className="px-3 py-2 whitespace-nowrap text-text-primary" title={clean(order.description)}>
-                <span className="font-mono font-semibold">{clean(order.productCode) || '—'}</span>
-                {order.description && (
-                    <span className="ml-1 max-w-[180px] truncate inline-block align-middle text-text-tertiary">
-                        {clean(order.description)}
-                    </span>
-                )}
-            </td>
-            <td className="px-3 py-2 font-mono font-bold text-right whitespace-nowrap text-text-primary">
-                {yardage > 0 ? yardage : '—'}
-            </td>
-            <PlanScheduleLoadedCell detail={detail} homePlantCode={order.plantCode} total={yardage} />
-            <td className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-secondary">
-                {loadSize > 0 ? loadSize : '—'}
-            </td>
-            <TrucksCell
-                isNonProduction={isNonProduction}
-                isPastDay={isPastDay}
-                order={order}
-                poolTimeline={poolTimeline}
-                rowKey={rowKey}
-                service={service}
-                travelOverrides={travelOverrides}
-            />
-            <td
-                className="px-3 py-2 font-mono whitespace-nowrap text-text-secondary"
-                title={
-                    order.toJobTime || order.toPlantTime
-                        ? `To job ${clean(order.toJobTime) || '—'} · To plant ${clean(order.toPlantTime) || '—'}`
-                        : undefined
-                }
-            >
-                {clean(order.toJobTime) || '—'}
-            </td>
-            <td
-                className="px-3 py-2 font-mono whitespace-nowrap text-text-secondary"
-                title="Spacing between loads (rate)"
-            >
-                {clean(order.rate) || '—'}
-            </td>
-            <td
-                className="px-3 py-2 whitespace-nowrap font-mono text-text-secondary"
-                title={clean(order.phone) || undefined}
-            >
-                <PhoneCell phone={clean(order.phone)} />
-            </td>
+            )}
+            {showColumn('travel') && (
+                <td
+                    className="px-3 py-2 font-mono whitespace-nowrap text-text-secondary"
+                    title={
+                        order.toJobTime || order.toPlantTime
+                            ? `To job ${clean(order.toJobTime) || '—'} · To plant ${clean(order.toPlantTime) || '—'}`
+                            : undefined
+                    }
+                >
+                    {clean(order.toJobTime) || '—'}
+                </td>
+            )}
+            {showColumn('spacing') && (
+                <td
+                    className="px-3 py-2 font-mono whitespace-nowrap text-text-secondary"
+                    title="Spacing between loads (rate)"
+                >
+                    {clean(order.rate) || '—'}
+                </td>
+            )}
+            {showColumn('contact') && (
+                <td
+                    className="px-3 py-2 whitespace-nowrap font-mono text-text-secondary"
+                    title={clean(order.phone) || undefined}
+                >
+                    <PhoneCell phone={clean(order.phone)} />
+                </td>
+            )}
         </tr>
     )
 }

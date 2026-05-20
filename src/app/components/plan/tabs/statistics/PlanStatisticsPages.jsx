@@ -949,13 +949,14 @@ function MismatchBadge({ tone }) {
     )
 }
 
+/** Trucks the operator actually drove this window. Each chip turns
+ *  green when it matches their assigned mixer (so the row reads "yes,
+ *  they were in their truck") and stays neutral otherwise. The
+ *  assigned-mixer reference itself lives in `AssignedCell` to keep
+ *  this column focused on real activity. */
 function TruckCell({ assignedTruck, trucksDriven }) {
     if (trucksDriven.length === 0) {
-        return (
-            <span className="text-[11px] italic text-text-tertiary">
-                {assignedTruck ? `#${assignedTruck} (none driven)` : '—'}
-            </span>
-        )
+        return <span className="text-[11px] italic text-text-tertiary">No trucks</span>
     }
     return (
         <div className="flex flex-wrap items-center gap-1">
@@ -966,7 +967,7 @@ function TruckCell({ assignedTruck, trucksDriven }) {
                         key={truck}
                         className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums font-semibold"
                         style={{
-                            background: isAssigned ? 'rgba(22, 163, 74, 0.12)' : 'var(--bg-tertiary)',
+                            background: isAssigned ? 'rgba(22, 163, 74, 0.14)' : 'var(--bg-tertiary)',
                             color: isAssigned ? '#15803d' : 'var(--text-primary)'
                         }}
                         title={
@@ -981,14 +982,182 @@ function TruckCell({ assignedTruck, trucksDriven }) {
                     </span>
                 )
             })}
-            {assignedTruck && !trucksDriven.includes(assignedTruck) && (
+        </div>
+    )
+}
+
+/** Operator's plant assignment — pulled strictly from the active-mixer
+ *  roster (plant code + truck number), falling back to the operator
+ *  record's `plant_code` for spare drivers without a fixed mixer. We do
+ *  NOT infer a plant from where the driver happened to load tickets —
+ *  operators are assigned to plants in the roster, not derived from
+ *  load history. Rows that don't link to either source collapse into
+ *  the dedicated "Unmatched drivers" bucket row instead of reaching
+ *  this component. */
+function AssignedCell({ assignedPlant, assignedTruck }) {
+    if (!assignedPlant && !assignedTruck) {
+        return (
+            <span
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold italic text-text-tertiary bg-bg-tertiary"
+                title="Operator record has no active mixer assignment and no plant set"
+            >
+                <i className="fas fa-circle-question text-[9px]" />
+                No assignment
+            </span>
+        )
+    }
+    return (
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            {assignedPlant && (
                 <span
-                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums text-text-tertiary"
-                    title={`Assigned mixer #${assignedTruck} — not driven this window`}
+                    className="inline-flex items-center rounded px-1.5 py-0.5 text-[11.5px] font-mono tabular-nums font-bold text-text-primary bg-bg-tertiary"
+                    title={`Active-mixer roster plant: ${assignedPlant}`}
                 >
-                    <i className="fas fa-arrow-right-arrow-left text-[8.5px]" />#{assignedTruck}
+                    {assignedPlant}
                 </span>
             )}
+            {assignedTruck && (
+                <span
+                    className="font-mono tabular-nums text-[11.5px] text-text-secondary"
+                    title={`Assigned mixer #${assignedTruck}`}
+                >
+                    #{assignedTruck}
+                </span>
+            )}
+        </div>
+    )
+}
+
+/** Aggregate row at the bottom of the Operators table for every ticket
+ *  whose `driver_name` doesn't resolve to an operator record in Tools.
+ *  Spans the whole table width with a warning tint, names the cause
+ *  ("Jonel ↔ Tools name mismatch"), and lists up to a dozen sample
+ *  driver-name strings from the bucket so the dispatcher can chase the
+ *  worst offenders. The bucket still carries real load + yardage totals
+ *  so the column footer stays honest.
+ *
+ *  When the operator roster genuinely failed to load (empty array after
+ *  fetch settled), the message swaps to point at THAT problem instead of
+ *  blaming name spellings — otherwise every ticket would always end up
+ *  here and the dispatcher would chase ghost name-mismatch fixes. */
+function UnmatchedDriversRow({
+    accentColor,
+    avgYardage,
+    isFirst,
+    maxLoads,
+    operatorRosterCount,
+    operatorRosterReady,
+    row
+}) {
+    const sampleList = Array.isArray(row.sampleNames) ? row.sampleNames : []
+    return (
+        <div
+            className="grid grid-cols-[2.25rem_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.1fr)_4.5rem_4.5rem_5rem] gap-3 items-start px-3 py-2.5 text-[12.5px]"
+            style={{
+                background: 'rgba(202, 138, 4, 0.07)',
+                borderTop: isFirst ? 'none' : '1px solid var(--border-light)'
+            }}
+        >
+            <span className="font-mono tabular-nums text-right text-text-tertiary pt-0.5">—</span>
+            <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                    <i className="fas fa-triangle-exclamation text-[12px] text-[#854d0e]" aria-hidden="true" />
+                    <span className="font-semibold text-text-primary">Unmatched drivers</span>
+                </div>
+                <div className="text-[10.5px] mt-1 text-text-secondary leading-snug">
+                    {operatorRosterReady && operatorRosterCount === 0 ? (
+                        <>
+                            <b>Operator roster failed to load.</b> Tools couldn&apos;t fetch any operator records, so
+                            every ticket lands here by default. Refresh the page; if the problem persists, check the
+                            operator-service edge function.
+                        </>
+                    ) : (
+                        <>
+                            These tickets reference driver names that don&apos;t match any of the{' '}
+                            {operatorRosterReady ? <b>{fmtInt(operatorRosterCount)}</b> : '—'} operator records in
+                            Tools. Usually caused by a spelling mismatch between Jonel and Tools — fix the
+                            operator&apos;s name on either side to roll these loads into the right driver row.
+                        </>
+                    )}
+                </div>
+                {sampleList.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                        {sampleList.map((sample) => (
+                            <span
+                                key={sample}
+                                className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-mono bg-bg-primary border border-border-light text-text-secondary"
+                                title="Driver name from the ticket"
+                            >
+                                {sample}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+            <span
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold italic text-[#854d0e] self-start"
+                style={{ background: 'rgba(202, 138, 4, 0.16)' }}
+                title="No operator-record link for these tickets — can't show an assigned plant"
+            >
+                <i className="fas fa-triangle-exclamation text-[9px]" />
+                Name mismatch
+            </span>
+            <div className="flex flex-wrap items-center gap-1 min-w-0">
+                {row.plantLoads.length === 0 ? (
+                    <span className="text-[11px] text-text-tertiary">—</span>
+                ) : (
+                    row.plantLoads.map(({ plant, loads }) => (
+                        <span
+                            key={plant}
+                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11.5px] font-mono tabular-nums bg-bg-tertiary text-text-primary"
+                            title={`${plant} · ${loads} unmatched load${loads === 1 ? '' : 's'}`}
+                        >
+                            <span className="font-semibold">{plant}</span>
+                            <span className="text-text-tertiary">×</span>
+                            <span className="font-semibold">{loads}</span>
+                        </span>
+                    ))
+                )}
+            </div>
+            <div className="flex flex-wrap items-center gap-1 min-w-0">
+                {row.trucksDriven.length === 0 ? (
+                    <span className="text-[11px] italic text-text-tertiary">No trucks</span>
+                ) : (
+                    row.trucksDriven.map((truck) => (
+                        <span
+                            key={truck}
+                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums font-semibold bg-bg-tertiary text-text-primary"
+                            title={`#${truck} · driven on unmatched ticket(s)`}
+                        >
+                            #{truck}
+                        </span>
+                    ))
+                )}
+            </div>
+            <span className="text-[11px] text-text-tertiary">—</span>
+            <div className="flex flex-col items-end gap-1 min-w-0">
+                <span className="font-mono tabular-nums font-semibold text-text-primary">{fmtInt(row.loads)}</span>
+                <div className="h-1.5 rounded-sm overflow-hidden relative bg-bg-tertiary w-12">
+                    <div
+                        className="h-full rounded-sm"
+                        style={{
+                            background: accentColor,
+                            width: `${maxLoads > 0 ? (row.loads / maxLoads) * 100 : 0}%`
+                        }}
+                    />
+                </div>
+            </div>
+            <span
+                className="font-mono tabular-nums text-right text-text-secondary"
+                title={
+                    row.loads > 0
+                        ? `Average yardage per load · ${row.loads} unmatched load${row.loads === 1 ? '' : 's'}`
+                        : 'No loads recorded'
+                }
+            >
+                {row.loads > 0 ? avgYardage.toFixed(1) : '—'}
+            </span>
+            <span className="font-mono tabular-nums text-right text-text-secondary">{fmtInt(row.yardage)} yd³</span>
         </div>
     )
 }
@@ -1057,94 +1226,140 @@ export function PlanStatisticsOperatorsPage({
                     message={(() => {
                         if (loading) return 'Loading tickets…'
                         if (selectedPlant) {
-                            return `No active mixer operators assigned to plant ${selectedPlant} drove a load in ${fmtRange(range.start, range.end)}.`
+                            return `No drivers loaded at plant ${selectedPlant} in ${fmtRange(range.start, range.end)}.`
                         }
                         return `No ticket data available for ${fmtRange(range.start, range.end)}.`
                     })()}
                 />
             ) : (
                 <div className="flex flex-col">
-                    <div className="grid grid-cols-[2.25rem_minmax(0,1.1fr)_minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_5.5rem_6rem] gap-3 items-center px-3 py-2 text-[10px] font-bold uppercase tracking-wider border-b border-border-light bg-bg-secondary text-text-tertiary">
+                    <div className="grid grid-cols-[2.25rem_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.1fr)_4.5rem_4.5rem_5rem] gap-3 items-center px-3 py-2 text-[10px] font-bold uppercase tracking-wider border-b border-border-light bg-bg-secondary text-text-tertiary">
                         <span className="text-right">#</span>
                         <span>Operator</span>
+                        <span>Assigned</span>
                         <span>Loads by plant</span>
-                        <span>Trucks</span>
+                        <span>Trucks driven</span>
                         <span>Flags</span>
                         <span className="text-right">Loads</span>
+                        <span className="text-right" title="Average yards per load — yardage ÷ loads">
+                            Yds / load
+                        </span>
                         <span className="text-right">Yardage</span>
                     </div>
-                    {loadsByOperator.map((row, idx) => (
-                        <div
-                            key={row.key}
-                            className="grid grid-cols-[2.25rem_minmax(0,1.1fr)_minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,1.3fr)_5.5rem_6rem] gap-3 items-center px-3 py-2 text-[12.5px]"
-                            style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
-                        >
-                            <span className="font-mono tabular-nums text-right text-text-tertiary">{idx + 1}</span>
-                            <div className="min-w-0">
-                                <div className="truncate font-semibold text-text-primary">{row.name}</div>
-                                {row.homePlant && (
-                                    <div className="text-[10.5px] truncate text-text-tertiary">
-                                        home {row.homePlant}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-1 min-w-0">
-                                {row.plantLoads.length === 0 ? (
-                                    <span className="text-[11px] text-text-tertiary">—</span>
-                                ) : (
-                                    row.plantLoads.map(({ plant, loads }) => {
-                                        const isHome = plant === row.homePlant
-                                        return (
+                    {loadsByOperator.map((row, idx) => {
+                        const avgYardage = row.loads > 0 ? row.yardage / row.loads : 0
+                        const statusLabel =
+                            row.operatorStatus && row.operatorStatus !== 'Active' ? row.operatorStatus : null
+                        if (row.unmatched) {
+                            return (
+                                <UnmatchedDriversRow
+                                    key={row.key}
+                                    accentColor={accentColor}
+                                    avgYardage={avgYardage}
+                                    isFirst={idx === 0}
+                                    maxLoads={maxLoads}
+                                    row={row}
+                                />
+                            )
+                        }
+                        return (
+                            <div
+                                key={row.key}
+                                className="grid grid-cols-[2.25rem_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.1fr)_4.5rem_4.5rem_5rem] gap-3 items-center px-3 py-2 text-[12.5px]"
+                                style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
+                            >
+                                <span className="font-mono tabular-nums text-right text-text-tertiary">{idx + 1}</span>
+                                <div className="min-w-0">
+                                    <div className="truncate font-semibold text-text-primary">{row.name}</div>
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                        {row.driverNum && (
                                             <span
-                                                key={plant}
-                                                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11.5px] font-mono tabular-nums"
-                                                style={{
-                                                    background: isHome
-                                                        ? 'rgba(22, 163, 74, 0.14)'
-                                                        : 'var(--bg-tertiary)',
-                                                    color: isHome ? '#15803d' : 'var(--text-primary)'
-                                                }}
-                                                title={
-                                                    isHome
-                                                        ? `${plant} · home plant · ${loads} load${loads === 1 ? '' : 's'}`
-                                                        : `${plant} · ${loads} load${loads === 1 ? '' : 's'}`
-                                                }
+                                                className="font-mono tabular-nums text-[10.5px] text-text-tertiary"
+                                                title="Dispatch driver number (smyrna_id)"
                                             >
-                                                <span className="font-semibold">{plant}</span>
-                                                <span className="text-text-tertiary">×</span>
-                                                <span className="font-semibold">{loads}</span>
+                                                #{row.driverNum}
                                             </span>
-                                        )
-                                    })
-                                )}
-                            </div>
-                            <TruckCell assignedTruck={row.assignedTruck} trucksDriven={row.trucksDriven} />
-                            <div className="flex flex-wrap items-center gap-1 min-w-0">
-                                {row.mismatches.length === 0 ? (
-                                    <span className="text-[11px] text-text-tertiary">—</span>
-                                ) : (
-                                    row.mismatches.map((tone) => <MismatchBadge key={tone} tone={tone} />)
-                                )}
-                            </div>
-                            <div className="flex flex-col items-end gap-1 min-w-0">
-                                <span className="font-mono tabular-nums font-semibold text-text-primary">
-                                    {fmtInt(row.loads)}
-                                </span>
-                                <div className="h-1.5 rounded-sm overflow-hidden relative bg-bg-tertiary w-12">
-                                    <div
-                                        className="h-full rounded-sm"
-                                        style={{
-                                            background: accentColor,
-                                            width: `${maxLoads > 0 ? (row.loads / maxLoads) * 100 : 0}%`
-                                        }}
-                                    />
+                                        )}
+                                        {statusLabel && (
+                                            <span
+                                                className="inline-flex items-center rounded px-1 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
+                                                style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
+                                                title={`Operator status: ${statusLabel}`}
+                                            >
+                                                {statusLabel}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
+                                <AssignedCell assignedPlant={row.homePlant} assignedTruck={row.assignedTruck} />
+                                <div className="flex flex-wrap items-center gap-1 min-w-0">
+                                    {row.plantLoads.length === 0 ? (
+                                        <span className="text-[11px] text-text-tertiary">—</span>
+                                    ) : (
+                                        row.plantLoads.map(({ plant, loads }) => {
+                                            const isHome = plant === row.homePlant
+                                            return (
+                                                <span
+                                                    key={plant}
+                                                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11.5px] font-mono tabular-nums"
+                                                    style={{
+                                                        background: isHome
+                                                            ? 'rgba(22, 163, 74, 0.14)'
+                                                            : 'var(--bg-tertiary)',
+                                                        color: isHome ? '#15803d' : 'var(--text-primary)'
+                                                    }}
+                                                    title={
+                                                        isHome
+                                                            ? `${plant} · home plant · ${loads} load${loads === 1 ? '' : 's'}`
+                                                            : `${plant} · cross-plant · ${loads} load${loads === 1 ? '' : 's'}`
+                                                    }
+                                                >
+                                                    <span className="font-semibold">{plant}</span>
+                                                    <span className="text-text-tertiary">×</span>
+                                                    <span className="font-semibold">{loads}</span>
+                                                </span>
+                                            )
+                                        })
+                                    )}
+                                </div>
+                                <TruckCell assignedTruck={row.assignedTruck} trucksDriven={row.trucksDriven} />
+                                <div className="flex flex-wrap items-center gap-1 min-w-0">
+                                    {row.mismatches.length === 0 ? (
+                                        <span className="text-[11px] text-text-tertiary">—</span>
+                                    ) : (
+                                        row.mismatches.map((tone) => <MismatchBadge key={tone} tone={tone} />)
+                                    )}
+                                </div>
+                                <div className="flex flex-col items-end gap-1 min-w-0">
+                                    <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                        {fmtInt(row.loads)}
+                                    </span>
+                                    <div className="h-1.5 rounded-sm overflow-hidden relative bg-bg-tertiary w-12">
+                                        <div
+                                            className="h-full rounded-sm"
+                                            style={{
+                                                background: accentColor,
+                                                width: `${maxLoads > 0 ? (row.loads / maxLoads) * 100 : 0}%`
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                <span
+                                    className="font-mono tabular-nums text-right text-text-secondary"
+                                    title={
+                                        row.loads > 0
+                                            ? `Average yardage per load · ${row.loads} load${row.loads === 1 ? '' : 's'}`
+                                            : 'No loads recorded'
+                                    }
+                                >
+                                    {row.loads > 0 ? avgYardage.toFixed(1) : '—'}
+                                </span>
+                                <span className="font-mono tabular-nums text-right text-text-secondary">
+                                    {fmtInt(row.yardage)} yd³
+                                </span>
                             </div>
-                            <span className="font-mono tabular-nums text-right text-text-secondary">
-                                {fmtInt(row.yardage)} yd³
-                            </span>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             )}
         </Panel>

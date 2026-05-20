@@ -196,14 +196,26 @@ export function buildPerPlantEmailPayload({
     helpIn.sort(byArrive)
     helpOut.sort(byArrive)
 
-    /* Clock-in roster — pre-grouped by the caller, since the rows live in
-     * a derived memo on the schedule hook and we don't want to recompute
-     * here. The roster has start-time order baked in by the pool sim. */
-    const roster = (clockInRowsByPlant?.[plantCode] || []).map((row) => ({
-        clockIn: row.timeLabel || (Number.isFinite(row.time) ? formatMinutesAsHHMM(row.time) : ''),
-        flag: row.flag || '',
-        name: row.operatorName || row.name || 'Operator',
-        truck: row.assignedTruck || row.truckNumber || ''
+    /* Clock-in roster — slot-numbered rows that match the cron's
+     * server-side shape so both delivery paths render the same way.
+     * `clockInRowsByPlant` is pre-grouped by the caller from
+     * `usePlanScheduleData`'s local clock-in computation; outbound /
+     * leave-off enrichment lives on the dashboard board and isn't
+     * surfaced through this service yet, so the manual button is
+     * intentionally narrower than the cron output. The cron path
+     * fills in outbound destination tags and leave-off slots via
+     * `buildPlantRosterInternal` in the edge function. */
+    const localClockIns = (clockInRowsByPlant?.[plantCode] || [])
+        .map((row) => (Number.isFinite(row?.time) ? row.time : null))
+        .filter((t) => t != null)
+        .sort((a, b) => a - b)
+    const roster = localClockIns.map((time, idx) => ({
+        clockIn: formatMinutesAsHHMM(time),
+        destinationPlant: '',
+        flag: '',
+        index: idx + 1,
+        isLeaveOff: false,
+        isOutbound: false
     }))
 
     return {

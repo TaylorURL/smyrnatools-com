@@ -83,7 +83,8 @@ export {
     computeActualYardsPerHour,
     computeCustomerSatisfaction,
     computeRequestedYardsPerHour,
-    isSmallPourJob
+    isSmallPourJob,
+    splitTicketsAtKicker
 } from './plan/planCustomerSat'
 export {
     getCalculatedTruckCount,

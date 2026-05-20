@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 
 import { buildYourPlantScope } from '../../utils/DistrictUtility'
+import { buildColocationMap } from '../../utils/PlantColocationUtility'
 
 /**
  * Centralizes the small derived plant-lookup maps every Plan tab needs
@@ -25,6 +26,12 @@ export function usePlanLookups({ canSeeYourTab, plants, regionPlants, userPlantC
         })
         return out
     }, [plants])
+
+    /** Co-location map derived from `plants.location_group_id`. Plants
+     *  that share a group id collapse to a single primary code so
+     *  statistics views can compare real plant-vs-plant flow without
+     *  same-site loads showing up as cross-loading. */
+    const plantColocationMap = useMemo(() => buildColocationMap(plants), [plants])
 
     /** Plant code → street address lookup for the schedule's route map. */
     const plantAddressByCode = useMemo(() => {
@@ -64,5 +71,5 @@ export function usePlanLookups({ canSeeYourTab, plants, regionPlants, userPlantC
         })
     }, [canSeeYourTab, plantNameByCode, plants, regionPlants, userRoleNames, userPlantCode])
 
-    return { plantAddressByCode, plantNameByCode, plantsWithDistricts, yourPlantScope }
+    return { plantAddressByCode, plantColocationMap, plantNameByCode, plantsWithDistricts, yourPlantScope }
 }

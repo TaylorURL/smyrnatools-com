@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 
 import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons'
 import { PlanStatisticsControls } from '../../../app/components/plan/tabs/statistics/PlanStatisticsControls'
+import PlanStatisticsHelpCrossLoadingPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage'
 import { PlanStatisticsKpiStrip } from '../../../app/components/plan/tabs/statistics/PlanStatisticsKpiStrip'
 import {
     PlanStatisticsBigPoursPage,
@@ -17,6 +18,7 @@ import {
     PlanStatisticsSectionTabs,
     PlanStatisticsSidebar
 } from '../../../app/components/plan/tabs/statistics/PlanStatisticsSidebar'
+import { useHelpCrossLoadingStats } from '../../../app/hooks/useHelpCrossLoadingStats'
 import { usePlanStatistics } from '../../../app/hooks/usePlanStatistics'
 import { buildScheduleCsv } from '../../../utils/PlanStatisticsUtility'
 
@@ -34,7 +36,14 @@ const TOP_LIST_LIMIT = 8
  * globally — every sub-page (including Customer-satisfaction) reads the
  * same active range and comparison window.
  */
-function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduction, mixerCountsByPlant }) {
+function PlanStatisticsView({
+    accentColor,
+    liveProduction,
+    mixerCountsByPlant,
+    planColocationMap,
+    planDate,
+    plantNameByCode
+}) {
     const [activeSection, setActiveSection] = useState('overview')
     /** Satisfaction-side memos (per-plant rank, trend, per-day, aggregate) are
      *  the most expensive work the hook does. Only run them when a sub-page
@@ -45,7 +54,9 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
      *  nothing. */
     const satisfactionEnabled = activeSection === 'satisfaction' || activeSection === 'overview'
     const operatorsEnabled = activeSection === 'operators'
+    const helpCrossLoadingEnabled = activeSection === 'helpCrossLoading'
     const stats = usePlanStatistics({
+        helpCrossLoadingEnabled,
         liveProduction,
         operatorsEnabled,
         planDate,
@@ -59,12 +70,18 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         currentSummary,
         customEnd,
         customStart,
+        detailByDay,
+        flatOrders,
         isSingleDay,
         loading,
         loadsByOperator,
+        operatorRosterCount,
+        operatorRosterReady,
         perPlantLoadAttribution,
         perPlantSatisfaction,
         period,
+        plansByDate,
+        plansLoading,
         previousSatisfactionAggregate,
         previousSummary,
         range,
@@ -86,6 +103,20 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         trendData,
         workingDayCount
     } = stats
+
+    /* Help & cross-loading derivation runs only when the sub-page is
+     * mounted. The hook fans out into pair / flow / order rollups from
+     * the saved plans + ticket detail map; it's a no-op when those
+     * inputs are still loading. */
+    const helpCrossLoading = useHelpCrossLoadingStats({
+        colocationMap: planColocationMap,
+        detailByDay,
+        flatOrders,
+        plansByDate: helpCrossLoadingEnabled ? plansByDate : {},
+        plantNameByCode,
+        range,
+        selectedPlant
+    })
 
     /** The schedule HTML occasionally lists ghost plant codes (956, 601, 265, …)
      *  that are sentinels or stale entries — not real production plants. The
@@ -192,7 +223,28 @@ function PlanStatisticsView({ accentColor, planDate, plantNameByCode, liveProduc
         if (activeSection === 'customers') return <PlanStatisticsCustomersPage {...commonProps} />
         if (activeSection === 'bigPours') return <PlanStatisticsBigPoursPage {...commonProps} />
         if (activeSection === 'operators')
-            return <PlanStatisticsOperatorsPage {...commonProps} loadsByOperator={loadsByOperator} />
+            return (
+                <PlanStatisticsOperatorsPage
+                    {...commonProps}
+                    loadsByOperator={loadsByOperator}
+                    operatorRosterCount={operatorRosterCount}
+                    operatorRosterReady={operatorRosterReady}
+                />
+            )
+        if (activeSection === 'helpCrossLoading') {
+            return (
+                <PlanStatisticsHelpCrossLoadingPage
+                    accentColor={accentColor}
+                    colocationMap={planColocationMap}
+                    helpByGiverPlant={helpCrossLoading.helpByGiverPlant}
+                    kpi={helpCrossLoading.kpi}
+                    loading={loading}
+                    plantNameByCode={plantNameByCode}
+                    plansLoading={plansLoading}
+                    range={range.current}
+                />
+            )
+        }
         // Overview is the default landing page.
         return (
             <PlanStatisticsOverviewPage

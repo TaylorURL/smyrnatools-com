@@ -293,15 +293,15 @@ class ReportServiceImpl {
      *  authoritative DB coords silently fall back to geocoding (or fail
      *  outright when their address isn't in OSM). */
     async fetchPlantsSorted() {
-        // Cache key bumped to `:v2` because the select now includes
-        // `latitude` / `longitude` — old v1 entries were missing those
-        // fields and would silently strip them for everyone with a warm
-        // in-flight cache when this lands.
-        const cacheKey = 'plants:all:v2'
+        // Cache key bumped to `:v4` because the select now includes
+        // `colocated_alias_codes` — older cache entries were missing it
+        // and would silently strip the phantom-code co-location
+        // mappings for everyone with a warm cache when this lands.
+        const cacheKey = 'plants:all:v4'
         const cached = CacheUtility.get(cacheKey)
         if (cached) return cached
         const { data, error } = await Database.from('plants')
-            .select('plant_code,plant_name,plant_address,latitude,longitude')
+            .select('plant_code,plant_name,plant_address,latitude,longitude,location_group_id,colocated_alias_codes')
             .order('plant_code', { ascending: true })
         const plants = !error && Array.isArray(data) ? sortPlants(data) : []
         CacheUtility.set(cacheKey, plants, TTL_MED)

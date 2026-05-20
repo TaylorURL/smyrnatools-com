@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo } from 'react'
 
-import { parseDurationMinutes, timeToMinutes } from '../../../utils/PlanUtility'
+import { parseDurationMinutes, splitTicketsAtKicker, timeToMinutes } from '../../../utils/PlanUtility'
 import { useOperatorNameLookup } from '../../hooks/useOperatorNameLookup'
 
 const clean = (value) => (value == null ? '' : String(value).trim())
@@ -56,46 +56,69 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, o
     const homePlantCode = order?.plantCode || ''
     const homePlantName = plantNameByCode?.[homePlantCode] || ''
 
-    /** Realized pour metrics — first / last truck loaded (minute-of-day
-     *  parsed from each ticket's `loadedTime`) plus a yards-per-hour pace.
+    /** Realized pour metrics. Pace (YPH) is computed against the ORIGINAL
+     *  cohort only — load times after a kicker gap (customer adding yardage
+     *  mid-pour) are excluded. The full ticket span is still surfaced via
+     *  first/last time, so the dispatcher can see both the original pour
+     *  pace AND the total elapsed window when a kicker landed.
      *
-     *  Pace is computed against the LARGER of:
-     *    a) the actual load span (last - first loadedTime), and
-     *    b) the planned pour duration: (expected loads − 1) × spacing.
-     *
-     *  This avoids a meaningless "218 yd/hr on a 40 yd pour" reading for
-     *  small orders where every truck was filled in a 10-min burst at the
-     *  plant — the actual pour at the job site spans the planned window,
-     *  not the loadout window. Same rule covers the single-load case
-     *  (actual span is 0, so the planned window dominates). */
+     *  Pace span uses the LARGER of the original cohort's actual load span
+     *  and its planned span ((expected loads − 1) × spacing) so a small
+     *  job loaded in a 10-min burst doesn't read as "218 yd/hr". */
     const realized = useMemo(() => {
         const parsed = tickets
-            .map((t) => ({ mins: timeToMinutes(t?.loadedTime), time: t?.loadedTime }))
+            .map((t, idx) => ({
+                idx,
+                mins: timeToMinutes(t?.loadedTime),
+                quantity: parseFloat(t?.quantity) || 0,
+                time: t?.loadedTime
+            }))
             .filter((entry) => Number.isFinite(entry.mins) && entry.time)
             .sort((a, b) => a.mins - b.mins)
         if (!parsed.length) return null
-        const first = parsed[0]
-        const last = parsed[parsed.length - 1]
-        const actualSpan = Math.max(0, last.mins - first.mins)
 
         const loadSize = parseFloat(order?.loadSize) || 0
-        const expectedTrucks =
-            loadSize > 0 && orderTotal > 0 ? Math.max(1, Math.ceil(orderTotal / loadSize)) : parsed.length
         const spacing = parseDurationMinutes(order?.rate) ?? 5
-        const plannedSpan = expectedTrucks > 1 ? (expectedTrucks - 1) * spacing : 0
+        const { kickerStartIndex } = splitTicketsAtKicker(
+            parsed.map((p) => p.mins),
+            spacing
+        )
+        const hasKicker = kickerStartIndex >= 0
+        const original = hasKicker ? parsed.slice(0, kickerStartIndex) : parsed
+        const kicker = hasKicker ? parsed.slice(kickerStartIndex) : []
+        // Map original/kicker membership back to the input ticket order so
+        // the table can flag rows visually.
+        const kickerTicketIndices = new Set(kicker.map((p) => p.idx))
 
-        const effectiveSpan = Math.max(actualSpan, plannedSpan)
-        const yph = effectiveSpan > 0 && totalLoaded > 0 ? (totalLoaded / effectiveSpan) * 60 : null
+        const originalYardage = original.reduce((sum, t) => sum + t.quantity, 0)
+        const kickerYardage = kicker.reduce((sum, t) => sum + t.quantity, 0)
+
+        const firstOriginal = original[0]
+        const lastOriginal = original[original.length - 1]
+        const originalSpan = Math.max(0, lastOriginal.mins - firstOriginal.mins)
+
+        const paceYardage = originalYardage > 0 ? originalYardage : 0
+        const expectedTrucks =
+            loadSize > 0 && paceYardage > 0 ? Math.max(1, Math.ceil(paceYardage / loadSize)) : original.length
+        const plannedSpan = expectedTrucks > 1 ? (expectedTrucks - 1) * spacing : 0
+        const effectiveSpan = Math.max(originalSpan, plannedSpan)
+        const yph = effectiveSpan > 0 && paceYardage > 0 ? (paceYardage / effectiveSpan) * 60 : null
+
         return {
-            actualSpan,
+            actualSpan: originalSpan,
             effectiveSpan,
-            firstTime: first.time,
-            lastTime: last.time,
+            firstTime: parsed[0].time,
+            hasKicker,
+            kickerStartIdx: hasKicker ? parsed[kickerStartIndex].idx : null,
+            kickerTicketIndices,
+            kickerYardage,
+            lastTime: parsed[parsed.length - 1].time,
+            originalYardage,
             plannedSpan,
             ticketCount: parsed.length,
             yph
         }
-    }, [order?.loadSize, order?.rate, orderTotal, tickets, totalLoaded])
+    }, [order?.loadSize, order?.rate, tickets])
 
     const formatYph = (yph) => (Number.isFinite(yph) ? `${yph.toFixed(1)} yd/hr` : '—')
     const formatDuration = (mins) => {
@@ -173,7 +196,9 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, o
                 </div>
 
                 {realized && (
-                    <div className="px-5 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 border-b bg-bg-secondary border-border-light">
+                    <div
+                        className={`px-5 py-3 grid grid-cols-1 sm:grid-cols-${realized.hasKicker ? 4 : 3} gap-3 border-b bg-bg-secondary border-border-light`}
+                    >
                         <MetricTile label="First truck loaded" value={realized.firstTime} />
                         <MetricTile
                             hint={
@@ -186,14 +211,34 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, o
                         />
                         <MetricTile
                             hint={(() => {
-                                if (realized.yph == null) return 'order has no yardage to pace'
+                                if (realized.yph == null) return 'no original yardage to pace'
                                 const planned = realized.plannedSpan > 0 && realized.plannedSpan >= realized.actualSpan
                                 const span = formatDuration(realized.effectiveSpan)
-                                return planned ? `over planned ${span} pour` : `over actual ${span} pour`
+                                const base = planned ? `over planned ${span} pour` : `over actual ${span} pour`
+                                return realized.hasKicker ? `${base} · excludes kicker` : base
                             })()}
-                            label="Pour pace"
+                            label={realized.hasKicker ? 'Original pour pace' : 'Pour pace'}
                             value={formatYph(realized.yph)}
                         />
+                        {realized.hasKicker && (
+                            <MetricTile
+                                hint={`${
+                                    Number.isInteger(realized.originalYardage)
+                                        ? realized.originalYardage
+                                        : realized.originalYardage.toFixed(1)
+                                } yd original + ${
+                                    Number.isInteger(realized.kickerYardage)
+                                        ? realized.kickerYardage
+                                        : realized.kickerYardage.toFixed(1)
+                                } yd kicker`}
+                                label="Kicker added"
+                                value={`+${
+                                    Number.isInteger(realized.kickerYardage)
+                                        ? realized.kickerYardage
+                                        : realized.kickerYardage.toFixed(1)
+                                } yd`}
+                            />
+                        )}
                     </div>
                 )}
 
@@ -248,6 +293,8 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, o
                                     const plantCode = t.plantId
                                     const isHomePlant = plantCode === homePlantCode
                                     const plantName = plantNameByCode?.[plantCode] || ''
+                                    const isKickerRow = !!realized?.kickerTicketIndices?.has(idx)
+                                    const isFirstKickerRow = realized?.kickerStartIdx === idx
                                     /** Minutes between this ticket's effective arrival
                                      *  at the JOB site and the previous ticket's. Built
                                      *  from each ticket's own loading-plant-to-job
@@ -293,12 +340,30 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, o
                                         <tr
                                             className="border-t border-border-light"
                                             key={t.ticketId || `${plantCode}-${t.ticketNum || idx}-${idx}`}
+                                            style={{
+                                                background: isKickerRow ? 'rgba(217, 119, 6, 0.06)' : undefined,
+                                                borderTop: isFirstKickerRow
+                                                    ? '1px solid rgba(217, 119, 6, 0.4)'
+                                                    : undefined
+                                            }}
                                         >
                                             <td
                                                 className="px-3 py-2 font-mono font-semibold text-right whitespace-nowrap text-text-tertiary"
                                                 style={{ fontVariantNumeric: 'tabular-nums' }}
                                             >
                                                 {idx + 1}
+                                                {isFirstKickerRow && (
+                                                    <span
+                                                        className="ml-1.5 inline-block text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                                                        style={{
+                                                            background: 'rgba(217, 119, 6, 0.15)',
+                                                            color: '#b45309'
+                                                        }}
+                                                        title="First load after a gap — treated as a kicker (customer added yardage mid-pour). Excluded from pace calc."
+                                                    >
+                                                        Kicker
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-3 py-2 whitespace-nowrap">
                                                 <span className="font-mono font-semibold text-text-primary">

@@ -232,17 +232,41 @@ function renderRoster({ roster }) {
     if (!Array.isArray(roster) || roster.length === 0) {
         return `<div style="font-size:12.5px;color:#64748b;padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">No operator clock-ins assigned for this plant today.</div>`
     }
+    /* Slot-based roster — mirrors the Plan Dashboard's per-plant
+     * clock-in board. The dispatch system doesn't assign operator names
+     * to slots ahead of time (that happens in the morning), so we list
+     * by slot number plus the back-computed clock-in time, an outbound
+     * destination tag where applicable, and a leave-off row when the
+     * plant's effective base exceeds the day's needed clock-ins. */
     const rows = roster
         .map((op) => {
-            const flag = op.flag
-                ? `<span style="font-size:10px;font-weight:700;text-transform:uppercase;color:#b45309;background:rgba(217,119,6,0.12);padding:2px 7px;border-radius:999px;margin-left:6px;">${htmlEscape(op.flag)}</span>`
+            const isLeaveOff = op.isLeaveOff === true
+            const rowStyle = isLeaveOff
+                ? 'padding:9px 10px;border-bottom:1px solid #f1f5f9;color:#94a3b8;background:#fafafa;'
+                : 'padding:9px 10px;border-bottom:1px solid #f1f5f9;'
+            const slotLabel = op.index ? `Slot ${op.index}` : op.name || '—'
+            const clockInCell = isLeaveOff
+                ? `<span style="color:#94a3b8;">—</span>`
+                : op.clockIn
+                  ? htmlEscape(op.clockIn)
+                  : '—'
+            const destinationTag = op.destinationPlant
+                ? `<span style="font-size:10.5px;font-weight:700;color:#0369a1;background:rgba(14,165,233,0.12);padding:2px 8px;border-radius:999px;">&rarr; ${htmlEscape(op.destinationPlant)}</span>`
                 : ''
+            const flagTone = isLeaveOff
+                ? 'color:#64748b;background:#e2e8f0;'
+                : op.isOutbound
+                  ? 'color:#0369a1;background:rgba(14,165,233,0.12);'
+                  : 'color:#b45309;background:rgba(217,119,6,0.12);'
+            const flagTag = op.flag
+                ? `<span style="font-size:10px;font-weight:700;text-transform:uppercase;${flagTone}padding:2px 7px;border-radius:999px;">${htmlEscape(op.flag)}</span>`
+                : ''
+            const notesCell = [destinationTag, flagTag].filter(Boolean).join(' ')
             return `
 <tr>
-    <td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;">${htmlEscape(op.name || '—')}</td>
-    <td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:90px;">${htmlEscape(op.clockIn || '—')}</td>
-    <td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;width:110px;">${op.truck ? `#${htmlEscape(op.truck)}` : '—'}</td>
-    <td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;width:120px;">${flag}</td>
+    <td style="${rowStyle}">${htmlEscape(slotLabel)}</td>
+    <td style="${rowStyle}font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:90px;">${clockInCell}</td>
+    <td style="${rowStyle}width:180px;">${notesCell || '—'}</td>
 </tr>`
         })
         .join('')
@@ -250,9 +274,8 @@ function renderRoster({ roster }) {
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;font-size:12.5px;">
     <thead>
         <tr>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Operator</th>
+            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Slot</th>
             <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:right;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Clock in</th>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Assigned truck</th>
             <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Notes</th>
         </tr>
     </thead>

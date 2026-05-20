@@ -1,5 +1,221 @@
 # Changelog
 
+## [2026.21.8] - 2026-05-20
+
+- New plant co-location concept lets the dispatcher mark two plant
+  codes as the same physical site (Baytown 403/404, Conroe 408/409),
+  so cross-loading + deadhead analytics no longer count same-site
+  loads as inter-plant help.
+  - `supabase/migrations/20260520_add_plants_location_group_id.sql` —
+    adds `plants.location_group_id uuid` plus a partial index. Seeds
+    Baytown 403/404 and Conroe 408/409 with shared group ids.
+  - `supabase/migrations/20260521_add_plants_colocated_alias_codes.sql`
+    — adds `plants.colocated_alias_codes text[]` for "phantom" dispatch
+    codes (e.g. 404, 409) that share a site without being maintained as
+    standalone plant rows. GIN-indexed for lookup speed.
+  - `src/utils/PlantColocationUtility.ts` — new `buildColocationMap`
+    derives an `aliasCode → primary` map from the runtime plants list,
+    merges real-plant siblings and phantom aliases into one group, and
+    exposes `resolvePrimary`, `getGroupCodes`, `formatColocatedCodeLabel`,
+    `formatColocatedPlantLabel`. `EMPTY_COLOCATION_MAP` is the no-op
+    default for callers without plant data.
+  - `supabase/functions/plant-service/index.ts` — new
+    `update-colocation` endpoint accepts a single `siblingPlantCodes`
+    list and splits it server-side into real-plant siblings (written
+    via shared `location_group_id`) vs phantom alias codes (written to
+    `plants.colocated_alias_codes`). Orphan-cleanup pass clears
+    group ids that drop below two members.
+  - `src/services/PlantService.js` — new `updatePlantColocation` wrapper
+    + cache bust.
+  - `src/services/ReportService.js` — plant select now includes
+    `location_group_id, colocated_alias_codes` so the runtime
+    colocation map is built from fresh data. Cache key bumped to `:v4`.
+  - `src/app/models/plants/Plant.js` — new `locationGroupId` +
+    `colocatedAliasCodes` fields.
+  - `src/app/hooks/usePlanLookups.js` — exposes
+    `plantColocationMap = buildColocationMap(plants)` so any tab can
+    collapse same-site work.
+  - `src/views/admin/plants/PlantsDetailView.jsx` — new "Co-location"
+    section initializes the selected list from BOTH `location_group_id`
+    siblings and `colocated_alias_codes`, reads from the freshly-fetched
+    plant (the parent's `plant` prop can be stale post-save).
+  - `src/app/components/plants/PlantColocationEditor.jsx` — three-pane
+    editor: removable chips for currently-selected siblings (with a
+    "Custom" badge for phantom codes), a filterable picker for real
+    sibling plants, a free-form input + Enter-to-add for custom dispatch
+    codes.
+- New `Help & Cross-Loading` sub-page on PlanView Statistics — answers
+  "how much is each plant helping the others, and how is the help
+  being delivered?" for the active window, regionally scoped.
+  - `src/app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage.jsx`,
+    `src/app/components/plan/tabs/statistics/HelpBreakdownTable.jsx` —
+    main page + extracted breakdown table. KPI strip, two side-by-side
+    horizontal `recharts` bar charts (planned deadhead drivers · actual
+    cross-loaded yardage), and a detail table with grouped column
+    headers, per-recipient breakdowns, and a 1-5 star "Help score"
+    column with a styled hover popover explaining the calculation
+    (`ratio = (given − received) ÷ produced`, banded 1-5).
+  - `src/app/hooks/useHelpCrossLoadingStats.js` — pair-level rollup
+    (giver → recipient) from `plans.assignments` deadheads +
+    `detailByDay` cross-load tickets. Pre-seeds every region-scoped
+    plant from `plantNameByCode` so quiet plants stay visible with
+    em-dashes instead of disappearing. Applies the colocation map
+    before grouping so 403/404 and 408/409 collapse to single rows.
+    Returns `null` help score for plants with no give/receive activity.
+  - `src/app/hooks/usePlanStatistics.js` — new
+    `helpCrossLoadingEnabled` flag triggers `PlanService.fetchPlansInRange`
+    so the sub-page sees deadhead assignments. `flatOrders` and
+    `detailByDay` exposed so the new hook can compute home-plant
+    attribution + cross-load tallies without re-walking rows.
+  - `src/app/components/plan/tabs/statistics/PlanStatisticsSidebar.jsx`
+    — new sidebar entry with `fa-arrows-rotate` icon.
+- Daily-plan-email cron now CCs dispatchers, dispatch managers, and
+  general managers by region in addition to district managers.
+  - `supabase/functions/daily-plan-email/index.ts` — recipient resolver
+    rewritten to use `regions_plants` for both district-overlap (DMs)
+    and region-membership (Dispatchers, Dispatch Managers, General
+    Managers) joins. CC order is GM → DM → Dispatcher. Edge function
+    also ports the Plan Dashboard's clock-in roster computation so the
+    4 PM email shows real operator clock-in times (was "no operator
+    clock-ins assigned"). New `fetchActiveMixerBaseByPlant` and
+    `fetchTravelMinutesByPair` server-side fetchers feed
+    `computeClockInRowsInternal`, `buildOutboundClockInRowsInternal`,
+    `buildPlantRosterInternal`. Cancelled (`00:00`) and dispatcher-test
+    (`99:99`) orders excluded from the email schedule.
+  - `scripts/emails/daily-plan-email.js` — roster section rebuilt as
+    slot-numbered three-column table (Slot · Clock-in · Notes) with
+    leave-off styling, outbound destination tags, and per-driver
+    helpIn/helpOut rows including direct-load order summaries and
+    return-plant info.
+  - `src/services/DailyPlanEmailService.js` — client-side roster shape
+    updated to match the slot-based contract.
+  - `scripts/sql/daily_plan_email_dry_run.sql` — fires the cron-send
+    endpoint with `dryRun: true` + `force: true` via `pg_net` for
+    routing verification without sending real emails.
+- Schedule compare mode (5:30 PM snapshot vs live) gains a change-metrics
+  strip and the split-view aligns rows side-by-side.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleChangeStrip.jsx`
+    — new strip surfacing per-field diff counts (time, spacing, yardage,
+    plant, address, ...) with earlier/later time-shift direction badges.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleSplitView.jsx`
+    — pair-aligned rows by `orderId` (or composite key fallback) plus a
+    "Show all columns" / "Compact columns" toggle.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleSyntheticRows.jsx`
+    — placeholder rows for added/removed orders so both columns stay
+    row-aligned.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleTable.jsx`,
+    `PlanScheduleOrderRow.jsx`, `PlanScheduleSyntheticRow.jsx` —
+    `compareMode` prop suppresses annotation badges and `visibleColumns`
+    filters cells for the compact mode.
+- Dashboard cleanup — removed the legacy embedded schedule section that
+  the dispatcher no longer uses.
+  - Removed `src/app/components/dashboard/DashboardScheduleSection.jsx`,
+    `src/app/hooks/useDashboardSchedule.js`, the stub
+    `plan_email_mockup.html`. `DashboardScrollSpyNav.jsx` and
+    `DashboardView.jsx` dropped the schedule scroll-spy section.
+
+## [2026.21.7] - 2026-05-19
+
+- Schedule split view (compare-with-snapshot) now reads side-by-side. Both columns align row-for-row so the
+  dispatcher can scan changes between the 5:30 PM snapshot and the live schedule without losing their place.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleSplitView.jsx` — new `pairAlignedOrders(snapshotOrders,
+    liveOrders, sortKey)` builds two parallel arrays where index `i` on the left describes the same pour as
+    index `i` on the right. Pairing is by `orderId` (or a `plantCode|orderNum|startTime` composite when no
+    orderId exists yet). Single sort pass over the union keeps both arrays in identical row sequence.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleSyntheticRows.jsx` — new `PlaceholderRow` component.
+    When an order exists on only one side, the opposite side renders a tinted ghost row at the matching slot:
+    red `Removed from live` for snapshot-only orders, green `Added since snapshot` for live-only orders. Shows
+    the reference order's number + customer so the dispatcher knows what the missing row would have been.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleTable.jsx` — `buildTableRows` detects
+    `order.__placeholder` and routes to the new `placeholder` row kind. New `compareMode` prop suppresses
+    annotation badges (status / service / hours-limit / needs-help pill) so row heights stay flat and equal
+    across both columns.
+  - `src/app/components/plan/tabs/schedule/PlanScheduleOrderRow.jsx` — `compareMode` prop gates every
+    annotation badge inside the customer cell and the trucks cell so the height collapses to the column-only
+    content, matching the placeholder row height.
+- Schedule split view drops to a compact column set by default with an opt-in to show everything.
+  - `PlanScheduleTable.jsx` — replaced the flat `TABLE_HEADERS` constant with `SCHEDULE_COLUMN_DEFS` (key +
+    label pairs) and exported `SCHEDULE_ALL_COLUMN_KEYS` + `SCHEDULE_COMPARE_DEFAULT_COLUMNS`
+    (`start, plant, order, customer, location, yards, spacing`). New `visibleColumns` prop filters both the
+    header and per-row cells. `syntheticBodyColSpan` is recomputed from the visible-column count so the
+    synthetic / placeholder rows fill the right number of columns when the table shrinks.
+  - `PlanScheduleOrderRow.jsx` — each `<td>` now wrapped in `showColumn('<key>') && …` so hidden columns drop
+    cleanly without breaking layout.
+  - `PlanScheduleSyntheticRow.jsx` + `PlanScheduleSyntheticRows.jsx` — every synthetic-row factory threads a
+    `bodyColSpan` prop through to the inner shell.
+  - `PlanScheduleSplitView.jsx` — new `showAllColumns` state, default false. New "Show all columns" /
+    "Compact columns" toggle in the summary strip.
+- New `PlanScheduleChangeStrip` — surfaces a high-level "what changed since snapshot" summary bar in compare
+  mode (added / removed / moved counts) so the dispatcher gets the totals at a glance before scanning rows.
+- New Help & Cross-Loading sub-page in the Statistics tab.
+  - `src/app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage.jsx`,
+    `src/app/components/plan/tabs/statistics/HelpBreakdownTable.jsx` — dedicated page surfacing planned help
+    (from saved `plans.assignments`) against actual delivered tickets (`detailByDay`), broken down by
+    sending plant → receiving plant pair, by individual order, and by flow direction.
+  - `src/app/hooks/useHelpCrossLoadingStats.js` — pure data hook that fans out into pair / flow / order
+    rollups from the saved plans + ticket detail map. Honors the active range and plant filter and bails
+    out cleanly when its inputs aren't loaded yet.
+  - `src/app/hooks/usePlanStatistics.js` — added `helpCrossLoadingEnabled` flag that gates the saved-plan
+    fetch + per-day ticket-detail fetch for this sub-page, mirroring the `satisfactionEnabled` /
+    `operatorsEnabled` pattern so the heavy fetches only fire when their sub-page is mounted.
+  - `src/app/components/plan/tabs/statistics/PlanStatisticsSidebar.jsx`,
+    `src/views/tools/plan/PlanStatisticsView.jsx` — wired the new sub-page into the sidebar + view router.
+- Operators stats page — name-match resolution rebuilt so most drivers actually resolve to a Tools operator
+  record instead of falling into the unmatched bucket.
+  - `src/app/hooks/usePlanStatistics.js` — new `nameLookupVariants(name)` generates multiple canonical
+    spellings per operator + per ticket: comma-flip (`SMITH, JOHN` ↔ `JOHN SMITH`), middle-name optional
+    (`JOHN A SMITH` ↔ `JOHN SMITH`), suffix-strip (`JOHN SMITH JR` ↔ `JOHN SMITH`), and both spaced and
+    collapsed punctuation policies (`O'BRIEN` / `O BRIEN` / `OBRIEN` all match). Lookup tries every variant
+    on the ticket side so a roster entry of "Bobby Johnson" matches a ticket reading "BOBBY A JOHNSON".
+  - Fixed a useEffect cancellation race where `setMixersLoading(true)` / `setOperatorRosterLoading(true)`
+    triggered a re-render → effect re-fired → previous closure's `cancelled = true` killed the in-flight
+    fetch → both rosters stayed `null` forever. Dropped the loading flags from the effect dep arrays so
+    the fetch actually completes.
+  - Drivers whose name doesn't resolve to any operator record now collapse into a single labeled
+    "Unmatched drivers" row at the bottom of the table with sample names + explanation
+    ("name mismatch between Jonel and Tools"). Aggregates loads / yardage / trucks driven / plants loaded
+    so the impact is visible without flooding the table with anonymous rows.
+  - `src/app/components/plan/tabs/statistics/PlanStatisticsPages.jsx` — Operators table redesigned with an
+    explicit "Assigned" column (active-mixer roster plant + truck number, falling back to the operator
+    record's `plant_code` for spare drivers), a "Yds / load" efficiency cell, and the dedicated
+    `UnmatchedDriversRow` renderer. Plant filter now scopes by where work happened (loaded-at-plant OR
+    home plant) so the column lights up rows that actually had activity at the selected plant.
+  - `src/app/components/plan/tabs/schedule/OrderTicketsModal.jsx` already routes driver names through the
+    same `useOperatorNameLookup` helper for consistent rendering across surfaces.
+- Plant colocation system — explicit roster of plants that share the same physical site so help between
+  sibling plants (Baytown 403/404, Conroe 408/409, etc.) stops surfacing as cross-plant flow when it's
+  really one yard.
+  - `supabase/migrations/20260520_add_plants_location_group_id.sql`,
+    `supabase/migrations/20260521_add_plants_colocated_alias_codes.sql` — schema migrations adding the
+    colocation columns to `plants`.
+  - `supabase/functions/plant-service/index.ts` — new server-side action to read / write the colocation
+    relationship.
+  - `src/utils/PlantColocationUtility.ts` — shared client-side helpers (build the colocation map, check
+    if two plants are siblings, expand a code to its full alias set).
+  - `src/app/components/plants/PlantColocationEditor.jsx` — new editor surfaced on the Plants Detail view
+    so dispatchers can pick the sibling plant codes manually.
+  - `src/app/models/plants/Plant.js`, `src/services/PlantService.js` — model + service plumbing for the
+    new fields.
+  - `src/views/admin/plants/PlantsDetailView.jsx` — embeds the new editor under a "Co-location" section.
+- Daily plan email — overhauled for cleaner subject lines, redesigned summary table, and per-plant
+  breakdowns.
+  - `supabase/functions/daily-plan-email/index.ts` — substantial rewrite of the email generator: new
+    subject template, restructured HTML, better handling of co-located plants in the per-plant section,
+    cleaner numeric formatting.
+  - `scripts/emails/daily-plan-email.js`, `src/services/DailyPlanEmailService.js` — client + script
+    callers updated to match the new payload.
+  - `scripts/sql/daily_plan_email_dry_run.sql` — dry-run SQL for verifying the email contents against
+    production data without sending.
+  - Removed the standalone `plan_email_mockup.html` design file — content now lives inside the function.
+- Dashboard schedule section removed.
+  - Deleted `src/app/components/dashboard/DashboardScheduleSection.jsx` and
+    `src/app/hooks/useDashboardSchedule.js`. The general Dashboard view was duplicating Plan-tab data
+    awkwardly; users should hit the Plan tab directly for schedule context.
+  - `src/views/common/dashboard/DashboardView.jsx`,
+    `src/app/components/dashboard/DashboardScrollSpyNav.jsx` — removed the section + nav entry.
+- Schedule pool math — `src/utils/plan/planCustomerSat.ts` exposes `splitTicketsAtKicker` so the Tickets
+  modal can render kicker-adjusted YPH consistently with the schedule-side calculations.
+
 ## [2026.21.6] - 2026-05-19
 
 - Hard-blocked the autosave race that was wiping the planner's saved assignments on tomorrow's plan

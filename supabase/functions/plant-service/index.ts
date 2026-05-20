@@ -202,6 +202,128 @@ Deno.serve(async (req) => {
                 }
                 return jsonResponse({ managerUserIds: cleaned, success: true }, headers)
             }
+            case 'update-colocation': {
+                /* Replaces the co-location group for `plantCode`. The
+                 * caller passes a SINGLE `siblingPlantCodes` list — the
+                 * full set of codes this plant should be co-located
+                 * with. This endpoint splits the list into:
+                 *
+                 *   • REAL siblings — codes that exist as plant rows.
+                 *     These get a shared `location_group_id` so the
+                 *     grouping is symmetric.
+                 *   • PHANTOM aliases — codes that DON'T exist in
+                 *     `plants` (e.g. dispatch's "404"/"409" that the
+                 *     dispatcher tracks via tickets but never created
+                 *     standalone rows for). These get stored on THIS
+                 *     plant's `colocated_alias_codes` column.
+                 *
+                 * Both write paths happen atomically per side; an empty
+                 * `siblingPlantCodes` clears both. */
+                const auth = await requireElevatedCaller(supabase, req, headers)
+                if (auth instanceof Response) return auth
+                const body = await parseBody(req)
+                const plantCode = trimString(body?.plantCode)
+                if (!plantCode) return errorResponse('Plant code is required', headers, 400)
+                const rawSiblings = Array.isArray(body?.siblingPlantCodes) ? body.siblingPlantCodes : []
+                const siblings = Array.from(
+                    new Set(
+                        rawSiblings
+                            .map((c: unknown) => trimString(c))
+                            .filter((c: string) => c.length > 0 && c !== plantCode)
+                    )
+                )
+
+                /* Look up which siblings actually exist as plant rows.
+                 * Anything that doesn't gets treated as a phantom alias
+                 * code instead of a hard error. The target plant itself
+                 * must exist (it's the row we're editing). */
+                const targetLookup = await supabase
+                    .from(PLANTS_TABLE)
+                    .select('plant_code, location_group_id')
+                    .eq('plant_code', plantCode)
+                    .maybeSingle()
+                if (targetLookup.error) {
+                    return errorResponse(targetLookup.error.message || 'Lookup failed', headers, 400)
+                }
+                if (!targetLookup.data) {
+                    return errorResponse(`Unknown plant code: ${plantCode}`, headers, 400)
+                }
+                const oldGroupId: string | null = targetLookup.data.location_group_id ?? null
+
+                let realSiblings: string[] = []
+                let aliasCodes: string[] = siblings
+                if (siblings.length > 0) {
+                    const { data: existingRows, error: existingErr } = await supabase
+                        .from(PLANTS_TABLE)
+                        .select('plant_code, location_group_id')
+                        .in('plant_code', siblings)
+                    if (existingErr) {
+                        return errorResponse(existingErr.message || 'Lookup failed', headers, 400)
+                    }
+                    const existingSet = new Set((existingRows ?? []).map((r: any) => r.plant_code))
+                    realSiblings = siblings.filter((c: string) => existingSet.has(c))
+                    aliasCodes = siblings.filter((c: string) => !existingSet.has(c))
+
+                    /* Real-sibling side: pick a group id and apply it. */
+                    if (realSiblings.length > 0) {
+                        let newGroupId: string | null = oldGroupId
+                        if (!newGroupId) {
+                            const siblingWithGroup = (existingRows ?? []).find(
+                                (r: any) => realSiblings.includes(r.plant_code) && r.location_group_id
+                            )
+                            newGroupId = siblingWithGroup?.location_group_id ?? crypto.randomUUID()
+                        }
+                        const targetSet = new Set([plantCode, ...realSiblings])
+                        const { error: setErr } = await supabase
+                            .from(PLANTS_TABLE)
+                            .update({ location_group_id: newGroupId, updated_at: nowISO() })
+                            .in('plant_code', Array.from(targetSet))
+                        if (setErr) return errorResponse(setErr.message || 'Update failed', headers, 400)
+                    } else {
+                        /* No real siblings — clear the target's
+                         * location_group_id so it's not pointing at a
+                         * stale group. Aliases still attach below. */
+                        const { error: clearErr } = await supabase
+                            .from(PLANTS_TABLE)
+                            .update({ location_group_id: null, updated_at: nowISO() })
+                            .eq('plant_code', plantCode)
+                        if (clearErr) return errorResponse(clearErr.message || 'Update failed', headers, 400)
+                    }
+                } else {
+                    /* Empty selection — clear both halves for this plant. */
+                    const { error: clearErr } = await supabase
+                        .from(PLANTS_TABLE)
+                        .update({ location_group_id: null, updated_at: nowISO() })
+                        .eq('plant_code', plantCode)
+                    if (clearErr) return errorResponse(clearErr.message || 'Update failed', headers, 400)
+                }
+
+                /* Phantom-alias side — always written for the target
+                 * plant. Empty array clears any previously-saved
+                 * aliases. */
+                const { error: aliasErr } = await supabase
+                    .from(PLANTS_TABLE)
+                    .update({ colocated_alias_codes: aliasCodes, updated_at: nowISO() })
+                    .eq('plant_code', plantCode)
+                if (aliasErr) return errorResponse(aliasErr.message || 'Update failed', headers, 400)
+
+                /* Orphan-cleanup pass for the OLD real-plant group:
+                 * if it's now down to <2 members it's no longer a real
+                 * group — clear it. */
+                if (oldGroupId) {
+                    const { data: oldGroupMembers } = await supabase
+                        .from(PLANTS_TABLE)
+                        .select('plant_code')
+                        .eq('location_group_id', oldGroupId)
+                    if ((oldGroupMembers?.length ?? 0) < 2) {
+                        await supabase
+                            .from(PLANTS_TABLE)
+                            .update({ location_group_id: null, updated_at: nowISO() })
+                            .eq('location_group_id', oldGroupId)
+                    }
+                }
+                return jsonResponse({ realSiblings, aliasCodes, success: true }, headers)
+            }
             case 'delete': {
                 const auth = await requireElevatedCaller(supabase, req, headers)
                 if (auth instanceof Response) return auth

@@ -48,6 +48,12 @@ export const PLAN_STATS_SECTIONS = [
         icon: 'fa-id-badge',
         id: 'operators',
         label: 'Operators'
+    },
+    {
+        description: 'Planned deadhead trips and actual cross-plant loading.',
+        icon: 'fa-arrows-rotate',
+        id: 'helpCrossLoading',
+        label: 'Help & Cross-Loading'
     }
 ]
 

@@ -15,6 +15,11 @@ import { formatMinutesClock } from '../../../../../utils/PlanUtility'
 export default function PlanScheduleSyntheticRow({
     accentColor,
     animationDelayMs = 0,
+    /** ColSpan for the wide right-hand cell. Defaults to 11 (matches the
+     *  Schedule table's 13-column layout minus the fixed time + plant
+     *  cells). The split view passes a smaller number so synthetic /
+     *  placeholder rows don't extend past the visible columns. */
+    bodyColSpan = 11,
     chips,
     icon,
     pillIcon,
@@ -44,7 +49,7 @@ export default function PlanScheduleSyntheticRow({
                 </span>
             </td>
             <td className="px-3 py-2 whitespace-nowrap align-top w-px">{plantCell}</td>
-            <td className="px-3 py-2 align-top" colSpan={11}>
+            <td className="px-3 py-2 align-top" colSpan={bodyColSpan}>
                 <div className="flex items-start gap-2.5 text-[12px] flex-wrap">
                     <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 text-white"

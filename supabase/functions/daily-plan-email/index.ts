@@ -35,7 +35,7 @@ import { buildDailyPlanEmail } from '../../../scripts/emails/daily-plan-email.js
  *               orders: [{ startTime, orderNum, customer, address, productCode, yardage, truckCount, needsHelp }],
  *               helpIn: [{ heading, detail }],
  *               helpOut: [{ heading, detail }],
- *               roster: [{ name, clockIn, truck, flag? }],
+ *               roster: [{ index, clockIn, destinationPlant, flag, isLeaveOff, isOutbound }],
  *               notes: '...'
  *           },
  *           ...
@@ -109,6 +109,10 @@ interface DmDebug {
     plantDistricts?: string[]
     dmPlantCodes?: string[]
     dmUserIds?: string[]
+    regionIds?: string[]
+    regionPlantCodes?: string[]
+    dispatcherUserIds?: string[]
+    generalManagerUserIds?: string[]
 }
 
 function createAdminClient(): any {
@@ -133,7 +137,7 @@ function isFiniteString(value: unknown): value is string {
 /**
  * Resolve TO + CC recipients for a single plant.
  *
- * Two independent sources keep PMs and DMs from getting tangled:
+ * Independent sources keep classifications from tangling:
  *
  *   • **TO (Plant Manager)** — `plants.manager_user_ids` for the plant,
  *     a flat array set via the Plants admin → Managers picker. Whoever
@@ -141,11 +145,14 @@ function isFiniteString(value: unknown): value is string {
  *   • **CC (District Manager)** — every user with a "District Manager"
  *     role whose home plant (`users_profiles.plant_code`) shares at
  *     least one district with the target plant. Districts live on
- *     `plants.districts` (text[]) and are managed in the RegionsDetail
- *     admin view. A DM "covers" every plant in their district family.
+ *     `regions_plants.districts` (jsonb[]).
+ *   • **CC (Dispatcher / Dispatch Manager)** — same lookup, scoped by
+ *     `regions_plants.region_id` instead of districts.
+ *   • **CC (General Manager)** — same lookup, scoped regionally like
+ *     dispatchers. A GM covers every plant in their region.
  *
  * If a user shows up in both lists (rare — a DM also attached as a
- * named manager) the DM classification wins so they're CC'd rather
+ * named manager) the CC classification wins so they're CC'd rather
  * than addressed directly.
  */
 async function resolvePlantRecipients(
@@ -173,17 +180,21 @@ async function resolvePlantRecipients(
         plantDistricts: [],
         sampleRows: [],
         dmPlantCodes: [],
-        dmUserIds: []
+        dmUserIds: [],
+        regionIds: [],
+        regionPlantCodes: [],
+        dispatcherUserIds: [],
+        generalManagerUserIds: []
     }
 
-    /* 2. District coverage — `regions_plants.districts` is a `jsonb[]`
-     *    of district names. PostgREST overlap operators on `jsonb[]`
-     *    are awkward, so we pull the full table once and join in
-     *    memory: cheap (rows == plant count) and dead-simple to reason
-     *    about. */
+    /* 2. Pull the regions_plants table once. We use it twice below:
+     *    once for the district-overlap join that drives DM CCs, once for
+     *    the region-membership join that drives Dispatcher / Dispatch
+     *    Manager CCs. One table, two indexed lookups in memory beats
+     *    two separate round-trips. */
     const { data: rpRows, error: rpErr } = await supabase
         .from('regions_plants')
-        .select('plant_code, districts')
+        .select('plant_code, region_id, districts')
     if (rpErr) {
         debug.assignErr = `${debug.assignErr || ''} | regions_plants: ${rpErr.message}`.trim()
     }
@@ -195,12 +206,19 @@ async function resolvePlantRecipients(
             .filter((s) => s.length > 0)
     }
     const districtsByPlant = new Map<string, string[]>()
-    ;(rpRows || []).forEach((row: { plant_code?: string; districts?: unknown }) => {
+    const regionIdsByPlant = new Map<string, Set<string>>()
+    ;(rpRows || []).forEach((row: { plant_code?: string; region_id?: string; districts?: unknown }) => {
         if (!row?.plant_code) return
         const list = normalizeDistricts(row.districts)
-        if (list.length === 0) return
-        const existing = districtsByPlant.get(row.plant_code) || []
-        districtsByPlant.set(row.plant_code, Array.from(new Set([...existing, ...list])))
+        if (list.length > 0) {
+            const existing = districtsByPlant.get(row.plant_code) || []
+            districtsByPlant.set(row.plant_code, Array.from(new Set([...existing, ...list])))
+        }
+        if (row?.region_id) {
+            const set = regionIdsByPlant.get(row.plant_code) || new Set<string>()
+            set.add(row.region_id)
+            regionIdsByPlant.set(row.plant_code, set)
+        }
     })
     const plantDistricts = districtsByPlant.get(queriedAs) || []
     debug.plantDistricts = plantDistricts
@@ -216,36 +234,118 @@ async function resolvePlantRecipients(
         debug.dmPlantCodes = dmPlantCodes
     }
 
-    /* 3. Look up DMs by role name → permission → profile.plant_code
-     *    membership in the coverage set. */
+    /* Region-membership coverage for dispatchers / dispatch managers.
+     * The target plant can belong to more than one region row (rare but
+     * the schema allows it), so we union the region_ids and then collect
+     * every plant_code that lives under any of those regions. */
+    const targetRegionIds = Array.from(regionIdsByPlant.get(queriedAs) || [])
+    debug.regionIds = targetRegionIds
+    let regionPlantCodes: string[] = []
+    if (targetRegionIds.length > 0) {
+        const regionSet = new Set(targetRegionIds)
+        const coverage = new Set<string>()
+        regionIdsByPlant.forEach((ids, code) => {
+            ids.forEach((id) => {
+                if (regionSet.has(id)) coverage.add(code)
+            })
+        })
+        regionPlantCodes = Array.from(coverage)
+        debug.regionPlantCodes = regionPlantCodes
+    }
+
+    /* 3. Look up DM + Dispatcher / Dispatch Manager + General Manager
+     *    candidates in a single roles fetch, then narrow each set with
+     *    the correct plant scope. DMs scope to the district coverage
+     *    set; dispatchers and general managers scope to the region
+     *    coverage set. */
     let dmUserIds: string[] = []
-    if (dmPlantCodes.length > 0) {
-        const { data: dmRoles } = await supabase.from('users_roles').select('id, name')
-        const dmRoleIds = (dmRoles || [])
-            .filter((r: { name?: string }) => /district manager/i.test(r?.name || ''))
-            .map((r: { id: string }) => r.id)
-        if (dmRoleIds.length > 0) {
-            const { data: dmPerms } = await supabase
+    let dispatcherUserIds: string[] = []
+    let generalManagerUserIds: string[] = []
+    const needsDmLookup = dmPlantCodes.length > 0
+    const needsRegionLookup = regionPlantCodes.length > 0
+    if (needsDmLookup || needsRegionLookup) {
+        const { data: roleRows } = await supabase.from('users_roles').select('id, name')
+        const dmRoleIds: string[] = []
+        const dispatcherRoleIds: string[] = []
+        const generalManagerRoleIds: string[] = []
+        ;(roleRows || []).forEach((r: { id: string; name?: string }) => {
+            const name = (r?.name || '').trim()
+            if (/district manager/i.test(name)) {
+                dmRoleIds.push(r.id)
+                return
+            }
+            /* "Dispatcher" and "Dispatch Manager" both qualify per the
+             * dispatcher's spec. The role-name match has to admit either
+             * exact label without leaking other "dispatch"-prefixed
+             * roles (none exist today but the regex keeps that boundary
+             * tight). */
+            if (/^dispatch(er|\s*manager)\s*$/i.test(name)) {
+                dispatcherRoleIds.push(r.id)
+                return
+            }
+            /* "General Manager" — scoped to the target plant's region.
+             * Anchored regex so adjacent labels (e.g. "Assistant General
+             * Manager") don't get pulled in by accident. */
+            if (/^general\s*manager$/i.test(name)) {
+                generalManagerRoleIds.push(r.id)
+            }
+        })
+
+        const allRoleIds = Array.from(new Set([...dmRoleIds, ...dispatcherRoleIds, ...generalManagerRoleIds]))
+        if (allRoleIds.length > 0) {
+            const { data: perms } = await supabase
                 .from('users_permissions')
-                .select('user_id')
-                .in('role_id', dmRoleIds)
-            const candidateIds = Array.from(new Set((dmPerms || []).map((p: { user_id: string }) => p.user_id)))
-            if (candidateIds.length > 0) {
-                const { data: dmProfilesScoped } = await supabase
+                .select('user_id, role_id')
+                .in('role_id', allRoleIds)
+            const dmRoleSet = new Set(dmRoleIds)
+            const dispatcherRoleSet = new Set(dispatcherRoleIds)
+            const generalManagerRoleSet = new Set(generalManagerRoleIds)
+            const dmCandidateSet = new Set<string>()
+            const dispatcherCandidateSet = new Set<string>()
+            const generalManagerCandidateSet = new Set<string>()
+            ;(perms || []).forEach((p: { user_id: string; role_id: string }) => {
+                if (dmRoleSet.has(p.role_id)) dmCandidateSet.add(p.user_id)
+                if (dispatcherRoleSet.has(p.role_id)) dispatcherCandidateSet.add(p.user_id)
+                if (generalManagerRoleSet.has(p.role_id)) generalManagerCandidateSet.add(p.user_id)
+            })
+            const allCandidateIds = Array.from(
+                new Set([...dmCandidateSet, ...dispatcherCandidateSet, ...generalManagerCandidateSet])
+            )
+            if (allCandidateIds.length > 0) {
+                const { data: profilesScoped } = await supabase
                     .from('users_profiles')
                     .select('id, plant_code')
-                    .in('id', candidateIds)
-                    .in('plant_code', dmPlantCodes)
-                dmUserIds = (dmProfilesScoped || []).map((p: { id: string }) => p.id)
+                    .in('id', allCandidateIds)
+                const dmCoverage = new Set(dmPlantCodes)
+                const regionCoverage = new Set(regionPlantCodes)
+                ;(profilesScoped || []).forEach((p: { id: string; plant_code?: string }) => {
+                    if (!p?.id || !p.plant_code) return
+                    if (needsDmLookup && dmCandidateSet.has(p.id) && dmCoverage.has(p.plant_code)) {
+                        dmUserIds.push(p.id)
+                    }
+                    if (needsRegionLookup && regionCoverage.has(p.plant_code)) {
+                        if (dispatcherCandidateSet.has(p.id)) dispatcherUserIds.push(p.id)
+                        if (generalManagerCandidateSet.has(p.id)) generalManagerUserIds.push(p.id)
+                    }
+                })
             }
         }
+        dmUserIds = Array.from(new Set(dmUserIds))
+        dispatcherUserIds = Array.from(new Set(dispatcherUserIds))
+        generalManagerUserIds = Array.from(new Set(generalManagerUserIds))
         debug.dmUserIds = dmUserIds
+        debug.dispatcherUserIds = dispatcherUserIds
+        debug.generalManagerUserIds = generalManagerUserIds
     }
 
     /* 4. Fetch profile + email rows for every recipient candidate (PMs
-     *    via manager_user_ids and DMs via the district join), then split
-     *    into TO and CC with DM precedence. */
-    const allIds = Array.from(new Set([...managerIds, ...dmUserIds]))
+     *    via manager_user_ids, DMs via the district join, dispatchers /
+     *    dispatch managers and general managers via the region join),
+     *    then split into TO and CC. All three coverage roles land in
+     *    CC; PMs land in TO unless the same user also has a CC
+     *    classification, in which case CC wins. */
+    const ccCandidateIds = Array.from(new Set([...dmUserIds, ...dispatcherUserIds, ...generalManagerUserIds]))
+    const allIds = Array.from(new Set([...managerIds, ...ccCandidateIds]))
     if (allIds.length === 0) return { to: [], cc: [], debug }
 
     const [{ data: profiles, error: profErr }, { data: users, error: userErr }] = await Promise.all([
@@ -265,7 +365,7 @@ async function resolvePlantRecipients(
     const profileById = new Map(
         (profiles || []).map((p: { id: string; first_name?: string; last_name?: string }) => [p.id, p])
     )
-    const dmSet = new Set(dmUserIds)
+    const ccSet = new Set(ccCandidateIds)
     const toBuild = (id: string): Recipient | null => {
         const email = emailById.get(id)
         if (!email) return null
@@ -274,14 +374,28 @@ async function resolvePlantRecipients(
         return { email, name }
     }
 
+    /* CC order: general managers first, then district managers, then
+     * dispatchers / dispatch managers — keeps the most senior coverage
+     * layer at the top of the recipient list when the dispatcher
+     * reviews who's on it. Email clients usually preserve this order.
+     * Dedup is via the ccEmails set so a user holding more than one
+     * classification appears exactly once. */
     const cc: Recipient[] = []
-    dmUserIds.forEach((id) => {
+    const ccEmails = new Set<string>()
+    const pushCc = (id: string) => {
         const r = toBuild(id)
-        if (r) cc.push(r)
-    })
+        if (!r) return
+        if (ccEmails.has(r.email)) return
+        ccEmails.add(r.email)
+        cc.push(r)
+    }
+    generalManagerUserIds.forEach(pushCc)
+    dmUserIds.forEach(pushCc)
+    dispatcherUserIds.forEach(pushCc)
+
     const to: Recipient[] = []
     managerIds
-        .filter((id) => !dmSet.has(id))
+        .filter((id) => !ccSet.has(id))
         .forEach((id) => {
             const r = toBuild(id)
             if (r) to.push(r)
@@ -549,6 +663,269 @@ function buildAssignmentDriverTimes(assignment: any): DriverTimes[] {
     return out
 }
 
+/* ── Clock-in pipeline (port of Plan Dashboard logic) ────────────────
+ *
+ * The dashboard's clock-in roster comes from three pieces, all ported
+ * here so the cron renders the same numbers without depending on the
+ * React hook chain that drives `usePlanScheduleData` / the dashboard
+ * board:
+ *
+ *   1. `computeClockInRowsInternal` — per-plant local clock-ins. For each
+ *      order at a plant, simulate the pool right before its dispatch,
+ *      compute how many fresh operators need to clock in to cover the
+ *      shortfall, and back-time their clock-in to (start − cycle to job
+ *      − prep). Mirrors `src/utils/plan/planPool.ts:computeClockInRows`.
+ *   2. `buildOutboundClockInRowsInternal` — clock-ins for operators
+ *      leaving a plant to help another. Each outbound assignment
+ *      contributes one row per driver, with timing dependent on whether
+ *      the driver is deadheading or pulling a load from the source
+ *      plant. Mirrors `PlanDashboardClockInBoard.buildOutboundClockInRows`.
+ *   3. `buildPlantRosterInternal` — combines local + outbound rows into
+ *      slot-numbered roster rows that the email template renders. Slots
+ *      beyond the day's needed count read as "leave off" so the manager
+ *      sees who not to bring in.
+ *
+ * Cron-time travel times: we don't run live Google traffic on the cron,
+ * so the lookup falls back to the order's own `toJobTime` from the
+ * dispatch report (same fallback the dashboard uses by passing
+ * `undefined` for `getTravelOverrides`). For outbound clock-ins we use
+ * the static `plant_travel_times` table; rows without an entry are
+ * skipped (no travel time → can't compute clock-in offset → can't
+ * render the slot reliably). */
+
+const PLAN_META_KEY_INTERNAL = '_meta'
+const PRE_TRIP_MIN = 15
+const LOAD_MIN = 10
+const SLUMP_MIN = 5
+const EARLY_ARRIVAL_MIN = 5
+const TRUCK_ON_SITE_MIN = 30
+
+function snapToFiveMin(value: number | null | undefined): number | null {
+    if (!Number.isFinite(value as number)) return null
+    return Math.round((value as number) / 5) * 5
+}
+
+function getDayOfWeekForDateStr(dateStr: string | null | undefined): number | null {
+    if (!dateStr || typeof dateStr !== 'string') return null
+    const parts = dateStr.split('-')
+    if (parts.length !== 3) return null
+    const [y, m, d] = parts.map((n) => parseInt(n, 10))
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null
+    return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+}
+
+function getPoolDayMultiplier(planDate: string | null | undefined): number {
+    const dow = getDayOfWeekForDateStr(planDate)
+    if (dow == null) return 1
+    if (dow === 0) return 0
+    if (dow === 6) return 0.5
+    return 1
+}
+
+function isSaturdayDate(planDate: string | null | undefined): boolean {
+    return getPoolDayMultiplier(planDate) === 0.5
+}
+
+function adjustPoolForDate(base: number, planDate: string | null | undefined): number {
+    const multiplier = getPoolDayMultiplier(planDate)
+    if (multiplier >= 1) return Number.isFinite(base) ? base : 0
+    if (multiplier <= 0) return 0
+    return Math.floor((Number.isFinite(base) ? base : 0) * multiplier)
+}
+
+function getMissingOperators(plantProduction: Record<string, any>, plantCode: string): number {
+    const raw = plantProduction?.[PLAN_META_KEY_INTERNAL]?.missingByPlant?.[plantCode]
+    const value = parseInt(raw, 10)
+    return Number.isFinite(value) && value > 0 ? value : 0
+}
+
+function getSaturdayOverride(plantProduction: Record<string, any>, plantCode: string): number | null {
+    const raw = plantProduction?.[PLAN_META_KEY_INTERNAL]?.saturdayOverrideByPlant?.[plantCode]
+    if (raw == null || raw === '') return null
+    const value = parseInt(raw, 10)
+    return Number.isFinite(value) && value >= 0 ? value : null
+}
+
+function getEffectiveBaseForPlant(
+    rawBase: number,
+    plantCode: string,
+    plantProduction: Record<string, any>,
+    planDate: string
+): number {
+    if (isSaturdayDate(planDate)) {
+        const override = getSaturdayOverride(plantProduction, plantCode)
+        if (override != null) return Math.max(0, override)
+    }
+    const adjusted = adjustPoolForDate(rawBase, planDate)
+    const missing = getMissingOperators(plantProduction, plantCode)
+    return Math.max(0, adjusted - missing)
+}
+
+interface ClockInRow {
+    count: number
+    plantCode: string
+    time: number
+}
+
+interface OutboundClockInRow {
+    isLoadedFromPlant: boolean
+    plantCode: string
+    time: number | null
+    toPlant: string
+}
+
+interface RosterRow {
+    clockIn: string
+    destinationPlant: string
+    flag: string
+    index: number
+    isLeaveOff: boolean
+    isOutbound: boolean
+}
+
+function computeClockInRowsInternal(orders: any[], baseByPlant: Record<string, number>): ClockInRow[] {
+    const rows: ClockInRow[] = []
+    const byPlant = new Map<string, any[]>()
+    for (const order of orders || []) {
+        if (isExcludedOrder(order)) continue
+        if (timeToMin(order?.startTime) == null) continue
+        if (!order?.plantCode) continue
+        const list = byPlant.get(order.plantCode) || []
+        list.push(order)
+        byPlant.set(order.plantCode, list)
+    }
+    byPlant.forEach((plantOrders, code) => {
+        const base = baseByPlant?.[code] ?? 0
+        if (base <= 0) return
+        plantOrders.sort((a, b) => (timeToMin(a.startTime) ?? 0) - (timeToMin(b.startTime) ?? 0))
+        const events: Array<{ count: number; time: number; type: 'dispatch' | 'return' }> = []
+        let clockedIn = 0
+        for (const order of plantOrders) {
+            const startMin = timeToMin(order.startTime)
+            if (startMin == null) continue
+            const truckCount = getCalculatedTruckCount(order)
+            if (!truckCount) continue
+            const spacing = parseDurationMin(order?.rate) ?? 5
+            const toJobMin = parseDurationMin(order?.toJobTime) ?? 20
+            const toPlantMin = parseDurationMin(order?.toPlantTime) ?? toJobMin
+            const cycleMin = toJobMin + TRUCK_ON_SITE_MIN + toPlantMin
+            const loadSize = parseFloat(order?.loadSize) || 0
+            const yardage = parseFloat(order?.yardage) || 0
+            const tripsTotal = loadSize > 0 && yardage > 0 ? Math.max(1, Math.ceil(yardage / loadSize)) : truckCount
+            let pool = clockedIn
+            for (const ev of events) {
+                if (ev.time > startMin) continue
+                pool += ev.type === 'return' ? ev.count : -ev.count
+            }
+            const shortfall = Math.max(0, truckCount - pool)
+            const toClockIn = Math.min(shortfall, base - clockedIn)
+            const arrivalPrepMin = PRE_TRIP_MIN + LOAD_MIN + SLUMP_MIN + EARLY_ARRIVAL_MIN
+            const clockInOffset = toJobMin + arrivalPrepMin
+            const poolBase = Math.max(0, pool)
+            for (let i = 0; i < toClockIn; i++) {
+                const dispatchIdx = poolBase + i
+                const slot = startMin + dispatchIdx * spacing
+                const raw = Math.max(0, slot - clockInOffset)
+                const t = Math.round(raw / 5) * 5
+                rows.push({ count: 1, plantCode: code, time: t })
+            }
+            clockedIn += toClockIn
+            events.push({ count: truckCount, time: startMin, type: 'dispatch' })
+            for (let i = 0; i < truckCount; i++) {
+                const j = tripsTotal - 1 - i
+                if (j < 0) continue
+                const lastTripIdx = Math.floor(j / truckCount) * truckCount + i
+                const returnTime = startMin + lastTripIdx * spacing + cycleMin
+                events.push({ count: 1, time: returnTime, type: 'return' })
+            }
+        }
+    })
+    return rows
+}
+
+function buildOutboundClockInRowsInternal(
+    assignments: any[],
+    plantProduction: Record<string, any>,
+    travelMinutesByPair: Map<string, number>
+): OutboundClockInRow[] {
+    const rows: OutboundClockInRow[] = []
+    for (const a of assignments || []) {
+        if (!a?.fromPlant || !a?.toPlant || a.fromPlant === a.toPlant) continue
+        const travelKey = `${a.fromPlant}->${a.toPlant}`
+        const travelMinutes = travelMinutesByPair.get(travelKey)
+        if (!Number.isFinite(travelMinutes)) continue
+        const isLoadedFromPlant = !!a.loadFromPlant
+        let destinationOrder: any = null
+        if (a.forOrderId) {
+            const destOrders = plantProduction?.[a.toPlant]?.orders || []
+            destinationOrder = destOrders.find((o: any) => (o.orderId || o.orderNum) === a.forOrderId) || null
+        }
+        const toJobMinutes = parseDurationMin(destinationOrder?.toJobTime)
+        const loadedTravelToJob = (travelMinutes as number) + (Number.isFinite(toJobMinutes) ? (toJobMinutes as number) : 0)
+        const clockInOffset = isLoadedFromPlant
+            ? PRE_TRIP_MIN + LOAD_MIN + loadedTravelToJob
+            : PRE_TRIP_MIN + (travelMinutes as number)
+        const driverTimes = buildAssignmentDriverTimes(a)
+        for (const driver of driverTimes) {
+            if (!Number.isFinite(driver.arriveMin)) continue
+            const rawClockIn = Math.max(0, (driver.arriveMin as number) - clockInOffset)
+            rows.push({
+                isLoadedFromPlant,
+                plantCode: a.fromPlant,
+                time: snapToFiveMin(rawClockIn),
+                toPlant: a.toPlant
+            })
+        }
+    }
+    return rows
+}
+
+function buildPlantRosterInternal(
+    plantCode: string,
+    base: number,
+    localRows: ClockInRow[],
+    outboundRows: OutboundClockInRow[]
+): RosterRow[] {
+    const local = localRows
+        .filter((r) => r.plantCode === plantCode)
+        .map((r) => ({ outbound: null as OutboundClockInRow | null, time: snapToFiveMin(r.time) }))
+    const outbound = outboundRows
+        .filter((r) => r.plantCode === plantCode)
+        .map((r) => ({ outbound: r, time: snapToFiveMin(r.time) }))
+    const combined = [...local, ...outbound]
+        .filter((entry) => entry.time != null)
+        .sort((a, b) => (a.time as number) - (b.time as number))
+    const slotCount = Math.max(base, combined.length)
+    if (slotCount === 0) return []
+    const slots: RosterRow[] = []
+    for (let i = 0; i < slotCount; i++) {
+        const entry = combined[i]
+        if (!entry) {
+            slots.push({
+                clockIn: '',
+                destinationPlant: '',
+                flag: 'Leave off',
+                index: i + 1,
+                isLeaveOff: true,
+                isOutbound: false
+            })
+            continue
+        }
+        const time = entry.time as number
+        const hh = String(Math.floor(time / 60)).padStart(2, '0')
+        const mm = String(time % 60).padStart(2, '0')
+        slots.push({
+            clockIn: `${hh}:${mm}`,
+            destinationPlant: entry.outbound ? entry.outbound.toPlant : '',
+            flag: entry.outbound ? (entry.outbound.isLoadedFromPlant ? 'Loaded out' : 'Outbound') : '',
+            index: i + 1,
+            isLeaveOff: false,
+            isOutbound: !!entry.outbound
+        })
+    }
+    return slots
+}
+
 function composeAddress(order: any): string {
     const parts = [order?.address, order?.city, order?.state]
         .map((p) => (p == null ? '' : String(p).trim()))
@@ -558,23 +935,45 @@ function composeAddress(order: any): string {
 
 /**
  * Build every per-plant payload from a saved `plans` row. Mirrors
- * `DailyPlanEmailService.buildAllPlantEmailPayloads` minus the two pool-sim
- * dependent fields (needsHelp + roster) — those stay in the manual button
- * path so the cron version can ship without porting the full client hook.
+ * `DailyPlanEmailService.buildAllPlantEmailPayloads`, now including the
+ * operator clock-in roster computed via the ported Plan-Dashboard logic
+ * (`computeClockInRowsInternal` + `buildOutboundClockInRowsInternal` +
+ * `buildPlantRosterInternal`). `needsHelp` remains false on every order
+ * — the pool-simulation that drives that flag still lives in the
+ * client-only hook chain.
  */
 function buildServerPayloads(
     planRow: { plant_production?: Record<string, any>; assignments?: any[]; notes?: string },
-    plantNameByCode: Record<string, string>
+    plantNameByCode: Record<string, string>,
+    planDate: string,
+    activeMixerBaseByPlant: Record<string, number>,
+    travelMinutesByPair: Map<string, number>
 ): PlantInput[] {
     const production = planRow?.plant_production || {}
     const assignments = Array.isArray(planRow?.assignments) ? planRow.assignments : []
     const notes = typeof planRow?.notes === 'string' ? planRow.notes : ''
     const out: PlantInput[] = []
 
+    /* Outbound clock-in rows and the day-adjusted base both apply
+     * across every plant in this plan, so compute them once outside
+     * the per-plant loop. The roster builder splices the plant-local
+     * slice in below. */
+    const outboundRows = buildOutboundClockInRowsInternal(assignments, production, travelMinutesByPair)
+    const outboundCountByPlant = new Map<string, number>()
+    outboundRows.forEach((row) => {
+        outboundCountByPlant.set(row.plantCode, (outboundCountByPlant.get(row.plantCode) || 0) + 1)
+    })
+
     const codes = Object.keys(production).filter((c) => c && c !== '_meta')
     for (const plantCode of codes) {
         const block = production[plantCode] || {}
         const rawOrders = Array.isArray(block.orders) ? block.orders : []
+        /* Cancelled (`00:00`) and dispatcher-test (`99:99`) orders are
+         * excluded from every per-plant section the email surfaces —
+         * KPI counts, orders table, and the clock-in roster (the
+         * dashboard's `computeClockInRows` does its own filter, but
+         * filtering at the source keeps the orders array we feed in
+         * consistent across paths). */
         const liveOrders = rawOrders.filter((o: any) => !isExcludedOrder(o))
 
         const orders = liveOrders
@@ -676,6 +1075,24 @@ function buildServerPayloads(
 
         if (orders.length === 0 && helpIn.length === 0 && helpOut.length === 0) continue
 
+        /* Clock-in roster — port of `PlanDashboardClockInBoard`. Effective
+         * base = active mixer operator count, day-adjusted (half on
+         * Saturdays unless overridden, zero on Sundays) and reduced by
+         * any operators the dispatcher marked missing on this plan.
+         * Local base = effective base − outbound commitments, mirroring
+         * the dashboard's pre-clock-in subtraction so local rows don't
+         * double-count operators already leaving for help. The roster
+         * itself is slot-numbered for the email template, with
+         * leave-off slots emitted at the tail when base exceeds need. */
+        const rawBase = activeMixerBaseByPlant[plantCode] || 0
+        const effectiveBase = getEffectiveBaseForPlant(rawBase, plantCode, production, planDate)
+        const outboundReserved = outboundCountByPlant.get(plantCode) || 0
+        const localBase = Math.max(0, effectiveBase - outboundReserved)
+        const localBaseByPlant: Record<string, number> = { [plantCode]: localBase }
+        const flattenedOrders = liveOrders.map((o: any) => ({ ...o, plantCode: o.plantCode || plantCode }))
+        const localRows = computeClockInRowsInternal(flattenedOrders, localBaseByPlant)
+        const roster = buildPlantRosterInternal(plantCode, effectiveBase, localRows, outboundRows)
+
         out.push({
             code: plantCode,
             helpIn,
@@ -684,7 +1101,7 @@ function buildServerPayloads(
             name: plantNameByCode[plantCode] || '',
             notes,
             orders,
-            roster: []
+            roster
         })
     }
     out.sort((a, b) => String(a.code).localeCompare(String(b.code)))
@@ -696,6 +1113,54 @@ async function fetchPlantNameMap(supabase: any): Promise<Record<string, string>>
     const map: Record<string, string> = {}
     ;(data || []).forEach((row: { plant_code?: string; plant_name?: string }) => {
         if (row?.plant_code) map[row.plant_code] = row.plant_name || ''
+    })
+    return map
+}
+
+/** Active mixer-operator headcount per plant — the canonical "base"
+ *  number the Plan Dashboard uses before day-of-week multipliers and
+ *  the dispatcher's missing / Saturday-override edits apply. Mirrors
+ *  `ReportService.fetchActiveMixerCountsByPlant`: count `operators`
+ *  rows where status='Active' AND position='Mixer Operator' grouped
+ *  by plant_code. */
+async function fetchActiveMixerBaseByPlant(supabase: any): Promise<Record<string, number>> {
+    const { data, error } = await supabase
+        .from('operators')
+        .select('plant_code')
+        .eq('status', 'Active')
+        .eq('position', 'Mixer Operator')
+    if (error) {
+        console.warn('[daily-plan-email] fetchActiveMixerBaseByPlant failed:', error.message)
+        return {}
+    }
+    const counts: Record<string, number> = {}
+    ;(data || []).forEach((row: { plant_code?: string }) => {
+        if (!row?.plant_code) return
+        counts[row.plant_code] = (counts[row.plant_code] || 0) + 1
+    })
+    return counts
+}
+
+/** Static plant-to-plant drive minutes used by the outbound clock-in
+ *  math. The Plan Dashboard's live dashboard uses Google traffic on
+ *  the client; the cron has no UI session and can't run that path, so
+ *  we fall back to the dispatcher-maintained `plant_travel_times`
+ *  table. Outbound clock-in rows for a plant pair with no row in this
+ *  table will be skipped (same behavior the dashboard exhibits when
+ *  the live lookup latches unavailable). */
+async function fetchTravelMinutesByPair(supabase: any): Promise<Map<string, number>> {
+    const { data, error } = await supabase
+        .from('plant_travel_times')
+        .select('from_plant_code, to_plant_code, travel_minutes')
+    const map = new Map<string, number>()
+    if (error) {
+        console.warn('[daily-plan-email] fetchTravelMinutesByPair failed:', error.message)
+        return map
+    }
+    ;(data || []).forEach((row: { from_plant_code?: string; to_plant_code?: string; travel_minutes?: number }) => {
+        if (!row?.from_plant_code || !row?.to_plant_code) return
+        if (!Number.isFinite(row.travel_minutes)) return
+        map.set(`${row.from_plant_code}->${row.to_plant_code}`, row.travel_minutes as number)
     })
     return map
 }
@@ -764,8 +1229,18 @@ async function handleCronSend(req: Request, headers: any): Promise<Response> {
     if (planErr) return errorResponse(planErr.message || 'Plan lookup failed', headers, 500)
     if (!planRow) return jsonResponse({ dryRun, planDate, reason: 'no-plan', skipped: true }, headers)
 
-    const plantNameByCode = await fetchPlantNameMap(supabase)
-    const plants = buildServerPayloads(planRow, plantNameByCode)
+    const [plantNameByCode, activeMixerBaseByPlant, travelMinutesByPair] = await Promise.all([
+        fetchPlantNameMap(supabase),
+        fetchActiveMixerBaseByPlant(supabase),
+        fetchTravelMinutesByPair(supabase)
+    ])
+    const plants = buildServerPayloads(
+        planRow,
+        plantNameByCode,
+        planDate,
+        activeMixerBaseByPlant,
+        travelMinutesByPair
+    )
     if (plants.length === 0) {
         return jsonResponse({ dryRun, planDate, reason: 'no-plants-with-content', skipped: true }, headers)
     }

@@ -216,13 +216,14 @@ function PlanViewImpl({ accentColor, isDark }) {
         if (viewMode === 'settings' && !canSeeSettingsTab) setViewModeRaw('dashboard')
     }, [viewMode, canSeeSettingsTab])
 
-    const { plantAddressByCode, plantNameByCode, plantsWithDistricts, yourPlantScope } = usePlanLookups({
-        canSeeYourTab,
-        plants,
-        regionPlants,
-        userPlantCode,
-        userRoleNames
-    })
+    const { plantAddressByCode, plantColocationMap, plantNameByCode, plantsWithDistricts, yourPlantScope } =
+        usePlanLookups({
+            canSeeYourTab,
+            plants,
+            regionPlants,
+            userPlantCode,
+            userRoleNames
+        })
 
     /* Review & Send modal — the daily-plan email pipeline. Replaces the
      * old "Copy Plan" affordance: the dispatcher reviews each plant's
@@ -381,6 +382,7 @@ function PlanViewImpl({ accentColor, isDark }) {
                                 accentColor={accentColor}
                                 liveProduction={plantProduction}
                                 mixerCountsByPlant={mixerCountsByPlant}
+                                planColocationMap={plantColocationMap}
                                 planDate={planDate}
                                 plantNameByCode={plantNameByCode}
                             />

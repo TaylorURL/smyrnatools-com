@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
+import PlantColocationEditor from '../../../app/components/plants/PlantColocationEditor'
 import PlantManagersEditor from '../../../app/components/plants/PlantManagersEditor'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
 import { PlantService } from '../../../services/PlantService'
@@ -26,9 +27,72 @@ function PlantsDetailView({ plant, onClose, onDelete }) {
     const [latitudeInput, setLatitudeInput] = useState(formatCoordinate(plant.latitude))
     const [longitudeInput, setLongitudeInput] = useState(formatCoordinate(plant.longitude))
     const [managerIds, setManagerIds] = useState(() => getInitialManagerIds(plant))
+    /* Co-location sibling codes the dispatcher has selected. The
+     * backend writes a shared `location_group_id` to this plant plus
+     * every sibling in one round trip on save. */
+    const [siblingPlantCodes, setSiblingPlantCodes] = useState([])
+    const [allPlants, setAllPlants] = useState([])
     const [isSaving, setIsSaving] = useState(false)
     const [message, setMessage] = useState('')
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+
+    /* Load the full plant list once so the co-location editor can list
+     * sibling candidates. Initialize the selected sibling set from BOTH
+     * sources of co-location data on this plant:
+     *   • Other plant rows sharing the same `location_group_id`
+     *   • Phantom alias codes stored on `colocated_alias_codes`
+     * The editor treats them as one unified list — the save handler
+     * splits them back apart server-side based on whether each code
+     * matches an existing plant row.
+     *
+     * Critically: pull the current plant's state from the FRESH list,
+     * not the `plant` prop. The parent (`PlantsView`) caches its own
+     * plants array in React state and doesn't refetch when the detail
+     * view saves, so the prop can be stale on the next open — which
+     * would silently drop any newly-added alias codes from the
+     * editor's initial render. */
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const list = await PlantService.fetchAllPlants()
+                if (cancelled) return
+                setAllPlants(list || [])
+                const freshPlant = (list || []).find((p) => (p?.plantCode || p?.plant_code) === plantCode) || plant
+                const groupId = freshPlant?.locationGroupId ?? freshPlant?.location_group_id ?? null
+                const realSiblings = groupId
+                    ? (list || [])
+                          .filter((p) => p?.locationGroupId === groupId || p?.location_group_id === groupId)
+                          .map((p) => p?.plantCode || p?.plant_code)
+                          .filter((code) => code && code !== plantCode)
+                    : []
+                const aliasCodes = Array.isArray(freshPlant?.colocatedAliasCodes)
+                    ? freshPlant.colocatedAliasCodes
+                    : Array.isArray(freshPlant?.colocated_alias_codes)
+                      ? freshPlant.colocated_alias_codes
+                      : []
+                const merged = Array.from(new Set([...realSiblings, ...aliasCodes].filter(Boolean)))
+                setSiblingPlantCodes(merged)
+            } catch {
+                if (!cancelled) setAllPlants([])
+            }
+        })()
+        return () => {
+            cancelled = true
+        }
+    }, [plantCode, plant])
+
+    const candidateSiblings = useMemo(
+        () =>
+            (allPlants || [])
+                .filter((p) => (p?.plantCode || p?.plant_code) && (p?.plantCode || p?.plant_code) !== plantCode)
+                .map((p) => ({
+                    plantCode: p?.plantCode || p?.plant_code,
+                    plantName: p?.plantName || p?.plant_name || ''
+                }))
+                .sort((a, b) => a.plantCode.localeCompare(b.plantCode)),
+        [allPlants, plantCode]
+    )
 
     const parseCoordinateInput = (raw) => {
         const trimmed = String(raw ?? '').trim()
@@ -75,6 +139,7 @@ function PlantsDetailView({ plant, onClose, onDelete }) {
             })
             const persisted = await PlantService.updatePlantManagers(plantCode, managerIds)
             setManagerIds(persisted)
+            await PlantService.updatePlantColocation(plantCode, siblingPlantCodes)
             setMessage('Changes saved')
             setTimeout(() => setMessage(''), 2000)
         } catch (error) {
@@ -204,6 +269,22 @@ function PlantsDetailView({ plant, onClose, onDelete }) {
                         <span className="font-semibold text-text-primary">Save</span>.
                     </div>
                     <PlantManagersEditor managerIds={managerIds} onChange={setManagerIds} disabled={isSaving} />
+                </DetailViewSection.Card>
+            </DetailViewSection.Section>
+            <DetailViewSection.Section id="colocation" title="Co-location" icon="fas fa-link">
+                <DetailViewSection.Card title="Same Physical Location" icon="fas fa-link">
+                    <div className="text-[12px] text-text-secondary mb-3">
+                        Check every plant code that shares this physical site. Statistics that compare plant-vs-plant
+                        flow (Help &amp; Cross-Loading, etc.) treat co-located plants as one location instead of
+                        counting same-site loads as cross-plant help. Saved on the next{' '}
+                        <span className="font-semibold text-text-primary">Save</span>.
+                    </div>
+                    <PlantColocationEditor
+                        candidates={candidateSiblings}
+                        disabled={isSaving}
+                        onChange={setSiblingPlantCodes}
+                        selectedCodes={siblingPlantCodes}
+                    />
                 </DetailViewSection.Card>
             </DetailViewSection.Section>
         </DetailViewSection>

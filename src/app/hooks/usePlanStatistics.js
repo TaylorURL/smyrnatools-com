@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { DispatchDataService } from '../../services/DispatchDataService'
 import { MixerService } from '../../services/MixerService'
 import { OperatorService } from '../../services/OperatorService'
+import { PlanService } from '../../services/PlanService'
 import { parseIsoLocal } from '../../utils/PlanStatisticsFormatUtility'
 import {
     aggregateMetrics,
@@ -43,6 +44,64 @@ const flattenLiveOrders = (rows) => {
     return out
 }
 
+/** Trailing generation suffix tokens to strip when normalising a name
+ *  ("Bobby Johnson JR" → "Bobby Johnson") so a roster entry without the
+ *  suffix still matches a Jonel ticket that has one. */
+const NAME_SUFFIXES = new Set(['JR', 'SR', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'])
+
+/** Build every lookup key a person name should match under. Both sides
+ *  of the ticket-to-operator match register/lookup through this list so
+ *  Jonel-vs-Tools spelling drift resolves without manual intervention:
+ *
+ *    "SMITH, JOHN"        → ["JOHN SMITH"]                       (comma flipped)
+ *    "JOHN A SMITH"       → ["JOHN A SMITH", "JOHN SMITH"]       (middle name optional)
+ *    "JOHN SMITH JR."     → ["JOHN SMITH"]                       (suffix + punctuation stripped)
+ *    "MARY-ANNE O'BRIEN"  → ["MARY ANNE O BRIEN", ..., "MARYANNE OBRIEN", ...]
+ *
+ *  Returns `[]` for genuinely empty / single-word strings (e.g. blanks,
+ *  "DEFAULT"); those fall straight into the unmatched bucket.
+ */
+function nameLookupVariants(name) {
+    const raw = String(name ?? '').trim()
+    if (!raw) return []
+    const upper = raw.toUpperCase()
+    /* Detect "LAST, FIRST" vs "JOHN SMITH, JR" by what's BEFORE the comma:
+     * one token → last-first → flip; multi token → comma is a separator. */
+    let flipped = upper
+    if (upper.includes(',')) {
+        const [head, ...rest] = upper.split(',')
+        const headTokens = head.trim().split(/\s+/).filter(Boolean)
+        if (headTokens.length === 1) {
+            flipped = `${rest.join(',').trim()} ${head.trim()}`
+        } else {
+            flipped = upper.replace(/,/g, ' ')
+        }
+    }
+    /* Generate keys for two punctuation policies so compound names match
+     * whether the punctuation is collapsed ("OBrien") or spaced
+     * ("O Brien"). Without both, "Maria O'Brien" never matches
+     * "MARIA OBRIEN" on a ticket. */
+    const PUNCT_RE = /[.,'\-]/g
+    const spacedBody = flipped.replace(PUNCT_RE, ' ').replace(/\s+/g, ' ').trim()
+    const collapsedBody = flipped.replace(PUNCT_RE, '').replace(/\s+/g, ' ').trim()
+    const tokenize = (body) => {
+        const tokens = body.split(' ').filter(Boolean)
+        while (tokens.length > 1 && NAME_SUFFIXES.has(tokens[tokens.length - 1])) tokens.pop()
+        return tokens
+    }
+    const keys = new Set()
+    ;[spacedBody, collapsedBody].forEach((body) => {
+        if (!body) return
+        const tokens = tokenize(body)
+        if (tokens.length < 2) return
+        keys.add(tokens.join(' '))
+        if (tokens.length >= 3) {
+            keys.add(`${tokens[0]} ${tokens[tokens.length - 1]}`)
+        }
+    })
+    return [...keys]
+}
+
 /**
  * Orchestrates every async + derived state slice for `PlanStatisticsView`.
  *
@@ -70,8 +129,19 @@ const flattenLiveOrders = (rows) => {
  *   the Operators sub-page can group loads by driver. Independent of
  *   satisfaction so loading the Operators page doesn't pay for the
  *   satisfaction memos as well.
+ * @param {boolean} [args.helpCrossLoadingEnabled=false] - When true, fetch
+ *   saved `plans` rows for the active range (assignments + plant_production)
+ *   so the Help & Cross-Loading sub-page can correlate planned help against
+ *   actual delivered tickets. Also enables the per-day ticket detail fetch
+ *   used by the cross-loading half of that page.
  */
-export function usePlanStatistics({ planDate, liveProduction, satisfactionEnabled = true, operatorsEnabled = false }) {
+export function usePlanStatistics({
+    planDate,
+    liveProduction,
+    satisfactionEnabled = true,
+    operatorsEnabled = false,
+    helpCrossLoadingEnabled = false
+}) {
     const [period, setPeriod] = useState('week')
     const [comparison, setComparison] = useState('none')
     /* Default to today's CST calendar date when the caller didn't pass
@@ -109,10 +179,32 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
      *  same name instead of the raw dispatch HTML driver string. */
     const [operatorRoster, setOperatorRoster] = useState(null)
     const [operatorRosterLoading, setOperatorRosterLoading] = useState(false)
+    /** Saved plan rows (with `assignments`) for the active range — only the
+     *  Help & Cross-Loading sub-page needs these, since the rest of the
+     *  Statistics tab reads ordered/loaded production straight from
+     *  `dispatch_data`. Indexed by plan_date so per-day pair groupings can
+     *  walk one entry at a time. */
+    const [plansByDate, setPlansByDate] = useState({})
+    const [plansLoading, setPlansLoading] = useState(false)
 
+    /* Active-mixer + operator-roster fetches.
+     *
+     * IMPORTANT: the loading flags (`mixersLoading` / `operatorRosterLoading`)
+     * are deliberately NOT in the deps arrays. They get flipped to `true`
+     * INSIDE the effect, which would otherwise:
+     *   1. Trigger a re-render
+     *   2. Re-fire the effect (loading flag changed)
+     *   3. Run cleanup on the previous closure → `cancelled = true`
+     *   4. Skip the guard (loading is true now), bail out
+     *   5. The original fetch completes, hits `if (cancelled) return`, and
+     *      NEVER calls `setActiveMixers`/`setOperatorRoster`
+     * → both rosters stay null forever, every ticket falls into the
+     *   unmatched bucket. We swap to a ref-based guard so the loading
+     *   flag is still surfaced to the UI but doesn't participate in the
+     *   effect's dep diffing. */
     useEffect(() => {
         if (!operatorsEnabled) return undefined
-        if (activeMixers !== null || mixersLoading) return undefined
+        if (activeMixers !== null) return undefined
         let cancelled = false
         setMixersLoading(true)
         ;(async () => {
@@ -133,11 +225,12 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
         return () => {
             cancelled = true
         }
-    }, [operatorsEnabled, activeMixers, mixersLoading])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [operatorsEnabled, activeMixers])
 
     useEffect(() => {
         if (!operatorsEnabled) return undefined
-        if (operatorRoster !== null || operatorRosterLoading) return undefined
+        if (operatorRoster !== null) return undefined
         let cancelled = false
         setOperatorRosterLoading(true)
         ;(async () => {
@@ -155,44 +248,36 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
         return () => {
             cancelled = true
         }
-    }, [operatorsEnabled, operatorRoster, operatorRosterLoading])
+    }, [operatorsEnabled, operatorRoster])
 
-    /** Two-step cross-reference. Dispatch tickets carry `driver_num` = the
-     *  operator's short `smyrna_id`. Mixers carry `assigned_operator` = the
-     *  operator's UUID `employee_id`. We need both indexes to bridge:
-     *  `ticket.driverNum → operator.smyrnaId → operator.employeeId → mixer`.
-     *  Direct `driverNum → mixer.assignedOperator` would always miss because
-     *  the two id namespaces aren't the same. */
-    const operatorBySmyrnaId = useMemo(() => {
-        const out = new Map()
-        ;(operatorRoster || []).forEach((op) => {
-            const key = String(op?.smyrnaId || '').trim()
-            if (!key) return
-            out.set(key, op)
-        })
-        return out
-    }, [operatorRoster])
-
-    /** Name-based fallback index — operators whose `smyrna_id` isn't
-     *  populated (a common gap in this DB) still resolve as long as the
-     *  ticket's `driver_name` matches the roster name case-insensitively.
-     *  Keyed by `name.toUpperCase().trim()` so the dispatch HTML's
-     *  ALL-CAPS strings match the mixed-case roster cleanly. */
+    /** Name-based index — operators resolve by canonicalised driver name,
+     *  which is the primary link between Jonel ticket data and Tools.
+     *  Each operator is registered under several canonical variants so
+     *  common Jonel spellings still match:
+     *    - "SMITH, JOHN"          → "JOHN SMITH"          (comma-flipped)
+     *    - "JOHN A SMITH"         → also "JOHN SMITH"     (middle dropped)
+     *    - "JOHN SMITH JR"        → also "JOHN SMITH"     (suffix dropped)
+     *    - "  John  Smith  "      → "JOHN SMITH"          (whitespace collapsed)
+     *  Both sides of the match route through `nameLookupVariants`, which
+     *  generates the same set of keys for any input, so a ticket whose
+     *  `driver_name` matches any registered variant resolves to the
+     *  operator record without manual cleanup. */
     const operatorByNormalizedName = useMemo(() => {
         const out = new Map()
-        ;(operatorRoster || []).forEach((op) => {
-            const key = String(op?.name || '')
-                .trim()
-                .toUpperCase()
+        const register = (key, op) => {
             if (!key) return
-            /* Prefer Active records on collisions so an inactive
-             * namesake doesn't drag the active roster entry out of the
-             * lookup. Two truly-active entries with the same name are
-             * unresolvable here — first one wins. */
             const existing = out.get(key)
+            /* Prefer Active records on collisions so an inactive namesake
+             * doesn't drag the active roster entry out of the lookup. Two
+             * truly-active entries with the same canonical key are
+             * unresolvable here — first one wins. */
             if (!existing || (existing.status !== 'Active' && op.status === 'Active')) {
                 out.set(key, op)
             }
+        }
+        ;(operatorRoster || []).forEach((op) => {
+            const variants = nameLookupVariants(op?.name)
+            variants.forEach((variant) => register(variant, op))
         })
         return out
     }, [operatorRoster])
@@ -357,7 +442,7 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
      *  reliably — older days will return empty maps and silently drop out
      *  of the satisfaction score (as expected). */
     useEffect(() => {
-        if (!satisfactionEnabled && !operatorsEnabled) return undefined
+        if (!satisfactionEnabled && !operatorsEnabled && !helpCrossLoadingEnabled) return undefined
         const allDays = [...currentDays, ...previousDays]
         if (allDays.length === 0) return undefined
         let cancelled = false
@@ -389,15 +474,47 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
         return () => {
             cancelled = true
         }
-    }, [currentDays, previousDays, detailByDay, satisfactionEnabled, operatorsEnabled])
+    }, [currentDays, previousDays, detailByDay, satisfactionEnabled, operatorsEnabled, helpCrossLoadingEnabled])
+
+    /** Saved-plan fetch — only fires when the Help & Cross-Loading
+     *  sub-page is mounted. Pulls every plan whose date falls in the
+     *  active range so the page can read `assignments` for planned-help
+     *  metrics. Range covers the current window only; comparison-window
+     *  plans aren't needed since this page doesn't surface deltas. */
+    useEffect(() => {
+        if (!helpCrossLoadingEnabled) return undefined
+        const startIso = range?.current?.start
+        const endIso = range?.current?.end
+        if (!startIso || !endIso) return undefined
+        let cancelled = false
+        setPlansLoading(true)
+        PlanService.fetchPlansInRange(startIso, endIso)
+            .then((rows) => {
+                if (cancelled) return
+                const map = {}
+                ;(rows || []).forEach((row) => {
+                    if (row?.plan_date) map[row.plan_date] = row
+                })
+                setPlansByDate(map)
+            })
+            .catch((err) => {
+                if (!cancelled) console.warn('[usePlanStatistics] plans fetch failed', err?.message || err)
+            })
+            .finally(() => {
+                if (!cancelled) setPlansLoading(false)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [helpCrossLoadingEnabled, range])
 
     /** Flat list of every live order in the active window, tagged with its
      *  plant + date. Built ONCE so per-plant memos can bucket without
      *  re-walking rows or calling `computeScheduleMetrics`. Always covers
      *  all plants — the plant comparison chart needs the unfiltered set. */
     const flatOrders = useMemo(
-        () => (satisfactionEnabled ? flattenLiveOrders(currentRows) : []),
-        [currentRows, satisfactionEnabled]
+        () => (satisfactionEnabled || helpCrossLoadingEnabled ? flattenLiveOrders(currentRows) : []),
+        [currentRows, satisfactionEnabled, helpCrossLoadingEnabled]
     )
 
     /** Merged detail map across every loaded date — built once and reused
@@ -797,6 +914,28 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
         const endIso = range?.current?.end
         if (!startIso || !endIso) return []
         const byOperator = new Map()
+        /* Every ticket whose driver name doesn't resolve to an operator
+         * record gets collapsed here. Per the operations team this is
+         * almost always a Jonel-↔-Tools spelling mismatch (a driver
+         * created on the dispatch side with a slightly different name,
+         * or a ticket carrying a stale "DEFAULT, DEFAULT" placeholder).
+         * Bundling them into ONE row instead of N "Unassigned" rows
+         * keeps the table honest about which loads are unverifiable
+         * AND points the dispatcher at the root cause. */
+        const unmatchedBucket = {
+            driverNum: null,
+            employeeId: null,
+            key: '__unmatched__',
+            loads: 0,
+            loadsByPlant: new Map(),
+            name: 'Unmatched drivers',
+            operatorHomePlant: null,
+            operatorStatus: null,
+            sampleNames: new Set(),
+            trucksDriven: new Set(),
+            unmatched: true,
+            yardage: 0
+        }
         Object.entries(detailByDay).forEach(([dayIso, dayMap]) => {
             if (!dayMap) return
             if (dayIso < startIso || dayIso > endIso) return
@@ -807,46 +946,69 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
                     const rawName = (ticket?.driverName || '').toString().trim()
                     const driverNum = (ticket?.driverNum || '').toString().trim()
                     const truckNum = (ticket?.truckNum || '').toString().trim()
-                    /* Resolve to the canonical operator record so the row
-                     * renders the same name shown everywhere else in the app
-                     * (Mixer detail, verification modal, etc.) instead of
-                     * the raw dispatch HTML string. Bridges either by the
-                     * dispatch `driver_num` ↔ `operator.smyrna_id` link OR
-                     * by case-insensitive name match — whichever resolves
-                     * first. Lets the page work even when one of those
-                     * id columns isn't populated in the DB. */
-                    const normalizedName = rawName.toUpperCase()
-                    const operator =
-                        (driverNum && operatorBySmyrnaId.get(driverNum)) ||
-                        (normalizedName && operatorByNormalizedName.get(normalizedName)) ||
-                        null
-                    const canonicalName = operator?.name?.trim()
-                    const fallbackName = rawName || (driverNum ? `Driver #${driverNum}` : 'Unknown')
-                    /* Run every name through the shared person-name formatter
-                     * so this page reads the same way as the Tickets modal,
-                     * regardless of how operator records or dispatch HTML
-                     * happen to capitalise the original string. */
-                    const name = canonicalName
-                        ? formatPersonName(canonicalName)
-                        : fallbackName.startsWith('Driver #')
-                          ? fallbackName
-                          : formatPersonName(fallbackName)
-                    /* Prefer the operator's UUID as the dedup key so two
-                     * spellings of the same driver collapse to one row.
-                     * Falls back to smyrna_id, then a normalised name. */
-                    const key = operator?.employeeId || driverNum || rawName.toUpperCase() || 'UNKNOWN'
+                    /* Match the ticket's `driver_name` against the operator
+                     * roster by canonicalised name. Names are the only link
+                     * between Jonel ticket data and the Tools operator
+                     * records — we deliberately do NOT look at the
+                     * dispatch `driver_num` column, which is a Jonel-side
+                     * identifier the operator records don't carry.
+                     *
+                     * Lookup tries ALL variants of the ticket name (full
+                     * canonical + first+last short key) so the match
+                     * succeeds whichever side carries the middle name. A
+                     * roster entry of "Bobby Johnson" matches a ticket
+                     * reading "BOBBY A JOHNSON" because the ticket's short
+                     * variant is "BOBBY JOHNSON" — the registered key. */
+                    const nameVariants = nameLookupVariants(rawName)
+                    let operator = null
+                    for (const variant of nameVariants) {
+                        const hit = operatorByNormalizedName.get(variant)
+                        if (hit) {
+                            operator = hit
+                            break
+                        }
+                    }
                     const yardage = parseFloat(ticket?._confirmedQuantity) || parseFloat(ticket?.quantity) || 0
+                    /* No operator record — collapse into the single
+                     * unmatched bucket so dispatchers see ONE row labelled
+                     * with the root cause instead of N anonymous "Driver #..."
+                     * rows. The bucket still aggregates loads, yardage,
+                     * trucks, and load-plants so the impact is visible. */
+                    if (!operator) {
+                        unmatchedBucket.loads += 1
+                        unmatchedBucket.yardage += yardage
+                        if (truckNum) unmatchedBucket.trucksDriven.add(truckNum)
+                        if (loaderPlant) {
+                            unmatchedBucket.loadsByPlant.set(
+                                loaderPlant,
+                                (unmatchedBucket.loadsByPlant.get(loaderPlant) || 0) + 1
+                            )
+                        }
+                        const sampleLabel = rawName || (driverNum ? `Driver #${driverNum}` : 'Unknown')
+                        if (sampleLabel && unmatchedBucket.sampleNames.size < 12) {
+                            unmatchedBucket.sampleNames.add(sampleLabel)
+                        }
+                        return
+                    }
+                    const canonicalName = operator.name?.trim() || rawName
+                    const name = formatPersonName(canonicalName)
+                    /* Operator's UUID dedupes two spellings of the same
+                     * driver into one row — that's the whole point of
+                     * normalising through the operator record first. */
+                    const fallbackKeySource = nameVariants[0] || rawName.toUpperCase()
+                    const key = operator.employeeId || `op:${fallbackKeySource}`
                     if (!byOperator.has(key)) {
                         byOperator.set(key, {
                             driverNum: driverNum || null,
-                            employeeId: operator?.employeeId || null,
+                            employeeId: operator.employeeId || null,
                             key,
                             loads: 0,
                             loadsByPlant: new Map(),
                             name,
-                            operatorHomePlant: operator?.plantCode || null,
-                            operatorStatus: operator?.status || null,
+                            operatorHomePlant: operator.plantCode || null,
+                            operatorStatus: operator.status || null,
                             trucksDriven: new Set(),
+                            unmatched: false,
                             yardage: 0
                         })
                     }
@@ -860,6 +1022,14 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
                 })
             })
         })
+        /* Sample names get materialised here so the consumer sees a plain
+         * sorted array rather than a Set + insertion order. */
+        if (unmatchedBucket.loads > 0) {
+            byOperator.set('__unmatched__', {
+                ...unmatchedBucket,
+                sampleNames: [...unmatchedBucket.sampleNames].sort()
+            })
+        }
         /** Mismatch classifier — runs only after BOTH the operator roster
          *  and the active-mixer roster have loaded so we don't flash false
          *  "unassigned" badges on every row during the initial fetch. */
@@ -875,6 +1045,23 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
                         .map(([plant, loads]) => ({ loads, plant }))
                         .sort((a, b) => b.loads - a.loads || a.plant.localeCompare(b.plant))
                     const plantsLoaded = plantLoads.map((p) => p.plant)
+                    /* The synthetic unmatched bucket carries pre-aggregated
+                     * load / yardage data but no operator-record link, so
+                     * roster-derived columns (assigned plant, assigned truck,
+                     * mismatch flags) don't apply. Return it untouched so the
+                     * UI can render it with the dedicated unmatched layout. */
+                    if (entry.unmatched) {
+                        return {
+                            ...entry,
+                            assignedPlant: null,
+                            assignedTruck: null,
+                            homePlant: null,
+                            mismatches: [],
+                            plantLoads,
+                            plantsLoaded,
+                            trucksDriven
+                        }
+                    }
                     /* Active-mixer lookup with a name fallback. The
                      * primary key is `operator.employeeId` (when the
                      * smyrnaId or operator-record bridge produced one);
@@ -895,8 +1082,11 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
                      * MIXER assignment — that's the dispatch roster the rest
                      * of the app treats as the active-operators list. The
                      * operator-record `plant_code` field is the secondary
-                     * fallback for spare drivers without a fixed mixer
-                     * (and is usually empty in practice). */
+                     * fallback for spare drivers without a fixed mixer.
+                     * Drivers we couldn't link by name fall into the
+                     * unmatched bucket above instead of carrying a guessed
+                     * plant here — operators aren't "assigned" to a plant
+                     * by where they happened to load. */
                     const homePlant = assigned?.assignedPlant || entry.operatorHomePlant || null
                     const mismatches = []
                     /* Multi-truck is its own offense — we can detect it from
@@ -935,21 +1125,39 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
                         trucksDriven
                     }
                 })
-                /* Plant filter is the active-mixer roster — strictly.
-                 * A driver appears under plant X's filter ONLY when they
-                 * have an active mixer assigned to plant X. That's the same
-                 * list the dispatcher treats as "this plant's operators"
-                 * everywhere else in the app. Drivers without an active
-                 * mixer don't have a home plant in this model and are
-                 * invisible to any plant filter by design. Cross-plant
-                 * helpers (a 402 operator who loaded at 403) only appear
-                 * under 402's filter — with a `wrongPlant` flag. */
+                /* Plant filter — match the rest of the Statistics tab,
+                 * which scopes by WHERE THE WORK HAPPENED, not by an
+                 * inferred roster relationship. A driver appears under
+                 * plant X's filter when either:
+                 *   - They loaded at least one ticket at plant X
+                 *     (the same load-plant semantics the yardage,
+                 *     satisfaction, and YPH sub-pages already use)
+                 *   - OR their active-mixer home plant is X (keeps
+                 *     assigned drivers visible even on a day they
+                 *     didn't drive)
+                 * The previous "home-plant only" rule silently dropped
+                 * every driver whose smyrna_id / name / mixer link had
+                 * any gap — which is most drivers in practice — so
+                 * any plant filter returned an empty list. Cross-plant
+                 * work still surfaces via the existing `wrongPlant`
+                 * flag on the row. */
                 .filter((row) => {
                     if (!selectedPlant) return true
-                    if (!row.homePlant) return false
-                    return String(row.homePlant).trim() === String(selectedPlant).trim()
+                    const target = String(selectedPlant).trim()
+                    if (!target) return true
+                    const loadedAtTarget = (row.plantsLoaded || []).some((code) => String(code).trim() === target)
+                    if (loadedAtTarget) return true
+                    if (row.homePlant && String(row.homePlant).trim() === target) return true
+                    return false
                 })
-                .sort((a, b) => b.loads - a.loads || b.yardage - a.yardage)
+                /* Unmatched bucket sorts to the very bottom regardless of
+                 * load count — it's a quality-of-data row, not part of
+                 * the per-driver ranking. */
+                .sort((a, b) => {
+                    if (a.unmatched && !b.unmatched) return 1
+                    if (!a.unmatched && b.unmatched) return -1
+                    return b.loads - a.loads || b.yardage - a.yardage
+                })
         )
     }, [
         detailByDay,
@@ -958,7 +1166,6 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
         selectedPlant,
         activeMixers,
         operatorRoster,
-        operatorBySmyrnaId,
         operatorByNormalizedName,
         mixerByEmployeeId,
         activeAssignmentByName
@@ -982,6 +1189,13 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
         [previousDays, range, comparison]
     )
 
+    /** True only when the operator roster has finished loading AND came
+     *  back with at least one operator. Lets the Operators page distinguish
+     *  "roster failed to load" (empty array after fetch completes) from
+     *  "names genuinely don't match" — the unmatched bucket message swaps
+     *  between the two so the dispatcher knows which problem to chase. */
+    const operatorRosterReady = operatorsEnabled && operatorRoster !== null && !operatorRosterLoading
+    const operatorRosterCount = Array.isArray(operatorRoster) ? operatorRoster.length : 0
     return {
         anchor,
         availablePlantCodes,
@@ -990,12 +1204,18 @@ export function usePlanStatistics({ planDate, liveProduction, satisfactionEnable
         currentSummary,
         customEnd,
         customStart,
+        detailByDay,
+        flatOrders,
         isSingleDay,
         loading,
         loadsByOperator,
+        operatorRosterCount,
+        operatorRosterReady,
         perPlantLoadAttribution,
         perPlantSatisfaction,
         period,
+        plansByDate,
+        plansLoading,
         previousSatisfactionAggregate,
         previousSummary,
         range,

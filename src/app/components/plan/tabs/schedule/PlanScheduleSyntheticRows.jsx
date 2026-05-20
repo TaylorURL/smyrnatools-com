@@ -17,7 +17,64 @@ import PlanScheduleSyntheticRow from './PlanScheduleSyntheticRow'
 const orderTagFromRow = (order, fallback = 'order') =>
     order?.orderNum ? `#${order.orderNum}` : order?.startTime ? String(order.startTime).slice(0, 5) : fallback
 
-export function ReturnRow({ accentColor, animationDelayMs, plantNameByCode, row }) {
+/**
+ * Ghost / placeholder row used only by the Schedule compare view to keep
+ * the snapshot and live tables aligned row-for-row. When an order exists
+ * on ONE side but not the other, that side renders the real order and
+ * the OPPOSITE side renders this placeholder at the same slot:
+ *
+ *   `placeholderKind: 'removed'` — order was on the 5:30 PM snapshot
+ *     but is gone from the live schedule. Rendered on the LIVE side.
+ *   `placeholderKind: 'added'`   — order is on the live schedule but
+ *     wasn't on the snapshot. Rendered on the SNAPSHOT side.
+ *
+ *  The reference order (the one on the OTHER side) is shown faintly so
+ *  the dispatcher can read what's missing / new at that row position.
+ */
+export function PlaceholderRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
+    const isRemoved = row.placeholderKind === 'removed'
+    const refOrder = row.order || {}
+    const plantName = plantNameByCode?.[refOrder.plantCode] || ''
+    const orderTag = orderTagFromRow(refOrder)
+    const customerTag = clean(refOrder.customer)
+    const accent = isRemoved ? '#dc2626' : '#16a34a'
+    const tint = isRemoved ? 'rgba(220, 38, 38, 0.06)' : 'rgba(22, 163, 74, 0.06)'
+    const icon = isRemoved ? 'fa-circle-minus' : 'fa-circle-plus'
+    const pillLabel = isRemoved ? 'Removed from live' : 'Added since snapshot'
+    return (
+        <PlanScheduleSyntheticRow
+            animationDelayMs={animationDelayMs}
+            bodyColSpan={bodyColSpan}
+            accentColor={accent}
+            icon={icon}
+            pillIcon={icon}
+            pillLabel={pillLabel}
+            plantCell={
+                refOrder.plantCode ? <PlantBadge code={refOrder.plantCode} fallback={accent} name={plantName} /> : null
+            }
+            primary={
+                <span className="text-text-secondary">
+                    {orderTag !== 'order' && <b className="text-text-primary">{orderTag}</b>}
+                    {customerTag ? (
+                        <>
+                            {orderTag !== 'order' ? ' · ' : ''}
+                            <span className="text-text-primary">{customerTag}</span>
+                        </>
+                    ) : null}
+                </span>
+            }
+            secondary={
+                isRemoved
+                    ? 'This order was on the 5:30 PM snapshot but is no longer on the live schedule.'
+                    : 'This order is on the live schedule but wasn’t on the 5:30 PM snapshot.'
+            }
+            time={row.time}
+            tint={tint}
+        />
+    )
+}
+
+export function ReturnRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
     const plantName = plantNameByCode?.[row.plantCode] || ''
     const orderTag = orderTagFromRow(row.order)
     const truckWord = row.count === 1 ? 'truck' : 'trucks'
@@ -32,6 +89,7 @@ export function ReturnRow({ accentColor, animationDelayMs, plantNameByCode, row 
     return (
         <PlanScheduleSyntheticRow
             animationDelayMs={animationDelayMs}
+            bodyColSpan={bodyColSpan}
             accentColor="#16a34a"
             icon="fa-arrow-rotate-left"
             pillIcon="fa-truck-fast"
@@ -57,12 +115,13 @@ export function ReturnRow({ accentColor, animationDelayMs, plantNameByCode, row 
     )
 }
 
-export function TradeoffRow({ accentColor, animationDelayMs, plantNameByCode, row }) {
+export function TradeoffRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
     const plantName = plantNameByCode?.[row.plantCode] || ''
     const freeCount = Number.isFinite(row.surplus) ? row.surplus : row.count
     return (
         <PlanScheduleSyntheticRow
             animationDelayMs={animationDelayMs}
+            bodyColSpan={bodyColSpan}
             accentColor="#d97706"
             chips={
                 <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[11px]">
@@ -102,12 +161,13 @@ export function TradeoffRow({ accentColor, animationDelayMs, plantNameByCode, ro
     )
 }
 
-export function SlotRow({ accentColor, animationDelayMs, plantNameByCode, row }) {
+export function SlotRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
     const plantName = plantNameByCode?.[row.plantCode] || ''
     const hours = Math.round((row.durationMin / 60) * 10) / 10
     return (
         <PlanScheduleSyntheticRow
             animationDelayMs={animationDelayMs}
+            bodyColSpan={bodyColSpan}
             accentColor={SLOT_ROW_ACCENT}
             icon="fa-calendar-plus"
             pillIcon="fa-calendar-plus"
@@ -132,7 +192,7 @@ export function SlotRow({ accentColor, animationDelayMs, plantNameByCode, row })
     )
 }
 
-export function PullUpRow({ accentColor, animationDelayMs, plantNameByCode, row }) {
+export function PullUpRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
     const plantName = plantNameByCode?.[row.plantCode] || ''
     const customerName = clean(row.order?.customer)
     const orderTag = orderTagFromRow(row.order)
@@ -142,6 +202,7 @@ export function PullUpRow({ accentColor, animationDelayMs, plantNameByCode, row 
     return (
         <PlanScheduleSyntheticRow
             animationDelayMs={animationDelayMs}
+            bodyColSpan={bodyColSpan}
             accentColor="#0d9488"
             icon="fa-arrow-left-long"
             pillIcon="fa-clock-rotate-left"
@@ -185,7 +246,7 @@ export function PullUpRow({ accentColor, animationDelayMs, plantNameByCode, row 
     )
 }
 
-export function ClockInRow({ accentColor, animationDelayMs, plantNameByCode, row }) {
+export function ClockInRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
     const plantName = plantNameByCode?.[row.plantCode] || ''
     const orderTag = row.forOrder?.orderNum
         ? `#${row.forOrder.orderNum}`
@@ -206,6 +267,7 @@ export function ClockInRow({ accentColor, animationDelayMs, plantNameByCode, row
     return (
         <PlanScheduleSyntheticRow
             animationDelayMs={animationDelayMs}
+            bodyColSpan={bodyColSpan}
             accentColor="#16a34a"
             icon="fa-user-clock"
             pillIcon="fa-right-to-bracket"
@@ -235,11 +297,12 @@ export function ClockInRow({ accentColor, animationDelayMs, plantNameByCode, row
     )
 }
 
-export function SendHomeRow({ accentColor, animationDelayMs, plantNameByCode, row }) {
+export function SendHomeRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
     const plantName = plantNameByCode?.[row.plantCode] || ''
     return (
         <PlanScheduleSyntheticRow
             animationDelayMs={animationDelayMs}
+            bodyColSpan={bodyColSpan}
             accentColor="#64748b"
             icon="fa-house-user"
             pillIcon="fa-door-open"
@@ -257,7 +320,7 @@ export function SendHomeRow({ accentColor, animationDelayMs, plantNameByCode, ro
     )
 }
 
-export function HelpRow({ accentColor, animationDelayMs, plantNameByCode, row }) {
+export function HelpRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
     const isOutbound = row.direction === 'outbound'
     const homePlant = row.returnPlant || row.fromPlant
     const fromName = plantNameByCode?.[row.fromPlant] || ''
@@ -293,6 +356,7 @@ export function HelpRow({ accentColor, animationDelayMs, plantNameByCode, row })
     return (
         <PlanScheduleSyntheticRow
             animationDelayMs={animationDelayMs}
+            bodyColSpan={bodyColSpan}
             accentColor={accent}
             icon={isOutbound ? 'fa-paper-plane' : 'fa-rotate-left'}
             pillIcon={isOutbound ? 'fa-truck-fast' : 'fa-truck-ramp-box'}

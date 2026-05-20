@@ -71,6 +71,25 @@ class PlantServiceImpl {
         await this.fetchAllPlants()
         return true
     }
+    /** Replaces this plant's co-location group with `[plantCode, ...siblingPlantCodes]`.
+     *  The backend picks/keeps a single `location_group_id` shared by every
+     *  plant in the new set, and clears any plants that were in the old
+     *  group but aren't in the new one. Pass an empty `siblingPlantCodes`
+     *  array to mark the plant as standalone. Busts the shared plants
+     *  cache so downstream lookups (`usePlanLookups`, statistics) see the
+     *  new grouping immediately. */
+    async updatePlantColocation(plantCode, siblingPlantCodes) {
+        if (!plantCode?.trim()) throw new Error('Plant code is required')
+        const siblings = Array.isArray(siblingPlantCodes) ? siblingPlantCodes : []
+        const { res, json } = await APIUtility.post(`/${SERVICE_PREFIX}/update-colocation`, {
+            plantCode,
+            siblingPlantCodes: siblings
+        })
+        if (!res.ok || json?.success !== true) throw new Error(json?.error || 'Failed to update plant co-location')
+        CacheUtility.delete('plants:all')
+        await this.fetchAllPlants()
+        return true
+    }
     /** Replaces the plant's manager-user-ids array with the supplied list.
      *  Caller passes the FULL desired list of user ids (not a delta) — the
      *  edge function dedupes + uuid-validates before writing. Returns the

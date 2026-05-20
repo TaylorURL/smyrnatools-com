@@ -7,23 +7,45 @@ import { timeToMinutes } from '../../../../../utils/PlanUtility'
 import OrderInfoModal from '../../../schedule/OrderInfoModal'
 import OrderTicketsModal from '../../../schedule/OrderTicketsModal'
 import PlanScheduleOrderRow from './PlanScheduleOrderRow'
-import { ClockInRow, HelpRow, PullUpRow, ReturnRow, SendHomeRow, TradeoffRow } from './PlanScheduleSyntheticRows'
+import {
+    ClockInRow,
+    HelpRow,
+    PlaceholderRow,
+    PullUpRow,
+    ReturnRow,
+    SendHomeRow,
+    TradeoffRow
+} from './PlanScheduleSyntheticRows'
 
-const TABLE_HEADERS = [
-    'Start',
-    'Plant',
-    'Order',
-    'Customer',
-    'Location',
-    'Product',
-    'Yards',
-    'Loaded',
-    'Load',
-    'Trucks',
-    'Travel',
-    'Spacing',
-    'Contact'
+/** Canonical column metadata. Each entry pairs a stable `key` with the
+ *  header label that's already in use. The `key` flows through into
+ *  `visibleColumns` so callers (the Schedule split view in particular)
+ *  can render a narrower set without touching the row renderer's `<td>`
+ *  order or duplicating the source of truth for column count. */
+export const SCHEDULE_COLUMN_DEFS = [
+    { key: 'start', label: 'Start' },
+    { key: 'plant', label: 'Plant' },
+    { key: 'order', label: 'Order' },
+    { key: 'customer', label: 'Customer' },
+    { key: 'location', label: 'Location' },
+    { key: 'product', label: 'Product' },
+    { key: 'yards', label: 'Yards' },
+    { key: 'loaded', label: 'Loaded' },
+    { key: 'load', label: 'Load' },
+    { key: 'trucks', label: 'Trucks' },
+    { key: 'travel', label: 'Travel' },
+    { key: 'spacing', label: 'Spacing' },
+    { key: 'contact', label: 'Contact' }
 ]
+
+export const SCHEDULE_ALL_COLUMN_KEYS = SCHEDULE_COLUMN_DEFS.map((c) => c.key)
+
+/** Default narrow set used by the Schedule split view. Compare mode strips
+ *  the cells that aren't useful at a side-by-side glance (per-truck pool
+ *  margins, ticket counts, contact info) so the dispatcher can read the
+ *  pair of schedules without scrolling sideways. The split view exposes
+ *  a toggle to drop back to the full column set. */
+export const SCHEDULE_COMPARE_DEFAULT_COLUMNS = ['start', 'plant', 'order', 'customer', 'location', 'yards', 'spacing']
 
 /* Order in which synthetic rows resolve when they share a minute. Returns
  * and clock-ins move first (pool grows), then help, then send-home / trade-
@@ -68,7 +90,23 @@ function buildTableRows({
     poolTimeline
 }) {
     const rows = []
-    for (const order of orders) rows.push({ kind: 'order', order, time: timeToMinutes(order.startTime) })
+    for (const order of orders) {
+        /* Compare-view placeholders flow through the `orders` list with
+         * `__placeholder: 'added' | 'removed'`. Treat them as their own row
+         * kind so the renderer can ghost them, and so synthetic-row helpers
+         * (returns, clock-ins, etc.) never try to attach pool data to a row
+         * that isn't a real order. */
+        if (order?.__placeholder) {
+            rows.push({
+                kind: 'placeholder',
+                order,
+                placeholderKind: order.__placeholder,
+                time: timeToMinutes(order.startTime)
+            })
+        } else {
+            rows.push({ kind: 'order', order, time: timeToMinutes(order.startTime) })
+        }
+    }
     if (extrasActive) {
         // Pool count on each bucket uses the pool state right after the last
         // return in that bucket.
@@ -288,6 +326,10 @@ function useRowContextMenu() {
 export default function PlanScheduleTable({
     accentColor,
     clockInRows = [],
+    /** Compare-view flag. Hides annotation badges (status / service /
+     *  hours-limit / needs-help) so each row's height stays predictable
+     *  and the snapshot / live tables read row-for-row at the same Y. */
+    compareMode = false,
     detailByOrderId = {},
     filteredPlantCode = null,
     firstLoadOutByPlant = null,
@@ -312,7 +354,12 @@ export default function PlanScheduleTable({
     pullUpRows = [],
     sendHomeRows = [],
     showExtraRows = true,
-    suggestedSlotRows = []
+    suggestedSlotRows = [],
+    /** Subset of `SCHEDULE_ALL_COLUMN_KEYS` to render, in canonical order.
+     *  `null` (the default) renders every column — used by the regular
+     *  Schedule tab. The split view passes a narrower list so each side
+     *  shows just the essentials. */
+    visibleColumns = null
 }) {
     const { infoOrder, openRowMenu, rowMenu, setInfoOrder, setRowMenu, setTicketsOrder, ticketsOrder } =
         useRowContextMenu()
@@ -389,6 +436,25 @@ export default function PlanScheduleTable({
         ]
     )
 
+    /** Resolved column visibility set + matching column definitions, used
+     *  by the header, every row, and every synthetic-row colSpan. */
+    const visibleColumnSet = useMemo(() => {
+        if (!Array.isArray(visibleColumns) || visibleColumns.length === 0) {
+            return new Set(SCHEDULE_ALL_COLUMN_KEYS)
+        }
+        return new Set(visibleColumns)
+    }, [visibleColumns])
+    const visibleColumnDefs = useMemo(
+        () => SCHEDULE_COLUMN_DEFS.filter((c) => visibleColumnSet.has(c.key)),
+        [visibleColumnSet]
+    )
+    /* Synthetic + placeholder rows render their primary cell with
+     * colSpan so they fill every column to the right of "start" + "plant".
+     * Recompute it from the visible-column count so the layout stays tight
+     * when the split view drops cells from the table. Floors at 1 so a
+     * pathological column subset still renders a non-empty cell. */
+    const syntheticBodyColSpan = Math.max(1, visibleColumnDefs.length - 2)
+
     return (
         <div className="relative">
             <div
@@ -409,13 +475,13 @@ export default function PlanScheduleTable({
                 <table className="w-full text-[12.5px] border-collapse">
                     <thead>
                         <tr>
-                            {TABLE_HEADERS.map((h) => (
+                            {visibleColumnDefs.map((col) => (
                                 <th
-                                    key={h}
+                                    key={col.key}
                                     className="px-3 py-2 text-left font-bold uppercase tracking-wider text-[10.5px] whitespace-nowrap bg-bg-tertiary border-b border-border-light text-text-secondary sticky z-10"
                                     style={{ boxShadow: '0 1px 0 0 var(--border-light)', top: 0 }}
                                 >
-                                    {h}
+                                    {col.label}
                                 </th>
                             ))}
                         </tr>
@@ -423,7 +489,13 @@ export default function PlanScheduleTable({
                     <tbody>
                         {tableRows.map((row, idx) => {
                             const animationDelayMs = getScheduleRowDelay(idx)
-                            const sharedProps = { accentColor, animationDelayMs, plantNameByCode, row }
+                            const sharedProps = {
+                                accentColor,
+                                animationDelayMs,
+                                bodyColSpan: syntheticBodyColSpan,
+                                plantNameByCode,
+                                row
+                            }
                             switch (row.kind) {
                                 case 'return':
                                     return (
@@ -442,6 +514,13 @@ export default function PlanScheduleTable({
                                     return <SendHomeRow key={`send-home-${row.sendHomeKey}`} {...sharedProps} />
                                 case 'help':
                                     return <HelpRow key={`help-${row.helpKey}`} {...sharedProps} />
+                                case 'placeholder':
+                                    return (
+                                        <PlaceholderRow
+                                            key={`placeholder-${row.placeholderKind}-${row.order?.orderId || idx}`}
+                                            {...sharedProps}
+                                        />
+                                    )
                                 default: {
                                     const o = row.order
                                     const rowKey = keyForOrder(o)
@@ -452,6 +531,7 @@ export default function PlanScheduleTable({
                                         <PlanScheduleOrderRow
                                             key={`${o.plantCode}-${o.orderId || idx}`}
                                             accentColor={accentColor}
+                                            compareMode={compareMode}
                                             animationDelayMs={animationDelayMs}
                                             detail={o.orderId ? detailByOrderId[o.orderId] : null}
                                             firstLoadOutMin={rowFirstLoadOutMin}
@@ -467,6 +547,7 @@ export default function PlanScheduleTable({
                                             poolTimeline={poolTimeline}
                                             rowKey={rowKey}
                                             travelOverrides={getTravelOverrides ? getTravelOverrides(o) : undefined}
+                                            visibleColumns={visibleColumnSet}
                                         />
                                     )
                                 }
