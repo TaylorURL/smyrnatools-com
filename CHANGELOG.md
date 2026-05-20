@@ -1,5 +1,58 @@
 # Changelog
 
+## [2026.21.9] - 2026-05-20
+
+- Plant Manager Report stripped down to a single field. Yardage,
+  Operators Sent to Other Plants, and the entire weekly-trends sidebar
+  have been removed — those signals now live on the Plan tab's Help &
+  Cross-Loading view, which derives them from live dispatch tickets +
+  planner assignments instead of self-reported entries.
+  - `src/app/types/ReportTypes.js` — `plant_manager` schema reduced to
+    `[{ label: 'Total Hours', name: 'total_hours', required: true, type: 'number' }]`.
+  - `src/app/components/reports/ConfirmationModal.jsx` — dropped the
+    yardage acknowledgment line; only the hours acknowledgment gates
+    submission now.
+  - `src/views/reporting/reports/ReportsSubmitView.jsx` — removed the
+    `AIService.validatePlantManagerMetrics` race + `fetchHoursReceived`
+    effect for plant_manager; submit path now jumps straight to the
+    confirmation modal after standard required-field validation.
+  - `src/views/reporting/reports/ReportsSubmitView.jsx`,
+    `ReportsReviewView.jsx` — dropped the `yph` / `yphGrade` /
+    `yphLabel` / `lost` / `lostGrade` / `lostLabel` prop pass-throughs
+    since no remaining plugin consumes them. Yardage icon + custom
+    label entries removed from the review form renderer.
+  - `src/app/hooks/useReviewData.js`, `useSubmitForm.js` — removed the
+    yph / lost / hoursReceived computation blocks and the `hoursReceivedFromOtherPlants`
+    hook parameter; `useSubmitForm` no longer imports `ReportService`.
+- Trends timeline removed from the Plant Manager Report submit + review
+  surfaces. The plugin entries are gone from both `PLUGINS` (submit) and
+  `REVIEW_PLUGINS` (review) maps, so the default form-section
+  rendering handles the single Total Hours input on its own.
+  - Removed `src/views/reporting/reports/types/WeeklyPlantManagerReport.jsx`,
+    `src/app/components/reports/granular/PmWeeklyTrendsSection.jsx`,
+    `src/app/components/reports/granular/PmAtoms.jsx`,
+    `src/app/components/reports/granular/PmOperatorsSentToHelp.jsx`,
+    `src/app/hooks/usePmTrendsData.js`, `src/app/hooks/useYphCalculation.js`.
+  - `src/services/AIService.js`, `src/app/ai/context.json` — removed
+    `validatePlantManagerMetrics` method + matching prompt entry; no
+    remaining call sites.
+  - `src/views/__tests__/ReportsSubmitView.test.jsx` — mocks pruned to
+    match the new report shape.
+- District Manager Report gains a `Help breakdown by plant` panel
+  scoped to the DM's district + Mon–Sat reporting week.
+  - `src/views/reporting/reports/types/WeeklyDistrictManagerReport.jsx`
+    — new `useDistrictHelpBreakdown` fetches `PlanService.fetchPlansInRange`
+    + `DispatchDataService.fetchDetailByDateRange` for the report week,
+    runs them through the shared `useHelpCrossLoadingStats` so the
+    numbers match the Plan tab's view exactly, then trims to the DM's
+    district primaries before rendering `HelpBreakdownTable`. Cross-
+    district recipients still surface so the DM sees where their
+    plants' help is going.
+- Schedule OrderInfoModal `Row` accepts React elements as `value` in
+  addition to primitives, so callers can pass a `<a href="tel:…">`
+  link without it being stringified to `[object Object]`. Primitive
+  trimming and the empty-value skip are preserved for strings/numbers.
+
 ## [2026.21.8] - 2026-05-20
 
 - New plant co-location concept lets the dispatcher mark two plant

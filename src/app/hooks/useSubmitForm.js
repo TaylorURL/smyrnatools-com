@@ -1,21 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ReportService } from '../../services/ReportService'
 import { ReportUtility } from '../../utils/ReportUtility'
+
+/* Yardage / YPH / lost-yardage have moved off the Plant Manager Report
+ * onto the Plan tab's Help & Cross-Loading view, which derives them
+ * from live dispatch tickets instead of self-reported entries. This
+ * hook no longer exposes those fields — every consumer was updated to
+ * stop reading them. */
 
 /**
  * Manages report form state, validation, AI-powered metric validation,
  * and field-level change handlers for the report submission wizard.
  */
-export function useSubmitForm({
-    report,
-    initialData,
-    user,
-    forcedReportDate,
-    plants,
-    operatorOptions,
-    hoursReceivedFromOtherPlants
-}) {
+export function useSubmitForm({ report, initialData, user, forcedReportDate, plants, operatorOptions }) {
     const [form, setForm] = useState(() => {
         if (initialData) {
             if (initialData.data) {
@@ -32,12 +29,6 @@ export function useSubmitForm({
         }
         return Object.fromEntries(report.fields.map((f) => [f.name, f.type === 'table' ? [] : '']))
     })
-    const [yph, setYph] = useState(null)
-    const [yphGrade, setYphGrade] = useState('')
-    const [yphLabel, setYphLabel] = useState('')
-    const [lost, setLost] = useState(null)
-    const [lostGrade, setLostGrade] = useState('')
-    const [lostLabel, setLostLabel] = useState('')
     const [excludedOperators, setExcludedOperators] = useState([])
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
     const [initialFormSnapshot, setInitialFormSnapshot] = useState(null)
@@ -103,23 +94,6 @@ export function useSubmitForm({
             setForm((f) => ({ ...f, report_date: forcedReportDate }))
         }
     }, [report.name, forcedReportDate])
-    useEffect(() => {
-        const { lost: l, lostGrade: lg, lostLabel: ll } = ReportService.getYardageMetrics(form)
-        if (report.name === 'plant_manager') {
-            const metrics = ReportUtility.getFullYphMetrics(form, hoursReceivedFromOtherPlants)
-            setYph({ adjusted: metrics.adjusted, raw: metrics.raw })
-            setYphGrade({ adjusted: metrics.adjustedGrade, raw: metrics.rawGrade })
-            setYphLabel({ adjusted: metrics.adjustedLabel, raw: metrics.rawLabel })
-        } else {
-            const { yph: y, yphGrade: yg, yphLabel: yl } = ReportService.getYardageMetrics(form)
-            setYph({ adjusted: y, raw: y })
-            setYphGrade({ adjusted: yg, raw: yg })
-            setYphLabel({ adjusted: yl, raw: yl })
-        }
-        setLost(l)
-        setLostGrade(lg)
-        setLostLabel(ll)
-    }, [form, report.name, hoursReceivedFromOtherPlants])
     useEffect(() => {
         if (report.name === 'plant_production' && Array.isArray(form.rows) && Array.isArray(operatorOptions)) {
             const excluded = ReportUtility.getExcludedOperators(form.rows, operatorOptions)
@@ -203,18 +177,12 @@ export function useSubmitForm({
         handleChange,
         hasUnsavedChanges,
         initializeRows,
-        lost,
-        lostGrade,
-        lostLabel,
         plantCode,
         removeOperatorRow,
         reportDateVerbose,
         setCarouselIndex,
         setForm,
         setHasUnsavedChanges,
-        setInitialFormSnapshot,
-        yph,
-        yphGrade,
-        yphLabel
+        setInitialFormSnapshot
     }
 }

@@ -38,22 +38,16 @@ jest.mock('../../app/hooks/useSubmitForm', () => ({
         carouselIndex: 0,
         clearRows: jest.fn(),
         excludedOperators: [],
-        form: { total_hours: '', yardage: '' },
+        form: { total_hours: '' },
         handleChange: jest.fn(),
         hasUnsavedChanges: false,
         initializeRows: jest.fn(),
-        lost: 0,
-        lostGrade: 'A',
-        lostLabel: 'Excellent',
         removeOperatorRow: jest.fn(),
         reportDateVerbose: 'June 15, 2025',
         setCarouselIndex: jest.fn(),
         setForm: jest.fn(),
         setHasUnsavedChanges: jest.fn(),
-        setInitialFormSnapshot: jest.fn(),
-        yph: 0,
-        yphGrade: 'A',
-        yphLabel: 'Excellent'
+        setInitialFormSnapshot: jest.fn()
     })
 }))
 
@@ -118,7 +112,6 @@ jest.mock('../reporting/reports/types/WeeklyAggregateProductionReport', () => ({
 jest.mock('../reporting/reports/types/WeeklyDistrictManagerReport', () => ({ DistrictManagerSubmitPlugin: () => null }))
 jest.mock('../reporting/reports/types/WeeklyEfficiencyReport', () => ({ EfficiencySubmitPlugin: () => null }))
 jest.mock('../reporting/reports/types/WeeklyGeneralManagerReport', () => ({ GeneralManagerSubmitPlugin: () => null }))
-jest.mock('../reporting/reports/types/WeeklyPlantManagerReport', () => ({ PlantManagerSubmitPlugin: () => null }))
 jest.mock('../reporting/reports/types/WeeklyQualityControlManagerReport', () => ({
     QualityControlManagerSubmitPlugin: () => null
 }))
@@ -130,10 +123,7 @@ jest.mock('../reporting/reports/types/WeeklySafetyManagerReport', () => ({ Safet
 import ReportsSubmitView from '../reporting/reports/ReportsSubmitView'
 
 const DEFAULT_REPORT = {
-    fields: [
-        { label: 'Total Yardage', name: 'yardage', required: true, type: 'number' },
-        { label: 'Total Hours', name: 'total_hours', required: true, type: 'number' }
-    ],
+    fields: [{ label: 'Total Hours', name: 'total_hours', required: true, type: 'number' }],
     name: 'ready_mix_instructor',
     title: 'Weekly Ready Mix Instructor Report',
     weekIso: '2025-W24'
@@ -170,7 +160,6 @@ describe('ReportsSubmitView', () => {
             />
         )
 
-        expect(screen.getByText('Total Yardage')).toBeInTheDocument()
         expect(screen.getByText('Total Hours')).toBeInTheDocument()
     })
 

@@ -179,30 +179,10 @@ export function useReviewData({ report, initialData, user, completedByUser }) {
         }
         fetchPlants()
     }, [report.name, user?.id])
-    const { yph, yphGrade, yphLabel, lost, lostGrade, lostLabel } = useMemo(() => {
-        const { lost, lostGrade, lostLabel } = ReportService.getYardageMetrics(form)
-        if (report.name === 'plant_manager') {
-            const metrics = ReportUtility.getFullYphMetrics(form, hoursReceivedFromOtherPlants)
-            return {
-                lost,
-                lostGrade,
-                lostLabel,
-                yph: { adjusted: metrics.adjusted, raw: metrics.raw },
-                yphGrade: { adjusted: metrics.adjustedGrade, raw: metrics.rawGrade },
-                yphLabel: { adjusted: metrics.adjustedLabel, raw: metrics.rawLabel }
-            }
-        } else {
-            const { yph, yphGrade, yphLabel } = ReportService.getYardageMetrics(form)
-            return {
-                lost,
-                lostGrade,
-                lostLabel,
-                yph: { adjusted: yph, raw: yph },
-                yphGrade: { adjusted: yphGrade, raw: yphGrade },
-                yphLabel: { adjusted: yphLabel, raw: yphLabel }
-            }
-        }
-    }, [form, report.name, hoursReceivedFromOtherPlants])
+    /* Yardage / YPH / lost-yardage previously computed here have been
+     * moved to the Plan tab's Help & Cross-Loading view (derived from
+     * live dispatch tickets instead of self-reported form fields). No
+     * report-review plugin consumes these props anymore. */
     return {
         assignedPlant,
         form,
@@ -211,9 +191,6 @@ export function useReviewData({ report, initialData, user, completedByUser }) {
         isPlantShutdown,
         isSubmitted,
         loadingPlants,
-        lost,
-        lostGrade,
-        lostLabel,
         maintenanceItems,
         operatorExclusionReason,
         operatorOptions,
@@ -223,9 +200,6 @@ export function useReviewData({ report, initialData, user, completedByUser }) {
         showManagerEditButton,
         submittedAt,
         weekIso,
-        weekVerbose,
-        yph,
-        yphGrade,
-        yphLabel
+        weekVerbose
     }
 }

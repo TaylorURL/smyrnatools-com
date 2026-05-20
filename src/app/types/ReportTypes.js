@@ -33,11 +33,12 @@ const reportTypes = [
     }),
     createReportType({
         assignment: ['reports.assigned.plant_manager'],
-        fields: [
-            { label: 'Yardage', name: 'yardage', required: true, type: 'number' },
-            { label: 'Total Hours', name: 'total_hours', required: true, type: 'number' },
-            { label: 'Operators Sent to Other Plants', name: 'operators_sent_to_help', required: false, type: 'table' }
-        ],
+        /* Yardage and operators-sent-to-help moved to the Plan tab's
+         * Help & Cross-Loading view (driven by live dispatch tickets +
+         * planner assignments) — the Plant Manager Report now only
+         * captures total operator hours, with the rest derived
+         * automatically on the analytics side. */
+        fields: [{ label: 'Total Hours', name: 'total_hours', required: true, type: 'number' }],
         frequency: 'weekly',
         name: 'plant_manager',
         review: ['reports.review.plant_manager'],

@@ -1,13 +1,17 @@
 /* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
 
+import HelpBreakdownTable from '../../../../app/components/plan/tabs/statistics/HelpBreakdownTable'
 import { usePreferences } from '../../../../app/context/PreferencesContext'
+import { useHelpCrossLoadingStats } from '../../../../app/hooks/useHelpCrossLoadingStats'
 import { filterMaintenanceItemsByPlant, useAllowedPlantCodes } from '../../../../app/hooks/useReportData'
+import { DispatchDataService } from '../../../../services/DispatchDataService'
 import { PlanService } from '../../../../services/PlanService'
 import { PlantService } from '../../../../services/PlantService'
 import { getDistrictPlantCodes, getDistrictsForPlantCode } from '../../../../utils/DistrictUtility'
 import FormatUtility from '../../../../utils/FormatUtility'
 import { isExcludedOrder } from '../../../../utils/PlanUtility'
+import { buildColocationMap, EMPTY_COLOCATION_MAP } from '../../../../utils/PlantColocationUtility'
 import { ReportUtility } from '../../../../utils/ReportUtility'
 
 const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
@@ -79,6 +83,125 @@ function useWeeklyYardageByPlant(weekIso, allowedCodes) {
         }
     }, [weekIso, allowedCodes])
     return { loading, yardageByPlant }
+}
+
+/** Fetches everything the Statistics-tab "Help breakdown by plant" table
+ *  needs and scopes it to the report's Mon–Sat week + the DM's district.
+ *  Pulls the same saved-plan + ticket-detail pair the Plan-tab uses, runs
+ *  them through the shared `useHelpCrossLoadingStats` so the numbers
+ *  match exactly, and trims the giver-plant list to the DM's district
+ *  primaries (so an outside-district plant that loaded for a district
+ *  plant's order doesn't show as a giver row, but recipients still surface
+ *  the cross-district flow). */
+function useDistrictHelpBreakdown({ districtPlantCodes, plants, weekIso }) {
+    const [plansByDate, setPlansByDate] = useState({})
+    const [detailByDay, setDetailByDay] = useState({})
+    const [loading, setLoading] = useState(false)
+
+    const weekDates = useMemo(() => getWeekDateStrings(weekIso), [weekIso])
+    const startIso = weekDates[0] || ''
+    const endIso = weekDates[weekDates.length - 1] || ''
+    const range = useMemo(() => ({ current: { end: endIso, start: startIso } }), [startIso, endIso])
+
+    useEffect(() => {
+        if (!startIso || !endIso || weekDates.length === 0) {
+            setPlansByDate({})
+            setDetailByDay({})
+            setLoading(false)
+            return undefined
+        }
+        let cancelled = false
+        setLoading(true)
+        Promise.allSettled([
+            PlanService.fetchPlansInRange(startIso, endIso),
+            DispatchDataService.fetchDetailByDateRange(weekDates)
+        ])
+            .then(([plansResult, detailResult]) => {
+                if (cancelled) return
+                const plansMap = {}
+                if (plansResult.status === 'fulfilled') {
+                    ;(plansResult.value || []).forEach((row) => {
+                        if (row?.plan_date) plansMap[row.plan_date] = row
+                    })
+                }
+                setPlansByDate(plansMap)
+                setDetailByDay(detailResult.status === 'fulfilled' ? detailResult.value || {} : {})
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [startIso, endIso, weekDates])
+
+    const colocationMap = useMemo(() => buildColocationMap(plants) || EMPTY_COLOCATION_MAP, [plants])
+
+    /* District primaries — district codes resolved through the co-location
+     * map so 403/404 collapse to one bucket. Used to filter the
+     * pre-seeded plantNameByCode AND to trim the hook's output to just
+     * the DM's plants. */
+    const districtPrimarySet = useMemo(() => {
+        const out = new Set()
+        const resolve = colocationMap?.resolvePrimary || EMPTY_COLOCATION_MAP.resolvePrimary
+        ;(districtPlantCodes || []).forEach((code) => {
+            const primary = resolve(code)
+            if (primary) out.add(primary)
+        })
+        return out
+    }, [districtPlantCodes, colocationMap])
+
+    /* Restrict the pre-seed roster the hook uses to mint zero-activity
+     * rows. Only district plants get a row by default; outside plants
+     * still show in the recipient column when district plants helped
+     * them, but never as their own giver row. */
+    const plantNameByCode = useMemo(() => {
+        const allowed = new Set(districtPlantCodes || [])
+        const out = {}
+        ;(plants || []).forEach((p) => {
+            const code = p?.plant_code
+            if (!code || !allowed.has(code)) return
+            out[code] = p.plant_name || p.name || null
+        })
+        return out
+    }, [plants, districtPlantCodes])
+
+    const flatOrders = useMemo(() => {
+        const out = []
+        Object.entries(plansByDate).forEach(([planDate, row]) => {
+            const production = row?.plant_production || {}
+            Object.entries(production).forEach(([plantCode, prod]) => {
+                if (plantCode === PLAN_META_KEY) return
+                const orders = Array.isArray(prod?.orders) ? prod.orders : []
+                orders.forEach((order) => {
+                    if (isExcludedOrder(order)) return
+                    out.push({ order, planDate, plantCode })
+                })
+            })
+        })
+        return out
+    }, [plansByDate])
+
+    const stats = useHelpCrossLoadingStats({
+        colocationMap,
+        detailByDay,
+        flatOrders,
+        plansByDate,
+        plantNameByCode,
+        range,
+        selectedPlant: null
+    })
+
+    /* Final district scope filter — guards against the hook's
+     * `ensureGiver` minting rows for outside-district plants when they
+     * appear in `pairFacts` as a giver (e.g. a non-district plant
+     * loading for a district plant's order). */
+    const helpByGiverPlant = useMemo(
+        () => (stats.helpByGiverPlant || []).filter((row) => districtPrimarySet.has(row.code)),
+        [stats.helpByGiverPlant, districtPrimarySet]
+    )
+
+    return { colocationMap, helpByGiverPlant, loading, plantNameByCode, range }
 }
 
 /** Compact card header — icon chip + label/title — matching the look used
@@ -385,6 +508,22 @@ function DistrictManagerPlugin({
     }, [districtPlantCodes, allowedCodes])
     const { loading: yardageLoading, yardageByPlant } = useWeeklyYardageByPlant(weekIso, yardageScopeCodes)
 
+    /* Same Mon–Sat scope as the yardage rail above; reuses the help-stats
+     * pipeline from the Statistics tab so the table reads identically to
+     * Plan → Statistics → Help & Cross-Loading, just trimmed to the DM's
+     * district plants. */
+    const {
+        colocationMap: helpColocationMap,
+        helpByGiverPlant,
+        loading: helpLoading,
+        plantNameByCode: helpPlantNameByCode,
+        range: helpRange
+    } = useDistrictHelpBreakdown({
+        districtPlantCodes: yardageScopeCodes,
+        plants: regionPlants.length > 0 ? regionPlants : plants,
+        weekIso
+    })
+
     const handleChange = (e, name) => {
         if (setForm) setForm((prev) => ({ ...prev, [name]: e.target.value }))
     }
@@ -420,6 +559,38 @@ function DistrictManagerPlugin({
                         </div>
                     </div>
                     <MaintenanceItemsTable items={filteredItems} plants={plants} />
+                </div>
+
+                <div className="rounded p-3" style={CARD_STYLE}>
+                    <CardHeader
+                        icon="fa-arrows-turn-to-dots"
+                        label="Help & Cross-Loading"
+                        title="Help breakdown by plant"
+                        sub="How each plant in the district contributed planned drivers and cross-loaded yardage during the week."
+                    />
+                    {helpLoading && helpByGiverPlant.length === 0 ? (
+                        <div className="rounded p-6 text-center flex flex-col items-center gap-1.5" style={CARD_STYLE}>
+                            <i className="fas fa-spinner fa-spin text-[18px] text-text-tertiary" />
+                            <p className="text-[12px] m-0 text-text-secondary">Loading help breakdown…</p>
+                        </div>
+                    ) : helpByGiverPlant.length === 0 ? (
+                        <div className="rounded p-6 text-center flex flex-col items-center gap-1.5" style={CARD_STYLE}>
+                            <i className="fas fa-arrows-turn-to-dots text-[18px] text-text-tertiary" />
+                            <p className="text-[12px] m-0 text-text-secondary">
+                                No district plants found for this report.
+                            </p>
+                        </div>
+                    ) : (
+                        <HelpBreakdownTable
+                            accentColor="var(--text-secondary)"
+                            colocationMap={helpColocationMap}
+                            crossLoadColor="#16a34a"
+                            deadheadColor="#2563eb"
+                            helpByGiverPlant={helpByGiverPlant}
+                            plantNameByCode={helpPlantNameByCode}
+                            range={helpRange.current}
+                        />
+                    )}
                 </div>
             </div>
 

@@ -1,7 +1,6 @@
 import React from 'react'
 /** Checklist items the user must acknowledge before report submission. */
 const CONFIRMATION_ITEMS = [
-    'Total yardage includes all yardage we can bill for and does not include lost yardage.',
     'Total hours only includes hours from operators and not from plant managers, loader operators or any other roles.'
 ]
 /** Pre-submission confirmation modal requiring all checklist items to be acknowledged. */

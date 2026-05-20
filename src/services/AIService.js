@@ -214,34 +214,6 @@ class AIServiceImpl {
             ? { guidance: invalidMatch[1].trim(), valid: false }
             : { guidance: 'Please provide a detailed explanation for the timing issues.', valid: false }
     }
-    /**
-     * Validates plant manager report metrics for mathematical consistency.
-     * Flags entries where yardage, hours, or loss ratios appear anomalous.
-     */
-    async validatePlantManagerMetrics(form) {
-        const yardage = Number(form.yardage) || 0
-        const hours = Number(form.total_hours) || 0
-        if (yardage === 0 || hours === 0) return { needsReview: false }
-        const yph = yardage / hours
-        const userPrompt = [
-            'Plant Manager Report Metrics:',
-            `- Total Yardage: ${yardage} yards`,
-            `- Total Hours: ${hours} hours`,
-            `- Yards Per Hour: ${yph.toFixed(2)}`,
-            '',
-            'Does this data make sense or should the plant manager double-check their entries?'
-        ].join('\n')
-        const result = await this.callAPI(PROMPTS.validatePlantManagerMetrics, userPrompt, {
-            temperature: 0.2,
-            timeout: 30000
-        })
-        if (result?.error) return { error: true }
-        try {
-            return JSON.parse(result?.content?.trim() || '{"needsReview": false}')
-        } catch {
-            return { needsReview: false }
-        }
-    }
     /** Formats asset history data (status changes, cleanliness trends, service records) for AI analysis. */
     formatHistoryData(ctx) {
         const parts = [

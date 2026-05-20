@@ -15,7 +15,6 @@ import { AggregateProductionSubmitPlugin } from './types/WeeklyAggregateProducti
 import { DistrictManagerSubmitPlugin } from './types/WeeklyDistrictManagerReport'
 import { EfficiencySubmitPlugin } from './types/WeeklyEfficiencyReport'
 import { GeneralManagerSubmitPlugin } from './types/WeeklyGeneralManagerReport'
-import { PlantManagerSubmitPlugin } from './types/WeeklyPlantManagerReport'
 import { QualityControlManagerSubmitPlugin } from './types/WeeklyQualityControlManagerReport'
 import { ReadyMixInstructorSubmitPlugin } from './types/WeeklyReadyMixInstructorReport'
 import { SafetyManagerSubmitPlugin } from './types/WeeklySafetyManagerReport'
@@ -53,7 +52,6 @@ const PLUGINS = {
     aggregate_production: AggregateProductionSubmitPlugin,
     district_manager: DistrictManagerSubmitPlugin,
     general_manager: GeneralManagerSubmitPlugin,
-    plant_manager: PlantManagerSubmitPlugin,
     plant_production: EfficiencySubmitPlugin,
     quality_control_manager: QualityControlManagerSubmitPlugin,
     ready_mix_instructor: ReadyMixInstructorSubmitPlugin,
@@ -139,10 +137,8 @@ function ReportsSubmitView({
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
     const {
-        fetchHoursReceived,
         fetchOperatorsAndMixers,
         forcedReportDate,
-        hoursReceivedFromOtherPlants,
         isCompleted,
         loadingPlants,
         maintenanceItems,
@@ -163,27 +159,13 @@ function ReportsSubmitView({
         handleChange,
         hasUnsavedChanges,
         initializeRows,
-        lost,
-        lostGrade,
-        lostLabel,
         removeOperatorRow,
         reportDateVerbose,
         setCarouselIndex,
         setForm,
         setHasUnsavedChanges,
-        setInitialFormSnapshot,
-        yph,
-        yphGrade,
-        yphLabel
-    } = useSubmitForm({
-        forcedReportDate,
-        hoursReceivedFromOtherPlants,
-        initialData,
-        operatorOptions,
-        plants,
-        report,
-        user
-    })
+        setInitialFormSnapshot
+    } = useSubmitForm({ forcedReportDate, initialData, operatorOptions, plants, report, user })
     const [submitting, setSubmitting] = useState(false)
     const [savingDraft, setSavingDraft] = useState(false)
     const [aiValidating, setAiValidating] = useState(false)
@@ -233,31 +215,13 @@ function ReportsSubmitView({
         e.preventDefault()
         clearMessages()
         if (report.name === 'plant_manager') {
-            setAiValidating(true)
-            setAiValidationProgress({ current: 0, total: 1 })
-            try {
-                const { AIService } = await import('../../../services/AIService')
-                const raceResult = await raceAiValidation(AIService.validatePlantManagerMetrics(form), 'plant_manager')
-                if (!raceResult.timedOut) {
-                    const validation = raceResult.value
-                    if (validation.error) {
-                        ErrorReporterUtility.reportError(new Error('AI validation failed for plant manager report'), {
-                            context: `validatePlantManagerMetrics returned error — yardage: ${form.yardage}, total_hours: ${form.total_hours}`
-                        })
-                    } else if (validation.needsReview) {
-                        showError(
-                            'AI analysis flagged a potential data entry issue — please double-check your yardage and total hours before confirming.'
-                        )
-                    }
-                }
-            } catch (error) {
-                console.error('[plant_manager] AI validation threw — bypassing:', error)
-                ErrorReporterUtility.reportError(error instanceof Error ? error : new Error(String(error)), {
-                    context: 'Unexpected error during AI validation of plant manager report'
-                })
-            } finally {
-                setAiValidating(false)
-            }
+            /* AI validation removed — it only checked the yardage ÷ hours
+             * ratio, and yardage no longer lives on this report (lives on
+             * the Plan Help & Cross-Loading view instead). The hours
+             * acknowledgment checkbox in `ConfirmationModal` is still
+             * the last gate before submission. */
+            const err = validateRequiredFields(form, report.fields)
+            if (err) return showError(err)
             setShowConfirmationModal(true)
             return
         }
@@ -384,9 +348,6 @@ function ReportsSubmitView({
             }
         })
     }, [report.name, form.plant, readOnly, initialData, clearRows, fetchOperatorsAndMixers, initializeRows, form.rows])
-    useEffect(() => {
-        if (report.name === 'plant_manager') fetchHoursReceived(form.plant || user?.plant_code, report.weekIso)
-    }, [report.name, report.weekIso, user?.plant_code, form.plant, fetchHoursReceived])
     /* Plan-tab style for the form-fields card. CSS custom properties so the
      * card adapts to dark mode, compact 12px inputs, and the `SECTION_LABEL`
      * pattern used by the redesigned report sections. */
@@ -791,12 +752,6 @@ function ReportsSubmitView({
                 {PluginComponent && (
                     <PluginComponent
                         form={form}
-                        yph={yph}
-                        yphGrade={yphGrade}
-                        yphLabel={yphLabel}
-                        lost={lost}
-                        lostGrade={lostGrade}
-                        lostLabel={lostLabel}
                         summaryTab={summaryTab}
                         setSummaryTab={setSummaryTab}
                         maintenanceItems={maintenanceItems}

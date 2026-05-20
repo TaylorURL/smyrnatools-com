@@ -13,19 +13,25 @@ const isSameDayOrder = (order) => {
     return t ? t.padStart(5, '0') === SAME_DAY_ORDER_START : false
 }
 
-/** Compact label + value row. Quiet, document-style — no card chrome. */
+/** Compact label + value row. Quiet, document-style — no card chrome.
+ *  Accepts either a primitive (string / number) or a React element — primitives
+ *  are trimmed and skipped when empty; elements are rendered as-is so callers
+ *  can pass things like a `<a href="tel:…">` link without it being stringified
+ *  to "[object Object]". */
 function Row({ label, mono, value, wide }) {
-    const text = clean(value)
-    if (!text) return null
+    if (value == null) return null
+    const isPrimitive = typeof value === 'string' || typeof value === 'number'
+    const text = isPrimitive ? String(value).trim() : ''
+    if (isPrimitive && !text) return null
     return (
         <div className={`flex items-baseline gap-3 py-1 ${wide ? 'sm:col-span-2' : ''}`}>
             <span className="shrink-0 w-[110px] text-[11px] uppercase tracking-wider text-text-tertiary">{label}</span>
             <span
                 className={`flex-1 min-w-0 text-[13px] leading-snug ${mono ? 'font-mono tabular-nums' : ''} text-text-primary`}
                 style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-                title={text}
+                title={isPrimitive ? text : undefined}
             >
-                {text}
+                {isPrimitive ? text : value}
             </span>
         </div>
     )

@@ -8,7 +8,6 @@ import { exportGeneralManagerReport } from '../../../utils/ExportUtility'
 import { DistrictManagerReviewPlugin } from './types/WeeklyDistrictManagerReport'
 import { EfficiencyReviewPlugin } from './types/WeeklyEfficiencyReport'
 import { GeneralManagerReviewPlugin } from './types/WeeklyGeneralManagerReport'
-import { PlantManagerReviewPlugin } from './types/WeeklyPlantManagerReport'
 import { QualityControlManagerReviewPlugin } from './types/WeeklyQualityControlManagerReport'
 import { ReadyMixInstructorReviewPlugin } from './types/WeeklyReadyMixInstructorReport'
 import { SafetyManagerReviewPlugin } from './types/WeeklySafetyManagerReport'
@@ -17,7 +16,6 @@ import { SafetyManagerReviewPlugin } from './types/WeeklySafetyManagerReport'
 const PLUGINS = {
     district_manager: DistrictManagerReviewPlugin,
     general_manager: GeneralManagerReviewPlugin,
-    plant_manager: PlantManagerReviewPlugin,
     plant_production: EfficiencyReviewPlugin,
     quality_control_manager: QualityControlManagerReviewPlugin,
     ready_mix_instructor: ReadyMixInstructorReviewPlugin,
@@ -33,10 +31,10 @@ const PLUGIN_ONLY_REPORTS = [
     'ready_mix_instructor'
 ]
 const getFieldIcon = (fieldName) => {
-    const iconMap = { total_hours: 'fa-clock', yardage: 'fa-box' }
+    const iconMap = { total_hours: 'fa-clock' }
     return iconMap[fieldName] || 'fa-recycle'
 }
-const getFieldLabel = (field) => (field.name === 'yardage' ? 'Total Yardage' : field.label)
+const getFieldLabel = (field) => field.label
 const StatusBadge = ({ isSubmitted }) => (
     <div
         className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold ${isSubmitted ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}
@@ -77,9 +75,6 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         isPlantShutdown,
         isSubmitted,
         loadingPlants,
-        lost,
-        lostGrade,
-        lostLabel,
         maintenanceItems,
         operatorExclusionReason,
         operatorOptions,
@@ -89,10 +84,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         showManagerEditButton,
         submittedAt,
         weekIso,
-        weekVerbose,
-        yph,
-        yphGrade,
-        yphLabel
+        weekVerbose
     } = useReviewData({ completedByUser, initialData, report, user })
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
@@ -338,12 +330,6 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     {PluginComponent && (
                         <PluginComponent
                             form={form}
-                            yph={yph}
-                            yphGrade={yphGrade}
-                            yphLabel={yphLabel}
-                            lost={lost}
-                            lostGrade={lostGrade}
-                            lostLabel={lostLabel}
                             summaryTab={summaryTab}
                             setSummaryTab={setSummaryTab}
                             maintenanceItems={maintenanceItems}
