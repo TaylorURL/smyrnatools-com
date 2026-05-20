@@ -1,5 +1,49 @@
 # Changelog
 
+## [2026.21.13] - 2026-05-20
+
+- Daily Plan cron email — cancelled (`17:00`) and dispatcher-test
+  (`18:00`) orders are now correctly excluded. The edge function had
+  the sentinel constants hard-coded as `'00:00'` / `'99:99'`, which
+  match nothing in real production data; cancelled orders were leaking
+  onto the schedule managers received at 4 PM AND inflating the
+  clock-in pool simulation with phantom truck demand.
+  - `supabase/functions/daily-plan-email/index.ts` — `CANCELLED_START`
+    + `TEST_START` aligned to `src/app/constants/planConstants.ts`
+    (`'17:00'` / `'18:00'`).
+- Cron email's operator clock-in roster now matches the Plan Dashboard
+  clock-in board exactly. The order-flatten step was preserving any
+  stale `order.plantCode` field if one existed; the dashboard's
+  `flattenOrders` always overrides with the production-map key.
+  - `supabase/functions/daily-plan-email/index.ts` — `flattenedOrders`
+    now uses `({ ...o, plantCode })` directly, mirroring
+    `PlanDashboardClockInBoard.flattenOrders`. Other clock-in
+    constants and formulas were already in lock-step with the
+    dashboard (`PRE_TRIP_MINUTES=15`, `LOAD_MINUTES=10`, etc.).
+- New "Service" sub-page on the Plan → Statistics tab. Surfaces good
+  vs. bad customer experience (late starts, slow pours) and where
+  service is winning or slipping, scoped by the same period / plant
+  selectors as the other Statistics sub-pages.
+  - `src/app/components/plan/tabs/statistics/PlanStatisticsServicePage.jsx`
+    — new page (~700 lines).
+  - `src/app/components/plan/tabs/statistics/PlanStatisticsSidebar.jsx`
+    — added "Service" entry (`fa-thumbs-up` icon).
+  - `src/app/hooks/useServiceQualityStats.js` — new derivation hook
+    (~370 lines). Gated behind `serviceEnabled` so the per-order
+    classifier only runs when the page is mounted.
+  - `src/views/tools/plan/PlanStatisticsView.jsx` — wires the
+    `serviceEnabled` flag through and renders the new page.
+  - `src/app/hooks/usePlanStatistics.js` — new `serviceEnabled` arg
+    that joins the existing detail-fetch + `flatOrders` gates so the
+    Service page gets the same ticket detail map the satisfaction
+    page does.
+- Per-order service classifier exposed as a reusable verdict object.
+  - `src/utils/plan/planCustomerSat.ts` — exports
+    `OrderExperienceVerdict` shape + `scoreOrderExperience` so the
+    new Service page and the existing satisfaction page share one
+    late/slow classifier instead of forking the rule. Backwards-
+    compatible — the old binary `isBad` field is preserved.
+
 ## [2026.21.12] - 2026-05-20
 
 - Plant Efficiency Report: **1st Load** and **Total Loads** are now

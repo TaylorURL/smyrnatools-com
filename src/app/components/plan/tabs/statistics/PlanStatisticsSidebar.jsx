@@ -36,6 +36,13 @@ export const PLAN_STATS_SECTIONS = [
         icon: 'fa-arrows-rotate',
         id: 'helpCrossLoading',
         label: 'Help & Cross-Loading'
+    },
+    {
+        description:
+            'Good vs. bad customer experience — late starts, slow pours, and where service is winning or slipping.',
+        icon: 'fa-thumbs-up',
+        id: 'service',
+        label: 'Service'
     }
 ]
 

@@ -93,6 +93,7 @@ export function usePlanStatistics({
     operatorsEnabled = false,
     helpCrossLoadingEnabled = false,
     plantsEnabled = false,
+    serviceEnabled = false,
     colocationMap = null
 }) {
     const [period, setPeriod] = useState('week')
@@ -395,7 +396,8 @@ export function usePlanStatistics({
      *  reliably — older days will return empty maps and silently drop out
      *  of the satisfaction score (as expected). */
     useEffect(() => {
-        if (!satisfactionEnabled && !operatorsEnabled && !helpCrossLoadingEnabled && !plantsEnabled) return undefined
+        if (!satisfactionEnabled && !operatorsEnabled && !helpCrossLoadingEnabled && !plantsEnabled && !serviceEnabled)
+            return undefined
         const allDays = [...currentDays, ...previousDays]
         if (allDays.length === 0) return undefined
         let cancelled = false
@@ -434,7 +436,8 @@ export function usePlanStatistics({
         satisfactionEnabled,
         operatorsEnabled,
         helpCrossLoadingEnabled,
-        plantsEnabled
+        plantsEnabled,
+        serviceEnabled
     ])
 
     /** Saved-plan fetch — only fires when the Help & Cross-Loading
@@ -474,8 +477,11 @@ export function usePlanStatistics({
      *  re-walking rows or calling `computeScheduleMetrics`. Always covers
      *  all plants — the plant comparison chart needs the unfiltered set. */
     const flatOrders = useMemo(
-        () => (satisfactionEnabled || helpCrossLoadingEnabled || plantsEnabled ? flattenLiveOrders(currentRows) : []),
-        [currentRows, satisfactionEnabled, helpCrossLoadingEnabled, plantsEnabled]
+        () =>
+            satisfactionEnabled || helpCrossLoadingEnabled || plantsEnabled || serviceEnabled
+                ? flattenLiveOrders(currentRows)
+                : [],
+        [currentRows, satisfactionEnabled, helpCrossLoadingEnabled, plantsEnabled, serviceEnabled]
     )
 
     /** Merged detail map across every loaded date — built once and reused

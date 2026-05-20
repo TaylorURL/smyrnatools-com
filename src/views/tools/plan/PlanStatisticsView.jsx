@@ -4,6 +4,7 @@ import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons
 import { PlanStatisticsControls } from '../../../app/components/plan/tabs/statistics/PlanStatisticsControls'
 import PlanStatisticsHelpCrossLoadingPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage'
 import { PlanStatisticsKpiStrip } from '../../../app/components/plan/tabs/statistics/PlanStatisticsKpiStrip'
+import PlanStatisticsServicePage from '../../../app/components/plan/tabs/statistics/PlanStatisticsServicePage'
 import {
     PlanStatisticsOperatorsPage,
     PlanStatisticsOverviewPage,
@@ -17,6 +18,7 @@ import {
 } from '../../../app/components/plan/tabs/statistics/PlanStatisticsSidebar'
 import { useHelpCrossLoadingStats } from '../../../app/hooks/useHelpCrossLoadingStats'
 import { usePlanStatistics } from '../../../app/hooks/usePlanStatistics'
+import { useServiceQualityStats } from '../../../app/hooks/useServiceQualityStats'
 import { buildScheduleCsv } from '../../../utils/PlanStatisticsUtility'
 
 /**
@@ -50,6 +52,7 @@ function PlanStatisticsView({
     const operatorsEnabled = activeSection === 'operators'
     const helpCrossLoadingEnabled = activeSection === 'helpCrossLoading'
     const plantsEnabled = activeSection === 'production'
+    const serviceEnabled = activeSection === 'service'
     const stats = usePlanStatistics({
         colocationMap: planColocationMap,
         helpCrossLoadingEnabled,
@@ -57,7 +60,8 @@ function PlanStatisticsView({
         operatorsEnabled,
         planDate,
         plantsEnabled,
-        satisfactionEnabled
+        satisfactionEnabled,
+        serviceEnabled
     })
     const {
         anchor,
@@ -112,6 +116,19 @@ function PlanStatisticsView({
         plansByDate: helpCrossLoadingEnabled ? plansByDate : {},
         plantNameByCode,
         range,
+        selectedPlant
+    })
+
+    /* Service-quality derivation — gated to the Service sub-page so
+     * the per-order classifier (same one customer-satisfaction uses)
+     * doesn't run on every page mount. Returns an empty result when
+     * disabled, so the consuming page can still mount safely. */
+    const serviceStats = useServiceQualityStats({
+        colocationMap: planColocationMap,
+        detailByDay,
+        enabled: serviceEnabled,
+        flatOrders,
+        plantNameByCode,
         selectedPlant
     })
 
@@ -217,6 +234,19 @@ function PlanStatisticsView({
                     plantNameByCode={plantNameByCode}
                     plansLoading={plansLoading}
                     range={range.current}
+                />
+            )
+        }
+        if (activeSection === 'service') {
+            return (
+                <PlanStatisticsServicePage
+                    accentColor={accentColor}
+                    colocationMap={planColocationMap}
+                    loading={loading}
+                    plansLoading={plansLoading}
+                    plantNameByCode={plantNameByCode}
+                    serviceLoading={satisfactionLoading}
+                    serviceStats={serviceStats}
                 />
             )
         }

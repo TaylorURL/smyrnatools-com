@@ -610,8 +610,15 @@ function formatMin(min: number | null | undefined): string {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-const CANCELLED_START = '00:00'
-const TEST_START = '99:99'
+/* Sentinel start times the dispatcher uses to flag non-production orders.
+ * MUST match `src/app/constants/planConstants.ts`:
+ *   CANCELLED_ORDER_START = '17:00'  → cancelled at the customer
+ *   TEST_ORDER_START      = '18:00'  → dispatcher test entry
+ * Earlier versions of this file used '00:00'/'99:99' which silently let
+ * every cancelled (17:00) order through onto the cron email's schedule
+ * AND into the clock-in pool simulation. */
+const CANCELLED_START = '17:00'
+const TEST_START = '18:00'
 
 function isExcludedOrder(order: any): boolean {
     const t = String(order?.startTime || '').trim()
@@ -968,12 +975,12 @@ function buildServerPayloads(
     for (const plantCode of codes) {
         const block = production[plantCode] || {}
         const rawOrders = Array.isArray(block.orders) ? block.orders : []
-        /* Cancelled (`00:00`) and dispatcher-test (`99:99`) orders are
-         * excluded from every per-plant section the email surfaces —
-         * KPI counts, orders table, and the clock-in roster (the
-         * dashboard's `computeClockInRows` does its own filter, but
-         * filtering at the source keeps the orders array we feed in
-         * consistent across paths). */
+        /* Cancelled (start = `17:00`) and dispatcher-test (`18:00`)
+         * orders are excluded from every per-plant section the email
+         * surfaces — KPI counts, orders table, and the clock-in roster
+         * (the dashboard's `computeClockInRows` does its own filter,
+         * but filtering at the source keeps the orders array we feed
+         * in consistent across paths). */
         const liveOrders = rawOrders.filter((o: any) => !isExcludedOrder(o))
 
         const orders = liveOrders
@@ -1089,7 +1096,13 @@ function buildServerPayloads(
         const outboundReserved = outboundCountByPlant.get(plantCode) || 0
         const localBase = Math.max(0, effectiveBase - outboundReserved)
         const localBaseByPlant: Record<string, number> = { [plantCode]: localBase }
-        const flattenedOrders = liveOrders.map((o: any) => ({ ...o, plantCode: o.plantCode || plantCode }))
+        /* Tag every order with the production-map key as its plant —
+         * matches `PlanDashboardClockInBoard.flattenOrders`, which
+         * ALWAYS overrides any `order.plantCode` field with the key
+         * the order lives under. Preserving an existing `plantCode`
+         * here would let stale field data desync the clock-in math
+         * from the dashboard. */
+        const flattenedOrders = liveOrders.map((o: any) => ({ ...o, plantCode }))
         const localRows = computeClockInRowsInternal(flattenedOrders, localBaseByPlant)
         const roster = buildPlantRosterInternal(plantCode, effectiveBase, localRows, outboundRows)
 
