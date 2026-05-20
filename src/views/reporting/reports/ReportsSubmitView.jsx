@@ -6,6 +6,7 @@ import OperatorExclusionReasonModal from '../../../app/components/reports/Operat
 import ReportValidationErrorModal from '../../../app/components/reports/ReportValidationErrorModal'
 import SubmitHeader from '../../../app/components/reports/SubmitHeader'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import { useEfficiencyTicketAggregates } from '../../../app/hooks/useEfficiencyTicketAggregates'
 import { useSubmitData } from '../../../app/hooks/useSubmitData'
 import { useSubmitForm } from '../../../app/hooks/useSubmitForm'
 import ErrorReporterUtility from '../../../utils/ErrorReporterUtility'
@@ -166,6 +167,49 @@ function ReportsSubmitView({
         setHasUnsavedChanges,
         setInitialFormSnapshot
     } = useSubmitForm({ forcedReportDate, initialData, operatorOptions, plants, report, user })
+    // Auto-fill `first_load` + `loads` on the Plant Efficiency Report from
+    // live dispatch tickets for the SINGLE report day. Scope is one day,
+    // not the week — the report represents one operational day's data,
+    // and aggregating across the week would multiply the ticket counts.
+    // The hook no-ops until the form has rows + operatorOptions + a valid
+    // report_date so we don't burn fetches before the matching keys are
+    // ready.
+    const isPlantProduction = report.name === 'plant_production'
+    const efficiencyTicketsEnabled =
+        isPlantProduction && !!form.report_date && Array.isArray(form.rows) && form.rows.length > 0
+    const {
+        aggregatesByOperatorId: efficiencyAggregates,
+        loading: efficiencyTicketsLoading,
+        ready: efficiencyTicketsReady
+    } = useEfficiencyTicketAggregates({
+        enabled: efficiencyTicketsEnabled,
+        operatorOptions,
+        reportDate: form.report_date,
+        rows: form.rows
+    })
+    // Push ticket aggregates into form.rows whenever they refresh. Honest
+    // overwrite semantics — if no tickets matched an operator, their
+    // first_load + loads reset to empty (rather than retaining a stale
+    // typed value from a prior session). Bails out via reference equality
+    // when nothing actually changed so editing other fields (start_time,
+    // eod_in_yard, etc.) doesn't trigger a setForm cascade.
+    useEffect(() => {
+        if (!isPlantProduction || !efficiencyTicketsReady) return
+        setForm((f) => {
+            const rows = Array.isArray(f.rows) ? f.rows : []
+            if (rows.length === 0) return f
+            let changed = false
+            const nextRows = rows.map((row) => {
+                const agg = efficiencyAggregates[row.name]
+                const targetFirstLoad = agg?.firstLoad ?? ''
+                const targetLoads = agg?.loads != null ? String(agg.loads) : ''
+                if (row.first_load === targetFirstLoad && row.loads === targetLoads) return row
+                changed = true
+                return { ...row, first_load: targetFirstLoad, loads: targetLoads }
+            })
+            return changed ? { ...f, rows: nextRows } : f
+        })
+    }, [isPlantProduction, efficiencyTicketsReady, efficiencyAggregates, setForm])
     const [submitting, setSubmitting] = useState(false)
     const [savingDraft, setSavingDraft] = useState(false)
     const [aiValidating, setAiValidating] = useState(false)
@@ -440,6 +484,28 @@ function ReportsSubmitView({
                     </div>
                 )}
 
+                {efficiencyTicketsEnabled && (
+                    <div
+                        className="flex items-center gap-2 rounded p-2 text-[11px] bg-bg-secondary border border-border-light text-text-tertiary"
+                        title="1st Load and Total Loads are pulled directly from this day's dispatch tickets and cannot be edited."
+                    >
+                        {efficiencyTicketsLoading || !efficiencyTicketsReady ? (
+                            <>
+                                <i className="fas fa-circle-notch fa-spin text-[10px]" />
+                                <span>Loading 1st load + total loads from dispatch tickets…</span>
+                            </>
+                        ) : (
+                            <>
+                                <i className="fas fa-check-circle text-[10px] text-emerald-600" />
+                                <span>
+                                    1st Load and Total Loads auto-filled from this report day&apos;s dispatch tickets —
+                                    not editable.
+                                </span>
+                            </>
+                        )}
+                    </div>
+                )}
+
                 {form.rows?.length > 0 && (
                     <>
                         <div className="flex flex-wrap gap-1">
@@ -510,23 +576,28 @@ function ReportsSubmitView({
                                     </div>
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                         {[
-                                            { field: 'start_time', label: 'Start Time' },
-                                            { field: 'first_load', label: '1st Load' },
-                                            { field: 'eod_in_yard', label: 'EOD In Yard' },
-                                            { field: 'punch_out', label: 'Punch Out' }
-                                        ].map(({ field, label }) => (
+                                            { autoFromTickets: false, field: 'start_time', label: 'Start Time' },
+                                            { autoFromTickets: true, field: 'first_load', label: '1st Load' },
+                                            { autoFromTickets: false, field: 'eod_in_yard', label: 'EOD In Yard' },
+                                            { autoFromTickets: false, field: 'punch_out', label: 'Punch Out' }
+                                        ].map(({ autoFromTickets, field, label }) => (
                                             <div key={field} className="flex flex-col gap-1">
                                                 <label
                                                     className={FORM_SECTION_LABEL_CLASS}
                                                     style={{ color: 'var(--text-tertiary)' }}
                                                 >
                                                     {label}
+                                                    {autoFromTickets && (
+                                                        <span className="ml-1 normal-case font-normal tracking-normal text-text-tertiary">
+                                                            · from tickets
+                                                        </span>
+                                                    )}
                                                 </label>
                                                 <input
                                                     type="time"
                                                     value={form.rows[carouselIndex]?.[field] ?? ''}
                                                     onChange={(e) => handleChange(e, 'rows', carouselIndex, field)}
-                                                    disabled={!!readOnly}
+                                                    disabled={!!readOnly || autoFromTickets}
                                                     className={`${FORM_FIELD_BASE_CLASS} tabular-nums`}
                                                     style={FORM_FIELD_STYLE}
                                                 />
@@ -540,12 +611,15 @@ function ReportsSubmitView({
                                                 style={{ color: 'var(--text-tertiary)' }}
                                             >
                                                 Total Loads
+                                                <span className="ml-1 normal-case font-normal tracking-normal text-text-tertiary">
+                                                    · from tickets
+                                                </span>
                                             </label>
                                             <input
                                                 type="number"
                                                 value={form.rows[carouselIndex]?.loads ?? ''}
                                                 onChange={(e) => handleChange(e, 'rows', carouselIndex, 'loads')}
-                                                disabled={readOnly}
+                                                disabled
                                                 className={`${FORM_FIELD_BASE_CLASS} tabular-nums`}
                                                 style={FORM_FIELD_STYLE}
                                             />
@@ -763,6 +837,7 @@ function ReportsSubmitView({
                                 'general_manager',
                                 'aggregate_production',
                                 'plant_manager',
+                                'plant_production',
                                 'ready_mix_instructor',
                                 'district_manager'
                             ].includes(report.name)

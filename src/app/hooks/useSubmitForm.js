@@ -42,7 +42,15 @@ export function useSubmitForm({ report, initialData, user, forcedReportDate, pla
     const handleChange = useCallback(
         (e, name, idx, colName) => {
             if (report.name === 'plant_production' && name === 'rows') {
+                // `name` + `truck_number` are auto-filled from the operator/mixer
+                // assignment; `first_load` + `loads` are auto-filled from live
+                // dispatch tickets via `useEfficiencyTicketAggregates`. All
+                // four are intentionally unchangeable by the operator so the
+                // report reflects the system-of-record numbers, not typed
+                // estimates. Editable fields remain: start_time, eod_in_yard,
+                // punch_out, comments.
                 if (colName === 'name' || colName === 'truck_number') return
+                if (colName === 'first_load' || colName === 'loads') return
                 setForm((f) => {
                     const updatedRows = [...(f.rows || [])]
                     updatedRows[idx][colName] = e.target.value

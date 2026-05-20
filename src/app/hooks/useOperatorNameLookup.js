@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
 
 import { OperatorService } from '../../services/OperatorService'
+import { formatPersonName } from '../../utils/OperatorNameLookupUtility'
+
+// Re-export so existing consumers (`import { formatPersonName } from './useOperatorNameLookup'`)
+// keep working without churn. The implementation now lives in the shared
+// utility alongside `nameLookupVariants` so every operator-name normalizer
+// has one source of truth.
+export { formatPersonName }
 
 /* Module-level promise so the operator roster is fetched once per session and
  * shared across every consumer of this hook. Subsequent mounts resolve
@@ -32,37 +39,6 @@ const normalize = (value) =>
     String(value ?? '')
         .trim()
         .toUpperCase()
-
-/** Roman numerals + generation suffixes that should stay uppercase. */
-const KEEP_UPPER = new Set(['JR', 'SR', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'])
-
-/**
- * Normalises a person's name to a consistent Title Case display. The dispatch
- * data and the operator records themselves are a mix of ALL-CAPS, mixed-case,
- * and the occasional all-lowercase row. Every consumer (Tickets modal,
- * Operators stats tab, etc.) routes through this helper so the same person
- * reads the same way no matter where they appear.
- *
- *   "BOBBY JOHNSON JR."      → "Bobby Johnson Jr."
- *   "mary-anne o'brien"      → "Mary-Anne O'Brien"
- *   "JOHN III"               → "John III"
- */
-export function formatPersonName(name) {
-    const raw = String(name ?? '').trim()
-    if (!raw) return ''
-    // Split on whitespace, hyphens and apostrophes but KEEP the delimiters so
-    // "Mary-Anne O'Brien" rebuilds with its original punctuation.
-    return raw
-        .toLowerCase()
-        .split(/(\s+|-|')/)
-        .map((part) => {
-            if (!part || /^[\s\-']+$/.test(part)) return part
-            const upper = part.toUpperCase()
-            if (KEEP_UPPER.has(upper)) return upper
-            return part.charAt(0).toUpperCase() + part.slice(1)
-        })
-        .join('')
-}
 
 /**
  * Returns a `resolve(rawName, driverNum?)` function that maps the dispatch

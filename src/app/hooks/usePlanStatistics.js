@@ -4,6 +4,7 @@ import { DispatchDataService } from '../../services/DispatchDataService'
 import { MixerService } from '../../services/MixerService'
 import { OperatorService } from '../../services/OperatorService'
 import { PlanService } from '../../services/PlanService'
+import { nameLookupVariants } from '../../utils/OperatorNameLookupUtility'
 import { parseIsoLocal } from '../../utils/PlanStatisticsFormatUtility'
 import {
     aggregateMetrics,
@@ -42,64 +43,6 @@ const flattenLiveOrders = (rows) => {
         })
     })
     return out
-}
-
-/** Trailing generation suffix tokens to strip when normalising a name
- *  ("Bobby Johnson JR" → "Bobby Johnson") so a roster entry without the
- *  suffix still matches a Jonel ticket that has one. */
-const NAME_SUFFIXES = new Set(['JR', 'SR', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'])
-
-/** Build every lookup key a person name should match under. Both sides
- *  of the ticket-to-operator match register/lookup through this list so
- *  Jonel-vs-Tools spelling drift resolves without manual intervention:
- *
- *    "SMITH, JOHN"        → ["JOHN SMITH"]                       (comma flipped)
- *    "JOHN A SMITH"       → ["JOHN A SMITH", "JOHN SMITH"]       (middle name optional)
- *    "JOHN SMITH JR."     → ["JOHN SMITH"]                       (suffix + punctuation stripped)
- *    "MARY-ANNE O'BRIEN"  → ["MARY ANNE O BRIEN", ..., "MARYANNE OBRIEN", ...]
- *
- *  Returns `[]` for genuinely empty / single-word strings (e.g. blanks,
- *  "DEFAULT"); those fall straight into the unmatched bucket.
- */
-function nameLookupVariants(name) {
-    const raw = String(name ?? '').trim()
-    if (!raw) return []
-    const upper = raw.toUpperCase()
-    /* Detect "LAST, FIRST" vs "JOHN SMITH, JR" by what's BEFORE the comma:
-     * one token → last-first → flip; multi token → comma is a separator. */
-    let flipped = upper
-    if (upper.includes(',')) {
-        const [head, ...rest] = upper.split(',')
-        const headTokens = head.trim().split(/\s+/).filter(Boolean)
-        if (headTokens.length === 1) {
-            flipped = `${rest.join(',').trim()} ${head.trim()}`
-        } else {
-            flipped = upper.replace(/,/g, ' ')
-        }
-    }
-    /* Generate keys for two punctuation policies so compound names match
-     * whether the punctuation is collapsed ("OBrien") or spaced
-     * ("O Brien"). Without both, "Maria O'Brien" never matches
-     * "MARIA OBRIEN" on a ticket. */
-    const PUNCT_RE = /[.,'\-]/g
-    const spacedBody = flipped.replace(PUNCT_RE, ' ').replace(/\s+/g, ' ').trim()
-    const collapsedBody = flipped.replace(PUNCT_RE, '').replace(/\s+/g, ' ').trim()
-    const tokenize = (body) => {
-        const tokens = body.split(' ').filter(Boolean)
-        while (tokens.length > 1 && NAME_SUFFIXES.has(tokens[tokens.length - 1])) tokens.pop()
-        return tokens
-    }
-    const keys = new Set()
-    ;[spacedBody, collapsedBody].forEach((body) => {
-        if (!body) return
-        const tokens = tokenize(body)
-        if (tokens.length < 2) return
-        keys.add(tokens.join(' '))
-        if (tokens.length >= 3) {
-            keys.add(`${tokens[0]} ${tokens[tokens.length - 1]}`)
-        }
-    })
-    return [...keys]
 }
 
 /**

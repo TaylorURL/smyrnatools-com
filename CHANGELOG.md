@@ -1,5 +1,37 @@
 # Changelog
 
+## [2026.21.12] - 2026-05-20
+
+- Plant Efficiency Report: **1st Load** and **Total Loads** are now
+  auto-filled from live dispatch tickets for the report's day and locked
+  against manual edits. New `useEfficiencyTicketAggregates` hook
+  (`src/app/hooks/useEfficiencyTicketAggregates.js`) pulls
+  `DispatchDataService.fetchDetailByOrderId(form.report_date)`,
+  attributes every ticket to one operator via name canonicalization
+  (truck-number fallback), and returns `{ firstLoad, loads }` per
+  employee_id. `ReportsSubmitView` syncs the aggregates into
+  `form.rows[]` with reference-equality short-circuiting so editing
+  other fields doesn't trigger a setForm cascade. Both inputs render
+  `disabled` with a "· from tickets" label, and
+  `useSubmitForm.handleChange` silently drops any edit attempts on
+  `first_load` / `loads` as defense-in-depth alongside the existing
+  `name` / `truck_number` blocks. Banner above the operator carousel
+  shows the live load/ready state of the ticket fetch.
+- Scope is intentionally one day, not the whole Mon–Sat week — the
+  Plant Efficiency Report represents a single operational day even
+  though the report cadence is weekly, so aggregating across the week
+  would multiply ticket counts. The hook calls the single-day endpoint
+  (`fetchDetailByOrderId`) keyed off `form.report_date`.
+- Extracted `nameLookupVariants`, `NAME_SUFFIXES`, and `formatPersonName`
+  into `src/utils/OperatorNameLookupUtility.ts` so every consumer of
+  operator-name canonicalization (Statistics → Operators tab,
+  Tickets-modal driver column, Plant Efficiency Report ticket
+  aggregator) hits one source of truth instead of three near-identical
+  copies. `usePlanStatistics` drops its local copy (≈60 lines) and
+  imports from the utility; `useOperatorNameLookup` drops its
+  duplicate `KEEP_UPPER` set and re-exports `formatPersonName` for
+  backward compatibility.
+
 ## [2026.21.11] - 2026-05-19
 
 - Renamed the Plan tab to **Operations** end-to-end. The lazy-loaded shell
