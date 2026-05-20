@@ -359,7 +359,9 @@ function PlanScheduleView({
                                     onClearFilters={hasActiveFilters ? clearAllFilters : null}
                                     onCopyRoster={copyOperatorRoster}
                                     onExitMaximized={effectiveMaximized ? () => setMaximized(false) : null}
-                                    onToggleCompare={() => setCompareMode((v) => !v)}
+                                    onToggleCompare={
+                                        !isViewingToday && !isPastDay ? null : () => setCompareMode((v) => !v)
+                                    }
                                     onToggleExtraRows={() => setShowExtraRows((v) => !v)}
                                     onTogglePlantFilter={togglePlantFilter}
                                     operatorRosterCopied={operatorRosterCopied}

@@ -1,5 +1,75 @@
 # Changelog
 
+## [2026.21.11] - 2026-05-19
+
+- Renamed the Plan tab to **Operations** end-to-end. The lazy-loaded shell
+  moved from `src/views/tools/plan/PlanView.jsx` →
+  `src/views/tools/plan/OperationsView.jsx` with the inner component
+  identifiers renamed (`PlanView`/`PlanViewImpl`/`PlanRegionBlocker` →
+  `OperationsView`/`OperationsViewImpl`/`OperationsRegionBlocker`).
+  Navbar label flipped to "Operations" in
+  `src/app/constants/navigationConstants.js` while the routing key + DB
+  permission (`plan.view`) stayed at `'Plan'` so saved start-page
+  preferences don't break. Stale `PlanView` doc-comment references swept
+  across hooks/services/utils.
+- Schedule tab: Good/Bad Experience and the rest of the secondary chips
+  no longer wrap onto a second line. `PlanScheduleOrderRow` and
+  `PlanScheduleOrderCard` switch to `flex-nowrap` with the customer name
+  taking `flex-1 min-w-0 truncate`, so chips stay on one line and the
+  customer name gets ellipsized when the column is tight. Same-day
+  orders join cancelled + test in suppressing `ServiceBadge`,
+  `HoursLimitBadge`, and `BigPourBadge` — the `OrderStatusBadge` already
+  conveys the order's nature for those rows.
+- Schedule compare view: "View original schedule" button is now hidden
+  on future dates in BOTH entry points (title row already did it, filter
+  drawer was missing the gate). Snapshot/live placeholder rows redrawn
+  to mirror an order row's first two cells (time + `PlantBadge`) plus a
+  single-line pill + faint reference label, so paired rows in the twin
+  tables land at the same height.
+- Statistics: dropped the "Plants" and "Yardage" sidebar items in favour
+  of a single **Production** sub-page that leads with the per-plant
+  scorecard table (no chart hero) and tucks the daily-trend +
+  weekday-shape charts underneath. Plant scorecards now always show two
+  yardage columns side by side — **Scheduled** (from the schedule data)
+  and **Actually loaded** (from cross-loaded ticket data) — plus
+  separate **Help received** / **Help given** columns in plain English
+  instead of the prior `+x in / −y out` pills. Inline legend explains
+  the columns above the table.
+- Statistics overview rebuilt as a launchpad: period-summary headline
+  card, Period highlights (Best day · Slowest day · Top plant · Top
+  customer) next to the Customer-satisfaction summary, and a row of
+  Launchpad tiles linking to Production / Customer satisfaction /
+  Operators / Help & cross-loading. Removed the daily trend chart, Top
+  Plants ranked list, Plants snapshot, and comparison panel that
+  duplicated the new Production sub-page.
+- Statistics: pulled the "Big pours" and "Customers & products" sidebar
+  items + their KPI tile / Overview previews. Underlying page components
+  + `currentSummary.bigPours` derivation stay in place for future
+  re-instatement.
+- Fixed cross-load attribution showing all dashes on the Production
+  page. `usePlanStatistics` now accepts a `plantsEnabled` flag (gates
+  the ticket-detail fetch + `mergedDetail` build) and an optional
+  `colocationMap` so sibling-site aliases (e.g. 404 ↔ 401) collapse to
+  the same physical plant when comparing home vs loader. The hook
+  iterates `flatOrders` (which carries `plantCode` in its wrapper)
+  instead of `currentDays[i].allLiveOrders` whose order objects don't
+  carry a plant code field.
+- Operations Dashboard: dropped the Leaflet "Help Routes" map card and
+  deleted `PlanFlowPreview` + `usePlanFlowPreviewMetrics`. The full
+  Planner tab retains the map.
+- Dead-code removal across the prior leaderboards cleanup —
+  `LeaderboardsUtility`, `useLeaderboardMetrics`, the
+  `leaderboardMetrics` slot in `INITIAL_PLANT_NOTIFICATIONS`,
+  `AIService.generatePlantSummary`/`generateRegionSummary`/`generateDistrictSummary`,
+  the matching prompts in `src/app/ai/context.json`, the
+  `getRoleContext`/`getToneModifier`/`PLANT_SUMMARY_BASE` helpers in
+  `src/app/ai/index.js`, and `src/app/constants/maintenanceConstants.js`
+  are all gone. README + AI Integration sections updated to match.
+- Public asset rename: `public/AppLogo.png` → `public/app-logo.png`,
+  with the 6 icon entries in `public/manifest.json` rewritten to point
+  at the new filename. Root `index.html` already referenced the
+  lowercase name.
+
 ## [2026.21.10] - 2026-05-20
 
 - Production hot-fix for the live site. Vercel was building the

@@ -154,7 +154,7 @@ function ReportsToolbar({
 
 /**
  * Slim sticky bar rendered directly below `ReportsToolbar`. Mirrors the
- * PlanView header bar: scope chip on the left, action buttons in the
+ * OperationsView header bar: scope chip on the left, action buttons in the
  * middle, and the tab segmented control on the right. Tabs replace the
  * old in-toolbar tab strip so the layout matches Plan / Schedule / Demand.
  */

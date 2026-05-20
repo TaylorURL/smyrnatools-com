@@ -132,7 +132,7 @@ export function AuthProvider({ children }) {
     /* The edge-function client (APIUtility) fires this event when the
      * server returns 401 or when client-side credentials are missing. Both
      * mean the current session is no longer usable — drop user state so the
-     * router falls back to the login screen and pollers (PlanView schedule
+     * router falls back to the login screen and pollers (OperationsView schedule
      * probe, presence heartbeat, etc.) stop hammering authenticated
      * endpoints. clearAllSessionData wipes the stale credentials so the
      * next render starts from a clean slate. */

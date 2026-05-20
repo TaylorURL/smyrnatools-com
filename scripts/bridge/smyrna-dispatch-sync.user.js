@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Smyrna Dispatch Sync
 // @namespace    smyrna-tools
-// @version      2.13.0
-// @description  Syncs today + next 7 days of DailyOrder, per-plant DetailOrderAnalysis, and per-plant DetailDriver reports to Supabase storage every 5 minutes during the active dispatch window (Central 00:00–17:30), triggers dispatch-import to parse uploads into dispatch_data, backfills missing files for the current year, and auto re-authenticates when the dispatch session expires
+// @version      2.15.1
+// @description  Syncs today + next 7 days of DailyOrder, per-plant DetailOrderAnalysis, and per-plant DetailDriver reports to Supabase storage every 5 minutes during the active dispatch window (Central 00:00–17:30), triggers dispatch-import to parse uploads into dispatch_data, backfills missing files for the current year, force re-uploads every (report × plant × date) for the current year once daily at 18:00 CT, exposes manual devtools triggers under window.smyrnaSync, and auto re-authenticates when the dispatch session expires
 // @match        http://srm-c03.aujs.local:8181/*
 // @match        http://srm-h.aujs.local:8181/*
 // @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
 // @connect      srm-c03.aujs.local
 // @connect      srm-h.aujs.local
 // @connect      db.smyrnatools.com
@@ -33,6 +34,17 @@
     // simultaneous report generations comfortably. Tune down if the server
     // ever starts dropping requests.
     const WORKER_CONCURRENCY = 10
+
+    // Daily full re-upload: once per Central day at this hour, the bridge
+    // force re-pulls EVERY (report × plant × date) combo from Jan 1 → today
+    // and overwrites whatever is in the bucket, regardless of whether the
+    // file already exists. This catches dispatcher corrections made to old
+    // records that the missing-file backfill (which skips existing files)
+    // would never re-fetch. Fires independent of the 00:00–17:30 rolling
+    // sync window so dispatchers can run it after close — long-running
+    // (~1–2h) and resource-heavy, by design.
+    const DAILY_FULL_REFRESH_HOUR_CT = 18 // 6 PM Central
+    const DAILY_FULL_REFRESH_KEY = 'smyrna_sync_last_full_refresh_date'
 
     // The dispatch UI runs on :8181 and the API on :8484 on the SAME box.
     // Hostname differs between deployments (srm-c03, srm-h, etc.), so we
@@ -181,6 +193,7 @@
     let authToken = null
     let lastSync = null
     let syncing = false
+    let fullRefreshing = false
     let earlyKickScheduled = false
     // Singleton promise so parallel workers that all hit 401 share one /token
     // round-trip instead of stampeding the server with a fresh login each.
@@ -233,6 +246,49 @@
 
     function isWithinSyncWindow() {
         return getCentralMinutesOfDay() < SYNC_WINDOW_END_MINUTES
+    }
+
+    // Today's date in America/Chicago as YYYY-MM-DD. Used as the marker
+    // key for "did the daily full refresh already run today?" — Central
+    // is the authoritative timezone for dispatch operations.
+    function getCentralDateString() {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            day: '2-digit',
+            month: '2-digit',
+            timeZone: 'America/Chicago',
+            year: 'numeric'
+        }).formatToParts(new Date())
+        const year = parts.find((p) => p.type === 'year')?.value
+        const month = parts.find((p) => p.type === 'month')?.value
+        const day = parts.find((p) => p.type === 'day')?.value
+        return `${year}-${month}-${day}`
+    }
+
+    function hasDailyFullRefreshRunToday() {
+        try {
+            return localStorage.getItem(DAILY_FULL_REFRESH_KEY) === getCentralDateString()
+        } catch {
+            return false
+        }
+    }
+
+    // Marker is written at the START of the refresh, not the end, so a
+    // failed run doesn't immediately re-trigger on the next 1-min tick
+    // (which would otherwise produce a hot loop hammering a struggling
+    // dispatch server). To force a manual retry today, clear the key
+    // from devtools: `localStorage.removeItem('smyrna_sync_last_full_refresh_date')`.
+    function markDailyFullRefreshRan() {
+        try {
+            localStorage.setItem(DAILY_FULL_REFRESH_KEY, getCentralDateString())
+        } catch {
+            // localStorage unavailable (private mode, etc.) — refresh will
+            // re-fire on the next tick. Acceptable; the bucket just gets
+            // re-uploaded again.
+        }
+    }
+
+    function isPastDailyFullRefreshTime() {
+        return getCentralMinutesOfDay() >= DAILY_FULL_REFRESH_HOUR_CT * 60
     }
 
     // RFC4122 v4 UUID. Prefers crypto.randomUUID when present (modern browsers),
@@ -996,6 +1052,10 @@
             log('Already syncing, skipping tick')
             return
         }
+        if (fullRefreshing) {
+            log('Daily full refresh in progress, skipping rolling tick')
+            return
+        }
         if (!isWithinSyncWindow()) {
             log('Outside Central sync window (00:00–17:30), skipping tick')
             updateBadge('paused', 'outside 00:00–17:30 CT')
@@ -1093,6 +1153,107 @@
         syncing = false
     }
 
+    // Re-uploads EVERY (report × plant × date) combo from Jan 1 → today,
+    // ignoring the bucket-existence gate that the rolling backfill uses.
+    // Fires once per Central day at DAILY_FULL_REFRESH_HOUR_CT. After the
+    // upload phase, `dispatch-import` is triggered once per covered date
+    // so `dispatch_data` is refreshed for the entire year too. Total
+    // runtime is typically 1–2 hours.
+    async function runDailyFullRefresh() {
+        if (fullRefreshing) {
+            log('Daily full refresh already in progress, skipping trigger')
+            return
+        }
+        if (syncing) {
+            log('Rolling sync in progress, deferring full refresh to next minute tick')
+            return
+        }
+        if (!seatToken) {
+            try {
+                await reauthenticate()
+            } catch (err) {
+                log('Daily full refresh: cold-start reauth failed:', err.message)
+                updateBadge('error', `Auth failed: ${err.message}`)
+                return
+            }
+        }
+        fullRefreshing = true
+        markDailyFullRefreshRan()
+        log('Daily full refresh starting — every report × every plant × Jan 1 → today')
+
+        const yearDates = getCurrentYearDatesThroughToday()
+        const tasks = []
+        for (const report of REPORTS) {
+            for (const date of yearDates) {
+                tasks.push(...buildTasksForDate(report, date))
+            }
+        }
+        log(`Daily full refresh: ${tasks.length} task(s) across ${yearDates.length} date(s)`)
+
+        const results = { fail: 0, ok: 0, total: tasks.length }
+        updateBadge('syncing', `full 0/${results.total}`)
+
+        let cursor = 0
+        const runWorker = async () => {
+            while (true) {
+                const idx = cursor++
+                if (idx >= tasks.length) return
+                const task = tasks[idx]
+                try {
+                    await syncTask(task)
+                    results.ok++
+                } catch (err) {
+                    log(`  FULL FAILED ${task.label}:`, err.message)
+                    results.fail++
+                }
+                updateBadge('syncing', `full ${results.ok + results.fail}/${results.total}`)
+            }
+        }
+        const workerCount = Math.min(WORKER_CONCURRENCY, tasks.length)
+        await Promise.all(Array.from({ length: workerCount }, runWorker))
+
+        log(`Daily full refresh upload phase: ${results.ok} ok, ${results.fail} failed`)
+
+        // Refresh dispatch_data for every date covered. Sequential to
+        // avoid hammering both the dispatch server (each call re-downloads
+        // every HTML for that date) and the edge function in parallel.
+        const importDates = Array.from(new Set(tasks.map((t) => t.date)))
+        updateBadge('syncing', `full importing ${importDates.length} date(s)`)
+        let importOk = 0
+        for (const date of importDates) {
+            const result = await triggerDispatchImport(date)
+            if (result.ok) importOk++
+            else log(`  FULL IMPORT FAILED ${date}: ${result.error}`)
+        }
+        log(`Daily full refresh import: ${importOk}/${importDates.length} date(s) refreshed in dispatch_data`)
+
+        if (results.fail === 0) {
+            lastSync = new Date()
+            updateBadge('ok')
+        } else if (results.ok > 0) {
+            lastSync = new Date()
+            updateBadge('partial', `full ${results.ok}/${results.total}`)
+        } else {
+            updateBadge('error', 'Full refresh failed entirely')
+        }
+        fullRefreshing = false
+        log('Daily full refresh complete')
+    }
+
+    // Fired every minute. No-ops unless it's past the configured trigger
+    // hour AND today's refresh hasn't already started. The marker is
+    // written at the start of the refresh, so a failure won't re-trigger
+    // on the next minute tick — see notes on markDailyFullRefreshRan.
+    function tickFullRefreshTrigger() {
+        if (fullRefreshing || syncing) return
+        if (hasDailyFullRefreshRunToday()) return
+        if (!isPastDailyFullRefreshTime()) return
+        runDailyFullRefresh().catch((err) => {
+            log('Daily full refresh error:', err.message)
+            fullRefreshing = false
+        })
+    }
+
     // ============================================================
     // STATUS BADGE
     // ============================================================
@@ -1147,7 +1308,7 @@
     // KICKOFF
     // ============================================================
     log(
-        `Smyrna Dispatch Sync v2.13.0 loaded - host ${DISPATCH_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, active window 00:00–17:30 CT, completeness check + retry on truncated reports, current-year backfill, multi-strategy auto re-auth (captured seat → fresh seat → page reload + auto-login)`
+        `Smyrna Dispatch Sync v2.15.1 loaded - host ${DISPATCH_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${PLANT_IDS.length} plants, active window 00:00–17:30 CT, daily full refresh at ${DAILY_FULL_REFRESH_HOUR_CT}:00 CT, completeness check + retry on truncated reports, current-year backfill, multi-strategy auto re-auth (captured seat → fresh seat → page reload + auto-login), manual triggers under smyrnaSync (unsafeWindow-attached)`
     )
 
     // Run the login-page auto-submit as soon as the DOM is available.
@@ -1166,5 +1327,67 @@
         updateBadge('waiting')
         setTimeout(runSync, 10000) // first run after 10s (gives UI time to make a call so we capture token)
         setInterval(runSync, INTERVAL_MS)
+        // Independent 1-min tick that fires the daily full refresh exactly
+        // once per Central day at DAILY_FULL_REFRESH_HOUR_CT. Independent
+        // of the rolling sync window — the full refresh runs even after
+        // 17:30 CT when regular ticks have stopped.
+        setInterval(tickFullRefreshTrigger, 60_000)
     }, 1000)
+
+    // ============================================================
+    // MANUAL DEVTOOLS TRIGGERS
+    // Exposed so the bridge operator can test the full-refresh flow
+    // without waiting for 18:00 CT. Bypasses time-of-day and "already
+    // ran today" checks; still respects the concurrency locks.
+    //
+    // IMPORTANT: this assigns to `unsafeWindow`, not `window`. With any
+    // @grant set (we have GM_xmlhttpRequest), Tampermonkey runs the
+    // script in a sandboxed context where `window` is a wrapper —
+    // `window.smyrnaSync = ...` would be invisible to the page's F12
+    // console. `unsafeWindow` is Tampermonkey's escape hatch for the
+    // real page window, which is what devtools sees.
+    //
+    // Usage from the dispatch UI tab's devtools console:
+    //   smyrnaSync.fullRefreshNow()      — fire the daily full refresh
+    //   smyrnaSync.runRollingSync()      — fire one rolling 5-min cycle
+    //   smyrnaSync.clearFullRefreshMark()— clear today's "ran" marker so
+    //                                      the 1-min tick re-fires it
+    //   smyrnaSync.status()              — print current state snapshot
+    // ============================================================
+    const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window
+    pageWindow.smyrnaSync = {
+        clearFullRefreshMark() {
+            try {
+                localStorage.removeItem(DAILY_FULL_REFRESH_KEY)
+                log('Manual: cleared daily-full-refresh marker — next minute tick will re-fire if past trigger hour')
+                return true
+            } catch (err) {
+                log('Manual: failed to clear marker:', err && err.message)
+                return false
+            }
+        },
+        fullRefreshNow() {
+            log('Manual trigger: starting daily full refresh now (bypassing time + marker checks)')
+            return runDailyFullRefresh()
+        },
+        runRollingSync() {
+            log('Manual trigger: running one rolling 5-min sync cycle now')
+            return runSync()
+        },
+        status() {
+            const snap = {
+                centralDate: getCentralDateString(),
+                centralMinutesOfDay: getCentralMinutesOfDay(),
+                fullRefreshing,
+                fullRefreshRanToday: hasDailyFullRefreshRunToday(),
+                lastSync: lastSync ? lastSync.toISOString() : null,
+                seatCaptured: !!seatToken,
+                syncing,
+                withinSyncWindow: isWithinSyncWindow()
+            }
+            log('Manual: status snapshot', snap)
+            return snap
+        }
+    }
+    log('Manual triggers ready — call smyrnaSync.fullRefreshNow() from devtools to test the daily full refresh')
 })()

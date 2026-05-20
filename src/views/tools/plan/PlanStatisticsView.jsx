@@ -5,12 +5,9 @@ import { PlanStatisticsControls } from '../../../app/components/plan/tabs/statis
 import PlanStatisticsHelpCrossLoadingPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage'
 import { PlanStatisticsKpiStrip } from '../../../app/components/plan/tabs/statistics/PlanStatisticsKpiStrip'
 import {
-    PlanStatisticsBigPoursPage,
-    PlanStatisticsCustomersPage,
     PlanStatisticsOperatorsPage,
     PlanStatisticsOverviewPage,
-    PlanStatisticsPlantsPage,
-    PlanStatisticsYardagePage
+    PlanStatisticsProductionPage
 } from '../../../app/components/plan/tabs/statistics/PlanStatisticsPages'
 import { PlanStatisticsSatisfactionPage } from '../../../app/components/plan/tabs/statistics/PlanStatisticsSatisfactionPage'
 import {
@@ -22,13 +19,10 @@ import { useHelpCrossLoadingStats } from '../../../app/hooks/useHelpCrossLoading
 import { usePlanStatistics } from '../../../app/hooks/usePlanStatistics'
 import { buildScheduleCsv } from '../../../utils/PlanStatisticsUtility'
 
-/** How many rows to show in the customer / product top lists. */
-const TOP_LIST_LIMIT = 8
-
 /**
  * Statistics dashboard for the Plan tab. Renders a left-rail navigation that
  * routes between dedicated sub-pages (Overview, Yardage, Customer
- * satisfaction, Plants, Customers & products, Big pours). Each sub-page
+ * satisfaction, Plants, Operators, Help & Cross-Loading). Each sub-page
  * tailors its layout for one operational question instead of cramming
  * every chart into a single wall of panels.
  *
@@ -55,11 +49,14 @@ function PlanStatisticsView({
     const satisfactionEnabled = activeSection === 'satisfaction' || activeSection === 'overview'
     const operatorsEnabled = activeSection === 'operators'
     const helpCrossLoadingEnabled = activeSection === 'helpCrossLoading'
+    const plantsEnabled = activeSection === 'production'
     const stats = usePlanStatistics({
+        colocationMap: planColocationMap,
         helpCrossLoadingEnabled,
         liveProduction,
         operatorsEnabled,
         planDate,
+        plantsEnabled,
         satisfactionEnabled
     })
     const {
@@ -137,23 +134,6 @@ function PlanStatisticsView({
         return { activeCount, topShare, totalYardage }
     }, [knownPlantRows])
 
-    const topCustomers = useMemo(
-        () =>
-            Object.values(currentSummary.perCustomer)
-                .filter((c) => c.yardage > 0)
-                .sort((a, b) => b.yardage - a.yardage)
-                .slice(0, TOP_LIST_LIMIT),
-        [currentSummary]
-    )
-    const topProducts = useMemo(
-        () =>
-            Object.values(currentSummary.perProduct)
-                .filter((c) => c.yardage > 0)
-                .sort((a, b) => b.yardage - a.yardage)
-                .slice(0, TOP_LIST_LIMIT),
-        [currentSummary]
-    )
-
     const handleExport = () => {
         const csv = buildScheduleCsv(currentDays)
         const blob = new Blob([csv], { type: 'text/csv' })
@@ -193,8 +173,6 @@ function PlanStatisticsView({
             previousSummary,
             range: range.current,
             selectedPlant,
-            topCustomers,
-            topProducts,
             trendComparison,
             trendData
         }
@@ -218,10 +196,7 @@ function PlanStatisticsView({
                 />
             )
         }
-        if (activeSection === 'yardage') return <PlanStatisticsYardagePage {...commonProps} />
-        if (activeSection === 'plants') return <PlanStatisticsPlantsPage {...commonProps} />
-        if (activeSection === 'customers') return <PlanStatisticsCustomersPage {...commonProps} />
-        if (activeSection === 'bigPours') return <PlanStatisticsBigPoursPage {...commonProps} />
+        if (activeSection === 'production') return <PlanStatisticsProductionPage {...commonProps} />
         if (activeSection === 'operators')
             return (
                 <PlanStatisticsOperatorsPage
@@ -252,7 +227,6 @@ function PlanStatisticsView({
                 onSelectSection={setActiveSection}
                 satisfactionAggregate={satisfactionAggregate}
                 satisfactionLoading={satisfactionLoading}
-                satisfactionWorstOrders={satisfactionWorstOrders}
             />
         )
     }

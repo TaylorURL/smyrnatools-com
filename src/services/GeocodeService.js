@@ -2,7 +2,7 @@ import { APIUtility } from '../utils/APIUtility'
 
 /**
  * Multi-provider US address geocoder used by the "Find a Spot" booking
- * assistant in PlanView. The project doesn't provision a paid maps API
+ * assistant in OperationsView. The project doesn't provision a paid maps API
  * key, so we chain three free providers to maximise hit rate on the
  * messy addresses dispatchers paste from texts and emails:
  *

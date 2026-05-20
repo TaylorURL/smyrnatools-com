@@ -27,7 +27,7 @@ import PlanSettingsView from './PlanSettingsView'
 import PlanStatisticsView from './PlanStatisticsView'
 
 /**
- * PlanView — plant-centric dispatch planner.
+ * OperationsView — plant-centric dispatch operations shell.
  *
  * Dispatchers create daily assignment plans: which plant sends operators
  * to which plant, with arrival times, stagger intervals, and custom
@@ -37,23 +37,23 @@ import PlanStatisticsView from './PlanStatisticsView'
  * This file is the shell — header, banners, settings modal, and the tab
  * router. Each tab's heavy logic lives in its own dedicated view file.
  */
-/** Temporary region gate — Plan is only available in Houston Concrete while the
- *  statewide rollout is staged. Remove this constant + the early return below
- *  to re-enable Plan everywhere. */
-const PLAN_ALLOWED_REGION_NAME = 'Houston Concrete'
+/** Temporary region gate — Operations is only available in Houston Concrete while
+ *  the statewide rollout is staged. Remove this constant + the early return below
+ *  to re-enable everywhere. */
+const OPERATIONS_ALLOWED_REGION_NAME = 'Houston Concrete'
 
 /** Out-of-region message — `usePreferences` is the only hook used here so
  *  the rules-of-hooks check is happy with this returning early. The full
- *  Plan UI lives in `<PlanViewImpl />` below and is only mounted once the
- *  region check passes. */
-function PlanRegionBlocker({ accentColor }) {
+ *  Operations UI lives in `<OperationsViewImpl />` below and is only
+ *  mounted once the region check passes. */
+function OperationsRegionBlocker({ accentColor }) {
     return (
         <div
             className="global-dashboard-container dashboard-container global-flush-top flush-top plan-view absolute flex items-center justify-center bg-bg-primary"
             style={{ inset: 0 }}
             role="alertdialog"
             aria-modal="true"
-            aria-labelledby="plan-region-blocker-title"
+            aria-labelledby="operations-region-blocker-title"
         >
             <div className="max-w-md mx-6 rounded-xl border border-border-light bg-bg-secondary px-6 py-8 text-center shadow-lg">
                 <i
@@ -61,8 +61,8 @@ function PlanRegionBlocker({ accentColor }) {
                     style={{ color: accentColor }}
                     aria-hidden="true"
                 />
-                <h2 id="plan-region-blocker-title" className="text-lg font-semibold text-text-primary mb-2">
-                    Plan unavailable
+                <h2 id="operations-region-blocker-title" className="text-lg font-semibold text-text-primary mb-2">
+                    Operations unavailable
                 </h2>
                 <p className="text-sm text-text-secondary">This functionality is not available in your region yet.</p>
             </div>
@@ -70,24 +70,24 @@ function PlanRegionBlocker({ accentColor }) {
     )
 }
 
-function PlanView() {
+function OperationsView() {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
     const isDark = preferences.themeMode === 'dark'
-    if (preferences.selectedRegion?.name !== PLAN_ALLOWED_REGION_NAME) {
-        return <PlanRegionBlocker accentColor={accentColor} />
+    if (preferences.selectedRegion?.name !== OPERATIONS_ALLOWED_REGION_NAME) {
+        return <OperationsRegionBlocker accentColor={accentColor} />
     }
-    return <PlanViewImpl accentColor={accentColor} isDark={isDark} />
+    return <OperationsViewImpl accentColor={accentColor} isDark={isDark} />
 }
 
-/** Real Plan shell — all heavy hooks live here so they're called in the
- *  same order on every render of THIS component. The wrapper above only
- *  mounts this once the region gate passes, so an out-of-region user
- *  never instantiates these hooks. */
-function PlanViewImpl({ accentColor, isDark }) {
+/** Real Operations shell — all heavy hooks live here so they're called in
+ *  the same order on every render of THIS component. The wrapper above only
+ *  mounts this once the region gate passes, so an out-of-region user never
+ *  instantiates these hooks. */
+function OperationsViewImpl({ accentColor, isDark }) {
     const isMobile = useIsMobile()
 
-    /* Mobile users get a focused two-tab Plan surface — Dashboard
+    /* Mobile users get a focused two-tab Operations surface — Dashboard
      * (manager "Your Plant / District / Region" view + clock-ins) and
      * Schedule (the full daily order list in card mode). Any other tab
      * (Planner, Demand, Statistics, etc.) falls back to Dashboard
@@ -434,4 +434,4 @@ function PlanViewImpl({ accentColor, isDark }) {
     )
 }
 
-export default PlanView
+export default OperationsView

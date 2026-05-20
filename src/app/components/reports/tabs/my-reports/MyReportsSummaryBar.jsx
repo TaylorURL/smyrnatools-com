@@ -1,6 +1,6 @@
 import React from 'react'
 
-/** A single stat cell — mirrors PlanView's RegionTotalCell layout (icon box +
+/** A single stat cell — mirrors OperationsView's RegionTotalCell layout (icon box +
  *  uppercase label + mono value) so the two surfaces share a visual rhythm. */
 function SummaryCell({ accent, color, hint, icon, label, value, valueColor, warning }) {
     const accentTint = `${accent}14`
@@ -36,7 +36,7 @@ function SummaryCell({ accent, color, hint, icon, label, value, valueColor, warn
 }
 
 /** Compact summary metrics shown above the My Reports week ribbon — mirrors
- *  the PlanView region-totals strip so the two surfaces feel related. */
+ *  the OperationsView region-totals strip so the two surfaces feel related. */
 export default function MyReportsSummaryBar({
     accent,
     cutoffLabel,

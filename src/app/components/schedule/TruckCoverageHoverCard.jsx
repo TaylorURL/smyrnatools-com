@@ -33,7 +33,7 @@ function HoverNote({ children }) {
 
 /**
  * Rich truck-coverage hover explainer for a single dispatch order. Shared
- * between PlanView's schedule tab and the dashboard schedule preview.
+ * between OperationsView's schedule tab and the dashboard schedule preview.
  *
  * Pool-timeline driven rows (`poolSource`, `poolAtStart`, `poolAfter`,
  * `poolAfterEffective`, `helpInWindow`, `timing`, `recommendedMoveTime`)

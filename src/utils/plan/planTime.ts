@@ -3,7 +3,7 @@ import { PLAN_TIME_ZONE, TIMELINE_HOURS, TIMELINE_START_HOUR } from '../../app/c
 /* ── CST anchored calendar / time-of-day helpers ─────────────────────────
  *  Smyrna's operations run on Central time regardless of where the
  *  dispatcher (or developer) is sitting. Every "today / now / day-of-week"
- *  decision in PlanView passes through here so a developer in another
+ *  decision in OperationsView passes through here so a developer in another
  *  timezone sees the same numbers a Houston dispatcher would. */
 
 const CST_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-CA', {
@@ -57,7 +57,7 @@ export const getDayOfWeekForDate = (dateStr) => {
 
 /** Today's CST calendar date in `YYYY-MM-DD` — anchors the realtime
  *  dashboard, the same-day booking shortcut, and every "is the user
- *  looking at today" check across PlanView. */
+ *  looking at today" check across OperationsView. */
 export const getTodayDate = () => {
     const { year, month, day } = getCstDateParts()
     return `${year}-${month}-${day}`

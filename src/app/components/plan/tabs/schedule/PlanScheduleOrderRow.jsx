@@ -217,9 +217,14 @@ export default function PlanScheduleOrderRow({
     const status = getOrderStatus(order.startTime, { isToday })
     const isCancelled = status?.kind === 'cancelled'
     const isTest = status?.kind === 'test'
+    const isSameDay = status?.kind === 'sameDay'
     const isNonProduction = isCancelled || isTest
-    const service = !isNonProduction ? evaluateOrderService(order, detail, nowMin) : null
-    const hoursLimit = !isNonProduction ? evaluateHoursLimit(order, firstLoadOutMin) : null
+    // Same-day, cancelled, and test orders all suppress the service-quality
+    // and hours-limit chips — the OrderStatusBadge already tells the story
+    // and the per-order metrics aren't meaningful for these.
+    const suppressSecondaryBadges = isNonProduction || isSameDay
+    const service = !suppressSecondaryBadges ? evaluateOrderService(order, detail, nowMin) : null
+    const hoursLimit = !suppressSecondaryBadges ? evaluateHoursLimit(order, firstLoadOutMin) : null
     return (
         <tr
             className="animate-slide-in-row border-t border-border-light"
@@ -253,9 +258,9 @@ export default function PlanScheduleOrderRow({
             )}
             {showColumn('customer') && (
                 <td className="px-3 py-2 max-w-[260px] text-text-primary" title={clean(order.customer)}>
-                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    <div className="flex items-center gap-2 min-w-0 flex-nowrap">
                         <span
-                            className="font-semibold truncate"
+                            className="font-semibold truncate flex-1 min-w-0"
                             style={{
                                 textDecoration: isCancelled ? 'line-through' : 'none'
                             }}
@@ -263,8 +268,8 @@ export default function PlanScheduleOrderRow({
                             {clean(order.customer) || '—'}
                         </span>
                         {!compareMode && status && <OrderStatusBadge status={status} />}
-                        {!compareMode && !isCancelled && !isTest && <ServiceBadge service={service} />}
-                        {!compareMode && !isCancelled && !isTest && <HoursLimitBadge limit={hoursLimit} />}
+                        {!compareMode && !suppressSecondaryBadges && <ServiceBadge service={service} />}
+                        {!compareMode && !suppressSecondaryBadges && <HoursLimitBadge limit={hoursLimit} />}
                     </div>
                 </td>
             )}

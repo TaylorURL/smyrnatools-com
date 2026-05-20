@@ -12,7 +12,7 @@ const SERVICE_PREFIX = 'dispatch-data-service'
  * upserts into `dispatch_data`.
  *
  * The shape returned by each method matches what the legacy bucket-parsing
- * hooks (useScheduleSync, useDetailOrders) returned, so existing PlanView
+ * hooks (useScheduleSync, useDetailOrders) returned, so existing OperationsView
  * consumers don't need to change.
  */
 
@@ -233,7 +233,7 @@ class DispatchDataServiceImpl {
      * page. Returns `[{ plan_date, plant_production }]` with the same
      * `plant_production` shape `plans` rows carry — synthesized purely from
      * `dispatch_data` order-header rows so days the dispatcher never opened
-     * in PlanView (and therefore never saved a `plans` row for) still
+     * in OperationsView (and therefore never saved a `plans` row for) still
      * contribute to yardage / order / customer / product / plant charts.
      */
     async fetchPlanRowsByDateRange(dateStrs) {

@@ -41,10 +41,16 @@ export default function PlanScheduleOrderCard({
     const status = getOrderStatus(order.startTime, { isToday })
     const isCancelled = status?.kind === 'cancelled'
     const isTest = status?.kind === 'test'
+    const isSameDay = status?.kind === 'sameDay'
     // Test + cancelled orders are not real pours — suppress truck count and
     // style the card so the dispatcher knows not to act on it.
     const isNonProduction = isCancelled || isTest
-    const hoursLimit = !isNonProduction ? evaluateHoursLimit(order, firstLoadOutMin) : null
+    // Same-day, cancelled, and test orders all suppress secondary chips
+    // (service quality, hours limit, big pour) — the OrderStatusBadge
+    // already conveys the order's nature and the per-order metrics aren't
+    // meaningful for these.
+    const suppressSecondaryBadges = isNonProduction || isSameDay
+    const hoursLimit = !suppressSecondaryBadges ? evaluateHoursLimit(order, firstLoadOutMin) : null
     const computedTrucks = isNonProduction ? null : getCalculatedTruckCount(order, travelOverrides)
     const trucks = computedTrucks ?? 0
     const addressBad = isLikelyBadAddress(clean(order.address))
@@ -80,10 +86,11 @@ export default function PlanScheduleOrderCard({
                     </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-nowrap min-w-0">
                         <div
-                            className="text-[15px] font-bold leading-tight text-text-primary font-heading"
+                            className="text-[15px] font-bold leading-tight text-text-primary font-heading flex-1 min-w-0 truncate"
                             style={{ textDecoration: isCancelled ? 'line-through' : 'none' }}
+                            title={clean(order.customer)}
                         >
                             {clean(order.customer) || 'Unknown customer'}
                         </div>
@@ -92,7 +99,7 @@ export default function PlanScheduleOrderCard({
                                 <button
                                     type="button"
                                     onClick={() => onPickStatus(status.kind)}
-                                    className="border-none bg-transparent p-0 cursor-pointer"
+                                    className="border-none bg-transparent p-0 cursor-pointer shrink-0"
                                     title={`Filter to ${status.label.toLowerCase()} orders`}
                                 >
                                     <OrderStatusBadge status={status} />
@@ -100,9 +107,9 @@ export default function PlanScheduleOrderCard({
                             ) : (
                                 <OrderStatusBadge status={status} />
                             ))}
-                        <BigPourBadge order={order} travelOverrides={travelOverrides} />
-                        {!isNonProduction && <ServiceBadge service={service} />}
-                        {!isNonProduction && <HoursLimitBadge limit={hoursLimit} />}
+                        {!suppressSecondaryBadges && <BigPourBadge order={order} travelOverrides={travelOverrides} />}
+                        {!suppressSecondaryBadges && <ServiceBadge service={service} />}
+                        {!suppressSecondaryBadges && <HoursLimitBadge limit={hoursLimit} />}
                     </div>
                     <div className="text-[11.5px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-text-secondary">
                         {plantCode &&

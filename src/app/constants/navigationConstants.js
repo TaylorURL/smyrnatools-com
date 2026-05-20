@@ -47,7 +47,7 @@ export const MENU_ITEMS = [
     { id: 'Managers', permission: 'managers.view', text: 'Managers' },
     { id: 'Reports', permission: 'reports.view', text: 'Reports' },
     { id: 'List', permission: 'list.view', text: 'List' },
-    { id: 'Plan', permission: 'plan.view', text: 'Plan' },
+    { id: 'Plan', permission: 'plan.view', text: 'Operations' },
     { id: 'Plants', permission: 'plants.view', text: 'Plants' },
     { id: 'Regions', permission: 'regions.view', text: 'Regions' },
     { id: 'Roles', permission: 'roles.view', text: 'Roles' },

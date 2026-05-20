@@ -4,7 +4,7 @@ import { useCallback, useMemo } from 'react'
  * Derives individual setter callbacks from the parent's single
  * `onChangeFilter(key, value)` so PlanScheduleView can hand off
  * setter-per-key style props (the rest of the view doesn't need to know
- * the state lives upstream in PlanView).
+ * the state lives upstream in OperationsView).
  *
  * Filter / view / sort state is controlled by the parent so it survives
  * the loading-skeleton swap on every date change.

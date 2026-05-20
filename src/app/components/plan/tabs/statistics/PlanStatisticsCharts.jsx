@@ -4,7 +4,6 @@ import {
     Bar,
     BarChart,
     CartesianGrid,
-    Cell,
     Legend,
     Line,
     LineChart,
@@ -23,11 +22,7 @@ import {
     fmtPct,
     parseIsoLocal
 } from '../../../../../utils/PlanStatisticsFormatUtility'
-import {
-    PLAN_STATS_CHART_TOOLTIP_STYLE,
-    PLAN_STATS_FALLBACK_SERIES_COLORS
-} from '../../../../../utils/PlanStatisticsUtility'
-import { plantBadgeColor } from '../../../../../utils/PlanUtility'
+import { PLAN_STATS_CHART_TOOLTIP_STYLE } from '../../../../../utils/PlanStatisticsUtility'
 
 /** Inline KPI hint — leads with intrinsic context (e.g. "yd³/load"); appends
  *  a subtle Δ% pill only when a comparison value is provided. */
@@ -137,61 +132,6 @@ export function TrendChart({ data, accent, comparisonData }) {
                         />
                     )}
                 </LineChart>
-            </ResponsiveContainer>
-        </div>
-    )
-}
-
-/** Top-12 horizontal bar chart of yardage by plant. */
-export function ByPlantChart({ accent, plantNameByCode, rows }) {
-    const trimmed = useMemo(
-        () =>
-            [...rows]
-                .sort((a, b) => b.yardage - a.yardage)
-                .slice(0, 12)
-                .map((r) => ({
-                    ...r,
-                    name: plantNameByCode?.[r.code] ? `${r.code} · ${plantNameByCode[r.code]}` : r.code
-                })),
-        [rows, plantNameByCode]
-    )
-    if (trimmed.length === 0) {
-        return (
-            <div className="text-[12px] py-6 text-center text-text-tertiary">
-                No plant production data in the selected range.
-            </div>
-        )
-    }
-    return (
-        <div style={{ height: Math.max(220, trimmed.length * 28 + 40) }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={trimmed} layout="vertical" margin={{ bottom: 4, left: 8, right: 16, top: 8 }}>
-                    <CartesianGrid stroke="var(--border-light)" strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" stroke="var(--text-tertiary)" tick={{ fontSize: 11 }} tickFormatter={fmtInt} />
-                    <YAxis
-                        type="category"
-                        dataKey="code"
-                        stroke="var(--text-tertiary)"
-                        tick={{ fontSize: 11 }}
-                        width={64}
-                    />
-                    <Tooltip
-                        contentStyle={PLAN_STATS_CHART_TOOLTIP_STYLE}
-                        cursor={{ fill: `${accent}10` }}
-                        formatter={(value, name) => [fmtInt(value), name]}
-                    />
-                    <Bar dataKey="yardage" name="Yardage" radius={[0, 3, 3, 0]}>
-                        {trimmed.map((row, idx) => (
-                            <Cell
-                                key={row.code}
-                                fill={plantBadgeColor(
-                                    row.code,
-                                    PLAN_STATS_FALLBACK_SERIES_COLORS[idx % PLAN_STATS_FALLBACK_SERIES_COLORS.length]
-                                )}
-                            />
-                        ))}
-                    </Bar>
-                </BarChart>
             </ResponsiveContainer>
         </div>
     )

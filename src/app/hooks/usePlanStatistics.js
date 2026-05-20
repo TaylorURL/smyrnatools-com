@@ -134,13 +134,23 @@ function nameLookupVariants(name) {
  *   so the Help & Cross-Loading sub-page can correlate planned help against
  *   actual delivered tickets. Also enables the per-day ticket detail fetch
  *   used by the cross-loading half of that page.
+ * @param {boolean} [args.plantsEnabled=false] - When true, fetch ticket
+ *   detail data so the Plants sub-page can show "loaded" + cross-loaded
+ *   yardage per plant alongside the schedule's "ordered" numbers. Without
+ *   this flag the per-plant load-attribution stays at all zeros.
+ * @param {Object} [args.colocationMap] - Optional plant co-location map
+ *   exposing `resolvePrimary(code)`. When provided, the per-plant load
+ *   attribution collapses sibling-site aliases (e.g. 404 → 401) so a load
+ *   inside the same physical plant isn't miscounted as cross-loaded.
  */
 export function usePlanStatistics({
     planDate,
     liveProduction,
     satisfactionEnabled = true,
     operatorsEnabled = false,
-    helpCrossLoadingEnabled = false
+    helpCrossLoadingEnabled = false,
+    plantsEnabled = false,
+    colocationMap = null
 }) {
     const [period, setPeriod] = useState('week')
     const [comparison, setComparison] = useState('none')
@@ -442,7 +452,7 @@ export function usePlanStatistics({
      *  reliably — older days will return empty maps and silently drop out
      *  of the satisfaction score (as expected). */
     useEffect(() => {
-        if (!satisfactionEnabled && !operatorsEnabled && !helpCrossLoadingEnabled) return undefined
+        if (!satisfactionEnabled && !operatorsEnabled && !helpCrossLoadingEnabled && !plantsEnabled) return undefined
         const allDays = [...currentDays, ...previousDays]
         if (allDays.length === 0) return undefined
         let cancelled = false
@@ -474,7 +484,15 @@ export function usePlanStatistics({
         return () => {
             cancelled = true
         }
-    }, [currentDays, previousDays, detailByDay, satisfactionEnabled, operatorsEnabled, helpCrossLoadingEnabled])
+    }, [
+        currentDays,
+        previousDays,
+        detailByDay,
+        satisfactionEnabled,
+        operatorsEnabled,
+        helpCrossLoadingEnabled,
+        plantsEnabled
+    ])
 
     /** Saved-plan fetch — only fires when the Help & Cross-Loading
      *  sub-page is mounted. Pulls every plan whose date falls in the
@@ -513,15 +531,15 @@ export function usePlanStatistics({
      *  re-walking rows or calling `computeScheduleMetrics`. Always covers
      *  all plants — the plant comparison chart needs the unfiltered set. */
     const flatOrders = useMemo(
-        () => (satisfactionEnabled || helpCrossLoadingEnabled ? flattenLiveOrders(currentRows) : []),
-        [currentRows, satisfactionEnabled, helpCrossLoadingEnabled]
+        () => (satisfactionEnabled || helpCrossLoadingEnabled || plantsEnabled ? flattenLiveOrders(currentRows) : []),
+        [currentRows, satisfactionEnabled, helpCrossLoadingEnabled, plantsEnabled]
     )
 
     /** Merged detail map across every loaded date — built once and reused
      *  by every aggregate. `computeCustomerSatisfaction` looks orders up by
      *  orderId so the keys are flat across dates. */
     const mergedDetail = useMemo(() => {
-        if (!satisfactionEnabled) return {}
+        if (!satisfactionEnabled && !plantsEnabled) return {}
         const out = {}
         Object.values(detailByDay).forEach((map) => {
             if (!map) return
@@ -530,7 +548,7 @@ export function usePlanStatistics({
             })
         })
         return out
-    }, [detailByDay, satisfactionEnabled])
+    }, [detailByDay, satisfactionEnabled, plantsEnabled])
 
     /** Per-plant load attribution — splits each plant's slice into:
      *
@@ -549,9 +567,14 @@ export function usePlanStatistics({
      *    crossOutYards = ticket yardage where this plant LOADED a truck for
      *                  another plant's order. Help GIVEN.
      *
-     *  Returns a map keyed by plant code so the scorecard table can join in
-     *  O(1). Empty map when ticket data isn't available for the window. */
+     *  Plant codes are normalised through `colocationMap.resolvePrimary` so
+     *  loads between sibling-site aliases (e.g. 404 → 401) collapse to the
+     *  same physical plant and aren't miscounted as cross-loaded. Source of
+     *  truth for the home plant is the `flatOrders` wrapper — the raw order
+     *  objects don't carry their plant code as a field. */
     const perPlantLoadAttribution = useMemo(() => {
+        const resolvePrimary =
+            typeof colocationMap?.resolvePrimary === 'function' ? colocationMap.resolvePrimary : (code) => code
         const out = {}
         const getEntry = (code) => {
             if (!out[code]) {
@@ -566,45 +589,30 @@ export function usePlanStatistics({
             }
             return out[code]
         }
-        // Ordered side — runs even when detail data isn't loaded yet so
-        // the table can show ordered yardage as soon as the schedule
-        // arrives, then back-fill loaded/cross numbers when tickets land.
-        currentDays.forEach((day) => {
-            const dayOrders = day.allLiveOrders || []
-            dayOrders.forEach((order) => {
-                const homePlant = order?.plantCode
-                if (!homePlant) return
-                getEntry(homePlant).ordered += parseFloat(order?.yardage) || 0
+        const hasDetail = Object.keys(mergedDetail).length > 0
+        flatOrders.forEach(({ order, plantCode }) => {
+            const homePlant = resolvePrimary(plantCode)
+            if (!homePlant) return
+            getEntry(homePlant).ordered += parseFloat(order?.yardage) || 0
+            if (!hasDetail || !order?.orderId) return
+            const detail = mergedDetail[order.orderId]
+            if (!detail || typeof detail.byPlant !== 'object') return
+            Object.entries(detail.byPlant).forEach(([rawLoaderPlant, slice]) => {
+                const loadedYards = parseFloat(slice?.loadedYardage) || 0
+                if (loadedYards <= 0) return
+                const loaderPlant = resolvePrimary(rawLoaderPlant)
+                const home = getEntry(homePlant)
+                home.loaded += loadedYards
+                if (loaderPlant === homePlant) {
+                    home.selfLoaded += loadedYards
+                } else {
+                    home.crossInYards += loadedYards
+                    getEntry(loaderPlant).crossOutYards += loadedYards
+                }
             })
         })
-        // Loaded + cross-loaded side — only when we have ticket data.
-        if (Object.keys(mergedDetail).length > 0) {
-            currentDays.forEach((day) => {
-                const dayOrders = day.allLiveOrders || []
-                dayOrders.forEach((order) => {
-                    const homePlant = order?.plantCode
-                    if (!homePlant || !order?.orderId) return
-                    const detail = mergedDetail[order.orderId]
-                    if (!detail || typeof detail.byPlant !== 'object') return
-                    Object.entries(detail.byPlant).forEach(([loaderPlant, slice]) => {
-                        const loadedYards = parseFloat(slice?.loadedYardage) || 0
-                        if (loadedYards <= 0) return
-                        // Attribute the loaded yards to the order's home plant.
-                        const home = getEntry(homePlant)
-                        home.loaded += loadedYards
-                        if (loaderPlant === homePlant) {
-                            home.selfLoaded += loadedYards
-                        } else {
-                            home.crossInYards += loadedYards
-                            // The loader plant gave help to another plant.
-                            getEntry(loaderPlant).crossOutYards += loadedYards
-                        }
-                    })
-                })
-            })
-        }
         return out
-    }, [currentDays, mergedDetail])
+    }, [flatOrders, mergedDetail, colocationMap])
 
     /** Per-day satisfaction. Walks each day's orders ONCE, hits the shared
      *  detail map. Null entries mean we have no ticket data for that day. */

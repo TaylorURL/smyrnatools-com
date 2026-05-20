@@ -1,14 +1,14 @@
 /* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
-import { fmtFloat, fmtInt, fmtRange } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtFloat, fmtInt, fmtRange, parseIsoLocal } from '../../../../../utils/PlanStatisticsFormatUtility'
 import {
     BIG_POUR_SPACING_THRESHOLD_MIN,
     BIG_POUR_YARDAGE_THRESHOLD,
     plantBadgeColor
 } from '../../../../../utils/PlanUtility'
-import { Panel, Stat, StatGroup } from '../../../ui/Panel'
-import { ByPlantChart, DayOfWeekChart, TrendChart } from './PlanStatisticsCharts'
+import { Panel } from '../../../ui/Panel'
+import { DayOfWeekChart, TrendChart } from './PlanStatisticsCharts'
 import { BigPoursTable, ComparisonRow, PlantScorecardTable, RankedList } from './PlanStatisticsTables'
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -140,51 +140,12 @@ export function ComparisonPanel({ currentSummary, previousSummary }) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
- * Plant yardage hero — by-plant chart with consistent header text. Shared
- * between Yardage + Plants. The page passes its own loading/empty state.
- * ────────────────────────────────────────────────────────────────────────── */
-
-function PlantYardageHero({ accentColor, knownPlantRows, knownPlantSummary, loading, plantNameByCode, selectedPlant }) {
-    const heroTitle = selectedPlant
-        ? `Yardage · ${plantNameByCode?.[selectedPlant] ? `${selectedPlant} · ${plantNameByCode[selectedPlant]}` : selectedPlant}`
-        : 'Yardage by plant'
-    return (
-        <Panel
-            title={heroTitle}
-            innerClassName="p-3"
-            right={
-                loading ? (
-                    <RefreshingHint when />
-                ) : (
-                    <span className="text-[11px] text-text-tertiary">
-                        {knownPlantSummary.activeCount} plant
-                        {knownPlantSummary.activeCount === 1 ? '' : 's'} · {fmtInt(knownPlantSummary.totalYardage)} yd³
-                        total
-                    </span>
-                )
-            }
-        >
-            {knownPlantRows.length === 0 ? (
-                <EmptySection
-                    icon="fa-chart-column"
-                    loading={loading}
-                    message={loading ? 'Loading plant production…' : 'No plant production in this window yet.'}
-                />
-            ) : (
-                <ByPlantChart accent={accentColor} plantNameByCode={plantNameByCode} rows={knownPlantRows} />
-            )}
-        </Panel>
-    )
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
  * NEW Overview — distilled best-of from every sub-page. Layout:
  *
  *   1. Daily yardage trend (the single most-asked-for chart on the page)
  *   2. Two-up: Top plants (5) | Customer satisfaction summary
- *   3. Two-up: Top customers (5) | Top products (5)
- *   4. Two-up: Plants snapshot (count + leader/laggard) | Big pours preview
- *   5. Period comparison (only when comparison is on)
+ *   3. Plants snapshot (count + leader/laggard)
+ *   4. Period comparison (only when comparison is on)
  *
  * Every panel has a "View details →" link that switches the active sidebar
  * section so the page works as a launchpad into the deeper views.
@@ -202,43 +163,6 @@ function ViewDetails({ onSelect, section, label = 'View details' }) {
             {label}
             <i className="fas fa-arrow-right text-[9px]" />
         </button>
-    )
-}
-
-/** Shared row layout for Overview's mini-lists (top plants, top customers,
- *  top products). Renders rank + label + bar gauge + value, hairline-
- *  separated rows, the same way the worst-orders list reads. */
-function MiniRankedList({ accent, items, labelKey, max, primaryFmt, secondaryFmt, valueLabel }) {
-    if (!items.length) return null
-    return (
-        <div className="flex flex-col">
-            {items.map((item, idx) => {
-                const value = item.yardage || 0
-                const pct = max > 0 ? (value / max) * 100 : 0
-                return (
-                    <div
-                        key={item[labelKey] || idx}
-                        className="grid grid-cols-[20px_1fr_80px_auto] gap-2 items-center px-3 py-2 text-[12px]"
-                        style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
-                    >
-                        <span className="font-mono tabular-nums text-right text-text-tertiary">{idx + 1}</span>
-                        <span className="truncate text-text-primary">{item[labelKey]}</span>
-                        <div className="h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
-                            <div className="h-full" style={{ background: accent, width: `${Math.max(2, pct)}%` }} />
-                        </div>
-                        <div className="text-right shrink-0 flex items-baseline gap-1.5">
-                            <span className="font-mono tabular-nums font-semibold text-text-primary">
-                                {primaryFmt ? primaryFmt(item) : fmtInt(value)}
-                            </span>
-                            {valueLabel && <span className="text-[10px] text-text-tertiary">{valueLabel}</span>}
-                            {secondaryFmt && (
-                                <span className="text-[10px] text-text-tertiary">{secondaryFmt(item)}</span>
-                            )}
-                        </div>
-                    </div>
-                )
-            })}
-        </div>
     )
 }
 
@@ -300,153 +224,87 @@ function SatisfactionSummary({ aggregate, loading, onSelect }) {
     )
 }
 
-/** Plants snapshot on the Overview — just the count + leader / laggard +
- *  a "View details" link to the full Plants page. */
-function PlantsSnapshot({ accent, knownPlantRows, knownPlantSummary, loading, onSelect, plantNameByCode }) {
-    const sorted = useMemo(() => [...knownPlantRows].sort((a, b) => b.yardage - a.yardage), [knownPlantRows])
-    const top = sorted[0]
-    const bottom = sorted.length > 1 ? sorted[sorted.length - 1] : null
+/** Launchpad tile linking to a deep-dive sub-page. Each tile carries a single
+ *  teaser metric so the Overview answers "what should I look at next?" rather
+ *  than trying to replay any sub-page's content. */
+function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) {
     return (
-        <Panel
-            title="Plants snapshot"
-            innerClassName="p-0"
-            right={loading ? <RefreshingHint when /> : <ViewDetails onSelect={onSelect} section="plants" />}
+        <button
+            type="button"
+            onClick={() => onSelect?.(section)}
+            className="flex flex-col gap-1 items-start rounded-lg border bg-bg-secondary border-border-light cursor-pointer p-3 text-left hover:border-current transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
         >
-            {sorted.length === 0 ? (
-                <EmptySection
-                    loading={loading}
-                    message={loading ? 'Loading plants…' : 'No plant production in this window.'}
-                />
-            ) : (
-                <StatGroup columns={3}>
-                    <Stat
-                        label="Active plants"
-                        value={fmtInt(knownPlantSummary.activeCount)}
-                        hint={
-                            knownPlantSummary.topShare
-                                ? `top: ${knownPlantSummary.topShare.code} (${(knownPlantSummary.topShare.share * 100).toFixed(0)}%)`
-                                : '—'
-                        }
-                    />
-                    {top && (
-                        <Stat
-                            label="Leader"
-                            value={top.code}
-                            hint={`${fmtInt(top.yardage)} yd³${plantNameByCode?.[top.code] ? ` · ${plantNameByCode[top.code]}` : ''}`}
-                            valueColor={plantBadgeColor(top.code, accent)}
-                        />
-                    )}
-                    {bottom ? (
-                        <Stat
-                            label="Lowest"
-                            value={bottom.code}
-                            hint={`${fmtInt(bottom.yardage)} yd³${plantNameByCode?.[bottom.code] ? ` · ${plantNameByCode[bottom.code]}` : ''}`}
-                            valueColor={plantBadgeColor(bottom.code, accent)}
-                        />
-                    ) : (
-                        <Stat label="Lowest" value="—" hint="only one active plant" />
-                    )}
-                </StatGroup>
-            )}
-        </Panel>
+            <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider">
+                <i className={`fas ${icon} text-[11px]`} style={{ color: accent }} />
+                {label}
+            </span>
+            <span className="font-mono tabular-nums font-bold leading-none text-text-primary" style={{ fontSize: 22 }}>
+                {value}
+            </span>
+            {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
+            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold" style={{ color: accent }}>
+                Open
+                <i className="fas fa-arrow-right text-[9px]" />
+            </span>
+        </button>
     )
 }
 
-/** Big pours preview — top 3 by yardage with date / plant / yardage. */
-function BigPoursPreview({ accent, currentSummary, loading, onSelect, plantNameByCode }) {
-    const top = useMemo(
-        () => [...currentSummary.bigPours].sort((a, b) => b.yardage - a.yardage).slice(0, 3),
-        [currentSummary.bigPours]
-    )
+/** One row inside the Period-highlights / Watchlist cards. Big label, big
+ *  value, optional hint underneath. Mirrors the at-a-glance density of the
+ *  dashboard "Stat" components without forcing a column grid. */
+function HighlightRow({ icon, label, hint, value, valueColor }) {
     return (
-        <Panel
-            title="Big pours to coordinate"
-            innerClassName="p-0"
-            right={
-                loading ? (
-                    <RefreshingHint when />
-                ) : (
-                    <ViewDetails
-                        onSelect={onSelect}
-                        section="bigPours"
-                        label={`${currentSummary.bigPours.length} total`}
-                    />
-                )
-            }
-        >
-            {top.length === 0 ? (
-                <EmptySection
-                    icon="fa-circle-check"
-                    loading={loading}
-                    message={loading ? 'Looking for big pours…' : 'No big pours scheduled in this window.'}
-                />
-            ) : (
-                <div className="flex flex-col">
-                    {top.map((pour, idx) => (
-                        <div
-                            key={`${pour.planDate}-${pour.plantCode}-${pour.orderNum || idx}`}
-                            className="flex items-center gap-3 px-3 py-2 text-[12px]"
-                            style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border-light)' }}
-                        >
-                            <span
-                                className="inline-block w-2 h-2 rounded-full shrink-0"
-                                style={{ background: plantBadgeColor(pour.plantCode, accent) }}
-                            />
-                            <div className="flex-1 min-w-0">
-                                <div className="font-semibold truncate text-text-primary">{pour.customer}</div>
-                                <div className="text-[11px] text-text-secondary">
-                                    <span className="font-mono tabular-nums">{pour.plantCode}</span>
-                                    {plantNameByCode?.[pour.plantCode] && <> · {plantNameByCode[pour.plantCode]}</>}
-                                    {' · '}
-                                    {pour.planDate}
-                                </div>
-                            </div>
-                            <span className="font-mono tabular-nums font-semibold text-text-primary">
-                                {fmtInt(pour.yardage)} yd³
-                            </span>
-                        </div>
-                    ))}
+        <div className="flex items-start gap-3 px-3 py-2.5 border-t border-border-light first:border-t-0">
+            <i
+                className={`fas ${icon} text-[11px] mt-1 w-4 text-center`}
+                style={{ color: valueColor || 'var(--text-tertiary)' }}
+            />
+            <div className="flex-1 min-w-0">
+                <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary">{label}</div>
+                <div
+                    className="font-semibold truncate text-text-primary"
+                    style={{ color: valueColor || 'var(--text-primary)', fontSize: 13.5 }}
+                >
+                    {value}
                 </div>
-            )}
-        </Panel>
+                {hint && <div className="text-[11px] text-text-tertiary truncate">{hint}</div>}
+            </div>
+        </div>
     )
 }
 
-/** Overview page — a launchpad summarizing every other section. */
+/** Friendly weekday + month/day formatter — e.g. "Wed, May 14". */
+const formatDayLabel = (iso) => {
+    if (!iso || typeof iso !== 'string') return '—'
+    const parsed = parseIsoLocal(iso)
+    if (!parsed) return iso
+    return parsed.toLocaleDateString('en-US', { day: 'numeric', month: 'short', weekday: 'short' })
+}
+
+/** Overview page — synthesizes every other section without duplicating any
+ *  one. Reads as a launchpad: the period story up top, what stood out, what
+ *  needs attention, and quick jumps into the deep-dive pages. */
 export function PlanStatisticsOverviewPage({
     accentColor,
-    comparison,
     currentDays,
     currentSummary,
-    knownPlantRows,
     knownPlantSummary,
     loading,
     onSelectSection,
     plantNameByCode,
-    previousSummary,
     range,
     satisfactionAggregate,
-    satisfactionLoading,
-    topCustomers,
-    topProducts,
-    trendComparison,
-    trendData
+    satisfactionLoading
 }) {
     const accent = accentColor || '#1e3a5f'
-    const topPlants = useMemo(
-        () => [...knownPlantRows].sort((a, b) => b.yardage - a.yardage).slice(0, 5),
-        [knownPlantRows]
-    )
-    const maxPlantYardage = topPlants[0]?.yardage || 0
-    const maxCustomerYardage = topCustomers[0]?.yardage || 0
-    const maxProductYardage = topProducts[0]?.yardage || 0
     const isEmpty = isEmptyAfterLoad(loading, currentDays)
 
     if (loading && currentDays.length === 0) {
-        // Cold-start skeleton matches the Overview layout so the swap is invisible.
         return (
             <div className="flex flex-col gap-4 animate-pulse">
-                {[260, 220, 180, 180].map((h, i) => (
+                {[160, 220, 200, 160].map((h, i) => (
                     <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
                 ))}
             </div>
@@ -464,59 +322,117 @@ export function PlanStatisticsOverviewPage({
         )
     }
 
+    const topPlantShare = currentSummary.topPlantShare
+    const topCustomerShare = currentSummary.topCustomerShare
+    const bestDay = currentSummary.bestDay
+    const worstDay = currentSummary.worstDay
+    const peakHour = currentSummary.peakHour
+    const activeCount = knownPlantSummary?.activeCount || 0
+    const totalYardage = currentSummary.totalYardage || 0
+    const daysWithProduction = currentSummary.daysWithProduction || 0
+    const yardagePerDay = daysWithProduction > 0 ? Math.round(totalYardage / daysWithProduction) : 0
+    const yardagePerLoad = currentSummary.yardagePerLoad
+    const badServiceCount = satisfactionAggregate?.badService || 0
+    const goodPct = satisfactionAggregate ? Math.round(satisfactionAggregate.score * 100) : null
+    const peakHourLabel =
+        peakHour && peakHour.loads > 0
+            ? `${String(peakHour.hour).padStart(2, '0')}:00 · ${fmtInt(peakHour.loads)} loads`
+            : '—'
+    const shiftSpanLabel =
+        currentSummary.avgShiftSpanHours != null ? `${fmtFloat(currentSummary.avgShiftSpanHours)} h avg` : '—'
+
     return (
         <div className="flex flex-col gap-4">
-            <Panel
-                title="Daily yardage"
-                innerClassName="p-3"
-                right={
-                    loading ? (
-                        <RefreshingHint when />
-                    ) : trendComparison ? (
-                        <span className="text-[11px] text-text-tertiary">
-                            Dotted = {comparison === 'lastYear' ? 'last year' : 'previous period'}
+            {/* 1. Period story — single high-density narrative card. */}
+            <Panel title="Period summary" innerClassName="p-4">
+                <div className="flex flex-col gap-3">
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                        <span
+                            className="font-mono tabular-nums font-bold leading-none text-text-primary font-heading"
+                            style={{ fontSize: 36 }}
+                        >
+                            {fmtInt(totalYardage)}
                         </span>
-                    ) : (
-                        <ViewDetails onSelect={onSelectSection} section="yardage" />
-                    )
-                }
-            >
-                {trendData.length === 0 ? (
-                    <EmptySection
-                        loading={loading}
-                        message={loading ? 'Loading daily trend…' : 'No daily yardage data yet.'}
-                    />
-                ) : (
-                    <TrendChart accent={accent} data={trendData} comparisonData={trendComparison} />
-                )}
+                        <span className="text-[11.5px] uppercase tracking-wider text-text-tertiary">
+                            yd³ poured · {daysWithProduction} day{daysWithProduction === 1 ? '' : 's'} · {activeCount}{' '}
+                            active plant{activeCount === 1 ? '' : 's'}
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[12px]">
+                        <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
+                            <span className="text-[10px] uppercase tracking-wider text-text-tertiary">Avg / day</span>
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                {fmtInt(yardagePerDay)} yd³
+                            </span>
+                        </div>
+                        <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
+                            <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                                Yards / load
+                            </span>
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                {yardagePerLoad != null ? fmtFloat(yardagePerLoad) : '—'}
+                            </span>
+                        </div>
+                        <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
+                            <span className="text-[10px] uppercase tracking-wider text-text-tertiary">Peak hour</span>
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                {peakHourLabel}
+                            </span>
+                        </div>
+                        <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
+                            <span className="text-[10px] uppercase tracking-wider text-text-tertiary">Shift span</span>
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                {shiftSpanLabel}
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </Panel>
 
+            {/* 2. Two-up: what stood out · how customers felt. */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Panel
-                    title="Top plants"
-                    innerClassName="p-0"
-                    right={
-                        loading ? <RefreshingHint when /> : <ViewDetails onSelect={onSelectSection} section="plants" />
-                    }
-                >
-                    {topPlants.length === 0 ? (
-                        <EmptySection
-                            loading={loading}
-                            message={loading ? 'Loading plant production…' : 'No plant production in this window.'}
-                        />
-                    ) : (
-                        <MiniRankedList
-                            accent={accent}
-                            items={topPlants.map((p) => ({
-                                ...p,
-                                label: plantNameByCode?.[p.code] ? `${p.code} · ${plantNameByCode[p.code]}` : p.code
-                            }))}
-                            labelKey="label"
-                            max={maxPlantYardage}
-                            primaryFmt={(item) => fmtInt(item.yardage)}
-                            valueLabel="yd³"
-                        />
-                    )}
+                <Panel title="Period highlights" innerClassName="p-0">
+                    <HighlightRow
+                        icon="fa-arrow-trend-up"
+                        label="Best day"
+                        value={bestDay ? formatDayLabel(bestDay.planDate) : '—'}
+                        hint={
+                            bestDay ? `${fmtInt(bestDay.totalYardage)} yd³ · ${fmtInt(bestDay.totalLoads)} loads` : null
+                        }
+                    />
+                    <HighlightRow
+                        icon="fa-arrow-trend-down"
+                        label="Slowest day"
+                        value={worstDay ? formatDayLabel(worstDay.planDate) : '—'}
+                        hint={worstDay ? `${fmtInt(worstDay.totalYardage)} yd³` : null}
+                    />
+                    <HighlightRow
+                        icon="fa-industry"
+                        label="Top plant"
+                        value={
+                            topPlantShare
+                                ? plantNameByCode?.[topPlantShare.code]
+                                    ? `${topPlantShare.code} · ${plantNameByCode[topPlantShare.code]}`
+                                    : topPlantShare.code
+                                : '—'
+                        }
+                        hint={
+                            topPlantShare
+                                ? `${fmtInt(topPlantShare.yardage)} yd³ · ${(topPlantShare.share * 100).toFixed(0)}% share`
+                                : null
+                        }
+                        valueColor={topPlantShare ? plantBadgeColor(topPlantShare.code, accent) : null}
+                    />
+                    <HighlightRow
+                        icon="fa-handshake"
+                        label="Top customer"
+                        value={topCustomerShare?.customer || '—'}
+                        hint={
+                            topCustomerShare
+                                ? `${fmtInt(topCustomerShare.yardage)} yd³ · ${(topCustomerShare.share * 100).toFixed(0)}% share`
+                                : null
+                        }
+                    />
                 </Panel>
                 <SatisfactionSummary
                     aggregate={satisfactionAggregate}
@@ -525,176 +441,65 @@ export function PlanStatisticsOverviewPage({
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Panel
-                    title="Top customers"
-                    innerClassName="p-0"
-                    right={
-                        loading ? (
-                            <RefreshingHint when />
-                        ) : (
-                            <ViewDetails onSelect={onSelectSection} section="customers" />
-                        )
-                    }
-                >
-                    {topCustomers.length === 0 ? (
-                        <EmptySection
-                            loading={loading}
-                            message={loading ? 'Loading customer mix…' : 'No customer data in this window.'}
-                        />
-                    ) : (
-                        <MiniRankedList
-                            accent={accent}
-                            items={topCustomers.slice(0, 5)}
-                            labelKey="customer"
-                            max={maxCustomerYardage}
-                            primaryFmt={(item) => fmtInt(item.yardage)}
-                            valueLabel="yd³"
-                        />
-                    )}
-                </Panel>
-                <Panel
-                    title="Top products"
-                    innerClassName="p-0"
-                    right={
-                        loading ? (
-                            <RefreshingHint when />
-                        ) : (
-                            <ViewDetails onSelect={onSelectSection} section="customers" label="View mix" />
-                        )
-                    }
-                >
-                    {topProducts.length === 0 ? (
-                        <EmptySection
-                            loading={loading}
-                            message={loading ? 'Loading product mix…' : 'No product data in this window.'}
-                        />
-                    ) : (
-                        <MiniRankedList
-                            accent={accent}
-                            items={topProducts.slice(0, 5)}
-                            labelKey="product"
-                            max={maxProductYardage}
-                            primaryFmt={(item) => `${fmtInt(item.loads)} loads`}
-                        />
-                    )}
-                </Panel>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <PlantsSnapshot
-                    accent={accent}
-                    knownPlantRows={knownPlantRows}
-                    knownPlantSummary={knownPlantSummary}
-                    loading={loading}
-                    onSelect={onSelectSection}
-                    plantNameByCode={plantNameByCode}
-                />
-                <BigPoursPreview
-                    accent={accent}
-                    currentSummary={currentSummary}
-                    loading={loading}
-                    onSelect={onSelectSection}
-                    plantNameByCode={plantNameByCode}
-                />
-            </div>
-
-            {previousSummary && <ComparisonPanel currentSummary={currentSummary} previousSummary={previousSummary} />}
+            {/* 3. Quick-nav launchpad — every other section in one row. */}
+            <Panel title="Drill into details" innerClassName="p-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <LaunchpadTile
+                        accent={accent}
+                        icon="fa-industry"
+                        label="Production"
+                        section="production"
+                        value={`${activeCount} plant${activeCount === 1 ? '' : 's'}`}
+                        hint="Scorecards · trend · weekday"
+                        onSelect={onSelectSection}
+                    />
+                    <LaunchpadTile
+                        accent={accent}
+                        icon="fa-face-smile"
+                        label="Customer satisfaction"
+                        section="satisfaction"
+                        value={goodPct != null ? `${goodPct}%` : '—'}
+                        hint={
+                            satisfactionAggregate
+                                ? `${fmtInt(badServiceCount)} bad${badServiceCount === 1 ? '' : 's'} flagged`
+                                : 'No scored tickets yet'
+                        }
+                        onSelect={onSelectSection}
+                    />
+                    <LaunchpadTile
+                        accent={accent}
+                        icon="fa-id-badge"
+                        label="Operators"
+                        section="operators"
+                        value={fmtInt(currentSummary.totalLoads || 0)}
+                        hint="Loads per driver"
+                        onSelect={onSelectSection}
+                    />
+                    <LaunchpadTile
+                        accent={accent}
+                        icon="fa-arrows-rotate"
+                        label="Help & cross-loading"
+                        section="helpCrossLoading"
+                        value={`${activeCount}`}
+                        hint="Plants in flow"
+                        onSelect={onSelectSection}
+                    />
+                </div>
+            </Panel>
         </div>
     )
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
- * Yardage sub-page — daily trend, by-plant chart, day-of-week. Now respects
- * loading + empty states so a refresh doesn't blank the page.
+ * Production sub-page — merged Plants + Yardage view. Leads with the
+ * per-plant scorecard table (the operator-facing "who did what" answer),
+ * then a daily yardage trend and weekday-shape chart for time-series
+ * context, then the period-comparison block when comparison is on.
  * ────────────────────────────────────────────────────────────────────────── */
 
-export function PlanStatisticsYardagePage({
+export function PlanStatisticsProductionPage({
     accentColor,
     comparison,
-    currentDays,
-    knownPlantRows,
-    knownPlantSummary,
-    loading,
-    plantNameByCode,
-    range,
-    selectedPlant,
-    trendComparison,
-    trendData
-}) {
-    const isEmpty = isEmptyAfterLoad(loading, currentDays)
-    if (loading && currentDays.length === 0) {
-        return (
-            <div className="flex flex-col gap-4 animate-pulse">
-                {[260, 240, 200].map((h, i) => (
-                    <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
-                ))}
-            </div>
-        )
-    }
-    if (isEmpty) {
-        return (
-            <Panel title="Yardage" innerClassName="p-0">
-                <EmptySection
-                    icon="fa-chart-line"
-                    message={`No saved schedules in ${fmtRange(range.start, range.end)}.`}
-                />
-            </Panel>
-        )
-    }
-    return (
-        <div className="flex flex-col gap-4">
-            <PlantYardageHero
-                accentColor={accentColor}
-                knownPlantRows={knownPlantRows}
-                knownPlantSummary={knownPlantSummary}
-                loading={loading}
-                plantNameByCode={plantNameByCode}
-                selectedPlant={selectedPlant}
-            />
-            <Panel
-                title="Daily yardage trend"
-                innerClassName="p-3"
-                right={
-                    loading ? (
-                        <RefreshingHint when />
-                    ) : trendComparison ? (
-                        <span className="text-[11px] text-text-tertiary">
-                            Dotted = {comparison === 'lastYear' ? 'last year' : 'previous period'}
-                        </span>
-                    ) : null
-                }
-            >
-                {trendData.length === 0 ? (
-                    <EmptySection
-                        loading={loading}
-                        message={loading ? 'Loading daily yardage…' : 'No daily yardage data yet.'}
-                    />
-                ) : (
-                    <TrendChart accent={accentColor} data={trendData} comparisonData={trendComparison} />
-                )}
-            </Panel>
-            <Panel title="Average by weekday" innerClassName="p-3" right={loading ? <RefreshingHint when /> : null}>
-                {currentDays.length === 0 ? (
-                    <EmptySection
-                        loading={loading}
-                        message={loading ? 'Loading weekday averages…' : 'No weekday data yet.'}
-                    />
-                ) : (
-                    <DayOfWeekChart accent={accentColor} plans={currentDays} />
-                )}
-            </Panel>
-        </div>
-    )
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
- * Plants sub-page — scorecards + by-plant chart + comparison. Now passes
- * loading flags through.
- * ────────────────────────────────────────────────────────────────────────── */
-
-export function PlanStatisticsPlantsPage({
-    accentColor,
     currentDays,
     currentSummary,
     isSingleDay,
@@ -706,13 +511,14 @@ export function PlanStatisticsPlantsPage({
     plantNameByCode,
     previousSummary,
     range,
-    selectedPlant
+    trendComparison,
+    trendData
 }) {
     const isEmpty = isEmptyAfterLoad(loading, currentDays)
     if (loading && currentDays.length === 0) {
         return (
             <div className="flex flex-col gap-4 animate-pulse">
-                {[260, 280, 200].map((h, i) => (
+                {[280, 260, 200].map((h, i) => (
                     <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
                 ))}
             </div>
@@ -720,7 +526,7 @@ export function PlanStatisticsPlantsPage({
     }
     if (isEmpty) {
         return (
-            <Panel title="Plants" innerClassName="p-0">
+            <Panel title="Production" innerClassName="p-0">
                 <EmptySection
                     icon="fa-industry"
                     message={`No saved schedules in ${fmtRange(range.start, range.end)}.`}
@@ -730,14 +536,6 @@ export function PlanStatisticsPlantsPage({
     }
     return (
         <div className="flex flex-col gap-4">
-            <PlantYardageHero
-                accentColor={accentColor}
-                knownPlantRows={knownPlantRows}
-                knownPlantSummary={knownPlantSummary}
-                loading={loading}
-                plantNameByCode={plantNameByCode}
-                selectedPlant={selectedPlant}
-            />
             <Panel
                 title="Plant scorecards"
                 innerClassName="p-0"
@@ -770,6 +568,38 @@ export function PlanStatisticsPlantsPage({
                         singleDayShiftSpan={isSingleDay ? currentDays[0]?.shiftSpanHours : null}
                         totalYardage={knownPlantSummary.totalYardage}
                     />
+                )}
+            </Panel>
+            <Panel
+                title="Daily yardage trend"
+                innerClassName="p-3"
+                right={
+                    loading ? (
+                        <RefreshingHint when />
+                    ) : trendComparison ? (
+                        <span className="text-[11px] text-text-tertiary">
+                            Dotted = {comparison === 'lastYear' ? 'last year' : 'previous period'}
+                        </span>
+                    ) : null
+                }
+            >
+                {trendData.length === 0 ? (
+                    <EmptySection
+                        loading={loading}
+                        message={loading ? 'Loading daily yardage…' : 'No daily yardage data yet.'}
+                    />
+                ) : (
+                    <TrendChart accent={accentColor} data={trendData} comparisonData={trendComparison} />
+                )}
+            </Panel>
+            <Panel title="Average by weekday" innerClassName="p-3" right={loading ? <RefreshingHint when /> : null}>
+                {currentDays.length === 0 ? (
+                    <EmptySection
+                        loading={loading}
+                        message={loading ? 'Loading weekday averages…' : 'No weekday data yet.'}
+                    />
+                ) : (
+                    <DayOfWeekChart accent={accentColor} plans={currentDays} />
                 )}
             </Panel>
             {previousSummary && <ComparisonPanel currentSummary={currentSummary} previousSummary={previousSummary} />}

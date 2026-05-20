@@ -6,7 +6,7 @@ import { useCallback, useEffect } from 'react'
  * the table fills the visible area. Desktop-only (mobile is already
  * cards-on-a-narrow-screen, so there's nothing to expand into).
  *
- * The `isMaximized` flag is owned by `PlanView` (parent) so it survives
+ * The `isMaximized` flag is owned by `OperationsView` (parent) so it survives
  * the loading-skeleton swap that fires on every date change — when the
  * flag lived inside PlanScheduleView, changing dates unmounted the view
  * and reset it.

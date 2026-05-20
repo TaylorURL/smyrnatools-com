@@ -49,7 +49,7 @@ const MixersView = lazyWithRetry(() => import('../views/assets/mixers/MixersView
 const MyAccountView = lazyWithRetry(() => import('../views/common/myaccount/MyAccountView'))
 const OperatorsView = lazyWithRetry(() => import('../views/people/operators/OperatorsView'))
 const PickupTrucksView = lazyWithRetry(() => import('../views/assets/pickup-trucks/PickupTrucksView'))
-const PlanView = lazyWithRetry(() => import('../views/tools/plan/PlanView'))
+const OperationsView = lazyWithRetry(() => import('../views/tools/plan/OperationsView'))
 const PlantsView = lazyWithRetry(() => import('../views/admin/plants/PlantsView'))
 const RegionsView = lazyWithRetry(() => import('../views/admin/regions/RegionsView'))
 const ReportsView = lazyWithRetry(() => import('../views/reporting/reports/ReportsView'))
@@ -310,7 +310,7 @@ function AppContent() {
                     />
                 )
             case 'Plan':
-                return <PlanView title="My Plan" />
+                return <OperationsView title="My Operations" />
             default:
                 return (
                     <div className="relative mx-auto my-8 flex h-[70vh] w-full max-w-[600px] flex-col items-center justify-center overflow-x-hidden rounded-xl bg-bg-primary p-8 text-center shadow-md">

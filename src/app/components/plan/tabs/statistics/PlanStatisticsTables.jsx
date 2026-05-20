@@ -151,156 +151,136 @@ export function PlantScorecardTable({
         return <div className="text-[12px] py-4 text-center text-text-tertiary">No plant production in this range.</div>
     }
     const sorted = [...rows].sort((a, b) => b.yardage - a.yardage)
-    /** Show the cross-loaded column only when at least one plant has ticket
-     *  data — otherwise the column is all em-dashes and just clutters the
-     *  table for windows where the bucket hasn't synced detail orders. */
-    const hasAttributionData =
-        loadAttributionByPlant &&
-        Object.values(loadAttributionByPlant).some((entry) => entry && (entry.loaded > 0 || entry.crossOutYards > 0))
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-[12px] border-collapse">
-                <thead>
-                    <tr className="text-text-tertiary">
-                        <th className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2">
-                            Plant
-                        </th>
-                        <th
-                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                            title="Total ordered yardage attributed to this plant — schedule's own demand, regardless of who loaded the trucks."
-                        >
-                            Ordered
-                        </th>
-                        {hasAttributionData && (
+        <div className="flex flex-col">
+            <div className="px-3 py-2.5 text-[11.5px] leading-relaxed border-b border-border-light text-text-secondary">
+                <span className="font-semibold text-text-primary">How to read this:</span>{' '}
+                <span className="font-semibold">Scheduled</span> is what dispatch booked for the plant.{' '}
+                <span className="font-semibold">Actually loaded</span> is what tickets show was poured for those orders
+                — it can be higher if sibling plants helped load the trucks, or lower if the plant gave help instead of
+                pouring its own orders.
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-[12px] border-collapse">
+                    <thead>
+                        <tr className="text-text-tertiary">
+                            <th className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2">
+                                Plant
+                            </th>
                             <th
                                 className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                title="Yardage actually loaded for this plant's orders (includes help received from sibling plants)."
+                                title="Yardage dispatch booked for this plant on the schedule, regardless of which plant actually loaded the trucks."
                             >
-                                Loaded
+                                Scheduled (yd³)
                             </th>
-                        )}
-                        {hasAttributionData && (
                             <th
                                 className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                title="Cross-loaded yardage — help received (in) and help given to other plants (out)."
+                                title="Yardage tickets show was actually loaded for this plant's orders — includes help received from other plants."
                             >
-                                Cross-loaded
+                                Actually loaded (yd³)
                             </th>
-                        )}
-                        <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
-                            Loads
-                        </th>
-                        <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
-                            Orders
-                        </th>
-                        <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
-                            Share
-                        </th>
-                        <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2">
-                            Status
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sorted.map((plant) => {
-                        const share = totalYardage > 0 ? (plant.yardage / totalYardage) * 100 : 0
-                        const trucks = mixerCountsByPlant?.[plant.code] || 0
-                        const status = buildScorecardStatus({
-                            isSingleDay,
-                            plant,
-                            singleDayShiftSpan,
-                            trucks
-                        })
-                        const attribution = loadAttributionByPlant?.[plant.code]
-                        const loadedYards = attribution?.loaded || 0
-                        const crossInYards = attribution?.crossInYards || 0
-                        const crossOutYards = attribution?.crossOutYards || 0
-                        return (
-                            <tr className="border-t border-border-light" key={plant.code}>
-                                <td className="px-3 py-2">
-                                    <div className="flex items-center gap-2">
-                                        <span
-                                            className="inline-block w-2 h-2 rounded-full shrink-0"
-                                            style={{ background: plantBadgeColor(plant.code, accent) }}
-                                        />
-                                        <span className="font-mono tabular-nums font-semibold text-text-primary">
-                                            {plant.code}
-                                        </span>
-                                        {plantNameByCode?.[plant.code] && (
-                                            <span className="truncate text-text-secondary">
-                                                {plantNameByCode[plant.code]}
+                            <th
+                                className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                                title="Yardage that other plants loaded for THIS plant's orders. Subtract this from 'Actually loaded' to see what this plant loaded itself."
+                            >
+                                Help received (yd³)
+                            </th>
+                            <th
+                                className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                                title="Yardage this plant loaded for OTHER plants' orders. Counts as help given."
+                            >
+                                Help given (yd³)
+                            </th>
+                            <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
+                                Loads
+                            </th>
+                            <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
+                                Orders
+                            </th>
+                            <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
+                                Share
+                            </th>
+                            <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-3 py-2">
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sorted.map((plant) => {
+                            const share = totalYardage > 0 ? (plant.yardage / totalYardage) * 100 : 0
+                            const trucks = mixerCountsByPlant?.[plant.code] || 0
+                            const status = buildScorecardStatus({
+                                isSingleDay,
+                                plant,
+                                singleDayShiftSpan,
+                                trucks
+                            })
+                            const attribution = loadAttributionByPlant?.[plant.code]
+                            const loadedYards = attribution?.loaded || 0
+                            const crossInYards = attribution?.crossInYards || 0
+                            const crossOutYards = attribution?.crossOutYards || 0
+                            return (
+                                <tr className="border-t border-border-light" key={plant.code}>
+                                    <td className="px-3 py-2">
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className="inline-block w-2 h-2 rounded-full shrink-0"
+                                                style={{ background: plantBadgeColor(plant.code, accent) }}
+                                            />
+                                            <span className="font-mono tabular-nums font-semibold text-text-primary">
+                                                {plant.code}
                                             </span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums font-semibold text-text-primary"
-                                    title="Ordered yardage attributed to this plant"
-                                >
-                                    {fmtInt(plant.yardage)}
-                                </td>
-                                {hasAttributionData && (
+                                            {plantNameByCode?.[plant.code] && (
+                                                <span className="truncate text-text-secondary">
+                                                    {plantNameByCode[plant.code]}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums font-semibold text-text-primary">
+                                        {fmtInt(plant.yardage)}
+                                    </td>
                                     <td
                                         className="px-2 py-2 text-right font-mono tabular-nums text-text-primary"
                                         title={
                                             loadedYards > 0
-                                                ? `${fmtInt(loadedYards)} yd loaded for this plant's orders`
-                                                : 'No ticket data yet'
+                                                ? `${fmtInt(loadedYards)} yd³ loaded for this plant's orders`
+                                                : 'No ticket data yet for this plant'
                                         }
                                     >
                                         {loadedYards > 0 ? fmtInt(loadedYards) : '—'}
                                     </td>
-                                )}
-                                {hasAttributionData && (
-                                    <td className="px-2 py-2 text-right font-mono tabular-nums whitespace-nowrap text-text-secondary">
-                                        {crossInYards === 0 && crossOutYards === 0 ? (
-                                            '—'
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1.5">
-                                                {crossInYards > 0 && (
-                                                    <span
-                                                        className="rounded px-1.5 py-0.5 text-[10.5px] font-semibold bg-[rgba(37,_99,_235,_0.12)] text-blue-700"
-                                                        title={`Help received: ${fmtInt(crossInYards)} yd loaded by sibling plants for this plant's orders`}
-                                                    >
-                                                        +{fmtInt(crossInYards)} in
-                                                    </span>
-                                                )}
-                                                {crossOutYards > 0 && (
-                                                    <span
-                                                        className="rounded px-1.5 py-0.5 text-[10.5px] font-semibold bg-[rgba(217,_119,_6,_0.12)] text-[#b45309]"
-                                                        title={`Help given: ${fmtInt(crossOutYards)} yd loaded by this plant for other plants' orders`}
-                                                    >
-                                                        −{fmtInt(crossOutYards)} out
-                                                    </span>
-                                                )}
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
+                                        {crossInYards > 0 ? fmtInt(crossInYards) : '—'}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
+                                        {crossOutYards > 0 ? fmtInt(crossOutYards) : '—'}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
+                                        {fmtInt(plant.loads)}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
+                                        {fmtInt(plant.orderCount)}
+                                    </td>
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
+                                        {share.toFixed(1)}%
+                                    </td>
+                                    <td className="px-3 py-2 text-right">
+                                        {status && (
+                                            <span
+                                                className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold"
+                                                style={{ background: `${status.color}1f`, color: status.color }}
+                                            >
+                                                {status.label}
                                             </span>
                                         )}
                                     </td>
-                                )}
-                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
-                                    {fmtInt(plant.loads)}
-                                </td>
-                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
-                                    {fmtInt(plant.orderCount)}
-                                </td>
-                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
-                                    {share.toFixed(1)}%
-                                </td>
-                                <td className="px-3 py-2 text-right">
-                                    {status && (
-                                        <span
-                                            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold"
-                                            style={{ background: `${status.color}1f`, color: status.color }}
-                                        >
-                                            {status.label}
-                                        </span>
-                                    )}
-                                </td>
-                            </tr>
-                        )
-                    })}
-                </tbody>
-            </table>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+            </div>
         </div>
     )
 }

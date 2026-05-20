@@ -1,16 +1,15 @@
 import React from 'react'
 
 import { fmtFloat, fmtInt, fmtMinutesAsHHMM } from '../../../../../utils/PlanStatisticsFormatUtility'
-import { BIG_POUR_SPACING_THRESHOLD_MIN, BIG_POUR_YARDAGE_THRESHOLD } from '../../../../../utils/PlanUtility'
 import { Stat, StatGroup } from '../../../ui/Panel'
 import { DeltaHint } from './PlanStatisticsCharts'
 
-/** Compact KPI strip — context, not the headline. Six tiles spanning total
- *  yardage, daily average, yards/load, peak hour, shift span, and big pours.
- *  Each tile shows a subtle Δ% pill when the previous-period summary exists. */
+/** Compact KPI strip — context, not the headline. Five tiles spanning total
+ *  yardage, daily average, yards/load, peak hour, and shift span. Each tile
+ *  shows a subtle Δ% pill when the previous-period summary exists. */
 export function PlanStatisticsKpiStrip({ currentSummary, previousSummary, workingDayCount }) {
     return (
-        <StatGroup columns={6}>
+        <StatGroup columns={5}>
             <Stat
                 label="Total yardage"
                 value={fmtInt(currentSummary.totalYardage)}
@@ -68,15 +67,6 @@ export function PlanStatisticsKpiStrip({ currentSummary, previousSummary, workin
                         current={currentSummary.avgShiftSpanHours}
                         previous={previousSummary?.avgShiftSpanHours}
                     />
-                }
-            />
-            <Stat
-                label="Big pours"
-                value={fmtInt(currentSummary.bigPours.length)}
-                hint={
-                    currentSummary.bigPours.length > 0
-                        ? `>${BIG_POUR_YARDAGE_THRESHOLD} yd³ · <${BIG_POUR_SPACING_THRESHOLD_MIN}m spacing`
-                        : 'none scheduled'
                 }
             />
         </StatGroup>

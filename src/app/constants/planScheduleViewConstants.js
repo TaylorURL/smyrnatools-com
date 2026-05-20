@@ -3,7 +3,7 @@
 
 /** Default-shape sentinel — used only when PlanScheduleView renders
  *  standalone (e.g. in tests or a future preview surface). The real
- *  PlanView always supplies `filters` + `onChangeFilter` so the
+ *  OperationsView always supplies `filters` + `onChangeFilter` so the
  *  schedule-tab filters survive the loading-skeleton swap on every
  *  date change. */
 export const DEFAULT_SCHEDULE_FILTERS = {

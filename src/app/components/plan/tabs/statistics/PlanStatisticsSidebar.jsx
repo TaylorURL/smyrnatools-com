@@ -14,34 +14,16 @@ export const PLAN_STATS_SECTIONS = [
         label: 'Overview'
     },
     {
-        description: 'Daily trend, day-of-week shape, and yardage by plant.',
-        icon: 'fa-cubes-stacked',
-        id: 'yardage',
-        label: 'Yardage'
+        description: 'Per-plant scorecards, daily yardage trend, and day-of-week shape.',
+        icon: 'fa-industry',
+        id: 'production',
+        label: 'Production'
     },
     {
         description: 'Short / medium / long-term horizons, plant comparison, year-over-year.',
         icon: 'fa-face-smile',
         id: 'satisfaction',
         label: 'Customer satisfaction'
-    },
-    {
-        description: 'Per-plant scorecards, share of yardage, utilization status.',
-        icon: 'fa-industry',
-        id: 'plants',
-        label: 'Plants'
-    },
-    {
-        description: 'Top customers, product mix, concentration risk.',
-        icon: 'fa-handshake',
-        id: 'customers',
-        label: 'Customers & products'
-    },
-    {
-        description: 'Large pours that need early coordination.',
-        icon: 'fa-truck-monster',
-        id: 'bigPours',
-        label: 'Big pours'
     },
     {
         description: 'Load counts per driver across the selected window.',

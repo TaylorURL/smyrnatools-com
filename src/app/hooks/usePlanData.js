@@ -509,7 +509,7 @@ export function usePlanData(planDate) {
 
     // Detail (ticket-level) orders are fetched once at this level so every
     // downstream tab (Schedule, Realtime, Statistics) sees the same map and
-    // PlanView can hold its skeleton until tickets actually land.
+    // OperationsView can hold its skeleton until tickets actually land.
     const { detailByOrderId, isLoading: isDetailOrdersLoading } = useDetailOrders(planDate)
 
     /* Effective edit-capability: the user must both hold the

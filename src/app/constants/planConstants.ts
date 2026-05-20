@@ -103,7 +103,7 @@ export const LANE_COLORS = [
 
 /* Smyrna's operations run on Central Standard Time regardless of where
  * the dispatcher (or developer) is sitting, so every "today / now /
- * day-of-week" decision in PlanView anchors here. Pinning the timezone
+ * day-of-week" decision in OperationsView anchors here. Pinning the timezone
  * keeps the date math stable when an East-Coast user opens the planner
  * at 11pm — UTC is already tomorrow, but CST is still today. */
 export const PLAN_TIME_ZONE = 'America/Chicago'

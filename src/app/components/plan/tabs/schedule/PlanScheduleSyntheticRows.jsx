@@ -28,49 +28,68 @@ const orderTagFromRow = (order, fallback = 'order') =>
  *   `placeholderKind: 'added'`   — order is on the live schedule but
  *     wasn't on the snapshot. Rendered on the SNAPSHOT side.
  *
- *  The reference order (the one on the OTHER side) is shown faintly so
- *  the dispatcher can read what's missing / new at that row position.
+ *  Renders as a single-line "ghost slot" matching `PlanScheduleOrderRow`'s
+ *  `px-3 py-2` cell padding so paired rows in the two side-by-side tables
+ *  occupy the same vertical space. A status pill + faint reference to the
+ *  order on the other side tells the dispatcher what's missing / new at
+ *  that row position without inflating row height to two/three lines.
  */
 export function PlaceholderRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
     const isRemoved = row.placeholderKind === 'removed'
     const refOrder = row.order || {}
-    const plantName = plantNameByCode?.[refOrder.plantCode] || ''
-    const orderTag = orderTagFromRow(refOrder)
+    const orderTag = orderTagFromRow(refOrder, '')
     const customerTag = clean(refOrder.customer)
+    const plantName = plantNameByCode?.[refOrder.plantCode] || ''
     const accent = isRemoved ? '#dc2626' : '#16a34a'
     const tint = isRemoved ? 'rgba(220, 38, 38, 0.06)' : 'rgba(22, 163, 74, 0.06)'
     const icon = isRemoved ? 'fa-circle-minus' : 'fa-circle-plus'
     const pillLabel = isRemoved ? 'Removed from live' : 'Added since snapshot'
+    const tooltip = isRemoved
+        ? 'This order was on the 5:30 PM snapshot but is no longer on the live schedule.'
+        : "This order is on the live schedule but wasn't on the 5:30 PM snapshot."
+    const referenceLabel = [orderTag, customerTag].filter(Boolean).join(' · ') || 'No matching order'
+    // Mirror the order row's first two cells (time + PlantBadge) so the
+    // table's natural row-height calculation lands at the same height as
+    // a real order row at the same index in the twin table. The remaining
+    // visible columns collapse into a single `colSpan` cell that carries
+    // the status pill + faint reference label.
+    const remainingCols = Math.max(1, bodyColSpan || 1)
     return (
-        <PlanScheduleSyntheticRow
-            animationDelayMs={animationDelayMs}
-            bodyColSpan={bodyColSpan}
-            accentColor={accent}
-            icon={icon}
-            pillIcon={icon}
-            pillLabel={pillLabel}
-            plantCell={
-                refOrder.plantCode ? <PlantBadge code={refOrder.plantCode} fallback={accent} name={plantName} /> : null
-            }
-            primary={
-                <span className="text-text-secondary">
-                    {orderTag !== 'order' && <b className="text-text-primary">{orderTag}</b>}
-                    {customerTag ? (
-                        <>
-                            {orderTag !== 'order' ? ' · ' : ''}
-                            <span className="text-text-primary">{customerTag}</span>
-                        </>
-                    ) : null}
-                </span>
-            }
-            secondary={
-                isRemoved
-                    ? 'This order was on the 5:30 PM snapshot but is no longer on the live schedule.'
-                    : 'This order is on the live schedule but wasn’t on the 5:30 PM snapshot.'
-            }
-            time={row.time}
-            tint={tint}
-        />
+        <tr
+            className="animate-slide-in-row border-t border-border-light"
+            style={{
+                animationDelay: `${animationDelayMs}ms`,
+                background: tint,
+                borderLeft: `3px solid ${accent}`
+            }}
+            title={tooltip}
+        >
+            <td
+                className="px-3 py-2 font-mono font-bold whitespace-nowrap"
+                style={{ color: refOrder.startTime ? accent : 'var(--text-tertiary)' }}
+            >
+                {refOrder.startTime ? String(refOrder.startTime).slice(0, 5) : '—'}
+            </td>
+            <td className="px-3 py-2 whitespace-nowrap">
+                {refOrder.plantCode ? (
+                    <PlantBadge code={refOrder.plantCode} fallback={accent} name={plantName} />
+                ) : (
+                    <span className="text-text-tertiary">—</span>
+                )}
+            </td>
+            <td className="px-3 py-2" colSpan={remainingCols}>
+                <div className="flex items-center gap-2 text-[12px]">
+                    <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 text-white"
+                        style={{ background: accent }}
+                    >
+                        <i className={`fas ${icon} text-[8px]`} />
+                        {pillLabel}
+                    </span>
+                    <span className="truncate text-text-tertiary italic">{referenceLabel}</span>
+                </div>
+            </td>
+        </tr>
     )
 }
 

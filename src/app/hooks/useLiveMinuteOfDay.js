@@ -9,7 +9,7 @@ const ONE_MINUTE_MS = 60_000
  * once a minute when `active` is true. Returns `null` otherwise so
  * callers can short-circuit "now"-based UI on past or future schedules.
  *
- * The CST anchor matters because PlanView is dispatch-driven: a planner
+ * The CST anchor matters because OperationsView is dispatch-driven: a planner
  * in another timezone needs to see the same "now" a Houston dispatcher
  * does, otherwise the realtime tab and the same-day booking guard land
  * on a different day than the schedule itself.
