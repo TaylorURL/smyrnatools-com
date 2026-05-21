@@ -1091,7 +1091,14 @@ export function usePlanStatistics({
             name: 'Unmatched drivers',
             operatorHomePlant: null,
             operatorStatus: null,
-            sampleNames: new Set(),
+            /* Per-unique-driver aggregates so dispatch can see exactly
+             * which names need fixing AND how much each one costs in
+             * unverifiable loads. Keyed by uppercased raw name so two
+             * spellings of the same ticket-side label collapse. Each
+             * entry tracks loads / yardage / drivers / trucks / plants
+             * — everything needed for an actionable bug report without
+             * the dispatcher having to dig back into the ticket data. */
+            namesByKey: new Map(),
             trucksDriven: new Set(),
             unmatched: true,
             yardage: 0
@@ -1145,9 +1152,25 @@ export function usePlanStatistics({
                             )
                         }
                         const sampleLabel = rawName || (driverNum ? `Driver #${driverNum}` : 'Unknown')
-                        if (sampleLabel && unmatchedBucket.sampleNames.size < 12) {
-                            unmatchedBucket.sampleNames.add(sampleLabel)
+                        const dedupeKey = (rawName || `__num__:${driverNum || '__unknown__'}`).toUpperCase()
+                        let bucket = unmatchedBucket.namesByKey.get(dedupeKey)
+                        if (!bucket) {
+                            bucket = {
+                                driverNums: new Set(),
+                                key: dedupeKey,
+                                loads: 0,
+                                name: sampleLabel,
+                                plants: new Set(),
+                                trucks: new Set(),
+                                yardage: 0
+                            }
+                            unmatchedBucket.namesByKey.set(dedupeKey, bucket)
                         }
+                        bucket.loads += 1
+                        bucket.yardage += yardage
+                        if (driverNum) bucket.driverNums.add(driverNum)
+                        if (truckNum) bucket.trucks.add(truckNum)
+                        if (loaderPlant) bucket.plants.add(loaderPlant)
                         return
                     }
                     const canonicalName = operator.name?.trim() || rawName
@@ -1182,12 +1205,26 @@ export function usePlanStatistics({
                 })
             })
         })
-        /* Sample names get materialised here so the consumer sees a plain
-         * sorted array rather than a Set + insertion order. */
+        /* Materialise the per-name bucket into a sorted array — busiest
+         * offender first so the dispatcher fixes the names that move the
+         * needle. Each entry carries its own load/yardage/truck/plant
+         * aggregates so the UI can render an actionable per-name table
+         * (and a copy-to-clipboard report) without recomputing anything. */
         if (unmatchedBucket.loads > 0) {
+            const unmatchedNames = [...unmatchedBucket.namesByKey.values()]
+                .map((b) => ({
+                    driverNums: [...b.driverNums].sort(),
+                    key: b.key,
+                    loads: b.loads,
+                    name: b.name,
+                    plants: [...b.plants].sort(),
+                    trucks: [...b.trucks].sort(),
+                    yardage: b.yardage
+                }))
+                .sort((a, b) => b.loads - a.loads || a.name.localeCompare(b.name))
             byOperator.set('__unmatched__', {
                 ...unmatchedBucket,
-                sampleNames: [...unmatchedBucket.sampleNames].sort()
+                unmatchedNames
             })
         }
         /** Mismatch classifier — runs only after BOTH the operator roster

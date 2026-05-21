@@ -1,5 +1,28 @@
 # Changelog
 
+## [2026.21.17] - 2026-05-21
+
+- Statistics → Operators "Unmatched drivers" row now lists every single
+  unique ticket-side driver name in the window — the prior 12-name cap
+  hid the long tail that dispatch actually needs to fix. New per-name
+  table inside the row carries each offender's driver number, load
+  count, total yardage, trucks driven, and loading plants so a one-line
+  copy-paste produces an actionable report.
+- New "Copy list" button on the Unmatched row generates a tab-separated
+  block (header + one row per unique name) that pastes cleanly into
+  Sheets / Excel as columns AND reads as an aligned text block in Slack
+  / email. Button label flips to "Copied" / "Copy failed" briefly so the
+  dispatcher knows the clipboard write went through.
+- `usePlanStatistics` bucket reshaped from `sampleNames: Set` to
+  `namesByKey: Map` so per-name aggregates (loads / yardage / driver
+  numbers / trucks / plants) accumulate across the window. The exposed
+  `unmatchedNames` array is sorted busiest-offender first then
+  alphabetical so the rows that move the needle land at the top.
+- Unmatched row layout rebuilt as a vertical block instead of cramming
+  the per-name detail into the operator-table grid; the per-name table
+  scrolls past ~10 rows (`max-h-[420px]`) so a heavy day with dozens of
+  offenders no longer breaks page layout.
+
 ## [2026.21.16] - 2026-05-21
 
 - Slow-service scoring lined up with the View Tickets popup. `scoreOrderExperience`
