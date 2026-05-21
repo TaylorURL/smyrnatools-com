@@ -79,6 +79,7 @@ const TRUCK_RETURN_BUCKET_MIN = 30
  * returns are skipped because they'd break the chosen ordering.
  */
 function buildTableRows({
+    compareMode,
     extrasActive,
     filteredClockInRows,
     filteredHelpRows,
@@ -245,8 +246,19 @@ function buildTableRows({
     // Chronological sort runs whenever any synthetic row is in play — they
     // only make sense at their actual minute between orders. With NO synthetic
     // rows (pure order list), we preserve the Sort by picker's ordering.
+    //
+    // Compare mode is a special case: the split-view caller has already
+    // produced pair-aligned snapshot + live arrays where index `i` on one
+    // side is paired with index `i` on the other. The internal re-sort
+    // here would break that alignment — placeholders carry priority 7
+    // while real orders carry priority 6, so two pairs sharing a minute
+    // can sort to different positions on each side (the snap column has
+    // a real order in slot A and a placeholder in slot B; the live
+    // column has the placeholder in slot A and the real in slot B; the
+    // re-sort then puts them in different sequences). Skip the re-sort
+    // in compare mode and trust the upstream pair sequence.
     const hasSyntheticRows = rows.some((r) => r.kind !== 'order')
-    if (hasSyntheticRows) {
+    if (hasSyntheticRows && !compareMode) {
         rows.sort((a, b) => {
             const at = Number.isFinite(a.time) ? a.time : Infinity
             const bt = Number.isFinite(b.time) ? b.time : Infinity
@@ -352,6 +364,11 @@ export default function PlanScheduleTable({
     poolTimeline,
     poolTimelinesByPlant,
     pullUpRows = [],
+    /** Optional ref to attach to the table's scroll viewport. The split
+     *  view passes a ref into each side so it can mirror scrollTop /
+     *  scrollLeft between the two tables — single-table consumers can
+     *  omit it. */
+    scrollContainerRef,
     sendHomeRows = [],
     showExtraRows = true,
     suggestedSlotRows = [],
@@ -413,6 +430,7 @@ export default function PlanScheduleTable({
     const tableRows = useMemo(
         () =>
             buildTableRows({
+                compareMode,
                 extrasActive,
                 filteredClockInRows,
                 filteredHelpRows,
@@ -432,7 +450,8 @@ export default function PlanScheduleTable({
             filteredSuggestedSlotRows,
             filteredPullUpRows,
             filteredClockInRows,
-            extrasActive
+            extrasActive,
+            compareMode
         ]
     )
 
@@ -458,6 +477,7 @@ export default function PlanScheduleTable({
     return (
         <div className="relative">
             <div
+                ref={scrollContainerRef}
                 className="rounded-xl overflow-auto"
                 style={{
                     background: 'var(--bg-primary)',

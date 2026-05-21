@@ -510,7 +510,13 @@ export function usePlanData(planDate) {
     // Detail (ticket-level) orders are fetched once at this level so every
     // downstream tab (Schedule, Realtime, Statistics) sees the same map and
     // OperationsView can hold its skeleton until tickets actually land.
-    const { detailByOrderId, isLoading: isDetailOrdersLoading } = useDetailOrders(planDate)
+    // Passing `plantProduction` lets the service-layer detail allocator
+    // backfill DetailDriver-only ticket quantities from the dispatcher's
+    // curated schedule yardage — without this, cross-plant tickets whose
+    // dispatch_data header row arrived with null `scheduled_yardage`
+    // render as "—" in the popup, the Schedule's Loaded column, and every
+    // Statistics sub-page that sums ticket quantities.
+    const { detailByOrderId, isLoading: isDetailOrdersLoading } = useDetailOrders(planDate, plantProduction)
 
     /* Effective edit-capability: the user must both hold the
      * `plan.edit` permission AND be viewing a current or future plan.

@@ -98,15 +98,10 @@ export default function PlanScheduleFilterDrawer({
     onChangeShowTest,
     onChangeSort,
     onChangeStatus,
-    compareMode = false,
     onClearFilters,
-    onCopyRoster,
     onExitMaximized,
-    onToggleCompare,
     onTogglePlantFilter,
     onToggleExtraRows,
-    operatorRosterCopied,
-    operatorRosterReady,
     plantFilters = [],
     plantNameByCode,
     plantOptions,
@@ -306,35 +301,6 @@ export default function PlanScheduleFilterDrawer({
                         {singlePlant}
                         {activePlantName && <span className="font-normal opacity-90">· {activePlantName}</span>}
                     </span>
-                    <button
-                        type="button"
-                        onClick={onCopyRoster}
-                        disabled={!operatorRosterReady}
-                        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
-                        style={{
-                            background: operatorRosterCopied
-                                ? '#16a34a'
-                                : operatorRosterReady
-                                  ? accentColor
-                                  : 'var(--bg-secondary)',
-                            border: `1px solid ${
-                                operatorRosterCopied
-                                    ? '#16a34a'
-                                    : operatorRosterReady
-                                      ? accentColor
-                                      : 'var(--border-light)'
-                            }`,
-                            color: operatorRosterCopied || operatorRosterReady ? '#fff' : 'var(--text-tertiary)'
-                        }}
-                        title={
-                            operatorRosterCopied
-                                ? 'Copied operator clock-in times'
-                                : `Copy operator clock-in times for ${singlePlant}`
-                        }
-                    >
-                        <i className={`fas fa-${operatorRosterCopied ? 'check' : 'copy'} text-[10.5px]`} />
-                        {operatorRosterCopied ? 'Copied' : 'Copy roster'}
-                    </button>
                     <ToggleSwitch
                         accent={accentColor}
                         checked={showExtraRows}
@@ -362,25 +328,6 @@ export default function PlanScheduleFilterDrawer({
                 >
                     <i className="fas fa-rotate-left mr-1" />
                     Reset
-                </button>
-            )}
-            {typeof onToggleCompare === 'function' && (
-                <button
-                    type="button"
-                    onClick={onToggleCompare}
-                    className="rounded-md px-2.5 py-1 text-[11.5px] font-semibold border-none cursor-pointer"
-                    style={{
-                        background: compareMode ? accentColor : 'var(--bg-secondary)',
-                        color: compareMode ? '#fff' : 'var(--text-secondary)'
-                    }}
-                    title={
-                        compareMode
-                            ? 'Exit the side-by-side comparison and return to the standard schedule view'
-                            : 'Split the schedule into two columns — the original 5:30 PM snapshot vs. live'
-                    }
-                >
-                    <i className={`fas ${compareMode ? 'fa-table-columns' : 'fa-clock-rotate-left'} mr-1`} />
-                    {compareMode ? 'Exit comparison' : 'View original schedule'}
                 </button>
             )}
             {typeof onExitMaximized === 'function' && (

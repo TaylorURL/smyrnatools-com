@@ -53,6 +53,8 @@ const EMPTY_RESULT = {
     byDay: [],
     byHour: HOUR_BUCKETS.map(buildEmptyHourRow),
     byPlant: [],
+    customerIndex: [],
+    orderVerdicts: [],
     outcomes: OUTCOME_BUCKETS.map((b) => ({ color: b.color, count: 0, key: b.key, label: b.label })),
     kpi: {
         avgLatenessMin: 0,
@@ -129,8 +131,14 @@ export function useServiceQualityStats({
             const detail = detailByDay?.[planDate]?.[order.orderId]
             const verdict = scoreOrderExperience(order, detail)
             if (!verdict.measured) continue
+            const customerRaw = (order.customer || '').trim()
             measured.push({
-                customer: order.customer || '',
+                customer: customerRaw,
+                // Canonical key for grouping. Matches the customer-bucket
+                // key (uppercase trim) so the Customer Lookup page can
+                // filter `orderVerdicts` directly against a `customerIndex`
+                // entry without re-normalizing.
+                customerKey: customerRaw ? customerRaw.toUpperCase() : '',
                 date: planDate,
                 firstLoadTime: verdict.firstLoadTime,
                 isBad: verdict.isBad,
@@ -236,6 +244,7 @@ export function useServiceQualityStats({
                     badJobs: 0,
                     displayName: raw,
                     jobs: 0,
+                    lastPourDate: '',
                     lateJobs: 0,
                     lateLatenessSum: 0,
                     slowJobs: 0,
@@ -244,6 +253,10 @@ export function useServiceQualityStats({
             }
             const bucket = customerBuckets.get(key)
             bucket.jobs += 1
+            // Track the most recent measured order so the lookup page can
+            // show "Last pour <date>" next to the customer name. ISO dates
+            // sort lexicographically, so a string-compare gets the max.
+            if (m.date && m.date > bucket.lastPourDate) bucket.lastPourDate = m.date
             if (m.isBad) bucket.badJobs += 1
             if (m.isLate) {
                 bucket.lateJobs += 1
@@ -252,24 +265,33 @@ export function useServiceQualityStats({
             }
             if (m.isSlow) bucket.slowJobs += 1
         }
-        const byCustomer = [...customerBuckets.values()]
-            .filter((b) => b.jobs >= MIN_JOBS_FOR_CUSTOMER_RANKING && b.badJobs > 0)
-            .map((b) => ({
-                avgLateMin: b.lateJobs > 0 ? b.lateLatenessSum / b.lateJobs : 0,
-                badJobs: b.badJobs,
-                goodPct: (b.jobs - b.badJobs) / b.jobs,
-                jobs: b.jobs,
-                lateJobs: b.lateJobs,
-                name: b.displayName,
-                slowJobs: b.slowJobs,
-                worstLateMin: b.worstLateMin
-            }))
+        const customerRowsAll = [...customerBuckets.entries()].map(([key, b]) => ({
+            avgLateMin: b.lateJobs > 0 ? b.lateLatenessSum / b.lateJobs : 0,
+            badJobs: b.badJobs,
+            goodJobs: b.jobs - b.badJobs,
+            goodPct: b.jobs > 0 ? (b.jobs - b.badJobs) / b.jobs : 0,
+            jobs: b.jobs,
+            key,
+            lastPourDate: b.lastPourDate,
+            lateJobs: b.lateJobs,
+            name: b.displayName,
+            slowJobs: b.slowJobs,
+            worstLateMin: b.worstLateMin
+        }))
+        // Top-12 worst slice for the Service page panel.
+        const byCustomer = customerRowsAll
+            .filter((r) => r.jobs >= MIN_JOBS_FOR_CUSTOMER_RANKING && r.badJobs > 0)
             .sort((a, b) => {
                 if (b.badJobs !== a.badJobs) return b.badJobs - a.badJobs
                 if (a.goodPct !== b.goodPct) return a.goodPct - b.goodPct
                 return b.jobs - a.jobs
             })
             .slice(0, 12)
+        // Full alphabetical index for the Customer Lookup page — every
+        // customer that had at least one measured order in the window,
+        // including those with 100% good service. The lookup UI does its
+        // own filtering / sorting on top of this raw list.
+        const customerIndex = [...customerRowsAll].sort((a, b) => a.name.localeCompare(b.name))
 
         /* ── 5. Hour-of-day rollup ─────────────────────────────────── */
         const hourBuckets = HOUR_BUCKETS.map((cfg) => ({
@@ -355,6 +377,7 @@ export function useServiceQualityStats({
             byDay,
             byHour,
             byPlant,
+            customerIndex,
             kpi: {
                 avgLatenessMin,
                 badJobs,
@@ -366,6 +389,11 @@ export function useServiceQualityStats({
                 totalJobs,
                 worstLatenessMin
             },
+            // Every measured order in the window, keyed by a canonical
+            // customer key (`UPPER(trim(customer))`). The Customer Lookup
+            // page consumes this directly to drill into a single
+            // customer's history without re-classifying.
+            orderVerdicts: filtered,
             outcomes,
             threshold: BAD_SERVICE_LATE_THRESHOLD_MIN,
             worstOrders

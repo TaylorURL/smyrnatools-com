@@ -1,6 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import { fmtYards } from '../../../../../utils/PlanStatisticsFormatUtility'
+
 const TIME_OF_DAY_SECTIONS = [
     { color: '#6366f1', hint: '00:00–06:00', key: 'overnight', label: 'Overnight' },
     { color: '#f59e0b', hint: '06:00–12:00', key: 'morning', label: 'Morning' },
@@ -51,7 +53,7 @@ export function PlanTimeOfDayBar({ grandTotal, totals }) {
         <div className="flex flex-col gap-1.5">
             <div className="flex items-baseline justify-between text-[10px] font-semibold uppercase tracking-wider">
                 <span className="text-text-tertiary">Time of day</span>
-                <span className="text-text-secondary">{Math.round(grandTotal).toLocaleString()} yd total</span>
+                <span className="text-text-secondary">{fmtYards(grandTotal)} yd total</span>
             </div>
             <div className="flex h-2 rounded-full overflow-hidden bg-bg-tertiary">
                 {TIME_OF_DAY_SECTIONS.map((section) => {
@@ -62,14 +64,14 @@ export function PlanTimeOfDayBar({ grandTotal, totals }) {
                         <div
                             key={section.key}
                             style={{ background: section.color, width: `${pct}%` }}
-                            title={`${section.label}: ${Math.round(value).toLocaleString()} yd (${pct.toFixed(1)}%)`}
+                            title={`${section.label}: ${fmtYards(value)} yd (${pct.toFixed(1)}%)`}
                         />
                     )
                 })}
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
                 {TIME_OF_DAY_SECTIONS.map((section) => {
-                    const value = Math.round(totals[section.key] || 0)
+                    const value = totals[section.key] || 0
                     const pct = grandTotal > 0 ? (value / grandTotal) * 100 : 0
                     return (
                         <span key={section.key} className="flex items-center gap-1.5">
@@ -78,7 +80,7 @@ export function PlanTimeOfDayBar({ grandTotal, totals }) {
                                 style={{ background: section.color }}
                             />
                             <span className="text-text-secondary">{section.label}</span>
-                            <span className="font-mono text-text-primary">{value.toLocaleString()} yd</span>
+                            <span className="font-mono text-text-primary">{fmtYards(value)} yd</span>
                             <span className="text-text-tertiary">
                                 · {pct.toFixed(0)}% · {section.hint}
                             </span>

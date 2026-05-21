@@ -41,7 +41,12 @@ function AlertRow({ id, message, metric, onClick }) {
  * Caps at three rows by default; users opt into the full list with a
  * "View more" toggle so the dashboard hero stays compact.
  */
-export default function DashboardAlertsPanel({ plantNotifications, setEmbeddedView, setEmbeddedViewSearch }) {
+export default function DashboardAlertsPanel({
+    plantNotifications,
+    setEmbeddedView,
+    setEmbeddedViewProps,
+    setEmbeddedViewSearch
+}) {
     const [expanded, setExpanded] = useState(false)
     const {
         longTermShopAssets = [],
@@ -54,10 +59,17 @@ export default function DashboardAlertsPanel({ plantNotifications, setEmbeddedVi
     const openOnAsset = (asset) => () => {
         setEmbeddedView?.(getAssetViewType(asset.type))
         setEmbeddedViewSearch?.(asset.identifier || '')
+        setEmbeddedViewProps?.(null)
     }
-    const openOperators = () => {
+    /* Each Operators alert pre-applies the status filter that matches
+     * the row's intent so the popup opens on the relevant subset
+     * instead of the full roster. The filter strings must match
+     * `OperatorsView`'s status options exactly (see `statuses` /
+     * synthetic options in that view). */
+    const openOperators = (initialStatusFilter) => () => {
         setEmbeddedView?.('operators')
         setEmbeddedViewSearch?.('')
+        setEmbeddedViewProps?.(initialStatusFilter ? { initialStatusFilter } : null)
     }
 
     /* Build a single ordered list — fleet bottleneck first, then long-term
@@ -87,7 +99,7 @@ export default function DashboardAlertsPanel({ plantNotifications, setEmbeddedVi
             key: 'unassigned',
             message: 'Unassigned operators',
             metric: unassignedOperators.length,
-            onClick: openOperators
+            onClick: openOperators('Unassigned Active')
         })
     }
     if (pendingOperators.length > 0) {
@@ -96,7 +108,7 @@ export default function DashboardAlertsPanel({ plantNotifications, setEmbeddedVi
             key: 'pending',
             message: 'Operators awaiting start date',
             metric: pendingOperators.length,
-            onClick: openOperators
+            onClick: openOperators('Pending Start')
         })
     }
     if (trainingOperators.length > 0) {
@@ -105,7 +117,7 @@ export default function DashboardAlertsPanel({ plantNotifications, setEmbeddedVi
             key: 'training',
             message: 'Operators currently in training',
             metric: trainingOperators.length,
-            onClick: openOperators
+            onClick: openOperators('Training')
         })
     }
 

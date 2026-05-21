@@ -4,6 +4,7 @@ import { DispatchDataService } from '../../services/DispatchDataService'
 import { MixerService } from '../../services/MixerService'
 import { OperatorService } from '../../services/OperatorService'
 import { PlanService } from '../../services/PlanService'
+import { enrichDetailEntryWithSchedule } from '../../utils/PlanDetailEnrichment'
 import { nameLookupVariants } from '../../utils/OperatorNameLookupUtility'
 import { parseIsoLocal } from '../../utils/PlanStatisticsFormatUtility'
 import {
@@ -18,6 +19,127 @@ import {
 } from '../../utils/PlanStatisticsUtility'
 import { computeCustomerSatisfaction, getTodayDate, isExcludedOrder, PLAN_META_KEY } from '../../utils/PlanUtility'
 import { formatPersonName } from './useOperatorNameLookup'
+
+/** Build a `{ [orderId]: order }` lookup across every plant block in a
+ *  plant_production blob. Used by the order-level merger so we can
+ *  reconcile the same order across plans + dispatch sources. */
+const indexOrdersByOrderId = (production) => {
+    const out = new Map()
+    if (!production || typeof production !== 'object') return out
+    Object.values(production).forEach((block) => {
+        if (!block || typeof block !== 'object') return
+        const orders = Array.isArray(block.orders) ? block.orders : []
+        orders.forEach((o) => {
+            if (!o?.orderId) return
+            const existing = out.get(o.orderId)
+            // If two plant blocks claim the same order, keep the one whose
+            // yardage is non-zero so the later max-merge picks the truthful
+            // copy. Otherwise first one wins.
+            if (!existing || (parseFloat(existing?.yardage) || 0) <= 0) {
+                out.set(o.orderId, o)
+            }
+        })
+    })
+    return out
+}
+
+/**
+ * Merges curated `plans` rows with imported `dispatch_data` rows at the
+ * **order level** (not just the day level). For each `plan_date`:
+ *   1. Start from the dispatch_data plant_production blob (covers every
+ *      imported order, even ones the dispatcher never touched in plans).
+ *   2. For each order present in the plans copy, overlay its yardage and
+ *      loadSize when the plans value is higher than dispatch's — the
+ *      dispatcher's curated yardage is the truthful source whenever
+ *      dispatch_data's `scheduled_yardage` arrived null (typical for
+ *      cross-plant order headers in the dispatch HTML import).
+ *
+ * Day-level fallback is preserved: if dispatch has no row for a date, the
+ * plans row is used as-is; if plans has no row, dispatch is used as-is.
+ *
+ * The resulting array preserves the `{ plan_date, plant_production, … }`
+ * shape every downstream consumer expects, sorted ascending by `plan_date`.
+ */
+const mergePlanAndDispatchRows = (plansRows, dispatchRows) => {
+    const plansByDate = new Map()
+    ;(plansRows || []).forEach((row) => {
+        if (row?.plan_date) plansByDate.set(row.plan_date, row)
+    })
+    const dispatchByDate = new Map()
+    ;(dispatchRows || []).forEach((row) => {
+        if (row?.plan_date) dispatchByDate.set(row.plan_date, row)
+    })
+    const allDates = new Set([...plansByDate.keys(), ...dispatchByDate.keys()])
+    const out = []
+    allDates.forEach((date) => {
+        const planRow = plansByDate.get(date)
+        const dispatchRow = dispatchByDate.get(date)
+        const planProduction =
+            planRow?.plant_production && typeof planRow.plant_production === 'object' ? planRow.plant_production : null
+        const dispatchProduction =
+            dispatchRow?.plant_production && typeof dispatchRow.plant_production === 'object'
+                ? dispatchRow.plant_production
+                : null
+        if (!planProduction && !dispatchProduction) return
+        if (!planProduction) {
+            out.push(dispatchRow)
+            return
+        }
+        if (!dispatchProduction) {
+            out.push(planRow)
+            return
+        }
+        // Both exist — order-level merge so we keep every order from both
+        // sources and adopt the higher yardage / loadSize per orderId.
+        const planIndex = indexOrdersByOrderId(planProduction)
+        const merged = {}
+        // Start with dispatch's per-plant blocks; preserve the imported
+        // metadata (firstJobTime, lastJobTime, totalYardage, etc.).
+        Object.entries(dispatchProduction).forEach(([code, block]) => {
+            if (!block || typeof block !== 'object') return
+            const baseOrders = Array.isArray(block.orders) ? block.orders : []
+            const upgradedOrders = baseOrders.map((o) => {
+                if (!o?.orderId) return o
+                const planOrder = planIndex.get(o.orderId)
+                if (!planOrder) return o
+                const dispatchYards = parseFloat(o.yardage) || 0
+                const planYards = parseFloat(planOrder.yardage) || 0
+                const dispatchLoad = parseFloat(o.loadSize) || 0
+                const planLoad = parseFloat(planOrder.loadSize) || 0
+                if (planYards <= dispatchYards && planLoad <= dispatchLoad) return o
+                return {
+                    ...o,
+                    loadSize: planLoad > dispatchLoad ? String(planLoad) : o.loadSize != null ? String(o.loadSize) : '',
+                    yardage: planYards > dispatchYards ? String(planYards) : o.yardage != null ? String(o.yardage) : ''
+                }
+            })
+            merged[code] = { ...block, orders: upgradedOrders }
+        })
+        // Add orders that plans knows about but dispatch doesn't (rare —
+        // would mean the dispatcher booked something never imported).
+        const dispatchOrderIds = new Set()
+        Object.values(dispatchProduction).forEach((block) => {
+            ;(block?.orders || []).forEach((o) => {
+                if (o?.orderId) dispatchOrderIds.add(o.orderId)
+            })
+        })
+        Object.entries(planProduction).forEach(([code, block]) => {
+            if (!block || typeof block !== 'object') return
+            const extras = (block.orders || []).filter((o) => o?.orderId && !dispatchOrderIds.has(o.orderId))
+            if (extras.length === 0) return
+            if (!merged[code]) {
+                merged[code] = { ...block, orders: extras }
+            } else {
+                merged[code] = { ...merged[code], orders: [...merged[code].orders, ...extras] }
+            }
+        })
+        // Take the plans row as the base envelope (keeps assignments / notes
+        // for downstream consumers that need them), then swap in our merged
+        // plant_production.
+        out.push({ ...(planRow || dispatchRow), plan_date: date, plant_production: merged })
+    })
+    return out.sort((a, b) => String(a.plan_date).localeCompare(String(b.plan_date)))
+}
 
 /**
  * Walk every plan row once, emitting a flat `{ planDate, plantCode, order }`
@@ -139,7 +261,10 @@ export function usePlanStatistics({
      *  `dispatch_data`. Indexed by plan_date so per-day pair groupings can
      *  walk one entry at a time. */
     const [plansByDate, setPlansByDate] = useState({})
-    const [plansLoading, setPlansLoading] = useState(false)
+    // `plansLoading` is held only as a public-API stub for downstream
+    // consumers; the plans fetch now rides on the main `loading` flag
+    // since plans + dispatch_data are fetched together in one effect.
+    const [plansLoading] = useState(false)
 
     /* Active-mixer + operator-roster fetches.
      *
@@ -306,29 +431,43 @@ export function usePlanStatistics({
         async function load() {
             setLoading(true)
             try {
-                // Stats read directly from `dispatch_data` — the imported
-                // order + ticket rows are the source of truth for yardage,
-                // orders, loads, customers, products, and plants. The
-                // `plans` table is the dispatcher's saved scheduling state
-                // (assignments, notes); it isn't authoritative for raw
-                // production counts and isn't required to exist for a
-                // given date. `fetchPlanRowsByDateRange` shapes the
-                // dispatch_data order headers into the same
-                // `{ plan_date, plant_production }` records the rest of
-                // this hook expects.
+                // Statistics pulls schedule data from BOTH the curated
+                // `plans` table (where the dispatcher's yardage edits land)
+                // AND the imported `dispatch_data` table (every day's
+                // dispatch report). For days the dispatcher curated, the
+                // plans row is authoritative — `dispatch_data` frequently
+                // arrives with null `scheduled_yardage` on cross-plant
+                // order headers, which would silently zero out yardage on
+                // every Statistics sub-page if we relied on dispatch_data
+                // alone. For days the dispatcher never opened, dispatch_data
+                // is the only thing we have. So we fetch both in parallel
+                // and merge per-date: plans wins when present, dispatch_data
+                // fills the gaps.
                 const currentDates = listWorkingDaysInRange(range.current.start, range.current.end)
                 const previousDates = range.previous
                     ? listWorkingDaysInRange(range.previous.start, range.previous.end)
                     : []
-                const [fetchedCurrent, fetchedPrevious] = await Promise.all([
+                const [dispatchCurrent, dispatchPrevious, plansCurrent, plansPrevious] = await Promise.all([
                     DispatchDataService.fetchPlanRowsByDateRange(currentDates),
                     previousDates.length
                         ? DispatchDataService.fetchPlanRowsByDateRange(previousDates)
+                        : Promise.resolve([]),
+                    PlanService.fetchPlansInRange(range.current.start, range.current.end).catch(() => []),
+                    range.previous
+                        ? PlanService.fetchPlansInRange(range.previous.start, range.previous.end).catch(() => [])
                         : Promise.resolve([])
                 ])
                 if (cancelled) return
-                setCurrentRows(fetchedCurrent || [])
-                setPreviousRows(fetchedPrevious || [])
+                setCurrentRows(mergePlanAndDispatchRows(plansCurrent, dispatchCurrent))
+                setPreviousRows(mergePlanAndDispatchRows(plansPrevious, dispatchPrevious))
+                // Populate `plansByDate` from the same fetch — the Help &
+                // Cross-Loading sub-page consumes it, and consolidating the
+                // fetch avoids a second round-trip.
+                const map = {}
+                ;(plansCurrent || []).forEach((row) => {
+                    if (row?.plan_date) map[row.plan_date] = row
+                })
+                setPlansByDate(map)
             } catch {
                 if (cancelled) return
                 setCurrentRows([])
@@ -395,6 +534,54 @@ export function usePlanStatistics({
      *  doesn't redo work. The bucket only retains a few weeks of history
      *  reliably — older days will return empty maps and silently drop out
      *  of the satisfaction score (as expected). */
+    /** Per-date Map<orderId, {scheduledYardage, loadSize}> derived from the
+     *  merged `currentRows` + `previousRows`. These rows are
+     *  plans-data-first (see `mergePlanAndDispatchRows`), so this map
+     *  carries the dispatcher's curated yardage — exactly what the detail
+     *  allocator needs to fill in for cross-plant orders whose dispatch_data
+     *  header row has a null `scheduled_yardage`. Passed into
+     *  `fetchDetailByDateRange` as the external fallback so ticket
+     *  quantities, `byPlant` totals, and downstream cross-load attribution
+     *  all reflect the right numbers. */
+    const scheduleMetaByDate = useMemo(() => {
+        const out = new Map()
+        const ingest = (rows) => {
+            ;(rows || []).forEach((row) => {
+                const date = row?.plan_date
+                if (!date) return
+                const production =
+                    row?.plant_production && typeof row.plant_production === 'object' ? row.plant_production : {}
+                let dateMap = out.get(date)
+                Object.values(production).forEach((block) => {
+                    if (!block || typeof block !== 'object') return
+                    const orders = Array.isArray(block.orders) ? block.orders : []
+                    orders.forEach((o) => {
+                        if (!o?.orderId) return
+                        const sy = parseFloat(o?.yardage) || 0
+                        const ls = parseFloat(o?.loadSize) || 0
+                        if (sy <= 0 && ls <= 0) return
+                        if (!dateMap) {
+                            dateMap = new Map()
+                            out.set(date, dateMap)
+                        }
+                        const existing = dateMap.get(o.orderId)
+                        if (!existing) {
+                            dateMap.set(o.orderId, { loadSize: ls, scheduledYardage: sy })
+                        } else {
+                            dateMap.set(o.orderId, {
+                                loadSize: Math.max(existing.loadSize, ls),
+                                scheduledYardage: Math.max(existing.scheduledYardage, sy)
+                            })
+                        }
+                    })
+                })
+            })
+        }
+        ingest(currentRows)
+        ingest(previousRows)
+        return out
+    }, [currentRows, previousRows])
+
     useEffect(() => {
         if (!satisfactionEnabled && !operatorsEnabled && !helpCrossLoadingEnabled && !plantsEnabled && !serviceEnabled)
             return undefined
@@ -409,7 +596,7 @@ export function usePlanStatistics({
         // ONE chunked range request instead of N per-date round-trips. For a
         // year window this drops from ~313 fetches to ~11. Empty entries
         // come back keyed by date so re-renders don't re-fetch them.
-        DispatchDataService.fetchDetailByDateRange(dates)
+        DispatchDataService.fetchDetailByDateRange(dates, scheduleMetaByDate)
             .then((rangeMap) => {
                 if (cancelled) return
                 setDetailByDay((prev) => {
@@ -433,6 +620,7 @@ export function usePlanStatistics({
         currentDays,
         previousDays,
         detailByDay,
+        scheduleMetaByDate,
         satisfactionEnabled,
         operatorsEnabled,
         helpCrossLoadingEnabled,
@@ -445,32 +633,10 @@ export function usePlanStatistics({
      *  active range so the page can read `assignments` for planned-help
      *  metrics. Range covers the current window only; comparison-window
      *  plans aren't needed since this page doesn't surface deltas. */
-    useEffect(() => {
-        if (!helpCrossLoadingEnabled) return undefined
-        const startIso = range?.current?.start
-        const endIso = range?.current?.end
-        if (!startIso || !endIso) return undefined
-        let cancelled = false
-        setPlansLoading(true)
-        PlanService.fetchPlansInRange(startIso, endIso)
-            .then((rows) => {
-                if (cancelled) return
-                const map = {}
-                ;(rows || []).forEach((row) => {
-                    if (row?.plan_date) map[row.plan_date] = row
-                })
-                setPlansByDate(map)
-            })
-            .catch((err) => {
-                if (!cancelled) console.warn('[usePlanStatistics] plans fetch failed', err?.message || err)
-            })
-            .finally(() => {
-                if (!cancelled) setPlansLoading(false)
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [helpCrossLoadingEnabled, range])
+    // `plansByDate` is populated alongside `currentRows` by the main fetch
+    // effect above — the plans data is the dispatcher's curated source of
+    // truth, used both to backfill yardage on dispatch_data gaps and to
+    // feed the Help & Cross-Loading sub-page's per-day assignment lookups.
 
     /** Flat list of every live order in the active window, tagged with its
      *  plant + date. Built ONCE so per-plant memos can bucket without
@@ -484,20 +650,57 @@ export function usePlanStatistics({
         [currentRows, satisfactionEnabled, helpCrossLoadingEnabled, plantsEnabled, serviceEnabled]
     )
 
+    /** Flat `orderId → {scheduledYardage, loadSize}` lookup derived from
+     *  the merged `flatOrders`. Used as the client-side fallback when a
+     *  ticket's `quantity` arrives at zero — same data the service-layer
+     *  allocator gets via `scheduleMetaByDate`, but accessible at the
+     *  `mergedDetail` merge step where we can post-process detail entries
+     *  whose service-side allocation didn't pick up the schedule yardage
+     *  (e.g., the detail fetch resolved before plans data was available
+     *  and the secondary refetch hasn't run yet). */
+    const orderScheduleByOrderId = useMemo(() => {
+        const map = new Map()
+        flatOrders.forEach(({ order }) => {
+            if (!order?.orderId) return
+            const sy = parseFloat(order?.yardage) || 0
+            const ls = parseFloat(order?.loadSize) || 0
+            if (sy <= 0 && ls <= 0) return
+            const existing = map.get(order.orderId)
+            if (!existing) {
+                map.set(order.orderId, { loadSize: ls, scheduledYardage: sy })
+            } else {
+                map.set(order.orderId, {
+                    loadSize: Math.max(existing.loadSize, ls),
+                    scheduledYardage: Math.max(existing.scheduledYardage, sy)
+                })
+            }
+        })
+        return map
+    }, [flatOrders])
+
     /** Merged detail map across every loaded date — built once and reused
      *  by every aggregate. `computeCustomerSatisfaction` looks orders up by
-     *  orderId so the keys are flat across dates. */
+     *  orderId so the keys are flat across dates.
+     *
+     *  Belt-and-suspenders backfill: for each order, if DetailDriver-only
+     *  tickets came back with `quantity === 0` AND the curated schedule
+     *  has a positive yardage for that order, re-run the per-ticket
+     *  allocation client-side and rebuild `byPlant` + `loadedYardage`.
+     *  This duplicates the service-layer allocator (which already runs
+     *  with the same fallback) and exists purely to insulate downstream
+     *  computations from any timing window where `detailByDay` was set
+     *  before the plans-based fallback reached the service. */
     const mergedDetail = useMemo(() => {
         if (!satisfactionEnabled && !plantsEnabled) return {}
         const out = {}
         Object.values(detailByDay).forEach((map) => {
             if (!map) return
             Object.entries(map).forEach(([orderId, entry]) => {
-                out[orderId] = entry
+                out[orderId] = enrichDetailEntryWithSchedule(entry, orderScheduleByOrderId.get(orderId))
             })
         })
         return out
-    }, [detailByDay, satisfactionEnabled, plantsEnabled])
+    }, [detailByDay, satisfactionEnabled, plantsEnabled, orderScheduleByOrderId])
 
     /** Per-plant load attribution — splits each plant's slice into:
      *

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { fmtFloat, fmtInt, fmtMinutesAsHHMM } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtFloat, fmtInt, fmtMinutesAsHHMM, fmtYards } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { Stat, StatGroup } from '../../../ui/Panel'
 import { DeltaHint } from './PlanStatisticsCharts'
 
@@ -12,7 +12,7 @@ export function PlanStatisticsKpiStrip({ currentSummary, previousSummary, workin
         <StatGroup columns={5}>
             <Stat
                 label="Total yardage"
-                value={fmtInt(currentSummary.totalYardage)}
+                value={fmtYards(currentSummary.totalYardage)}
                 hint={
                     <DeltaHint
                         base={`${fmtInt(currentSummary.totalLoads)} loads`}
@@ -23,7 +23,7 @@ export function PlanStatisticsKpiStrip({ currentSummary, previousSummary, workin
             />
             <Stat
                 label="Avg per day"
-                value={fmtInt(currentSummary.avgYardagePerActiveDay)}
+                value={fmtYards(currentSummary.avgYardagePerActiveDay)}
                 hint={
                     <DeltaHint
                         base={`${currentSummary.daysWithProduction} of ${workingDayCount} working day${workingDayCount === 1 ? '' : 's'}`}

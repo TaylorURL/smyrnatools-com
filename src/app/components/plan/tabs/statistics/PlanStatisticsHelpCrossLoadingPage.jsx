@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
-import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtInt, fmtYards } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { PLAN_STATS_CHART_TOOLTIP_STYLE } from '../../../../../utils/PlanStatisticsUtility'
 import {
     EMPTY_COLOCATION_MAP,
@@ -183,7 +183,7 @@ export default function PlanStatisticsHelpCrossLoadingPage({
                 <Stat
                     hint={`across ${fmtInt(safeKpi.crossLoadTickets)} ticket${safeKpi.crossLoadTickets === 1 ? '' : 's'}`}
                     label="Yardage actually loaded for other plants"
-                    value={`${fmtInt(safeKpi.crossLoadYardage)} yd³`}
+                    value={`${fmtYards(safeKpi.crossLoadYardage)} yd³`}
                     valueColor={METHOD.crossLoad.color}
                 />
                 <Stat

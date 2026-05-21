@@ -1,7 +1,7 @@
 /* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
-import { fmtFloat, fmtInt, fmtRange, parseIsoLocal } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtFloat, fmtInt, fmtRange, fmtYards, parseIsoLocal } from '../../../../../utils/PlanStatisticsFormatUtility'
 import {
     BIG_POUR_SPACING_THRESHOLD_MIN,
     BIG_POUR_YARDAGE_THRESHOLD,
@@ -53,9 +53,9 @@ export function ComparisonPanel({ currentSummary, previousSummary }) {
     const rows = useMemo(
         () => [
             {
-                current: { formatted: fmtInt(currentSummary.totalYardage), value: currentSummary.totalYardage },
+                current: { formatted: fmtYards(currentSummary.totalYardage), value: currentSummary.totalYardage },
                 label: 'Total yardage',
-                previous: { formatted: fmtInt(previousSummary.totalYardage), value: previousSummary.totalYardage }
+                previous: { formatted: fmtYards(previousSummary.totalYardage), value: previousSummary.totalYardage }
             },
             {
                 current: { formatted: fmtInt(currentSummary.totalLoads), value: currentSummary.totalLoads },
@@ -83,12 +83,12 @@ export function ComparisonPanel({ currentSummary, previousSummary }) {
             },
             {
                 current: {
-                    formatted: fmtInt(currentSummary.avgYardagePerActiveDay),
+                    formatted: fmtYards(currentSummary.avgYardagePerActiveDay),
                     value: currentSummary.avgYardagePerActiveDay
                 },
                 label: 'Avg yardage / active day',
                 previous: {
-                    formatted: fmtInt(previousSummary.avgYardagePerActiveDay),
+                    formatted: fmtYards(previousSummary.avgYardagePerActiveDay),
                     value: previousSummary.avgYardagePerActiveDay
                 }
             },
@@ -351,7 +351,7 @@ export function PlanStatisticsOverviewPage({
                             className="font-mono tabular-nums font-bold leading-none text-text-primary font-heading"
                             style={{ fontSize: 36 }}
                         >
-                            {fmtInt(totalYardage)}
+                            {fmtYards(totalYardage)}
                         </span>
                         <span className="text-[11.5px] uppercase tracking-wider text-text-tertiary">
                             yd³ poured · {daysWithProduction} day{daysWithProduction === 1 ? '' : 's'} · {activeCount}{' '}
@@ -362,7 +362,7 @@ export function PlanStatisticsOverviewPage({
                         <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
                             <span className="text-[10px] uppercase tracking-wider text-text-tertiary">Avg / day</span>
                             <span className="font-mono tabular-nums font-semibold text-text-primary">
-                                {fmtInt(yardagePerDay)} yd³
+                                {fmtYards(yardagePerDay)} yd³
                             </span>
                         </div>
                         <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
@@ -397,14 +397,16 @@ export function PlanStatisticsOverviewPage({
                         label="Best day"
                         value={bestDay ? formatDayLabel(bestDay.planDate) : '—'}
                         hint={
-                            bestDay ? `${fmtInt(bestDay.totalYardage)} yd³ · ${fmtInt(bestDay.totalLoads)} loads` : null
+                            bestDay
+                                ? `${fmtYards(bestDay.totalYardage)} yd³ · ${fmtInt(bestDay.totalLoads)} loads`
+                                : null
                         }
                     />
                     <HighlightRow
                         icon="fa-arrow-trend-down"
                         label="Slowest day"
                         value={worstDay ? formatDayLabel(worstDay.planDate) : '—'}
-                        hint={worstDay ? `${fmtInt(worstDay.totalYardage)} yd³` : null}
+                        hint={worstDay ? `${fmtYards(worstDay.totalYardage)} yd³` : null}
                     />
                     <HighlightRow
                         icon="fa-industry"
@@ -418,7 +420,7 @@ export function PlanStatisticsOverviewPage({
                         }
                         hint={
                             topPlantShare
-                                ? `${fmtInt(topPlantShare.yardage)} yd³ · ${(topPlantShare.share * 100).toFixed(0)}% share`
+                                ? `${fmtYards(topPlantShare.yardage)} yd³ · ${(topPlantShare.share * 100).toFixed(0)}% share`
                                 : null
                         }
                         valueColor={topPlantShare ? plantBadgeColor(topPlantShare.code, accent) : null}
@@ -429,7 +431,7 @@ export function PlanStatisticsOverviewPage({
                         value={topCustomerShare?.customer || '—'}
                         hint={
                             topCustomerShare
-                                ? `${fmtInt(topCustomerShare.yardage)} yd³ · ${(topCustomerShare.share * 100).toFixed(0)}% share`
+                                ? `${fmtYards(topCustomerShare.yardage)} yd³ · ${(topCustomerShare.share * 100).toFixed(0)}% share`
                                 : null
                         }
                     />
@@ -987,7 +989,7 @@ function UnmatchedDriversRow({
             >
                 {row.loads > 0 ? avgYardage.toFixed(1) : '—'}
             </span>
-            <span className="font-mono tabular-nums text-right text-text-secondary">{fmtInt(row.yardage)} yd³</span>
+            <span className="font-mono tabular-nums text-right text-text-secondary">{fmtYards(row.yardage)} yd³</span>
         </div>
     )
 }
@@ -1036,7 +1038,7 @@ export function PlanStatisticsOperatorsPage({
                 ) : totals.drivers > 0 ? (
                     <span className="text-[11px] text-text-tertiary">
                         {fmtInt(totals.drivers)} driver{totals.drivers === 1 ? '' : 's'} · {fmtInt(totals.loads)} load
-                        {totals.loads === 1 ? '' : 's'} · {fmtInt(totals.yardage)} yd³
+                        {totals.loads === 1 ? '' : 's'} · {fmtYards(totals.yardage)} yd³
                         {totals.mismatched > 0 && (
                             <>
                                 {' · '}
@@ -1185,7 +1187,7 @@ export function PlanStatisticsOperatorsPage({
                                     {row.loads > 0 ? avgYardage.toFixed(1) : '—'}
                                 </span>
                                 <span className="font-mono tabular-nums text-right text-text-secondary">
-                                    {fmtInt(row.yardage)} yd³
+                                    {fmtYards(row.yardage)} yd³
                                 </span>
                             </div>
                         )

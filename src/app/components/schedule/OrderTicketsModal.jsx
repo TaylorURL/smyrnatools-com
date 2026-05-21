@@ -1,7 +1,12 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo } from 'react'
 
-import { parseDurationMinutes, splitTicketsAtKicker, timeToMinutes } from '../../../utils/PlanUtility'
+import {
+    computeRequestedYardsPerHour,
+    parseDurationMinutes,
+    splitTicketsAtKicker,
+    timeToMinutes
+} from '../../../utils/PlanUtility'
 import { useOperatorNameLookup } from '../../hooks/useOperatorNameLookup'
 
 const clean = (value) => (value == null ? '' : String(value).trim())
@@ -48,13 +53,67 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, o
         }
     }, [onClose])
 
-    const tickets = useMemo(() => (Array.isArray(detail?.tickets) ? detail.tickets : []), [detail])
-    const totalLoaded = detail?.loadedYardage || 0
     const orderTotal = parseFloat(order?.yardage) || 0
+    const orderLoadSize = parseFloat(order?.loadSize) || 0
     const orderNumLabel = order?.orderNum ? `#${order.orderNum}` : ''
     const customerLabel = clean(order?.customer)
     const homePlantCode = order?.plantCode || ''
     const homePlantName = plantNameByCode?.[homePlantCode] || ''
+
+    /** Defensive client-side allocator. Mirrors the upstream
+     *  `DispatchDataService.buildDetailByOrderId` allocation but runs at
+     *  the modal layer too, so cross-plant DetailDriver-only tickets get
+     *  estimated quantities even when the service-layer fallback chain
+     *  happens to miss this order (e.g., `plantProduction` lands after
+     *  the detail fetch resolved and the service's secondary refetch
+     *  hasn't completed yet, or a stale `detailByOrderId` is sitting in
+     *  state from before the `plans` table had the curated yardage).
+     *
+     *  Strategy per ticket:
+     *   - confirmed (non-DetailDriver) tickets pass through untouched.
+     *   - DetailDriver-only tickets with `quantity > 0` already from the
+     *     service allocator also pass through (we never override the
+     *     authoritative result).
+     *   - DetailDriver-only tickets with `quantity === 0` get
+     *     `min(loadSize, remaining)`, where `remaining =
+     *     order.yardage − sum of confirmed ticket quantities`. */
+    const tickets = useMemo(() => {
+        const raw = Array.isArray(detail?.tickets) ? detail.tickets : []
+        if (raw.length === 0 || orderTotal <= 0) return raw
+        const confirmedTotal = raw.reduce(
+            (sum, t) => (t?.sourceReport === 'DetailDriver' ? sum : sum + (parseFloat(t?.quantity) || 0)),
+            0
+        )
+        // Also count any DetailDriver tickets that the upstream allocator
+        // already filled in — we don't want to re-allocate yardage that
+        // service-layer code already accounted for.
+        const upstreamEstimateTotal = raw.reduce(
+            (sum, t) => (t?.sourceReport === 'DetailDriver' ? sum + (parseFloat(t?.quantity) || 0) : sum),
+            0
+        )
+        let remaining = Math.max(0, orderTotal - confirmedTotal - upstreamEstimateTotal)
+        if (remaining <= 0) return raw
+        let backfilled = false
+        const next = raw.map((t) => {
+            if (t?.sourceReport !== 'DetailDriver') return t
+            const currentQty = parseFloat(t?.quantity) || 0
+            if (currentQty > 0) return t
+            if (remaining <= 0) return t
+            const allocation = orderLoadSize > 0 ? Math.min(orderLoadSize, remaining) : remaining
+            remaining -= allocation
+            backfilled = true
+            return { ...t, quantity: allocation }
+        })
+        return backfilled ? next : raw
+    }, [detail, orderTotal, orderLoadSize])
+
+    /** Recompute loaded total from the (possibly backfilled) ticket array
+     *  so the LOADED header reflects the same numbers shown per row. */
+    const totalLoaded = useMemo(() => {
+        const raw = Array.isArray(detail?.tickets) ? detail.tickets : []
+        if (tickets === raw) return detail?.loadedYardage || 0
+        return tickets.reduce((sum, t) => sum + (parseFloat(t?.quantity) || 0), 0)
+    }, [detail, tickets])
 
     /** Realized pour metrics. Pace (YPH) is computed against the ORIGINAL
      *  cohort only — load times after a kicker gap (customer adding yardage
@@ -103,6 +162,7 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, o
         const plannedSpan = expectedTrucks > 1 ? (expectedTrucks - 1) * spacing : 0
         const effectiveSpan = Math.max(originalSpan, plannedSpan)
         const yph = effectiveSpan > 0 && paceYardage > 0 ? (paceYardage / effectiveSpan) * 60 : null
+        const targetYph = computeRequestedYardsPerHour(loadSize, spacing)
 
         return {
             actualSpan: originalSpan,
@@ -115,6 +175,7 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, o
             lastTime: parsed[parsed.length - 1].time,
             originalYardage,
             plannedSpan,
+            targetYph,
             ticketCount: parsed.length,
             yph
         }
@@ -195,52 +256,94 @@ function OrderTicketsModal({ accentColor = '#2563eb', detail, getJobTravelMin, o
                     </div>
                 </div>
 
-                {realized && (
-                    <div
-                        className={`px-5 py-3 grid grid-cols-1 sm:grid-cols-${realized.hasKicker ? 4 : 3} gap-3 border-b bg-bg-secondary border-border-light`}
-                    >
-                        <MetricTile label="First truck loaded" value={realized.firstTime} />
-                        <MetricTile
-                            hint={
-                                realized.ticketCount > 1
-                                    ? `${realized.ticketCount} loads total`
-                                    : 'only one load so far'
-                            }
-                            label="Last truck loaded"
-                            value={realized.lastTime}
-                        />
-                        <MetricTile
-                            hint={(() => {
-                                if (realized.yph == null) return 'no original yardage to pace'
-                                const planned = realized.plannedSpan > 0 && realized.plannedSpan >= realized.actualSpan
-                                const span = formatDuration(realized.effectiveSpan)
-                                const base = planned ? `over planned ${span} pour` : `over actual ${span} pour`
-                                return realized.hasKicker ? `${base} · excludes kicker` : base
-                            })()}
-                            label={realized.hasKicker ? 'Original pour pace' : 'Pour pace'}
-                            value={formatYph(realized.yph)}
-                        />
-                        {realized.hasKicker && (
-                            <MetricTile
-                                hint={`${
-                                    Number.isInteger(realized.originalYardage)
-                                        ? realized.originalYardage
-                                        : realized.originalYardage.toFixed(1)
-                                } yd original + ${
-                                    Number.isInteger(realized.kickerYardage)
-                                        ? realized.kickerYardage
-                                        : realized.kickerYardage.toFixed(1)
-                                } yd kicker`}
-                                label="Kicker added"
-                                value={`+${
-                                    Number.isInteger(realized.kickerYardage)
-                                        ? realized.kickerYardage
-                                        : realized.kickerYardage.toFixed(1)
-                                } yd`}
-                            />
-                        )}
-                    </div>
-                )}
+                {realized &&
+                    (() => {
+                        /* Pace comparison: actual achieved yd/hr against the
+                         * customer's scheduled rate. Color the actual value
+                         * by how it lines up — green if at or above target,
+                         * amber when it slips, red once it falls below 70%
+                         * (the same cutoff `computeCustomerSatisfaction`
+                         * uses to flag "slow service"). */
+                        // Literal class names so Tailwind JIT picks them up.
+                        // Dynamic `sm:grid-cols-${n}` templates wouldn't.
+                        const gridCols = realized.hasKicker ? 'sm:grid-cols-5' : 'sm:grid-cols-4'
+                        const paceRatio =
+                            realized.yph != null && realized.targetYph && realized.targetYph > 0
+                                ? realized.yph / realized.targetYph
+                                : null
+                        const paceColor =
+                            paceRatio == null
+                                ? undefined
+                                : paceRatio >= 1
+                                  ? '#16a34a'
+                                  : paceRatio >= 0.7
+                                    ? '#d97706'
+                                    : '#dc2626'
+                        const paceHint = (() => {
+                            if (realized.yph == null) return 'no original yardage to pace'
+                            const span = formatDuration(realized.effectiveSpan)
+                            const planned = realized.plannedSpan > 0 && realized.plannedSpan >= realized.actualSpan
+                            const spanLabel = planned ? `over planned ${span}` : `over actual ${span}`
+                            const ratioLabel = paceRatio != null ? ` · ${Math.round(paceRatio * 100)}% of target` : ''
+                            const kickerLabel = realized.hasKicker ? ' · excludes kicker' : ''
+                            return `${spanLabel}${ratioLabel}${kickerLabel}`
+                        })()
+                        return (
+                            <div
+                                className={`px-5 py-3 grid grid-cols-1 ${gridCols} gap-3 border-b bg-bg-secondary border-border-light`}
+                            >
+                                <MetricTile label="First truck loaded" value={realized.firstTime} />
+                                <MetricTile
+                                    hint={
+                                        realized.ticketCount > 1
+                                            ? `${realized.ticketCount} loads total`
+                                            : 'only one load so far'
+                                    }
+                                    label="Last truck loaded"
+                                    value={realized.lastTime}
+                                />
+                                <MetricTile
+                                    hint={
+                                        realized.targetYph
+                                            ? `${order?.loadSize || '—'} yd / truck × ${parseDurationMinutes(order?.rate) || 5} min`
+                                            : 'truck size or rate missing'
+                                    }
+                                    label="Target pace"
+                                    value={formatYph(realized.targetYph)}
+                                />
+                                <MetricTile
+                                    hint={paceHint}
+                                    label={realized.hasKicker ? 'Actual pace (original)' : 'Actual pace'}
+                                    value={
+                                        paceColor && realized.yph != null ? (
+                                            <span style={{ color: paceColor }}>{formatYph(realized.yph)}</span>
+                                        ) : (
+                                            formatYph(realized.yph)
+                                        )
+                                    }
+                                />
+                                {realized.hasKicker && (
+                                    <MetricTile
+                                        hint={`${
+                                            Number.isInteger(realized.originalYardage)
+                                                ? realized.originalYardage
+                                                : realized.originalYardage.toFixed(1)
+                                        } yd original + ${
+                                            Number.isInteger(realized.kickerYardage)
+                                                ? realized.kickerYardage
+                                                : realized.kickerYardage.toFixed(1)
+                                        } yd kicker`}
+                                        label="Kicker added"
+                                        value={`+${
+                                            Number.isInteger(realized.kickerYardage)
+                                                ? realized.kickerYardage
+                                                : realized.kickerYardage.toFixed(1)
+                                        } yd`}
+                                    />
+                                )}
+                            </div>
+                        )
+                    })()}
 
                 <div className="flex-1 overflow-auto">
                     {tickets.length === 0 ? (

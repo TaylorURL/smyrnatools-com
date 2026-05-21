@@ -1,5 +1,61 @@
 # Changelog
 
+## [2026.21.14] - 2026-05-20
+
+- Statistics → **Service** sub-page replaces the prior Late page. Shows the
+  full late + slow + good experience verdict (matching the satisfaction
+  scorer's `scoreOrderExperience`) — per-plant scorecard, customers feeling
+  the bad service, good-service % by time of day, outcome mix, daily trend,
+  and worst bad-service jobs. Side-by-side grids collapsed to single-column
+  full-width panels so chart heights can't mismatch.
+- New Statistics → **Customer Lookup** sub-page. Searchable card grid over
+  every customer with measured orders in the active window; each card shows
+  good %, last pour date, late/slow counts, and a sparkline trail of recent
+  verdicts. Click-to-drill into a customer's full job history.
+  (`src/app/components/plan/tabs/statistics/PlanStatisticsCustomerLookupPage.jsx`,
+  `src/app/hooks/useServiceQualityStats.js`).
+- Side-by-side comparison view (View original schedule): moved orders are
+  now split into two row-aligned pairs — one at the snapshot's original
+  slot (real on snap, amber "Moved to HH:MM" ghost on live) and one at the
+  live's new slot (amber "Moved here from HH:MM" ghost on snap, real on
+  live). Both columns stay chronological. Added scroll-sync so the two
+  tables mirror `scrollTop` / `scrollLeft`. Suppressed the internal
+  `(time, kind)` re-sort in compare mode so placeholder-vs-order priority
+  differences can't swap pair indices between sides.
+- Schedule: removed the duplicate "View original schedule" button from the
+  filter drawer; the title-row toggle is now the single entry point.
+- View Tickets popup: added **Target pace** tile next to **Actual pace** so
+  the dispatcher reads requested vs. achieved yd/hr side-by-side. Actual
+  pace value color-codes against the target (green ≥ 100%, amber ≥ 70%,
+  red < 70%) using the same threshold as the customer-satisfaction scorer.
+- Plant Efficiency Report: `1st Load` and `Total Loads` auto-fill from the
+  report-day's dispatch tickets and lock against manual edits. Hook
+  (`useEfficiencyTicketAggregates`) attributes tickets via operator-name
+  canonicalization with truck-number fallback.
+- Statistics sidebar: every label normalized to Title Case ("Customer
+  Satisfaction", "Customer Lookup").
+- Dashboard alerts: clicking the Training / Pending Start / Unassigned
+  Operators alerts now pre-applies the matching status filter when opening
+  the Operators popup. `DashboardView` forwards `embeddedViewProps` to
+  `EmbeddedViewModal` so any alert can drive the embedded view's initial
+  state.
+- Removed CSV export from the Operations → Statistics top bar
+  (`PlanStatisticsControls`) and from the Operations → Demand header
+  (`PlanDemandView`). Orphaned helpers (`buildScheduleCsv`,
+  `buildPerPlantCsv`, `downloadCsvFile`) dropped from `PlanStatisticsUtility`
+  / `PlanDemandUtility`.
+- Bridge userscript (`scripts/bridge/smyrna-dispatch-sync.user.js`): added
+  a once-per-day full re-upload pass at 18:00 CT that force-refreshes every
+  (report × plant × date) combo for the current year regardless of bucket
+  state, plus `window.smyrnaSync.{fullRefreshNow,runRollingSync,
+  clearFullRefreshMark,status}()` manual triggers for in-browser testing.
+- Shared `OperatorNameLookupUtility` (`nameLookupVariants`,
+  `formatPersonName`) — extracted from `usePlanStatistics` and
+  `useOperatorNameLookup` so every operator-name canonicalizer hits one
+  source of truth.
+- `vite.config.js`: exclude `.claude/**` from the vitest run so spawned
+  agent worktrees don't double-execute the suite with stale env.
+
 ## [2026.21.13] - 2026-05-20
 
 - Daily Plan cron email — cancelled (`17:00`) and dispatcher-test

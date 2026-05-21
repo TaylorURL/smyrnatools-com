@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
-import { fmtDate, fmtInt, fmtRange } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtDate, fmtInt, fmtRange, fmtYards } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { PLAN_STATS_CHART_TOOLTIP_STYLE } from '../../../../../utils/PlanStatisticsUtility'
 import { plantBadgeColor } from '../../../../../utils/PlanUtility'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
@@ -333,7 +333,7 @@ function PlantScoreboard({ accent, perPlant, plantNameByCode, selectedPlant, onP
                                     {fmtInt(row.samples)}
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
-                                    {fmtInt(row.yardage)}
+                                    {fmtYards(row.yardage)}
                                 </td>
                                 <td className="px-3 py-2 text-right">
                                     <ScorePill score={row.score} />
@@ -528,7 +528,7 @@ function WorstOrdersList({ orders, plantNameByCode }) {
                         </div>
                     </div>
                     <div className="text-right font-mono tabular-nums font-semibold text-text-primary">
-                        {fmtInt(row.yardage)} yd³
+                        {fmtYards(row.yardage)} yd³
                     </div>
                 </div>
             ))}
@@ -554,7 +554,7 @@ function WorstCustomersList({ customers }) {
                             <span>
                                 {fmtInt(row.badOrders)} of {fmtInt(row.samples)} scored
                             </span>
-                            <span>· {fmtInt(row.yardage)} yd³ affected</span>
+                            <span>· {fmtYards(row.yardage)} yd³ affected</span>
                         </div>
                     </div>
                 </div>

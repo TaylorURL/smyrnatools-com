@@ -7,7 +7,8 @@ import {
     fmtDate,
     fmtInt,
     fmtMinutesAsHHMM,
-    fmtPct
+    fmtPct,
+    fmtYards
 } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { MAX_YPH, plantBadgeColor, TARGET_YPH, timeToMinutes } from '../../../../../utils/PlanUtility'
 
@@ -48,7 +49,7 @@ export function RankedList({ accent, emptyLabel, items, labelKey, secondaryFmt, 
                         />
                     </div>
                     <span className="font-mono tabular-nums font-semibold w-20 text-right shrink-0 text-text-primary">
-                        {fmtInt(item.yardage)} {valueLabel}
+                        {fmtYards(item.yardage)} {valueLabel}
                     </span>
                     {secondaryFmt && (
                         <span className="font-mono tabular-nums w-16 text-right shrink-0 text-text-tertiary">
@@ -103,7 +104,7 @@ export function BigPoursTable({ accent, plantNameByCode, pours }) {
                     </div>
                     <div className="text-right shrink-0">
                         <div className="font-mono tabular-nums font-semibold text-text-primary">
-                            {fmtInt(pour.yardage)} yd³
+                            {fmtYards(pour.yardage)} yd³
                         </div>
                         <div className="text-[10.5px] text-text-tertiary">{fmtInt(pour.loads)} loads</div>
                     </div>
@@ -154,11 +155,17 @@ export function PlantScorecardTable({
     return (
         <div className="flex flex-col">
             <div className="px-3 py-2.5 text-[11.5px] leading-relaxed border-b border-border-light text-text-secondary">
-                <span className="font-semibold text-text-primary">How to read this:</span>{' '}
-                <span className="font-semibold">Scheduled</span> is what dispatch booked for the plant.{' '}
-                <span className="font-semibold">Actually loaded</span> is what tickets show was poured for those orders
-                — it can be higher if sibling plants helped load the trucks, or lower if the plant gave help instead of
-                pouring its own orders.
+                <span className="font-semibold text-text-primary">How to read this:</span> the four yardage columns are{' '}
+                <span className="font-semibold">non-overlapping</span>, so subtraction works.{' '}
+                <span className="font-semibold">Scheduled</span> = booked for this plant.{' '}
+                <span className="font-semibold">Own mixers loaded</span> = this plant&apos;s mixers loading for this
+                plant&apos;s orders. <span className="font-semibold">Help received</span> = other plants&apos; mixers
+                loading for this plant&apos;s orders. <span className="font-semibold">Help given</span> = this
+                plant&apos;s mixers loading for OTHER plants&apos; orders. So{' '}
+                <span className="font-semibold">Own mixers loaded + Help received ≈ Scheduled</span> (any gap is
+                ticket-extraction issues, not unloaded concrete), and{' '}
+                <span className="font-semibold">Own mixers loaded + Help given</span> = this plant&apos;s total mixer
+                output for the day.
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-[12px] border-collapse">
@@ -175,19 +182,19 @@ export function PlantScorecardTable({
                             </th>
                             <th
                                 className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                title="Yardage tickets show was actually loaded for this plant's orders — includes help received from other plants."
+                                title="Yardage this plant's own mixers loaded for this plant's own orders. Does NOT include help received — that's the next column. Add the two for the full delivery against this plant's orders."
                             >
-                                Actually loaded (yd³)
+                                Own mixers loaded (yd³)
                             </th>
                             <th
                                 className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                title="Yardage that other plants loaded for THIS plant's orders. Subtract this from 'Actually loaded' to see what this plant loaded itself."
+                                title="Yardage other plants' mixers loaded for THIS plant's orders. Independent of 'Own mixers loaded' — add them for the total against this plant's orders."
                             >
                                 Help received (yd³)
                             </th>
                             <th
                                 className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
-                                title="Yardage this plant loaded for OTHER plants' orders. Counts as help given."
+                                title="Yardage this plant's mixers loaded for OTHER plants' orders. Add to 'Own mixers loaded' for this plant's total mixer output for the day."
                             >
                                 Help given (yd³)
                             </th>
@@ -216,7 +223,14 @@ export function PlantScorecardTable({
                                 trucks
                             })
                             const attribution = loadAttributionByPlant?.[plant.code]
-                            const loadedYards = attribution?.loaded || 0
+                            /* `selfLoaded` = this plant's own mixers loading
+                             * for this plant's own orders (the loaded total
+                             * minus help received). Switching to selfLoaded
+                             * makes the four yardage columns non-overlapping
+                             * so the row is actually addable: scheduled ≈
+                             * selfLoaded + helpReceived, mixerOutput =
+                             * selfLoaded + helpGiven. */
+                            const selfLoadedYards = attribution?.selfLoaded || 0
                             const crossInYards = attribution?.crossInYards || 0
                             const crossOutYards = attribution?.crossOutYards || 0
                             return (
@@ -238,23 +252,23 @@ export function PlantScorecardTable({
                                         </div>
                                     </td>
                                     <td className="px-2 py-2 text-right font-mono tabular-nums font-semibold text-text-primary">
-                                        {fmtInt(plant.yardage)}
+                                        {fmtYards(plant.yardage)}
                                     </td>
                                     <td
                                         className="px-2 py-2 text-right font-mono tabular-nums text-text-primary"
                                         title={
-                                            loadedYards > 0
-                                                ? `${fmtInt(loadedYards)} yd³ loaded for this plant's orders`
-                                                : 'No ticket data yet for this plant'
+                                            selfLoadedYards > 0
+                                                ? `${fmtYards(selfLoadedYards)} yd³ — this plant's own mixers, this plant's own orders`
+                                                : 'No own-mixer ticket data for this plant'
                                         }
                                     >
-                                        {loadedYards > 0 ? fmtInt(loadedYards) : '—'}
+                                        {selfLoadedYards > 0 ? fmtYards(selfLoadedYards) : '—'}
                                     </td>
                                     <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
-                                        {crossInYards > 0 ? fmtInt(crossInYards) : '—'}
+                                        {crossInYards > 0 ? fmtYards(crossInYards) : '—'}
                                     </td>
                                     <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
-                                        {crossOutYards > 0 ? fmtInt(crossOutYards) : '—'}
+                                        {crossOutYards > 0 ? fmtYards(crossOutYards) : '—'}
                                     </td>
                                     <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                         {fmtInt(plant.loads)}

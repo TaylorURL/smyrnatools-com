@@ -207,8 +207,8 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
 
 /**
  * Statistics page top-bar controls — period + period nav + plant filter +
- * comparison + CSV export. Stateless aside from per-menu open/close UI
- * state; every selector is lifted into `usePlanStatistics`.
+ * comparison. Stateless aside from per-menu open/close UI state; every
+ * selector is lifted into `usePlanStatistics`.
  */
 export function PlanStatisticsControls({
     accentColor,
@@ -217,7 +217,6 @@ export function PlanStatisticsControls({
     comparison,
     customEnd,
     customStart,
-    onExport,
     period,
     plantNameByCode,
     range,
@@ -227,8 +226,7 @@ export function PlanStatisticsControls({
     setCustomEnd,
     setCustomStart,
     setPeriod,
-    setSelectedPlant,
-    canExport
+    setSelectedPlant
 }) {
     const availablePlants = useMemo(
         () =>
@@ -261,15 +259,6 @@ export function PlanStatisticsControls({
                 setSelectedPlant={setSelectedPlant}
             />
             <ComparisonMenu accentColor={accentColor} comparison={comparison} setComparison={setComparison} />
-            <button
-                onClick={onExport}
-                disabled={!canExport}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 disabled:opacity-50 bg-bg-tertiary text-text-secondary"
-                title="Download per-day schedule metrics as CSV"
-            >
-                <i className="fas fa-file-csv" />
-                <span>Export</span>
-            </button>
         </div>
     )
 }

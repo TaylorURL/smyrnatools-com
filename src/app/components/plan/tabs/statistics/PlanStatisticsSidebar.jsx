@@ -23,7 +23,7 @@ export const PLAN_STATS_SECTIONS = [
         description: 'Short / medium / long-term horizons, plant comparison, year-over-year.',
         icon: 'fa-face-smile',
         id: 'satisfaction',
-        label: 'Customer satisfaction'
+        label: 'Customer Satisfaction'
     },
     {
         description: 'Load counts per driver across the selected window.',
@@ -43,6 +43,12 @@ export const PLAN_STATS_SECTIONS = [
         icon: 'fa-thumbs-up',
         id: 'service',
         label: 'Service'
+    },
+    {
+        description: 'Search any customer to see every job they had — scheduled time, plant, and verdict.',
+        icon: 'fa-magnifying-glass',
+        id: 'customerLookup',
+        label: 'Customer Lookup'
     }
 ]
 

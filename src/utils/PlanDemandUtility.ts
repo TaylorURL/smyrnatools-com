@@ -176,12 +176,6 @@ interface CollectHourlyParams {
     passesPlantFilter: (code: string) => boolean
 }
 
-interface BuildPerPlantCsvParams {
-    perPlant: PlantAccumulator[]
-    peakByPlant: Record<string, number>
-    totals: DemandTotals
-}
-
 /** Fallback palette for plants that aren't in the shared plant-badge map. */
 export const FALLBACK_SERIES_COLORS = [
     '#0ea5e9',
@@ -443,10 +437,13 @@ export const buildDemandData = ({
     })
 
     const cumulativeYardage = toCumulative(hours.map((h) => h.yardage))
+    /* Don't round here — the display layer (`fmtYards`) snaps to the
+     * nearest half-yard at render time. Rounding upstream silently
+     * destroyed 4.5-yd entries by turning them into 5. */
     const cumulativeHourly = hours.map((h, i) => ({
         hour: h.hour,
         label: h.label,
-        yardage: Math.round(cumulativeYardage[i])
+        yardage: cumulativeYardage[i]
     }))
 
     const capacityByPlant: CapacityByPlantEntry[] = perPlant
@@ -460,13 +457,16 @@ export const buildDemandData = ({
         }))
         .sort((a, b) => b.peak - a.peak)
 
+    /* Raw yardage preserved — the display layer's `fmtYards` snaps to
+     * the nearest half-yard. Don't round here or 4.5-yd customer/product
+     * totals get silently destroyed. */
     const topCustomers: CustomerEntry[] = Array.from(customerYardage.entries())
-        .map(([customer, yardage]) => ({ customer, yardage: Math.round(yardage) }))
+        .map(([customer, yardage]) => ({ customer, yardage }))
         .sort((a, b) => b.yardage - a.yardage)
         .slice(0, 10)
 
     const productMix: ProductEntry[] = Array.from(productYardage.entries())
-        .map(([product, yardage]) => ({ product, yardage: Math.round(yardage) }))
+        .map(([product, yardage]) => ({ product, yardage }))
         .sort((a, b) => b.yardage - a.yardage)
 
     const avgLoadSize =
@@ -506,42 +506,4 @@ export const supplyVerdict = (supply: number, demand: number): SupplyVerdict => 
     if (coverage >= COVERAGE_ON_TARGET) return { color: '#0ea5e9', coverage, label: 'On target', tone: 'good' }
     if (coverage >= COVERAGE_TIGHT) return { color: '#d97706', coverage, label: 'Tight', tone: 'warn' }
     return { color: '#dc2626', coverage, label: 'Overbooked', tone: 'bad' }
-}
-
-/** Escape a value for CSV output (RFC 4180 quoting). */
-const csvCell = (value: string | number | null | undefined): string => {
-    const str = String(value ?? '')
-    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-}
-
-/** Build the per-plant CSV string for export download. */
-export const buildPerPlantCsv = ({ perPlant, peakByPlant, totals }: BuildPerPlantCsvParams): string => {
-    const header = ['Plant', 'Name', 'Orders', 'Yardage (yd)', 'Trucks', 'Share %', 'Base', 'Peak']
-    const rows = perPlant.map((p) => {
-        const share = totals.trucks > 0 ? (p.totalTrucks / totals.trucks) * 100 : 0
-        return [
-            p.code,
-            p.name,
-            p.orders,
-            Math.round(p.totalYardage),
-            p.totalTrucks,
-            share.toFixed(1),
-            p.adjustedBase,
-            peakByPlant[p.code] || 0
-        ]
-    })
-    return [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\n')
-}
-
-/** Trigger a CSV file download in the browser. */
-export const downloadCsvFile = (csv: string, filename: string): void => {
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = filename
-    document.body.appendChild(anchor)
-    anchor.click()
-    document.body.removeChild(anchor)
-    URL.revokeObjectURL(url)
 }

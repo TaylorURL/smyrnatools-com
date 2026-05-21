@@ -10,7 +10,7 @@
  * `PlanStatisticsFormatUtility` so view-side code can pull just the
  * formatters without dragging in the analytics graph.
  */
-import { fmtMinutesAsHHMM, fmtRange, parseIsoLocal } from './PlanStatisticsFormatUtility'
+import { fmtRange, parseIsoLocal } from './PlanStatisticsFormatUtility'
 import {
     BIG_POUR_SPACING_THRESHOLD_MIN,
     BIG_POUR_YARDAGE_THRESHOLD,
@@ -696,22 +696,4 @@ export const shiftAnchor = (anchorIso, period, direction) => {
         base.setDate(base.getDate() + direction)
     }
     return isoDate(base)
-}
-
-/** Build a CSV blob of per-day schedule metrics for the export button. */
-export const buildScheduleCsv = (days) => {
-    const rows = [['Date', 'Yardage', 'Loads', 'Orders', 'Active plants', 'First job', 'Last job', 'Shift span (h)']]
-    days.forEach((p) => {
-        rows.push([
-            p.planDate,
-            p.totalYardage,
-            p.totalLoads,
-            p.totalOrders,
-            p.activePlants,
-            fmtMinutesAsHHMM(p.firstJobMinutes),
-            fmtMinutesAsHHMM(p.lastJobMinutes),
-            p.shiftSpanHours ?? ''
-        ])
-    })
-    return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
 }

@@ -1,0 +1,492 @@
+/* eslint-disable react/forbid-dom-props */
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+
+import { fmtDate, fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
+
+const GOOD = '#16a34a'
+const BAD = '#dc2626'
+const LATE = '#f59e0b'
+const SLOW = '#ea580c'
+
+const GOOD_THRESHOLD = 0.85
+
+const fmtMinutes = (n) => {
+    if (n == null || !Number.isFinite(n)) return '—'
+    if (n < 60) return `${Math.round(n)} min`
+    const h = Math.floor(n / 60)
+    const m = Math.round(n % 60)
+    return m === 0 ? `${h}h` : `${h}h ${m}m`
+}
+
+const pctColor = (pct) => (pct == null ? 'var(--text-tertiary)' : pct >= GOOD_THRESHOLD ? GOOD : BAD)
+
+const verdictColor = (m) => {
+    if (m.isLate && m.isSlow) return BAD
+    if (m.isLate) return LATE
+    if (m.isSlow) return SLOW
+    return GOOD
+}
+
+const verdictLabel = (m) => {
+    if (m.isLate && m.isSlow) return 'Late + slow'
+    if (m.isLate) return 'Late'
+    if (m.isSlow) return 'Slow'
+    return 'Good'
+}
+
+const FILTERS = [
+    { key: 'all', label: 'All' },
+    { key: 'bad', label: 'Bad service', test: (c) => c.badJobs > 0 },
+    { key: 'late', label: 'Late', test: (c) => c.lateJobs > 0 },
+    { key: 'slow', label: 'Slow', test: (c) => c.slowJobs > 0 },
+    { key: 'perfect', label: 'Perfect', test: (c) => c.badJobs === 0 && c.jobs > 0 }
+]
+
+const SORTS = [
+    { key: 'badJobs', label: 'Most bad service' },
+    { key: 'recent', label: 'Most recent pour' },
+    { key: 'jobs', label: 'Most jobs' },
+    { key: 'goodPctAsc', label: 'Lowest good %' },
+    { key: 'name', label: 'Name (A–Z)' }
+]
+
+/** One dot per measured order, chronological. */
+function VerdictTrail({ orders }) {
+    const dots = useMemo(() => {
+        const sorted = [...orders].sort((a, b) => {
+            if (a.date !== b.date) return a.date.localeCompare(b.date)
+            return (a.startMin || 0) - (b.startMin || 0)
+        })
+        return sorted.slice(-24)
+    }, [orders])
+    if (!dots.length) return null
+    return (
+        <div className="flex items-center gap-[2px]">
+            {dots.map((m) => (
+                <div
+                    key={m.orderId}
+                    title={`${fmtDate(m.date)} · ${verdictLabel(m)}`}
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ background: verdictColor(m) }}
+                />
+            ))}
+        </div>
+    )
+}
+
+/** Stacked horizontal bar: good / late-only / slow-only / both. */
+function MixBar({ badJobs, goodJobs, jobs, lateJobs, slowJobs }) {
+    if (jobs === 0) return null
+    const lateOnly = Math.max(0, lateJobs - Math.min(lateJobs, slowJobs))
+    const slowOnly = Math.max(0, slowJobs - Math.min(lateJobs, slowJobs))
+    const both = Math.max(0, badJobs - lateOnly - slowOnly)
+    const seg = (count, color) =>
+        count > 0 ? <div style={{ background: color, width: `${(count / jobs) * 100}%` }} /> : null
+    return (
+        <div className="rounded-sm h-1.5 overflow-hidden flex bg-bg-tertiary">
+            {seg(goodJobs, GOOD)}
+            {seg(lateOnly, LATE)}
+            {seg(slowOnly, SLOW)}
+            {seg(both, BAD)}
+        </div>
+    )
+}
+
+function CustomerCard({ customer, isActive, onSelect, orders }) {
+    return (
+        <button
+            type="button"
+            onClick={() => onSelect(customer.key)}
+            className="text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border transition-colors"
+            style={{
+                background: isActive ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                borderColor: isActive ? 'var(--text-secondary)' : 'var(--border-light)'
+            }}
+        >
+            <div className="flex items-baseline justify-between gap-3 min-w-0">
+                <div className="min-w-0">
+                    <div
+                        className="text-[13.5px] font-semibold text-text-primary truncate leading-tight"
+                        title={customer.name}
+                    >
+                        {customer.name || '(unnamed)'}
+                    </div>
+                    {customer.lastPourDate && (
+                        <div className="text-[10.5px] text-text-tertiary tabular-nums mt-0.5">
+                            Last pour {fmtDate(customer.lastPourDate)}
+                        </div>
+                    )}
+                </div>
+                <div
+                    className="text-[20px] font-semibold tabular-nums leading-none shrink-0"
+                    style={{ color: pctColor(customer.goodPct) }}
+                >
+                    {fmtPct(customer.goodPct)}
+                </div>
+            </div>
+            <MixBar
+                badJobs={customer.badJobs}
+                goodJobs={customer.goodJobs}
+                jobs={customer.jobs}
+                lateJobs={customer.lateJobs}
+                slowJobs={customer.slowJobs}
+            />
+            <div className="flex items-center justify-between gap-2">
+                <div className="text-[11px] text-text-tertiary tabular-nums">
+                    {fmtInt(customer.jobs)} jobs
+                    {customer.lateJobs > 0 && (
+                        <>
+                            <span className="mx-1.5">·</span>
+                            <span style={{ color: LATE }}>{fmtInt(customer.lateJobs)} late</span>
+                        </>
+                    )}
+                    {customer.slowJobs > 0 && (
+                        <>
+                            <span className="mx-1.5">·</span>
+                            <span style={{ color: SLOW }}>{fmtInt(customer.slowJobs)} slow</span>
+                        </>
+                    )}
+                </div>
+                <VerdictTrail orders={orders} />
+            </div>
+        </button>
+    )
+}
+
+function StatBlock({ label, sub, value, valueColor }) {
+    return (
+        <div className="flex flex-col gap-0.5">
+            <div className="text-[11px] text-text-tertiary">{label}</div>
+            <div
+                className="text-[18px] font-semibold tabular-nums leading-tight"
+                style={{ color: valueColor || 'var(--text-primary)' }}
+            >
+                {value}
+            </div>
+            {sub && <div className="text-[10.5px] text-text-tertiary">{sub}</div>}
+        </div>
+    )
+}
+
+function CustomerOrdersTable({ colocationMap, orders, plantNameByCode }) {
+    if (!orders.length) {
+        return (
+            <div className="text-[12px] py-4 text-text-tertiary">
+                No measured orders for this customer in the window.
+            </div>
+        )
+    }
+    return (
+        <div className="overflow-x-auto">
+            <table className="w-full min-w-[660px] border-collapse">
+                <thead>
+                    <tr>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider text-left px-3 py-2 text-text-tertiary border-b border-border-light">
+                            Date
+                        </th>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider text-left px-3 py-2 text-text-tertiary border-b border-border-light">
+                            Plant
+                        </th>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider text-left px-3 py-2 text-text-tertiary border-b border-border-light">
+                            Verdict
+                        </th>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider text-right px-3 py-2 text-text-tertiary border-b border-border-light">
+                            Scheduled
+                        </th>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider text-right px-3 py-2 text-text-tertiary border-b border-border-light">
+                            First load
+                        </th>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider text-right px-3 py-2 text-text-tertiary border-b border-border-light">
+                            Late by
+                        </th>
+                        <th className="text-[10.5px] font-semibold uppercase tracking-wider text-right px-3 py-2 text-text-tertiary border-b border-border-light">
+                            Pace
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {orders.map((m) => (
+                        <tr key={m.orderId} className="border-b border-border-light last:border-b-0">
+                            <td className="px-3 py-2 text-[12px] text-text-secondary tabular-nums">
+                                {fmtDate(m.date)}
+                            </td>
+                            <td className="px-3 py-2 text-[12px] text-text-primary">
+                                <span className="font-mono text-[11px] tabular-nums text-text-tertiary mr-2">
+                                    {formatColocatedCodeLabel(m.plantCode, colocationMap)}
+                                </span>
+                                {formatColocatedPlantLabel(m.plantCode, plantNameByCode, colocationMap)}
+                            </td>
+                            <td className="px-3 py-2 text-[12px] font-semibold" style={{ color: verdictColor(m) }}>
+                                {verdictLabel(m)}
+                            </td>
+                            <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-secondary">
+                                {m.startTime || '—'}
+                            </td>
+                            <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-secondary">
+                                {m.firstLoadTime || '—'}
+                            </td>
+                            <td
+                                className="px-3 py-2 text-right text-[12px] tabular-nums"
+                                style={{ color: m.isLate ? LATE : 'var(--text-tertiary)' }}
+                            >
+                                {m.isLate ? fmtMinutes(m.latenessMin) : '—'}
+                            </td>
+                            <td
+                                className="px-3 py-2 text-right text-[12px] tabular-nums"
+                                style={{ color: m.isSlow ? SLOW : 'var(--text-tertiary)' }}
+                            >
+                                {m.paceScore == null ? '—' : fmtPct(m.paceScore)}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    )
+}
+
+function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByCode }) {
+    const sortedOrders = useMemo(
+        () =>
+            [...orders].sort((a, b) => {
+                if (a.date !== b.date) return b.date.localeCompare(a.date)
+                return b.latenessMin - a.latenessMin
+            }),
+        [orders]
+    )
+    const lateAndSlow = orders.filter((m) => m.isLate && m.isSlow).length
+    return (
+        <div className="rounded-md p-4 bg-bg-primary border border-border-light">
+            <div className="flex items-baseline justify-between gap-3 mb-4">
+                <div className="min-w-0">
+                    <h3 className="text-[17px] font-semibold m-0 truncate text-text-primary" title={customer.name}>
+                        {customer.name || '(unnamed)'}
+                    </h3>
+                    <div className="text-[11.5px] text-text-tertiary tabular-nums mt-0.5">
+                        {fmtInt(customer.jobs)} measured order{customer.jobs === 1 ? '' : 's'} in the active window
+                        {customer.lastPourDate && <> · last pour {fmtDate(customer.lastPourDate)}</>}
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="text-[11.5px] text-text-secondary cursor-pointer bg-transparent border-none p-1"
+                    title="Clear selection"
+                >
+                    Close
+                </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-5 pb-4 border-b border-border-light">
+                <StatBlock
+                    label="Good service"
+                    value={fmtPct(customer.goodPct)}
+                    valueColor={pctColor(customer.goodPct)}
+                    sub={`${fmtInt(customer.goodJobs)} of ${fmtInt(customer.jobs)}`}
+                />
+                <StatBlock
+                    label="Late"
+                    value={fmtInt(customer.lateJobs)}
+                    valueColor={customer.lateJobs > 0 ? LATE : undefined}
+                    sub={
+                        customer.lateJobs > 0
+                            ? `Avg ${fmtMinutes(customer.avgLateMin)} · worst ${fmtMinutes(customer.worstLateMin)}`
+                            : null
+                    }
+                />
+                <StatBlock
+                    label="Slow"
+                    value={fmtInt(customer.slowJobs)}
+                    valueColor={customer.slowJobs > 0 ? SLOW : undefined}
+                    sub={lateAndSlow > 0 ? `${fmtInt(lateAndSlow)} also late` : null}
+                />
+                <StatBlock
+                    label="Bad total"
+                    value={fmtInt(customer.badJobs)}
+                    valueColor={customer.badJobs > 0 ? BAD : undefined}
+                />
+            </div>
+
+            <CustomerOrdersTable
+                orders={sortedOrders}
+                plantNameByCode={plantNameByCode}
+                colocationMap={colocationMap}
+            />
+        </div>
+    )
+}
+
+export default function PlanStatisticsCustomerLookupPage({
+    colocationMap,
+    customerLookupLoading,
+    loading,
+    plansLoading,
+    plantNameByCode,
+    serviceStats
+}) {
+    const { customerIndex, orderVerdicts } = serviceStats
+    const isLoading = !!(loading || customerLookupLoading || plansLoading)
+
+    const [filterText, setFilterText] = useState('')
+    const [filterKey, setFilterKey] = useState('all')
+    const [sortKey, setSortKey] = useState('badJobs')
+    const [selectedKey, setSelectedKey] = useState(null)
+    const searchRef = useRef(null)
+    const detailRef = useRef(null)
+
+    useEffect(() => {
+        searchRef.current?.focus()
+    }, [])
+
+    const ordersByCustomer = useMemo(() => {
+        const map = new Map()
+        for (const m of orderVerdicts) {
+            if (!m.customerKey) continue
+            if (!map.has(m.customerKey)) map.set(m.customerKey, [])
+            map.get(m.customerKey).push(m)
+        }
+        return map
+    }, [orderVerdicts])
+
+    const visibleCustomers = useMemo(() => {
+        const activeFilter = FILTERS.find((f) => f.key === filterKey) || FILTERS[0]
+        const lower = filterText.trim().toLowerCase()
+        let rows = activeFilter.test ? customerIndex.filter(activeFilter.test) : customerIndex
+        if (lower) rows = rows.filter((c) => c.name.toLowerCase().includes(lower))
+        rows = [...rows]
+        switch (sortKey) {
+            case 'jobs':
+                rows.sort((a, b) => b.jobs - a.jobs || a.name.localeCompare(b.name))
+                break
+            case 'recent':
+                rows.sort((a, b) => {
+                    const ad = a.lastPourDate || ''
+                    const bd = b.lastPourDate || ''
+                    if (ad !== bd) return bd.localeCompare(ad)
+                    return a.name.localeCompare(b.name)
+                })
+                break
+            case 'goodPctAsc':
+                rows.sort((a, b) => a.goodPct - b.goodPct || a.name.localeCompare(b.name))
+                break
+            case 'name':
+                rows.sort((a, b) => a.name.localeCompare(b.name))
+                break
+            case 'badJobs':
+            default:
+                rows.sort((a, b) => b.badJobs - a.badJobs || a.goodPct - b.goodPct || a.name.localeCompare(b.name))
+        }
+        return rows
+    }, [customerIndex, filterKey, filterText, sortKey])
+
+    const selectedCustomer = useMemo(
+        () => customerIndex.find((c) => c.key === selectedKey) || null,
+        [customerIndex, selectedKey]
+    )
+    const selectedOrders = useMemo(
+        () => (selectedKey ? ordersByCustomer.get(selectedKey) || [] : []),
+        [ordersByCustomer, selectedKey]
+    )
+
+    useEffect(() => {
+        if (selectedKey && detailRef.current) {
+            detailRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+    }, [selectedKey])
+
+    return (
+        <div className="flex flex-col gap-3">
+            {/* Search + sort */}
+            <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                    <i className="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-text-tertiary pointer-events-none" />
+                    <input
+                        ref={searchRef}
+                        type="text"
+                        value={filterText}
+                        onChange={(e) => setFilterText(e.target.value)}
+                        placeholder="Search customers"
+                        className="w-full rounded pl-9 pr-3 py-2 text-[13px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary"
+                    />
+                </div>
+                <select
+                    value={sortKey}
+                    onChange={(e) => setSortKey(e.target.value)}
+                    className="rounded px-2.5 py-2 text-[12px] outline-none cursor-pointer bg-bg-primary border border-border-light text-text-primary"
+                >
+                    {SORTS.map((opt) => (
+                        <option key={opt.key} value={opt.key}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Filter row + count */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-3 flex-wrap">
+                    {FILTERS.map((f) => {
+                        const active = filterKey === f.key
+                        return (
+                            <button
+                                key={f.key}
+                                type="button"
+                                onClick={() => setFilterKey(f.key)}
+                                className="bg-transparent border-none cursor-pointer p-0 text-[12px]"
+                                style={{
+                                    color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                                    fontWeight: active ? 600 : 400,
+                                    textDecoration: active ? 'underline' : 'none',
+                                    textUnderlineOffset: '4px'
+                                }}
+                            >
+                                {f.label}
+                            </button>
+                        )
+                    })}
+                </div>
+                <div className="text-[11px] text-text-tertiary tabular-nums">
+                    {fmtInt(visibleCustomers.length)} of {fmtInt(customerIndex.length)}
+                    {isLoading && <span className="ml-2 italic">refreshing</span>}
+                </div>
+            </div>
+
+            {/* Customer card grid */}
+            {customerIndex.length === 0 ? (
+                <div className="text-[12px] py-8 text-center text-text-tertiary">
+                    {isLoading ? 'Loading…' : 'No customer activity in this window.'}
+                </div>
+            ) : visibleCustomers.length === 0 ? (
+                <div className="text-[12px] py-8 text-center text-text-tertiary">
+                    No matches. Clear the search or switch filters.
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {visibleCustomers.map((customer) => (
+                        <CustomerCard
+                            key={customer.key || customer.name}
+                            customer={customer}
+                            isActive={customer.key === selectedKey}
+                            onSelect={(key) => setSelectedKey((current) => (current === key ? null : key))}
+                            orders={ordersByCustomer.get(customer.key) || []}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {/* Detail */}
+            <div ref={detailRef}>
+                {selectedCustomer && (
+                    <CustomerDetail
+                        colocationMap={colocationMap}
+                        customer={selectedCustomer}
+                        onClose={() => setSelectedKey(null)}
+                        orders={selectedOrders}
+                        plantNameByCode={plantNameByCode}
+                    />
+                )}
+            </div>
+        </div>
+    )
+}

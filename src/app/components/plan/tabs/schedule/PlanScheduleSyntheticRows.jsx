@@ -19,14 +19,20 @@ const orderTagFromRow = (order, fallback = 'order') =>
 
 /**
  * Ghost / placeholder row used only by the Schedule compare view to keep
- * the snapshot and live tables aligned row-for-row. When an order exists
- * on ONE side but not the other, that side renders the real order and
- * the OPPOSITE side renders this placeholder at the same slot:
+ * the snapshot and live tables aligned row-for-row. Four kinds:
  *
- *   `placeholderKind: 'removed'` — order was on the 5:30 PM snapshot
+ *   `placeholderKind: 'removed'`    — order was on the 5:30 PM snapshot
  *     but is gone from the live schedule. Rendered on the LIVE side.
- *   `placeholderKind: 'added'`   — order is on the live schedule but
+ *   `placeholderKind: 'added'`      — order is on the live schedule but
  *     wasn't on the snapshot. Rendered on the SNAPSHOT side.
+ *   `placeholderKind: 'movedTo'`    — order existed on BOTH sides but
+ *     the dispatcher moved its start time. Rendered on the LIVE side at
+ *     the original snapshot slot; carries `row.order.movedToTime` so the
+ *     ghost label can read "Moved to HH:MM".
+ *   `placeholderKind: 'movedFrom'`  — flip side of `movedTo`. Rendered
+ *     on the SNAPSHOT side at the new live slot; carries
+ *     `row.order.movedFromTime` so the label reads "Moved here from
+ *     HH:MM".
  *
  *  Renders as a single-line "ghost slot" matching `PlanScheduleOrderRow`'s
  *  `px-3 py-2` cell padding so paired rows in the two side-by-side tables
@@ -35,18 +41,48 @@ const orderTagFromRow = (order, fallback = 'order') =>
  *  that row position without inflating row height to two/three lines.
  */
 export function PlaceholderRow({ accentColor, animationDelayMs, bodyColSpan, plantNameByCode, row }) {
-    const isRemoved = row.placeholderKind === 'removed'
     const refOrder = row.order || {}
+    const kind = row.placeholderKind
     const orderTag = orderTagFromRow(refOrder, '')
     const customerTag = clean(refOrder.customer)
     const plantName = plantNameByCode?.[refOrder.plantCode] || ''
-    const accent = isRemoved ? '#dc2626' : '#16a34a'
-    const tint = isRemoved ? 'rgba(220, 38, 38, 0.06)' : 'rgba(22, 163, 74, 0.06)'
-    const icon = isRemoved ? 'fa-circle-minus' : 'fa-circle-plus'
-    const pillLabel = isRemoved ? 'Removed from live' : 'Added since snapshot'
-    const tooltip = isRemoved
-        ? 'This order was on the 5:30 PM snapshot but is no longer on the live schedule.'
-        : "This order is on the live schedule but wasn't on the 5:30 PM snapshot."
+    const moveTarget = String(refOrder.movedToTime || refOrder.movedFromTime || '').slice(0, 5)
+    let accent
+    let tint
+    let icon
+    let pillLabel
+    let tooltip
+    if (kind === 'removed') {
+        accent = '#dc2626'
+        tint = 'rgba(220, 38, 38, 0.06)'
+        icon = 'fa-circle-minus'
+        pillLabel = 'Removed from live'
+        tooltip = 'This order was on the 5:30 PM snapshot but is no longer on the live schedule.'
+    } else if (kind === 'added') {
+        accent = '#16a34a'
+        tint = 'rgba(22, 163, 74, 0.06)'
+        icon = 'fa-circle-plus'
+        pillLabel = 'Added since snapshot'
+        tooltip = "This order is on the live schedule but wasn't on the 5:30 PM snapshot."
+    } else if (kind === 'movedTo') {
+        accent = '#d97706'
+        tint = 'rgba(217, 119, 6, 0.06)'
+        icon = 'fa-arrow-right'
+        pillLabel = moveTarget ? `Moved to ${moveTarget}` : 'Moved'
+        tooltip = `This order was at ${String(refOrder.startTime || '').slice(0, 5) || 'this slot'} on the snapshot — the dispatcher moved it to ${moveTarget || 'another time'} on the live schedule.`
+    } else if (kind === 'movedFrom') {
+        accent = '#d97706'
+        tint = 'rgba(217, 119, 6, 0.06)'
+        icon = 'fa-arrow-left'
+        pillLabel = moveTarget ? `Moved here from ${moveTarget}` : 'Moved here'
+        tooltip = `This slot is on the live schedule because the dispatcher moved the order here from ${moveTarget || 'an earlier time'} since the 5:30 PM snapshot.`
+    } else {
+        accent = '#64748b'
+        tint = 'transparent'
+        icon = 'fa-circle'
+        pillLabel = 'Placeholder'
+        tooltip = ''
+    }
     const referenceLabel = [orderTag, customerTag].filter(Boolean).join(' · ') || 'No matching order'
     // Mirror the order row's first two cells (time + PlantBadge) so the
     // table's natural row-height calculation lands at the same height as

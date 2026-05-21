@@ -101,18 +101,83 @@ const groupOrderRowsByPlant = (rows) => {
     return byPlant
 }
 
+/** Build a `{ [orderId]: { scheduledYardage, loadSize } }` map keyed by the
+ *  largest meaningful numeric value seen for each order. The dispatch HTML
+ *  imports a per-plant-view row per order, so the same `order_id` shows up
+ *  multiple times under different `home_plant_code`s — for cross-plant
+ *  orders the loaded-plant variant often has `scheduled_yardage` / `load_size`
+ *  null while the home-plant variant carries the real numbers. Without this
+ *  max-merge, whichever row PostgREST returns last wins and we lose the
+ *  scheduled yardage entirely. */
+const collapseOrderMetaRows = (rows) => {
+    const map = new Map()
+    for (const o of rows || []) {
+        if (!o?.order_id) continue
+        const incoming = {
+            loadSize: parseFloat(o.load_size) || 0,
+            scheduledYardage: parseFloat(o.scheduled_yardage) || 0
+        }
+        const existing = map.get(o.order_id)
+        if (!existing) {
+            map.set(o.order_id, incoming)
+            continue
+        }
+        map.set(o.order_id, {
+            loadSize: Math.max(existing.loadSize, incoming.loadSize),
+            scheduledYardage: Math.max(existing.scheduledYardage, incoming.scheduledYardage)
+        })
+    }
+    return map
+}
+
+/** Max-merge two `Map<orderId, {scheduledYardage, loadSize}>` fallback
+ *  maps into a single Map. Used by `fetchDetail…` to combine the
+ *  dispatch_data-derived fallback (from `fetch-schedule` / `fetch-plan-rows-by-date-range`)
+ *  with caller-supplied data (typically the curated `plans.plant_production`
+ *  blob from `PlanService`). Either input may be `undefined`. */
+const mergeScheduleFallbacks = (primary, secondary) => {
+    const out = new Map(primary || [])
+    if (secondary instanceof Map) {
+        secondary.forEach((value, orderId) => {
+            const existing = out.get(orderId)
+            out.set(orderId, {
+                loadSize: Math.max(existing?.loadSize || 0, value?.loadSize || 0),
+                scheduledYardage: Math.max(existing?.scheduledYardage || 0, value?.scheduledYardage || 0)
+            })
+        })
+    }
+    return out
+}
+
 /** Folds raw ticket / order-meta rows into the
  *  `{ [orderId]: { tickets, byPlant, loadedYardage, ticketCount, … } }`
  *  shape both detail fetchers return. Applies the per-order DetailDriver
  *  estimate cap and the final per-ticket trim so per-row sums always match
- *  scheduled yardage. */
-const buildDetailByOrderId = (ticketRows, orderRows) => {
-    const orderMeta = new Map()
-    for (const o of orderRows || []) {
-        if (!o.order_id) continue
-        orderMeta.set(o.order_id, {
-            loadSize: parseFloat(o.load_size) || 0,
-            scheduledYardage: parseFloat(o.scheduled_yardage) || 0
+ *  scheduled yardage.
+ *
+ *  When the database's `order_meta` row for an order is missing or has
+ *  a null `scheduled_yardage` (typical for cross-plant orders whose home
+ *  plant variant never made it into the meta query, OR whose dispatch HTML
+ *  was parsed without a scheduled-yardage value), the optional
+ *  `scheduleFallback` map (orderId → { scheduledYardage, loadSize }) is
+ *  consulted before falling back to zero. This keeps the cross-plant
+ *  DetailDriver-only allocator from collapsing every estimate ticket to
+ *  `quantity = 0`, which would otherwise zero out the Schedule's Loaded
+ *  column, the Statistics Plants page cross-load attribution, and any
+ *  other downstream view that sums ticket quantities. */
+const buildDetailByOrderId = (ticketRows, orderRows, scheduleFallback) => {
+    const orderMeta = collapseOrderMetaRows(orderRows)
+    const fallback = scheduleFallback instanceof Map ? scheduleFallback : null
+    if (fallback) {
+        fallback.forEach((value, orderId) => {
+            const existing = orderMeta.get(orderId)
+            const next = {
+                loadSize: Math.max(existing?.loadSize || 0, value?.loadSize || 0),
+                scheduledYardage: Math.max(existing?.scheduledYardage || 0, value?.scheduledYardage || 0)
+            }
+            if (next.scheduledYardage > 0 || next.loadSize > 0) {
+                orderMeta.set(orderId, next)
+            }
         })
     }
 
@@ -258,30 +323,53 @@ class DispatchDataServiceImpl {
      * Returns ticket-level data keyed by orderId, in the same shape useDetailOrders
      * has been returning: `{ [orderId]: { orderId, orderNum, byPlant, loadedYardage,
      * ticketCount, tickets[] } }`. Tickets are sorted by loadedTime.
+     *
+     * The schedule is fetched in parallel and folded in as a fallback for
+     * the per-order allocator — cross-plant orders whose `dispatch_data`
+     * order-meta row carries a null `scheduled_yardage` would otherwise
+     * leave every DetailDriver-only ticket at `quantity = 0`.
+     *
+     * @param {string} dateStr - ISO `YYYY-MM-DD`.
+     * @param {Map<string, {scheduledYardage:number, loadSize:number}>} [externalScheduleFallback]
+     *   Optional map of orderId → schedule meta sourced from outside
+     *   `dispatch_data` (typically the curated `plans.plant_production`
+     *   blob). When provided, it's max-merged into the dispatch_data-derived
+     *   fallback before the allocator runs — covers the case where BOTH
+     *   the order-meta query AND the schedule query return null yardage.
      */
-    async fetchDetailByOrderId(dateStr) {
+    async fetchDetailByOrderId(dateStr, externalScheduleFallback) {
         if (!dateStr || !ISO_DATE.test(dateStr)) return {}
-        const { tickets, orders } = await post(
-            'fetch-detail-by-order-id',
-            { date: dateStr },
-            { orders: [], tickets: [] }
-        )
-        return buildDetailByOrderId(tickets, orders)
+        const [detail, scheduleRows] = await Promise.all([
+            post('fetch-detail-by-order-id', { date: dateStr }, { orders: [], tickets: [] }),
+            post('fetch-schedule', { date: dateStr }, { rows: [] }).then((res) => res?.rows || [])
+        ])
+        const fallback = mergeScheduleFallbacks(collapseOrderMetaRows(scheduleRows), externalScheduleFallback)
+        return buildDetailByOrderId(detail?.tickets || [], detail?.orders || [], fallback)
     }
 
     /**
      * Range version of `fetchDetailByOrderId`: pulls every date in `dateStrs`
      * in one server-side paginated call. Returns
-     * `{ [date]: { [orderId]: { tickets, byPlant, … } } }`.
+     * `{ [date]: { [orderId]: { tickets, byPlant, … } } }`. Schedule rows are
+     * fetched in parallel (per the same fallback rationale as the single-date
+     * variant) and split by `order_date` before the per-day fold.
+     *
+     * @param {string[]} dateStrs
+     * @param {Map<string, Map<string, {scheduledYardage:number, loadSize:number}>>} [externalScheduleFallbackByDate]
+     *   Optional map of date → (orderId → schedule meta), sourced from
+     *   outside `dispatch_data`. The Statistics page passes the curated
+     *   `plans.plant_production` data here so cross-plant orders with null
+     *   `scheduled_yardage` in dispatch_data still get accurate ticket
+     *   quantities.
      */
-    async fetchDetailByDateRange(dateStrs) {
+    async fetchDetailByDateRange(dateStrs, externalScheduleFallbackByDate) {
         const validDates = (dateStrs || []).filter((d) => ISO_DATE.test(d))
         if (!validDates.length) return {}
-        const { tickets, orders } = await post(
-            'fetch-detail-by-date-range',
-            { dates: validDates },
-            { orders: [], tickets: [] }
-        )
+        const [detail, scheduleRowsByDate] = await Promise.all([
+            post('fetch-detail-by-date-range', { dates: validDates }, { orders: [], tickets: [] }),
+            post('fetch-plan-rows-by-date-range', { dates: validDates }, { rows: [] }).then((res) => res?.rows || [])
+        ])
+        const { tickets, orders } = detail || { orders: [], tickets: [] }
 
         const ticketsByDate = new Map()
         for (const row of tickets || []) {
@@ -295,11 +383,23 @@ class DispatchDataServiceImpl {
             if (!ordersByDate.has(row.order_date)) ordersByDate.set(row.order_date, [])
             ordersByDate.get(row.order_date).push(row)
         }
+        const scheduleByDate = new Map()
+        for (const row of scheduleRowsByDate || []) {
+            if (!row?.order_date) continue
+            if (!scheduleByDate.has(row.order_date)) scheduleByDate.set(row.order_date, [])
+            scheduleByDate.get(row.order_date).push(row)
+        }
 
         const out = {}
         const seen = new Set([...ticketsByDate.keys(), ...ordersByDate.keys()])
         for (const date of seen) {
-            out[date] = buildDetailByOrderId(ticketsByDate.get(date) || [], ordersByDate.get(date) || [])
+            const dispatchFallback = collapseOrderMetaRows(scheduleByDate.get(date) || [])
+            const external = externalScheduleFallbackByDate?.get?.(date)
+            out[date] = buildDetailByOrderId(
+                ticketsByDate.get(date) || [],
+                ordersByDate.get(date) || [],
+                mergeScheduleFallbacks(dispatchFallback, external)
+            )
         }
 
         // Ensure every requested date has a (possibly empty) entry so

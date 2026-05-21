@@ -16,7 +16,6 @@ import { usePlanScheduleAdjacentTotals } from '../../../app/hooks/usePlanSchedul
 import { usePlanScheduleData } from '../../../app/hooks/usePlanScheduleData'
 import { usePlanScheduleFilterSetters } from '../../../app/hooks/usePlanScheduleFilterSetters'
 import { usePlanScheduleMaximize } from '../../../app/hooks/usePlanScheduleMaximize'
-import { usePlanScheduleRoster } from '../../../app/hooks/usePlanScheduleRoster'
 import { ScheduleSnapshotService } from '../../../services/ScheduleSnapshotService'
 import { computeScheduleHeadlineMetrics } from '../../../utils/PlanScheduleUtility'
 
@@ -154,12 +153,6 @@ function PlanScheduleView({
             totalYards
         })
 
-    const { copyOperatorRoster, operatorRosterCopied, operatorRosterText } = usePlanScheduleRoster({
-        clockInRows,
-        poolSourceByCode,
-        singlePlant
-    })
-
     /** Toggle a plant in the multi-select array — used both by the
      *  PlantDropdownModal (per-event) and by code that wants to flip a
      *  single chip on/off. */
@@ -253,9 +246,8 @@ function PlanScheduleView({
         setShowTest(false)
     }
 
-    /** Single-plant affordances (copy roster, extras toggle, plant scope
-     *  chip) only light up when exactly one plant is selected. */
-    const operatorRosterReady = !!singlePlant && !!operatorRosterText
+    /** Single-plant affordances (extras toggle, plant scope chip) only
+     *  light up when exactly one plant is selected. */
     const activePlantName = singlePlant ? plantNameByCode?.[singlePlant] || '' : ''
 
     return (
@@ -347,7 +339,6 @@ function PlanScheduleView({
                                 <PlanScheduleFilterDrawer
                                     accent={accentColor}
                                     activePlantName={activePlantName}
-                                    compareMode={compareMode}
                                     minYards={minYards}
                                     onChangeMinYards={setMinYards}
                                     onChangeProduct={setProductFilter}
@@ -357,15 +348,9 @@ function PlanScheduleView({
                                     onChangeSort={setSortKey}
                                     onChangeStatus={setStatusFilter}
                                     onClearFilters={hasActiveFilters ? clearAllFilters : null}
-                                    onCopyRoster={copyOperatorRoster}
                                     onExitMaximized={effectiveMaximized ? () => setMaximized(false) : null}
-                                    onToggleCompare={
-                                        !isViewingToday && !isPastDay ? null : () => setCompareMode((v) => !v)
-                                    }
                                     onToggleExtraRows={() => setShowExtraRows((v) => !v)}
                                     onTogglePlantFilter={togglePlantFilter}
-                                    operatorRosterCopied={operatorRosterCopied}
-                                    operatorRosterReady={operatorRosterReady}
                                     plantFilters={plantFilters}
                                     plantNameByCode={plantNameByCode}
                                     plantOptions={plantOptions}

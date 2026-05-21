@@ -4,6 +4,7 @@ import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons
 import { PlanStatisticsControls } from '../../../app/components/plan/tabs/statistics/PlanStatisticsControls'
 import PlanStatisticsHelpCrossLoadingPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage'
 import { PlanStatisticsKpiStrip } from '../../../app/components/plan/tabs/statistics/PlanStatisticsKpiStrip'
+import PlanStatisticsCustomerLookupPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsCustomerLookupPage'
 import PlanStatisticsServicePage from '../../../app/components/plan/tabs/statistics/PlanStatisticsServicePage'
 import {
     PlanStatisticsOperatorsPage,
@@ -19,7 +20,6 @@ import {
 import { useHelpCrossLoadingStats } from '../../../app/hooks/useHelpCrossLoadingStats'
 import { usePlanStatistics } from '../../../app/hooks/usePlanStatistics'
 import { useServiceQualityStats } from '../../../app/hooks/useServiceQualityStats'
-import { buildScheduleCsv } from '../../../utils/PlanStatisticsUtility'
 
 /**
  * Statistics dashboard for the Plan tab. Renders a left-rail navigation that
@@ -52,7 +52,11 @@ function PlanStatisticsView({
     const operatorsEnabled = activeSection === 'operators'
     const helpCrossLoadingEnabled = activeSection === 'helpCrossLoading'
     const plantsEnabled = activeSection === 'production'
-    const serviceEnabled = activeSection === 'service'
+    const customerLookupEnabled = activeSection === 'customerLookup'
+    // Service-quality classifier feeds both the Service page and the
+    // Customer Lookup page — enable the underlying ticket-detail fetch
+    // and the per-order verdict memo whenever either is active.
+    const serviceEnabled = activeSection === 'service' || customerLookupEnabled
     const stats = usePlanStatistics({
         colocationMap: planColocationMap,
         helpCrossLoadingEnabled,
@@ -151,19 +155,6 @@ function PlanStatisticsView({
         return { activeCount, topShare, totalYardage }
     }, [knownPlantRows])
 
-    const handleExport = () => {
-        const csv = buildScheduleCsv(currentDays)
-        const blob = new Blob([csv], { type: 'text/csv' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `schedule-stats-${range.current.start}_to_${range.current.end}.csv`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-    }
-
     /** Active section's metadata — used for the right-pane header. */
     const sectionMeta = useMemo(
         () => PLAN_STATS_SECTIONS.find((s) => s.id === activeSection) || PLAN_STATS_SECTIONS[0],
@@ -250,6 +241,18 @@ function PlanStatisticsView({
                 />
             )
         }
+        if (activeSection === 'customerLookup') {
+            return (
+                <PlanStatisticsCustomerLookupPage
+                    colocationMap={planColocationMap}
+                    customerLookupLoading={satisfactionLoading}
+                    loading={loading}
+                    plansLoading={plansLoading}
+                    plantNameByCode={plantNameByCode}
+                    serviceStats={serviceStats}
+                />
+            )
+        }
         // Overview is the default landing page.
         return (
             <PlanStatisticsOverviewPage
@@ -273,11 +276,9 @@ function PlanStatisticsView({
                     accentColor={accentColor}
                     anchor={anchor}
                     availablePlantCodes={availablePlantCodes}
-                    canExport={currentDays.length > 0}
                     comparison={comparison}
                     customEnd={customEnd}
                     customStart={customStart}
-                    onExport={handleExport}
                     period={period}
                     plantNameByCode={plantNameByCode}
                     range={range}

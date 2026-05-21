@@ -4,7 +4,6 @@
 
 import {
     BAD_SERVICE_LATE_THRESHOLD_MIN,
-    BAD_SERVICE_PACE_THRESHOLD,
     BUFFER_MINUTES,
     buildAssignmentDriverTimes,
     computeActualYardsPerHour,
@@ -16,11 +15,11 @@ import {
     getCalculatedTruckCount,
     isBigPourOrder,
     isExcludedOrder,
-    isSmallPourJob,
     LOAD_MINUTES,
     parseDurationMinutes,
     PLAN_META_KEY,
     PRE_TRIP_MINUTES,
+    scoreOrderExperience,
     timeToMinutes
 } from './PlanUtility'
 
@@ -221,20 +220,15 @@ export const evaluateOrderService = (order, detail, nowMin) => {
         return null
     }
 
-    const firstLoad = loadedTimes[0]
-    const lastLoad = loadedTimes[loadedTimes.length - 1]
-    const startLateness = Number.isFinite(startMin) ? Math.max(0, firstLoad - startMin) : 0
-    const actualDuration = Math.max(0, lastLoad - firstLoad)
-
-    // Pace verdict compares actual yd/hr against the requested yd/hr the
-    // schedule plan implies (loadSize / spacing). Small pours (≤3 trucks or
-    // ≤30 yd) skip the slow check — their cadence is set by the customer's
-    // finishing crew, not dispatch, and treating it as "Poor Service" is a
-    // false positive. The on-time start check still applies in every case.
-    const requestedYdPerHr = computeRequestedYardsPerHour(loadSize, spacing)
-    const actualYdPerHr = computeActualYardsPerHour(totalYardage, actualDuration)
-    const paceScore = requestedYdPerHr && actualYdPerHr ? clamp01(actualYdPerHr / requestedYdPerHr) : 1
-    const smallJob = isSmallPourJob(expectedTrucks, totalYardage)
+    // Delegate the bad/late/slow verdict to `scoreOrderExperience` so the
+    // schedule badge applies the EXACT same classification — same
+    // kicker-aware split, same paceYardage source (actual ticket sum,
+    // with proration as fallback), same thresholds — that
+    // `computeCustomerSatisfaction` uses in the Statistics page. Before
+    // this, both code paths computed similar but subtly different pace
+    // numbers, which let an order read "Bad Experience" on the badge
+    // while statistics counted it as good (or vice versa).
+    const verdict = scoreOrderExperience(order, detail)
 
     const allTrucksLoaded = expectedTrucks ? loadedTimes.length >= expectedTrucks : false
     // For past days, `nowMin` is null and we treat everything with tickets
@@ -246,24 +240,25 @@ export const evaluateOrderService = (order, detail, nowMin) => {
     if (!isCompleted) {
         return {
             expectedTrucks: expectedTrucks ?? null,
-            isLate: startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN,
-            startLateness,
+            isLate: verdict.isLate,
+            startLateness: verdict.latenessMin,
             status: 'ongoing',
             ticketsLoaded: loadedTimes.length
         }
     }
 
-    const isLate = startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN
-    const isSlow = !smallJob && paceScore < BAD_SERVICE_PACE_THRESHOLD
+    const requestedYdPerHr = computeRequestedYardsPerHour(loadSize, spacing)
+    const actualDuration = Math.max(0, loadedTimes[loadedTimes.length - 1] - loadedTimes[0])
+    const actualYdPerHr = computeActualYardsPerHour(verdict.paceYardage, actualDuration)
     return {
         actualYdPerHr,
         expectedTrucks: expectedTrucks ?? null,
-        isLate,
-        isSlow,
-        paceScore,
+        isLate: verdict.isLate,
+        isSlow: verdict.isSlow,
+        paceScore: verdict.paceScore == null ? 1 : verdict.paceScore,
         requestedYdPerHr,
-        startLateness,
-        status: isLate || isSlow ? 'bad' : 'good',
+        startLateness: verdict.latenessMin,
+        status: verdict.isBad ? 'bad' : 'good',
         ticketsLoaded: loadedTimes.length
     }
 }

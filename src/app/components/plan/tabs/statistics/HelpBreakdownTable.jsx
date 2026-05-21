@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
-import { fmtInt, fmtRange } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtInt, fmtRange, fmtYards } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel } from '../../../../../utils/PlantColocationUtility'
 import { plantBadgeColor } from '../../../../../utils/PlanUtility'
 import { Panel } from '../../../ui/Panel'
@@ -50,11 +50,15 @@ function RecipientList({ items, getPrimary, max = 4, plantNameByCode, unitLabel,
                 const codeLabel = formatColocatedCodeLabel(it.code, colocationMap)
                 const name = plantNameByCode?.[it.code] || ''
                 const count = getPrimary(it)
+                /* Choose the right formatter per unit — yards must preserve
+                 * halves; driver / ticket / order counts stay integers. */
+                const isYardage = unitLabel === 'yd³'
+                const formatted = isYardage ? fmtYards(count) : fmtInt(count)
                 return (
                     <div
                         key={it.code}
                         className="flex items-center gap-1.5 text-[11.5px] min-w-0"
-                        title={`${count} ${unitLabel} → ${name || codeLabel}`}
+                        title={`${formatted} ${unitLabel} → ${name || codeLabel}`}
                     >
                         <i className="fas fa-arrow-right text-[9px] shrink-0" aria-hidden="true" style={{ color }} />
                         <span className="font-mono tabular-nums font-semibold text-text-primary shrink-0">
@@ -63,7 +67,7 @@ function RecipientList({ items, getPrimary, max = 4, plantNameByCode, unitLabel,
                         {name && <span className="truncate text-text-secondary">{name}</span>}
                         <span className="text-text-tertiary">—</span>
                         <span className="font-mono tabular-nums font-semibold whitespace-nowrap" style={{ color }}>
-                            {fmtInt(count)} {unitLabel}
+                            {formatted} {unitLabel}
                         </span>
                     </div>
                 )
@@ -263,11 +267,11 @@ export default function HelpBreakdownTable({
                             const name = plantNameByCode?.[row.code]
                             const codeLabel = formatColocatedCodeLabel(row.code, colocationMap)
                             const netYardage = (row.crossLoadYardage || 0) - (row.receivedYardage || 0)
-                            const scoreTitle = `Help score: ${row.helpScore ?? '—'}/5 — gave ${fmtInt(
+                            const scoreTitle = `Help score: ${row.helpScore ?? '—'}/5 — gave ${fmtYards(
                                 row.crossLoadYardage
-                            )} yd³, received ${fmtInt(row.receivedYardage)} yd³ (net ${
+                            )} yd³, received ${fmtYards(row.receivedYardage)} yd³ (net ${
                                 netYardage >= 0 ? '+' : ''
-                            }${fmtInt(netYardage)} yd³) against ${fmtInt(row.producedYardage)} yd³ produced.`
+                            }${fmtYards(netYardage)} yd³) against ${fmtYards(row.producedYardage)} yd³ produced.`
                             return (
                                 <tr className="border-t border-border-light" key={row.code}>
                                     <td className="px-3 py-2 align-top">
@@ -309,7 +313,7 @@ export default function HelpBreakdownTable({
                                             color: row.crossLoadYardage > 0 ? crossLoadColor : 'var(--text-tertiary)'
                                         }}
                                     >
-                                        {row.crossLoadYardage > 0 ? `${fmtInt(row.crossLoadYardage)} yd³` : '—'}
+                                        {row.crossLoadYardage > 0 ? `${fmtYards(row.crossLoadYardage)} yd³` : '—'}
                                     </td>
                                     <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary align-top">
                                         {row.crossLoadTickets > 0 ? fmtInt(row.crossLoadTickets) : '—'}

@@ -74,6 +74,11 @@ export default defineConfig(({ mode }) => {
             exclude: [
                 '**/node_modules/**',
                 '**/build/**',
+                // Agent-spawned worktrees mirror the repo under .claude/.
+                // Vitest's default glob picks them up and double-runs every
+                // test (including ones excluded by exact path below), so
+                // exclude the whole tree.
+                '**/.claude/**',
                 'src/services/__tests__/DatabaseService.test.js',
                 'src/utils/__tests__/APIUtility.test.js',
                 'src/views/__tests__/LoginView.test.jsx',

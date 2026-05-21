@@ -19,6 +19,7 @@ import {
 } from 'recharts'
 
 import { PRODUCT_COLORS } from '../../../../../utils/PlanDemandUtility'
+import { fmtYards } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { plantBadgeColor } from '../../../../../utils/PlanUtility'
 
 /** Default daytime trim window — 06:00–18:00. Charts widen this when the
@@ -148,7 +149,7 @@ export function YardageSharePieChart({ plantColor, plants, total }) {
         () =>
             plants
                 .filter((plant) => plant.totalYardage > 0)
-                .map((plant) => ({ code: plant.code, name: plant.code, value: Math.round(plant.totalYardage) })),
+                .map((plant) => ({ code: plant.code, name: plant.code, value: plant.totalYardage })),
         [plants]
     )
     if (rows.length === 0) return <PlanDemandEmptyState />
@@ -174,7 +175,7 @@ export function YardageSharePieChart({ plantColor, plants, total }) {
                     <Tooltip
                         contentStyle={tooltipStyle}
                         formatter={(val, name) => [
-                            `${val.toLocaleString()} yd (${total > 0 ? ((val / total) * 100).toFixed(1) : '0'}%)`,
+                            `${fmtYards(val)} yd (${total > 0 ? ((val / total) * 100).toFixed(1) : '0'}%)`,
                             name
                         ]}
                     />
@@ -207,7 +208,7 @@ export function CumulativeYardageChart({ accent, rows }) {
                     <Tooltip
                         contentStyle={tooltipStyle}
                         labelStyle={tooltipLabelStyle}
-                        formatter={(val) => [`${val.toLocaleString()} yd`, 'Running total']}
+                        formatter={(val) => [`${fmtYards(val)} yd`, 'Running total']}
                     />
                     <Area
                         type="monotone"
@@ -274,7 +275,7 @@ export function TopCustomersBarChart({ accent, rows }) {
                     <Tooltip
                         contentStyle={tooltipStyle}
                         labelStyle={tooltipLabelStyle}
-                        formatter={(val) => [`${val.toLocaleString()} yd`, 'Yardage']}
+                        formatter={(val) => [`${fmtYards(val)} yd`, 'Yardage']}
                     />
                     <Bar dataKey="yardage" fill={accent} radius={[0, 6, 6, 0]} />
                 </BarChart>
@@ -313,7 +314,7 @@ export function ProductMixPieChart({ rows, total }) {
                     <Tooltip
                         contentStyle={tooltipStyle}
                         formatter={(val, name) => [
-                            `${val.toLocaleString()} yd (${total > 0 ? ((val / total) * 100).toFixed(1) : '0'}%)`,
+                            `${fmtYards(val)} yd (${total > 0 ? ((val / total) * 100).toFixed(1) : '0'}%)`,
                             name
                         ]}
                     />

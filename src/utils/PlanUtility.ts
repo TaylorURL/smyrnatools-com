@@ -84,6 +84,7 @@ export {
     computeCustomerSatisfaction,
     computeRequestedYardsPerHour,
     isSmallPourJob,
+    scoreOrderExperience,
     splitTicketsAtKicker
 } from './plan/planCustomerSat'
 export {

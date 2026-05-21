@@ -2,6 +2,7 @@
 import React from 'react'
 
 import { supplyVerdict } from '../../../../../utils/PlanDemandUtility'
+import { fmtYards } from '../../../../../utils/PlanStatisticsFormatUtility'
 
 const COVERAGE_DISPLAY_MAX_PCT = 150
 const COVERAGE_BAR_BENCHMARK_PCT = 110
@@ -94,7 +95,7 @@ function PerPlantRow({ color, peak, plant }) {
                 </div>
             </td>
             <td className="px-3 py-2 font-mono font-semibold whitespace-nowrap text-right text-text-primary">
-                {Math.round(plant.totalYardage).toLocaleString()} yd
+                {fmtYards(plant.totalYardage)} yd
             </td>
             <td className="px-3 py-2 text-right whitespace-nowrap">
                 <div className="flex flex-col items-end">

@@ -6,7 +6,7 @@ import DashboardAlertsPanel from '../../../app/components/dashboard/DashboardAle
 import { DashboardAtAGlance } from '../../../app/components/dashboard/DashboardAtAGlance'
 import DashboardHeader from '../../../app/components/dashboard/DashboardHeader'
 import DashboardPeopleSection from '../../../app/components/dashboard/DashboardPeopleSection'
-import { DASHBOARD_NAV_SECTIONS, DashboardScrollSpyNav } from '../../../app/components/dashboard/DashboardScrollSpyNav'
+import DashboardPodcastPanel from '../../../app/components/dashboard/DashboardPodcastPanel'
 import DashboardSkeleton from '../../../app/components/dashboard/DashboardSkeleton'
 import EmbeddedViewModal from '../../../app/components/dashboard/EmbeddedViewModal'
 import FleetOverviewSection from '../../../app/components/dashboard/FleetOverviewSection'
@@ -17,7 +17,6 @@ import { useDashboardInit } from '../../../app/hooks/useDashboardInit'
 import { useDashboardManagers } from '../../../app/hooks/useDashboardManagers'
 import { useDashboardStats } from '../../../app/hooks/useDashboardStats'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
-import { usePlanScrollSpy } from '../../../app/hooks/usePlanScrollSpy'
 import { usePlantNotifications } from '../../../app/hooks/usePlantNotifications'
 import { useStatusHistory } from '../../../app/hooks/useStatusHistory'
 import { PlantService } from '../../../services/PlantService'
@@ -34,6 +33,12 @@ export default function DashboardView() {
     const isMobile = useIsMobile()
     const [embeddedView, setEmbeddedView] = useState(null)
     const [embeddedViewSearch, setEmbeddedViewSearch] = useState('')
+    /* Forwarded as-is onto the embedded ViewComponent via spread, so any
+     * alert that opens a list view can pre-apply a filter (e.g. the
+     * Operators alerts hand off `initialStatusFilter: 'Training'`).
+     * Without this, the popup ignored the alert's intent and opened on
+     * the full unfiltered list. */
+    const [embeddedViewProps, setEmbeddedViewProps] = useState(null)
     const [, startTransition] = useTransition()
     const filterTimeoutRef = useRef(null)
     const scrollContainerRef = useRef(null)
@@ -214,18 +219,11 @@ export default function DashboardView() {
         (plantNotifications.unassignedOperators?.length > 0 ? 1 : 0) +
         (plantNotifications.pendingOperators?.length > 0 ? 1 : 0) +
         (plantNotifications.trainingOperators?.length > 0 ? 1 : 0)
-    const peopleCount = (managerStats?.total || 0) + (stats.operators?.total || 0)
     const openIssues =
         (stats.mixers?.issues || 0) +
         (stats.tractors?.issues || 0) +
         (stats.trailers?.issues || 0) +
         (stats.equipment?.issues || 0)
-
-    const [activeSection, jumpTo] = usePlanScrollSpy({
-        deps: [showSkeleton, alertCount, peopleCount],
-        scrollContainerRef,
-        sections: DASHBOARD_NAV_SECTIONS
-    })
 
     return (
         <div
@@ -244,16 +242,7 @@ export default function DashboardView() {
             />
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
                 <div className="w-full px-3 sm:px-4 lg:px-6 flex gap-4">
-                    {!isMobile && (
-                        <DashboardScrollSpyNav
-                            accent={accentColor}
-                            activeId={activeSection}
-                            alertCount={alertCount}
-                            onJump={jumpTo}
-                            peopleCount={peopleCount}
-                            sections={DASHBOARD_NAV_SECTIONS}
-                        />
-                    )}
+                    <DashboardPodcastPanel />
 
                     <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                         {error && (
@@ -274,6 +263,7 @@ export default function DashboardView() {
                                 <DashboardAlertsPanel
                                     plantNotifications={plantNotifications}
                                     setEmbeddedView={setEmbeddedView}
+                                    setEmbeddedViewProps={setEmbeddedViewProps}
                                     setEmbeddedViewSearch={setEmbeddedViewSearch}
                                 />
                                 <FleetOverviewSection
@@ -316,10 +306,12 @@ export default function DashboardView() {
                 <EmbeddedViewModal
                     accentColor={accentColor}
                     embeddedView={embeddedView}
+                    embeddedViewProps={embeddedViewProps}
                     embeddedViewSearch={embeddedViewSearch}
                     onClose={() => {
                         setEmbeddedView(null)
                         setEmbeddedViewSearch('')
+                        setEmbeddedViewProps(null)
                     }}
                 />
             )}

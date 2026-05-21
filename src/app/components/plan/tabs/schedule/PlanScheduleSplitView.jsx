@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { ScheduleSnapshotService } from '../../../../../services/ScheduleSnapshotService'
 import { clean, compareOrders, getOrderStatus } from '../../../../../utils/PlanScheduleUtility'
@@ -44,40 +44,92 @@ const orderPairKey = (order) => {
 /** Build a placeholder pseudo-order. The schedule table recognises the
  *  `__placeholder` marker and routes these to `PlaceholderRow` instead of
  *  the normal order row. We carry over enough fields from the reference
- *  order (the one on the OTHER side) so the placeholder reads as
- *  "this is what the missing row was". */
-const buildPlaceholder = (kind, reference, key) => ({
+ *  order so the placeholder reads as "this is what's at this slot on the
+ *  other side". `extras` carries kind-specific data (e.g. `movedToTime`
+ *  for a moved-away placeholder so it can render the destination time). */
+const buildPlaceholder = (kind, reference, key, extras = {}) => ({
     __placeholder: kind,
     customer: reference?.customer || '',
     orderId: `__placeholder__${key}`,
     orderNum: reference?.orderNum || '',
     plantCode: reference?.plantCode || '',
     startTime: reference?.startTime || '',
-    yardage: reference?.yardage || ''
+    yardage: reference?.yardage || '',
+    ...extras
 })
 
 /** Pair snapshot + live orders by `orderId` (or composite fallback) and
  *  return two row-aligned arrays. Sort runs once over the union so the
  *  two arrays guarantee the same row sequence — index `i` on the left
- *  describes the same pour as index `i` on the right. Orders missing on
- *  one side land as placeholders so the heights line up. */
+ *  describes the same pour as index `i` on the right.
+ *
+ *  Four pair shapes:
+ *
+ *  1. Same on both sides (or same time on both)  → ONE pair, both real.
+ *  2. Only on snapshot (cancelled / dropped)     → ONE pair, snap real,
+ *     live placeholder "Removed from live".
+ *  3. Only on live (added after snapshot)        → ONE pair, snap
+ *     placeholder "Added since snapshot", live real.
+ *  4. On both but the dispatcher moved the time  → TWO pairs:
+ *       (a) at the snapshot's original slot — snap real, live a
+ *           "Moved to HH:MM" ghost so the live column shows the slot
+ *           was vacated.
+ *       (b) at the live's new slot — snap a "Moved here from HH:MM"
+ *           ghost so the snapshot column shows the slot was filled,
+ *           live real.
+ *
+ *  Splitting moved orders is the only way to keep BOTH columns in
+ *  chronological order while preserving pair alignment — the move
+ *  surfaces visually as a ghost row at the vacated slot and a ghost row
+ *  at the filled slot, both labelled with the corresponding time so the
+ *  dispatcher can trace the move at a glance.
+ */
 function pairAlignedOrders(snapshotOrders, liveOrders, sortKey) {
     const snapMap = new Map()
     snapshotOrders.forEach((order) => snapMap.set(orderPairKey(order), order))
     const liveMap = new Map()
     liveOrders.forEach((order) => liveMap.set(orderPairKey(order), order))
+
     const pairs = []
     const seen = new Set()
-    const addPair = (key) => {
+    const enqueue = (key) => {
         if (seen.has(key)) return
         seen.add(key)
         const snap = snapMap.get(key) || null
         const live = liveMap.get(key) || null
-        const sortRef = live || snap
-        pairs.push({ key, live, snap, sortRef })
+        if (!snap && !live) return
+
+        // Same scheduled start (or one-sided) → single row pair.
+        if (snap && live && snap.startTime === live.startTime) {
+            pairs.push({ key, live, snap, sortRef: snap })
+            return
+        }
+        // Time moved — emit two pairs so each column reads chronologically.
+        if (snap && live) {
+            pairs.push({
+                key: `${key}__from`,
+                live: buildPlaceholder('movedTo', snap, `${key}__movedTo`, {
+                    movedToTime: live.startTime
+                }),
+                snap,
+                sortRef: snap
+            })
+            pairs.push({
+                key: `${key}__to`,
+                live,
+                snap: buildPlaceholder('movedFrom', live, `${key}__movedFrom`, {
+                    movedFromTime: snap.startTime
+                }),
+                sortRef: live
+            })
+            return
+        }
+        // One-sided (added or removed). Standard placeholder handling
+        // happens at the .map() stage below.
+        pairs.push({ key, live, snap, sortRef: snap || live })
     }
-    snapMap.forEach((_value, key) => addPair(key))
-    liveMap.forEach((_value, key) => addPair(key))
+    snapMap.forEach((_value, key) => enqueue(key))
+    liveMap.forEach((_value, key) => enqueue(key))
     pairs.sort((a, b) => compareOrders(a.sortRef, b.sortRef, sortKey))
     return {
         liveAligned: pairs.map((p) => p.live || buildPlaceholder('removed', p.snap, p.key)),
@@ -175,6 +227,39 @@ export default function PlanScheduleSplitView({
     const [showAllColumns, setShowAllColumns] = useState(false)
     const visibleColumns = showAllColumns ? SCHEDULE_ALL_COLUMN_KEYS : SCHEDULE_COMPARE_DEFAULT_COLUMNS
     const planDate = filters?.planDate
+
+    /* Scroll-sync refs. Each PlanScheduleTable attaches a ref to its inner
+     * scroll viewport; the effect below mirrors scrollTop + scrollLeft
+     * between the two so the dispatcher reads pair-by-pair without
+     * having to scroll each side independently. */
+    const snapshotScrollRef = useRef(null)
+    const liveScrollRef = useRef(null)
+    useEffect(() => {
+        const snap = snapshotScrollRef.current
+        const live = liveScrollRef.current
+        if (!snap || !live) return undefined
+        // Lock token tracks which side initiated the in-flight sync so the
+        // mirror assignment doesn't fire the partner's listener back into
+        // an infinite loop. Cleared on the next animation frame.
+        let lockedBy = null
+        const mirror = (source, target) => () => {
+            if (lockedBy && lockedBy !== source) return
+            lockedBy = source
+            if (target.scrollTop !== source.scrollTop) target.scrollTop = source.scrollTop
+            if (target.scrollLeft !== source.scrollLeft) target.scrollLeft = source.scrollLeft
+            requestAnimationFrame(() => {
+                lockedBy = null
+            })
+        }
+        const onSnap = mirror(snap, live)
+        const onLive = mirror(live, snap)
+        snap.addEventListener('scroll', onSnap, { passive: true })
+        live.addEventListener('scroll', onLive, { passive: true })
+        return () => {
+            snap.removeEventListener('scroll', onSnap)
+            live.removeEventListener('scroll', onLive)
+        }
+    }, [snapshot, loading])
 
     useEffect(() => {
         if (providedSnapshot !== undefined) {
@@ -291,6 +376,7 @@ export default function PlanScheduleSplitView({
                             poolTimeline={{}}
                             poolTimelinesByPlant={{}}
                             pullUpRows={[]}
+                            scrollContainerRef={snapshotScrollRef}
                             sendHomeRows={[]}
                             showExtraRows={false}
                             suggestedSlotRows={[]}
@@ -321,6 +407,7 @@ export default function PlanScheduleSplitView({
                             poolTimeline={poolTimeline || {}}
                             poolTimelinesByPlant={poolTimelinesByPlant || {}}
                             pullUpRows={[]}
+                            scrollContainerRef={liveScrollRef}
                             sendHomeRows={[]}
                             showExtraRows={false}
                             suggestedSlotRows={[]}

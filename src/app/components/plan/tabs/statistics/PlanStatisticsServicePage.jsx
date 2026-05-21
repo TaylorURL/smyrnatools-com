@@ -639,47 +639,45 @@ export default function PlanStatisticsServicePage({
                 )}
             </Panel>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <Panel title="Customers feeling the bad service" innerClassName="p-3">
-                    <div className="text-[11.5px] mb-2 text-text-secondary">
-                        Accounts experiencing the most bad-service jobs (min 2 jobs in window). These customers don't
-                        cause the lateness or slow pace — but they absorb it, and the on-time conversation needs to
-                        happen with them.
-                    </div>
-                    <CustomerList rows={byCustomer} emptyMessage="No customers with bad service in this window." />
-                </Panel>
-                <Panel title="Good service % by time of day" innerClassName="p-3">
-                    <div className="text-[11.5px] mb-2 text-text-secondary">
-                        Buckets scheduled start times by hour-of-day. Surfaces patterns like "6am load-outs run late" or
-                        "afternoon pours fall behind pace." Attribution lands on the dispatcher's booking decision.
-                    </div>
-                    <HourOfDayChart data={byHour} accentColor={accentColor} />
-                </Panel>
-            </div>
+            <Panel title="Customers feeling the bad service" innerClassName="p-3">
+                <div className="text-[11.5px] mb-2 text-text-secondary">
+                    Accounts experiencing the most bad-service jobs (min 2 jobs in window). These customers don't cause
+                    the lateness or slow pace — but they absorb it, and the on-time conversation needs to happen with
+                    them.
+                </div>
+                <CustomerList rows={byCustomer} emptyMessage="No customers with bad service in this window." />
+            </Panel>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <Panel title="Outcome mix" innerClassName="p-3">
-                    <div className="text-[11.5px] mb-2 text-text-secondary">
-                        Every measured order sorts into exactly one bucket — useful for spotting whether the bad service
-                        is mostly lateness, mostly slow pours, or both at once.
-                    </div>
-                    <OutcomesBreakdown outcomes={outcomes} accentColor={accentColor} />
-                </Panel>
-                <Panel title={byDay.length > 1 ? 'Good service trend by day' : 'Service trend'} innerClassName="p-3">
-                    {byDay.length > 1 ? (
-                        <>
-                            <div className="text-[11.5px] mb-2 text-text-secondary">
-                                Daily good-service %. Spot weekday patterns and one-off bad days at a glance.
-                            </div>
-                            <DailyTrendChart data={byDay} accentColor={accentColor} />
-                        </>
-                    ) : (
-                        <div className="text-[12px] py-6 text-center text-text-tertiary">
-                            Single-day window — the daily trend lights up once the window spans multiple days.
+            <Panel title="Good service % by time of day" innerClassName="p-3">
+                <div className="text-[11.5px] mb-2 text-text-secondary">
+                    Buckets scheduled start times by hour-of-day. Surfaces patterns like "6am load-outs run late" or
+                    "afternoon pours fall behind pace." Attribution lands on the dispatcher's booking decision.
+                </div>
+                <HourOfDayChart data={byHour} accentColor={accentColor} />
+            </Panel>
+
+            <Panel title="Outcome mix" innerClassName="p-3">
+                <div className="text-[11.5px] mb-2 text-text-secondary">
+                    Every measured order sorts into exactly one bucket — useful for spotting whether the bad service is
+                    mostly lateness, mostly slow pours, or both at once.
+                </div>
+                <OutcomesBreakdown outcomes={outcomes} accentColor={accentColor} />
+            </Panel>
+
+            <Panel title={byDay.length > 1 ? 'Good service trend by day' : 'Service trend'} innerClassName="p-3">
+                {byDay.length > 1 ? (
+                    <>
+                        <div className="text-[11.5px] mb-2 text-text-secondary">
+                            Daily good-service %. Spot weekday patterns and one-off bad days at a glance.
                         </div>
-                    )}
-                </Panel>
-            </div>
+                        <DailyTrendChart data={byDay} accentColor={accentColor} />
+                    </>
+                ) : (
+                    <div className="text-[12px] py-6 text-center text-text-tertiary">
+                        Single-day window — the daily trend lights up once the window spans multiple days.
+                    </div>
+                )}
+            </Panel>
 
             <Panel title="Worst bad-service jobs" right={isLoading ? <RefreshingHint when /> : null}>
                 <div className="text-[11.5px] mb-2 text-text-secondary">

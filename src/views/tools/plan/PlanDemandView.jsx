@@ -16,13 +16,9 @@ import { PlanChartModeToggle, PlanTimeOfDayBar } from '../../../app/components/p
 import { PlanDemandPerPlantTable } from '../../../app/components/plan/tabs/demand/PlanDemandPerPlantTable'
 import { Panel, Stat, StatGroup } from '../../../app/components/ui/Panel'
 import PlantFilterButton from '../../../app/components/ui/PlantFilterButton'
-import {
-    buildDemandData,
-    buildPerPlantCsv,
-    downloadCsvFile,
-    FALLBACK_SERIES_COLORS
-} from '../../../utils/PlanDemandUtility'
+import { buildDemandData, FALLBACK_SERIES_COLORS } from '../../../utils/PlanDemandUtility'
 import { formatPlantFilterDisplay, resolvePlantFilterCodes } from '../../../utils/PlanRuntimeUtility'
+import { fmtYards } from '../../../utils/PlanStatisticsFormatUtility'
 import { PLAN_META_KEY, plantBadgeColor } from '../../../utils/PlanUtility'
 
 const CHART_OPTIONS = [
@@ -140,11 +136,6 @@ function PlanDemandView({
           })
         : ''
 
-    const handleExportCsv = () => {
-        const csv = buildPerPlantCsv({ peakByPlant: data.peakByPlant, perPlant: data.perPlant, totals: data.totals })
-        downloadCsvFile(csv, `demand-${planDate || 'day'}.csv`)
-    }
-
     const utilColor = utilizationColor(data.capacityUtilization)
     const scopeLabel = formatPlantFilterDisplay({
         plantFilter,
@@ -181,21 +172,12 @@ function PlanDemandView({
                                 Clear
                             </button>
                         )}
-                        <button
-                            type="button"
-                            onClick={handleExportCsv}
-                            disabled={data.perPlant.length === 0}
-                            className="border-none rounded text-[12px] font-medium px-2 py-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-bg-tertiary text-text-secondary"
-                            title="Download the per-plant breakdown as CSV"
-                        >
-                            Export CSV
-                        </button>
                     </div>
                 </div>
 
                 <StatGroup columns={8}>
                     <Stat label="Trucks" value={data.totals.trucks} />
-                    <Stat label="Yardage" value={`${Math.round(data.totals.yardage).toLocaleString()} yd`} />
+                    <Stat label="Yardage" value={`${fmtYards(data.totals.yardage)} yd`} />
                     <Stat
                         label="Orders"
                         value={data.totals.orders}
@@ -208,7 +190,7 @@ function PlanDemandView({
                     />
                     <Stat
                         label="Biggest pour"
-                        value={data.biggestOrder ? `${Math.round(data.biggestOrder.yardage).toLocaleString()} yd` : '—'}
+                        value={data.biggestOrder ? `${fmtYards(data.biggestOrder.yardage)} yd` : '—'}
                         hint={data.biggestOrder ? data.biggestOrder.customer : null}
                     />
                     <Stat
