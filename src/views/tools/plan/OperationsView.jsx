@@ -17,7 +17,6 @@ import { usePlanLookups } from '../../../app/hooks/usePlanLookups'
 import { usePlanPresence } from '../../../app/hooks/usePlanPresence'
 import { usePlanUserContext } from '../../../app/hooks/usePlanUserContext'
 import { PLAN_META_KEY } from '../../../utils/PlanUtility'
-import BookOrderView from './BookOrderView'
 import CallListView from './CallListView'
 import PlanDashboardView from './PlanDashboardView'
 import PlanDemandView from './PlanDemandView'
@@ -276,7 +275,6 @@ function OperationsViewImpl({ accentColor, isDark }) {
                      * back, which read as "the date control bounced me to
                      * another tab." Keep the view mounted and let the panel
                      * handle empty data internally. */
-                    if (effectiveViewMode === 'book-order') return false
                     const productionKeys = Object.keys(plantProduction || {}).filter((k) => k !== PLAN_META_KEY)
                     const hasScheduleData = productionKeys.length > 0
                     return isLoading || (isSchedulesSyncing && !hasScheduleData) || isDetailOrdersLoading
@@ -389,17 +387,6 @@ function OperationsViewImpl({ accentColor, isDark }) {
                         )}
 
                         {effectiveViewMode === 'call-list' && <CallListView accentColor={accentColor} />}
-
-                        {effectiveViewMode === 'book-order' && (
-                            <BookOrderView
-                                accentColor={accentColor}
-                                mixerCountsByPlant={mixerCountsByPlant}
-                                onChangePlanDate={setPlanDate}
-                                planDate={planDate}
-                                plantProduction={plantProduction}
-                                plants={plants}
-                            />
-                        )}
 
                         {effectiveViewMode === 'settings' && canSeeSettingsTab && (
                             <PlanSettingsView

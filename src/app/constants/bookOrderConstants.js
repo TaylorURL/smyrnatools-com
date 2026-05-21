@@ -93,7 +93,7 @@ export const poolPillColor = (poolAfter) => {
  *  to reality without forcing the dispatcher to pick load-size / spacing on
  *  the form. */
 export const DEFAULT_LOAD_SIZE_YARDS = 10
-export const DEFAULT_TRUCK_SPACING_MIN = 5
+export let DEFAULT_TRUCK_SPACING_MIN = 5
 export const DEFAULT_POUR_TAIL_MIN = 30
 export const DEFAULT_TRAVEL_OUT_MIN = 25
 
@@ -179,17 +179,38 @@ export const SHIFT_ANCHOR_MIN = Math.floor((PREFERRED_WINDOW_START_MIN + PREFERR
 
 /* DOT 14-hour driver shift cap — clock-in to back-at-yard. Suggestions
  * whose projected back-at-yard would push the plant's earliest operator
- * past this many minutes are filtered out. */
-export const SHIFT_LIMIT_MIN = 14 * 60
+ * past this many minutes are filtered out. Hydrated from
+ * `plan_settings.dot_shift_cap_hours` (× 60). */
+export let SHIFT_LIMIT_MIN = 14 * 60
 
 /* Mandated minimum off-the-clock window between an operator's last back-
  * at-yard and their next clock-in. Drives the per-plant floor derived
- * from yesterday's actual ticket times. */
-export const REST_HOURS_MIN = 10 * 60
+ * from yesterday's actual ticket times. Hydrated from
+ * `plan_settings.required_rest_hours` (× 60). */
+export let REST_HOURS_MIN = 10 * 60
 
 /* Single-load discharge time at the job. Each ticket = one truck load; the
- * full pour TAIL only matters at the order level. */
-export const PER_LOAD_POUR_MIN = 10
+ * full pour TAIL only matters at the order level. Hydrated from
+ * `plan_settings.per_load_pour_minutes`. */
+export let PER_LOAD_POUR_MIN = 10
+
+/**
+ * Hydrate the configurable booking-recommender constants from a
+ * `plan_settings` row. Called from the central plan-settings hydrator;
+ * missing or non-finite values leave the current value untouched so a
+ * sparse payload can't blank a constant out.
+ */
+export function hydrateBookOrderSettings(snapshot) {
+    if (!snapshot) return
+    const spacing = parseFloat(snapshot.default_truck_spacing_minutes)
+    if (Number.isFinite(spacing)) DEFAULT_TRUCK_SPACING_MIN = spacing
+    const capHours = parseFloat(snapshot.dot_shift_cap_hours)
+    if (Number.isFinite(capHours)) SHIFT_LIMIT_MIN = capHours * 60
+    const restHours = parseFloat(snapshot.required_rest_hours)
+    if (Number.isFinite(restHours)) REST_HOURS_MIN = restHours * 60
+    const pour = parseFloat(snapshot.per_load_pour_minutes)
+    if (Number.isFinite(pour)) PER_LOAD_POUR_MIN = pour
+}
 
 /* "Materially tighter" threshold — another preferred fitting slot must
  * shave at least an hour off the chosen slot's idle gap before we

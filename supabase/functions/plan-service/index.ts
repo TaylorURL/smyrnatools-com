@@ -5,6 +5,53 @@ import { errorResponse, getCorsHeaders, handleOptions, jsonResponse } from '../_
 const TRAVEL_TIMES_TABLE = 'plant_travel_times'
 const PLANS_TABLE = 'plans'
 const TEMPLATES_TABLE = 'plan_templates'
+const PLAN_SETTINGS_TABLE = 'plan_settings'
+
+// Columns the client is allowed to set on a plan_settings upsert. Anything
+// else in the payload is silently dropped so future schema columns (e.g.
+// provenance fields) can't be overwritten from the browser. Names match
+// the migration in supabase/migrations/20260521_plan_settings.sql.
+const PLAN_SETTINGS_WRITABLE_COLUMNS = new Set([
+    'pre_trip_minutes',
+    'plant_load_minutes',
+    'slump_test_minutes',
+    'early_arrival_minutes',
+    'on_site_minutes_per_truck',
+    'default_truck_spacing_minutes',
+    'per_load_pour_minutes',
+    'dot_shift_cap_hours',
+    'required_rest_hours',
+    'overtime_warning_hours',
+    'late_threshold_minutes',
+    'slow_pace_min_ratio',
+    'small_pour_max_trucks',
+    'small_pour_max_yardage',
+    'big_pour_min_yardage',
+    'big_pour_max_spacing_minutes',
+    'big_pour_min_trucks',
+    'pull_up_min_savings_minutes',
+    'pull_up_customer_notice_minutes',
+    'day_start_minutes',
+    'day_end_minutes',
+    'slot_granularity_minutes',
+    'max_travel_minutes'
+])
+
+/** Strip a settings patch down to writable columns + coerce numeric
+ *  strings into numbers. The DB's per-column CHECK constraints handle
+ *  range validation, so we don't duplicate them here — the constraint
+ *  violation message bubbles back through the error path. */
+function sanitizePlanSettingsPatch(patch: Record<string, unknown> | null | undefined): Record<string, number> {
+    if (!patch || typeof patch !== 'object') return {}
+    const out: Record<string, number> = {}
+    for (const [key, raw] of Object.entries(patch)) {
+        if (!PLAN_SETTINGS_WRITABLE_COLUMNS.has(key)) continue
+        if (raw == null) continue
+        const value = typeof raw === 'number' ? raw : parseFloat(String(raw))
+        if (Number.isFinite(value)) out[key] = value
+    }
+    return out
+}
 
 async function parseBody(req: Request): Promise<any> {
     try {
@@ -224,6 +271,40 @@ Deno.serve(async (req) => {
                 })
                 if (error) return errorResponse('Operation failed', headers, 400)
                 return jsonResponse({ success: true }, headers)
+            }
+            case 'fetch-plan-settings': {
+                const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
+                const regionCode = typeof body?.regionCode === 'string' ? body.regionCode.trim() : ''
+                if (!regionCode) return errorResponse('regionCode is required', headers, 400)
+                const { data, error } = await supabase
+                    .from(PLAN_SETTINGS_TABLE)
+                    .select('*')
+                    .eq('region_code', regionCode)
+                    .maybeSingle()
+                if (error && error.code !== 'PGRST116') return errorResponse('Operation failed', headers, 400)
+                return jsonResponse({ data: data ?? null }, headers)
+            }
+            case 'upsert-plan-settings': {
+                const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
+                const regionCode = typeof body?.regionCode === 'string' ? body.regionCode.trim() : ''
+                if (!regionCode) return errorResponse('regionCode is required', headers, 400)
+                const patch = sanitizePlanSettingsPatch(body?.patch)
+                if (Object.keys(patch).length === 0)
+                    return errorResponse('No valid columns supplied in patch', headers, 400)
+                const { data, error } = await supabase
+                    .from(PLAN_SETTINGS_TABLE)
+                    .upsert(
+                        { region_code: regionCode, ...patch, updated_by: auth, updated_at: nowISO() },
+                        { onConflict: 'region_code' }
+                    )
+                    .select('*')
+                    .maybeSingle()
+                if (error) return errorResponse(error.message || 'Operation failed', headers, 400)
+                return jsonResponse({ success: true, data: data ?? null }, headers)
             }
             case 'delete-template': {
                 const auth = await requireAuthenticated(supabase, req, headers)

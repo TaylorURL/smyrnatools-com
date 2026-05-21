@@ -1,7 +1,13 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-/** Every Plan tab in the order they appear in the desktop switcher. */
+/** Every Plan tab in the order they appear in the desktop switcher.
+ *  Find a Spot (`book-order`) is intentionally disabled — its tab entry
+ *  is removed and the OperationsView render branch is gone. The
+ *  underlying utilities and components stay in the tree so the feature
+ *  can be re-enabled later without rebuilding it; the only thing
+ *  required to bring it back is reinstating the tab entry here and the
+ *  render branch in OperationsView. */
 const PLAN_TABS = [
     { icon: 'fa-gauge-high', label: 'Plan Dashboard', mobileLabel: 'Dashboard', mode: 'dashboard' },
     { icon: 'fa-calendar-days', label: 'Schedule', mobileLabel: 'Schedule', mode: 'schedule' },
@@ -9,15 +15,14 @@ const PLAN_TABS = [
     { icon: 'fa-chart-column', label: 'Demand', mode: 'demand' },
     { icon: 'fa-chart-line', label: 'Statistics', mode: 'statistics' },
     { icon: 'fa-phone-volume', label: 'Call List', mode: 'call-list' },
-    { icon: 'fa-clipboard-list', label: 'Find a Spot', mode: 'book-order' },
     { icon: 'fa-sliders', label: 'Settings', mode: 'settings', requiresSettings: true }
 ]
 
 /** Tabs that survive on a phone. Wide-layout tabs (Planner / Demand /
- *  Statistics / Call List / Find a Spot / Settings) need horizontal real
- *  estate that doesn't exist on mobile, so they're hidden in favour of
- *  Dashboard + Schedule — the two surfaces that already render usefully
- *  at narrow widths and cover the most frequent on-the-go workflows. */
+ *  Statistics / Call List / Settings) need horizontal real estate that
+ *  doesn't exist on mobile, so they're hidden in favour of Dashboard +
+ *  Schedule — the two surfaces that already render usefully at narrow
+ *  widths and cover the most frequent on-the-go workflows. */
 const MOBILE_TAB_MODES = new Set(['dashboard', 'schedule'])
 
 /**

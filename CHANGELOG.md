@@ -1,5 +1,55 @@
 # Changelog
 
+## [2026.21.18] - 2026-05-21
+
+- Plan → Settings tab now drives the dispatch math instead of just the
+  travel-time matrix. New `plan_settings` table (migration at
+  `supabase/migrations/20260521_plan_settings.sql`) stores per-region
+  operational knobs — pre-trip / load / slump, on-site cycle time,
+  default truck spacing, DOT shift cap, overtime warning band, late /
+  slow-pace thresholds, small / big-pour classifiers, and the travel
+  sanity ceiling. Per-column ranges + 12 cross-column CHECK constraints
+  in the migration catch misconfigurations that would otherwise break
+  scheduling math (zero spacing, cycle longer than a shift, small / big
+  pour overlap, etc.).
+- Configurable constants in `src/app/constants/planConstants.ts`,
+  `src/utils/PlanScheduleUtility.ts`, and
+  `src/app/constants/bookOrderConstants.js` flipped from `const` to
+  `let`. Three module-local `hydrate*Settings()` functions mutate them
+  from a `plan_settings` row at startup so every consumer reading via
+  `import { X }` picks up the live value through ESM live bindings —
+  zero call-site changes required across the planner / schedule /
+  demand / pool / customer-sat code paths.
+- `src/services/PlanSettingsService.js` fetches a region's row and fans
+  the snapshot out to all three modules. New `usePlanOperationalSettings`
+  hook (`src/app/hooks/usePlanOperationalSettings.js`) drives the form
+  with diff-only saves so a partial patch never blanks unchanged
+  columns; the freshly returned row is re-hydrated immediately on save
+  so the running session reflects the new values without a reload.
+- `supabase/functions/plan-service/index.ts` gained
+  `fetch-plan-settings` + `upsert-plan-settings` endpoints behind
+  `requireAuthenticated`, with a writable-column allowlist that drops
+  any unknown keys before touching the DB. Server-side CHECK violations
+  bubble back into the form so the dispatcher sees the precise
+  constraint that failed.
+- `App.jsx` calls `PlanSettingsService.loadAndHydrate(regionCode)` on
+  auth + region change so the active dispatch math always matches the
+  current region's row. Falls back to baked-in defaults silently when
+  no row exists or the fetch fails.
+- Settings tab rebuilt around a clean sectioned form: search input,
+  reset-to-defaults button, three section strips (Truck cycle / DOT
+  compliance / Service quality), per-row "Custom" pill when a value
+  differs from the default, inline cross-column validator mirroring
+  every DB CHECK, sticky action bar with dirty count + saved flash.
+  Wrapper now caps the page at `max-w-4xl` so the form doesn't sprawl
+  on wide screens.
+- Find-a-Spot-only knobs (`pull_up_*`, slot scanner day window /
+  granularity, `per_load_pour_minutes`, `required_rest_hours`) are
+  intentionally hidden from the form while Find a Spot is disabled.
+  The SQL columns + runtime hydrators stay in place so re-enabling
+  Find a Spot only requires putting the fields back in
+  `planSettingsSchema.js`.
+
 ## [2026.21.17] - 2026-05-21
 
 - Statistics → Operators "Unmatched drivers" row now lists every single
