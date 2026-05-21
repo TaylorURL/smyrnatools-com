@@ -106,6 +106,18 @@ export interface OrderExperienceVerdict {
     numTrucks: number
     /** Original-cohort yardage used in the pace calc (post-kicker filter). */
     paceYardage: number
+    /** Sum of ticket quantities AFTER the first kicker-gap. Zero when the
+     *  order had no kicker (most jobs). The same value the View Tickets
+     *  popup shows in its "Kicker added" pill, so the badge / lookup row
+     *  and the popup can never disagree about the kicker total. */
+    kickerYards: number
+    /** Ticket count after the kicker break — i.e. how many trucks the
+     *  customer added mid-pour. Zero when there was no kicker. */
+    kickerLoads: number
+    /** Whether the order ended with a kicker. Equivalent to
+     *  `kickerLoads > 0` but exposed explicitly so callers don't conflate
+     *  "no kicker" with "kicker yardage couldn't be measured." */
+    hasKicker: boolean
     /** Scheduled pour-start minute-of-day. `null` when missing. */
     startMin: number | null
     /** Raw `startTime` HH:MM string from the order. */
@@ -117,9 +129,12 @@ const UNMEASURED_VERDICT: OrderExperienceVerdict = {
     firstLoadMin: null,
     firstLoadTime: '',
     firstTruckNum: '',
+    hasKicker: false,
     isBad: false,
     isLate: false,
     isSlow: false,
+    kickerLoads: 0,
+    kickerYards: 0,
     latenessMin: 0,
     measured: false,
     numTrucks: 0,
@@ -167,8 +182,11 @@ export function scoreOrderExperience(order, detail): OrderExperienceVerdict {
         sortedTickets.map((t) => t.mins),
         spacing
     )
-    const originalTickets = kickerStartIndex >= 0 ? sortedTickets.slice(0, kickerStartIndex) : sortedTickets
+    const hasKicker = kickerStartIndex >= 0
+    const originalTickets = hasKicker ? sortedTickets.slice(0, kickerStartIndex) : sortedTickets
     if (!originalTickets.length) return UNMEASURED_VERDICT
+    const kickerTickets = hasKicker ? sortedTickets.slice(kickerStartIndex) : []
+    const kickerYards = kickerTickets.reduce((sum, t) => sum + t.quantity, 0)
 
     const originalYardage = originalTickets.reduce((sum, t) => sum + t.quantity, 0)
     const scheduledYardage = parseFloat(order?.yardage) || 0
@@ -215,9 +233,12 @@ export function scoreOrderExperience(order, detail): OrderExperienceVerdict {
         firstLoadMin: first.mins,
         firstLoadTime: first.loadedTime,
         firstTruckNum: first.truckNum,
+        hasKicker: hasKicker && kickerTickets.length > 0,
         isBad: isLate || isSlow,
         isLate,
         isSlow,
+        kickerLoads: kickerTickets.length,
+        kickerYards,
         latenessMin: startLateness,
         measured: true,
         numTrucks,

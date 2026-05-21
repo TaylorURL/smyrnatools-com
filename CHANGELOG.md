@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026.21.20] - 2026-05-21
+
+- Customer Lookup detail table now surfaces kicker yardage on each
+  measured order. New right-most "Kicker" column shows `+X yd` in red
+  when the customer added yardage mid-pour, `—` otherwise; hover
+  reveals the kicker load count so dispatch can read "+18 yd · 2
+  kicker loads" at a glance.
+- Same-day orders carry an amber "Same-day" pill next to the verdict
+  in the same row — fires on the dispatch `15:00` start-time sentinel
+  (`SAME_DAY_ORDER_START` in `planConstants.ts`) so customers whose
+  jobs were booked the same day they ran read as a distinct class on
+  the lookup history.
+- `scoreOrderExperience` in `src/utils/plan/planCustomerSat.ts` now
+  returns `kickerYards`, `kickerLoads`, and `hasKicker` alongside the
+  existing late / slow / pace fields. Same `splitTicketsAtKicker` split
+  the pace calc already uses, so the lookup row, the Kickers tab, and
+  the View Tickets popup can never disagree about the kicker total.
+- `useServiceQualityStats` propagates the new kicker fields plus
+  `isSameDay` onto every `orderVerdicts` entry so the Customer Lookup
+  page can render the per-row badges without re-classifying tickets.
+
 ## [2026.21.19] - 2026-05-21
 
 - New Statistics → Kickers sub-page that ranks customers by how much

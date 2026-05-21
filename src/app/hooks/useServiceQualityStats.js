@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { scoreOrderExperience } from '../../utils/plan/planCustomerSat'
 import { EMPTY_COLOCATION_MAP } from '../../utils/PlantColocationUtility'
 import { isExcludedOrder } from '../../utils/PlanUtility'
-import { BAD_SERVICE_LATE_THRESHOLD_MIN } from '../constants/planConstants'
+import { BAD_SERVICE_LATE_THRESHOLD_MIN, SAME_DAY_ORDER_START } from '../constants/planConstants'
 
 /* Outcome buckets covering every measured order. Mutually exclusive and
  * collectively exhaustive — the histogram column always sums to the
@@ -141,9 +141,19 @@ export function useServiceQualityStats({
                 customerKey: customerRaw ? customerRaw.toUpperCase() : '',
                 date: planDate,
                 firstLoadTime: verdict.firstLoadTime,
+                hasKicker: verdict.hasKicker,
                 isBad: verdict.isBad,
                 isLate: verdict.isLate,
+                // Same-day orders carry the `15:00` start-time sentinel
+                // — the dispatch HTML's signal that the customer called
+                // in the pour the same day it ran. Surfacing this on the
+                // Customer Lookup detail lets dispatch see at a glance
+                // which entries on a customer's history were last-minute
+                // bookings vs. planned pours.
+                isSameDay: verdict.startTime === SAME_DAY_ORDER_START,
                 isSlow: verdict.isSlow,
+                kickerLoads: verdict.kickerLoads,
+                kickerYards: verdict.kickerYards,
                 latenessMin: verdict.latenessMin,
                 orderId: order.orderId,
                 orderNum: order.orderNum || '',
