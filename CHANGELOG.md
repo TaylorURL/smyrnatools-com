@@ -1,5 +1,38 @@
 # Changelog
 
+## [2026.21.19] - 2026-05-21
+
+- New Statistics → Kickers sub-page that ranks customers by how much
+  extra yardage they call in mid-pour. Card grid mirrors the Customer
+  Lookup layout — name + last-kicker date on the left, big red average
+  kicker on the right, a kicker-share bar showing kicker yards as a
+  fraction of their total scheduled book, a `X of Y jobs · Z yd total
+  · NN% rate` footer, and a kicker-trail dot strip where dot size
+  scales with the per-kicker yardage so a 30-yard surprise visually
+  outweighs a 3-yard nudge.
+- Clicking a card opens the detail panel with four stat blocks (Avg
+  kicker per kicker job, Avg per job across the full book, Total kicked
+  with a "% of scheduled" sub-line, and Kicker rate with worst-single
+  sub-line) plus a per-job table of Date / Plant / Scheduled / Kicker
+  yards (+yd, red) / Loads / % over schedule.
+- Page-level filters: All / Heavy avg (≥ 10 yd) / Frequent (≥ 30%) /
+  Kicked this week. Sorts: Largest avg kicker / Most yards kicked /
+  Most frequent kicker / Most kicker jobs / Most recent kicker / Name
+  (A–Z). Plant filter from the global controls applies upstream so the
+  leaderboard responds to the selected plant the same way every other
+  Statistics page does.
+- New `useKickerStats` hook (`src/app/hooks/useKickerStats.js`) walks
+  `flatOrders` + `detailByDay`, runs the same `splitTicketsAtKicker`
+  helper that the View Tickets popup and slow-pace scorer use, and
+  rolls up per customer. Gated by `enabled` so it's a no-op unless the
+  Kickers tab is mounted — kicker math runs zero times on every other
+  Statistics page.
+- `usePlanStatistics` gains a `kickersEnabled` prop that triggers the
+  ticket-detail range fetch + `flatOrders` build alongside the existing
+  satisfaction / help / service / plants gates. `PlanStatisticsView.jsx`
+  wires the new section into the sidebar + route table; sidebar entry
+  uses the `fa-bolt` icon.
+
 ## [2026.21.18] - 2026-05-21
 
 - Plan → Settings tab now drives the dispatch math instead of just the

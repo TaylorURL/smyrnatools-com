@@ -2,22 +2,24 @@ import React, { useMemo, useState } from 'react'
 
 import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons'
 import { PlanStatisticsControls } from '../../../app/components/plan/tabs/statistics/PlanStatisticsControls'
-import PlanStatisticsHelpCrossLoadingPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage'
-import { PlanStatisticsKpiStrip } from '../../../app/components/plan/tabs/statistics/PlanStatisticsKpiStrip'
 import PlanStatisticsCustomerLookupPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsCustomerLookupPage'
-import PlanStatisticsServicePage from '../../../app/components/plan/tabs/statistics/PlanStatisticsServicePage'
+import PlanStatisticsHelpCrossLoadingPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage'
+import PlanStatisticsKickersPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsKickersPage'
+import { PlanStatisticsKpiStrip } from '../../../app/components/plan/tabs/statistics/PlanStatisticsKpiStrip'
 import {
     PlanStatisticsOperatorsPage,
     PlanStatisticsOverviewPage,
     PlanStatisticsProductionPage
 } from '../../../app/components/plan/tabs/statistics/PlanStatisticsPages'
 import { PlanStatisticsSatisfactionPage } from '../../../app/components/plan/tabs/statistics/PlanStatisticsSatisfactionPage'
+import PlanStatisticsServicePage from '../../../app/components/plan/tabs/statistics/PlanStatisticsServicePage'
 import {
     PLAN_STATS_SECTIONS,
     PlanStatisticsSectionTabs,
     PlanStatisticsSidebar
 } from '../../../app/components/plan/tabs/statistics/PlanStatisticsSidebar'
 import { useHelpCrossLoadingStats } from '../../../app/hooks/useHelpCrossLoadingStats'
+import { useKickerStats } from '../../../app/hooks/useKickerStats'
 import { usePlanStatistics } from '../../../app/hooks/usePlanStatistics'
 import { useServiceQualityStats } from '../../../app/hooks/useServiceQualityStats'
 
@@ -53,6 +55,7 @@ function PlanStatisticsView({
     const helpCrossLoadingEnabled = activeSection === 'helpCrossLoading'
     const plantsEnabled = activeSection === 'production'
     const customerLookupEnabled = activeSection === 'customerLookup'
+    const kickersEnabled = activeSection === 'kickers'
     // Service-quality classifier feeds both the Service page and the
     // Customer Lookup page — enable the underlying ticket-detail fetch
     // and the per-order verdict memo whenever either is active.
@@ -60,6 +63,7 @@ function PlanStatisticsView({
     const stats = usePlanStatistics({
         colocationMap: planColocationMap,
         helpCrossLoadingEnabled,
+        kickersEnabled,
         liveProduction,
         operatorsEnabled,
         planDate,
@@ -133,6 +137,18 @@ function PlanStatisticsView({
         enabled: serviceEnabled,
         flatOrders,
         plantNameByCode,
+        selectedPlant
+    })
+
+    /* Kicker-leaderboard derivation — gated to the Kickers sub-page so
+     * the per-order kicker split (same `splitTicketsAtKicker` helper the
+     * View Tickets popup uses) doesn't run when another tab is mounted.
+     * Returns an empty result when disabled. */
+    const kickerStats = useKickerStats({
+        colocationMap: planColocationMap,
+        detailByDay,
+        enabled: kickersEnabled,
+        flatOrders,
         selectedPlant
     })
 
@@ -250,6 +266,17 @@ function PlanStatisticsView({
                     plansLoading={plansLoading}
                     plantNameByCode={plantNameByCode}
                     serviceStats={serviceStats}
+                />
+            )
+        }
+        if (activeSection === 'kickers') {
+            return (
+                <PlanStatisticsKickersPage
+                    colocationMap={planColocationMap}
+                    kickerStats={kickerStats}
+                    loading={loading || satisfactionLoading}
+                    plansLoading={plansLoading}
+                    plantNameByCode={plantNameByCode}
                 />
             )
         }

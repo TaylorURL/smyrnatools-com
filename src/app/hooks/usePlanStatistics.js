@@ -216,6 +216,7 @@ export function usePlanStatistics({
     helpCrossLoadingEnabled = false,
     plantsEnabled = false,
     serviceEnabled = false,
+    kickersEnabled = false,
     colocationMap = null
 }) {
     const [period, setPeriod] = useState('week')
@@ -583,7 +584,14 @@ export function usePlanStatistics({
     }, [currentRows, previousRows])
 
     useEffect(() => {
-        if (!satisfactionEnabled && !operatorsEnabled && !helpCrossLoadingEnabled && !plantsEnabled && !serviceEnabled)
+        if (
+            !satisfactionEnabled &&
+            !operatorsEnabled &&
+            !helpCrossLoadingEnabled &&
+            !plantsEnabled &&
+            !serviceEnabled &&
+            !kickersEnabled
+        )
             return undefined
         const allDays = [...currentDays, ...previousDays]
         if (allDays.length === 0) return undefined
@@ -625,7 +633,8 @@ export function usePlanStatistics({
         operatorsEnabled,
         helpCrossLoadingEnabled,
         plantsEnabled,
-        serviceEnabled
+        serviceEnabled,
+        kickersEnabled
     ])
 
     /** Saved-plan fetch — only fires when the Help & Cross-Loading
@@ -644,10 +653,10 @@ export function usePlanStatistics({
      *  all plants — the plant comparison chart needs the unfiltered set. */
     const flatOrders = useMemo(
         () =>
-            satisfactionEnabled || helpCrossLoadingEnabled || plantsEnabled || serviceEnabled
+            satisfactionEnabled || helpCrossLoadingEnabled || plantsEnabled || serviceEnabled || kickersEnabled
                 ? flattenLiveOrders(currentRows)
                 : [],
-        [currentRows, satisfactionEnabled, helpCrossLoadingEnabled, plantsEnabled, serviceEnabled]
+        [currentRows, satisfactionEnabled, helpCrossLoadingEnabled, plantsEnabled, serviceEnabled, kickersEnabled]
     )
 
     /** Flat `orderId → {scheduledYardage, loadSize}` lookup derived from

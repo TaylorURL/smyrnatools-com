@@ -49,6 +49,13 @@ export const PLAN_STATS_SECTIONS = [
         icon: 'fa-magnifying-glass',
         id: 'customerLookup',
         label: 'Customer Lookup'
+    },
+    {
+        description:
+            'Customers ranked by how much extra yardage they call in mid-pour — average kicker, rate, and totals.',
+        icon: 'fa-bolt',
+        id: 'kickers',
+        label: 'Kickers'
     }
 ]
 
