@@ -1,5 +1,47 @@
 # Changelog
 
+## [2026.21.15] - 2026-05-21
+
+- Maintenance forms rail (`src/app/components/maintenance/MaintenanceFormsRail.jsx`)
+  rebuilt as a per-plant rollup. Each plant location now appears exactly
+  once with its current submission status surfaced as a badge (Not
+  submitted / Pending review / Approved · submitted / Rejected · resubmit).
+  Replaces the prior three time-ordered sections that duplicated a plant
+  across Due / Pending / Submission History rows and added an extra row
+  per historical upload.
+- Per-plant status picker matches each due item against its
+  `(form_id, due_date)` submission key — a freshly uploaded form now
+  immediately reads as submitted instead of staying as "Not submitted"
+  while the upstream loader still ships the satisfied placeholder. Future-
+  dated due items demote below recent submissions so the next-period
+  deadline doesn't shadow the current period's status.
+- Maintenance form detail panel (`MaintenanceFormView`): added a
+  "Previous submissions" history card to every mode (Submit, Review, View-
+  only). Lists every prior submission for the form, newest first, with
+  status pill + submitted-at timestamp + plant code + "View PDF" link.
+  Default view collapses to the latest 3 with a "Show all (N more)" toggle.
+  Current submission gets a "Viewing" badge in Review / View-only modes.
+- Detail panel widths: dropped the `mx-auto max-w-3xl` / `max-w-4xl`
+  centering shells from all three modes so content fills the right pane
+  instead of leaving large empty gutters at wide viewports.
+- New service method `MaintenanceService.fetchSubmissionsByFormId(formId)`
+  + shared `useSubmissionHistory(formId)` hook for the history card.
+- Maintenance PDF (`src/utils/MaintenancePdfFormUtility.ts`):
+  - Frequency on the meta strip now Title-Cased (e.g. "Monthly" instead
+    of "monthly").
+  - Download filename now human-readable: `"<Form Title> — <Frequency>
+    — <YYYY-MM-DD>.pdf"` instead of the kebab-cased slug.
+  - Submission info / Inspection items section headings added so the
+    form reads in chapters; continuation pages repeat the heading with
+    `(continued)`.
+  - Signature block split into a Sign here / Date signed two-column
+    layout with sign-lines on each side.
+  - Grammar pass on every helper string (subtitle, plant helper,
+    submitter helper, select fallback, empty-template note).
+- Schedule order rows (`PlanScheduleBadges.HoursLimitBadge`): pill label
+  reads `LIMIT · 14.8H` instead of `LIMIT EXCEEDED · 14.8H` — tighter
+  vertical rhythm on dense rows without losing the information.
+
 ## [2026.21.14] - 2026-05-20
 
 - Statistics → **Service** sub-page replaces the prior Late page. Shows the

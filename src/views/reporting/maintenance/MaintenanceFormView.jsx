@@ -145,7 +145,161 @@ function PdfEmbed({ url }) {
     )
 }
 
-/* ── Submit mode ─────────────────────────────────────────────────────────── */
+/* ── Submission history ──────────────────────────────────────────────────
+ *  Lists every prior submission of the same form so the worker sees what
+ *  they've turned in before (newest first). Default view shows the latest
+ *  three with a "Show all (N)" toggle for longer histories. Reused across
+ *  Submit / Review / View-only modes so the timeline reads consistently
+ *  wherever the form is opened. */
+
+const HISTORY_COLLAPSED_LIMIT = 3
+
+function useSubmissionHistory(formId) {
+    const [history, setHistory] = useState([])
+    const [loading, setLoading] = useState(false)
+    const refresh = useCallback(async () => {
+        if (!formId) {
+            setHistory([])
+            return
+        }
+        setLoading(true)
+        try {
+            const rows = await MaintenanceService.fetchSubmissionsByFormId(formId)
+            setHistory(Array.isArray(rows) ? rows : [])
+        } finally {
+            setLoading(false)
+        }
+    }, [formId])
+    useEffect(() => {
+        refresh()
+    }, [refresh])
+    return { history, loading, refresh }
+}
+
+function formatHistoryDateTime(value) {
+    if (!value) return '—'
+    const d = new Date(value)
+    if (Number.isNaN(d.getTime())) return '—'
+    return d.toLocaleString(undefined, {
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    })
+}
+
+function HistoryStatusPill({ submission }) {
+    const status = StatusForSubmission(submission)
+    return (
+        <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
+            style={{ background: `${status.color}1f`, color: status.color }}
+        >
+            {status.label}
+        </span>
+    )
+}
+
+function HistoryRow({ accentColor, isCurrent, submission }) {
+    const pdfUrl = useMemo(
+        () => MaintenanceService.getScannedPdfUrl(submission?.scanned_pdf_url),
+        [submission?.scanned_pdf_url]
+    )
+    return (
+        <div
+            className="flex items-center gap-2 py-2 border-t border-border-light first:border-t-0"
+            style={isCurrent ? { background: `${accentColor}10` } : undefined}
+        >
+            <HistoryStatusPill submission={submission} />
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                    <div className="text-[13px] font-semibold leading-tight text-text-primary truncate">
+                        {formatHistoryDateTime(submission?.submitted_at)}
+                    </div>
+                    {isCurrent && (
+                        <span
+                            className="inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider shrink-0"
+                            style={{ background: `${accentColor}20`, color: accentColor }}
+                        >
+                            Viewing
+                        </span>
+                    )}
+                </div>
+                <div className="text-[11px] text-text-tertiary tabular-nums truncate mt-0.5">
+                    {submission?.plant_code ? `Plant ${submission.plant_code}` : 'No plant'}
+                    {submission?.due_date && (
+                        <>
+                            <span className="mx-1.5">·</span>
+                            Due {formatMaintenanceDateShort(submission.due_date)}
+                        </>
+                    )}
+                </div>
+            </div>
+            {pdfUrl ? (
+                <a
+                    href={pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer bg-bg-secondary border border-border-light text-text-secondary shrink-0"
+                    title="Open the scanned PDF in a new tab"
+                >
+                    <i className="fas fa-file-pdf text-[10px]" />
+                    View PDF
+                </a>
+            ) : (
+                <span className="text-[11px] text-text-tertiary shrink-0">No PDF</span>
+            )}
+        </div>
+    )
+}
+
+function SubmissionHistoryCard({ accentColor, currentSubmissionId, expanded, history, loading, onToggleExpanded }) {
+    const total = history?.length || 0
+    const visible = expanded ? history : history.slice(0, HISTORY_COLLAPSED_LIMIT)
+    const hiddenCount = total - visible.length
+    const canExpand = total > HISTORY_COLLAPSED_LIMIT
+    return (
+        <div className="rounded p-3" style={CARD_STYLE}>
+            <CardHeader
+                accent={accentColor}
+                icon="fa-clock-rotate-left"
+                label="History"
+                title="Previous submissions"
+                sub={
+                    loading
+                        ? 'Loading prior submissions…'
+                        : total === 0
+                          ? 'No submissions for this form yet. The first one you submit will show up here.'
+                          : `${total} submission${total === 1 ? '' : 's'} on file. Newest first.`
+                }
+            />
+            {!loading && total > 0 && (
+                <>
+                    <div className="flex flex-col">
+                        {visible.map((submission) => (
+                            <HistoryRow
+                                key={submission.id}
+                                accentColor={accentColor}
+                                isCurrent={!!currentSubmissionId && submission.id === currentSubmissionId}
+                                submission={submission}
+                            />
+                        ))}
+                    </div>
+                    {canExpand && (
+                        <button
+                            type="button"
+                            onClick={onToggleExpanded}
+                            className="mt-2 self-start text-[12px] font-semibold px-0 py-1 bg-transparent border-none cursor-pointer text-text-secondary"
+                        >
+                            {expanded ? 'Show less' : `Show all (${hiddenCount} more)`}
+                        </button>
+                    )}
+                </>
+            )}
+        </div>
+    )
+}
 
 function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, plantCode }) {
     const [pdfFile, setPdfFile] = useState(null)
@@ -155,6 +309,8 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
     const [downloadedAt, setDownloadedAt] = useState(null)
+    const [historyExpanded, setHistoryExpanded] = useState(false)
+    const { history, loading: historyLoading, refresh: refreshHistory } = useSubmissionHistory(formObj?.id)
     const fileInputRef = useRef(null)
 
     const handleDownload = useCallback(() => {
@@ -212,6 +368,11 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
                 scannedPdfUrl: url
             })
             setSuccess(true)
+            setPdfFile(null)
+            setSubmitterNotes('')
+            // Pull the updated history so the new row appears at the top of
+            // the "Submission history" card without forcing a full reload.
+            refreshHistory()
             if (onSubmitted) onSubmitted(submission)
         } catch (err) {
             setError(err?.message || 'Failed to submit scanned form.')
@@ -219,7 +380,7 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
             setUploading(false)
             setSubmitting(false)
         }
-    }, [pdfFile, formObj, dueDate, item, plantCode, submitterNotes, onSubmitted])
+    }, [pdfFile, formObj, dueDate, item, plantCode, submitterNotes, onSubmitted, refreshHistory])
 
     return (
         <div className="flex h-full w-full flex-col overflow-y-auto bg-bg-secondary">
@@ -232,7 +393,16 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
                 title={formObj?.title}
             />
 
-            <div className="mx-auto w-full max-w-3xl px-3 sm:px-4 py-3 flex flex-col gap-2.5">
+            <div className="w-full px-3 sm:px-4 py-3 flex flex-col gap-2.5">
+                {/* Submission history — every prior upload for this form, newest first. */}
+                <SubmissionHistoryCard
+                    accentColor={accentColor}
+                    expanded={historyExpanded}
+                    history={history}
+                    loading={historyLoading}
+                    onToggleExpanded={() => setHistoryExpanded((prev) => !prev)}
+                />
+
                 {/* Step 1 — Download */}
                 <div className="rounded p-3" style={CARD_STYLE}>
                     <CardHeader
@@ -364,6 +534,8 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
     const [submitterName, setSubmitterName] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
+    const [historyExpanded, setHistoryExpanded] = useState(false)
+    const { history, loading: historyLoading } = useSubmissionHistory(formObj?.id)
 
     useEffect(() => {
         let cancelled = false
@@ -405,7 +577,7 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
                 title={formObj?.title}
             />
 
-            <div className="mx-auto w-full max-w-4xl px-3 sm:px-4 py-3 flex flex-col gap-2.5">
+            <div className="w-full px-3 sm:px-4 py-3 flex flex-col gap-2.5">
                 <div className="rounded p-3" style={CARD_STYLE}>
                     <CardHeader
                         accent={accentColor}
@@ -460,6 +632,15 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
                         </button>
                     </div>
                 </div>
+
+                <SubmissionHistoryCard
+                    accentColor={accentColor}
+                    currentSubmissionId={submission?.id}
+                    expanded={historyExpanded}
+                    history={history}
+                    loading={historyLoading}
+                    onToggleExpanded={() => setHistoryExpanded((prev) => !prev)}
+                />
             </div>
         </div>
     )
@@ -473,6 +654,8 @@ function ViewOnlyMode({ accentColor, formObj, item, onBack, submission }) {
         () => MaintenanceService.getScannedPdfUrl(submission?.scanned_pdf_url),
         [submission?.scanned_pdf_url]
     )
+    const [historyExpanded, setHistoryExpanded] = useState(false)
+    const { history, loading: historyLoading } = useSubmissionHistory(formObj?.id)
     return (
         <div className="flex h-full w-full flex-col overflow-y-auto bg-bg-secondary">
             <PageHeader
@@ -485,7 +668,7 @@ function ViewOnlyMode({ accentColor, formObj, item, onBack, submission }) {
                 statusColor={status.color}
                 title={formObj?.title}
             />
-            <div className="mx-auto w-full max-w-4xl px-3 sm:px-4 py-3 flex flex-col gap-2.5">
+            <div className="w-full px-3 sm:px-4 py-3 flex flex-col gap-2.5">
                 <div className="rounded p-3" style={CARD_STYLE}>
                     <CardHeader
                         accent={accentColor}
@@ -524,6 +707,15 @@ function ViewOnlyMode({ accentColor, formObj, item, onBack, submission }) {
                         <div className="text-[12.5px] leading-relaxed text-text-primary">{submission.review_notes}</div>
                     </div>
                 )}
+
+                <SubmissionHistoryCard
+                    accentColor={accentColor}
+                    currentSubmissionId={submission?.id}
+                    expanded={historyExpanded}
+                    history={history}
+                    loading={historyLoading}
+                    onToggleExpanded={() => setHistoryExpanded((prev) => !prev)}
+                />
             </div>
         </div>
     )

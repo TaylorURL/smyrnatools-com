@@ -238,7 +238,7 @@ export function HoursLimitBadge({ limit }) {
             title={tooltipLines.join('\n')}
         >
             <i className="fas fa-clock text-[9px]" />
-            Limit Exceeded · {elapsedHours.toFixed(1)}h
+            Limit · {elapsedHours.toFixed(1)}h
         </span>
     )
 }

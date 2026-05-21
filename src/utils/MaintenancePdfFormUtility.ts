@@ -49,6 +49,28 @@ const HELPER_BLOCK_HEIGHT = 12
 const FALLBACK_ACCENT = '#1e3a5f'
 
 /** Convert a `#rrggbb` (or `#rgb`) string to a `[r,g,b]` triple jspdf wants. */
+/** Title-cases the first letter of each word in a value, leaving the rest
+ *  alone so existing capitalization (e.g. acronyms in form titles) survives.
+ *  Used for the on-page Frequency display so "monthly" reads as "Monthly"
+ *  without us mass-rewriting the underlying DB enum values. */
+function titleCase(value) {
+    return String(value || '')
+        .trim()
+        .replace(/\b([a-z])/g, (_, ch) => ch.toUpperCase())
+}
+
+/** Strip filesystem-illegal / awkward characters from a value but preserve
+ *  spaces and casing so the downloaded PDF reads as a human filename rather
+ *  than a kebab-cased slug. Used to build the maintenance-form download
+ *  filename — much friendlier than the prior `mixer-maintenance-form_2026-05-21.pdf`. */
+function sanitizeFilenamePart(value) {
+    return String(value || '')
+        .trim()
+        .replace(/[\\/:*?"<>|]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+}
+
 function hexToRgb(hex) {
     const cleaned = (hex || '').replace('#', '').trim()
     if (cleaned.length === 3) {
@@ -136,6 +158,22 @@ function drawHelperText(doc, text, x, y, maxWidth) {
     setText(doc, COLORS.bodyText)
 }
 
+/** Renders a flush-left section heading: tracked accent eyebrow above an
+ *  uppercase title with a thin rule running the rest of the column. Used
+ *  to break the page into "Submission info" and "Inspection items"
+ *  groups so the worker reads the form in chapters. */
+function drawSectionHeading(doc, label, x, y, accentRgb) {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(LABEL_FONT_SIZE)
+    setText(doc, accentRgb)
+    const text = label.toUpperCase()
+    doc.text(text, x, y, { charSpace: 1.2 })
+    const labelWidth = doc.getTextWidth(text)
+    drawRule(doc, x + labelWidth + 10, y - 3, x + COLUMN_WIDTH, COLORS.border)
+    setText(doc, COLORS.bodyText)
+    return y + 10
+}
+
 /* ── Header / footer ───────────────────────────────────────────────────── */
 
 /** Renders the accent-band header + meta strip. Returns the y cursor where
@@ -155,7 +193,7 @@ function drawHeader(doc, meta, accentRgb) {
     setText(doc, [255, 255, 255])
     const subtitle = [
         meta.frequency && `${meta.frequency.toUpperCase()} INSPECTION`,
-        'PRINT · COMPLETE · SCAN · UPLOAD'
+        'PRINT — COMPLETE BY HAND — SCAN — UPLOAD'
     ]
         .filter(Boolean)
         .join('   ·   ')
@@ -164,7 +202,7 @@ function drawHeader(doc, meta, accentRgb) {
     if (meta.formId) {
         doc.setFontSize(8)
         setText(doc, [226, 232, 240])
-        doc.text(`Form ID  ${meta.formId}`, PAGE_WIDTH - MARGIN_X, 54, { align: 'right', charSpace: 0.6 })
+        doc.text(`Reference  ${meta.formId}`, PAGE_WIDTH - MARGIN_X, 54, { align: 'right', charSpace: 0.6 })
     }
 
     // Meta strip — three info blocks: form name, frequency, generated at.
@@ -178,10 +216,10 @@ function drawHeader(doc, meta, accentRgb) {
     const cellWidth = (PAGE_WIDTH - MARGIN_X * 2) / 3
 
     const cells = [
-        { label: 'Form Title', value: meta.title || '—' },
-        { label: 'Frequency', value: meta.frequency || 'Ad hoc' },
+        { label: 'Form', value: meta.title || '—' },
+        { label: 'Frequency', value: meta.frequency ? titleCase(meta.frequency) : 'As needed' },
         {
-            label: 'Generated',
+            label: 'Issued',
             value: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
         }
     ]
@@ -225,7 +263,7 @@ function buildHeaderFields() {
     return [
         {
             field_type: 'text',
-            helper: 'Three-letter plant code (e.g. ATL, TEN, MOB).',
+            helper: 'Plant code as it appears on your dispatch schedule.',
             id: PLANT_FIELD_KEY,
             label: 'Plant',
             required: true,
@@ -233,14 +271,15 @@ function buildHeaderFields() {
         },
         {
             field_type: 'date',
+            helper: 'Date the work was finished.',
             id: COMPLETION_DATE_FIELD_KEY,
-            label: 'Completion Date',
+            label: 'Date Completed',
             required: true,
             width: 'half'
         },
         {
             field_type: 'text',
-            helper: 'Print legibly — this becomes the submission record.',
+            helper: 'Print your full name clearly — this is the record of who signed off.',
             id: SUBMITTER_FIELD_KEY,
             label: 'Completed By',
             required: true,
@@ -310,7 +349,7 @@ function renderSelectInput(doc, field, x, y) {
         doc.setFont('helvetica', 'italic')
         doc.setFontSize(9)
         setText(doc, COLORS.placeholder)
-        doc.text('Write the selected option in this field.', x + 8, y + 19)
+        doc.text('Write your selection here.', x + 8, y + 19)
         setText(doc, COLORS.bodyText)
         return
     }
@@ -358,10 +397,25 @@ function renderChecklistInput(doc, field, x, y) {
 }
 
 function renderSignatureInput(doc, x, y) {
+    const dateColumnWidth = 110
     drawOutlinedBox(doc, x, y, COLUMN_WIDTH, SIGNATURE_HEIGHT, { fill: [255, 255, 255] })
-    drawUppercaseLabel(doc, 'Signature', x + 8, y + 12, { color: COLORS.placeholder })
-    drawUppercaseLabel(doc, 'Date', x + COLUMN_WIDTH - 80, y + 12, { color: COLORS.placeholder })
-    drawRule(doc, x + COLUMN_WIDTH - 80, y + SIGNATURE_HEIGHT - 8, x + COLUMN_WIDTH - 8, COLORS.borderStrong)
+    // Vertical divider between signature area (left) and date area (right).
+    setStroke(doc, COLORS.rule)
+    doc.setLineWidth(0.4)
+    doc.line(x + COLUMN_WIDTH - dateColumnWidth, y + 6, x + COLUMN_WIDTH - dateColumnWidth, y + SIGNATURE_HEIGHT - 6)
+    drawUppercaseLabel(doc, 'Sign here', x + 10, y + 14, { color: COLORS.placeholder })
+    drawUppercaseLabel(doc, 'Date signed', x + COLUMN_WIDTH - dateColumnWidth + 10, y + 14, {
+        color: COLORS.placeholder
+    })
+    // Sign-line beneath the signature area so the operator has a place to land.
+    drawRule(doc, x + 10, y + SIGNATURE_HEIGHT - 12, x + COLUMN_WIDTH - dateColumnWidth - 10, COLORS.borderStrong)
+    drawRule(
+        doc,
+        x + COLUMN_WIDTH - dateColumnWidth + 10,
+        y + SIGNATURE_HEIGHT - 12,
+        x + COLUMN_WIDTH - 10,
+        COLORS.borderStrong
+    )
 }
 
 /**
@@ -429,42 +483,56 @@ export function buildMaintenanceFormPdf(form, options = {}) {
     let cursorY = drawHeader(doc, meta, accentRgb)
     const usableBottom = PAGE_HEIGHT - MARGIN_BOTTOM
 
-    // Instructional sub-line
+    // Instructional sub-line — concise three-step direction the worker
+    // can read at a glance before filling anything in.
     doc.setFont('helvetica', 'italic')
     doc.setFontSize(9.5)
     setText(doc, COLORS.helper)
     doc.text(
-        'Print this form, hand-write every field, then scan and upload the finished sheet for review.',
+        'Complete every required field by hand, then scan the finished sheet and upload it for review.',
         MARGIN_X,
         cursorY,
         { maxWidth: COLUMN_WIDTH }
     )
     setText(doc, COLORS.bodyText)
-    cursorY += 18
+    cursorY += 22
 
-    // Always-rendered header fields — plant / date / submitter — followed by
-    // the form-defined fields.
-    const allFields = [...buildHeaderFields(), ...fields]
+    const headerFields = buildHeaderFields()
 
-    if (fields.length === 0) {
-        // Still render header fields so the worker has somewhere to write
-        // even when the template is empty.
-        doc.setFont('helvetica', 'italic')
-        doc.setFontSize(10)
-        setText(doc, COLORS.helper)
-    }
-
-    allFields.forEach((field) => {
+    // Submission info section — plant / date / submitter — always rendered
+    // so the worker can identify the sheet even if the template is empty.
+    cursorY = drawSectionHeading(doc, 'Submission Info', MARGIN_X, cursorY, accentRgb)
+    headerFields.forEach((field) => {
         const needed = estimateFieldHeight(field)
         if (cursorY + needed > usableBottom) {
             doc.addPage()
             cursorY = drawHeader(doc, meta, accentRgb)
+            cursorY = drawSectionHeading(doc, 'Submission Info (continued)', MARGIN_X, cursorY, accentRgb)
         }
         cursorY = renderField(doc, field, MARGIN_X, cursorY)
     })
 
-    if (fields.length === 0) {
-        // Friendly note under the synthetic fields when no template fields exist.
+    // Inspection items section — only show when the template actually
+    // defines fields, otherwise the heading would dangle over nothing.
+    if (fields.length > 0) {
+        cursorY += 4
+        if (cursorY + 60 > usableBottom) {
+            doc.addPage()
+            cursorY = drawHeader(doc, meta, accentRgb)
+        }
+        cursorY = drawSectionHeading(doc, 'Inspection Items', MARGIN_X, cursorY, accentRgb)
+        fields.forEach((field) => {
+            const needed = estimateFieldHeight(field)
+            if (cursorY + needed > usableBottom) {
+                doc.addPage()
+                cursorY = drawHeader(doc, meta, accentRgb)
+                cursorY = drawSectionHeading(doc, 'Inspection Items (continued)', MARGIN_X, cursorY, accentRgb)
+            }
+            cursorY = renderField(doc, field, MARGIN_X, cursorY)
+        })
+    } else {
+        // Empty-template fallback — a single friendly line below the
+        // header fields rather than an unanchored heading.
         if (cursorY + 60 > usableBottom) {
             doc.addPage()
             cursorY = drawHeader(doc, meta, accentRgb)
@@ -473,7 +541,7 @@ export function buildMaintenanceFormPdf(form, options = {}) {
         doc.setFontSize(10)
         setText(doc, COLORS.helper)
         doc.text(
-            'No template fields are configured — submit the header info above and any free-form notes you need.',
+            'No template fields are configured for this form. Add free-form notes on a separate sheet if needed.',
             MARGIN_X,
             cursorY + 16,
             { maxWidth: COLUMN_WIDTH }
@@ -494,13 +562,18 @@ export function buildMaintenanceFormPdf(form, options = {}) {
  * Convenience — trigger a browser download of the blank form PDF. Filename
  * uses the form title and the date the PDF was generated (the worker fills
  * in the actual completion date by hand).
+ *
+ * Output shape: `"<Form Title> — <Frequency> — <YYYY-MM-DD>.pdf"` — Title
+ * Case for readability when the file lands in Downloads, em-dash separator
+ * so the segments don't visually blur into the title text, ISO date so
+ * sorting in the filesystem still works. Filesystem-illegal characters are
+ * stripped so the save dialog doesn't bounce the request.
  */
 export function downloadMaintenanceFormPdf(form, options = {}) {
     const doc = buildMaintenanceFormPdf(form, options)
-    const safeTitle = (form?.title || 'maintenance-form')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
+    const title = sanitizeFilenamePart(titleCase(form?.title || 'Maintenance Form')) || 'Maintenance Form'
+    const frequency = sanitizeFilenamePart(titleCase(options.frequency || form?.frequency || ''))
     const today = new Date().toISOString().slice(0, 10)
-    doc.save(`${safeTitle}_${today}.pdf`)
+    const parts = [title, frequency, today].filter(Boolean)
+    doc.save(`${parts.join(' — ')}.pdf`)
 }

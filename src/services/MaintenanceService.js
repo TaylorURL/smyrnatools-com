@@ -462,6 +462,22 @@ export class MaintenanceService {
             return []
         }
     }
+    /** Fetches every submission for a given form, newest first. Powers the
+     *  "Submission history" list in the worker's upload view so they can
+     *  see every prior submission (not just the latest) with its date. */
+    static async fetchSubmissionsByFormId(formId) {
+        try {
+            if (!formId) return []
+            const { data, error } = await Database.from('maintenance_submissions')
+                .select(SUBMISSION_DETAIL_SELECT)
+                .eq('form_id', formId)
+                .order('submitted_at', { ascending: false })
+            return error ? [] : data || []
+        } catch (err) {
+            console.error('Failed to fetch submissions for form:', err)
+            return []
+        }
+    }
     /** Fetches all reviewed (approved/rejected) submissions visible to the current reviewer. */
     static async fetchReviewedSubmissions() {
         return fetchReviewableSubmissions(['approved', 'rejected'], 'reviewed_at', false)

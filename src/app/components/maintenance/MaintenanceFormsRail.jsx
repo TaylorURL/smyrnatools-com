@@ -1,89 +1,209 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 
 import { formatMaintenanceDate } from '../../../utils/MaintenanceUtility'
 import { ItemIcon, PlantChip, StatusBadge } from './MaintenanceFormAtoms'
 
-/* Collapsible section header. Click toggles its open state; the count + icon
- * give an at-a-glance read on how much work the section is hiding. */
-function SectionHeader({ accentColor, count, icon, isOpen, label, onToggle, tone }) {
-    const accent = tone === 'danger' ? '#dc2626' : tone === 'warning' ? '#d97706' : accentColor
-    return (
-        <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={isOpen}
-            className="w-full flex items-center gap-2 px-3 py-2 cursor-pointer border-none transition-colors hover:bg-bg-tertiary bg-bg-secondary border-b border-border-light text-text-primary"
-        >
-            <i className={`fas ${icon} text-[11px] text-center w-3.5`} style={{ color: accent }} />
-            <span className="text-[10.5px] font-bold uppercase tracking-wider flex-1 text-left">{label}</span>
-            <span
-                className="text-[10.5px] font-mono tabular-nums rounded px-1.5 py-0.5"
-                style={{
-                    background: count > 0 ? `${accent}1a` : 'var(--bg-tertiary)',
-                    color: count > 0 ? accent : 'var(--text-tertiary)'
-                }}
-            >
-                {count}
-            </span>
-            <i className={`fas fa-chevron-${isOpen ? 'down' : 'right'} text-[9px] text-text-tertiary`} />
-        </button>
-    )
+/* ── Per-plant rollup ─────────────────────────────────────────────────────
+ *  Each plant location appears exactly once. The row state tells the user
+ *  at a glance whether that plant has submitted its current-period form:
+ *
+ *    Not submitted   — there's an open due item with no submission yet.
+ *    Pending review  — they submitted; reviewer hasn't decided yet.
+ *    Approved        — submission was accepted.
+ *    Rejected        — needs to resubmit.
+ *    No activity     — neither a due item nor a submission was found for
+ *                      this plant in the visible window.
+ *
+ *  Clicking a row routes to the most appropriate detail mode: SubmitMode
+ *  when the plant still needs to upload, ReviewMode when a reviewer is
+ *  the user and the submission is pending, ViewOnlyMode otherwise.
+ */
+
+const STATUS_PRIORITY = {
+    rejected: 5, // most urgent: needs resubmit
+    overdue: 4, // past due_date with no matching submission
+    submitted: 3, // waiting on a reviewer
+    approved: 2,
+    completed: 1,
+    upcoming: 0 // future due_date — surfaces only when no submission exists
 }
 
-/** Single selectable row inside a section. Shows the form title, plant chip,
- *  meta line (due/submission date + submitter when present), and a status
- *  badge on the right. Active row highlights with the user's accent. */
-function ItemRow({ accentColor, isActive, item, onClick, onDelete, statusKey }) {
-    const title = item.form?.title || item.maintenance_forms?.title || 'Untitled form'
-    const dateLabel = item.due_date
-        ? `Due ${formatMaintenanceDate(item.due_date)}`
-        : item.submitted_at
-          ? `Submitted ${formatMaintenanceDate(item.submitted_at)}`
-          : item.reviewed_at
-            ? `Reviewed ${formatMaintenanceDate(item.reviewed_at)}`
-            : null
-    const submitter = item.submitted_by_name || null
+const ROW_KIND = {
+    due: 'due',
+    pending: 'pending',
+    reviewed: 'reviewed',
+    mine: 'mine'
+}
+
+/** YYYY-MM-DD for "today" so future/overdue checks ignore the clock. */
+function todayIso() {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** Period key used to match a submission against its due item — both
+ *  carry the same `due_date` for the same form-period, so equal keys
+ *  mean the worker has already satisfied that due slot. */
+function itemPeriodKey(item) {
+    const formId = item?.form_id || item?.maintenance_forms?.id || ''
+    const dueDate = item?.due_date || ''
+    if (!formId || !dueDate) return null
+    return `${formId}|${dueDate}`
+}
+
+const STATUS_LABELS = {
+    approved: { description: 'Submitted and approved for the period.', label: 'Submitted · approved' },
+    notSubmitted: { description: 'No upload yet for this period.', label: 'Not submitted' },
+    pending: { description: 'Submitted — reviewer hasn’t decided yet.', label: 'Pending review' },
+    rejected: { description: 'Submission was rejected; needs to be resubmitted.', label: 'Rejected · resubmit' }
+}
+
+function itemEffectiveDate(item) {
+    return item?.submitted_at || item?.reviewed_at || item?.due_date || null
+}
+
+function rowStatusKey(row) {
+    if (!row) return 'notSubmitted'
+    if (row.kind === ROW_KIND.due) return 'notSubmitted'
+    const s = (row.item?.status || '').toLowerCase()
+    if (s === 'rejected') return 'rejected'
+    if (s === 'approved') return 'approved'
+    if (s === 'submitted') return 'pending'
+    return 'pending'
+}
+
+function priorityScore(row, todayKey) {
+    if (!row) return 0
+    if (row.kind === ROW_KIND.due) {
+        const due = row.item?.due_date || ''
+        return due && due < todayKey ? STATUS_PRIORITY.overdue : STATUS_PRIORITY.upcoming
+    }
+    const s = (row.item?.status || '').toLowerCase()
+    return STATUS_PRIORITY[s] ?? STATUS_PRIORITY.completed
+}
+
+/** Pick the single most relevant item for a plant.
+ *
+ *  Step 1: drop any due item whose `(form_id, due_date)` matches an
+ *  existing submission — that period has been satisfied even if the
+ *  upstream loader still ships the due placeholder. This fixes the
+ *  "shows 'Not submitted' right after a submit" bug.
+ *
+ *  Step 2: a remaining due item with a future due_date scores LOWER
+ *  than any submission, so a recent approved/pending submission keeps
+ *  the plant green/yellow instead of being shadowed by next month's
+ *  upcoming form. A remaining due item that's PAST due (overdue) still
+ *  outranks an approved submission so the plant doesn't read as "done"
+ *  while an older period is unsatisfied.
+ *
+ *  Step 3: ties break on the effective date — most recent wins. */
+function pickPlantRow(rows) {
+    if (!rows?.length) return null
+    const submissionKeys = new Set()
+    rows.forEach((row) => {
+        if (row.kind === ROW_KIND.due) return
+        const key = itemPeriodKey(row.item)
+        if (key) submissionKeys.add(key)
+    })
+    const filtered = rows.filter((row) => {
+        if (row.kind !== ROW_KIND.due) return true
+        const key = itemPeriodKey(row.item)
+        return !key || !submissionKeys.has(key)
+    })
+    if (!filtered.length) return null
+    const today = todayIso()
+    return [...filtered].sort((a, b) => {
+        const dp = priorityScore(b, today) - priorityScore(a, today)
+        if (dp !== 0) return dp
+        const ad = new Date(itemEffectiveDate(a.item) || 0).getTime()
+        const bd = new Date(itemEffectiveDate(b.item) || 0).getTime()
+        return bd - ad
+    })[0]
+}
+
+function itemMatchesQuery(item, query) {
+    if (!query) return true
+    const q = query.trim().toLowerCase()
+    if (!q) return true
+    const haystack = [item.form?.title, item.maintenance_forms?.title, item.plant_code, item.submitted_by_name]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+    return haystack.includes(q)
+}
+
+function itemMatchesPlant(item, selectedPlant) {
+    if (!selectedPlant || selectedPlant === 'All') return true
+    if (selectedPlant.startsWith('DISTRICT:')) return true
+    return (item.plant_code || '').toUpperCase() === selectedPlant.toUpperCase()
+}
+
+/** One plant row: status icon · plant chip · current form title · status
+ *  pill. The whole row is clickable; the trash button is only enabled for
+ *  submission-backed rows (workers can delete their own uploads). */
+function PlantRow({ accentColor, isActive, onClick, onDelete, row }) {
+    const statusKey = rowStatusKey(row)
+    const status = STATUS_LABELS[statusKey] || STATUS_LABELS.notSubmitted
+    const item = row.item
+    const title = item.form?.title || item.maintenance_forms?.title || 'Maintenance form'
+    const dateLabel =
+        row.kind === ROW_KIND.due && item.due_date
+            ? `Due ${formatMaintenanceDate(item.due_date)}`
+            : item.submitted_at
+              ? `Submitted ${formatMaintenanceDate(item.submitted_at)}`
+              : item.reviewed_at
+                ? `Reviewed ${formatMaintenanceDate(item.reviewed_at)}`
+                : null
 
     return (
         <div
             role="button"
             tabIndex={0}
-            onClick={() => onClick?.(item)}
+            onClick={() => onClick?.(row)}
             onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    onClick?.(item)
+                    onClick?.(row)
                 }
             }}
-            className="flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors hover:bg-bg-tertiary border-b border-border-light"
+            className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer transition-colors hover:bg-bg-tertiary border-b border-border-light"
             style={{
                 background: isActive ? `${accentColor}14` : 'transparent',
                 borderLeft: `3px solid ${isActive ? accentColor : 'transparent'}`
             }}
+            title={status.description}
         >
-            <ItemIcon status={statusKey} />
+            <ItemIcon
+                status={
+                    statusKey === 'notSubmitted'
+                        ? 'pending'
+                        : statusKey === 'pending'
+                          ? 'submitted'
+                          : statusKey === 'approved'
+                            ? 'approved'
+                            : statusKey === 'rejected'
+                              ? 'rejected'
+                              : 'pending'
+                }
+            />
             <div className="min-w-0 flex-1">
-                <div
-                    className="text-[12px] font-semibold truncate"
-                    style={{ color: isActive ? accentColor : 'var(--text-primary)' }}
-                >
-                    {title}
+                <div className="flex items-center gap-1.5">
+                    <PlantChip code={row.plantCode} />
+                    <div
+                        className="text-[12.5px] font-semibold truncate"
+                        style={{ color: isActive ? accentColor : 'var(--text-primary)' }}
+                    >
+                        {title}
+                    </div>
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5 text-[10.5px] flex-wrap text-text-secondary">
-                    <PlantChip code={item.plant_code} />
                     {dateLabel && <span className="font-mono tabular-nums">{dateLabel}</span>}
-                    {submitter && (
-                        <>
-                            <span className="text-text-tertiary">·</span>
-                            <span className="truncate max-w-[140px]">{submitter}</span>
-                        </>
-                    )}
                 </div>
             </div>
             <div className="shrink-0 flex items-center gap-1">
-                <StatusBadge status={statusKey} />
-                {onDelete && (
+                <StatusBadge status={status.label.replace(/\s/g, ' ').toLowerCase()} />
+                {onDelete && row.kind !== ROW_KIND.due && (
                     <button
                         type="button"
                         onClick={(event) => {
@@ -101,59 +221,33 @@ function ItemRow({ accentColor, isActive, item, onClick, onDelete, statusKey }) 
     )
 }
 
-/** Inline empty state shown when a section has no rows. */
-function SectionEmpty({ message }) {
-    return (
-        <div className="px-3 py-3 text-[11px] bg-bg-primary border-b border-border-light text-text-tertiary">
-            {message}
-        </div>
-    )
-}
-
-/** Skeleton row for the loading state — keeps the rail's layout stable. */
+/** Skeleton row while form data is loading — keeps rail height stable. */
 function SkeletonRow() {
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light">
+        <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-border-light">
             <div className="w-6 h-6 rounded animate-pulse shrink-0 bg-bg-tertiary" />
             <div className="flex-1 min-w-0">
                 <div className="h-3 w-32 rounded animate-pulse mb-1 bg-bg-tertiary" />
                 <div className="h-2.5 w-44 rounded animate-pulse bg-bg-secondary" />
             </div>
-            <div className="h-4 w-12 rounded animate-pulse shrink-0 bg-bg-tertiary" />
+            <div className="h-4 w-20 rounded animate-pulse shrink-0 bg-bg-tertiary" />
         </div>
     )
 }
 
-const itemMatchesQuery = (item, query) => {
-    if (!query) return true
-    const q = query.trim().toLowerCase()
-    const haystack = [item.form?.title, item.maintenance_forms?.title, item.plant_code, item.submitted_by_name]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-    return haystack.includes(q)
-}
-
-const itemMatchesPlant = (item, selectedPlant) => {
-    if (!selectedPlant || selectedPlant === 'All') return true
-    if (selectedPlant.startsWith('DISTRICT:')) return true // district filtering handled upstream
-    return (item.plant_code || '').toUpperCase() === selectedPlant.toUpperCase()
-}
-
-const dedupeById = (items) => {
-    const seen = new Set()
-    return items.filter((item) => {
-        if (!item?.id || seen.has(item.id)) return false
-        seen.add(item.id)
-        return true
-    })
-}
-
 /**
- * Sectioned forms rail — left column of the combined Maintenance Log workflow.
- * Groups every form-related item the user has access to (Due / Pending Review /
- * Submissions) into collapsible sections so upload, review, and history all
- * live next to each other and feed a single right-hand detail pane.
+ * Per-plant maintenance forms rail — left column of the combined log.
+ * Each plant location appears exactly once with its current submission
+ * status surfaced as a badge. Click a row to open the form detail panel
+ * in the appropriate mode (submit / review / view-only) for that plant.
+ *
+ * The prior implementation grouped by item-type (Due / Pending Review /
+ * Submission history) which duplicated a plant across sections whenever
+ * it had both a due form and a submission, and added extra rows for
+ * every historical submission. The new layout collapses all of that
+ * into a single row per plant; full submission history for a plant
+ * remains accessible via the "Previous submissions" card in the
+ * detail panel.
  */
 export function MaintenanceFormsRail({
     accentColor,
@@ -169,35 +263,35 @@ export function MaintenanceFormsRail({
     selectedItemId,
     selectedPlant
 }) {
-    const [openSections, setOpenSections] = useState({ due: true, history: false, review: true })
-    const toggle = (key) => setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
+    /* Group every form item we know about by plant_code, tagged with its
+     * source kind so the click router can pick the right detail mode. */
+    const plantRows = useMemo(() => {
+        const passes = (item) => itemMatchesPlant(item, selectedPlant) && itemMatchesQuery(item, searchText)
+        const byPlant = new Map()
+        const push = (item, kind) => {
+            if (!item || !item.plant_code || !passes(item)) return
+            const list = byPlant.get(item.plant_code) || []
+            list.push({ item, kind, plantCode: item.plant_code })
+            byPlant.set(item.plant_code, list)
+        }
+        ;(dueItems || []).forEach((i) => push(i, ROW_KIND.due))
+        ;(pendingReviews || []).forEach((i) => push(i, ROW_KIND.pending))
+        ;(mySubmissions || []).forEach((i) => push(i, ROW_KIND.mine))
+        ;(reviewedSubmissions || []).forEach((i) => push(i, ROW_KIND.reviewed))
 
-    const filterItems = (items) =>
-        items.filter((item) => itemMatchesPlant(item, selectedPlant) && itemMatchesQuery(item, searchText))
-
-    const filteredDue = useMemo(
-        () => filterItems(dueItems || []).sort((a, b) => (a.plant_code || '').localeCompare(b.plant_code || '')),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [dueItems, searchText, selectedPlant]
-    )
-    const filteredPendingReviews = useMemo(
-        () => filterItems(pendingReviews || []),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [pendingReviews, searchText, selectedPlant]
-    )
-    const submissionHistory = useMemo(() => {
-        const merged = dedupeById([...(reviewedSubmissions || []), ...(mySubmissions || [])])
-        return filterItems(merged).sort(
-            (a, b) => new Date(b.submitted_at || b.reviewed_at || 0) - new Date(a.submitted_at || a.reviewed_at || 0)
-        )
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reviewedSubmissions, mySubmissions, searchText, selectedPlant])
+        const rows = []
+        byPlant.forEach((items, plantCode) => {
+            const pick = pickPlantRow(items)
+            if (pick) rows.push({ ...pick, plantCode })
+        })
+        return rows.sort((a, b) => a.plantCode.localeCompare(b.plantCode))
+    }, [dueItems, pendingReviews, mySubmissions, reviewedSubmissions, searchText, selectedPlant])
 
     if (formLoading) {
         return (
             <div className="flex flex-col">
                 <div className="px-3 py-2 text-[10.5px] font-bold uppercase tracking-wider bg-bg-secondary border-b border-border-light text-text-tertiary">
-                    Loading forms…
+                    Loading plants…
                 </div>
                 {Array.from({ length: 6 }, (_, i) => (
                     <SkeletonRow key={i} />
@@ -206,101 +300,55 @@ export function MaintenanceFormsRail({
         )
     }
 
-    const handleSelectDue = (item) => onSelectItem?.({ ...item, __kind: 'form-due' })
-    const handleSelectReview = (item) =>
-        onSelectItem?.({ ...item, __kind: 'form-review', form: item.maintenance_forms, isReview: true })
-    const handleSelectHistory = (item) => {
-        const isPending = item.status === 'submitted'
+    const handleSelect = (row) => {
+        if (!row) return
+        if (row.kind === ROW_KIND.due) {
+            onSelectItem?.({ ...row.item, __kind: 'form-due' })
+            return
+        }
+        const isPending = (row.item.status || '').toLowerCase() === 'submitted'
         onSelectItem?.({
-            ...item,
+            ...row.item,
             __kind: isPending && canReview ? 'form-review' : 'form-history',
-            form: item.maintenance_forms,
+            form: row.item.maintenance_forms,
             isReview: isPending && canReview,
-            isViewOnly: !isPending || !canReview
+            isViewOnly: !(isPending && canReview)
         })
     }
 
+    const notSubmittedCount = plantRows.filter((r) => rowStatusKey(r) === 'notSubmitted').length
+    const submittedCount = plantRows.length - notSubmittedCount
+
     return (
         <div className="flex flex-col">
-            <SectionHeader
-                accentColor={accentColor}
-                count={filteredDue.length}
-                icon="fa-clipboard-list"
-                isOpen={openSections.due}
-                label="Forms to upload"
-                onToggle={() => toggle('due')}
-                tone="warning"
-            />
-            {openSections.due &&
-                (filteredDue.length === 0 ? (
-                    <SectionEmpty message="No recurring forms are due right now." />
-                ) : (
-                    filteredDue.map((item) => (
-                        <ItemRow
-                            key={`due-${item.id}`}
-                            accentColor={accentColor}
-                            isActive={selectedItemId === item.id}
-                            item={item}
-                            onClick={handleSelectDue}
-                            statusKey={item.status || 'pending'}
-                        />
-                    ))
-                ))}
-
-            {canReview && (
-                <>
-                    <SectionHeader
+            <div className="flex items-center gap-2 px-3 py-2 bg-bg-secondary border-b border-border-light">
+                <i className="fas fa-industry text-[11px] text-text-tertiary" />
+                <span className="text-[10.5px] font-bold uppercase tracking-wider flex-1 text-text-primary">
+                    Plants
+                </span>
+                <span
+                    className="text-[10.5px] font-mono tabular-nums rounded px-1.5 py-0.5 bg-bg-tertiary text-text-tertiary"
+                    title={`${submittedCount} submitted · ${notSubmittedCount} not submitted`}
+                >
+                    {submittedCount}/{plantRows.length}
+                </span>
+            </div>
+            {plantRows.length === 0 ? (
+                <div className="px-3 py-6 text-[12px] text-center text-text-tertiary">
+                    No maintenance activity for the active filter.
+                </div>
+            ) : (
+                plantRows.map((row) => (
+                    <PlantRow
+                        key={row.plantCode}
                         accentColor={accentColor}
-                        count={filteredPendingReviews.length}
-                        icon="fa-clipboard-check"
-                        isOpen={openSections.review}
-                        label="Awaiting review"
-                        onToggle={() => toggle('review')}
-                        tone="danger"
+                        isActive={selectedItemId === row.item.id}
+                        onClick={handleSelect}
+                        onDelete={onDeleteSubmission}
+                        row={row}
                     />
-                    {openSections.review &&
-                        (filteredPendingReviews.length === 0 ? (
-                            <SectionEmpty message="Nothing to review — submissions land here when teams upload." />
-                        ) : (
-                            filteredPendingReviews.map((item) => (
-                                <ItemRow
-                                    key={`review-${item.id}`}
-                                    accentColor={accentColor}
-                                    isActive={selectedItemId === item.id}
-                                    item={item}
-                                    onClick={handleSelectReview}
-                                    onDelete={onDeleteSubmission}
-                                    statusKey={item.status || 'submitted'}
-                                />
-                            ))
-                        ))}
-                </>
+                ))
             )}
-
-            <SectionHeader
-                accentColor={accentColor}
-                count={submissionHistory.length}
-                icon="fa-clock-rotate-left"
-                isOpen={openSections.history}
-                label="Submission history"
-                onToggle={() => toggle('history')}
-            />
-            {openSections.history &&
-                (submissionHistory.length === 0 ? (
-                    <SectionEmpty message="Reviewed submissions and your past uploads appear here." />
-                ) : (
-                    submissionHistory.map((item) => (
-                        <ItemRow
-                            key={`history-${item.id}`}
-                            accentColor={accentColor}
-                            isActive={selectedItemId === item.id}
-                            item={item}
-                            onClick={handleSelectHistory}
-                            onDelete={onDeleteSubmission}
-                            statusKey={item.status || 'completed'}
-                        />
-                    ))
-                ))}
         </div>
     )
 }
