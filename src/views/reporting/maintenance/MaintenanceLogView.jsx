@@ -67,14 +67,12 @@ export default function MaintenanceLogView({
         setServiceTarget
     } = useMaintenanceLogActions({ onFormDataReload })
 
-    const showFormsRail = !!(
-        permissions.canCreate ||
-        permissions.canReview ||
-        dueItems.length > 0 ||
-        pendingReviews.length > 0 ||
-        reviewedSubmissions.length > 0 ||
-        mySubmissions.length > 0
-    )
+    /* Rail is visible to every user — the per-plant rollup is the only
+     * way a non-reviewer can see whether the plants in their scope have
+     * submitted their monthly maintenance. Permission gates still apply
+     * to the destructive actions (create / review / approve / reject)
+     * at the service layer; this only controls visibility of the list. */
+    const showFormsRail = true
 
     const equipmentBody = (
         <div className="flex-1 overflow-y-auto">

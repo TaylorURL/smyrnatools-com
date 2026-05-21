@@ -117,7 +117,14 @@ export const CUSTOMER_SAT_PACE_WEIGHT = 0.6
 export const CUSTOMER_SAT_ONTIME_WEIGHT = 0.4
 export const CUSTOMER_SAT_LATE_WINDOW_MIN = 60
 export const BAD_SERVICE_LATE_THRESHOLD_MIN = 15
-export const BAD_SERVICE_PACE_THRESHOLD = 0.7
+/** Achieved-yd-per-hour ÷ requested-yd-per-hour. Anything STRICTLY below
+ *  this flags the order as slow. Set at 1.0 so any pour that finished
+ *  under the requested pace (after kicker exclusion and the small-pour
+ *  exemption) is recorded as a bad experience — matches the View Tickets
+ *  popup, which shows the actual-vs-target ratio with red/amber any time
+ *  the achieved rate dips below target. The earlier 0.7 buffer let jobs
+ *  read as "Good service" even when the popup flagged them slow. */
+export const BAD_SERVICE_PACE_THRESHOLD = 1.0
 /** Jobs at or below either threshold skip the slow-pace check entirely.
  *  Small pours (driveways, patches, hand-finished slabs) are routinely
  *  paced slower than the planned truck-spacing implies, and treating that

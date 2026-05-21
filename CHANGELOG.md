@@ -1,5 +1,35 @@
 # Changelog
 
+## [2026.21.16] - 2026-05-21
+
+- Slow-service scoring lined up with the View Tickets popup. `scoreOrderExperience`
+  (`src/utils/plan/planCustomerSat.ts`) now divides paceYardage by
+  `effectiveSpan = max(actualDuration, plannedSpan)` — the same denominator
+  the popup uses — so the schedule's experience badge and the popup's
+  Actual-pace tile can't disagree. A fast burst still lands at `paceScore = 1.0`
+  (not slow); a pour that overshoots planned span trips the slow flag the
+  same way it shows amber/red in the popup.
+- `BAD_SERVICE_PACE_THRESHOLD` raised from `0.7` to `1.0`
+  (`src/app/constants/planConstants.ts`). Any pour finishing below the
+  requested yd/hr (excluding kickers, after the small-pour exemption) is
+  now flagged as slow — the previous 30% buffer was letting jobs read as
+  "Good service" while the popup painted them red.
+- Maintenance forms rail is now visible to every authenticated user — not
+  gated on `maintenance.create` / `maintenance.review`. `showFormsRail` in
+  `MaintenanceLogView.jsx` is hardcoded true so a non-permissioned user
+  can see whether each plant in their scope has submitted their monthly
+  maintenance form. Destructive actions (create / submit / approve /
+  reject) still require their respective permissions at the service
+  layer.
+- `MaintenanceView.jsx` always fetches `fetchPendingReviews()` +
+  `fetchReviewedSubmissions()` (no longer gated on `canReview`) so the
+  per-plant rollup has cross-user submission data to bucket.
+- `MaintenanceService.fetchReviewableSubmissions` no longer short-circuits
+  to `[]` when the caller lacks `maintenance.review`. Plant-scope
+  filtering + role-weight hierarchy still apply downstream, so a worker
+  only sees submissions within their accessible plants and from peers at
+  or below their role weight.
+
 ## [2026.21.15] - 2026-05-21
 
 - Maintenance forms rail (`src/app/components/maintenance/MaintenanceFormsRail.jsx`)

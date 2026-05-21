@@ -123,15 +123,18 @@ async function postMaint(endpoint, data) {
     return json
 }
 /**
- * Fetches submissions eligible for review, filtered by the reviewer's permissions,
- * role weight hierarchy, and plant access scope.
+ * Fetches submissions eligible for review, filtered by role weight hierarchy
+ * and plant access scope. Read access is open to every authenticated user so
+ * the per-plant rail in MaintenanceView can show submission status for every
+ * plant in their scope, regardless of whether they themselves hold
+ * `maintenance.review`. Acting on a submission (approve / reject) still
+ * requires `maintenance.review` — that gate lives on `reviewSubmission`,
+ * not here.
  */
 async function fetchReviewableSubmissions(statusFilter, orderField, orderAscending) {
     try {
         const user = await UserService.getCurrentUser()
         if (!user?.id) return []
-        const hasReviewPermission = await UserService.hasPermission(user.id, PERMISSION_REVIEW).catch(() => false)
-        if (!hasReviewPermission) return []
         const [hasItPermission, hasBypass] = await Promise.all([
             UserService.hasPermission(user.id, PERMISSION_IT).catch(() => false),
             UserService.hasPermission(user.id, PERMISSION_BYPASS_PLANT).catch(() => false)

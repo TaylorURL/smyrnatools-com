@@ -190,8 +190,20 @@ export function scoreOrderExperience(order, detail): OrderExperienceVerdict {
     const actualDuration = Math.max(0, lastLoad - first.mins)
     const startLateness = Number.isFinite(startMin) ? Math.max(0, first.mins - (startMin as number)) : 0
 
+    /* Effective pour span — match what the View Tickets popup reports so
+     * the badge and the popup can never disagree. The popup divides by
+     * `max(actualSpan, plannedSpan)` so a fast burst (e.g. four trucks
+     * back-to-back in 6 min when planned spacing was 5 min × 3 = 15 min)
+     * doesn't read as an impossible 200 yd/hr; the trade-off is that
+     * jobs that finish within the planned window land exactly at the
+     * target rate (paceScore = 1.0), neither slow nor exceeding pace.
+     * Jobs that actually overshoot the planned span score < 1.0 and now
+     * trip the slow flag, matching the popup's red/amber indicator. */
+    const plannedSpan = numTrucks > 1 ? (numTrucks - 1) * spacing : 0
+    const effectiveSpan = Math.max(actualDuration, plannedSpan)
+
     const requestedYdPerHr = computeRequestedYardsPerHour(loadSize, spacing)
-    const actualYdPerHr = computeActualYardsPerHour(paceYardage, actualDuration)
+    const actualYdPerHr = computeActualYardsPerHour(paceYardage, effectiveSpan)
     const paceScore = requestedYdPerHr && actualYdPerHr ? clamp01(actualYdPerHr / requestedYdPerHr) : null
     const paceScoreForCheck = paceScore == null ? 1 : paceScore
 

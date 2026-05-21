@@ -76,10 +76,16 @@ export default function MaintenanceView() {
             }))
             setPermissions(perms)
             const currentUser = await UserService.getCurrentUser()
+            // Pending + reviewed submissions are fetched for every user
+            // (not just reviewers) so the per-plant rail can show whether
+            // every plant in the user's scope has submitted, regardless
+            // of who has approve/reject permission. The service still
+            // enforces plant-scope + role-weight filtering, so a worker
+            // only sees data within their accessible plants.
             const [due, reviews, reviewed, submissions, forms] = await Promise.all([
                 MaintenanceService.fetchMyDueItems().catch(() => []),
-                perms.canReview ? MaintenanceService.fetchPendingReviews().catch(() => []) : [],
-                perms.canReview ? MaintenanceService.fetchReviewedSubmissions().catch(() => []) : [],
+                MaintenanceService.fetchPendingReviews().catch(() => []),
+                MaintenanceService.fetchReviewedSubmissions().catch(() => []),
                 MaintenanceService.fetchMySubmissions(currentUser?.id).catch(() => []),
                 MaintenanceService.fetchForms({ regionCode }).catch(() => [])
             ])
