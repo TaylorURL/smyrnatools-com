@@ -18,6 +18,10 @@ import { useAccentColor } from '../../hooks/useAccentColor'
  * @param {boolean} [props.allowMultiple=false] - Enables multi-select mode with checkboxes.
  * @param {string[]} [props.selectedPlantCodes] - Pre-selected plant codes for multi-select mode.
  * @param {string} [props.userPlantCode] - User's primary plant code for "My District" detection.
+ * @param {Array<Object>} [props.regionGroups] - Optional region groupings rendered above the
+ *   district list in single-select mode. Each entry is `{ code, name, plantCodes: string[] }`.
+ *   Clicking a region row emits `REGION:<code>` via `onSelect` so the parent can scope its
+ *   filter to that region's plants. Used by the dashboard's Home Office plant picker.
  */
 function PlantDropdownModal({
     isOpen,
@@ -29,16 +33,25 @@ function PlantDropdownModal({
     showMyPlants = false,
     allowMultiple = false,
     selectedPlantCodes = [],
-    userPlantCode = ''
+    userPlantCode = '',
+    regionGroups = []
 }) {
     const [search, setSearch] = useState('')
     const [localSelectedCodes, setLocalSelectedCodes] = useState(selectedPlantCodes || [])
+    /** Per-region collapse state for the hierarchical (office-mode) view.
+     *  Regions start collapsed so the user can see the whole list at a
+     *  glance, then expand the one they want to drill into. */
+    const [expandedRegions, setExpandedRegions] = useState({})
     /** Re-seed local state every time the modal opens so the checked rows
      *  always reflect the parent's current `selectedPlantCodes`. Without
      *  this, an external selection change while the modal was closed
      *  would leave the next open in a stale state. */
     useEffect(() => {
         if (isOpen) setLocalSelectedCodes(selectedPlantCodes || [])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen])
+    useEffect(() => {
+        if (isOpen) setExpandedRegions({})
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
     const accentColor = useAccentColor()
@@ -162,7 +175,121 @@ function PlantDropdownModal({
                             My Plants
                         </div>
                     )}
-                    {!allowMultiple && districtGroups.length > 0 && (
+                    {!allowMultiple && regionGroups && regionGroups.length > 0 && !search.trim() && (
+                        <>
+                            <div className="mx-4 my-1 border-t border-border-light" />
+                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Regions
+                            </div>
+                            {regionGroups.map((region) => {
+                                const isExpanded = !!expandedRegions[region.code]
+                                const districts = region.districts || []
+                                const regionPlants = (region.plants || []).slice().sort((a, b) => {
+                                    const codeA = a.plantCode || a.plant_code || ''
+                                    const codeB = b.plantCode || b.plant_code || ''
+                                    return (
+                                        parseInt(codeA.replace(/\D/g, '') || '0') -
+                                        parseInt(codeB.replace(/\D/g, '') || '0')
+                                    )
+                                })
+                                return (
+                                    <div key={region.code} className="mb-1">
+                                        <div className="flex items-center gap-1 rounded-[10px] hover:bg-slate-100">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setExpandedRegions((prev) => ({
+                                                        ...prev,
+                                                        [region.code]: !prev[region.code]
+                                                    }))
+                                                }
+                                                className="flex items-center justify-center w-8 h-8 ml-2 rounded border-none bg-transparent text-slate-500 cursor-pointer"
+                                                aria-label={isExpanded ? 'Collapse region' : 'Expand region'}
+                                            >
+                                                <i
+                                                    className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[11px]`}
+                                                />
+                                            </button>
+                                            <div
+                                                className="flex flex-1 cursor-pointer items-center gap-3 rounded-[10px] px-2 py-3 text-sm font-medium text-gray-700"
+                                                onClick={() => {
+                                                    onSelect(`REGION:${region.code}`)
+                                                    onClose()
+                                                }}
+                                            >
+                                                <i className="fas fa-globe" style={{ color: accentColor }} />
+                                                <span className="flex-1">{region.name}</span>
+                                                <span className="text-xs text-slate-400">
+                                                    {region.plantCodes?.length || 0}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {isExpanded && (
+                                            <div className="ml-6 mt-1 mb-2 border-l border-gray-200 pl-2">
+                                                {districts.length > 0 && (
+                                                    <>
+                                                        <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                                            Districts
+                                                        </div>
+                                                        {districts.map((district) => (
+                                                            <div
+                                                                key={`${region.code}:${district.name}`}
+                                                                className="mb-0.5 flex cursor-pointer items-center gap-3 rounded-[8px] px-3 py-2 text-sm text-gray-700 hover:bg-slate-100"
+                                                                onClick={() => {
+                                                                    onSelect(`DISTRICT:${district.name}`)
+                                                                    onClose()
+                                                                }}
+                                                            >
+                                                                <i
+                                                                    className="fas fa-layer-group"
+                                                                    style={{ color: accentColor }}
+                                                                />
+                                                                <span className="flex-1">{district.name}</span>
+                                                                <span className="text-xs text-slate-400">
+                                                                    {district.plantCodes.length}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </>
+                                                )}
+                                                {regionPlants.length > 0 && (
+                                                    <>
+                                                        <div className="px-3 py-1 mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                                            Plants
+                                                        </div>
+                                                        {regionPlants.map((plant) => {
+                                                            const code = plant.plantCode || plant.plant_code
+                                                            return (
+                                                                <div
+                                                                    key={`${region.code}:${code}`}
+                                                                    className="flex cursor-pointer items-center gap-3 rounded-[8px] px-3 py-2 text-sm text-gray-700 hover:bg-slate-100"
+                                                                    onClick={() => {
+                                                                        onSelect(code)
+                                                                        onClose()
+                                                                    }}
+                                                                >
+                                                                    <span>
+                                                                        ({code}) {plant.plantName || plant.plant_name}
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                            <div className="mx-4 my-1 border-t border-border-light" />
+                        </>
+                    )}
+                    {!allowMultiple && regionGroups && regionGroups.length > 0 && search.trim() && (
+                        <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Plants
+                        </div>
+                    )}
+                    {!allowMultiple && (!regionGroups || regionGroups.length === 0) && districtGroups.length > 0 && (
                         <>
                             <div className="mx-4 my-1 border-t border-border-light" />
                             {userDistrict && (
@@ -237,30 +364,37 @@ function PlantDropdownModal({
                             </div>
                         </>
                     )}
-                    {sortedPlants.map((plant) => {
-                        const code = plant.plantCode || plant.plant_code
-                        const isSelected = allowMultiple && localSelectedCodes.includes(code)
-                        return (
-                            <div
-                                key={code}
-                                className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-4 py-3 text-sm transition-colors hover:bg-slate-100 ${isSelected ? 'bg-blue-50 font-semibold' : 'text-gray-700'}`}
-                                onClick={() => handlePlantClick(code)}
-                            >
-                                {allowMultiple && (
-                                    <input
-                                        type="checkbox"
-                                        checked={isSelected}
-                                        onChange={() => {}}
-                                        className="h-[18px] w-[18px]"
-                                        style={{ accentColor }}
-                                    />
-                                )}
-                                <span className="text-gray-700">
-                                    ({code}) {plant.plantName || plant.plant_name}
-                                </span>
-                            </div>
-                        )
-                    })}
+                    {/* The hierarchical region accordion already renders
+                        every plant nested under its region in office-mode
+                        single-select view. Suppressing the flat list while
+                        no search is active avoids a duplicate flat dump
+                        of every org plant under the accordion. */}
+                    {!allowMultiple && regionGroups && regionGroups.length > 0 && !search.trim()
+                        ? null
+                        : sortedPlants.map((plant) => {
+                              const code = plant.plantCode || plant.plant_code
+                              const isSelected = allowMultiple && localSelectedCodes.includes(code)
+                              return (
+                                  <div
+                                      key={code}
+                                      className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-4 py-3 text-sm transition-colors hover:bg-slate-100 ${isSelected ? 'bg-blue-50 font-semibold' : 'text-gray-700'}`}
+                                      onClick={() => handlePlantClick(code)}
+                                  >
+                                      {allowMultiple && (
+                                          <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => {}}
+                                              className="h-[18px] w-[18px]"
+                                              style={{ accentColor }}
+                                          />
+                                      )}
+                                      <span className="text-gray-700">
+                                          ({code}) {plant.plantName || plant.plant_name}
+                                      </span>
+                                  </div>
+                              )
+                          })}
                 </div>
                 {allowMultiple && (
                     <div className="border-t border-gray-200 bg-slate-50 px-4 py-3 flex items-center gap-2">

@@ -150,33 +150,42 @@ const RoleCard = ({
     }
 
     return (
-        <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
-            {/* Header — always visible */}
+        <div className="overflow-hidden rounded border border-border-light bg-bg-primary shadow-sm transition-all duration-200 hover:shadow-lg">
+            {/* Header — asset-card visual rhythm: 40x40 accent icon + bold name + stat pills + chevron. */}
             <div
-                className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-3 px-5 py-4 cursor-pointer transition-colors hover:bg-slate-50"
                 onClick={onToggle}
             >
                 <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: `${accentColor}15`, color: accentColor }}
+                    className="w-10 h-10 rounded flex items-center justify-center text-white text-lg flex-shrink-0"
+                    style={{ background: accentColor }}
                 >
-                    <i className="fas fa-shield-alt text-sm" />
+                    <i className="fas fa-shield-alt" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5">
-                        <span className="text-sm font-bold text-slate-800">{role.name}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-lg font-extrabold tracking-tight truncate text-text-primary">
+                            {role.name}
+                        </span>
                         {isElevated && (
                             <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
                                 Elevated
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-slate-400">Weight: {role.weight || 0}</span>
-                        <span className="text-slate-200 text-[8px]">●</span>
-                        <span className="text-xs text-slate-400">{permissions.length} permissions</span>
-                        <span className="text-slate-200 text-[8px]">●</span>
-                        <span className="text-xs text-slate-400">{namespaces.length} namespaces</span>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600">
+                            <i className="fas fa-balance-scale text-[9px]" />
+                            <span className="font-mono tabular-nums">{role.weight || 0}</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-teal-50 text-teal-700">
+                            <span className="font-mono tabular-nums">{permissions.length}</span>
+                            <span>perms</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-cyan-50 text-cyan-700">
+                            <span className="font-mono tabular-nums">{namespaces.length}</span>
+                            <span>namespaces</span>
+                        </span>
                     </div>
                 </div>
                 <i
@@ -550,6 +559,9 @@ function RolesView() {
         return permSet.size
     }, [roles])
 
+    /** Number of roles whose weight crosses the elevated threshold (> 75). */
+    const elevatedCount = useMemo(() => roles.filter((r) => (r.weight || 0) > 75).length, [roles])
+
     const handleRemovePermission = useCallback(
         async (roleId, permission) => {
             if (!hasITAccess) return
@@ -634,26 +646,29 @@ function RolesView() {
         [updateRoleWeight, setError]
     )
 
-    const badge = `${roles.length} Total`
+    const badge = `${roles.length} Roles · ${totalPermissions} Permissions · ${elevatedCount} Elevated`
 
     if (isLoading && roles.length === 0) {
         return (
             <div className="min-h-screen bg-slate-50 p-6">
-                <div className="max-w-5xl mx-auto">
-                    <Skeleton className="h-8 w-48 mb-6" />
-                    <SkeletonStack count={6} gapClassName="gap-3">
-                        {() => (
-                            <div className="rounded-lg p-4 bg-white border border-border-light">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <Skeleton className="h-5 w-40" />
-                                    <Skeleton className="h-5 w-16" rounded="rounded-full" />
+                <Skeleton className="h-8 w-48 mb-6" />
+                <SkeletonStack count={6} gapClassName="gap-3">
+                    {() => (
+                        <div className="rounded border border-border-light bg-white p-4">
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="w-10 h-10" rounded="rounded" />
+                                <div className="flex-1">
+                                    <Skeleton className="h-4 w-40 mb-1.5" />
+                                    <div className="flex gap-1.5">
+                                        <Skeleton className="h-3.5 w-12" rounded="rounded" />
+                                        <Skeleton className="h-3.5 w-16" rounded="rounded" />
+                                        <Skeleton className="h-3.5 w-20" rounded="rounded" />
+                                    </div>
                                 </div>
-                                <Skeleton className="h-3 w-full mb-1.5" />
-                                <Skeleton className="h-3 w-3/4" />
                             </div>
-                        )}
-                    </SkeletonStack>
-                </div>
+                        </div>
+                    )}
+                </SkeletonStack>
             </div>
         )
     }
@@ -706,29 +721,6 @@ function RolesView() {
                     </div>
                 )}
 
-                {/* Stats */}
-                <div className="flex items-center gap-4 mb-5 px-1">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                            <i className="fas fa-shield-alt text-slate-500 text-xs" />
-                        </div>
-                        <div>
-                            <span className="text-lg font-bold text-slate-800">{roles.length}</span>
-                            <span className="text-xs text-slate-400 ml-1.5">roles</span>
-                        </div>
-                    </div>
-                    <div className="w-px h-8 bg-slate-200" />
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                            <i className="fas fa-key text-slate-500 text-xs" />
-                        </div>
-                        <div>
-                            <span className="text-lg font-bold text-slate-800">{totalPermissions}</span>
-                            <span className="text-xs text-slate-400 ml-1.5">unique permissions</span>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Role cards */}
                 <div className="space-y-3">
                     {sortedRoles.map((role) => (
@@ -747,9 +739,14 @@ function RolesView() {
                         />
                     ))}
                     {sortedRoles.length === 0 && (
-                        <div className="bg-white rounded-xl border border-border-light shadow-sm p-12 text-center text-slate-400">
-                            <i className="fas fa-search text-3xl mb-3 block" />
-                            <div className="text-sm">No roles match your search</div>
+                        <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-border-light rounded">
+                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
+                                <i className="fas fa-shield-alt text-3xl text-slate-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-800 mb-2">No Roles Found</h3>
+                            <p className="text-slate-500 max-w-md">
+                                {searchQuery ? 'No roles match your search.' : 'There are no roles in the system yet.'}
+                            </p>
                         </div>
                     )}
                 </div>

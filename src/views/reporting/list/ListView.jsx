@@ -57,12 +57,19 @@ function ListView({ title = 'Tasks List', onSelectItem, onStatusFilterChange }) 
     const [bulkStatusOpen, setBulkStatusOpen] = useState(false)
     const [bulkPriorityOpen, setBulkPriorityOpen] = useState(false)
 
-    const { isLoading, plants, reload } = useListData()
-    const { regionPlantCodes, regionPlants } = useListRegion({
+    const { isLoading: itemsLoading, plants, reload } = useListData()
+    const { regionPlantCodes, regionPlants, regionReady } = useListRegion({
         regionCode: preferences?.selectedRegion?.code || '',
         selectedPlant,
         setSelectedPlant
     })
+    /* Keep the skeleton up until BOTH the items and the region scope
+     * have resolved. Without the region gate the filtered list briefly
+     * leaks tasks from the previous region on first paint / region
+     * swap — `regionPlantCodes` starts as `null`, so the `filteredItems`
+     * memo skips the region filter and renders the unfiltered set
+     * until the fetch lands. */
+    const isLoading = itemsLoading || !regionReady
     const {
         bulkToggleCompletion,
         bulkUpdatePriority,

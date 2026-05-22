@@ -80,13 +80,20 @@ export {
 } from './plan/planAvailability'
 export { plantBadgeColor } from './plan/planBadges'
 export {
+    BAD_LATE_MIN,
+    classifyServiceTier,
     computeActualYardsPerHour,
     computeCustomerSatisfaction,
     computeRequestedYardsPerHour,
     isSmallPourJob,
+    NOT_GOOD_LATE_MIN,
     scoreOrderExperience,
-    splitTicketsAtKicker
+    SERVICE_TIER_META,
+    SERVICE_TIER_ORDER,
+    splitTicketsAtKicker,
+    VERY_BAD_LATE_MIN
 } from './plan/planCustomerSat'
+export type { OrderExperienceVerdict, ServiceTier } from './plan/planCustomerSat'
 export {
     getCalculatedTruckCount,
     getEffectiveMinTrucks,

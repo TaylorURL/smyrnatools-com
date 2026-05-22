@@ -98,13 +98,23 @@ export const MaintenanceLogService = {
         return data || []
     },
 
-    /** Fetches recent service entries across all equipment. Optionally limited. */
-    async fetchRecentEntries(limit = 10) {
-        const { data, error } = await Database.from(ENTRIES_TABLE)
-            .select('*, maintenance_log_equipment(name, plant_code), maintenance_log_service_types(name)')
+    /** Fetches recent service entries across all equipment. Optionally
+     *  limited and / or scoped to a region's plant codes. The plant-code
+     *  filter pushes the region scope down to the database so the
+     *  caller doesn't waste a round-trip on entries outside their
+     *  active region. */
+    async fetchRecentEntries(limit = 10, plantCodes = null) {
+        let query = Database.from(ENTRIES_TABLE)
+            .select('*, maintenance_log_equipment!inner(name, plant_code), maintenance_log_service_types(name)')
             .eq('status', 'completed')
             .order('service_date', { ascending: false })
-            .limit(limit)
+        if (Array.isArray(plantCodes) && plantCodes.length) {
+            // `!inner` join above lets us filter on the joined equipment
+            // table; the dotted path is PostgREST's syntax for embedded
+            // table filters.
+            query = query.in('maintenance_log_equipment.plant_code', plantCodes)
+        }
+        const { data, error } = await query.limit(limit)
         if (error) throw error
         return resolvePerformerNames(data || [])
     },

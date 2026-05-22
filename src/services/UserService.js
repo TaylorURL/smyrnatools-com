@@ -12,6 +12,13 @@ const UNKNOWN_USER = { id: 'unknown', name: 'Unknown User' }
 const DEFAULT_ROLE_NAME = 'User'
 const ALWAYS_PERMITTED = 'my_account.view'
 const ALL_REGIONS_PERMISSION = 'regions.select.all'
+/** Role weight at or above which a user bypasses per-profile region scoping
+ *  and gets every region in the top-bar selector regardless of their
+ *  `profiles.regions` / `plant_code` configuration. Mirrors the operations
+ *  contract that elevated roles (district managers and up) need fleet-wide
+ *  visibility without an admin having to flip the all-regions permission
+ *  on each one individually. */
+const ALL_REGIONS_ROLE_WEIGHT_THRESHOLD = 70
 /** Centralized API helper for all user-service endpoints. */
 const postUser = (endpoint, body, options) => APIUtility.post(`${USER_FUNCTION}/${endpoint}`, body, options)
 const postDM = (endpoint, body, options) => APIUtility.post(`${DM_FUNCTION}/${endpoint}`, body, options)
@@ -290,6 +297,16 @@ class UserServiceImpl {
         const id = resolveEntityId(userId)
         const hasAllRegions = await this.hasPermission(id, ALL_REGIONS_PERMISSION).catch(() => false)
         if (hasAllRegions) return safelyFetchRegions(() => PlantService.fetchRegions())
+        // Role-weight bypass: users at or above the elevated threshold get every
+        // region regardless of profile scoping. Runs after the explicit
+        // permission check so the existing all-regions permission still wins —
+        // this is an additional fast-path for the role hierarchy, not a
+        // replacement.
+        const highestRole = await this.getHighestRole(id).catch(() => null)
+        const roleWeight = Number(highestRole?.weight) || 0
+        if (roleWeight >= ALL_REGIONS_ROLE_WEIGHT_THRESHOLD) {
+            return safelyFetchRegions(() => PlantService.fetchRegions())
+        }
         const { data: profile } = await Database.from(PROFILES_TABLE)
             .select('plant_code, regions')
             .eq('id', id)

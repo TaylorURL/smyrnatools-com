@@ -3,18 +3,38 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import CallListService from '../../services/CallListService'
 
 /**
- * Backs the Plan -> Call List tab. Owns the dormant-customer roster and the
- * per-customer history map. Exposes actions for logging calls and reloading
- * after a mutation. History is lazy-loaded the first time a customer is
- * expanded and cached locally for the lifetime of the tab.
+ * Backs the Plan -> Call List tab. Owns the dormant-customer roster
+ * (and, when `includeActive: true` is passed, the broader Directory
+ * roster of every customer that's poured in the last year), the
+ * per-customer history map, and the per-customer phone-contacts cache
+ * that overlays manual edits onto dispatch-derived numbers. History +
+ * contacts are lazy-loaded the first time a customer is opened and
+ * cached locally for the lifetime of the tab.
+ *
+ * @param {Object} [options]
+ * @param {boolean} [options.includeActive=false] - If true, the roster
+ *   includes customers currently pouring (not just dormant). Used by
+ *   the Directory page; left false for the Outreach Queue.
  */
-export function useCallList() {
+export function useCallList({ includeActive = false } = {}) {
     const [roster, setRoster] = useState([])
     const [isLoadingRoster, setIsLoadingRoster] = useState(true)
     const [rosterError, setRosterError] = useState(null)
     const [historyByCustomer, setHistoryByCustomer] = useState({})
+    const [contactsByCustomer, setContactsByCustomer] = useState({})
     const [loadingHistoryFor, setLoadingHistoryFor] = useState(() => new Set())
+    const [loadingContactsFor, setLoadingContactsFor] = useState(() => new Set())
+    const [savingContactFor, setSavingContactFor] = useState(() => new Set())
     const [savingFor, setSavingFor] = useState(() => new Set())
+    const [recentActivity, setRecentActivity] = useState([])
+    const [isLoadingActivity, setIsLoadingActivity] = useState(false)
+    /** Per-user activity rollup for the management Team Monitor surface.
+     *  Reusing the `fetchLeaderboard` service method here is intentional —
+     *  the edge function endpoint is also called `leaderboard` for
+     *  backward compatibility, but consumer-facing state uses the
+     *  monitoring-tool framing. */
+    const [teamMonitor, setTeamMonitor] = useState({ daysWindow: 30, rows: [] })
+    const [isLoadingTeamMonitor, setIsLoadingTeamMonitor] = useState(false)
     const isMountedRef = useRef(true)
 
     useEffect(() => {
@@ -28,7 +48,7 @@ export function useCallList() {
         setIsLoadingRoster(true)
         setRosterError(null)
         try {
-            const data = await CallListService.fetchRoster()
+            const data = await CallListService.fetchRoster({ includeActive })
             if (!isMountedRef.current) return
             setRoster(data)
         } catch (err) {
@@ -37,7 +57,7 @@ export function useCallList() {
         } finally {
             if (isMountedRef.current) setIsLoadingRoster(false)
         }
-    }, [])
+    }, [includeActive])
 
     useEffect(() => {
         loadRoster()
@@ -94,6 +114,7 @@ export function useCallList() {
                     : row
             )
         )
+        setRecentActivity((prev) => [entry, ...prev].slice(0, 500))
     }, [])
 
     const logCall = useCallback(
@@ -146,6 +167,7 @@ export function useCallList() {
                 const remaining = existing.filter((entry) => entry.id !== logId)
                 return { ...prev, [customerNum]: remaining }
             })
+            setRecentActivity((prev) => prev.filter((entry) => entry.id !== logId))
             setRoster((prev) =>
                 prev.map((row) => {
                     if (row.customer_num !== customerNum) return row
@@ -166,17 +188,154 @@ export function useCallList() {
         [historyByCustomer]
     )
 
+    const loadContacts = useCallback(
+        async (customerNum, { force = false } = {}) => {
+            if (!customerNum) return
+            if (!force && contactsByCustomer[customerNum]) return
+            setLoadingContactsFor((prev) => {
+                const next = new Set(prev)
+                next.add(customerNum)
+                return next
+            })
+            try {
+                const data = await CallListService.fetchContacts(customerNum)
+                if (!isMountedRef.current) return
+                setContactsByCustomer((prev) => ({ ...prev, [customerNum]: data }))
+            } catch {
+                if (!isMountedRef.current) return
+                setContactsByCustomer((prev) => ({ ...prev, [customerNum]: [] }))
+            } finally {
+                if (isMountedRef.current) {
+                    setLoadingContactsFor((prev) => {
+                        const next = new Set(prev)
+                        next.delete(customerNum)
+                        return next
+                    })
+                }
+            }
+        },
+        [contactsByCustomer]
+    )
+
+    /** Insert or update a phone-number entry. Patches the local cache
+     *  optimistically so the editor reflects the new state without
+     *  waiting for a refetch. Server enforces the single-primary-per-
+     *  customer rule, so we mirror it in the local patch. */
+    const saveContact = useCallback(async (customerNum, payload) => {
+        if (!customerNum) return null
+        setSavingContactFor((prev) => {
+            const next = new Set(prev)
+            next.add(customerNum)
+            return next
+        })
+        try {
+            const saved = await CallListService.saveContact({ ...payload, customerNum })
+            if (!saved || !isMountedRef.current) return saved
+            setContactsByCustomer((prev) => {
+                const existing = prev[customerNum] || []
+                const otherRows = existing.filter((row) => row.phone_digits !== saved.phone_digits)
+                const next = saved.is_primary
+                    ? [saved, ...otherRows.map((row) => ({ ...row, is_primary: false }))]
+                    : [saved, ...otherRows]
+                return { ...prev, [customerNum]: next }
+            })
+            return saved
+        } finally {
+            if (isMountedRef.current) {
+                setSavingContactFor((prev) => {
+                    const next = new Set(prev)
+                    next.delete(customerNum)
+                    return next
+                })
+            }
+        }
+    }, [])
+
+    /** Remove a phone-number entry. The server hard-deletes manual rows
+     *  and soft-hides dispatch-sourced ones; the local cache reflects
+     *  the returned row (or strips it when it was hard-deleted). */
+    const deleteContact = useCallback(async (customerNum, phoneDigits, phoneDisplay) => {
+        if (!customerNum || !phoneDigits) return false
+        setSavingContactFor((prev) => {
+            const next = new Set(prev)
+            next.add(customerNum)
+            return next
+        })
+        try {
+            const result = await CallListService.deleteContact({ customerNum, phoneDigits, phoneDisplay })
+            if (!isMountedRef.current) return true
+            setContactsByCustomer((prev) => {
+                const existing = prev[customerNum] || []
+                if (result?.action === 'hidden' && result?.data) {
+                    const filtered = existing.filter((row) => row.phone_digits !== phoneDigits)
+                    return { ...prev, [customerNum]: [...filtered, result.data] }
+                }
+                return {
+                    ...prev,
+                    [customerNum]: existing.filter((row) => row.phone_digits !== phoneDigits)
+                }
+            })
+            return true
+        } catch {
+            return false
+        } finally {
+            if (isMountedRef.current) {
+                setSavingContactFor((prev) => {
+                    const next = new Set(prev)
+                    next.delete(customerNum)
+                    return next
+                })
+            }
+        }
+    }, [])
+
+    const loadTeamMonitor = useCallback(async ({ daysWindow = 30 } = {}) => {
+        setIsLoadingTeamMonitor(true)
+        try {
+            const data = await CallListService.fetchLeaderboard({ daysWindow })
+            if (isMountedRef.current) setTeamMonitor(data)
+        } catch {
+            if (isMountedRef.current) setTeamMonitor({ daysWindow, rows: [] })
+        } finally {
+            if (isMountedRef.current) setIsLoadingTeamMonitor(false)
+        }
+    }, [])
+
+    const loadRecentActivity = useCallback(async () => {
+        setIsLoadingActivity(true)
+        try {
+            const data = await CallListService.fetchRecentActivity(200)
+            if (isMountedRef.current) setRecentActivity(data)
+        } catch {
+            if (isMountedRef.current) setRecentActivity([])
+        } finally {
+            if (isMountedRef.current) setIsLoadingActivity(false)
+        }
+    }, [])
+
     return {
+        contactsByCustomer,
+        deleteContact,
         deleteEntry,
         historyByCustomer,
+        isLoadingActivity,
         isLoadingRoster,
+        isLoadingTeamMonitor,
+        loadContacts,
         loadHistory,
+        loadTeamMonitor,
+        loadRecentActivity,
+        loadingContactsFor,
         loadingHistoryFor,
         logCall,
+        recentActivity,
         refreshRoster: loadRoster,
         roster,
         rosterError,
-        savingFor
+        saveContact,
+        savingContactFor,
+        savingFor,
+        teamMonitor
     }
 }
 

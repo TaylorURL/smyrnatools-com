@@ -1,209 +1,301 @@
-import React, { useEffect, useMemo, useState } from 'react'
+/* eslint-disable react/forbid-dom-props */
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { CallListSkeleton } from '../../../app/components/common/PlanSkeletons'
-import CallListDetail from '../../../app/components/plan/tabs/call-list/CallListDetail'
-import CallListRow from '../../../app/components/plan/tabs/call-list/CallListRow'
-import { Stat, StatGroup } from '../../../app/components/ui/Panel'
-import useCallList from '../../../app/hooks/useCallList'
 import {
-    CALL_LIST_SORT_OPTIONS,
-    matchesCallListQuery,
-    RECENT_CALL_COOLDOWN_DAYS,
-    sortCallListRoster,
-    wasRecentlyCalled
-} from '../../../utils/CallListUtility'
+    CallListActivityPage,
+    CallListDirectoryPage,
+    CallListOutreachPage
+} from '../../../app/components/plan/tabs/call-list/CallListPages'
+import {
+    CALL_LIST_SECTIONS,
+    CallListSectionTabs,
+    CallListSidebar,
+    visibleCallListSections
+} from '../../../app/components/plan/tabs/call-list/CallListSidebar'
+import { CallListTeamMonitorPage } from '../../../app/components/plan/tabs/call-list/CallListTeamMonitorPage'
+import { useAuth } from '../../../app/context/AuthContext'
+import useCallList from '../../../app/hooks/useCallList'
+import { UserService } from '../../../services/UserService'
 
 /**
- * Plan -> Call List tab. Two-pane layout: left column lists every customer
- * who poured in the last 365 days but not in the last 30, sorted longest-
- * dormant first. Right column is a detail panel where dispatchers log a
- * call outcome (No Answer / Will Book Again / Booked / Not Interested) or
- * leave a free-form note. All entries are persisted with the dispatcher's
- * identity stamped server-side and surface as a per-customer history.
+ * Plan → Call List tab. Layout mirrors Operations → Statistics: a left
+ * sidebar that routes between sub-pages, each one a focused worksheet.
+ *
+ *   - Outreach Queue: dormant customers that need a call.
+ *   - Activity Feed: chronological log of every team call — click an
+ *     entry to jump to that customer's detail.
+ *   - Directory: full searchable roster including cooldown rows.
+ *
+ * Per-section list/detail toggle: clicking a customer card hides the
+ * list (and the section's filter strip) and renders only that customer's
+ * full detail view, mirroring the Statistics → Customer Lookup pattern.
+ * The "Back to list" button at the top of the detail returns to the
+ * list. Loading skeletons swap in for both the list and the detail when
+ * the underlying data is mid-fetch so users never see stale rows
+ * for the wrong filter window.
  */
-function CallListView({ accentColor }) {
+function CallListView({ accentColor, planColocationMap, plantNameByCode }) {
     const {
+        contactsByCustomer,
+        deleteContact,
         deleteEntry,
         historyByCustomer,
+        isLoadingActivity,
         isLoadingRoster,
+        isLoadingTeamMonitor,
+        loadContacts,
         loadHistory,
+        loadRecentActivity,
+        loadTeamMonitor,
+        loadingContactsFor,
         loadingHistoryFor,
         logCall,
+        recentActivity,
         refreshRoster,
         roster,
         rosterError,
-        savingFor
-    } = useCallList()
+        saveContact,
+        savingContactFor,
+        savingFor,
+        teamMonitor
+    } = useCallList({ includeActive: true })
 
-    const [query, setQuery] = useState('')
-    const [sortKey, setSortKey] = useState('oldest')
+    /** Role-weight gate for the Team Monitor side menu. The fetch fires
+     *  once per user; until it resolves we treat the user as weight 0
+     *  (sidebar hides Team Monitor by default — a brief flash is far
+     *  preferable to leaking the management surface to weight-0 users). */
+    const { user } = useAuth()
+    const [userRoleWeight, setUserRoleWeight] = useState(0)
+    useEffect(() => {
+        let cancelled = false
+        if (!user?.id) {
+            setUserRoleWeight(0)
+            return undefined
+        }
+        UserService.getUserWeight(user.id)
+            .then((weight) => {
+                if (!cancelled) setUserRoleWeight(Number(weight) || 0)
+            })
+            .catch(() => {
+                if (!cancelled) setUserRoleWeight(0)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [user?.id])
+
+    const tone = accentColor || '#1e3a5f'
+    const [activeSection, setActiveSection] = useState('outreach')
+    const [teamMonitorWindow, setTeamMonitorWindow] = useState(30)
+
+    /** Bounce the user back to the Outreach Queue if they're sitting on
+     *  a section their role weight doesn't clear. Covers stale state
+     *  (the user opened Team Monitor as a manager, then their role
+     *  changed) and the rare deep-link case. */
+    useEffect(() => {
+        const allowed = visibleCallListSections(userRoleWeight)
+        if (!allowed.some((section) => section.id === activeSection)) {
+            setActiveSection(allowed[0]?.id || 'outreach')
+        }
+    }, [activeSection, userRoleWeight])
+    /** A single customer is selected at a time across the tab. Outreach
+     *  and Directory both consume this; the Activity Feed selects the
+     *  matching customer and routes the user to the Outreach detail
+     *  view when a feed entry is clicked. */
     const [selectedCustomerNum, setSelectedCustomerNum] = useState(null)
 
-    const filtered = useMemo(() => {
-        const q = query.trim().toLowerCase()
-        return sortCallListRoster(
-            roster.filter((row) => matchesCallListQuery(row, q)),
-            sortKey
-        )
-    }, [roster, query, sortKey])
+    const handleSelectCustomer = useCallback((num) => {
+        setSelectedCustomerNum(num)
+    }, [])
 
+    const handleClearSelectedCustomer = useCallback(() => {
+        setSelectedCustomerNum(null)
+    }, [])
+
+    /** Clear the selected customer whenever the user switches sub-pages.
+     *  Avoids the confusing state where a stale selection sticks around
+     *  after the user navigates to a different surface. */
     useEffect(() => {
-        if (filtered.length === 0) {
-            setSelectedCustomerNum(null)
-            return
-        }
-        if (!filtered.some((row) => row.customer_num === selectedCustomerNum)) {
-            // Prefer the first non-cooldown row so the dispatcher lands on an
-            // actionable customer; fall back to filtered[0] if the entire list
-            // is in the cooldown tier.
-            const firstActionable = filtered.find((row) => !wasRecentlyCalled(row.last_call_at))
-            setSelectedCustomerNum((firstActionable || filtered[0]).customer_num)
-        }
-    }, [filtered, selectedCustomerNum])
+        setSelectedCustomerNum(null)
+    }, [activeSection])
 
-    useEffect(() => {
-        if (selectedCustomerNum) loadHistory(selectedCustomerNum)
-    }, [selectedCustomerNum, loadHistory])
-
-    const stats = useMemo(() => {
-        const total = roster.length
-        const contacted = roster.filter((row) => (row.call_count_last_30 || 0) > 0).length
-        const sumDays = roster.reduce((acc, row) => acc + (row.days_since_last_pour || 0), 0)
-        const avgDays = total ? Math.round(sumDays / total) : 0
-        const callsLogged = roster.reduce((acc, row) => acc + (row.call_count_last_30 || 0), 0)
-        return { avgDays, callsLogged, contacted, total }
-    }, [roster])
-
-    const selectedRow = filtered.find((row) => row.customer_num === selectedCustomerNum) || null
-
-    /** Index of the first row inside the cooldown tier — lets us render an
-     *  accent divider so the bottom group reads as "recently called, come
-     *  back later" instead of an unexplained gap in dormancy ordering. */
-    const cooldownStartIndex = useMemo(
-        () => filtered.findIndex((row) => wasRecentlyCalled(row.last_call_at)),
-        [filtered]
+    /** Clicking a row in the Activity Feed jumps the user to that
+     *  customer's detail view on the Outreach page. The customer might
+     *  live in the cooldown tier (already called), so we fall back to
+     *  Directory when the roster lookup misses Outreach's `fresh`
+     *  filter. */
+    const handleActivitySelectCustomer = useCallback(
+        (customerNum) => {
+            if (!customerNum) return
+            const row = roster.find((r) => r.customer_num === customerNum)
+            if (!row) return
+            setActiveSection('directory')
+            setSelectedCustomerNum(customerNum)
+        },
+        [roster]
     )
 
-    /* Tab fills the parent's available height (the Plan shell wraps each
-     * tab in `flex flex-col flex-1 min-h-0 overflow-hidden`). The stat
-     * strip takes its natural height; the grid below claims the rest with
-     * `flex-1 min-h-0`, which lets the inner list panel scroll precisely
-     * within the remaining space — no viewport-math needed.
-     *
-     * Show the layout-matching skeleton only on first load so the hand-off
-     * from the global Plan skeleton doesn't flicker. Manual refreshes keep
-     * the previous roster visible so the user isn't yanked back to a blank
-     * skeleton mid-task. */
+    useEffect(() => {
+        if (activeSection === 'activity' && recentActivity.length === 0 && !isLoadingActivity) {
+            loadRecentActivity()
+        }
+    }, [activeSection, recentActivity.length, isLoadingActivity, loadRecentActivity])
+
+    /* Team Monitor's initial fetch is owned by the page component itself
+     * (its `daysWindow` effect fires on mount + window-change). We do NOT
+     * auto-load here — that effect was looping forever whenever the
+     * fetch returned an empty list or an error: `rows.length === 0 &&
+     * !isLoading` stays true after each completed fetch, so the effect
+     * re-fired and re-started the request. */
+
+    const sectionMeta = useMemo(
+        () => CALL_LIST_SECTIONS.find((s) => s.id === activeSection) || CALL_LIST_SECTIONS[0],
+        [activeSection]
+    )
+
+    const dormantCount = useMemo(
+        () => roster.filter((r) => r.pouring_status === 'dormant' || !r.pouring_status).length,
+        [roster]
+    )
+
     if (isLoadingRoster && roster.length === 0) return <CallListSkeleton />
+
     return (
-        <div className="flex-1 min-h-0 flex flex-col gap-3 px-3 sm:px-4 lg:px-6 py-4 sm:py-5 overflow-hidden animate-fade-in-fast">
-            <StatGroup columns={4}>
-                <Stat hint="poured 30d–365d ago" label="Dormant customers" value={stats.total.toLocaleString()} />
-                <Stat hint="at least one call / 30d" label="Contacted" value={stats.contacted.toLocaleString()} />
-                <Stat hint="across the list" label="Avg days dormant" value={stats.avgDays.toLocaleString()} />
-                <Stat hint="entries / 30d" label="Calls logged" value={stats.callsLogged.toLocaleString()} />
-            </StatGroup>
+        <div className="flex-1 min-h-0 overflow-y-auto animate-fade-in-fast" data-content-scroll>
+            <div className="px-3 sm:px-4 md:px-6 py-4 flex flex-col gap-4">
+                <Header
+                    description={sectionMeta.description}
+                    dormantCount={dormantCount}
+                    label={sectionMeta.label}
+                    onRefresh={() => {
+                        refreshRoster()
+                        if (activeSection === 'activity') loadRecentActivity()
+                        if (activeSection === 'team-monitor') loadTeamMonitor({ daysWindow: teamMonitorWindow })
+                    }}
+                    rosterCount={roster.length}
+                />
 
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3">
-                <section className="lg:col-span-5 flex flex-col gap-2 min-h-0">
-                    <div className="flex items-center flex-wrap gap-x-2 gap-y-1.5">
-                        <h3 className="text-[14px] font-semibold m-0 truncate text-text-primary">
-                            {`Dormant Customers (${filtered.length})`}
-                        </h3>
-                        <div className="flex-1" />
-                        <button
-                            type="button"
-                            onClick={refreshRoster}
-                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold border-none cursor-pointer bg-bg-tertiary text-text-secondary"
-                            title="Reload roster"
-                        >
-                            <i className="fas fa-rotate" />
-                            Refresh
-                        </button>
-                    </div>
-                    <div className="flex-1 min-h-0 flex flex-col rounded overflow-hidden bg-bg-primary border border-border-light">
-                        <div className="flex items-center gap-2 px-3 py-2 border-b border-border-light">
-                            <div className="relative flex-1 min-w-0">
-                                <i className="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none text-text-tertiary" />
-                                <input
-                                    type="search"
-                                    value={query}
-                                    onChange={(e) => setQuery(e.target.value)}
-                                    placeholder="Search customers, contacts, phone…"
-                                    className="w-full rounded-md pl-7 pr-2.5 py-1.5 text-[12px] outline-none bg-bg-secondary border border-border-light text-text-primary"
-                                />
-                            </div>
-                            <select
-                                value={sortKey}
-                                onChange={(e) => setSortKey(e.target.value)}
-                                className="rounded-md px-2 py-1.5 text-[12px] cursor-pointer outline-none bg-bg-secondary border border-border-light text-text-primary"
-                            >
-                                {CALL_LIST_SORT_OPTIONS.map(({ key, label }) => (
-                                    <option key={key} value={key}>
-                                        {label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                <CallListSectionTabs
+                    accentColor={tone}
+                    activeSection={activeSection}
+                    onSelect={setActiveSection}
+                    userRoleWeight={userRoleWeight}
+                />
 
-                        {isLoadingRoster && (
-                            <div className="text-sm italic text-center p-6 text-text-tertiary">
-                                Loading dormant customers…
-                            </div>
+                <div className="flex gap-4 items-start">
+                    <CallListSidebar
+                        accentColor={tone}
+                        activeSection={activeSection}
+                        onSelect={setActiveSection}
+                        userRoleWeight={userRoleWeight}
+                    />
+                    <div className="flex-1 min-w-0 flex flex-col gap-3">
+                        {activeSection === 'outreach' && (
+                            <CallListOutreachPage
+                                accentColor={tone}
+                                colocationMap={planColocationMap}
+                                contactsByCustomer={contactsByCustomer}
+                                deleteContact={deleteContact}
+                                deleteEntry={deleteEntry}
+                                historyByCustomer={historyByCustomer}
+                                isLoading={isLoadingRoster}
+                                loadContacts={loadContacts}
+                                loadHistory={loadHistory}
+                                loadingContactsFor={loadingContactsFor}
+                                loadingHistoryFor={loadingHistoryFor}
+                                logCall={logCall}
+                                onClearSelectedCustomer={handleClearSelectedCustomer}
+                                onSelectCustomer={handleSelectCustomer}
+                                plantNameByCode={plantNameByCode}
+                                roster={roster}
+                                rosterError={rosterError}
+                                saveContact={saveContact}
+                                savingContactFor={savingContactFor}
+                                savingFor={savingFor}
+                                selectedCustomerNum={selectedCustomerNum}
+                            />
                         )}
-                        {rosterError && !isLoadingRoster && (
-                            <div className="m-3 rounded-md p-2.5 text-[12px] bg-[rgba(220,38,38,0.1)] text-red-700">
-                                {rosterError}
-                            </div>
+                        {activeSection === 'activity' && (
+                            <CallListActivityPage
+                                accentColor={tone}
+                                isLoading={isLoadingActivity}
+                                onRefresh={loadRecentActivity}
+                                onSelectCustomer={handleActivitySelectCustomer}
+                                recentActivity={recentActivity}
+                            />
                         )}
-                        {!isLoadingRoster && !rosterError && filtered.length === 0 && (
-                            <div className="text-sm italic text-center p-6 text-text-tertiary">
-                                No dormant customers match your filters.
-                            </div>
+                        {activeSection === 'team-monitor' && userRoleWeight >= 31 && (
+                            <CallListTeamMonitorPage
+                                daysWindow={teamMonitorWindow}
+                                isLoading={isLoadingTeamMonitor}
+                                monitor={teamMonitor}
+                                // Just update the window state — the page's own
+                                // `daysWindow` effect picks up the change and
+                                // fires the reload via `onRefresh`. Calling
+                                // `loadTeamMonitor` here too caused a double
+                                // fetch on every window switch.
+                                onChangeWindow={setTeamMonitorWindow}
+                                onRefresh={loadTeamMonitor}
+                            />
                         )}
-
-                        <div className="flex-1 min-h-0 overflow-y-auto">
-                            {filtered.map((row, idx) => (
-                                <React.Fragment key={row.customer_num}>
-                                    {idx === cooldownStartIndex && cooldownStartIndex > 0 && (
-                                        <div className="px-3 py-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] flex items-center gap-2 bg-bg-secondary text-text-tertiary border-b border-border-light">
-                                            <i className="fas fa-hourglass-half text-[9px]" />
-                                            Called in last {RECENT_CALL_COOLDOWN_DAYS} days
-                                        </div>
-                                    )}
-                                    <CallListRow
-                                        accentColor={accentColor}
-                                        isSelected={row.customer_num === selectedCustomerNum}
-                                        onSelect={() => setSelectedCustomerNum(row.customer_num)}
-                                        row={row}
-                                    />
-                                </React.Fragment>
-                            ))}
-                        </div>
+                        {activeSection === 'directory' && (
+                            <CallListDirectoryPage
+                                accentColor={tone}
+                                colocationMap={planColocationMap}
+                                contactsByCustomer={contactsByCustomer}
+                                deleteContact={deleteContact}
+                                deleteEntry={deleteEntry}
+                                historyByCustomer={historyByCustomer}
+                                isLoading={isLoadingRoster}
+                                loadContacts={loadContacts}
+                                loadHistory={loadHistory}
+                                loadingContactsFor={loadingContactsFor}
+                                loadingHistoryFor={loadingHistoryFor}
+                                logCall={logCall}
+                                onClearSelectedCustomer={handleClearSelectedCustomer}
+                                onSelectCustomer={handleSelectCustomer}
+                                plantNameByCode={plantNameByCode}
+                                roster={roster}
+                                rosterError={rosterError}
+                                saveContact={saveContact}
+                                savingContactFor={savingContactFor}
+                                savingFor={savingFor}
+                                selectedCustomerNum={selectedCustomerNum}
+                            />
+                        )}
                     </div>
-                </section>
-
-                <section className="lg:col-span-7 flex flex-col gap-2 min-h-0">
-                    <div className="flex items-center flex-wrap gap-x-2 gap-y-1.5">
-                        <h3 className="text-[14px] font-semibold m-0 min-w-0 truncate text-text-primary">Detail</h3>
-                        {selectedRow && (
-                            <span className="text-[12px] truncate text-text-tertiary">
-                                · {selectedRow.customer_name || selectedRow.customer_num}
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex-1 min-h-0 overflow-y-auto rounded bg-bg-primary border border-border-light">
-                        <CallListDetail
-                            history={selectedRow ? historyByCustomer[selectedRow.customer_num] : null}
-                            isLoadingHistory={selectedRow ? loadingHistoryFor.has(selectedRow.customer_num) : false}
-                            isSaving={selectedRow ? savingFor.has(selectedRow.customer_num) : false}
-                            onDeleteEntry={deleteEntry}
-                            onLog={logCall}
-                            row={selectedRow}
-                        />
-                    </div>
-                </section>
+                </div>
             </div>
+        </div>
+    )
+}
+
+function Header({ description, dormantCount, label, onRefresh, rosterCount }) {
+    const activeCount = rosterCount - dormantCount
+    return (
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+                <div className="text-[18px] sm:text-[22px] font-bold leading-tight text-text-primary font-heading">
+                    Call List
+                </div>
+                <div className="text-[11.5px] sm:text-[12px] text-text-secondary">
+                    {description} · {dormantCount} dormant · {activeCount} active customer
+                    {activeCount === 1 ? '' : 's'}
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={onRefresh}
+                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold border-none cursor-pointer bg-bg-secondary border border-border-light text-text-secondary"
+                    title="Reload the roster + activity feed"
+                >
+                    <i className="fas fa-rotate text-[10px]" />
+                    Refresh
+                </button>
+            </div>
+            <span className="hidden" data-section-label={label} />
         </div>
     )
 }

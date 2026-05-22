@@ -26,10 +26,10 @@ export const PLAN_STATS_SECTIONS = [
         label: 'Customer Satisfaction'
     },
     {
-        description: 'Load counts per driver across the selected window.',
+        description: 'Load counts per operator across the selected window.',
         icon: 'fa-id-badge',
         id: 'operators',
-        label: 'Operators'
+        label: 'Operators Loads'
     },
     {
         description: 'Planned deadhead trips and actual cross-plant loading.',
@@ -48,14 +48,20 @@ export const PLAN_STATS_SECTIONS = [
         description: 'Search any customer to see every job they had — scheduled time, plant, and verdict.',
         icon: 'fa-magnifying-glass',
         id: 'customerLookup',
-        label: 'Customer Lookup'
+        label: 'Service Lookup'
+    },
+    {
+        description: 'Pull up a single ticket — see its order, coverage, flags, and the full ticket list around it.',
+        icon: 'fa-receipt',
+        id: 'ticketLookup',
+        label: 'Ticket Lookup'
     },
     {
         description:
             'Customers ranked by how much extra yardage they call in mid-pour — average kicker, rate, and totals.',
         icon: 'fa-bolt',
         id: 'kickers',
-        label: 'Kickers'
+        label: 'Kickers Analysis'
     }
 ]
 

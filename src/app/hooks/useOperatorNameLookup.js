@@ -92,7 +92,7 @@ export function useOperatorNameLookup() {
         const canonical = op?.name?.trim()
         if (canonical) return formatPersonName(canonical)
         if (raw) return formatPersonName(raw)
-        if (num) return `Driver #${num}`
+        if (num) return `Operator #${num}`
         return ''
     }
 

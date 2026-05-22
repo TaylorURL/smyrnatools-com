@@ -279,31 +279,67 @@ export function useIssueCommentCounts({
     }, [allMixersRef, allTractorsRef, allTrailersRef, allEquipmentRef, computeStats, countsRef])
     return { assetIssueDetails, countsRef, fetchIssueCommentCounts }
 }
-export function usePlantFilter(dashboardRegionCode, dashboardPlant, regionPlants, allPlants, myPlantCodes) {
+export function usePlantFilter(
+    dashboardRegionCode,
+    dashboardPlant,
+    regionPlants,
+    allPlants,
+    myPlantCodes,
+    regionGroups
+) {
     const plantSetRef = useRef(new Set())
     const updatePlantSet = useCallback(
         (regionType) => {
             const isOffice = regionType === 'Office'
             const plantSet = new Set()
+            // When the dashboard is anchored to Home Office, district scoping
+            // has to apply across every plant in the org — `regionPlants`
+            // is empty for Office regions, so falling back to `allPlants`
+            // is what lets the office-mode picker filter by district.
+            const plantSource = dashboardPlant?.startsWith('DISTRICT:') && isOffice ? allPlants : regionPlants
             if (dashboardPlant === 'MY_PLANTS' && myPlantCodes?.size > 0) {
                 myPlantCodes.forEach((code) => plantSet.add(String(code).trim()))
+            } else if (dashboardPlant?.startsWith('REGION:')) {
+                const regionCode = dashboardPlant.slice(7)
+                const group = (regionGroups || []).find((g) => g.code === regionCode)
+                const codes = group?.plantCodes || []
+                codes.forEach((code) => plantSet.add(String(code).trim()))
             } else if (dashboardPlant?.startsWith('DISTRICT:')) {
+                // Office mode: `allPlants` doesn't carry the district join
+                // (that's only on per-region fetches). Walk the pre-computed
+                // regionGroups map instead so district picks actually resolve
+                // to plants. Regular regions fall through to the original
+                // plant-by-plant scan since their plants already carry
+                // districts.
                 const districtName = dashboardPlant.slice(9)
-                const plants = regionPlants || []
-                plants.forEach((p) => {
-                    const code = p.plantCode || p.plant_code
-                    const dists = p.districts || []
-                    if (dists.some((d) => (typeof d === 'string' ? d : d?.name) === districtName)) {
-                        plantSet.add(String(code).trim())
-                    }
-                })
+                if (isOffice && regionGroups?.length) {
+                    regionGroups.forEach((region) => {
+                        ;(region.districts || []).forEach((district) => {
+                            if (district.name === districtName) {
+                                district.plantCodes.forEach((code) => plantSet.add(String(code).trim()))
+                            }
+                        })
+                    })
+                } else {
+                    const plants = plantSource || []
+                    plants.forEach((p) => {
+                        const code = p.plantCode || p.plant_code
+                        const dists = p.districts || []
+                        if (dists.some((d) => (typeof d === 'string' ? d : d?.name) === districtName)) {
+                            plantSet.add(String(code).trim())
+                        }
+                    })
+                }
+            } else if (dashboardPlant) {
+                // Specific plant code wins over the Office "show everything"
+                // fallback so picking one plant from the office-mode modal
+                // actually narrows the dashboard.
+                plantSet.add(String(dashboardPlant).trim())
             } else if (isOffice) {
                 allPlants.forEach((p) => {
                     const code = p.plantCode || p.plant_code
                     if (code) plantSet.add(String(code).trim())
                 })
-            } else if (dashboardPlant) {
-                plantSet.add(String(dashboardPlant).trim())
             } else {
                 const plants = regionPlants || []
                 plants.forEach((p) => {
@@ -314,7 +350,7 @@ export function usePlantFilter(dashboardRegionCode, dashboardPlant, regionPlants
             plantSetRef.current = plantSet
             return plantSet
         },
-        [dashboardPlant, regionPlants, allPlants, myPlantCodes]
+        [dashboardPlant, regionPlants, allPlants, myPlantCodes, regionGroups]
     )
     const createFilterFn = useCallback((plantSet) => {
         const filterActive = plantSet.size > 0

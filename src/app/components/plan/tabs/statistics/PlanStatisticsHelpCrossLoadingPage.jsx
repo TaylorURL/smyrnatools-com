@@ -17,7 +17,7 @@ import { EmptySection, RefreshingHint } from './PlanStatisticsPages'
 /* Two ways one plant helps another, color-keyed so every label, chart,
  * and chip on the page reads the same way:
  *
- *  • DEADHEAD = the dispatcher planned for one of THIS plant's drivers to
+ *  • DEADHEAD = the dispatcher planned for one of THIS plant's operators to
  *    drive (empty) over to another plant and help them out. From the
  *    Planner tab assignments — represents INTENT, not delivery.
  *  • CROSS-LOAD = one of THIS plant's mixers actually loaded a ticket for
@@ -32,9 +32,9 @@ const METHOD = {
     },
     deadhead: {
         color: '#2563eb',
-        primaryLabel: 'Drivers sent to help other plants',
+        primaryLabel: 'Operators sent to help other plants',
         sourceHint: 'from planner assignments',
-        title: 'Planned drivers sent out (deadhead)'
+        title: 'Planned operators sent out (deadhead)'
     }
 }
 
@@ -115,8 +115,8 @@ function MethodLegend() {
                 <div className="font-semibold text-text-primary mb-0.5" style={{ color: METHOD.deadhead.color }}>
                     {METHOD.deadhead.title}
                 </div>
-                The dispatcher scheduled drivers from this plant to drive empty over to another plant to help them out.
-                Counted from <span className="font-semibold">Planner tab</span> assignments.
+                The dispatcher scheduled operators from this plant to drive empty over to another plant to help them
+                out. Counted from <span className="font-semibold">Planner tab</span> assignments.
             </div>
             <div
                 className="rounded border border-border-light px-3 py-2 text-[12px] text-text-secondary"
@@ -176,8 +176,8 @@ export default function PlanStatisticsHelpCrossLoadingPage({
             <StatGroup columns={4}>
                 <Stat
                     hint={`across ${fmtInt(safeKpi.deadheadTrips)} planned trip${safeKpi.deadheadTrips === 1 ? '' : 's'}`}
-                    label="Drivers planned to help other plants"
-                    value={`${fmtInt(safeKpi.deadheadDrivers)} drivers`}
+                    label="Operators planned to help other plants"
+                    value={`${fmtInt(safeKpi.deadheadDrivers)} operators`}
                     valueColor={METHOD.deadhead.color}
                 />
                 <Stat
@@ -237,8 +237,8 @@ export default function PlanStatisticsHelpCrossLoadingPage({
                             innerClassName="p-2"
                         >
                             <div className="px-1 pb-2 text-[11.5px] text-text-secondary">
-                                {METHOD.deadhead.primaryLabel} — each bar is the total number of drivers the dispatcher
-                                planned to send out from that plant.
+                                {METHOD.deadhead.primaryLabel} — each bar is the total number of operators the
+                                dispatcher planned to send out from that plant.
                             </div>
                             <HelpGivenBarChart
                                 accentColor={METHOD.deadhead.color}
@@ -246,7 +246,7 @@ export default function PlanStatisticsHelpCrossLoadingPage({
                                 data={helpByGiverPlant}
                                 metricKey="deadheadDrivers"
                                 plantNameByCode={plantNameByCode}
-                                unitLabel="drivers"
+                                unitLabel="operators"
                             />
                         </Panel>
                         <Panel

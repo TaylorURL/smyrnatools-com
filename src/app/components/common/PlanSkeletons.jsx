@@ -267,80 +267,81 @@ export function StatisticsSkeleton() {
     )
 }
 
-/** Call List tab — 4-stat strip on top, 2-column body matching the real
- *  layout: left = dormant list (search + sort + rows), right = detail panel
- *  (header + KPI strip + 2x2 outcome grid + textarea + history). */
+/** One placeholder card matching the live `CallListCustomerCardRow` shape —
+ *  name + last-pour line on the left, dormancy badge top-right, then a
+ *  phone/contact row and a pour-days / call-status row. */
+const CallListCardSkeleton = () => (
+    <div className="rounded-md p-3 flex flex-col gap-2 border bg-bg-primary border-border-light">
+        <div className="flex items-baseline justify-between gap-3">
+            <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <Bar className="h-3.5 w-2/3" />
+                <Bar className="h-2.5 w-1/3" />
+            </div>
+            <Bar className="h-5 w-10" />
+        </div>
+        <div className="flex items-center gap-3">
+            <Bar className="h-2.5 w-28" />
+            <Bar className="h-2.5 w-20" />
+        </div>
+        <div className="flex items-center justify-between gap-2">
+            <Bar className="h-2.5 w-24" />
+            <Bar className="h-2.5 w-20" />
+        </div>
+    </div>
+)
+
+/** Call List tab loading skeleton. Mirrors the live page exactly: header
+ *  row with title + description + Refresh button, mobile-only section
+ *  tabs strip, and a sidebar (md+) next to the filter strip + 3-column
+ *  card grid. The previous skeleton showed a 4-stat strip and a 2-column
+ *  list/detail layout that the page hasn't used for a while. */
 export function CallListSkeleton() {
     return (
-        <div className="flex-1 min-h-0 flex flex-col gap-3 px-3 sm:px-4 lg:px-6 py-4 sm:py-5 overflow-hidden">
-            <StatGroupSkeleton cols={4} />
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3">
-                <section className="lg:col-span-5 flex flex-col gap-2 min-h-0">
-                    <div className="flex items-center gap-2">
-                        <Bar className="h-4 w-44" />
-                        <div className="flex-1" />
-                        <Bar className="h-6 w-20" />
+        <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="px-3 sm:px-4 md:px-6 py-4 flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="min-w-0 flex flex-col gap-1.5">
+                        <Bar className="h-5 w-32" />
+                        <Bar className="h-3 w-64" />
                     </div>
-                    <div className="flex-1 min-h-0 flex flex-col rounded overflow-hidden bg-bg-primary border border-border-light">
-                        <div className="flex items-center gap-2 px-3 py-2 border-b border-border-light">
-                            <Bar className="h-7 flex-1" />
-                            <Bar className="h-7 w-32" />
-                        </div>
-                        {Array.from({ length: 10 }).map((_, i) => (
-                            <div key={i} className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light">
-                                <div className="flex-1 min-w-0">
-                                    <Bar className="h-3 w-2/3 mb-1.5" />
-                                    <Bar className="h-2.5 w-1/2" />
-                                </div>
-                                <Bar className="h-5 w-12 rounded-full" />
+                    <Bar className="h-7 w-24 rounded-md" />
+                </div>
+
+                <div className="md:hidden flex items-center gap-1 overflow-x-auto pb-1">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <Bar key={i} className="h-7 w-28 shrink-0 rounded-md" />
+                    ))}
+                </div>
+
+                <div className="flex gap-4 items-start">
+                    <aside className="hidden md:flex shrink-0 flex-col gap-0.5 sticky top-0 self-start py-2 pr-1 w-[220px]">
+                        <Bar className="h-2.5 w-20 mx-3 mb-1" />
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="flex items-center gap-2.5 rounded-md px-3 py-2"
+                                style={{ background: i === 0 ? 'var(--bg-secondary)' : 'transparent' }}
+                            >
+                                <Bar className="h-3 w-3 rounded-full" />
+                                <Bar className="h-3 w-28" />
                             </div>
                         ))}
-                    </div>
-                </section>
-                <section className="lg:col-span-7 flex flex-col gap-2 min-h-0">
-                    <div className="flex items-center gap-2">
-                        <Bar className="h-4 w-20" />
-                    </div>
-                    <div className="flex-1 min-h-0 rounded flex flex-col bg-bg-primary border border-border-light">
-                        <div className="px-4 py-2.5 border-b border-border-light">
-                            <div className="flex items-center gap-2">
-                                <Bar className="h-4 w-44" />
-                                <div className="flex-1" />
-                                <Bar className="h-3 w-32" />
-                            </div>
-                            <Bar className="h-3 w-32 mt-1.5" />
+                    </aside>
+
+                    <div className="flex-1 min-w-0 flex flex-col gap-3">
+                        <div className="rounded-lg px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-bg-primary border border-border-light">
+                            <Bar className="h-7 flex-1 min-w-[200px] rounded-md" />
+                            <Bar className="h-7 w-36 rounded-md" />
+                            <Bar className="h-2.5 w-20" />
                         </div>
-                        <div className="px-4 py-2 flex items-center gap-3 border-b border-border-light">
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <Bar key={i} className="h-3 w-20" />
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                            {Array.from({ length: 9 }).map((_, i) => (
+                                <CallListCardSkeleton key={i} />
                             ))}
                         </div>
-                        <div className="px-4 py-3 flex flex-col gap-2.5 border-b border-border-light">
-                            <div className="grid grid-cols-2 gap-2">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                    <Bar key={i} className="h-9" />
-                                ))}
-                            </div>
-                            <Bar className="h-14 rounded-md" />
-                            <div className="flex justify-end">
-                                <Bar className="h-7 w-24" />
-                            </div>
-                        </div>
-                        <div className="px-4 py-1.5 border-b border-border-light">
-                            <Bar className="h-2.5 w-32" />
-                        </div>
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="px-3 py-2 flex flex-col gap-1.5 border-b border-border-light">
-                                <div className="flex items-center gap-2">
-                                    <Bar className="h-4 w-16 rounded-full" />
-                                    <div className="flex-1" />
-                                    <Bar className="h-2.5 w-24" />
-                                </div>
-                                <Bar className="h-2.5 w-3/4" />
-                            </div>
-                        ))}
                     </div>
-                </section>
+                </div>
             </div>
         </div>
     )

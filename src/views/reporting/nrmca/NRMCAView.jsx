@@ -722,6 +722,12 @@ export default function NRMCAView() {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [regionPlants, setRegionPlants] = useState([])
+    /* `regionReady` is false until `fetchRegionPlants` has resolved at
+     * least once for the active region code. It gates `loadData()` so
+     * the NRMCA fetches never fire with a null / stale plant-code set —
+     * which would have caused the service to return the entire fleet
+     * and leak the other region's calibrations on first paint. */
+    const [regionReady, setRegionReady] = useState(false)
     const [addPlantModal, setAddPlantModal] = useState(false)
     const [tab, setTab] = useState('all')
 
@@ -762,18 +768,30 @@ export default function NRMCAView() {
     )
 
     useEffect(() => {
+        // Reset readiness on every region change so the skeleton holds
+        // through the swap instead of briefly rendering the previous
+        // region's data while the new region's plants are in flight.
+        setRegionReady(false)
         if (regionCode) {
             PlantService.fetchRegionPlants(regionCode)
-                .then(setRegionPlants)
-                .catch(() => setRegionPlants([]))
+                .then((p) => {
+                    setRegionPlants(p)
+                    setRegionReady(true)
+                })
+                .catch(() => {
+                    setRegionPlants([])
+                    setRegionReady(true)
+                })
         } else {
             setRegionPlants([])
+            setRegionReady(true)
         }
     }, [regionCode])
 
     useEffect(() => {
+        if (!regionReady) return
         loadData()
-    }, [loadData])
+    }, [loadData, regionReady])
 
     const expiredPlantCount = useMemo(
         () => plants.filter((p) => getRenewalStatus(p.renewal_expires_at) === 'expired').length,

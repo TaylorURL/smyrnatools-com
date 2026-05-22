@@ -386,7 +386,13 @@ function OperationsViewImpl({ accentColor, isDark }) {
                             />
                         )}
 
-                        {effectiveViewMode === 'call-list' && <CallListView accentColor={accentColor} />}
+                        {effectiveViewMode === 'call-list' && (
+                            <CallListView
+                                accentColor={accentColor}
+                                planColocationMap={plantColocationMap}
+                                plantNameByCode={plantNameByCode}
+                            />
+                        )}
 
                         {effectiveViewMode === 'settings' && canSeeSettingsTab && (
                             <PlanSettingsView

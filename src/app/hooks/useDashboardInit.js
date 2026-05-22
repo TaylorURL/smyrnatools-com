@@ -23,6 +23,13 @@ export function useDashboardInit({ plantSetRef, preferences }) {
     const [totalAggregateLocations, setTotalAggregateLocations] = useState(0)
     const [dashboardRegionCode, setDashboardRegionCode] = useState('')
     const [dashboardRegionName, setDashboardRegionName] = useState('')
+    /** When the user has Home Office selected the plant-filter modal needs
+     *  more than just `regionPlants` (which is empty for Office regions) —
+     *  it needs a list of every region the user can drill into plus that
+     *  region's plant codes so they can scope the dashboard by region /
+     *  district / plant. We pre-fetch the plants for each permitted region
+     *  on the first office-mode init and cache the result here. */
+    const [regionGroups, setRegionGroups] = useState([])
     const [dashboardPlant, setDashboardPlant] = useState('')
     const [regionPlantsLoaded, setRegionPlantsLoaded] = useState(false)
     const [plantModalOpen, setPlantModalOpen] = useState(false)
@@ -94,6 +101,66 @@ export function useDashboardInit({ plantSetRef, preferences }) {
             })
         }
     }, [preferences.selectedRegion])
+    /** Build the region → plant-codes map the office-mode plant modal
+     *  needs. Filters out Office-type regions (they don't own plants
+     *  themselves) and any region with zero plants so the modal doesn't
+     *  render empty groups. Fires whenever the permitted-regions list
+     *  changes (initial load + permission/region churn). */
+    useEffect(() => {
+        let cancelled = false
+        async function loadRegionGroups() {
+            if (!permittedRegions?.length) {
+                if (!cancelled) setRegionGroups([])
+                return
+            }
+            const drillable = permittedRegions.filter((region) => (region.type || region.region_type) !== 'Office')
+            const lists = await Promise.all(
+                drillable.map(async (region) => {
+                    const code = region.regionCode || region.region_code
+                    if (!code) return null
+                    const plants = await PlantService.fetchRegionPlants(code).catch(() => [])
+                    const plantCodes = (plants || [])
+                        .map((p) => String(p.plantCode || p.plant_code || '').trim())
+                        .filter(Boolean)
+                    if (!plantCodes.length) return null
+                    // Roll up districts using the same plant→districts join
+                    // PlantService.fetchRegionPlants returns. We pre-compute
+                    // the (district → plant codes) map here so the office-mode
+                    // modal can render districts nested under each region
+                    // without re-walking the plants list every render.
+                    const districtMap = new Map()
+                    for (const plant of plants) {
+                        const plantCode = String(plant.plantCode || plant.plant_code || '').trim()
+                        if (!plantCode) continue
+                        for (const d of plant.districts || []) {
+                            const dname = typeof d === 'string' ? d : d?.name
+                            if (!dname) continue
+                            if (!districtMap.has(dname)) districtMap.set(dname, [])
+                            districtMap.get(dname).push(plantCode)
+                        }
+                    }
+                    const districts = Array.from(districtMap.entries())
+                        .map(([name, codes]) => ({ name, plantCodes: codes }))
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                    return {
+                        code,
+                        districts,
+                        name: region.regionName || region.region_name || code,
+                        plantCodes,
+                        plants,
+                        type: region.type || region.region_type || ''
+                    }
+                })
+            )
+            if (cancelled) return
+            setRegionGroups(lists.filter(Boolean).sort((a, b) => a.name.localeCompare(b.name)))
+        }
+        loadRegionGroups()
+        return () => {
+            cancelled = true
+        }
+    }, [permittedRegions])
+
     useEffect(() => {
         let cancelled = false
         async function fetchPlants() {
@@ -182,6 +249,7 @@ export function useDashboardInit({ plantSetRef, preferences }) {
         plantModalOpen,
         refreshKey,
         refreshing,
+        regionGroups,
         regionPlants,
         regionPlantsLoaded,
         setDashboardPlant,

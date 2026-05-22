@@ -1,5 +1,32 @@
 # Changelog
 
+## [2026.21.21] - 2026-05-21
+
+- Calculators page rebuilt as a 3-column layout matching the Plan
+  dashboard / Statistics design language. Left rail (`224px`) is the
+  categorised calculator catalog with a "Recent" section backed by
+  localStorage. Middle column is the active calculator. Right rail
+  (`280px`, `xl:` and up) is never empty — it always shows a
+  per-calculator "Standard" card with the relevant ACI clause plus the
+  ACI 211.1 slump table and ACI 318-19 max-w/cm summary.
+- `CalculatorShell` rebuilt around the shared `Panel` + `Stat` +
+  `StatGroup` primitives (`src/app/components/ui/Panel.jsx`) so every
+  calculator sits in the same flat 1px-bordered chrome as the rest of
+  the Plan tab. Headline result stays prominent (36–44px tabular numeral)
+  with a status pill in the right slot and a `StatGroup` row underneath.
+- Five new ACI-grounded calculators added under
+  `src/views/tools/calculator/types/` — Volume (slab / footing / column),
+  Cost Estimator, Required Strength (`f'cr`), Air Content, and Curing
+  Schedule. Every formula in `src/utils/CalculatorMath.js` carries a
+  `// REF:` comment pointing back to the ACI publication it implements
+  (318-19 §26.4.3 / Table 19.3.3.1 / Table 19.3.2.1, 211.1 Table 6.3.1,
+  308.1 §6.3.4, ASTM C1074 §8).
+- New `src/utils/__tests__/CalculatorMath.test.js` covers every helper —
+  `requiredAverageStrength`, `strengthDevModificationFactor`,
+  `requiredAirContentPercent`, `maxWaterCementRatio`, `minimumCuringDays`,
+  `nurseSaulMaturity`, plus the geometry + reference-table sanity checks.
+  41 new tests, full vitest suite now at 123 passing.
+
 ## [2026.21.20] - 2026-05-21
 
 - Customer Lookup detail table now surfaces kicker yardage on each

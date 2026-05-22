@@ -91,11 +91,16 @@ const TABS = [
  *   Coverage — truck-coverage panel from the schedule's hover side-panel.
  *   Flags — operational suggestions (overbooked, closer plant, big-pour
  *           shortfall, dispatch mismatch). Header shows a count badge.
+ *
+ * Pass `inline` to render the same body without the modal backdrop / fixed
+ * overlay — used by the Ticket Lookup page in the Statistics tab so the
+ * lookup result reads as part of the page instead of a popup.
  */
 function OrderInfoModal({
     accentColor = '#2563eb',
     closerPlant,
     coverage,
+    inline = false,
     onClose,
     onOpenLocation,
     onViewTickets,
@@ -106,6 +111,7 @@ function OrderInfoModal({
     const [tab, setTab] = useState('details')
 
     useEffect(() => {
+        if (inline) return undefined
         const onKey = (e) => {
             if (e.key === 'Escape') onClose?.()
         }
@@ -116,7 +122,7 @@ function OrderInfoModal({
             window.removeEventListener('keydown', onKey)
             document.body.style.overflow = prev
         }
-    }, [onClose])
+    }, [inline, onClose])
 
     const homePlantCode = order?.plantCode || ''
     const customerLabel = clean(order?.customer)
@@ -153,64 +159,63 @@ function OrderInfoModal({
 
     if (!order) return null
 
-    return (
+    const card = (
         <div
-            role="dialog"
-            aria-modal="true"
-            onClick={onClose}
-            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] z-[2147483000]"
+            onClick={inline ? undefined : (e) => e.stopPropagation()}
+            className="rounded-lg flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light"
+            style={
+                inline
+                    ? undefined
+                    : {
+                          boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.35))',
+                          maxHeight: '88vh',
+                          maxWidth: 760
+                      }
+            }
         >
-            <div
-                onClick={(e) => e.stopPropagation()}
-                className="rounded-lg flex flex-col w-full overflow-hidden bg-bg-primary border border-border-light"
-                style={{
-                    boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.35))',
-                    maxHeight: '88vh',
-                    maxWidth: 760
-                }}
-            >
-                <div className="flex items-center gap-3 px-5 py-3 border-b border-border-light bg-bg-primary">
-                    <div
-                        className="shrink-0 rounded px-2 py-1 text-[12px] font-bold tabular-nums text-white"
-                        style={{ background: plantColor, minWidth: 42, textAlign: 'center' }}
-                        title={plantName ? `Plant ${homePlantCode} — ${plantName}` : `Plant ${homePlantCode}`}
-                    >
-                        {homePlantCode || '—'}
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-border-light bg-bg-primary">
+                <div
+                    className="shrink-0 rounded px-2 py-1 text-[12px] font-bold tabular-nums text-white"
+                    style={{ background: plantColor, minWidth: 42, textAlign: 'center' }}
+                    title={plantName ? `Plant ${homePlantCode} — ${plantName}` : `Plant ${homePlantCode}`}
+                >
+                    {homePlantCode || '—'}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2 min-w-0">
+                        <span className="text-[15px] font-semibold text-text-primary truncate font-heading">
+                            Order #{cleanOrDash(order?.orderNum)}
+                        </span>
+                        <span className="text-[12px] text-text-tertiary truncate">{customerLabel || '—'}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2 min-w-0">
-                            <span className="text-[15px] font-semibold text-text-primary truncate font-heading">
-                                Order #{cleanOrDash(order?.orderNum)}
-                            </span>
-                            <span className="text-[12px] text-text-tertiary truncate">{customerLabel || '—'}</span>
+                    {summaryLine && (
+                        <div className="text-[11.5px] font-mono tabular-nums text-text-secondary truncate mt-0.5">
+                            {summaryLine}
                         </div>
-                        {summaryLine && (
-                            <div className="text-[11.5px] font-mono tabular-nums text-text-secondary truncate mt-0.5">
-                                {summaryLine}
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                        {onOpenLocation && (
-                            <button
-                                type="button"
-                                onClick={() => onOpenLocation(order)}
-                                className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary"
-                                title="Open route map"
-                            >
-                                Map
-                            </button>
-                        )}
-                        {onViewTickets && (
-                            <button
-                                type="button"
-                                onClick={() => onViewTickets(order)}
-                                className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary"
-                                title="View loaded tickets"
-                            >
-                                Tickets{ticketCount != null && ticketCount > 0 ? ` (${ticketCount})` : ''}
-                            </button>
-                        )}
+                    )}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                    {onOpenLocation && (
+                        <button
+                            type="button"
+                            onClick={() => onOpenLocation(order)}
+                            className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary"
+                            title="Open route map"
+                        >
+                            Map
+                        </button>
+                    )}
+                    {onViewTickets && (
+                        <button
+                            type="button"
+                            onClick={() => onViewTickets(order)}
+                            className="text-[12px] px-2.5 py-1.5 rounded border border-border-light bg-transparent cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-tertiary"
+                            title="View loaded tickets"
+                        >
+                            Tickets{ticketCount != null && ticketCount > 0 ? ` (${ticketCount})` : ''}
+                        </button>
+                    )}
+                    {!inline && (
                         <button
                             type="button"
                             onClick={onClose}
@@ -220,137 +225,150 @@ function OrderInfoModal({
                         >
                             <i className="fas fa-xmark text-[14px]" />
                         </button>
-                    </div>
+                    )}
                 </div>
+            </div>
 
-                {flags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 px-5 py-2 border-b border-border-light bg-bg-secondary">
-                        {flags.map((f) => (
-                            <span
-                                key={f.label}
-                                className="text-[10.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                                style={{ background: `${f.accent}14`, color: f.accent }}
-                            >
-                                {f.label}
-                            </span>
-                        ))}
+            {flags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 px-5 py-2 border-b border-border-light bg-bg-secondary">
+                    {flags.map((f) => (
+                        <span
+                            key={f.label}
+                            className="text-[10.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                            style={{ background: `${f.accent}14`, color: f.accent }}
+                        >
+                            {f.label}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            <div className="flex items-center gap-4 px-5 border-b border-border-light bg-bg-primary">
+                {TABS.map((t) => {
+                    const active = tab === t.id
+                    const badge = t.id === 'flags' && suggestions.length > 0 ? suggestions.length : null
+                    return (
+                        <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setTab(t.id)}
+                            className="relative bg-transparent border-0 cursor-pointer py-2.5 text-[12.5px] font-medium"
+                            style={{
+                                borderBottom: active ? `2px solid ${accentColor}` : '2px solid transparent',
+                                color: active ? accentColor : 'var(--text-secondary)',
+                                marginBottom: -1
+                            }}
+                        >
+                            {t.label}
+                            {badge != null && (
+                                <span
+                                    className="ml-1.5 text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded"
+                                    style={{
+                                        background: active ? `${accentColor}22` : 'var(--bg-tertiary)',
+                                        color: active ? accentColor : 'var(--text-secondary)'
+                                    }}
+                                >
+                                    {badge}
+                                </span>
+                            )}
+                        </button>
+                    )
+                })}
+            </div>
+
+            <div className="flex-1 overflow-auto px-5 py-4 bg-bg-primary">
+                {tab === 'details' && (
+                    <div className="flex flex-col gap-5">
+                        <div>
+                            <Heading>Job site</Heading>
+                            <Row label="Address" value={formattedAddress} wide />
+                            <Row label="City" value={order.city} />
+                            <Row label="State / ZIP" mono value={stateZip} />
+                        </div>
+
+                        <div>
+                            <Heading>Schedule</Heading>
+                            <Row label="Start" mono value={order.startTime} />
+                            <Row label="Spacing" mono value={order.rate} />
+                            <Row label="To job" mono value={order.toJobTime} />
+                            <Row label="To plant" mono value={order.toPlantTime} />
+                        </div>
+
+                        <div>
+                            <Heading>Product</Heading>
+                            <Row label="Code" mono value={order.productCode} />
+                            <Row label="Description" value={order.description} wide />
+                            <Row label="Load size" mono value={order.loadSize ? `${order.loadSize} yd` : ''} />
+                        </div>
+
+                        <div>
+                            <Heading>Customer</Heading>
+                            <Row label="Name" value={order.customer} wide />
+                            <Row label="Customer #" mono value={order.customerNum} />
+                            <Row label="Contact" value={order.contact} />
+                            <Row
+                                label="Phone"
+                                mono
+                                value={
+                                    order.phone ? (
+                                        <a
+                                            className="text-inherit hover:underline"
+                                            href={`tel:${String(order.phone).replace(/\D/g, '')}`}
+                                        >
+                                            {order.phone}
+                                        </a>
+                                    ) : null
+                                }
+                            />
+                        </div>
+
+                        <div>
+                            <Heading>Identifiers</Heading>
+                            <Row label="Order #" mono value={order.orderNum} />
+                            <Row label="Order ID" mono value={order.orderId} />
+                            <Row label="PO #" mono value={order.poNumber} />
+                            <Row label="Job #" mono value={order.jobNumber} />
+                        </div>
                     </div>
                 )}
 
-                <div className="flex items-center gap-4 px-5 border-b border-border-light bg-bg-primary">
-                    {TABS.map((t) => {
-                        const active = tab === t.id
-                        const badge = t.id === 'flags' && suggestions.length > 0 ? suggestions.length : null
-                        return (
-                            <button
-                                key={t.id}
-                                type="button"
-                                onClick={() => setTab(t.id)}
-                                className="relative bg-transparent border-0 cursor-pointer py-2.5 text-[12.5px] font-medium"
-                                style={{
-                                    borderBottom: active ? `2px solid ${accentColor}` : '2px solid transparent',
-                                    color: active ? accentColor : 'var(--text-secondary)',
-                                    marginBottom: -1
-                                }}
-                            >
-                                {t.label}
-                                {badge != null && (
-                                    <span
-                                        className="ml-1.5 text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded"
-                                        style={{
-                                            background: active ? `${accentColor}22` : 'var(--bg-tertiary)',
-                                            color: active ? accentColor : 'var(--text-secondary)'
-                                        }}
-                                    >
-                                        {badge}
-                                    </span>
-                                )}
-                            </button>
-                        )
-                    })}
-                </div>
+                {tab === 'coverage' &&
+                    (coverage ? (
+                        <OrderCoverageView coverage={coverage} />
+                    ) : (
+                        <EmptyState
+                            title="No coverage data"
+                            hint="Truck-coverage math runs only when the schedule is filtered to this order's plant. Filter to the plant on the Schedule tab and reopen this order."
+                        />
+                    ))}
 
-                <div className="flex-1 overflow-auto px-5 py-4 bg-bg-primary">
-                    {tab === 'details' && (
-                        <div className="flex flex-col gap-5">
-                            <div>
-                                <Heading>Job site</Heading>
-                                <Row label="Address" value={formattedAddress} wide />
-                                <Row label="City" value={order.city} />
-                                <Row label="State / ZIP" mono value={stateZip} />
-                            </div>
-
-                            <div>
-                                <Heading>Schedule</Heading>
-                                <Row label="Start" mono value={order.startTime} />
-                                <Row label="Spacing" mono value={order.rate} />
-                                <Row label="To job" mono value={order.toJobTime} />
-                                <Row label="To plant" mono value={order.toPlantTime} />
-                            </div>
-
-                            <div>
-                                <Heading>Product</Heading>
-                                <Row label="Code" mono value={order.productCode} />
-                                <Row label="Description" value={order.description} wide />
-                                <Row label="Load size" mono value={order.loadSize ? `${order.loadSize} yd` : ''} />
-                            </div>
-
-                            <div>
-                                <Heading>Customer</Heading>
-                                <Row label="Name" value={order.customer} wide />
-                                <Row label="Customer #" mono value={order.customerNum} />
-                                <Row label="Contact" value={order.contact} />
-                                <Row
-                                    label="Phone"
-                                    mono
-                                    value={
-                                        order.phone ? (
-                                            <a
-                                                className="text-inherit hover:underline"
-                                                href={`tel:${String(order.phone).replace(/\D/g, '')}`}
-                                            >
-                                                {order.phone}
-                                            </a>
-                                        ) : null
-                                    }
-                                />
-                            </div>
-
-                            <div>
-                                <Heading>Identifiers</Heading>
-                                <Row label="Order #" mono value={order.orderNum} />
-                                <Row label="Order ID" mono value={order.orderId} />
-                                <Row label="PO #" mono value={order.poNumber} />
-                                <Row label="Job #" mono value={order.jobNumber} />
-                            </div>
+                {tab === 'flags' &&
+                    (suggestions.length === 0 ? (
+                        <EmptyState
+                            title="Nothing flagged"
+                            hint="The order is on track based on the current plan — no closer plant, no overbooking, no big-pour shortfall."
+                        />
+                    ) : (
+                        <div>
+                            {suggestions.map((s, i) => (
+                                <FlagItem key={i} index={i + 1} title={s.title} body={s.body} />
+                            ))}
                         </div>
-                    )}
-
-                    {tab === 'coverage' &&
-                        (coverage ? (
-                            <OrderCoverageView coverage={coverage} />
-                        ) : (
-                            <EmptyState
-                                title="No coverage data"
-                                hint="Truck-coverage math runs only when the schedule is filtered to this order's plant. Filter to the plant on the Schedule tab and reopen this order."
-                            />
-                        ))}
-
-                    {tab === 'flags' &&
-                        (suggestions.length === 0 ? (
-                            <EmptyState
-                                title="Nothing flagged"
-                                hint="The order is on track based on the current plan — no closer plant, no overbooking, no big-pour shortfall."
-                            />
-                        ) : (
-                            <div>
-                                {suggestions.map((s, i) => (
-                                    <FlagItem key={i} index={i + 1} title={s.title} body={s.body} />
-                                ))}
-                            </div>
-                        ))}
-                </div>
+                    ))}
             </div>
+        </div>
+    )
+
+    if (inline) return card
+
+    return (
+        <div
+            role="dialog"
+            aria-modal="true"
+            onClick={onClose}
+            className="fixed inset-0 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.55)] z-[2147483000]"
+        >
+            {card}
         </div>
     )
 }

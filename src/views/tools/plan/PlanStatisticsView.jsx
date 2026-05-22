@@ -18,6 +18,7 @@ import {
     PlanStatisticsSectionTabs,
     PlanStatisticsSidebar
 } from '../../../app/components/plan/tabs/statistics/PlanStatisticsSidebar'
+import PlanStatisticsTicketLookupPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsTicketLookupPage'
 import { useHelpCrossLoadingStats } from '../../../app/hooks/useHelpCrossLoadingStats'
 import { useKickerStats } from '../../../app/hooks/useKickerStats'
 import { usePlanStatistics } from '../../../app/hooks/usePlanStatistics'
@@ -55,6 +56,7 @@ function PlanStatisticsView({
     const helpCrossLoadingEnabled = activeSection === 'helpCrossLoading'
     const plantsEnabled = activeSection === 'production'
     const customerLookupEnabled = activeSection === 'customerLookup'
+    const ticketLookupEnabled = activeSection === 'ticketLookup'
     const kickersEnabled = activeSection === 'kickers'
     // Service-quality classifier feeds both the Service page and the
     // Customer Lookup page — enable the underlying ticket-detail fetch
@@ -69,7 +71,8 @@ function PlanStatisticsView({
         planDate,
         plantsEnabled,
         satisfactionEnabled,
-        serviceEnabled
+        serviceEnabled,
+        ticketLookupEnabled
     })
     const {
         anchor,
@@ -276,6 +279,17 @@ function PlanStatisticsView({
                     kickerStats={kickerStats}
                     loading={loading || satisfactionLoading}
                     plansLoading={plansLoading}
+                    plantNameByCode={plantNameByCode}
+                />
+            )
+        }
+        if (activeSection === 'ticketLookup') {
+            return (
+                <PlanStatisticsTicketLookupPage
+                    accentColor={accentColor}
+                    detailByDay={detailByDay}
+                    flatOrders={flatOrders}
+                    loading={loading || satisfactionLoading}
                     plantNameByCode={plantNameByCode}
                 />
             )

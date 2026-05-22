@@ -36,10 +36,22 @@ function PlanSettingsView({
     const regionName = preferences?.selectedRegion?.name || ''
     return (
         <div className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-4xl flex flex-col gap-6 px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
-                <PlanOperationalSettings accentColor={accentColor} regionCode={regionCode} regionName={regionName} />
+            {/* Two-panel split — Operational settings on the left,
+                Travel times on the right. Stacks vertically below the
+                lg breakpoint so phones / narrow laptops still get a
+                readable single-column layout. Items align to the top so
+                the two panels don't stretch to match each other's
+                height when one is much taller. */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-4 lg:gap-6 mx-auto max-w-[1600px] px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+                <div className="min-w-0">
+                    <PlanOperationalSettings
+                        accentColor={accentColor}
+                        regionCode={regionCode}
+                        regionName={regionName}
+                    />
+                </div>
 
-                <div className="flex flex-col gap-3">
+                <div className="min-w-0 flex flex-col gap-3">
                     <div>
                         <div className="text-[15px] font-semibold text-text-primary">Travel times between plants</div>
                         <div className="text-[11.5px] text-text-tertiary">

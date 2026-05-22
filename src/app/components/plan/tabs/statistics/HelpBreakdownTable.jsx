@@ -32,7 +32,7 @@ function StarScore({ score, total = 5 }) {
 
 /** Recipients column — each destination plant on its own line with
  *  the directional arrow + full plant label + count and explicit unit,
- *  so the dispatcher reads "→ 403 Baytown — 8 drivers" instead of
+ *  so the dispatcher reads "→ 403 Baytown — 8 operators" instead of
  *  guessing what the bare number means. */
 function RecipientList({ items, getPrimary, max = 4, plantNameByCode, unitLabel, color, colocationMap }) {
     const ranked = useMemo(
@@ -203,7 +203,7 @@ export default function HelpBreakdownTable({
                                 style={{ color: deadheadColor }}
                                 rowSpan={2}
                             >
-                                Where the drivers went
+                                Where the operators went
                             </th>
                             <th
                                 className="text-center font-semibold uppercase tracking-wider text-[10px] px-2 py-2 border-l border-border-light"
@@ -232,9 +232,9 @@ export default function HelpBreakdownTable({
                         <tr className="text-text-tertiary bg-bg-secondary">
                             <th
                                 className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2 border-l border-border-light"
-                                title="Total number of drivers the dispatcher planned to send out from this plant to help others"
+                                title="Total number of operators the dispatcher planned to send out from this plant to help others"
                             >
-                                Drivers sent
+                                Operators sent
                             </th>
                             <th
                                 className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
@@ -292,7 +292,7 @@ export default function HelpBreakdownTable({
                                             color: row.deadheadDrivers > 0 ? deadheadColor : 'var(--text-tertiary)'
                                         }}
                                     >
-                                        {row.deadheadDrivers > 0 ? `${fmtInt(row.deadheadDrivers)} drv` : '—'}
+                                        {row.deadheadDrivers > 0 ? `${fmtInt(row.deadheadDrivers)} op` : '—'}
                                     </td>
                                     <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary align-top">
                                         {row.deadheadTrips > 0 ? fmtInt(row.deadheadTrips) : '—'}
@@ -304,7 +304,7 @@ export default function HelpBreakdownTable({
                                             getPrimary={(r) => r.deadheadDrivers}
                                             items={row.recipients}
                                             plantNameByCode={plantNameByCode}
-                                            unitLabel="drivers"
+                                            unitLabel="operators"
                                         />
                                     </td>
                                     <td

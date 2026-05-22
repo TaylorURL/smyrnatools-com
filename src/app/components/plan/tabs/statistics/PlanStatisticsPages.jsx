@@ -1,12 +1,15 @@
 /* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { OperatorService } from '../../../../../services/OperatorService'
 import { fmtFloat, fmtInt, fmtRange, fmtYards, parseIsoLocal } from '../../../../../utils/PlanStatisticsFormatUtility'
 import {
     BIG_POUR_SPACING_THRESHOLD_MIN,
     BIG_POUR_YARDAGE_THRESHOLD,
     plantBadgeColor
 } from '../../../../../utils/PlanUtility'
+import CommentModalSection from '../../../sections/CommentModalSection'
+import HistoryViewSection from '../../../sections/HistoryViewSection'
 import { Panel } from '../../../ui/Panel'
 import { DayOfWeekChart, TrendChart } from './PlanStatisticsCharts'
 import { BigPoursTable, ComparisonRow, PlantScorecardTable, RankedList } from './PlanStatisticsTables'
@@ -474,7 +477,7 @@ export function PlanStatisticsOverviewPage({
                         label="Operators"
                         section="operators"
                         value={fmtInt(currentSummary.totalLoads || 0)}
-                        hint="Loads per driver"
+                        hint="Loads per operator"
                         onSelect={onSelectSection}
                     />
                     <LaunchpadTile
@@ -877,7 +880,7 @@ function AssignedCell({ assignedPlant, assignedTruck }) {
  *  also reads as a sane block in Slack / email. The dispatcher hits
  *  "Copy list" and forwards this to whoever maintains operator names. */
 function buildUnmatchedNamesReport(rows) {
-    const header = ['Driver name (ticket)', 'Driver #', 'Loads', 'Yd³', 'Trucks', 'Plants'].join('\t')
+    const header = ['Operator name (ticket)', 'Operator #', 'Loads', 'Yd³', 'Trucks', 'Plants'].join('\t')
     const body = rows.map((r) =>
         [
             r.name || '(no name)',
@@ -948,7 +951,7 @@ function UnmatchedDriversRow({
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <i className="fas fa-triangle-exclamation text-[13px] text-[#854d0e]" aria-hidden="true" />
-                        <span className="font-semibold text-text-primary">Unmatched drivers</span>
+                        <span className="font-semibold text-text-primary">Unmatched operators</span>
                         <span
                             className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold italic text-[#854d0e]"
                             style={{ background: 'rgba(202, 138, 4, 0.16)' }}
@@ -966,10 +969,10 @@ function UnmatchedDriversRow({
                             </>
                         ) : (
                             <>
-                                These tickets reference driver names that don&apos;t match any of the{' '}
+                                These tickets reference operator names that don&apos;t match any of the{' '}
                                 {operatorRosterReady ? <b>{fmtInt(operatorRosterCount)}</b> : '—'} operator records in
                                 Tools. Usually caused by a spelling mismatch between Jonel and Tools — fix the
-                                operator&apos;s name on either side to roll these loads into the right driver row.
+                                operator&apos;s name on either side to roll these loads into the right operator row.
                             </>
                         )}
                     </div>
@@ -1011,7 +1014,7 @@ function UnmatchedDriversRow({
             </div>
             {unmatchedNames.length === 0 ? (
                 <div className="text-[11px] text-text-tertiary italic">
-                    No unmatched driver names captured in this window.
+                    No unmatched operator names captured in this window.
                 </div>
             ) : (
                 <div
@@ -1025,8 +1028,8 @@ function UnmatchedDriversRow({
                                 'minmax(0, 1.6fr) minmax(0, 0.7fr) 3.5rem 4rem minmax(0, 1fr) minmax(0, 0.9fr)'
                         }}
                     >
-                        <span>Driver name (ticket)</span>
-                        <span>Driver #</span>
+                        <span>Operator name (ticket)</span>
+                        <span>Operator #</span>
                         <span className="text-right">Loads</span>
                         <span className="text-right">Yd³</span>
                         <span>Trucks</span>
@@ -1121,12 +1124,22 @@ export function PlanStatisticsOperatorsPage({
         return { drivers: loadsByOperator.length, loads, mismatched, yardage }
     }, [loadsByOperator])
 
+    /* Operator-modal state — when a dispatcher hits Comments / History on
+     * a row we mount the same `CommentModalSection` / `HistoryViewSection`
+     * pair the assets pages use, scoped to the operator's `employeeId`.
+     * Stored as the full `{ employeeId, name }` object so the modal can
+     * show the operator's display name without a roster re-lookup. */
+    const [commentTarget, setCommentTarget] = useState(null)
+    const [historyTarget, setHistoryTarget] = useState(null)
+    const handleShowComments = useCallback((operator) => setCommentTarget(operator), [])
+    const handleShowHistory = useCallback((operator) => setHistoryTarget(operator), [])
+
     if (loading && currentDays.length === 0) {
         return <div className="rounded animate-pulse bg-bg-secondary border border-border-light h-[320px]" />
     }
     if (!loading && currentDays.length === 0) {
         return (
-            <Panel title="Operators" innerClassName="p-0">
+            <Panel title="Operators Loads" innerClassName="p-0">
                 <EmptySection
                     icon="fa-id-badge"
                     message={`No saved schedules in ${fmtRange(range.start, range.end)}.`}
@@ -1144,7 +1157,7 @@ export function PlanStatisticsOperatorsPage({
                     <RefreshingHint when />
                 ) : totals.drivers > 0 ? (
                     <span className="text-[11px] text-text-tertiary">
-                        {fmtInt(totals.drivers)} driver{totals.drivers === 1 ? '' : 's'} · {fmtInt(totals.loads)} load
+                        {fmtInt(totals.drivers)} operator{totals.drivers === 1 ? '' : 's'} · {fmtInt(totals.loads)} load
                         {totals.loads === 1 ? '' : 's'} · {fmtYards(totals.yardage)} yd³
                         {totals.mismatched > 0 && (
                             <>
@@ -1165,7 +1178,7 @@ export function PlanStatisticsOperatorsPage({
                     message={(() => {
                         if (loading) return 'Loading tickets…'
                         if (selectedPlant) {
-                            return `No drivers loaded at plant ${selectedPlant} in ${fmtRange(range.start, range.end)}.`
+                            return `No operators loaded at plant ${selectedPlant} in ${fmtRange(range.start, range.end)}.`
                         }
                         return `No ticket data available for ${fmtRange(range.start, range.end)}.`
                     })()}
@@ -1214,7 +1227,7 @@ export function PlanStatisticsOperatorsPage({
                                         {row.driverNum && (
                                             <span
                                                 className="font-mono tabular-nums text-[10.5px] text-text-tertiary"
-                                                title="Dispatch driver number (smyrna_id)"
+                                                title="Dispatch operator number (smyrna_id)"
                                             >
                                                 #{row.driverNum}
                                             </span>
@@ -1229,6 +1242,13 @@ export function PlanStatisticsOperatorsPage({
                                             </span>
                                         )}
                                     </div>
+                                    {row.employeeId && (
+                                        <OperatorActionButtons
+                                            operator={{ employeeId: row.employeeId, name: row.name }}
+                                            onComments={handleShowComments}
+                                            onHistory={handleShowHistory}
+                                        />
+                                    )}
                                 </div>
                                 <AssignedCell assignedPlant={row.homePlant} assignedTruck={row.assignedTruck} />
                                 <div className="flex flex-wrap items-center gap-1 min-w-0">
@@ -1301,6 +1321,57 @@ export function PlanStatisticsOperatorsPage({
                     })}
                 </div>
             )}
+            {commentTarget && (
+                <CommentModalSection
+                    itemId={commentTarget.employeeId}
+                    itemNumber={commentTarget.name}
+                    itemType="Operator"
+                    onClose={() => setCommentTarget(null)}
+                    service={OperatorService}
+                />
+            )}
+            {historyTarget && (
+                <HistoryViewSection item={historyTarget} onClose={() => setHistoryTarget(null)} type="operator" />
+            )}
         </Panel>
+    )
+}
+
+/**
+ * Comments + History action chips that sit under an operator's name in
+ * the Statistics → Operators row. Mirrors the pattern on `AssetListRow`'s
+ * operator column (used by MixersView, TractorsView, …) so the same
+ * affordance is available wherever an operator is rendered. Clicks bubble
+ * up the operator object to the parent, which owns the modal state.
+ */
+function OperatorActionButtons({ onComments, onHistory, operator }) {
+    if (!operator?.employeeId) return null
+    return (
+        <div className="flex items-center gap-1 mt-1">
+            <button
+                type="button"
+                onClick={(e) => {
+                    e.stopPropagation()
+                    onComments?.(operator)
+                }}
+                title="Operator comments"
+                className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary"
+            >
+                <i className="fas fa-comment text-[8px]" />
+                <span>Comments</span>
+            </button>
+            <button
+                type="button"
+                onClick={(e) => {
+                    e.stopPropagation()
+                    onHistory?.(operator)
+                }}
+                title="Operator history"
+                className="inline-flex items-center gap-1 rounded text-[10px] px-1.5 py-0.5 cursor-pointer transition-colors hover:brightness-95 bg-bg-secondary border border-border-light text-text-secondary"
+            >
+                <i className="fas fa-history text-[8px]" />
+                <span>History</span>
+            </button>
+        </div>
     )
 }

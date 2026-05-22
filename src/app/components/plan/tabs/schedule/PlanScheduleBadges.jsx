@@ -227,7 +227,7 @@ export function HoursLimitBadge({ limit }) {
     if (!limit || !limit.exceeds) return null
     const { elapsedHours, finishMin, firstLoadOutMin, segments } = limit
     const tooltipLines = [
-        `Driver shift would hit ${elapsedHours.toFixed(1)}h — past the 14h DOT limit.`,
+        `Operator shift would hit ${elapsedHours.toFixed(1)}h — past the 14h DOT limit.`,
         `Anchor (first load-out): ${minuteOfDayToHhmm(firstLoadOutMin)}`,
         `Projected back at yard: ${minuteOfDayToHhmm(finishMin)}`,
         `Load ${segments.load}m + slump ${segments.slump}m + travel ${segments.travelOut}m + pour ${segments.pour}m + return ${segments.travelBack}m`

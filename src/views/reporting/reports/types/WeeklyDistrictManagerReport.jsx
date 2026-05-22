@@ -566,7 +566,7 @@ function DistrictManagerPlugin({
                         icon="fa-arrows-turn-to-dots"
                         label="Help & Cross-Loading"
                         title="Help breakdown by plant"
-                        sub="How each plant in the district contributed planned drivers and cross-loaded yardage during the week."
+                        sub="How each plant in the district contributed planned operators and cross-loaded yardage during the week."
                     />
                     {helpLoading && helpByGiverPlant.length === 0 ? (
                         <div className="rounded p-6 text-center flex flex-col items-center gap-1.5" style={CARD_STYLE}>

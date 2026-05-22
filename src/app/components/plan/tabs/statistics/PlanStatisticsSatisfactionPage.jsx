@@ -6,6 +6,7 @@ import { fmtDate, fmtInt, fmtRange, fmtYards } from '../../../../../utils/PlanSt
 import { PLAN_STATS_CHART_TOOLTIP_STYLE } from '../../../../../utils/PlanStatisticsUtility'
 import { plantBadgeColor } from '../../../../../utils/PlanUtility'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
+import ServiceTierBreakdown from './ServiceTierBreakdown'
 
 /* ──────────────────────────────────────────────────────────────────────────
  * The page intentionally stays monochrome — same hairline-border / mono-
@@ -165,6 +166,12 @@ function Hero({ aggregate, loading, plantNameByCode, previousAggregate, range, s
                 />
                 <Stat label="Good-service rate" value={fmtScore(score)} hint="bad = late > 15 min or slow pace" />
             </StatGroup>
+            {aggregate?.tierCounts && (
+                <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 border-t border-border-light text-[11px] text-text-tertiary">
+                    <span className="font-semibold uppercase tracking-wider">Bad-order severity:</span>
+                    <ServiceTierBreakdown tierCounts={aggregate.tierCounts} showZero />
+                </div>
+            )}
         </Panel>
     )
 }
@@ -255,6 +262,12 @@ function PlantScoreboard({ accent, perPlant, plantNameByCode, selectedPlant, onP
                             Good
                         </th>
                         <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">Bad</th>
+                        <th
+                            className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2"
+                            title="Bad-order severity: Not Good (≥15 min), Bad (≥30 min), Very Bad (>60 min late)."
+                        >
+                            Severity
+                        </th>
                         <th className="text-right font-semibold uppercase tracking-wider text-[10px] px-2 py-2">
                             Orders
                         </th>
@@ -328,6 +341,9 @@ function PlantScoreboard({ accent, perPlant, plantNameByCode, selectedPlant, onP
                                     style={{ color: row.badService > 0 ? '#dc2626' : 'var(--text-secondary)' }}
                                 >
                                     {fmtInt(row.badService)}
+                                </td>
+                                <td className="px-2 py-2 text-right">
+                                    <ServiceTierBreakdown tierCounts={row.tierCounts} align="right" compact />
                                 </td>
                                 <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
                                     {fmtInt(row.samples)}

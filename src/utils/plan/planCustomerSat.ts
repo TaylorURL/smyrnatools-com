@@ -66,6 +66,52 @@ export const isSmallPourJob = (expectedTrucks, totalYardage) => {
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
 
+/* Lateness tiers shared across the Satisfaction, Service, and
+ * Customer Lookup surfaces. The cutoffs match operations' verbal
+ * grading: 15 min late = "Not Good", 30 min = "Bad", > 60 min =
+ * "Very Bad".
+ *
+ * Slow is a SEPARATE axis (pour-pace failure) and never lands in a
+ * lateness tier — it has its own `isSlow` flag and its own column on
+ * the pages. An order that's both late and slow gets tagged with the
+ * relevant lateness tier AND remains flagged slow. */
+export const NOT_GOOD_LATE_MIN = 15
+export const BAD_LATE_MIN = 30
+export const VERY_BAD_LATE_MIN = 60
+
+export type ServiceTier = 'good' | 'notGood' | 'bad' | 'veryBad'
+
+/** Order the tiers worsen, useful for any caller that wants to walk
+ *  them in display order (Good → Not Good → Bad → Very Bad). */
+export const SERVICE_TIER_ORDER: ServiceTier[] = ['good', 'notGood', 'bad', 'veryBad']
+
+/** Human label + accent color per tier. Pinned here so every page
+ *  renders the same words / hues for the same verdict. */
+export const SERVICE_TIER_META: Record<ServiceTier, { color: string; label: string }> = {
+    bad: { color: '#dc2626', label: 'Bad' },
+    good: { color: '#16a34a', label: 'Good' },
+    notGood: { color: '#f59e0b', label: 'Not Good' },
+    veryBad: { color: '#7f1d1d', label: 'Very Bad' }
+}
+
+/** Maps a verdict to its LATENESS tier. Pure function of `latenessMin`
+ *  — slow is tracked separately via `isSlow`, never folded into a
+ *  lateness tier. A slow-only order returns `good` here; callers still
+ *  surface it via the slow flag. */
+export function classifyServiceTier({
+    isLate,
+    latenessMin
+}: {
+    isLate: boolean
+    isSlow?: boolean
+    latenessMin: number
+}): ServiceTier {
+    if (!isLate) return 'good'
+    if (latenessMin > VERY_BAD_LATE_MIN) return 'veryBad'
+    if (latenessMin >= BAD_LATE_MIN) return 'bad'
+    return 'notGood'
+}
+
 /** Verdict shape returned by `scoreOrderExperience`. Consumers either care
  *  about `measured` (was there enough data to judge) and `isBad` (binary
  *  service classifier), or they reach for the breakdown fields to
@@ -83,6 +129,12 @@ export interface OrderExperienceVerdict {
     isSlow: boolean
     /** Combined verdict — bad service when either dimension trips. */
     isBad: boolean
+    /** Severity tier the order falls into. `good` when neither dimension
+     *  tripped, `notGood` / `bad` / `veryBad` by lateness banding (slow-
+     *  only orders land in `notGood`). Surfaced so the satisfaction /
+     *  service / customer-lookup pages can break the binary `isBad`
+     *  count into a meaningful spread. */
+    tier: ServiceTier
     /** Minutes the first ticket loaded after scheduled start; 0 when on
      *  time or scheduled time was missing. */
     latenessMin: number
@@ -141,7 +193,8 @@ const UNMEASURED_VERDICT: OrderExperienceVerdict = {
     paceScore: null,
     paceYardage: 0,
     startMin: null,
-    startTime: ''
+    startTime: '',
+    tier: 'good'
 }
 
 /**
@@ -227,6 +280,7 @@ export function scoreOrderExperience(order, detail): OrderExperienceVerdict {
 
     const isLate = startLateness > BAD_SERVICE_LATE_THRESHOLD_MIN
     const isSlow = !isSmallPourJob(numTrucks, paceYardage) && paceScoreForCheck < BAD_SERVICE_PACE_THRESHOLD
+    const tier = classifyServiceTier({ isLate, isSlow, latenessMin: startLateness })
 
     return {
         firstDriverName: first.driverName,
@@ -245,18 +299,25 @@ export function scoreOrderExperience(order, detail): OrderExperienceVerdict {
         paceScore,
         paceYardage,
         startMin: Number.isFinite(startMin) ? (startMin as number) : null,
-        startTime: order?.startTime || ''
+        startTime: order?.startTime || '',
+        tier
     }
 }
 
 /** Per-day customer-satisfaction aggregate. Walks orders, scores each via
  *  `scoreOrderExperience`, and returns the good/bad split + score ratio.
  *  Unmeasured orders are excluded from the sample count — the score is
- *  always relative to orders we could actually judge. */
+ *  always relative to orders we could actually judge.
+ *
+ *  Also returns `tierCounts` — the breakdown of the bad/good population
+ *  into `good` / `notGood` / `bad` / `veryBad` so callers (Customer
+ *  Satisfaction / Service / Customer Lookup pages) can render a graded
+ *  breakdown instead of just the binary good/bad split. */
 export const computeCustomerSatisfaction = (orders, detailByOrderId) => {
     if (!Array.isArray(orders) || !orders.length) return null
     let samples = 0
     let badService = 0
+    const tierCounts: Record<ServiceTier, number> = { bad: 0, good: 0, notGood: 0, veryBad: 0 }
 
     orders.forEach((order) => {
         const detail = order?.orderId ? detailByOrderId?.[order.orderId] : null
@@ -264,6 +325,7 @@ export const computeCustomerSatisfaction = (orders, detailByOrderId) => {
         if (!verdict.measured) return
         samples += 1
         if (verdict.isBad) badService += 1
+        tierCounts[verdict.tier] += 1
     })
 
     if (samples === 0) return null
@@ -272,6 +334,7 @@ export const computeCustomerSatisfaction = (orders, detailByOrderId) => {
         badService,
         goodService,
         samples,
-        score: goodService / samples
+        score: goodService / samples,
+        tierCounts
     }
 }

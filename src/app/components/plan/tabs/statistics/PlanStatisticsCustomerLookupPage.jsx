@@ -1,8 +1,9 @@
-/* eslint-disable react/forbid-dom-props */
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { fmtDate, fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
+import ServiceTierBreakdown from './ServiceTierBreakdown'
 
 const GOOD = '#16a34a'
 const BAD = '#dc2626'
@@ -31,18 +32,31 @@ const fmtMinutes = (n) => {
 
 const pctColor = (pct) => (pct == null ? 'var(--text-tertiary)' : pct >= GOOD_THRESHOLD ? GOOD : BAD)
 
+/* Tier-aware verdict palette + labels. Lateness severity tiers
+ * (Not Good / Bad / Very Bad) and slow are SEPARATE dimensions —
+ * slow is a pour-pace failure, lateness is an arrival-time failure.
+ * A slow-only on-time order reads "Slow" (orange), not "Not Good".
+ * An order that's both late and slow reads "<Tier> + slow". */
+const TIER_TO_COLOR = { bad: BAD, good: GOOD, notGood: LATE, veryBad: '#7f1d1d' }
+
 const verdictColor = (m) => {
-    if (m.isLate && m.isSlow) return BAD
-    if (m.isLate) return LATE
+    if (m.tier && m.tier !== 'good') return TIER_TO_COLOR[m.tier]
     if (m.isSlow) return SLOW
     return GOOD
 }
 
 const verdictLabel = (m) => {
-    if (m.isLate && m.isSlow) return 'Late + slow'
-    if (m.isLate) return 'Late'
-    if (m.isSlow) return 'Slow'
-    return 'Good'
+    const slowSuffix = m.isSlow ? ' + slow' : ''
+    switch (m.tier) {
+        case 'veryBad':
+            return `Very Bad${slowSuffix}`
+        case 'bad':
+            return `Bad${slowSuffix}`
+        case 'notGood':
+            return `Not Good${slowSuffix}`
+        default:
+            return m.isSlow ? 'Slow' : 'Good'
+    }
 }
 
 const FILTERS = [
@@ -160,6 +174,9 @@ function CustomerCard({ customer, isActive, onSelect, orders }) {
                 </div>
                 <VerdictTrail orders={orders} />
             </div>
+            {customer.tierCounts && customer.badJobs > 0 && (
+                <ServiceTierBreakdown tierCounts={customer.tierCounts} compact />
+            )}
         </button>
     )
 }
@@ -350,6 +367,13 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                 />
             </div>
 
+            {customer.tierCounts && (
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-text-tertiary">
+                    <span className="font-semibold uppercase tracking-wider">Bad-service severity:</span>
+                    <ServiceTierBreakdown tierCounts={customer.tierCounts} showZero />
+                </div>
+            )}
+
             <CustomerOrdersTable
                 orders={sortedOrders}
                 plantNameByCode={plantNameByCode}
@@ -437,6 +461,30 @@ export default function PlanStatisticsCustomerLookupPage({
         }
     }, [selectedKey])
 
+    /* Mutually-exclusive views: selecting a customer hides the entire
+     * search / filter row and the card grid, and replaces them with the
+     * detail card. Closing the detail (or unselecting via the same row)
+     * restores the list. Keeps the page focused on one thing at a time
+     * and removes the awkward "scroll past the grid to find the detail
+     * card" rhythm of the prior layout. */
+    if (selectedCustomer) {
+        return (
+            <div className="flex flex-col gap-3" ref={detailRef}>
+                {isLoading ? (
+                    <CustomerDetailSkeleton />
+                ) : (
+                    <CustomerDetail
+                        colocationMap={colocationMap}
+                        customer={selectedCustomer}
+                        onClose={() => setSelectedKey(null)}
+                        orders={selectedOrders}
+                        plantNameByCode={plantNameByCode}
+                    />
+                )}
+            </div>
+        )
+    }
+
     return (
         <div className="flex flex-col gap-3">
             {/* Search + sort */}
@@ -449,13 +497,15 @@ export default function PlanStatisticsCustomerLookupPage({
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
                         placeholder="Search customers"
-                        className="w-full rounded pl-9 pr-3 py-2 text-[13px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary"
+                        disabled={isLoading}
+                        className="w-full rounded pl-9 pr-3 py-2 text-[13px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary disabled:opacity-60"
                     />
                 </div>
                 <select
                     value={sortKey}
                     onChange={(e) => setSortKey(e.target.value)}
-                    className="rounded px-2.5 py-2 text-[12px] outline-none cursor-pointer bg-bg-primary border border-border-light text-text-primary"
+                    disabled={isLoading}
+                    className="rounded px-2.5 py-2 text-[12px] outline-none cursor-pointer bg-bg-primary border border-border-light text-text-primary disabled:opacity-60"
                 >
                     {SORTS.map((opt) => (
                         <option key={opt.key} value={opt.key}>
@@ -475,7 +525,8 @@ export default function PlanStatisticsCustomerLookupPage({
                                 key={f.key}
                                 type="button"
                                 onClick={() => setFilterKey(f.key)}
-                                className="bg-transparent border-none cursor-pointer p-0 text-[12px]"
+                                disabled={isLoading}
+                                className="bg-transparent border-none cursor-pointer p-0 text-[12px] disabled:opacity-60"
                                 style={{
                                     color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
                                     fontWeight: active ? 600 : 400,
@@ -489,15 +540,26 @@ export default function PlanStatisticsCustomerLookupPage({
                     })}
                 </div>
                 <div className="text-[11px] text-text-tertiary tabular-nums">
-                    {fmtInt(visibleCustomers.length)} of {fmtInt(customerIndex.length)}
-                    {isLoading && <span className="ml-2 italic">refreshing</span>}
+                    {isLoading ? (
+                        <span className="italic">Loading customers…</span>
+                    ) : (
+                        <>
+                            {fmtInt(visibleCustomers.length)} of {fmtInt(customerIndex.length)}
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* Customer card grid */}
-            {customerIndex.length === 0 ? (
+            {/* Customer card grid — replaced wholesale with a skeleton while
+             *  the upstream query is still resolving. Showing the previous
+             *  filter's data with a tiny "refreshing" label was misleading
+             *  because the visible rows didn't reflect the active filter
+             *  selection yet. */}
+            {isLoading ? (
+                <CustomerCardGridSkeleton />
+            ) : customerIndex.length === 0 ? (
                 <div className="text-[12px] py-8 text-center text-text-tertiary">
-                    {isLoading ? 'Loading…' : 'No customer activity in this window.'}
+                    No customer activity in this window.
                 </div>
             ) : visibleCustomers.length === 0 ? (
                 <div className="text-[12px] py-8 text-center text-text-tertiary">
@@ -516,19 +578,83 @@ export default function PlanStatisticsCustomerLookupPage({
                     ))}
                 </div>
             )}
+        </div>
+    )
+}
 
-            {/* Detail */}
-            <div ref={detailRef}>
-                {selectedCustomer && (
-                    <CustomerDetail
-                        colocationMap={colocationMap}
-                        customer={selectedCustomer}
-                        onClose={() => setSelectedKey(null)}
-                        orders={selectedOrders}
-                        plantNameByCode={plantNameByCode}
-                    />
-                )}
+/** Skeleton for the customer card grid — 9 placeholder cards in the same
+ *  responsive grid the real list uses. Renders while the underlying
+ *  service-quality query is in-flight (period / plant / comparison
+ *  filter swaps) so the visible content matches the active filter
+ *  selection instead of lingering on the previous window's results. */
+function CustomerCardGridSkeleton() {
+    const PlaceholderBar = ({ className = '', style }) => (
+        <div className={`rounded animate-pulse ${className}`} style={{ background: 'var(--bg-tertiary)', ...style }} />
+    )
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i} className="rounded-md p-3 flex flex-col gap-2 border bg-bg-primary border-border-light">
+                    <div className="flex items-baseline justify-between gap-3">
+                        <div className="flex-1 min-w-0 flex flex-col gap-1">
+                            <PlaceholderBar className="h-3.5 w-2/3" />
+                            <PlaceholderBar className="h-2.5 w-1/3" />
+                        </div>
+                        <PlaceholderBar className="h-5 w-12" />
+                    </div>
+                    <PlaceholderBar className="h-1.5 w-full" />
+                    <div className="flex items-center justify-between gap-2">
+                        <PlaceholderBar className="h-2.5 w-20" />
+                        <div className="flex items-center gap-[2px]">
+                            {Array.from({ length: 12 }).map((__, j) => (
+                                <PlaceholderBar key={j} className="h-1.5 w-1.5 rounded-full" />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+/** Skeleton for the customer detail card — header, 4-stat block, then a
+ *  short order table. Rendered when the user has a customer selected
+ *  but the upstream data is mid-reload. Keeps the same layout shape so
+ *  the actual content slots in without a visual jump. */
+function CustomerDetailSkeleton() {
+    const PlaceholderBar = ({ className = '', style }) => (
+        <div className={`rounded animate-pulse ${className}`} style={{ background: 'var(--bg-tertiary)', ...style }} />
+    )
+    return (
+        <div className="rounded-md p-4 bg-bg-primary border border-border-light">
+            <div className="flex items-baseline justify-between gap-3 mb-4">
+                <div className="min-w-0 flex flex-col gap-1.5">
+                    <PlaceholderBar className="h-4 w-48" />
+                    <PlaceholderBar className="h-3 w-64" />
+                </div>
+                <PlaceholderBar className="h-3 w-10" />
             </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-5 pb-4 border-b border-border-light">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex flex-col gap-1">
+                        <PlaceholderBar className="h-2.5 w-16" />
+                        <PlaceholderBar className="h-5 w-20" />
+                        <PlaceholderBar className="h-2.5 w-24" />
+                    </div>
+                ))}
+            </div>
+            <div className="flex items-center gap-3 px-3 py-2 bg-bg-secondary border-b border-border-light rounded-t">
+                {['12%', '15%', '18%', '12%', '12%', '12%', '12%', '12%'].map((w, i) => (
+                    <PlaceholderBar key={i} className="h-2.5" style={{ width: w }} />
+                ))}
+            </div>
+            {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2 border-b border-border-light last:border-b-0">
+                    {['12%', '15%', '18%', '12%', '12%', '12%', '12%', '12%'].map((w, j) => (
+                        <PlaceholderBar key={j} className="h-3" style={{ width: w }} />
+                    ))}
+                </div>
+            ))}
         </div>
     )
 }

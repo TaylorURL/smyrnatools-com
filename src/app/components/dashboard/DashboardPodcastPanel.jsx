@@ -170,7 +170,7 @@ export default function DashboardPodcastPanel() {
     const progressPct = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0
 
     return (
-        <aside className="flex flex-col w-[300px] shrink-0 py-5 pr-3 gap-3">
+        <aside className="flex flex-col gap-3 w-full pt-3 pb-0 lg:w-[300px] lg:shrink-0 lg:py-5 lg:pr-3">
             <header className="flex items-baseline justify-between gap-2 px-1">
                 <span className="text-[13px] font-bold text-text-primary font-heading">SRM Podcast</span>
                 {episodes.length > 0 && (

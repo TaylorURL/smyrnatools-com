@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import ReportsHomeOfficeGate from '../../../app/components/reports/ReportsHomeOfficeGate'
 import ReportsModalsHostConnected from '../../../app/components/reports/ReportsModalsHostConnected'
 import ReportsToolbar, { ReportsActionBar } from '../../../app/components/reports/ReportsToolbar'
 import { ReportsViewSkeleton } from '../../../app/components/reports/ReportsViewSkeletons'
@@ -314,6 +315,19 @@ function ReportsView() {
     })
 
     /* ── Pre-render branches ───────────────────────────────────── */
+    // Home Office never owns reports. Short-circuit any deep-link /
+    // stale-state path that would otherwise drop the user straight into
+    // a submit or review form before they pick an operating region.
+    if (String(regionType || '').toLowerCase() === 'office') {
+        return (
+            <div className="bg-slate-50 min-h-screen w-full pb-16 relative">
+                <div className="pointer-events-none select-none blur-sm" aria-hidden>
+                    <ReportsViewSkeleton variant="grid" />
+                </div>
+                <ReportsHomeOfficeGate userId={user?.id} />
+            </div>
+        )
+    }
     if (showForm) {
         const report = reportTypeMap[showForm.name]
             ? { ...reportTypeMap[showForm.name], weekIso: showForm.weekIso }

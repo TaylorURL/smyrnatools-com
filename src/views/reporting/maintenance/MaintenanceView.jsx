@@ -108,12 +108,32 @@ export default function MaintenanceView() {
     const loadLogData = useCallback(async () => {
         setLogLoading(true)
         try {
-            const [eq, cats, svcTypes, recent, plants] = await Promise.all([
-                MaintenanceLogService.fetchEquipmentSummary().catch(() => []),
+            // Resolve the region's plants first so the equipment + recent
+            // entries fetches can push their plant-code filter down to the
+            // database. Without this the view loaded the entire fleet's
+            // maintenance data and only narrowed when a single plant was
+            // picked — the active region was effectively ignored.
+            const plants = regionCode ? await PlantService.fetchRegionPlants(regionCode).catch(() => []) : []
+            const plantCodeList = plants.map((p) => String(p.plantCode || p.plant_code || '').trim()).filter(Boolean)
+            // No region selected → don't pretend the user has fleet-wide
+            // access. Leave the dataset empty and let the empty state
+            // prompt them to pick a region. Categories + service types
+            // stay global because they're metadata used by the picker
+            // dropdowns, not region-specific records.
+            const shouldFetchData = !regionCode || plantCodeList.length > 0
+            const [eq, cats, svcTypes, recent] = await Promise.all([
+                shouldFetchData
+                    ? MaintenanceLogService.fetchEquipmentSummary(
+                          plantCodeList.length ? plantCodeList : undefined
+                      ).catch(() => [])
+                    : [],
                 MaintenanceLogService.fetchCategories().catch(() => []),
                 MaintenanceLogService.fetchServiceTypes().catch(() => []),
-                MaintenanceLogService.fetchRecentEntries(10).catch(() => []),
-                regionCode ? PlantService.fetchRegionPlants(regionCode).catch(() => []) : []
+                shouldFetchData
+                    ? MaintenanceLogService.fetchRecentEntries(10, plantCodeList.length ? plantCodeList : null).catch(
+                          () => []
+                      )
+                    : []
             ])
             setEquipment(eq)
             setCategories(cats)
@@ -144,6 +164,39 @@ export default function MaintenanceView() {
         })
         return codes
     }, [regionPlants])
+
+    /** Restrict a list to entries whose `plant_code` belongs to the
+     *  active region. Used so submissions / due items / review queues —
+     *  which the server returns for the user's full accessible scope —
+     *  visually reflect the region the dispatcher is focused on. Items
+     *  with no `plant_code` (legacy rows, region-wide forms) pass through
+     *  so they don't silently disappear. When the user hasn't picked a
+     *  region yet (`regionPlantCodes` is empty), the original list is
+     *  returned untouched. */
+    const filterToRegion = useCallback(
+        (rows) => {
+            if (!regionPlantCodes.size || !Array.isArray(rows)) return rows || []
+            return rows.filter((row) => {
+                const code = String(row?.plant_code || '')
+                    .trim()
+                    .toUpperCase()
+                return !code || regionPlantCodes.has(code)
+            })
+        },
+        [regionPlantCodes]
+    )
+
+    /* Submissions / forms / due items / reviews come back from the
+     * service for the user's full accessible scope (server-side security
+     * boundary). Re-scope to the active region for display so a
+     * dispatcher focused on Region A doesn't see Region B activity. */
+    const regionDueItems = useMemo(() => filterToRegion(dueItems), [dueItems, filterToRegion])
+    const regionPendingReviews = useMemo(() => filterToRegion(pendingReviews), [pendingReviews, filterToRegion])
+    const regionReviewedSubmissions = useMemo(
+        () => filterToRegion(reviewedSubmissions),
+        [reviewedSubmissions, filterToRegion]
+    )
+    const regionMySubmissions = useMemo(() => filterToRegion(mySubmissions), [mySubmissions, filterToRegion])
 
     const categoryOptions = useMemo(() => {
         const names = [...new Set(equipment.map((e) => e.category_name).filter(Boolean))].sort()
@@ -212,8 +265,8 @@ export default function MaintenanceView() {
 
     // ── Badge counts ──
 
-    const dueBadgeCount = dueItems.filter((i) => i.status !== 'completed').length
-    const reviewBadgeCount = pendingReviews.length
+    const dueBadgeCount = regionDueItems.filter((i) => i.status !== 'completed').length
+    const reviewBadgeCount = regionPendingReviews.length
 
     // ── Full-screen drilldown view ──
 
@@ -375,19 +428,19 @@ export default function MaintenanceView() {
                     <MaintenanceLogView
                         categories={categories}
                         categoryFilter={categoryFilter}
-                        dueItems={dueItems}
+                        dueItems={regionDueItems}
                         equipment={equipment}
                         formLoading={formLoading}
                         loading={logLoading}
-                        mySubmissions={mySubmissions}
+                        mySubmissions={regionMySubmissions}
                         onCloseAddModal={() => setShowAddModal(false)}
                         onFormDataReload={loadFormData}
                         onReload={loadLogData}
-                        pendingReviews={pendingReviews}
+                        pendingReviews={regionPendingReviews}
                         permissions={permissions}
                         plants={regionPlants}
                         recentEntries={recentEntries}
-                        reviewedSubmissions={reviewedSubmissions}
+                        reviewedSubmissions={regionReviewedSubmissions}
                         searchText={searchText}
                         selectedPlant={selectedPlant}
                         serviceTypes={serviceTypes}

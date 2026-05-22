@@ -54,8 +54,6 @@ const EMPTY_RESULT = {
     byHour: HOUR_BUCKETS.map(buildEmptyHourRow),
     byPlant: [],
     customerIndex: [],
-    orderVerdicts: [],
-    outcomes: OUTCOME_BUCKETS.map((b) => ({ color: b.color, count: 0, key: b.key, label: b.label })),
     kpi: {
         avgLatenessMin: 0,
         badJobs: 0,
@@ -64,9 +62,12 @@ const EMPTY_RESULT = {
         lateAndSlow: 0,
         lateJobs: 0,
         slowJobs: 0,
+        tierCounts: { bad: 0, good: 0, notGood: 0, veryBad: 0 },
         totalJobs: 0,
         worstLatenessMin: 0
     },
+    orderVerdicts: [],
+    outcomes: OUTCOME_BUCKETS.map((b) => ({ color: b.color, count: 0, key: b.key, label: b.label })),
     threshold: BAD_SERVICE_LATE_THRESHOLD_MIN,
     worstOrders: []
 }
@@ -161,7 +162,12 @@ export function useServiceQualityStats({
                 paceScore: verdict.paceScore,
                 plantCode: resolvePrimary(plantCode),
                 startMin: verdict.startMin,
-                startTime: verdict.startTime
+                startTime: verdict.startTime,
+                /* Lateness severity tier — `good`/`notGood`/`bad`/`veryBad`
+                 * from `classifyServiceTier`. Lets every consumer surface
+                 * the same graded breakdown instead of the binary
+                 * good/bad split. */
+                tier: verdict.tier
             })
         }
 
@@ -178,6 +184,7 @@ export function useServiceQualityStats({
         let lateAndSlow = 0
         let lateLatenessSum = 0
         let worstLatenessMin = 0
+        const tierCounts = { bad: 0, good: 0, notGood: 0, veryBad: 0 }
         for (const m of filtered) {
             if (m.isLate) {
                 lateJobs += 1
@@ -186,6 +193,7 @@ export function useServiceQualityStats({
             }
             if (m.isSlow) slowJobs += 1
             if (m.isLate && m.isSlow) lateAndSlow += 1
+            tierCounts[m.tier] += 1
         }
         const badJobs = filtered.filter((m) => m.isBad).length
         const goodJobs = totalJobs - badJobs
@@ -203,6 +211,7 @@ export function useServiceQualityStats({
                     lateJobs: 0,
                     lateLatenessSum: 0,
                     slowJobs: 0,
+                    tierCounts: { bad: 0, good: 0, notGood: 0, veryBad: 0 },
                     worstLateMin: 0
                 })
             }
@@ -219,6 +228,7 @@ export function useServiceQualityStats({
                 if (m.latenessMin > bucket.worstLateMin) bucket.worstLateMin = m.latenessMin
             }
             if (m.isSlow) bucket.slowJobs += 1
+            bucket.tierCounts[m.tier] += 1
         }
         for (const code of Object.keys(plantNameByCode || {})) {
             ensurePlant(resolvePrimary(code))
@@ -233,6 +243,7 @@ export function useServiceQualityStats({
                 jobs: b.jobs,
                 lateJobs: b.lateJobs,
                 slowJobs: b.slowJobs,
+                tierCounts: b.tierCounts,
                 worstLateMin: b.worstLateMin
             }))
             .sort((a, b) => {
@@ -258,6 +269,7 @@ export function useServiceQualityStats({
                     lateJobs: 0,
                     lateLatenessSum: 0,
                     slowJobs: 0,
+                    tierCounts: { bad: 0, good: 0, notGood: 0, veryBad: 0 },
                     worstLateMin: 0
                 })
             }
@@ -274,6 +286,7 @@ export function useServiceQualityStats({
                 if (m.latenessMin > bucket.worstLateMin) bucket.worstLateMin = m.latenessMin
             }
             if (m.isSlow) bucket.slowJobs += 1
+            bucket.tierCounts[m.tier] += 1
         }
         const customerRowsAll = [...customerBuckets.entries()].map(([key, b]) => ({
             avgLateMin: b.lateJobs > 0 ? b.lateLatenessSum / b.lateJobs : 0,
@@ -286,6 +299,7 @@ export function useServiceQualityStats({
             lateJobs: b.lateJobs,
             name: b.displayName,
             slowJobs: b.slowJobs,
+            tierCounts: b.tierCounts,
             worstLateMin: b.worstLateMin
         }))
         // Top-12 worst slice for the Service page panel.
@@ -396,6 +410,7 @@ export function useServiceQualityStats({
                 lateAndSlow,
                 lateJobs,
                 slowJobs,
+                tierCounts,
                 totalJobs,
                 worstLatenessMin
             },

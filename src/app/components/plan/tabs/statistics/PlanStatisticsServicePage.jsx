@@ -18,6 +18,7 @@ import { PLAN_STATS_CHART_TOOLTIP_STYLE } from '../../../../../utils/PlanStatist
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 import { EmptySection, RefreshingHint } from './PlanStatisticsPages'
+import ServiceTierBreakdown from './ServiceTierBreakdown'
 
 const GOOD_COLOR = '#16a34a'
 const LATE_COLOR = '#f59e0b'
@@ -68,11 +69,12 @@ function FailureTags({ isLate, isSlow }) {
 }
 
 /** Sortable column header for the plant scorecard. */
-function ColumnHeader({ active, direction, label, numeric, onClick }) {
+function ColumnHeader({ active, direction, label, numeric, onClick, title }) {
     const arrow = !active ? '' : direction === 'asc' ? ' ↑' : ' ↓'
     return (
         <th
             onClick={onClick}
+            title={title}
             className={`text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap cursor-pointer select-none border-b border-border-light bg-bg-tertiary text-text-tertiary ${
                 numeric ? 'text-right' : 'text-left'
             }`}
@@ -97,14 +99,23 @@ function PlantScorecardTable({ colocationMap, plantNameByCode, rows }) {
     }
     const sorted = useMemo(() => {
         const dir = sortDir === 'asc' ? 1 : -1
+        /* Tier sort keys (`notGood`, `bad`, `veryBad`) live on the nested
+         * `tierCounts` object, not directly on the row. Resolve those
+         * inline before falling through to the generic numeric compare. */
+        const valueOf = (row) => {
+            if (sortKey === 'notGood') return row.tierCounts?.notGood ?? 0
+            if (sortKey === 'bad') return row.tierCounts?.bad ?? 0
+            if (sortKey === 'veryBad') return row.tierCounts?.veryBad ?? 0
+            return row[sortKey]
+        }
         const cmp = (a, b) => {
             if (sortKey === 'plant') {
                 const al = formatColocatedPlantLabel(a.code, plantNameByCode, colocationMap)
                 const bl = formatColocatedPlantLabel(b.code, plantNameByCode, colocationMap)
                 return al.localeCompare(bl) * dir
             }
-            const av = a[sortKey]
-            const bv = b[sortKey]
+            const av = valueOf(a)
+            const bv = valueOf(b)
             const an = av == null ? -Infinity : av
             const bn = bv == null ? -Infinity : bv
             return (an - bn) * dir
@@ -138,11 +149,28 @@ function PlantScorecardTable({ colocationMap, plantNameByCode, rows }) {
                             onClick={() => toggleSort('goodJobs')}
                         />
                         <ColumnHeader
-                            active={sortKey === 'lateJobs'}
+                            active={sortKey === 'notGood'}
                             direction={sortDir}
-                            label="Late"
+                            label="Not Good"
                             numeric
-                            onClick={() => toggleSort('lateJobs')}
+                            onClick={() => toggleSort('notGood')}
+                            title="Orders 15–29 min late"
+                        />
+                        <ColumnHeader
+                            active={sortKey === 'bad'}
+                            direction={sortDir}
+                            label="Bad"
+                            numeric
+                            onClick={() => toggleSort('bad')}
+                            title="Orders 30–60 min late"
+                        />
+                        <ColumnHeader
+                            active={sortKey === 'veryBad'}
+                            direction={sortDir}
+                            label="Very Bad"
+                            numeric
+                            onClick={() => toggleSort('veryBad')}
+                            title="Orders > 60 min late"
                         />
                         <ColumnHeader
                             active={sortKey === 'slowJobs'}
@@ -150,6 +178,7 @@ function PlantScorecardTable({ colocationMap, plantNameByCode, rows }) {
                             label="Slow"
                             numeric
                             onClick={() => toggleSort('slowJobs')}
+                            title="Pour rate below 70% of requested — separate from lateness"
                         />
                         <ColumnHeader
                             active={sortKey === 'goodPct'}
@@ -190,9 +219,25 @@ function PlantScorecardTable({ colocationMap, plantNameByCode, rows }) {
                                 </td>
                                 <td
                                     className="px-3 py-2 text-right text-[12.5px] tabular-nums"
-                                    style={{ color: row.lateJobs > 0 ? LATE_COLOR : 'var(--text-secondary)' }}
+                                    style={{
+                                        color: row.tierCounts?.notGood > 0 ? '#f59e0b' : 'var(--text-secondary)'
+                                    }}
                                 >
-                                    {fmtInt(row.lateJobs)}
+                                    {fmtInt(row.tierCounts?.notGood || 0)}
+                                </td>
+                                <td
+                                    className="px-3 py-2 text-right text-[12.5px] tabular-nums"
+                                    style={{ color: row.tierCounts?.bad > 0 ? '#dc2626' : 'var(--text-secondary)' }}
+                                >
+                                    {fmtInt(row.tierCounts?.bad || 0)}
+                                </td>
+                                <td
+                                    className="px-3 py-2 text-right text-[12.5px] tabular-nums font-semibold"
+                                    style={{
+                                        color: row.tierCounts?.veryBad > 0 ? '#7f1d1d' : 'var(--text-secondary)'
+                                    }}
+                                >
+                                    {fmtInt(row.tierCounts?.veryBad || 0)}
                                 </td>
                                 <td
                                     className="px-3 py-2 text-right text-[12.5px] tabular-nums"
@@ -251,10 +296,11 @@ function CustomerList({ emptyMessage, rows }) {
                         <div className="text-[12.5px] font-semibold text-text-primary truncate" title={row.name}>
                             {row.name}
                         </div>
-                        <div className="text-[10.5px] text-text-tertiary">
+                        <div className="text-[10.5px] text-text-tertiary mb-0.5">
                             {fmtInt(row.badJobs)} bad of {fmtInt(row.jobs)} · {fmtInt(row.lateJobs)} late ·{' '}
                             {fmtInt(row.slowJobs)} slow
                         </div>
+                        <ServiceTierBreakdown tierCounts={row.tierCounts} compact />
                     </div>
                     <div className="text-right shrink-0">
                         <div
@@ -576,32 +622,42 @@ export default function PlanStatisticsServicePage({
                 innerClassName="p-0 overflow-hidden"
             >
                 {hasData ? (
-                    <StatGroup columns={4}>
-                        <Stat
-                            label="Good service"
-                            value={fmtPct(kpi.goodPct)}
-                            valueColor={goodPctColor(kpi.goodPct)}
-                            hint={`${fmtInt(kpi.goodJobs)} of ${fmtInt(kpi.totalJobs)} jobs — neither late nor slow`}
-                        />
-                        <Stat
-                            label="Late jobs"
-                            value={fmtInt(kpi.lateJobs)}
-                            valueColor={kpi.lateJobs > 0 ? LATE_COLOR : 'var(--text-primary)'}
-                            hint={`First load > ${threshold} min past scheduled start`}
-                        />
-                        <Stat
-                            label="Slow jobs"
-                            value={fmtInt(kpi.slowJobs)}
-                            valueColor={kpi.slowJobs > 0 ? SLOW_COLOR : 'var(--text-primary)'}
-                            hint="Pour rate under 70% of requested yd/hr"
-                        />
-                        <Stat
-                            label="Late + slow"
-                            value={fmtInt(kpi.lateAndSlow)}
-                            valueColor={kpi.lateAndSlow > 0 ? BOTH_COLOR : 'var(--text-primary)'}
-                            hint="Worst-case overlap — both failures on one order"
-                        />
-                    </StatGroup>
+                    <div className="flex flex-col gap-3 p-3">
+                        <StatGroup columns={4}>
+                            <Stat
+                                label="Good service"
+                                value={fmtPct(kpi.goodPct)}
+                                valueColor={goodPctColor(kpi.goodPct)}
+                                hint={`${fmtInt(kpi.goodJobs)} of ${fmtInt(kpi.totalJobs)} jobs — neither late nor slow`}
+                            />
+                            <Stat
+                                label="Late jobs"
+                                value={fmtInt(kpi.lateJobs)}
+                                valueColor={kpi.lateJobs > 0 ? LATE_COLOR : 'var(--text-primary)'}
+                                hint={`First load > ${threshold} min past scheduled start`}
+                            />
+                            <Stat
+                                label="Slow jobs"
+                                value={fmtInt(kpi.slowJobs)}
+                                valueColor={kpi.slowJobs > 0 ? SLOW_COLOR : 'var(--text-primary)'}
+                                hint="Pour rate under 70% of requested yd/hr"
+                            />
+                            <Stat
+                                label="Late + slow"
+                                value={fmtInt(kpi.lateAndSlow)}
+                                valueColor={kpi.lateAndSlow > 0 ? BOTH_COLOR : 'var(--text-primary)'}
+                                hint="Worst-case overlap — both failures on one order"
+                            />
+                        </StatGroup>
+                        {/* Severity breakdown of the bad slice — tiered by
+                            lateness so the dispatcher sees how many orders
+                            were mildly off (15 min) vs. catastrophically
+                            late (60+ min). */}
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-text-tertiary">
+                            <span className="font-semibold uppercase tracking-wider">Bad-service breakdown:</span>
+                            <ServiceTierBreakdown tierCounts={kpi.tierCounts} showZero />
+                        </div>
+                    </div>
                 ) : (
                     <div className="p-3">
                         <EmptySection
@@ -639,11 +695,9 @@ export default function PlanStatisticsServicePage({
                 )}
             </Panel>
 
-            <Panel title="Customers feeling the bad service" innerClassName="p-3">
+            <Panel title="Customers with the worst service" innerClassName="p-3">
                 <div className="text-[11.5px] mb-2 text-text-secondary">
-                    Accounts experiencing the most bad-service jobs (min 2 jobs in window). These customers don't cause
-                    the lateness or slow pace — but they absorb it, and the on-time conversation needs to happen with
-                    them.
+                    These are the customers who have had the worst service (min 2 jobs in window).
                 </div>
                 <CustomerList rows={byCustomer} emptyMessage="No customers with bad service in this window." />
             </Panel>

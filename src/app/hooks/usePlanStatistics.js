@@ -4,8 +4,8 @@ import { DispatchDataService } from '../../services/DispatchDataService'
 import { MixerService } from '../../services/MixerService'
 import { OperatorService } from '../../services/OperatorService'
 import { PlanService } from '../../services/PlanService'
-import { enrichDetailEntryWithSchedule } from '../../utils/PlanDetailEnrichment'
 import { nameLookupVariants } from '../../utils/OperatorNameLookupUtility'
+import { enrichDetailEntryWithSchedule } from '../../utils/PlanDetailEnrichment'
 import { parseIsoLocal } from '../../utils/PlanStatisticsFormatUtility'
 import {
     aggregateMetrics,
@@ -217,6 +217,7 @@ export function usePlanStatistics({
     plantsEnabled = false,
     serviceEnabled = false,
     kickersEnabled = false,
+    ticketLookupEnabled = false,
     colocationMap = null
 }) {
     const [period, setPeriod] = useState('week')
@@ -590,7 +591,8 @@ export function usePlanStatistics({
             !helpCrossLoadingEnabled &&
             !plantsEnabled &&
             !serviceEnabled &&
-            !kickersEnabled
+            !kickersEnabled &&
+            !ticketLookupEnabled
         )
             return undefined
         const allDays = [...currentDays, ...previousDays]
@@ -653,10 +655,23 @@ export function usePlanStatistics({
      *  all plants — the plant comparison chart needs the unfiltered set. */
     const flatOrders = useMemo(
         () =>
-            satisfactionEnabled || helpCrossLoadingEnabled || plantsEnabled || serviceEnabled || kickersEnabled
+            satisfactionEnabled ||
+            helpCrossLoadingEnabled ||
+            plantsEnabled ||
+            serviceEnabled ||
+            kickersEnabled ||
+            ticketLookupEnabled
                 ? flattenLiveOrders(currentRows)
                 : [],
-        [currentRows, satisfactionEnabled, helpCrossLoadingEnabled, plantsEnabled, serviceEnabled, kickersEnabled]
+        [
+            currentRows,
+            satisfactionEnabled,
+            helpCrossLoadingEnabled,
+            plantsEnabled,
+            serviceEnabled,
+            kickersEnabled,
+            ticketLookupEnabled
+        ]
     )
 
     /** Flat `orderId → {scheduledYardage, loadSize}` lookup derived from
@@ -922,6 +937,7 @@ export function usePlanStatistics({
                 goodService: aggregate.goodService,
                 samples: aggregate.samples,
                 score: Math.round(aggregate.score * 100),
+                tierCounts: aggregate.tierCounts,
                 trajectory,
                 yardage: Math.round(entry.yardage)
             })
@@ -1097,9 +1113,7 @@ export function usePlanStatistics({
             key: '__unmatched__',
             loads: 0,
             loadsByPlant: new Map(),
-            name: 'Unmatched drivers',
-            operatorHomePlant: null,
-            operatorStatus: null,
+            name: 'Unmatched operators',
             /* Per-unique-driver aggregates so dispatch can see exactly
              * which names need fixing AND how much each one costs in
              * unverifiable loads. Keyed by uppercased raw name so two
@@ -1108,6 +1122,10 @@ export function usePlanStatistics({
              * — everything needed for an actionable bug report without
              * the dispatcher having to dig back into the ticket data. */
             namesByKey: new Map(),
+
+            operatorHomePlant: null,
+
+            operatorStatus: null,
             trucksDriven: new Set(),
             unmatched: true,
             yardage: 0
@@ -1160,7 +1178,7 @@ export function usePlanStatistics({
                                 (unmatchedBucket.loadsByPlant.get(loaderPlant) || 0) + 1
                             )
                         }
-                        const sampleLabel = rawName || (driverNum ? `Driver #${driverNum}` : 'Unknown')
+                        const sampleLabel = rawName || (driverNum ? `Operator #${driverNum}` : 'Unknown')
                         const dedupeKey = (rawName || `__num__:${driverNum || '__unknown__'}`).toUpperCase()
                         let bucket = unmatchedBucket.namesByKey.get(dedupeKey)
                         if (!bucket) {

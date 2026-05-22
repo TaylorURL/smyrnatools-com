@@ -67,12 +67,135 @@ export const formatCallListPhone = (phone: string | null | undefined): string =>
     return phone
 }
 
+interface ParsedPhone {
+    /** Pretty-printed form for display, e.g. `(713) 555-0001`. */
+    display: string
+    /** `tel:` href value — strips formatting, keeps leading `+` if present. */
+    href: string
+    /** Optional inline label captured from the source, e.g. `Office`,
+     *  `Mobile`, `Alt`. Empty when no label was found. */
+    label: string
+    /** Stable identity for `key=` props + the "tried" multi-select set —
+     *  digits-only so cosmetic formatting changes don't fragment selection. */
+    key: string
+    /** The exact raw substring we extracted, preserved for logging back
+     *  into the call entry so audit history shows what the dispatcher
+     *  actually saw on screen. */
+    raw: string
+}
+
+/** Splits a dispatch-imported `phone` field into one or more parsed phone
+ *  entries. The Daily Order Listing crams multiple numbers into a single
+ *  string — typical separators are comma, semicolon, slash, the word
+ *  "or", or a newline. Inline labels in parentheses or after a colon are
+ *  extracted into the `label` field so the UI can render them as
+ *  `(713) 555-0001 · Office` instead of mashing the label into the
+ *  formatted number. Returns an empty array for blank input. */
+export const parsePhoneNumbers = (raw: string | null | undefined): ParsedPhone[] => {
+    if (!raw) return []
+    const text = String(raw).trim()
+    if (!text) return []
+    // Split on common separators. The dispatch import sometimes uses the
+    // literal word "or" between numbers ("(713) 555-0001 or (713) 555-0002")
+    // so we substitute that to a comma first.
+    const normalized = text
+        .replace(/\bor\b/gi, ',')
+        .replace(/\b(?:and|cell|office|mobile|fax|alt)\s*[:#-]?\s*/gi, (match) => `, ${match.trim()}: `)
+    const chunks = normalized
+        .split(/[,;|\n\r/]+/)
+        .map((c) => c.trim())
+        .filter(Boolean)
+    const out: ParsedPhone[] = []
+    const seen = new Set<string>()
+    for (const chunk of chunks) {
+        // Pull a trailing or leading label like "Office:", "(office)", "mobile -"
+        let label = ''
+        let numberPart = chunk
+        const parenLabel = chunk.match(/\(([^()0-9]+)\)/)
+        if (parenLabel && parenLabel[1] && /[a-z]/i.test(parenLabel[1])) {
+            label = parenLabel[1].trim()
+            numberPart = chunk.replace(parenLabel[0], '').trim()
+        }
+        const colonLabel = numberPart.match(/^([A-Za-z][A-Za-z\s]*)[:\-#]\s*/)
+        if (colonLabel) {
+            label = label || colonLabel[1].trim()
+            numberPart = numberPart.slice(colonLabel[0].length).trim()
+        }
+        const trailingLabel = numberPart.match(/[\s\-:]([A-Za-z][A-Za-z\s]*)$/)
+        if (!label && trailingLabel) {
+            label = trailingLabel[1].trim()
+            numberPart = numberPart.slice(0, trailingLabel.index).trim()
+        }
+        const digits = numberPart.replace(/\D/g, '')
+        if (digits.length < 7) continue
+        const key = digits.startsWith('1') && digits.length === 11 ? digits.slice(1) : digits
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push({
+            display: formatCallListPhone(numberPart) || numberPart,
+            href: numberPart.startsWith('+') ? `+${digits}` : digits,
+            key,
+            label: label.replace(/\s+/g, ' ').trim(),
+            raw: numberPart
+        })
+    }
+    return out
+}
+
+/** Returns the ISO date (YYYY-MM-DD) for `value` in the user's local
+ *  timezone. Used to bucket call entries into "today" for the goal bar. */
+export const localIsoDate = (value: string | Date | null | undefined): string => {
+    if (!value) return ''
+    const d = typeof value === 'string' ? new Date(value) : value
+    if (Number.isNaN(d.getTime())) return ''
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+}
+
+/** Default daily call target — used as the denominator for the goal bar
+ *  at the top of the Call List view. Tuned for a focused cold-calling
+ *  session (~30 min of calls at ~1.5 min each). The user can adjust this
+ *  via the goal pill inline once a session settings table exists. */
+export const DEFAULT_DAILY_CALL_TARGET = 20
+
+/** Per-outcome weight for the "session momentum" hint shown next to the
+ *  goal bar. Booked is worth the most because it's the only outcome that
+ *  directly drives yardage; will-book-again is the warm follow-up;
+ *  no-answer and notes get a small boost for the effort. */
+export const CALL_OUTCOME_MOMENTUM_WEIGHTS: Record<string, number> = {
+    booked: 5,
+    not_interested: 1,
+    no_answer: 1,
+    note: 1,
+    will_book_again: 3
+}
+
 /** Color tone for the days-dormant badge — same red/amber/green tiers used
- *  by the schedule tab's other health indicators. */
+ *  by the schedule tab's other health indicators. Negative days mean the
+ *  customer is on the schedule for a future pour (their `last_pour_date` is
+ *  ahead of today), which is the healthiest state — render as green. */
 export const dormancyTone = (days: number): string => {
+    if (days < 0) return '#16a34a'
     if (days >= 180) return '#dc2626'
     if (days >= 90) return '#d97706'
     return '#16a34a'
+}
+
+/** True when the customer's most recent recorded pour is in the future,
+ *  i.e. they're booked on an upcoming schedule but haven't poured yet.
+ *  The aggregator reports this as a negative day count. */
+export const isCustomerOnSchedule = (days: number | null | undefined): boolean =>
+    Number.isFinite(days as number) && (days as number) < 0
+
+/** Formats the days-since-last-pour value for display. Customers booked for
+ *  a future pour (negative days) read as "On Schedule" rather than a
+ *  meaningless `-3d`. Falls back to `Nd` for normal dormant rows. */
+export const formatDormancyLabel = (days: number | null | undefined, suffix = ''): string => {
+    if (!Number.isFinite(days as number)) return '—'
+    if ((days as number) < 0) return 'On Schedule'
+    return `${days}d${suffix}`
 }
 
 /** Cooldown after a logged call. Customers contacted within this window are

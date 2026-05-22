@@ -54,6 +54,7 @@ export default function DashboardView() {
         permittedRegions,
         plantModalOpen,
         refreshing,
+        regionGroups,
         regionPlants,
         regionPlantsLoaded,
         setDashboardPlant,
@@ -73,7 +74,14 @@ export default function DashboardView() {
         userAdditionalPlants.forEach((code) => codes.add(code))
         return codes
     }, [userPlantCode, userAdditionalPlants])
-    const plantFilter = usePlantFilter(dashboardRegionCode, dashboardPlant, regionPlants, allPlants, myPlantCodesSet)
+    const plantFilter = usePlantFilter(
+        dashboardRegionCode,
+        dashboardPlant,
+        regionPlants,
+        allPlants,
+        myPlantCodesSet,
+        regionGroups
+    )
     const {
         createFilterFn: activeCreateFilterFn,
         plantSetRef: activePlantSetRef,
@@ -200,7 +208,17 @@ export default function DashboardView() {
     })()
     const heroRegionSub = (() => {
         const isOffice = selectedRegion?.type === 'Office'
-        if (isOffice) {
+        // Office-mode REGION/DISTRICT/plant drill-downs share a label
+        // shape with the regular regions so the header reads identically
+        // regardless of which scope the user picked.
+        if (dashboardPlant?.startsWith('REGION:')) {
+            const code = dashboardPlant.slice(7)
+            const group = (regionGroups || []).find((g) => g.code === code)
+            const count = group?.plantCodes?.length || 0
+            const label = group?.type === 'Aggregate' ? 'Aggregate Location' : 'Concrete Plant'
+            return `${group?.name || code} · ${count} ${label}${count !== 1 ? 's' : ''}`
+        }
+        if (isOffice && !dashboardPlant) {
             return `${totalRegionsExcludingOffice} Region${totalRegionsExcludingOffice !== 1 ? 's' : ''}, ${totalPlantsExcludingAggregate} Concrete Plant${totalPlantsExcludingAggregate !== 1 ? 's' : ''}, ${totalAggregateLocations} Aggregate Location${totalAggregateLocations !== 1 ? 's' : ''}`
         }
         const plantLabel = isAggregate ? 'Aggregate Location' : 'Concrete Plant'
@@ -241,7 +259,7 @@ export default function DashboardView() {
                 regionDisplayName={regionDisplayName}
             />
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
-                <div className="w-full px-3 sm:px-4 lg:px-6 flex gap-4">
+                <div className="w-full px-3 sm:px-4 lg:px-6 flex flex-col lg:flex-row gap-3 lg:gap-4">
                     <DashboardPodcastPanel />
 
                     <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
@@ -297,7 +315,13 @@ export default function DashboardView() {
                 isOpen={plantModalOpen}
                 onClose={() => setPlantModalOpen(false)}
                 onSelect={(plantCode) => setDashboardPlant(plantCode === 'All' ? '' : plantCode)}
-                plants={regionPlants}
+                // Home Office can't filter by its own plants (there are none) —
+                // surface every plant in the org plus a regions section so the
+                // dispatcher can scope by region → district → plant from a
+                // single modal. Regular regions keep showing just their own
+                // plants and districts.
+                plants={selectedRegion?.type === 'Office' ? allPlants : regionPlants}
+                regionGroups={selectedRegion?.type === 'Office' ? regionGroups : []}
                 showAllPlants={true}
                 showMyPlants={false}
                 userPlantCode={userPlantCode}
