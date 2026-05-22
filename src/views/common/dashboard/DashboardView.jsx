@@ -260,7 +260,11 @@ export default function DashboardView() {
             />
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
                 <div className="w-full px-3 sm:px-4 lg:px-6 flex flex-col lg:flex-row gap-3 lg:gap-4">
-                    <DashboardPodcastPanel />
+                    {/* Podcast panel is desktop-only — the embedded player
+                        consumes vertical real estate that phones can't
+                        afford, and the show notes don't shorten cleanly
+                        for a narrow column. */}
+                    {!isMobile && <DashboardPodcastPanel />}
 
                     <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                         {error && (

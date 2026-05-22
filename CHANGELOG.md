@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026.21.22] - 2026-05-21
+
+- Dashboard no longer renders the SRM Podcast panel on mobile
+  (`src/views/common/dashboard/DashboardView.jsx`). The embedded player
+  + show-notes column consumes vertical real estate phones can't afford
+  and didn't shorten cleanly into a narrow layout, pushing the rest of
+  the dashboard offscreen.
+
 ## [2026.21.21] - 2026-05-21
 
 - Calculators page rebuilt as a 3-column layout matching the Plan
