@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from 'react'
 
 import { exportEfficiencyReport } from '../../../../app/components/modules/export/reports/EfficiencyExport'
+import { EFFICIENCY_THRESHOLDS } from '../../../../app/constants/reportConstants'
 import { ReportService } from '../../../../services/ReportService'
 import { ReportUtility } from '../../../../utils/ReportUtility'
 
@@ -209,10 +210,13 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
                 </thead>
                 <tbody>
                     {processed.map(({ r, dStart, dEnd, hours, lph, key }) => {
-                        const warnStart = dStart !== null && dStart > 15
-                        const warnEnd = dEnd !== null && dEnd > 20
-                        const lowLoads = r.loads !== undefined && r.loads !== '' && Number(r.loads) < 3
-                        const longHours = hours !== null && hours > 14
+                        const warnStart = dStart !== null && dStart > EFFICIENCY_THRESHOLDS.LATE_START_LIMIT_MIN
+                        const warnEnd = dEnd !== null && dEnd > EFFICIENCY_THRESHOLDS.LATE_OFF_LIMIT_MIN
+                        const lowLoads =
+                            r.loads !== undefined &&
+                            r.loads !== '' &&
+                            Number(r.loads) < EFFICIENCY_THRESHOLDS.LOW_LOADS_THRESHOLD
+                        const longHours = hours !== null && hours > EFFICIENCY_THRESHOLDS.LONG_HOURS_THRESHOLD
                         const needsComment = warnStart || warnEnd || lowLoads || longHours
                         const hasComment = r.comments?.trim()
                         const missingRequiredComment = needsComment && !hasComment
@@ -256,7 +260,7 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
                                     style={{
                                         ...rowStyle,
                                         color:
-                                            hours !== null && hours > 20
+                                            hours !== null && hours > EFFICIENCY_THRESHOLDS.LONG_HOURS_DANGER_THRESHOLD
                                                 ? '#dc2626'
                                                 : longHours
                                                   ? '#b45309'

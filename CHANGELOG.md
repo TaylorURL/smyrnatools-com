@@ -1,5 +1,25 @@
 # Changelog
 
+## [2026.21.26] - 2026-05-22
+
+- Plant Manager Weekly Efficiency Report now allows +10 min leniency
+  on both timing thresholds. The "LATE START" badge (and the
+  exported spreadsheet's bolded red `Δ Start` cell) trips at >25 min
+  between punch-in and first load — up from 15. The "LATE OFF" badge
+  trips at >30 min between washout (EOD in yard) and punch out — up
+  from 20. LOW LOADS (<3) and LONG HOURS (>14h) thresholds are
+  unchanged.
+- Single-source-of-truth refactor along the way
+  (`src/app/constants/reportConstants.js`,
+  `src/app/components/modules/export/reports/EfficiencyExport.js`,
+  `src/views/reporting/reports/types/WeeklyEfficiencyReport.jsx`):
+  the on-screen review surface and the Excel export were each
+  maintaining their own copy of the five threshold numbers (15, 20,
+  3, 14, 20), and the export file's own comment warned about drift.
+  All five live on the new `EFFICIENCY_THRESHOLDS` named export and
+  both consumers now import from there — future tweaks land in one
+  place.
+
 ## [2026.21.25] - 2026-05-22
 
 - New per-customer realtime presence on the Call List → customer

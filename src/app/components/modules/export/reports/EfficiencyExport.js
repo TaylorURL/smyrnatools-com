@@ -7,6 +7,7 @@ import {
     COLORS
 } from '../../../../../utils/ExportUtility'
 import { ReportUtility } from '../../../../../utils/ReportUtility'
+import { EFFICIENCY_THRESHOLDS } from '../../../../constants/reportConstants'
 import { createSheet, exportWorkbook, finalizeSheet, generateFilename, initExport } from '../ExportModule'
 
 /* ── Layout constants ─────────────────────────────────────────────────────
@@ -19,12 +20,14 @@ const STAT_TILE_COLS_PER_TILE = 3
 const STAT_TILES_PER_ROW = 4
 const STAT_TILE_VALUE_FORMAT = { argb: 'FF1F2937' }
 
-/* ── Threshold rules — kept here so the export and the on-screen badges
- *    use the same numbers without drifting. */
-const PUNCH_TO_LOAD_LIMIT_MIN = 15
-const WASHOUT_TO_PUNCH_LIMIT_MIN = 20
-const LOW_LOADS_THRESHOLD = 3
-const LONG_HOURS_THRESHOLD = 14
+/* ── Threshold rules — sourced from `app/constants/reportConstants.js` so
+ *    the export and the on-screen badges read the same numbers. */
+const {
+    LATE_OFF_LIMIT_MIN: WASHOUT_TO_PUNCH_LIMIT_MIN,
+    LATE_START_LIMIT_MIN: PUNCH_TO_LOAD_LIMIT_MIN,
+    LONG_HOURS_THRESHOLD,
+    LOW_LOADS_THRESHOLD
+} = EFFICIENCY_THRESHOLDS
 
 const formatLongDate = (iso) => {
     if (!iso) return ''
