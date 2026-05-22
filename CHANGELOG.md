@@ -1,5 +1,46 @@
 # Changelog
 
+## [2026.21.25] - 2026-05-22
+
+- New per-customer realtime presence on the Call List → customer
+  detail surface
+  (`src/app/components/plan/tabs/call-list/CallListCustomerCard.jsx`,
+  `src/app/hooks/useCallListCustomerPresence.js`). The moment two
+  dispatchers open the same customer, both see an amber warning chip
+  with the other's name + role so nobody dials a number that's
+  already in flight. Modelled on `usePlanPresence` — ephemeral
+  Supabase Realtime channel keyed by
+  `call-list-customer:${customer_num}`, no DB writes, no heartbeats.
+  Leaving the detail clears the chip on every other client within
+  the channel's sync window (~300ms).
+- Activity feed on the Call List rebuilt around three layers
+  (`src/app/components/plan/tabs/call-list/CallListPages.jsx`): a KPI
+  strip (calls today / this week, booked rate, unique customers, top
+  caller), a stacked outcome breakdown bar showing the mix at a
+  glance, and a date-grouped timeline (Today / Yesterday / This week
+  / Earlier) of every entry. Clicking a row still pivots into the
+  matching customer's detail surface — same target, just framed with
+  context above so the team can see WHO is making progress and WHAT
+  outcomes are landing. New toolbar carries a time-range selector,
+  outcome chip filter, and a search field that matches name /
+  customer number / note text.
+- Team Monitor time-range selector
+  (`src/app/components/plan/tabs/call-list/CallListTeamMonitorPage.jsx`)
+  rebuilt as a segmented button row with a "Time frame" label, and
+  the option set expanded to Today / This week / 30 days / 90 days /
+  Year / All. Mirrors the Activity feed's selector so both surfaces
+  read the same.
+- Statistics ticket-to-operator matching now uses truck number as
+  the primary disambiguator (`src/app/hooks/usePlanStatistics.js`).
+  Two operators sharing a name (e.g. duplicate roster entries) no
+  longer collapse onto one row: each operator's mixer assignment
+  drives the ticket attribution, with the name-variant lookup kept
+  as a fallback for spares without a fixed truck. The truck-based
+  hit is only accepted when the resolved operator's name canonicalises
+  to the ticket's `driver_name`, so a spare driver who took someone
+  else's truck for one load doesn't bleed into the regular driver's
+  numbers.
+
 ## [2026.21.24] - 2026-05-22
 
 - Statistics → Operators page now splits the operator list into

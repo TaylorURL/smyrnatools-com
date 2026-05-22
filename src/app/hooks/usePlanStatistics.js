@@ -377,6 +377,44 @@ export function usePlanStatistics({
         return out
     }, [activeMixers])
 
+    /** Truck number → assigned-operator employeeId. The PRIMARY
+     *  disambiguator when two active operators share a name: each is on
+     *  their own mixer, so the ticket's `truck_num` plus this map
+     *  uniquely identifies which operator drove that load. Falls back to
+     *  the name-variant lookup whenever no mixer is registered for the
+     *  truck (spare drivers without a fixed assignment, equipment moves,
+     *  etc.). First-seen wins on truck-number collisions — those should
+     *  never happen in clean data. */
+    const mixerByTruckNumber = useMemo(() => {
+        const out = new Map()
+        ;(activeMixers || []).forEach((m) => {
+            const truck = String(m.truckNumber || '').trim()
+            if (!truck) return
+            const employeeId = String(m.assignedOperator || '').trim()
+            if (!employeeId) return
+            if (!out.has(truck)) {
+                out.set(truck, {
+                    assignedPlant: String(m.assignedPlant || '').trim() || null,
+                    employeeId
+                })
+            }
+        })
+        return out
+    }, [activeMixers])
+
+    /** UUID → operator record. Used to translate the truck-based mixer
+     *  lookup back into the full operator record so the per-row
+     *  display fields (name, status, plant) come from the canonical
+     *  Tools roster rather than the dispatch ticket's spelling. */
+    const operatorByEmployeeId = useMemo(() => {
+        const out = new Map()
+        ;(operatorRoster || []).forEach((op) => {
+            const id = String(op?.employeeId ?? '').trim()
+            if (id) out.set(id, op)
+        })
+        return out
+    }, [operatorRoster])
+
     /** Direct lookup: normalized operator name → active mixer assignment.
      *  Built by joining the active-mixer roster against the operator records
      *  by `employeeId` and keying the result by `operator.name`. Lets us
@@ -1140,26 +1178,44 @@ export function usePlanStatistics({
                     const rawName = (ticket?.driverName || '').toString().trim()
                     const driverNum = (ticket?.driverNum || '').toString().trim()
                     const truckNum = (ticket?.truckNum || '').toString().trim()
-                    /* Match the ticket's `driver_name` against the operator
-                     * roster by canonicalised name. Names are the only link
-                     * between Jonel ticket data and the Tools operator
-                     * records — we deliberately do NOT look at the
-                     * dispatch `driver_num` column, which is a Jonel-side
-                     * identifier the operator records don't carry.
+                    /* Match the ticket to the operator roster. Two-stage
+                     * lookup so namesakes don't collapse onto one row:
                      *
-                     * Lookup tries ALL variants of the ticket name (full
-                     * canonical + first+last short key) so the match
-                     * succeeds whichever side carries the middle name. A
-                     * roster entry of "Bobby Johnson" matches a ticket
-                     * reading "BOBBY A JOHNSON" because the ticket's short
-                     * variant is "BOBBY JOHNSON" — the registered key. */
+                     *   1. Truck-number lookup. Each operator has their
+                     *      own mixer, so `ticket.truck_num` →
+                     *      `assignedOperator.employeeId` uniquely
+                     *      identifies which operator drove the load. We
+                     *      ONLY trust this when the resolved operator's
+                     *      name matches the ticket's `driver_name`
+                     *      (canonicalised) — otherwise a spare driver
+                     *      who drove someone else's truck for one load
+                     *      would get attributed to the regular driver.
+                     *   2. Name-variant lookup against `operatorByNormalizedName`.
+                     *      Same as before — handles spares without a
+                     *      fixed mixer and tickets where the truck
+                     *      doesn't resolve. When two operators share a
+                     *      name, this still collapses to one row, but
+                     *      stage 1 already split the common case. */
                     const nameVariants = nameLookupVariants(rawName)
                     let operator = null
-                    for (const variant of nameVariants) {
-                        const hit = operatorByNormalizedName.get(variant)
-                        if (hit) {
-                            operator = hit
-                            break
+                    if (truckNum) {
+                        const mixerHit = mixerByTruckNumber.get(truckNum)
+                        if (mixerHit?.employeeId) {
+                            const opByTruck = operatorByEmployeeId.get(mixerHit.employeeId)
+                            if (opByTruck) {
+                                const truckOpVariants = nameLookupVariants(opByTruck.name)
+                                const namesMatch = nameVariants.some((v) => truckOpVariants.includes(v))
+                                if (namesMatch) operator = opByTruck
+                            }
+                        }
+                    }
+                    if (!operator) {
+                        for (const variant of nameVariants) {
+                            const hit = operatorByNormalizedName.get(variant)
+                            if (hit) {
+                                operator = hit
+                                break
+                            }
                         }
                     }
                     const yardage = parseFloat(ticket?._confirmedQuantity) || parseFloat(ticket?.quantity) || 0
@@ -1391,7 +1447,9 @@ export function usePlanStatistics({
         activeMixers,
         operatorRoster,
         operatorByNormalizedName,
+        operatorByEmployeeId,
         mixerByEmployeeId,
+        mixerByTruckNumber,
         activeAssignmentByName
     ])
 

@@ -1,4 +1,4 @@
-/* eslint-disable react/forbid-dom-props */
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { mergeCustomerContacts, normalizeContactDigits } from '../../../../../utils/CallListContactsUtility'
@@ -16,6 +16,7 @@ import {
 import DateUtility from '../../../../../utils/DateUtility'
 import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { useAuth } from '../../../../context/AuthContext'
+import useCallListCustomerPresence from '../../../../hooks/useCallListCustomerPresence'
 import useCustomerServiceLookup from '../../../../hooks/useCustomerServiceLookup'
 import { CustomerServiceContext, CustomerServiceContextSkeleton, StatBlock } from '../statistics/CustomerServiceContext'
 
@@ -137,6 +138,14 @@ export function CallListCustomerDetail({
     const [comment, setComment] = useState('')
     const [submitting, setSubmitting] = useState(null)
 
+    /* Per-customer realtime presence. The moment two dispatchers open
+     * the same customer detail, both see a warning chip with the other's
+     * name so nobody dials a number that's already in flight. Channel
+     * dies with the component, so navigating away clears the chip on
+     * every other client within the realtime sync window. */
+    const { users: presenceUsers } = useCallListCustomerPresence(row.customer_num, { userId: currentUserId })
+    const otherViewers = useMemo(() => presenceUsers.filter((u) => !u.isSelf), [presenceUsers])
+
     /** Pull the same per-customer service-quality context Statistics →
      *  Customer Lookup surfaces. Gives the dispatcher cold-call talking
      *  points (good %, late/slow tallies, recent verdict trail) inline
@@ -185,6 +194,7 @@ export function CallListCustomerDetail({
 
     return (
         <div className="rounded-md p-4 bg-bg-primary border border-border-light flex flex-col gap-5">
+            <CustomerPresenceBanner viewers={otherViewers} />
             <div className="flex items-baseline justify-between gap-3">
                 <div className="min-w-0">
                     <h3 className="text-[17px] font-semibold m-0 truncate text-text-primary" title={row.customer_name}>
@@ -339,6 +349,59 @@ export function CallListCustomerDetail({
                         isLoading={isLoadingHistory}
                         onDelete={onDeleteEntry ? (logId) => onDeleteEntry(row.customer_num, logId) : null}
                     />
+                </div>
+            </div>
+        </div>
+    )
+}
+
+/** Live "X is also viewing this customer" warning. Hidden when no
+ *  other dispatcher is on the same customer detail. Renders an amber
+ *  banner with the other viewers' names and roles so the dispatcher
+ *  can coordinate before dialling. Driven by
+ *  `useCallListCustomerPresence` — purely ephemeral, no DB writes. */
+function CustomerPresenceBanner({ viewers }) {
+    if (!viewers || viewers.length === 0) return null
+    const names = viewers.map((v) => v.name)
+    const message =
+        viewers.length === 1
+            ? `${names[0]} is also viewing this customer`
+            : viewers.length === 2
+              ? `${names[0]} and ${names[1]} are also viewing this customer`
+              : `${names[0]} and ${viewers.length - 1} others are also viewing this customer`
+    return (
+        <div
+            className="rounded-md flex items-start gap-3 px-3 py-2.5"
+            style={{
+                background: 'rgba(245, 158, 11, 0.12)',
+                border: '1px solid rgba(245, 158, 11, 0.35)'
+            }}
+            role="status"
+        >
+            <i className="fas fa-triangle-exclamation text-[14px] mt-0.5" style={{ color: '#b45309' }} />
+            <div className="flex-1 min-w-0">
+                <div className="text-[12.5px] font-semibold" style={{ color: '#92400e' }}>
+                    {message}
+                </div>
+                <div className="text-[11px] mt-0.5" style={{ color: '#b45309' }}>
+                    Coordinate before calling so this customer isn&apos;t dialled twice.
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {viewers.map((v) => (
+                        <span
+                            key={v.userId}
+                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
+                            style={{
+                                background: 'rgba(245, 158, 11, 0.18)',
+                                color: '#92400e'
+                            }}
+                            title={v.role || undefined}
+                        >
+                            <i className="fas fa-circle text-[6px]" style={{ color: '#16a34a' }} />
+                            {v.name}
+                            {v.role && <span className="opacity-70">· {v.role}</span>}
+                        </span>
+                    ))}
                 </div>
             </div>
         </div>

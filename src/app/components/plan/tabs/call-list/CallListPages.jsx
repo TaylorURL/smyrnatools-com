@@ -1,4 +1,4 @@
-/* eslint-disable react/forbid-dom-props */
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
 import {
@@ -428,12 +428,124 @@ function StatusFilterRow({ activeKey, onSelect, roster }) {
     )
 }
 
+/* ─── Activity feed — metrics + grouped timeline ──────────────────
+ *
+ * Rebuilt around three layers: a KPI strip (calls today / this week,
+ * booked rate, unique customers, top caller), a stacked outcome bar
+ * showing the mix at a glance, and a date-grouped timeline of every
+ * entry. Clicking a row jumps into the matching customer's detail
+ * surface — same pivot the old design supported, just framed with
+ * context above so the team can see WHO is making progress and WHAT
+ * outcomes are landing.
+ */
+
+const ICON_BY_OUTCOME = {
+    booked: 'fa-circle-check',
+    no_answer: 'fa-phone-slash',
+    not_interested: 'fa-circle-xmark',
+    note: 'fa-note-sticky',
+    will_book_again: 'fa-rotate-right'
+}
+
+const TIME_RANGE_OPTIONS = [
+    { days: 1, key: 'today', label: 'Today' },
+    { days: 7, key: 'week', label: 'This week' },
+    { days: 30, key: 'month', label: '30 days' },
+    { days: null, key: 'all', label: 'All' }
+]
+
+const startOfDayMs = (date) => {
+    const d = new Date(date)
+    d.setHours(0, 0, 0, 0)
+    return d.getTime()
+}
+
+const formatTimeOfDay = (iso) => {
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return ''
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+}
+
+const formatRelativeShort = (iso) => {
+    const ts = Date.parse(iso)
+    if (!Number.isFinite(ts)) return ''
+    const deltaSec = Math.round((Date.now() - ts) / 1000)
+    if (deltaSec < 45) return 'just now'
+    if (deltaSec < 60 * 60) return `${Math.round(deltaSec / 60)}m ago`
+    if (deltaSec < 60 * 60 * 24) return `${Math.round(deltaSec / 3600)}h ago`
+    return formatTimeOfDay(iso)
+}
+
+const initialsOf = (name) => {
+    if (!name) return '—'
+    const parts = String(name).trim().split(/\s+/)
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+    return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase()
+}
+
+/** Bucket entries into Today / Yesterday / This week / Earlier based
+ *  on local-time day boundaries. Order preserved within each bucket
+ *  (the caller already sorts newest-first). */
+function groupEntriesByDay(entries) {
+    const todayStart = startOfDayMs(new Date())
+    const yesterdayStart = todayStart - 86400000
+    const weekStart = todayStart - 6 * 86400000
+    const groups = { earlier: [], today: [], week: [], yesterday: [] }
+    entries.forEach((entry) => {
+        const ts = Date.parse(entry.created_at)
+        if (!Number.isFinite(ts)) {
+            groups.earlier.push(entry)
+            return
+        }
+        if (ts >= todayStart) groups.today.push(entry)
+        else if (ts >= yesterdayStart) groups.yesterday.push(entry)
+        else if (ts >= weekStart) groups.week.push(entry)
+        else groups.earlier.push(entry)
+    })
+    return groups
+}
+
+/** Metric rollup for the KPI strip + outcome breakdown bar. Pure: no
+ *  React state, no side effects. Run from a memo against the filtered
+ *  entry list. */
+function computeActivityMetrics(entries) {
+    const todayStart = startOfDayMs(new Date())
+    const weekStart = todayStart - 6 * 86400000
+    const outcomeCounts = {}
+    const callerCounts = new Map()
+    const uniqueCustomers = new Set()
+    let callsToday = 0
+    let callsWeek = 0
+    entries.forEach((entry) => {
+        const ts = Date.parse(entry.created_at)
+        if (Number.isFinite(ts)) {
+            if (ts >= todayStart) callsToday += 1
+            if (ts >= weekStart) callsWeek += 1
+        }
+        const outcome = entry.outcome || 'note'
+        outcomeCounts[outcome] = (outcomeCounts[outcome] || 0) + 1
+        if (entry.customer_num) uniqueCustomers.add(String(entry.customer_num))
+        const caller = entry.created_by_name?.trim()
+        if (caller) callerCounts.set(caller, (callerCounts.get(caller) || 0) + 1)
+    })
+    const topCaller = [...callerCounts.entries()].sort((a, b) => b[1] - a[1])[0] || null
+    const bookedRate = entries.length > 0 ? (outcomeCounts.booked || 0) / entries.length : 0
+    return {
+        bookedRate,
+        callsToday,
+        callsWeek,
+        outcomeCounts,
+        topCaller: topCaller ? { count: topCaller[1], name: topCaller[0] } : null,
+        total: entries.length,
+        uniqueCustomers: uniqueCustomers.size
+    }
+}
+
 /** Activity Feed — chronological log of every team call. Clicking an
  *  entry opens the matching customer's detail (same surface Outreach +
  *  Directory use) so dispatchers can pivot from "I see Bob called ACME
  *  yesterday" to "let me log my own follow-up" without leaving the
- *  tab. The skeleton matches the entry shape so the feed doesn't
- *  collapse on refresh. */
+ *  tab. */
 export function CallListActivityPage({
     accentColor,
     isLoading,
@@ -444,9 +556,21 @@ export function CallListActivityPage({
 }) {
     const [query, setQuery] = useState('')
     const [outcomeFilter, setOutcomeFilter] = useState('all')
+    const [timeRange, setTimeRange] = useState('all')
+
+    const timeFiltered = useMemo(() => {
+        const cfg = TIME_RANGE_OPTIONS.find((o) => o.key === timeRange)
+        if (!cfg?.days) return recentActivity
+        const cutoff = startOfDayMs(new Date()) - (cfg.days - 1) * 86400000
+        return recentActivity.filter((entry) => {
+            const ts = Date.parse(entry.created_at)
+            return Number.isFinite(ts) && ts >= cutoff
+        })
+    }, [recentActivity, timeRange])
+
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase()
-        return recentActivity.filter((entry) => {
+        return timeFiltered.filter((entry) => {
             if (outcomeFilter !== 'all' && entry.outcome !== outcomeFilter) return false
             if (!q) return true
             const haystack = [
@@ -461,138 +585,407 @@ export function CallListActivityPage({
                 .join(' | ')
             return haystack.includes(q)
         })
-    }, [recentActivity, query, outcomeFilter])
+    }, [timeFiltered, query, outcomeFilter])
 
-    // If parent has resolved a customer for activity click-through, hand
-    // off to the detail surface. The view-level pages pick it up via
-    // `onSelectCustomer` and render the appropriate page detail.
+    const metrics = useMemo(() => computeActivityMetrics(timeFiltered), [timeFiltered])
+    const groupedFiltered = useMemo(() => groupEntriesByDay(filtered), [filtered])
+
     if (selectedCustomerForActivity) {
         return selectedCustomerForActivity
     }
 
+    const showSkeleton = isLoading && recentActivity.length === 0
+    const showEmpty = !showSkeleton && filtered.length === 0
+    const hasOutcomeFilter = outcomeFilter !== 'all'
+
     return (
         <div className="flex flex-col gap-3 min-w-0">
-            <div
-                className="rounded-lg px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-bg-primary border border-border-light"
-                style={{ boxShadow: 'var(--shadow-sm)' }}
-            >
-                <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px] bg-bg-secondary border border-border-light">
-                    <i className="fas fa-magnifying-glass text-[11px] text-text-tertiary" />
-                    <input
-                        type="text"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search by customer, contact, note, or who called…"
-                        disabled={isLoading && recentActivity.length === 0}
-                        className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary disabled:opacity-60"
-                    />
-                </div>
-                <select
-                    value={outcomeFilter}
-                    onChange={(e) => setOutcomeFilter(e.target.value)}
-                    disabled={isLoading && recentActivity.length === 0}
-                    className="rounded-md px-2.5 py-1.5 text-[12.5px] cursor-pointer outline-none bg-bg-secondary border border-border-light text-text-primary disabled:opacity-60"
-                >
-                    <option value="all">All outcomes</option>
-                    {Object.entries(CALL_OUTCOME_LABELS).map(([key, label]) => (
-                        <option key={key} value={key}>
-                            {label}
-                        </option>
-                    ))}
-                </select>
-                <button
-                    type="button"
-                    onClick={onRefresh}
-                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-tertiary text-text-secondary"
-                    title="Reload activity feed"
-                >
-                    <i className="fas fa-rotate text-[10px]" />
-                    Refresh
-                </button>
-                <span className="text-[11.5px] text-text-tertiary tabular-nums">
-                    {isLoading && recentActivity.length === 0 ? (
-                        <span className="italic">Loading…</span>
-                    ) : (
-                        <>
-                            {filtered.length} of {recentActivity.length}
-                        </>
-                    )}
-                </span>
-            </div>
+            <ActivityMetrics
+                accentColor={accentColor}
+                isLoading={showSkeleton}
+                metrics={metrics}
+                rangeLabel={TIME_RANGE_OPTIONS.find((o) => o.key === timeRange)?.label || 'All'}
+            />
 
-            {isLoading && recentActivity.length === 0 ? (
+            <ActivityOutcomeBreakdown
+                isLoading={showSkeleton}
+                metrics={metrics}
+                onSelectOutcome={(key) => setOutcomeFilter((cur) => (cur === key ? 'all' : key))}
+                selectedOutcome={outcomeFilter}
+            />
+
+            <ActivityToolbar
+                hasOutcomeFilter={hasOutcomeFilter}
+                isLoading={showSkeleton}
+                onClearOutcome={() => setOutcomeFilter('all')}
+                onQueryChange={setQuery}
+                onRefresh={onRefresh}
+                onTimeRangeChange={setTimeRange}
+                outcomeFilter={outcomeFilter}
+                query={query}
+                shown={filtered.length}
+                timeRange={timeRange}
+                total={recentActivity.length}
+            />
+
+            {showSkeleton ? (
                 <ActivityListSkeleton />
-            ) : filtered.length === 0 ? (
-                <div className="rounded-lg p-6 text-center text-[12.5px] bg-bg-primary border border-border-light text-text-secondary">
-                    {recentActivity.length === 0
-                        ? 'No team calls logged yet.'
-                        : 'No entries match the current filters.'}
-                </div>
+            ) : showEmpty ? (
+                <ActivityEmpty hasFilters={hasOutcomeFilter || !!query.trim()} totalLoaded={recentActivity.length} />
             ) : (
-                <ActivityList accentColor={accentColor} entries={filtered} onSelectCustomer={onSelectCustomer} />
+                <ActivityGroupedList groups={groupedFiltered} onSelectCustomer={onSelectCustomer} />
             )}
         </div>
     )
 }
 
-function ActivityList({ entries, onSelectCustomer }) {
+/* ─── KPI strip ────────────────────────────────────────────────── */
+
+function ActivityMetrics({ accentColor, isLoading, metrics, rangeLabel }) {
+    if (isLoading) {
+        return (
+            <div className="rounded-lg overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 bg-bg-primary border border-border-light">
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <MetricSkel key={i} />
+                ))}
+            </div>
+        )
+    }
+    const bookedPct = Math.round((metrics.bookedRate || 0) * 100)
     return (
-        <div className="rounded-lg overflow-hidden bg-bg-primary border border-border-light">
-            <ol className="flex flex-col">
-                {entries.map((entry, idx) => {
-                    const tone = CALL_OUTCOME_COLORS[entry.outcome] || '#64748b'
+        <div className="rounded-lg overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 bg-bg-primary border border-border-light">
+            <MetricCell label="Calls today" value={metrics.callsToday} accent={accentColor} />
+            <MetricCell label="Calls this week" value={metrics.callsWeek} sub={`Range · ${rangeLabel}`} />
+            <MetricCell
+                label="Booked"
+                sub={metrics.total > 0 ? `${bookedPct}% of activity` : 'No activity'}
+                value={metrics.outcomeCounts.booked || 0}
+                valueColor={metrics.outcomeCounts.booked ? '#16a34a' : undefined}
+            />
+            <MetricCell label="Customers contacted" sub="Unique customer #" value={metrics.uniqueCustomers} />
+            <MetricCell
+                label="Top caller"
+                sub={
+                    metrics.topCaller
+                        ? `${metrics.topCaller.count} call${metrics.topCaller.count === 1 ? '' : 's'}`
+                        : '—'
+                }
+                value={metrics.topCaller ? metrics.topCaller.name : '—'}
+                valueText
+            />
+        </div>
+    )
+}
+
+function MetricCell({ accent, label, sub, value, valueColor, valueText }) {
+    return (
+        <div className="px-3 py-2.5 flex flex-col gap-0.5 bg-bg-primary border-r last:border-r-0 border-b sm:border-b-0 border-border-light">
+            <span className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-text-tertiary">{label}</span>
+            <span
+                className={`leading-tight font-semibold tabular-nums ${valueText ? 'text-[14px] truncate' : 'text-[20px] font-mono'}`}
+                style={{ color: valueColor || (accent && !valueText ? accent : 'var(--text-primary)') }}
+                title={valueText ? String(value) : undefined}
+            >
+                {value}
+            </span>
+            {sub && <span className="text-[10.5px] text-text-tertiary">{sub}</span>}
+        </div>
+    )
+}
+
+function MetricSkel() {
+    return (
+        <div className="px-3 py-2.5 flex flex-col gap-1 border-r last:border-r-0 border-b sm:border-b-0 border-border-light">
+            <div className="h-2 w-16 rounded bg-bg-tertiary animate-pulse" />
+            <div className="h-5 w-12 rounded bg-bg-tertiary animate-pulse" />
+            <div className="h-2 w-20 rounded bg-bg-tertiary animate-pulse" />
+        </div>
+    )
+}
+
+/* ─── Outcome breakdown bar (stacked, clickable) ────────────────── */
+
+function ActivityOutcomeBreakdown({ isLoading, metrics, onSelectOutcome, selectedOutcome }) {
+    if (isLoading) {
+        return (
+            <div className="rounded-lg p-3 bg-bg-primary border border-border-light">
+                <div className="h-2.5 rounded bg-bg-tertiary animate-pulse" />
+            </div>
+        )
+    }
+    if (!metrics.total) return null
+    const orderedKeys = ['booked', 'will_book_again', 'note', 'no_answer', 'not_interested']
+    return (
+        <div className="rounded-lg p-3 bg-bg-primary border border-border-light">
+            <div className="flex items-baseline justify-between mb-2">
+                <span className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-text-tertiary">
+                    Outcome mix
+                </span>
+                <span className="text-[10.5px] text-text-tertiary tabular-nums">
+                    {metrics.total} entr{metrics.total === 1 ? 'y' : 'ies'}
+                </span>
+            </div>
+            <div className="flex h-2.5 rounded-full overflow-hidden bg-bg-tertiary">
+                {orderedKeys.map((key) => {
+                    const count = metrics.outcomeCounts[key] || 0
+                    if (count === 0) return null
+                    const pct = (count / metrics.total) * 100
                     return (
-                        <li key={entry.id} className="border-b border-border-light last:border-b-0">
-                            <button
-                                type="button"
-                                onClick={() => onSelectCustomer && onSelectCustomer(entry.customer_num)}
-                                disabled={!entry.customer_num || !onSelectCustomer}
-                                className="w-full text-left px-4 py-2.5 flex items-start gap-3 cursor-pointer disabled:cursor-default border-none bg-transparent hover:bg-bg-secondary transition-colors"
-                                style={{
-                                    borderBottom: idx === entries.length - 1 ? 'none' : undefined
-                                }}
-                            >
-                                <span
-                                    className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-[11px] uppercase"
-                                    style={{ background: `${tone}29`, color: tone }}
-                                    title={CALL_OUTCOME_LABELS[entry.outcome]}
-                                >
-                                    {(CALL_OUTCOME_LABELS[entry.outcome] || '?').charAt(0)}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-baseline gap-2 flex-wrap">
-                                        <span className="font-semibold text-[13px] text-text-primary truncate">
-                                            {entry.customer_name || `Customer ${entry.customer_num}`}
-                                        </span>
-                                        <span className="text-[10.5px] text-text-tertiary">#{entry.customer_num}</span>
-                                        <span
-                                            className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 font-bold uppercase tracking-wider text-[9.5px]"
-                                            style={{ background: `${tone}22`, color: tone }}
-                                        >
-                                            {CALL_OUTCOME_LABELS[entry.outcome] || entry.outcome}
-                                        </span>
-                                    </div>
-                                    <div className="text-[11px] mt-0.5 inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 text-text-tertiary">
-                                        <span>{DateUtility.formatDateTime(entry.created_at)}</span>
-                                        {entry.created_by_name && (
-                                            <span className="text-text-secondary font-semibold">
-                                                · {entry.created_by_name}
-                                            </span>
-                                        )}
-                                        {entry.contact_name && <span>· {entry.contact_name}</span>}
-                                    </div>
-                                    {entry.comment && (
-                                        <div className="text-[12px] mt-1 whitespace-pre-wrap text-text-secondary">
-                                            {entry.comment}
-                                        </div>
-                                    )}
-                                </div>
-                            </button>
-                        </li>
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => onSelectOutcome(key)}
+                            title={`${CALL_OUTCOME_LABELS[key]} · ${count} (${Math.round(pct)}%)`}
+                            className="h-full border-none cursor-pointer transition-opacity"
+                            style={{
+                                background: CALL_OUTCOME_COLORS[key],
+                                opacity: selectedOutcome === 'all' || selectedOutcome === key ? 1 : 0.35,
+                                width: `${pct}%`
+                            }}
+                            aria-label={`${CALL_OUTCOME_LABELS[key]} ${count} calls`}
+                        />
                     )
                 })}
-            </ol>
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                {orderedKeys.map((key) => {
+                    const count = metrics.outcomeCounts[key] || 0
+                    if (count === 0) return null
+                    const isActive = selectedOutcome === key
+                    return (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => onSelectOutcome(key)}
+                            className="inline-flex items-center gap-1.5 text-[11px] cursor-pointer bg-transparent border-none p-0"
+                            style={{
+                                color: isActive ? CALL_OUTCOME_COLORS[key] : 'var(--text-secondary)',
+                                fontWeight: isActive ? 700 : 500
+                            }}
+                        >
+                            <span className="w-2 h-2 rounded-full" style={{ background: CALL_OUTCOME_COLORS[key] }} />
+                            <span>{CALL_OUTCOME_LABELS[key]}</span>
+                            <span className="tabular-nums text-text-tertiary">{count}</span>
+                        </button>
+                    )
+                })}
+            </div>
         </div>
+    )
+}
+
+/* ─── Toolbar ──────────────────────────────────────────────────── */
+
+function ActivityToolbar({
+    hasOutcomeFilter,
+    isLoading,
+    onClearOutcome,
+    onQueryChange,
+    onRefresh,
+    onTimeRangeChange,
+    outcomeFilter,
+    query,
+    shown,
+    timeRange,
+    total
+}) {
+    return (
+        <div
+            className="rounded-lg px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-bg-primary border border-border-light"
+            style={{ boxShadow: 'var(--shadow-sm)' }}
+        >
+            <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px] bg-bg-secondary border border-border-light">
+                <i className="fas fa-magnifying-glass text-[11px] text-text-tertiary" />
+                <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => onQueryChange(e.target.value)}
+                    placeholder="Search by customer, contact, note, or who called…"
+                    disabled={isLoading}
+                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary disabled:opacity-60"
+                />
+            </div>
+            <div className="inline-flex rounded-md overflow-hidden border border-border-light">
+                {TIME_RANGE_OPTIONS.map((opt) => {
+                    const active = opt.key === timeRange
+                    return (
+                        <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => onTimeRangeChange(opt.key)}
+                            disabled={isLoading}
+                            className="text-[11.5px] font-semibold px-2.5 py-1.5 border-none cursor-pointer disabled:opacity-60 transition-colors"
+                            style={{
+                                background: active ? 'var(--accent)' : 'var(--bg-secondary)',
+                                color: active ? '#fff' : 'var(--text-secondary)'
+                            }}
+                        >
+                            {opt.label}
+                        </button>
+                    )
+                })}
+            </div>
+            {hasOutcomeFilter && (
+                <button
+                    type="button"
+                    onClick={onClearOutcome}
+                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer"
+                    style={{
+                        background: `${CALL_OUTCOME_COLORS[outcomeFilter]}1A`,
+                        color: CALL_OUTCOME_COLORS[outcomeFilter]
+                    }}
+                    title="Clear outcome filter"
+                >
+                    <i className={`fas ${ICON_BY_OUTCOME[outcomeFilter] || 'fa-filter'} text-[10px]`} />
+                    {CALL_OUTCOME_LABELS[outcomeFilter]}
+                    <i className="fas fa-xmark text-[10px] opacity-80" />
+                </button>
+            )}
+            <button
+                type="button"
+                onClick={onRefresh}
+                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold border-none cursor-pointer bg-bg-tertiary text-text-secondary"
+                title="Reload activity feed"
+            >
+                <i className="fas fa-rotate text-[10px]" />
+                Refresh
+            </button>
+            <span className="text-[11.5px] text-text-tertiary tabular-nums ml-auto">
+                {isLoading ? (
+                    <span className="italic">Loading…</span>
+                ) : (
+                    <>
+                        {shown} of {total}
+                    </>
+                )}
+            </span>
+        </div>
+    )
+}
+
+/* ─── Empty state ──────────────────────────────────────────────── */
+
+function ActivityEmpty({ hasFilters, totalLoaded }) {
+    return (
+        <div className="rounded-lg p-8 text-center bg-bg-primary border border-border-light flex flex-col items-center gap-2">
+            <i className="fas fa-phone-volume text-[22px] text-text-tertiary" />
+            <div className="text-[13px] font-semibold text-text-primary">
+                {totalLoaded === 0 ? 'No team calls logged yet' : hasFilters ? 'No matches' : 'Nothing in this range'}
+            </div>
+            <div className="text-[11.5px] text-text-secondary max-w-[420px]">
+                {totalLoaded === 0
+                    ? 'Once anyone on the team logs a call from the Outreach or Directory tab, it lands here in chronological order.'
+                    : hasFilters
+                      ? 'Adjust the search, outcome filter, or time range to see more activity.'
+                      : 'Try widening the time range to see older calls.'}
+            </div>
+        </div>
+    )
+}
+
+/* ─── Date-grouped timeline ────────────────────────────────────── */
+
+const GROUP_LABELS = [
+    { key: 'today', label: 'Today' },
+    { key: 'yesterday', label: 'Yesterday' },
+    { key: 'week', label: 'This week' },
+    { key: 'earlier', label: 'Earlier' }
+]
+
+function ActivityGroupedList({ groups, onSelectCustomer }) {
+    const visibleGroups = GROUP_LABELS.filter(({ key }) => groups[key] && groups[key].length > 0)
+    if (visibleGroups.length === 0) return null
+    return (
+        <div className="flex flex-col gap-2.5">
+            {visibleGroups.map(({ key, label }) => (
+                <ActivityGroupSection
+                    key={key}
+                    entries={groups[key]}
+                    label={label}
+                    onSelectCustomer={onSelectCustomer}
+                />
+            ))}
+        </div>
+    )
+}
+
+function ActivityGroupSection({ entries, label, onSelectCustomer }) {
+    return (
+        <section className="rounded-lg overflow-hidden bg-bg-primary border border-border-light">
+            <header className="px-3 py-1.5 flex items-baseline justify-between bg-bg-secondary border-b border-border-light">
+                <span className="text-[10.5px] font-bold uppercase tracking-[.08em] text-text-secondary">{label}</span>
+                <span className="text-[10.5px] text-text-tertiary tabular-nums">
+                    {entries.length} entr{entries.length === 1 ? 'y' : 'ies'}
+                </span>
+            </header>
+            <ol className="flex flex-col">
+                {entries.map((entry, idx) => (
+                    <li key={entry.id} className={idx === entries.length - 1 ? '' : 'border-b border-border-light'}>
+                        <ActivityRow entry={entry} onSelectCustomer={onSelectCustomer} />
+                    </li>
+                ))}
+            </ol>
+        </section>
+    )
+}
+
+function ActivityRow({ entry, onSelectCustomer }) {
+    const tone = CALL_OUTCOME_COLORS[entry.outcome] || '#64748b'
+    const icon = ICON_BY_OUTCOME[entry.outcome] || 'fa-phone'
+    return (
+        <button
+            type="button"
+            onClick={() => onSelectCustomer && onSelectCustomer(entry.customer_num)}
+            disabled={!entry.customer_num || !onSelectCustomer}
+            className="w-full text-left px-3 py-2.5 flex items-start gap-3 cursor-pointer disabled:cursor-default border-none bg-transparent hover:bg-bg-secondary transition-colors"
+            style={{ borderLeft: `3px solid ${tone}` }}
+        >
+            <span
+                className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md"
+                style={{ background: `${tone}22`, color: tone }}
+                title={CALL_OUTCOME_LABELS[entry.outcome] || entry.outcome}
+                aria-hidden="true"
+            >
+                <i className={`fas ${icon} text-[12px]`} />
+            </span>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="font-semibold text-[13px] text-text-primary truncate">
+                        {entry.customer_name || `Customer ${entry.customer_num}`}
+                    </span>
+                    <span className="text-[10.5px] text-text-tertiary tabular-nums">#{entry.customer_num}</span>
+                    {entry.contact_name && (
+                        <span className="text-[10.5px] text-text-tertiary truncate">· {entry.contact_name}</span>
+                    )}
+                </div>
+                {entry.comment && (
+                    <div className="text-[12px] mt-1 whitespace-pre-wrap text-text-secondary line-clamp-3">
+                        {entry.comment}
+                    </div>
+                )}
+                {entry.created_by_name && (
+                    <span
+                        className="inline-flex items-center gap-1 mt-1.5 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                        title={`Logged by ${entry.created_by_name}`}
+                    >
+                        <span
+                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[8px] font-bold text-white"
+                            style={{ background: tone }}
+                        >
+                            {initialsOf(entry.created_by_name)}
+                        </span>
+                        {entry.created_by_name}
+                    </span>
+                )}
+            </div>
+            <span
+                className="shrink-0 text-[10.5px] text-text-tertiary tabular-nums"
+                title={DateUtility.formatDateTime(entry.created_at)}
+            >
+                {formatRelativeShort(entry.created_at)}
+            </span>
+        </button>
     )
 }
 

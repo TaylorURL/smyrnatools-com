@@ -4,11 +4,17 @@ import React, { useEffect, useMemo } from 'react'
 import { CALL_OUTCOME_COLORS, CALL_OUTCOME_LABELS, formatRelativeDays } from '../../../../../utils/CallListUtility'
 import { fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
 
+/* Time-range catalog. Mirrors the Activity feed's selector so both
+ * surfaces read the same. `days` is what the backend's leaderboard RPC
+ * uses to compute the trailing window. "All" passes a large sentinel
+ * so the RPC effectively scans every recorded call. */
 const WINDOW_OPTIONS = [
-    { days: 7, label: 'Last 7 days' },
-    { days: 30, label: 'Last 30 days' },
-    { days: 90, label: 'Last 90 days' },
-    { days: 365, label: 'Last year' }
+    { days: 1, label: 'Today' },
+    { days: 7, label: 'This week' },
+    { days: 30, label: '30 days' },
+    { days: 90, label: '90 days' },
+    { days: 365, label: 'Year' },
+    { days: 36500, label: 'All' }
 ]
 
 /** Per-user activity rollup. Backs the Call List → Team Monitor side
@@ -80,27 +86,30 @@ export function CallListTeamMonitorPage({ daysWindow = 30, isLoading, monitor, o
 
 function WindowSelector({ activeDays, isLoading, onSelect }) {
     return (
-        <div className="flex items-center gap-3 flex-wrap text-[12px]">
-            {WINDOW_OPTIONS.map(({ days, label }) => {
-                const active = activeDays === days
-                return (
-                    <button
-                        key={days}
-                        type="button"
-                        onClick={() => onSelect && onSelect(days)}
-                        disabled={isLoading}
-                        className="bg-transparent border-none cursor-pointer p-0 disabled:opacity-60"
-                        style={{
-                            color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                            fontWeight: active ? 600 : 400,
-                            textDecoration: active ? 'underline' : 'none',
-                            textUnderlineOffset: '4px'
-                        }}
-                    >
-                        {label}
-                    </button>
-                )
-            })}
+        <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10.5px] font-bold uppercase tracking-[.08em] text-text-tertiary mr-1">
+                Time frame
+            </span>
+            <div className="inline-flex rounded-md overflow-hidden border border-border-light">
+                {WINDOW_OPTIONS.map(({ days, label }) => {
+                    const active = activeDays === days
+                    return (
+                        <button
+                            key={days}
+                            type="button"
+                            onClick={() => onSelect && onSelect(days)}
+                            disabled={isLoading}
+                            className="text-[11.5px] font-semibold px-2.5 py-1.5 border-none cursor-pointer disabled:opacity-60 transition-colors"
+                            style={{
+                                background: active ? 'var(--accent)' : 'var(--bg-secondary)',
+                                color: active ? '#fff' : 'var(--text-secondary)'
+                            }}
+                        >
+                            {label}
+                        </button>
+                    )
+                })}
+            </div>
         </div>
     )
 }
