@@ -18,17 +18,19 @@ const STATUS_TINTS = {
     stationary: '#a16207'
 }
 
-/** Inline horizontal allocation bar — track + fill + percent text. */
+/** Inline horizontal allocation bar — track + fill + percent text. The
+ *  fixed minimums only kick in at `sm+`; on mobile the bar shrinks with
+ *  the column so the table fits inside a phone viewport. */
 function AllocationBar({ percent }) {
     const pct = Math.min(100, Math.max(0, percent || 0))
     const color = pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#dc2626'
     return (
-        <div className="flex items-center gap-2 min-w-[120px]">
+        <div className="flex items-center gap-1.5 sm:gap-2 sm:min-w-[120px]">
             <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
                 <div className="h-full rounded-full" style={{ background: color, width: `${pct}%` }} />
             </div>
             <span
-                className="text-[11.5px] font-semibold font-mono tabular-nums min-w-[36px] text-right"
+                className="text-[11px] sm:text-[11.5px] font-semibold font-mono tabular-nums sm:min-w-[36px] text-right"
                 style={{ color }}
             >
                 {pct}%
@@ -37,8 +39,11 @@ function AllocationBar({ percent }) {
     )
 }
 
-/** Single row of the flat fleet table. Pure presentation — caller owns the data. */
-function FleetRow({ active, dotColor, isTotal, label, shop, spare, stationary, total, allocation }) {
+/** Single row of the flat fleet table. The Spare / In shop / Stationary
+ *  columns hide below `sm` so a phone-width screen renders the four
+ *  essentials (asset type · total · active · allocation) without
+ *  horizontal scroll. */
+function FleetRow({ active, allocation, dotColor, isTotal, label, shop, spare, stationary, total }) {
     return (
         <tr
             className={isTotal ? 'font-semibold' : 'transition-colors hover:bg-bg-tertiary'}
@@ -62,24 +67,24 @@ function FleetRow({ active, dotColor, isTotal, label, shop, spare, stationary, t
                 {active ?? '—'}
             </td>
             <td
-                className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
+                className="hidden sm:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
                 style={{ color: spare != null ? STATUS_TINTS.spare : 'var(--text-tertiary)' }}
             >
                 {spare ?? '—'}
             </td>
             <td
-                className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
+                className="hidden sm:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
                 style={{ color: STATUS_TINTS.inShop }}
             >
                 {shop ?? '—'}
             </td>
             <td
-                className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
+                className="hidden md:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
                 style={{ color: stationary != null ? STATUS_TINTS.stationary : 'var(--text-tertiary)' }}
             >
                 {stationary ?? '—'}
             </td>
-            <td className="px-3 py-2 w-[220px]">
+            <td className="px-2 sm:px-3 py-2 sm:w-[220px]">
                 <AllocationBar percent={allocation} />
             </td>
         </tr>
@@ -130,93 +135,100 @@ export default function FleetOverviewSection({ accentColor: _accentColor, displa
             innerClassName=""
             right={<span className="text-[11px] text-text-tertiary">Active, spare, in-shop by asset type</span>}
         >
-            <table className="w-full border-collapse">
-                <thead>
-                    <tr className="bg-bg-secondary">
-                        <th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary border-b border-border-light">
-                            Asset type
-                        </th>
-                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
-                            Total
-                        </th>
-                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
-                            Active
-                        </th>
-                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
-                            Spare
-                        </th>
-                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
-                            In shop
-                        </th>
-                        <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
-                            Stationary
-                        </th>
-                        <th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary border-b border-border-light">
-                            Allocation
-                        </th>
-                    </tr>
-                </thead>
-                <tbody className="border-border-light">
-                    {!isAggregate && (
+            {/* `overflow-x-auto` is the last-line-of-defense for any future
+                column or fixed-width inside the table that would otherwise
+                push past the viewport. The Spare / In shop / Stationary
+                columns are display:none under sm/md so a phone-width
+                screen already fits without scrolling. */}
+            <div className="overflow-x-auto -mx-px">
+                <table className="w-full border-collapse">
+                    <thead>
+                        <tr className="bg-bg-secondary">
+                            <th className="px-3 py-2 text-left text-[11px] font-semibold text-text-secondary border-b border-border-light">
+                                Asset type
+                            </th>
+                            <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
+                                Total
+                            </th>
+                            <th className="px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
+                                Active
+                            </th>
+                            <th className="hidden sm:table-cell px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
+                                Spare
+                            </th>
+                            <th className="hidden sm:table-cell px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
+                                In shop
+                            </th>
+                            <th className="hidden md:table-cell px-3 py-2 text-right text-[11px] font-semibold text-text-secondary border-b border-border-light">
+                                Stationary
+                            </th>
+                            <th className="px-2 sm:px-3 py-2 text-left text-[11px] font-semibold text-text-secondary border-b border-border-light">
+                                Allocation
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="border-border-light">
+                        {!isAggregate && (
+                            <FleetRow
+                                active={m.activeOperators ?? m.active}
+                                allocation={m.allocationPercent}
+                                dotColor="#1e40af"
+                                label="Mixers"
+                                shop={m.shop}
+                                spare={m.spare}
+                                total={m.total}
+                            />
+                        )}
                         <FleetRow
-                            active={m.activeOperators ?? m.active}
-                            allocation={m.allocationPercent}
-                            dotColor="#1e40af"
-                            label="Mixers"
-                            shop={m.shop}
-                            spare={m.spare}
-                            total={m.total}
+                            active={t.activeOperators ?? t.active}
+                            allocation={t.allocationPercent}
+                            dotColor="#16a34a"
+                            label="Tractors"
+                            shop={t.shop}
+                            spare={t.spare}
+                            total={t.total}
                         />
-                    )}
-                    <FleetRow
-                        active={t.activeOperators ?? t.active}
-                        allocation={t.allocationPercent}
-                        dotColor="#16a34a"
-                        label="Tractors"
-                        shop={t.shop}
-                        spare={t.spare}
-                        total={t.total}
-                    />
-                    <FleetRow
-                        active={tr.active}
-                        allocation={tr.allocationPercent}
-                        dotColor="#d97706"
-                        label="Trailers"
-                        shop={tr.shop}
-                        spare={tr.spare}
-                        total={tr.total}
-                    />
-                    <FleetRow
-                        active={e.active}
-                        allocation={e.allocationPercent}
-                        dotColor="#9333ea"
-                        label="Equipment"
-                        shop={e.shop}
-                        spare={e.spare}
-                        total={e.total}
-                    />
-                    <FleetRow
-                        active={p.active}
-                        allocation={p.total > 0 ? Math.round((p.active / p.total) * 100) : 0}
-                        dotColor="#db2777"
-                        label="Pickup trucks"
-                        shop={p.shop}
-                        stationary={p.stationary}
-                        total={p.total}
-                    />
-                    <FleetRow
-                        active={totals.active}
-                        allocation={totalAllocation}
-                        dotColor="var(--accent)"
-                        isTotal
-                        label="Total"
-                        shop={totals.shop}
-                        spare={totals.spare}
-                        stationary={totals.stationary || null}
-                        total={totals.total}
-                    />
-                </tbody>
-            </table>
+                        <FleetRow
+                            active={tr.active}
+                            allocation={tr.allocationPercent}
+                            dotColor="#d97706"
+                            label="Trailers"
+                            shop={tr.shop}
+                            spare={tr.spare}
+                            total={tr.total}
+                        />
+                        <FleetRow
+                            active={e.active}
+                            allocation={e.allocationPercent}
+                            dotColor="#9333ea"
+                            label="Equipment"
+                            shop={e.shop}
+                            spare={e.spare}
+                            total={e.total}
+                        />
+                        <FleetRow
+                            active={p.active}
+                            allocation={p.total > 0 ? Math.round((p.active / p.total) * 100) : 0}
+                            dotColor="#db2777"
+                            label="Pickup trucks"
+                            shop={p.shop}
+                            stationary={p.stationary}
+                            total={p.total}
+                        />
+                        <FleetRow
+                            active={totals.active}
+                            allocation={totalAllocation}
+                            dotColor="var(--accent)"
+                            isTotal
+                            label="Total"
+                            shop={totals.shop}
+                            spare={totals.spare}
+                            stationary={totals.stationary || null}
+                            total={totals.total}
+                        />
+                    </tbody>
+                </table>
+            </div>
         </Panel>
     )
 }

@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026.21.23] - 2026-05-21
+
+- Fleet allocation table on `DashboardView` no longer overflows the
+  right edge of the screen on mobile
+  (`src/app/components/dashboard/FleetOverviewSection.jsx`). The Spare
+  / In shop columns hide below `sm`, Stationary hides below `md`, the
+  fixed `220px` allocation column and `120px` allocation-bar minimum
+  only apply at `sm+`, and the whole table is wrapped in an
+  `overflow-x-auto` div so any future column added without responsive
+  handling still scrolls inside the panel instead of pushing the page
+  layout out.
+
 ## [2026.21.22] - 2026-05-21
 
 - Dashboard no longer renders the SRM Podcast panel on mobile
