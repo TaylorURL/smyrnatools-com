@@ -1,5 +1,23 @@
 # Changelog
 
+## [2026.21.24] - 2026-05-22
+
+- Statistics → Operators page now splits the operator list into
+  assigned-vs-visiting groups when the global plant filter is set
+  (`src/app/components/plan/tabs/statistics/PlanStatisticsPages.jsx`).
+  Section headers — "Assigned to {plant}" and "Visiting · loaded at
+  {plant}" — render between groups with a count chip and a muted hint,
+  and the rank counter (`#`) restarts inside each segment for clean
+  per-group scanning. The unmatched-driver bucket continues to sit at
+  the bottom unchanged. When no plant is filtered, the page renders
+  the flat unified list as before.
+- New "Print" button in the Operators panel header opens a
+  self-contained printer-friendly window. Carries the segment headers
+  through to the printout when filtered, includes the ranged headline
+  meta (`N operators · N loads · N yd³ · mismatches`), and uses ASCII
+  table styling that survives any theme — works for direct printing
+  and for "Save as PDF" from the browser dialog.
+
 ## [2026.21.23] - 2026-05-21
 
 - Fleet allocation table on `DashboardView` no longer overflows the
