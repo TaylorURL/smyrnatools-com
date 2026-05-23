@@ -266,8 +266,8 @@ function StatusBadge({ status, isDark }) {
     const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.ok
     return (
         <span
-            className="inline-flex items-center gap-1 rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5"
-            style={{ background: isDark ? cfg.darkBg : cfg.bg, color: isDark ? cfg.darkColor : cfg.color }}
+            className="inline-flex items-center gap-1 rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 text-text-primary"
+            style={{ background: isDark ? cfg.darkBg : cfg.bg }}
         >
             <i className={`fas ${cfg.icon} text-[9px]`} />
             {cfg.badge}

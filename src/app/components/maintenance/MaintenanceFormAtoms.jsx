@@ -59,13 +59,16 @@ function useTint(palette) {
     }
 }
 
-/** Compact status badge — uppercase, tracked-wider, palette-tinted. */
+/** Compact status badge — uppercase, tracked-wider, palette-tinted.
+ *  Text uses the theme foreground so light / dark / grayed all read
+ *  with the same contrast; only the tint background carries the
+ *  status colour. */
 export function StatusBadge({ status }) {
     const tint = useTint(STATUS_PALETTE[status] || FALLBACK_TINT)
     return (
         <span
-            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5"
-            style={tint}
+            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 text-text-primary"
+            style={{ background: tint.background }}
         >
             {status}
         </span>
@@ -78,8 +81,8 @@ export function PlantChip({ code }) {
     if (!code) return <span className="text-text-tertiary">—</span>
     return (
         <span
-            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 font-mono tabular-nums"
-            style={tint}
+            className="inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 font-mono tabular-nums text-text-primary"
+            style={{ background: tint.background }}
         >
             {code}
         </span>

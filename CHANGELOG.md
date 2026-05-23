@@ -1,5 +1,46 @@
 # Changelog
 
+## [2026.21.33] - 2026-05-23
+
+- Maintenance log status badges (OK / Due Soon / Overdue / Never
+  Serviced) now render their label in the theme foreground
+  (`text-text-primary`) instead of the status hex colour, so light /
+  dark / grayed all read with the same contrast. The tinted
+  background still carries the at-a-glance status signal. Affects
+  `MaintenanceLogTable.jsx`, `MaintenanceEquipmentDetail.jsx`
+  (detail-panel header badge), and the combined-log atoms in
+  `MaintenanceFormAtoms.jsx` (`StatusBadge` + `PlantChip`). The
+  colored `ItemIcon` row leader is unchanged — icons can still
+  carry the status colour because the user only asked for
+  badge-text neutralization.
+- Maintenance filter pills above the log table (Total / OK / Due
+  Soon / Overdue) lost their hex text colour — `CountPill` in
+  `MaintenanceFilterBar.jsx` now renders the count + label in
+  `text-text-primary` on top of the same tinted bg + border so the
+  pills still read as a status at a glance but the text contrasts
+  with whichever theme is active.
+- List view status + priority badges neutralised the same way.
+  `getItemStatusStyle` in `src/app/constants/listViewConstants.js`
+  now returns only `{ background, border }` (the `color` field
+  dropped); every consumer (`ListItemRow` status pill,
+  `ListBulkActionsBar` action buttons) automatically picks up
+  theme text. New `getItemStatusIconColor` helper exposes the
+  status hex separately so the icon glyph inside the badge stays
+  coloured for the at-a-glance signal.
+- `ListItemRow` priority chip (High / Medium / Low / Urgent / No
+  Priority) renders the label in theme text; the icon glyph still
+  takes the priority hex so the chip retains its visual identity.
+- `ListCardItem` priority chip now explicitly colours the icon
+  glyph with `pc.color` (was previously inheriting theme text and
+  losing the priority signal). Label stays in theme text.
+- `ListCardsBoard` kanban group-header label (Pending / In Progress
+  / etc.) switched from hex text to `text-text-primary`. The
+  tinted icon square next to it stays coloured.
+- `getBulkButtonStyle` in `listViewConstants.js` neutralised the
+  same way so the bulk-action toolbar (Complete / Priority /
+  Delete / Cancel buttons) renders labels in theme text on top of
+  the tinted action background.
+
 ## [2026.21.32] - 2026-05-23
 
 - New **Operations > Statistics > Workforce > Efficiency** tab

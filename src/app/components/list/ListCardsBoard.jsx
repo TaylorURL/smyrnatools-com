@@ -60,10 +60,7 @@ export default function ListCardsBoard({
                             >
                                 <i className={`fas ${group.icon}`} />
                             </span>
-                            <span
-                                className="text-[11px] font-bold uppercase tracking-wider"
-                                style={{ color: color.text }}
-                            >
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-text-primary">
                                 {group.label}
                             </span>
                             <span

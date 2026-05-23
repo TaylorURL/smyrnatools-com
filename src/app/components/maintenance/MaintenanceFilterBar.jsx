@@ -84,11 +84,10 @@ function CountPill({ accentColor, active, count, label, onClick }) {
             type="button"
             onClick={onClick}
             aria-pressed={active}
-            className="inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-colors"
+            className="inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-colors text-text-primary"
             style={{
                 background: active ? `${tint}26` : `${tint}14`,
-                borderColor: active ? tint : `${tint}30`,
-                color: tint
+                borderColor: active ? tint : `${tint}30`
             }}
         >
             <span className="font-mono tabular-nums">{count.toLocaleString()}</span>

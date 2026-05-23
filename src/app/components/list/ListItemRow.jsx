@@ -2,7 +2,7 @@
 import React from 'react'
 
 import { ListService } from '../../../services/ListService'
-import { getItemStatusStyle } from '../../constants/listViewConstants'
+import { getItemStatusIconColor, getItemStatusStyle } from '../../constants/listViewConstants'
 
 /**
  * Single row in the grouped task list — checkbox, status pill, priority pill,
@@ -39,18 +39,21 @@ export default function ListItemRow({ accentColor, isMobile, isSelected, item, o
                 {isSelected && <i className="fas fa-check text-white text-[8px]" />}
             </button>
             <span
-                className="inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5"
+                className="inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 text-text-primary"
                 style={getItemStatusStyle(itemStatus)}
             >
-                <i className={`fas ${ListService.getStatusIcon(itemStatus)} text-[8px]`} />
+                <i
+                    className={`fas ${ListService.getStatusIcon(itemStatus)} text-[8px]`}
+                    style={{ color: getItemStatusIconColor(itemStatus) }}
+                />
                 {ListService.getStatusLabel(itemStatus)}
             </span>
             {!isMobile && (
                 <span
-                    className="inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border"
-                    style={{ background: pc.bg, borderColor: pc.border, color: pc.color }}
+                    className="inline-flex items-center shrink-0 rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border text-text-primary"
+                    style={{ background: pc.bg, borderColor: pc.border }}
                 >
-                    <i className={`fas ${pc.icon} text-[8px]`} />
+                    <i className={`fas ${pc.icon} text-[8px]`} style={{ color: pc.color }} />
                     {pc.label}
                 </span>
             )}

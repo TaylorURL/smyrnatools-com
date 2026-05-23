@@ -72,19 +72,31 @@ export const normalizeToUpperCase = (str) =>
         .trim()
         .toUpperCase()
 
+/** Returns the tint-only style for a status badge. The text colour is
+ *  intentionally omitted — consumers render the badge label in the
+ *  theme foreground (`text-text-primary`) so light / dark / grayed all
+ *  read with the same contrast, while the tinted bg + border still
+ *  carry the at-a-glance status colour. */
 export const getItemStatusStyle = (statusType) => {
     const color = STATUS_COLORS[normalizeListStatus(statusType)] || STATUS_COLORS.pending
     return {
         background: color.bg,
-        border: `1px solid ${color.border}`,
-        color: color.text
+        border: `1px solid ${color.border}`
     }
 }
 
+/** Icon-only colour for the status — used inside a badge whose label
+ *  renders in theme text so the icon glyph still carries the colored
+ *  status signal. */
+export const getItemStatusIconColor = (statusType) =>
+    (STATUS_COLORS[normalizeListStatus(statusType)] || STATUS_COLORS.pending).text
+
+/** Bulk-action button style — same neutralization as status badges.
+ *  The action colour reads through the tinted background; the button
+ *  label uses theme text. */
 export const getBulkButtonStyle = (type) => {
     const color = BULK_ACTION_COLORS[type] || BULK_ACTION_COLORS.cancel
     return {
-        background: color.bg,
-        color: color.text
+        background: color.bg
     }
 }

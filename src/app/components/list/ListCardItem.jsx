@@ -60,7 +60,7 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
                     className="inline-flex items-center rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border text-text-primary"
                     style={{ background: pc.bg, borderColor: pc.border }}
                 >
-                    <i className={`fas ${pc.icon} text-[8px]`} />
+                    <i className={`fas ${pc.icon} text-[8px]`} style={{ color: pc.color }} />
                     {pc.label}
                 </span>
                 <span
