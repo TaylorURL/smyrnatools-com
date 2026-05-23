@@ -10,6 +10,7 @@ import { PlanReviewSendModal } from '../../../app/components/plan/PlanReviewSend
 import { PlanScheduleStaleBanner } from '../../../app/components/plan/tabs/schedule/PlanScheduleStaleBanner'
 import { isDarkLikeTheme } from '../../../app/constants/themeConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import { useCustomerRiskIndex } from '../../../app/hooks/useCustomerRiskIndex'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { usePlanActions } from '../../../app/hooks/usePlanActions'
 import { usePlanData } from '../../../app/hooks/usePlanData'
@@ -97,6 +98,16 @@ function OperationsViewImpl({ accentColor, isDark }) {
     const [viewMode, setViewModeRaw] = useState('dashboard')
     const effectiveViewMode = isMobile && !MOBILE_VIEW_MODES.has(viewMode) ? 'dashboard' : viewMode
     const { planDate, setPlanDate } = usePlanDate(effectiveViewMode)
+
+    /** Per-customer behaviour rollup for the Schedule tab — fires only when
+     *  Schedule is the active surface. Hook caches its result by lookback
+     *  window, so toggling away and back doesn't re-fetch. The map flows
+     *  down through `PlanScheduleView` → `PlanScheduleTable` → row, where
+     *  the customer cell renders the "Likely to Kick" / "Likely to
+     *  Cancel/Move" badges. */
+    const { riskByCustomer: scheduleCustomerRiskIndex } = useCustomerRiskIndex({
+        enabled: effectiveViewMode === 'schedule'
+    })
 
     /* Schedule tab's "maximize" toggle lives here so it survives the data
      * skeleton swap. On a date change `usePlanData` flips `isLoading` true,
@@ -349,6 +360,7 @@ function OperationsViewImpl({ accentColor, isDark }) {
                                     accentColor={accentColor}
                                     adjacentProduction={adjacentProduction}
                                     assignments={assignments}
+                                    customerRiskIndex={scheduleCustomerRiskIndex}
                                     detailByOrderId={detailByOrderId}
                                     filters={scheduleFilters}
                                     getTravelTime={getTravelTime}

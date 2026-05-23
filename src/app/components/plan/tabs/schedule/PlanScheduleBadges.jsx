@@ -243,6 +243,41 @@ export function HoursLimitBadge({ limit }) {
     )
 }
 
+/** Pre-emptive risk pill — fires on customers whose trailing 60-day history
+ *  has them adding yardage mid-pour on ≥30% of jobs ("Likely to Kick") or
+ *  cancelling / moving ≥25% of jobs after the 5:30 PM commit snapshot
+ *  ("Likely to Cancel/Move"). Both signals come from `useCustomerRiskIndex`,
+ *  which folds the existing Kickers + Moves & Cancels classifiers into a
+ *  single per-customer lookup. The pill is suppressed under `compareMode`
+ *  alongside the other annotation badges. */
+export function LikelyKickerBadge({ rate }) {
+    const pct = Math.round((rate || 0) * 100)
+    return (
+        <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
+            style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
+            title={`Kicker rate ${pct}% over the last 60 working days — likely to call in extra yardage mid-pour.`}
+        >
+            <i className="fas fa-bolt text-[9px]" />
+            Likely to Kick
+        </span>
+    )
+}
+
+export function LikelyChurnBadge({ rate }) {
+    const pct = Math.round((rate || 0) * 100)
+    return (
+        <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
+            style={{ background: 'rgba(217, 119, 6, 0.14)', color: '#b45309' }}
+            title={`Cancel + move rate ${pct}% over the last 60 working days — order may shift after the 5:30 PM commit.`}
+        >
+            <i className="fas fa-shuffle text-[9px]" />
+            Likely to Cancel/Move
+        </span>
+    )
+}
+
 /** Maps the start-time sentinel `kind` to one of the project's themed badge
  *  utility classes so the pill flips correctly between light and dark mode. */
 const STATUS_BADGE_TONE_CLASS = {

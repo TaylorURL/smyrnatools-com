@@ -1,5 +1,78 @@
 # Changelog
 
+## [2026.21.28] - 2026-05-23
+
+- New Dayforce sync pipeline lands an end-to-end Hours and Labor Cost
+  view inside Operations > Statistics. A Tampermonkey userscript
+  (`scripts/bridge/dayforce-sync.user.js`) running on
+  `wkdus261.dayforcehcm.com` intercepts the session GUID + CSRF token
+  from the live UI's own traffic, calls
+  `Timesheet/ObfuscatingTimesheet/GetManagerTimesheetLoadBundle` for
+  each Houston RMX org_unit and
+  `EmployeeSelfService/TimeAndAttendance/GetManagerEmployeeRawPunches`
+  per employee, and POSTs structured JSON to a new `dayforce-import`
+  edge function every 5 minutes. Mirrors the dispatch-bridge pattern
+  in `scripts/bridge/smyrna-dispatch-sync.user.js`.
+- `supabase/functions/dayforce-import/index.ts` decodes the obfuscated
+  timesheet schema (j6 = employees, b4 = shifts, fl = clockIn,
+  fj = clockOut, fh = hours, bg = employment record with hourly rate,
+  etc.) and upserts into four new tables created by
+  `supabase/migrations/20260523_dayforce_data.sql`:
+  `dayforce_org_units`, `dayforce_employees`, `dayforce_shifts`,
+  `dayforce_raw_punches`. Raw payloads are preserved in jsonb columns
+  so a future Dayforce build rotation can be re-processed without
+  re-scraping. Deployed with `--no-verify-jwt` per project convention.
+- Operations > Statistics gains two new sub-pages:
+  `src/app/components/dayforce/DayforceHoursPage.jsx` (scheduled vs
+  actual hours, variance %, per-plant rollup, weekly trend, exception
+  counts, PTO) and `src/app/components/dayforce/DayforceLaborCostPage.jsx`
+  (regular vs OT cost at the 40-hour weekly threshold × 1.5,
+  per-operator and per-plant breakdown, blended rate). Both registered
+  in `PlanStatisticsSidebar.jsx` and routed in `PlanStatisticsView.jsx`.
+- Hours / Labor Cost are scoped to mixer + tractor operators only.
+  `src/app/hooks/useDayforceOperatorMetrics.js` exposes
+  `DEFAULT_OPERATOR_POSITIONS = ['Mixer Operator', 'Tractor Operator']`
+  and drops anyone not in that allowlist — plant managers, office
+  staff, and unmatched Dayforce employees never bleed into the
+  payroll-comparable totals. The filter bar surfaces the exclusion
+  count so the reduced scope is transparent.
+- Each Dayforce employee is name-matched to a smyrnatools operator
+  (canonical-name token sort handles "Gomez, Jose (Jose) 007943" <->
+  "Jose Gomez"), with `smyrnaId` <-> `employee_badge` as the fallback,
+  so labor rolls up under the operator's smyrnatools plant_code
+  rather than the Dayforce `RMX_TX_*` code. The per-plant rollup
+  uses the friendly plantName from the `plants` table. Unassigned
+  operators bucket under a single "Unassigned" row instead of
+  fragmenting across raw Dayforce codes.
+- New filter bar
+  (`src/app/components/dayforce/DayforceFilters.jsx`) follows the
+  same pill-button + custom-popover language as
+  `PlanStatisticsControls.jsx` — no chunky bordered outer container,
+  no native `<select>`. Search, role, and sort each render as a
+  compact pill that tints to the project accent when active, with a
+  scope-summary indicator on the right ("47 in view · 12 excluded").
+- Filter state lives in
+  `src/app/hooks/useDayforceOperatorFilters.js` — search +
+  position + sort, with a `SORT_OPTIONS` registry that lets each
+  page (Hours, Labor Cost) pick which sort modes to surface.
+- Daily plan email pipeline gained Saturday-specific behaviour. New
+  pg_cron migration
+  `supabase/migrations/20260523_daily_plan_email_saturday_cron.sql`
+  fires `daily-plan-email` an hour earlier on Saturdays, and the
+  edge function (`supabase/functions/daily-plan-email/index.ts`) +
+  the `Review & Send` modal
+  (`src/app/components/plan/PlanReviewSendModal.jsx`) handle the
+  shorter Saturday window with adjusted copy and recipient logic.
+- `daily_plan_email.js` got a major rework for content layout +
+  recipient resolution; preview script
+  (`scripts/emails/preview-daily-plan-email.mjs`) added so the
+  full rendered email can be eyeballed locally before sending.
+- Schedule view picked up small polish: `PlanScheduleBadges.jsx`
+  adds new badge variants, `PlanScheduleOrderRow.jsx` and
+  `PlanScheduleTable.jsx` reflow to accommodate them, and
+  `PlanActionButtons.jsx` adjusts the action bar layout.
+
+
 ## [2026.21.27] - 2026-05-22
 
 - Comment and issue surfaces on the asset and people list views now

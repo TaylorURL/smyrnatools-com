@@ -55,11 +55,28 @@ const TEST_MODE = false
 const TEST_REDIRECT_EMAIL = 'tbtaylor@smyrnareadymix.com'
 
 /* Cron schedule windows. pg_cron fires at both 21:00 UTC (CDT) and 22:00
- * UTC (CST); the edge function self-checks Chicago wall-clock against
- * `CRON_HOUR_CT = 16` so only the run that matches 4:00 PM Chicago does
- * any work. Sundays are skipped to match the rest of the plan pipeline. */
+ * UTC (CST) for the weekday 4 PM run, plus 16:00 UTC (CDT) and 17:00 UTC
+ * (CST) for the Saturday 11 AM run. The edge function self-checks Chicago
+ * wall-clock against the per-day expected hour so off-DST and off-day
+ * triggers are cheap no-ops.
+ *
+ * Day-of-week (Sunday = 0 … Saturday = 6):
+ *   • Mon–Fri (1–5): send at 16:00 Chicago, target tomorrow's plan
+ *   • Sat        (6): send at 11:00 Chicago, target Monday's plan (we
+ *                     don't operate Sundays)
+ *   • Sun        (0): skipped — no plan to ship
+ */
 const PLAN_TIME_ZONE = 'America/Chicago'
-const CRON_HOUR_CT = 16
+const CRON_HOUR_WEEKDAY_CT = 16
+const CRON_HOUR_SATURDAY_CT = 11
+
+/** The Chicago hour at which the cron send is allowed for a given weekday.
+ *  Returns null on Sundays — the rest of the pipeline doesn't run Sunday. */
+function expectedCronHourForWeekday(weekday: number): number | null {
+    if (weekday === 0) return null
+    if (weekday === 6) return CRON_HOUR_SATURDAY_CT
+    return CRON_HOUR_WEEKDAY_CT
+}
 
 const DEFAULT_FRONTEND_URL = 'https://smyrnatools.com'
 
@@ -575,6 +592,20 @@ function chicagoTodayDate(now = chicagoNow()): string {
 function chicagoTomorrowDate(now = chicagoNow()): string {
     const base = new Date(Date.UTC(now.year, now.month - 1, now.day, 12, 0, 0))
     base.setUTCDate(base.getUTCDate() + 1)
+    const yyyy = base.getUTCFullYear()
+    const mm = String(base.getUTCMonth() + 1).padStart(2, '0')
+    const dd = String(base.getUTCDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+}
+
+/** Returns the next working date that should receive the email. On Saturday
+ *  this jumps to Monday because the plant doesn't operate Sundays; every
+ *  other day it's tomorrow. Anchored at noon UTC like the other helpers so
+ *  DST shifts can't slip the date by a day. */
+function chicagoNextWorkingDate(now = chicagoNow()): string {
+    const base = new Date(Date.UTC(now.year, now.month - 1, now.day, 12, 0, 0))
+    const skipSunday = now.weekday === 6 ? 2 : 1
+    base.setUTCDate(base.getUTCDate() + skipSunday)
     const yyyy = base.getUTCFullYear()
     const mm = String(base.getUTCMonth() + 1).padStart(2, '0')
     const dd = String(base.getUTCDate()).padStart(2, '0')
@@ -1224,14 +1255,30 @@ async function handleCronSend(req: Request, headers: any): Promise<Response> {
     const force = body?.force === true
     const dryRun = body?.dryRun === true
     const now = chicagoNow()
-    if (!force && now.hour !== CRON_HOUR_CT) {
-        return jsonResponse({ chicagoHour: now.hour, reason: 'outside-send-window', skipped: true }, headers)
-    }
-    if (!force && now.weekday === 0) {
+    const expectedHour = expectedCronHourForWeekday(now.weekday)
+    if (!force && expectedHour == null) {
+        /* Sunday — every downstream surface assumes plants don't run that
+         * day. Bail without touching plans. */
         return jsonResponse({ reason: 'sunday', skipped: true }, headers)
     }
+    if (!force && now.hour !== expectedHour) {
+        return jsonResponse(
+            {
+                chicagoHour: now.hour,
+                expectedHour,
+                reason: 'outside-send-window',
+                skipped: true,
+                weekday: now.weekday
+            },
+            headers
+        )
+    }
 
-    const planDate = isFiniteString(body?.planDate) ? body.planDate.trim() : chicagoTomorrowDate(now)
+    /* On Saturday the cron targets Monday's plan because Sunday is closed —
+     * `chicagoNextWorkingDate` skips Sundays automatically. Other days
+     * still ship tomorrow's plan. Callers can override via body.planDate
+     * (used by the SQL dry-run smoke test). */
+    const planDate = isFiniteString(body?.planDate) ? body.planDate.trim() : chicagoNextWorkingDate(now)
     const supabase = createAdminClient()
 
     const { data: planRow, error: planErr } = await supabase

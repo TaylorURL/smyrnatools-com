@@ -11,7 +11,15 @@ import {
     isLikelyBadAddress
 } from '../../../../../utils/PlanScheduleUtility'
 import { getCalculatedTruckCount } from '../../../../../utils/PlanUtility'
-import { HoursLimitBadge, OrderStatusBadge, PlantBadge, ServiceBadge } from './PlanScheduleBadges'
+import { resolveCustomerRiskBadges } from '../../../../hooks/useCustomerRiskIndex'
+import {
+    HoursLimitBadge,
+    LikelyChurnBadge,
+    LikelyKickerBadge,
+    OrderStatusBadge,
+    PlantBadge,
+    ServiceBadge
+} from './PlanScheduleBadges'
 import PlanScheduleLoadedCell from './PlanScheduleLoadedCell'
 
 const composeAddress = (order) => formatOrderAddress(order, ', ')
@@ -191,6 +199,11 @@ export default function PlanScheduleOrderRow({
      *  rows reads as the same height — annotation badges wrap and would
      *  otherwise desync the row heights between snapshot and live. */
     compareMode = false,
+    /** Per-customer behaviour index produced by `useCustomerRiskIndex`.
+     *  When provided, the customer cell renders a "Likely to Kick" or
+     *  "Likely to Cancel/Move" pill for any customer whose trailing
+     *  60-day history clears the risk thresholds. */
+    customerRiskIndex,
     detail,
     firstLoadOutMin,
     getCloserPlantForOrder,
@@ -225,6 +238,14 @@ export default function PlanScheduleOrderRow({
     const suppressSecondaryBadges = isNonProduction || isSameDay
     const service = !suppressSecondaryBadges ? evaluateOrderService(order, detail, nowMin) : null
     const hoursLimit = !suppressSecondaryBadges ? evaluateHoursLimit(order, firstLoadOutMin) : null
+    /* Risk badges run on every live row (including future / today) — the
+     * signal is "what does this customer typically do?" which applies as
+     * soon as the order is booked. Suppressed for cancelled / test /
+     * same-day orders since those already have their own primary badge. */
+    const riskBadges =
+        !suppressSecondaryBadges && customerRiskIndex
+            ? resolveCustomerRiskBadges(customerRiskIndex, order.customer)
+            : null
     return (
         <tr
             className="animate-slide-in-row border-t border-border-light"
@@ -270,6 +291,8 @@ export default function PlanScheduleOrderRow({
                         {!compareMode && status && <OrderStatusBadge status={status} />}
                         {!compareMode && !suppressSecondaryBadges && <ServiceBadge service={service} />}
                         {!compareMode && !suppressSecondaryBadges && <HoursLimitBadge limit={hoursLimit} />}
+                        {!compareMode && riskBadges?.likelyToKick && <LikelyKickerBadge rate={riskBadges.kickerRate} />}
+                        {!compareMode && riskBadges?.likelyToChurn && <LikelyChurnBadge rate={riskBadges.churnRate} />}
                     </div>
                 </td>
             )}

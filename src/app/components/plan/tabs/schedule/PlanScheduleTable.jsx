@@ -342,6 +342,11 @@ export default function PlanScheduleTable({
      *  hours-limit / needs-help) so each row's height stays predictable
      *  and the snapshot / live tables read row-for-row at the same Y. */
     compareMode = false,
+    /** Optional `Map<customerKey, RiskRecord>` from `useCustomerRiskIndex`.
+     *  Forwarded straight into each row so the customer cell can render
+     *  the "Likely to Kick" / "Likely to Cancel/Move" badges without each
+     *  row re-running the aggregation. */
+    customerRiskIndex,
     detailByOrderId = {},
     filteredPlantCode = null,
     firstLoadOutByPlant = null,
@@ -553,6 +558,7 @@ export default function PlanScheduleTable({
                                             accentColor={accentColor}
                                             compareMode={compareMode}
                                             animationDelayMs={animationDelayMs}
+                                            customerRiskIndex={customerRiskIndex}
                                             detail={o.orderId ? detailByOrderId[o.orderId] : null}
                                             firstLoadOutMin={rowFirstLoadOutMin}
                                             getCloserPlantForOrder={getCloserPlantForOrder}

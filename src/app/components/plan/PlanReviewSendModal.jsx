@@ -11,16 +11,16 @@ import { DEFAULT_SCHEDULE_FILTERS } from '../../constants/planScheduleViewConsta
 import { usePlanScheduleData } from '../../hooks/usePlanScheduleData'
 
 /**
- * "Review & Send" modal for the daily-plan email pipeline.
- *
- * Replaces the old Copy Plan flow on the Plan header. The dispatcher
- * opens it → we run usePlanScheduleData against the live plan so the
- * per-plant payloads inherit the same coverage classification + roster
- * the Schedule tab already shows → we ship those payloads through
- * `/daily-plan-email/preview` to get rendered HTML + resolved
- * recipients → we display the result as a per-plant accordion → a
- * single confirm button calls `/daily-plan-email/send`, which routes
- * every message to the test inbox while we validate the lookup logic.
+ * "Review & Send" modal — the dispatch manager's final-check surface for
+ * the daily plan email. Opens from the Plan header after the schedule is
+ * locked. The flow is intentionally framed as a manager confirmation, not
+ * a technical preview: prominent target date ("Monday's plan"), audience
+ * spelled out (plant managers TO, district managers CC), per-plant
+ * accordion for last-look at each plant's rendered email, and a single
+ * Send button that fans out via `/daily-plan-email/send`. The modal
+ * inherits the same coverage classification + clock-in roster the
+ * Schedule tab shows so what they see here matches what each plant
+ * manager will read.
  */
 
 function Pill({ children, tone = 'neutral' }) {
@@ -238,6 +238,28 @@ export function PlanReviewSendModal({
     const sentCount = sendState.result?.sent ?? null
     const totalCount = sendState.result?.total ?? plantsResolved.length
 
+    /* Friendly day label for the dispatch manager — they think in
+     * weekday names, not ISO dates. The string sits in the header so
+     * everyone in the modal knows which day's plan is going out. */
+    const planDateLabel = (() => {
+        if (!planDate || typeof planDate !== 'string') return ''
+        const [year, month, day] = planDate.split('-').map((n) => parseInt(n, 10))
+        if (!year || !month || !day) return planDate
+        const date = new Date(year, month - 1, day)
+        if (!Number.isFinite(date.getTime())) return planDate
+        return date.toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'long',
+            weekday: 'long',
+            year: 'numeric'
+        })
+    })()
+    const recipientCount = plantsResolved.reduce((sum, plant) => sum + plant.to.length + plant.cc.length, 0)
+    const plantsMissingManager = plantsResolved.filter((plant) => plant.to.length === 0).length
+    const plantsMissingDM = plantsResolved.filter((plant) => plant.cc.length === 0).length
+    const testMode = data?.testMode
+    const testInbox = data?.testRedirectEmail || 'tbtaylor@smyrnareadymix.com'
+
     return ReactDOM.createPortal(
         <div
             className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[rgba(15,23,42,0.55)] backdrop-blur-sm"
@@ -252,16 +274,20 @@ export function PlanReviewSendModal({
             >
                 <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-border-light">
                     <div className="min-w-0">
-                        <h2 className="text-[16px] font-semibold leading-tight text-text-primary m-0">
-                            Review & Send Daily Plan
+                        <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary">
+                            Dispatch manager · final review
+                        </div>
+                        <h2 className="mt-1 text-[18px] font-semibold leading-tight text-text-primary m-0">
+                            Send the daily plan
+                            {planDateLabel ? (
+                                <span className="ml-2 font-normal text-text-secondary">{`for ${planDateLabel}`}</span>
+                            ) : null}
                         </h2>
-                        <p className="mt-1 text-[12px] leading-snug text-text-tertiary">
-                            One email per plant, addressed to the plant manager with the district manager on CC. While
-                            we&apos;re testing, every message will route to{' '}
-                            <span className="font-mono text-text-secondary">
-                                {data?.testRedirectEmail || 'tbtaylor@smyrnareadymix.com'}
-                            </span>{' '}
-                            with the intended recipients listed in the body.
+                        <p className="mt-1.5 text-[12.5px] leading-snug text-text-secondary">
+                            Each plant gets one email — addressed to the plant manager with the district manager on CC.
+                            Use the per-plant cards below to confirm recipients and skim the rendered email before you
+                            release. Hit <span className="font-semibold text-text-primary">Send to all plants</span>{' '}
+                            when you&apos;re ready.
                         </p>
                     </div>
                     <button
@@ -272,6 +298,59 @@ export function PlanReviewSendModal({
                         <i className="fas fa-times text-[13px]" />
                     </button>
                 </div>
+
+                {/* At-a-glance summary strip — three counts the dispatch
+                    manager actually wants to see before pressing send. */}
+                {!previewState.loading && !previewState.error && plantsResolved.length > 0 && (
+                    <div className="grid grid-cols-3 gap-px bg-border-light border-b border-border-light">
+                        <div className="flex flex-col items-start gap-0.5 bg-bg-primary px-5 py-3">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                                Plants ready
+                            </span>
+                            <span className="text-[18px] font-bold text-text-primary leading-none font-mono tabular-nums">
+                                {plantsResolved.length}
+                            </span>
+                            <span className="text-[11px] text-text-tertiary">{recipientCount} recipients total</span>
+                        </div>
+                        <div className="flex flex-col items-start gap-0.5 bg-bg-primary px-5 py-3">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                                Missing plant manager
+                            </span>
+                            <span
+                                className="text-[18px] font-bold leading-none font-mono tabular-nums"
+                                style={{ color: plantsMissingManager > 0 ? '#b91c1c' : 'var(--text-primary)' }}
+                            >
+                                {plantsMissingManager}
+                            </span>
+                            <span className="text-[11px] text-text-tertiary">
+                                {plantsMissingManager > 0 ? 'review before sending' : 'every plant covered'}
+                            </span>
+                        </div>
+                        <div className="flex flex-col items-start gap-0.5 bg-bg-primary px-5 py-3">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                                Missing district manager
+                            </span>
+                            <span
+                                className="text-[18px] font-bold leading-none font-mono tabular-nums"
+                                style={{ color: plantsMissingDM > 0 ? '#b45309' : 'var(--text-primary)' }}
+                            >
+                                {plantsMissingDM}
+                            </span>
+                            <span className="text-[11px] text-text-tertiary">
+                                {plantsMissingDM > 0 ? 'DM CC will be empty' : 'every plant CC’d'}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {testMode && !previewState.loading && (
+                    <div className="px-5 py-2 text-[11.5px] border-b border-border-light bg-amber-50 text-amber-900">
+                        <i className="fas fa-vial mr-1.5" />
+                        <span className="font-semibold">Test mode is on</span> — every email will route to{' '}
+                        <span className="font-mono">{testInbox}</span> instead of the real recipients. The intended TO
+                        and CC lists are printed at the top of each message so you can verify routing.
+                    </div>
+                )}
 
                 <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 bg-bg-secondary">
                     {previewState.loading && (
@@ -307,15 +386,25 @@ export function PlanReviewSendModal({
                 </div>
 
                 <div className="flex items-center gap-3 px-5 py-3 border-t border-border-light bg-bg-primary">
-                    <div className="text-[12px] text-text-tertiary flex-1 min-w-0">
+                    <div className="text-[12px] text-text-secondary flex-1 min-w-0">
                         {sendState.result ? (
                             <span className="font-semibold text-text-primary">
-                                Sent {sentCount} of {totalCount} emails.
+                                <i className="fas fa-circle-check text-[11px] mr-1" style={{ color: '#16a34a' }} />
+                                Sent {sentCount} of {totalCount} plant{totalCount === 1 ? '' : 's'}.
                             </span>
+                        ) : plantsResolved.length === 0 ? (
+                            <span className="italic text-text-tertiary">Nothing to send for this plan.</span>
+                        ) : testMode ? (
+                            <>
+                                <span className="font-semibold text-text-primary">{plantsResolved.length}</span>{' '}
+                                {plantsResolved.length === 1 ? 'email' : 'emails'} queued — all routing to the test
+                                inbox.
+                            </>
                         ) : (
                             <>
-                                {plantsResolved.length} email{plantsResolved.length === 1 ? '' : 's'} ready · routed to
-                                test inbox
+                                <span className="font-semibold text-text-primary">{plantsResolved.length}</span>{' '}
+                                {plantsResolved.length === 1 ? 'email' : 'emails'} ready to go to plant + district
+                                managers.
                             </>
                         )}
                         {sendState.error && (
@@ -352,7 +441,9 @@ export function PlanReviewSendModal({
                         ) : (
                             <>
                                 <i className="fas fa-paper-plane mr-1.5" />
-                                Send all (test inbox)
+                                {testMode
+                                    ? 'Send to test inbox'
+                                    : `Send to ${plantsResolved.length} plant${plantsResolved.length === 1 ? '' : 's'}`}
                             </>
                         )}
                     </button>

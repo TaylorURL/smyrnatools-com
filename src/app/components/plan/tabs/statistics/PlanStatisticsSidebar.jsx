@@ -62,6 +62,18 @@ export const PLAN_STATS_SECTIONS = [
         icon: 'fa-shuffle',
         id: 'movesCancels',
         label: 'Moves & Cancels'
+    },
+    {
+        description: 'Scheduled vs actual hours from Dayforce, plant rollups, weekly trend, and exception counts.',
+        icon: 'fa-clock',
+        id: 'hours',
+        label: 'Hours'
+    },
+    {
+        description: 'Labor cost from Dayforce — regular vs overtime, blended rate, per-operator and per-plant cost.',
+        icon: 'fa-dollar-sign',
+        id: 'laborCost',
+        label: 'Labor Cost'
     }
 ]
 

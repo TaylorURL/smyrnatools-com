@@ -1,23 +1,40 @@
 /**
  * Daily Plan email — built per-plant from the dispatcher's saved plan and
  * sent to that plant's manager (plus the district manager who owns the
- * plant on CC). Mirrors `plan_email_mockup.html` line-for-line so the
- * preview the dispatcher sees in the Review modal IS the message that
- * lands in the manager's inbox.
+ * plant on CC). The HTML uses inline styles exclusively (Gmail / Outlook
+ * strip `<style>` blocks); the slightly verbose markup is the table-driven
+ * layout that survives every major client without falling over on dark
+ * mode or narrow viewports.
  *
- * Template returns `{ subject, html, text }`. The HTML uses inline styles
- * exclusively (Gmail / Outlook strip `<style>` blocks); the slightly
- * verbose markup is the table-driven layout that survives every major
- * client without falling over on dark mode or narrow viewports.
- *
- * `testMode = true` injects the yellow "redirected" banner at the top of
+ * `testMode = true` injects the amber "redirected" banner at the top of
  * the message with the actual intended TO + CC the routing logic
- * produced, so we can verify each plant's manager / DM lookup before
+ * produced so we can verify each plant's manager / DM lookup before
  * flipping the redirect off in production.
+ *
+ * Visual language:
+ *   • Brand red (#c12033) on the top stripe — Smyrna identity.
+ *   • Navy (#1e3a5f) on section headers + footer accents — calmer than
+ *     the brand red and prevents the email from screaming throughout.
+ *   • Plenty of whitespace, a hero KPI row instead of three small tiles,
+ *     and "needs help" orders flagged with a left rail so the manager
+ *     can scan for risk in one glance.
  */
 
 const ACCENT = '#c12033'
+const ACCENT_DARK = '#8a1521'
 const NAVY = '#1e3a5f'
+const NAVY_DARK = '#0f1f33'
+const INK = '#0f172a'
+const INK_MUTED = '#475569'
+const INK_SOFT = '#64748b'
+const INK_FAINT = '#94a3b8'
+const BORDER = '#e2e8f0'
+const SURFACE = '#f8fafc'
+const SURFACE_ALT = '#f1f5f9'
+const STATUS_OK_BG = 'rgba(22,163,74,0.12)'
+const STATUS_OK_FG = '#15803d'
+const STATUS_RISK_BG = 'rgba(220,38,38,0.12)'
+const STATUS_RISK_FG = '#b91c1c'
 
 function htmlEscape(value) {
     return String(value ?? '')
@@ -65,13 +82,25 @@ function formatRecipient(r) {
     return htmlEscape(r.email)
 }
 
+/** Section header — uppercase eyebrow + thin underline. Pinned navy so
+ *  every header in the email reads the same. */
+function renderSectionHeader(title, eyebrow) {
+    return `
+<div style="margin:32px 0 14px;">
+    <div style="font-size:10.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:${NAVY};margin-bottom:4px;">${htmlEscape(eyebrow || '')}</div>
+    <div style="display:flex;align-items:baseline;border-bottom:2px solid ${NAVY};padding-bottom:10px;">
+        <div style="font-size:18px;font-weight:700;color:${INK};line-height:1.2;">${htmlEscape(title)}</div>
+    </div>
+</div>`
+}
+
 function renderTestBanner({ intendedTo, intendedCc, testRedirectEmail, plantLabel }) {
     const toLine = (intendedTo || []).map(formatRecipient).join(', ') || '<em>(no plant manager resolved)</em>'
     const ccLine = (intendedCc || []).map(formatRecipient).join(', ') || '<em>(no district manager resolved)</em>'
     return `
 <tr>
-    <td style="background:#fef3c7;border-bottom:1px solid #fcd34d;padding:14px 28px;font-size:12.5px;color:#78350f;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;color:#92400e;">
+    <td style="background:#fef3c7;border-bottom:1px solid #fcd34d;padding:14px 32px;font-size:12.5px;color:#78350f;line-height:1.55;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;color:#92400e;">
             &#9888; Test mode &middot; message redirected
         </div>
         This message would have been delivered in production to the recipients below for <strong>${htmlEscape(plantLabel)}</strong>. While we are testing the daily-plan pipeline, every email is redirected to <span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;">${htmlEscape(testRedirectEmail)}</span> so the routing can be validated before production.
@@ -83,34 +112,39 @@ function renderTestBanner({ intendedTo, intendedCc, testRedirectEmail, plantLabe
 </tr>`
 }
 
+/** Hero KPI strip — four big numbers, brand-tinted corners on the outer
+ *  cards so the eye lands on Orders first, Yardage second. Keeps Loads
+ *  and the start/end window subordinate. */
 function renderSummaryGrid({ kpi }) {
     const orderCount = Number.isFinite(kpi?.orderCount) ? kpi.orderCount : 0
     const yardage = Number.isFinite(kpi?.yardage) ? kpi.yardage : 0
     const customers = Number.isFinite(kpi?.customerCount) ? kpi.customerCount : 0
     const loads = Number.isFinite(kpi?.loadCount) ? kpi.loadCount : 0
-    const windowText = kpi?.firstStart && kpi?.lastStart ? `${kpi.firstStart} &ndash; ${kpi.lastStart}` : '&mdash;'
-    const cell = (label, value, hint) => `
-        <td valign="top" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;width:33.3%;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:4px;">${label}</div>
-            <div style="font-size:18px;font-weight:700;color:#0f172a;font-variant-numeric:tabular-nums;">${value}</div>
-            <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${hint}</div>
+    const windowText =
+        kpi?.firstStart && kpi?.lastStart ? `${kpi.firstStart}&nbsp;&ndash;&nbsp;${kpi.lastStart}` : '&mdash;'
+    const cell = (label, value, hint, accent) => `
+        <td valign="top" width="25%" style="background:${SURFACE};border:1px solid ${BORDER};border-radius:10px;padding:16px 14px;${accent ? `border-top:3px solid ${accent};` : ''}">
+            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:${INK_SOFT};margin-bottom:6px;">${label}</div>
+            <div style="font-size:24px;font-weight:700;color:${INK};font-variant-numeric:tabular-nums;line-height:1.05;">${value}</div>
+            ${hint ? `<div style="font-size:11px;color:${INK_FAINT};margin-top:6px;">${hint}</div>` : ''}
         </td>`
     return `
-<table role="presentation" cellspacing="8" cellpadding="0" border="0" style="width:100%;border-collapse:separate;border-spacing:8px;margin:0 -8px 24px;">
+<table role="presentation" cellspacing="10" cellpadding="0" border="0" style="width:100%;border-collapse:separate;border-spacing:10px;margin:0 -10px 4px;">
     <tr>
-        ${cell('Orders', orderCount.toLocaleString(), `${customers} customer${customers === 1 ? '' : 's'} &middot; ${Math.round(yardage).toLocaleString()} yd&sup3;`)}
-        ${cell('Loads', loads.toLocaleString(), 'truck loads scheduled')}
-        ${cell('Window', windowText, 'first &rarr; last start')}
+        ${cell('Orders', orderCount.toLocaleString(), `${customers} customer${customers === 1 ? '' : 's'}`, ACCENT)}
+        ${cell('Yardage', `${Math.round(yardage).toLocaleString()} <span style="font-size:13px;color:${INK_SOFT};font-weight:500;">yd&sup3;</span>`, 'scheduled volume', null)}
+        ${cell('Loads', loads.toLocaleString(), 'truck loads', null)}
+        ${cell('Window', windowText, 'first &rarr; last start', NAVY)}
     </tr>
 </table>`
 }
 
 function renderOrdersTable({ orders }) {
     if (!Array.isArray(orders) || orders.length === 0) {
-        return `<div style="font-size:12.5px;color:#64748b;padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">No orders scheduled for this plant today.</div>`
+        return `<div style="font-size:12.5px;color:${INK_SOFT};padding:16px;background:${SURFACE};border-radius:10px;border:1px solid ${BORDER};">No orders scheduled for this plant today.</div>`
     }
     const rows = orders
-        .map((order) => {
+        .map((order, idx) => {
             const start = htmlEscape(order.startTime || '—')
             const orderNum = order.orderNum ? `#${htmlEscape(order.orderNum)}` : '—'
             const customer = htmlEscape(order.customer || 'Unknown customer')
@@ -119,34 +153,45 @@ function renderOrdersTable({ orders }) {
             const trucks = Number.isFinite(order.truckCount) ? order.truckCount : '—'
             const spacing = Number.isFinite(order.spacingMin) ? `${order.spacingMin} min` : '—'
             const status = order.needsHelp
-                ? `<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;background:rgba(220,38,38,0.12);color:#b91c1c;">Needs help</span>`
-                : `<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;background:rgba(22,163,74,0.12);color:#15803d;">Covered</span>`
+                ? `<span style="display:inline-block;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;background:${STATUS_RISK_BG};color:${STATUS_RISK_FG};">Needs help</span>`
+                : `<span style="display:inline-block;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;background:${STATUS_OK_BG};color:${STATUS_OK_FG};">Covered</span>`
+            const isLast = idx === orders.length - 1
+            const rowBg = idx % 2 === 0 ? '#ffffff' : '#fbfcfd'
+            const cellBase = `padding:12px 12px;vertical-align:top;${isLast ? '' : `border-bottom:1px solid ${SURFACE_ALT};`}background:${rowBg};`
+            /* Risk rail — thin red line on the left cell when the order
+             * needs help. Lets the manager scan a long table for issues
+             * without reading every status pill. */
+            const firstCellBase = order.needsHelp
+                ? `${cellBase}border-left:3px solid ${ACCENT};`
+                : `${cellBase}border-left:3px solid transparent;`
             return `
 <tr>
-    <td style="padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:top;font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:60px;">${start}</td>
-    <td style="padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:top;font-family:ui-monospace,Menlo,Consolas,monospace;color:#475569;font-weight:600;width:78px;">${orderNum}</td>
-    <td style="padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:top;">
-        <div style="font-weight:600;color:#0f172a;">${customer}</div>
-        ${subline ? `<div style="font-size:11px;color:#64748b;margin-top:2px;">${subline}</div>` : ''}
+    <td style="${firstCellBase}font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:62px;font-weight:600;color:${INK};">${start}</td>
+    <td style="${cellBase}font-family:ui-monospace,Menlo,Consolas,monospace;color:${INK_MUTED};font-weight:600;width:80px;">${orderNum}</td>
+    <td style="${cellBase}">
+        <div style="font-weight:600;color:${INK};">${customer}</div>
+        ${subline ? `<div style="font-size:11px;color:${INK_SOFT};margin-top:2px;">${subline}</div>` : ''}
     </td>
-    <td style="padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:top;font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:56px;">${yards}</td>
-    <td style="padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:top;font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:60px;">${trucks}</td>
-    <td style="padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:top;font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:72px;">${spacing}</td>
-    <td style="padding:10px;border-bottom:1px solid #f1f5f9;vertical-align:top;width:100px;">${status}</td>
+    <td style="${cellBase}font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:58px;font-weight:600;color:${INK};">${yards}</td>
+    <td style="${cellBase}font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:60px;color:${INK_MUTED};">${trucks}</td>
+    <td style="${cellBase}font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:74px;color:${INK_MUTED};">${spacing}</td>
+    <td style="${cellBase}width:104px;">${status}</td>
 </tr>`
         })
         .join('')
+    const th = (label, align) => `
+<th style="background:${NAVY};color:#ffffff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.1em;text-align:${align};padding:11px 12px;">${label}</th>`
     return `
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;font-size:12.5px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;font-size:12.5px;border-radius:10px;overflow:hidden;border:1px solid ${BORDER};">
     <thead>
         <tr>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:right;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Start</th>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Order #</th>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Customer</th>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:right;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Yards</th>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:right;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Trucks</th>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:right;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Spacing</th>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Status</th>
+            ${th('Start', 'right')}
+            ${th('Order #', 'left')}
+            ${th('Customer', 'left')}
+            ${th('Yards', 'right')}
+            ${th('Trucks', 'right')}
+            ${th('Spacing', 'right')}
+            ${th('Status', 'left')}
         </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -156,43 +201,44 @@ function renderOrdersTable({ orders }) {
 function renderPlantBadge(code, name) {
     if (!code) return ''
     const safeCode = htmlEscape(code)
-    const safeName = name ? `&nbsp;<span style="color:#64748b;font-weight:500;">${htmlEscape(name)}</span>` : ''
-    return `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:#0f172a;">${safeCode}</span>${safeName}`
+    const safeName = name
+        ? `&nbsp;<span style="color:${INK_SOFT};font-weight:500;">${htmlEscape(name)}</span>`
+        : ''
+    return `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:${INK};">${safeCode}</span>${safeName}`
 }
 
 function renderHelpRow({ direction, row, isLast }) {
     const counterLabel = renderPlantBadge(row.counterPlantCode, row.counterPlantName)
     const returnsHome = !row.returnPlantCode || row.returnPlantCode === row.counterPlantCode
-    const returnLabel = returnsHome
-        ? ''
-        : renderPlantBadge(row.returnPlantCode, row.returnPlantName)
+    const returnLabel = returnsHome ? '' : renderPlantBadge(row.returnPlantCode, row.returnPlantName)
     const arrive = row.arriveTime ? htmlEscape(row.arriveTime) : '—'
     const leave = row.leaveTime ? htmlEscape(row.leaveTime) : ''
-    const headline = direction === 'in'
-        ? `<strong style="color:#0f172a;">${htmlEscape(row.driverLabel)}</strong> from ${counterLabel}`
-        : `<strong style="color:#0f172a;">${htmlEscape(row.driverLabel)}</strong> to ${counterLabel}`
+    const headline =
+        direction === 'in'
+            ? `<strong style="color:${INK};">${htmlEscape(row.driverLabel)}</strong> from ${counterLabel}`
+            : `<strong style="color:${INK};">${htmlEscape(row.driverLabel)}</strong> to ${counterLabel}`
     const timingParts = []
     if (direction === 'in') {
-        timingParts.push(`Arrives <strong style="color:#0f172a;">${arrive}</strong>`)
-        if (leave) timingParts.push(`leaves <strong style="color:#0f172a;">${leave}</strong>`)
+        timingParts.push(`Arrives <strong style="color:${INK};">${arrive}</strong>`)
+        if (leave) timingParts.push(`leaves <strong style="color:${INK};">${leave}</strong>`)
     } else {
-        timingParts.push(`Arrives at ${counterLabel} <strong style="color:#0f172a;">${arrive}</strong>`)
-        if (leave) timingParts.push(`leaves <strong style="color:#0f172a;">${leave}</strong>`)
+        timingParts.push(`Arrives at ${counterLabel} <strong style="color:${INK};">${arrive}</strong>`)
+        if (leave) timingParts.push(`leaves <strong style="color:${INK};">${leave}</strong>`)
     }
-    const timingLine = `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;color:#475569;font-size:11.5px;">${timingParts.join(' &middot; ')}</span>`
+    const timingLine = `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;color:${INK_MUTED};font-size:11.5px;">${timingParts.join(' &middot; ')}</span>`
     const forOrder = row.forOrder
     const forLine = forOrder
-        ? `<div style="font-size:11.5px;color:#1e293b;margin-top:4px;">
-                <span style="display:inline-block;padding:1px 7px;border-radius:999px;background:rgba(14,165,233,0.12);color:#0369a1;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;margin-right:6px;">Direct load</span>
-                ${forOrder.orderNum ? `<strong>#${htmlEscape(forOrder.orderNum)}</strong> ` : ''}${htmlEscape(forOrder.customer)}${forOrder.productCode ? ` &middot; <span style="color:#64748b;">${htmlEscape(forOrder.productCode)}</span>` : ''}${forOrder.startTime ? ` &middot; <span style="color:#64748b;">pour ${htmlEscape(String(forOrder.startTime).slice(0, 5))}</span>` : ''}
+        ? `<div style="font-size:11.5px;color:${INK};margin-top:4px;">
+                <span style="display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(14,165,233,0.12);color:#0369a1;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;margin-right:6px;">Direct load</span>
+                ${forOrder.orderNum ? `<strong>#${htmlEscape(forOrder.orderNum)}</strong> ` : ''}${htmlEscape(forOrder.customer)}${forOrder.productCode ? ` &middot; <span style="color:${INK_SOFT};">${htmlEscape(forOrder.productCode)}</span>` : ''}${forOrder.startTime ? ` &middot; <span style="color:${INK_SOFT};">pour ${htmlEscape(String(forOrder.startTime).slice(0, 5))}</span>` : ''}
            </div>`
         : ''
     const returnLine = returnLabel
-        ? `<div style="font-size:11.5px;color:#475569;margin-top:4px;">Returns to ${returnLabel} after.</div>`
+        ? `<div style="font-size:11.5px;color:${INK_MUTED};margin-top:4px;">Returns to ${returnLabel} after.</div>`
         : ''
     return `
-<div style="padding:9px 0;${isLast ? '' : 'border-bottom:1px solid #e2e8f0;'}">
-    <div style="font-size:12.5px;color:#1e293b;">${headline}</div>
+<div style="padding:10px 0;${isLast ? '' : `border-bottom:1px solid ${BORDER};`}">
+    <div style="font-size:12.5px;color:${INK};">${headline}</div>
     <div style="margin-top:3px;">${timingLine}</div>
     ${forLine}
     ${returnLine}
@@ -201,26 +247,27 @@ function renderHelpRow({ direction, row, isLast }) {
 
 function renderHelpCell({ direction, rows }) {
     const directionColor = direction === 'in' ? '#15803d' : '#c2410c'
+    const directionBg = direction === 'in' ? 'rgba(22,163,74,0.08)' : 'rgba(217,119,6,0.08)'
     const arrow = direction === 'in' ? '&#8600;' : '&#8599;'
     const label = direction === 'in' ? 'Help coming IN' : 'Help going OUT'
     if (!rows || rows.length === 0) {
         return `
-<td valign="top" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;width:50%;vertical-align:top;">
-    <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 8px;color:${directionColor};">${arrow} ${label}</div>
-    <div style="font-size:12.5px;color:#94a3b8;">No cross-plant ${direction === 'in' ? 'arrivals' : 'departures'} scheduled.</div>
+<td valign="top" style="background:${SURFACE};border:1px solid ${BORDER};border-radius:10px;padding:16px 18px;width:50%;vertical-align:top;">
+    <div style="display:inline-block;padding:4px 10px;border-radius:999px;background:${directionBg};font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 12px;color:${directionColor};">${arrow}&nbsp; ${label}</div>
+    <div style="font-size:12.5px;color:${INK_FAINT};">No cross-plant ${direction === 'in' ? 'arrivals' : 'departures'} scheduled.</div>
 </td>`
     }
     const body = rows.map((r, idx) => renderHelpRow({ direction, isLast: idx === rows.length - 1, row: r })).join('')
     return `
-<td valign="top" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;width:50%;vertical-align:top;">
-    <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 8px;color:${directionColor};">${arrow} ${label}</div>
+<td valign="top" style="background:${SURFACE};border:1px solid ${BORDER};border-radius:10px;padding:16px 18px;width:50%;vertical-align:top;">
+    <div style="display:inline-block;padding:4px 10px;border-radius:999px;background:${directionBg};font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 12px;color:${directionColor};">${arrow}&nbsp; ${label}</div>
     ${body}
 </td>`
 }
 
 function renderHelpSection({ helpIn, helpOut }) {
     return `
-<table role="presentation" cellspacing="12" cellpadding="0" border="0" style="width:100%;border-collapse:separate;border-spacing:12px;margin:0 -12px;">
+<table role="presentation" cellspacing="14" cellpadding="0" border="0" style="width:100%;border-collapse:separate;border-spacing:14px;margin:0 -14px;">
     <tr>
         ${renderHelpCell({ direction: 'in', rows: helpIn })}
         ${renderHelpCell({ direction: 'out', rows: helpOut })}
@@ -230,28 +277,22 @@ function renderHelpSection({ helpIn, helpOut }) {
 
 function renderRoster({ roster }) {
     if (!Array.isArray(roster) || roster.length === 0) {
-        return `<div style="font-size:12.5px;color:#64748b;padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">No operator clock-ins assigned for this plant today.</div>`
+        return `<div style="font-size:12.5px;color:${INK_SOFT};padding:16px;background:${SURFACE};border-radius:10px;border:1px solid ${BORDER};">No operator clock-ins assigned for this plant today.</div>`
     }
-    /* Slot-based roster — mirrors the Plan Dashboard's per-plant
-     * clock-in board. The dispatch system doesn't assign operator names
-     * to slots ahead of time (that happens in the morning), so we list
-     * by slot number plus the back-computed clock-in time, an outbound
-     * destination tag where applicable, and a leave-off row when the
-     * plant's effective base exceeds the day's needed clock-ins. */
     const rows = roster
-        .map((op) => {
+        .map((op, idx) => {
             const isLeaveOff = op.isLeaveOff === true
-            const rowStyle = isLeaveOff
-                ? 'padding:9px 10px;border-bottom:1px solid #f1f5f9;color:#94a3b8;background:#fafafa;'
-                : 'padding:9px 10px;border-bottom:1px solid #f1f5f9;'
-            const slotLabel = op.index ? `Slot ${op.index}` : op.name || '—'
+            const isLast = idx === roster.length - 1
+            const baseCell = `padding:11px 12px;vertical-align:middle;${isLast ? '' : `border-bottom:1px solid ${SURFACE_ALT};`}`
+            const slotChipBg = isLeaveOff ? '#e2e8f0' : NAVY
+            const slotChipFg = isLeaveOff ? '#94a3b8' : '#ffffff'
             const clockInCell = isLeaveOff
-                ? `<span style="color:#94a3b8;">—</span>`
+                ? `<span style="color:${INK_FAINT};">—</span>`
                 : op.clockIn
                   ? htmlEscape(op.clockIn)
                   : '—'
             const destinationTag = op.destinationPlant
-                ? `<span style="font-size:10.5px;font-weight:700;color:#0369a1;background:rgba(14,165,233,0.12);padding:2px 8px;border-radius:999px;">&rarr; ${htmlEscape(op.destinationPlant)}</span>`
+                ? `<span style="font-size:10.5px;font-weight:700;color:#0369a1;background:rgba(14,165,233,0.12);padding:3px 9px;border-radius:999px;letter-spacing:0.06em;text-transform:uppercase;">&rarr;&nbsp; ${htmlEscape(op.destinationPlant)}</span>`
                 : ''
             const flagTone = isLeaveOff
                 ? 'color:#64748b;background:#e2e8f0;'
@@ -259,24 +300,31 @@ function renderRoster({ roster }) {
                   ? 'color:#0369a1;background:rgba(14,165,233,0.12);'
                   : 'color:#b45309;background:rgba(217,119,6,0.12);'
             const flagTag = op.flag
-                ? `<span style="font-size:10px;font-weight:700;text-transform:uppercase;${flagTone}padding:2px 7px;border-radius:999px;">${htmlEscape(op.flag)}</span>`
+                ? `<span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;${flagTone}padding:3px 9px;border-radius:999px;">${htmlEscape(op.flag)}</span>`
                 : ''
-            const notesCell = [destinationTag, flagTag].filter(Boolean).join(' ')
+            const notesCell = [destinationTag, flagTag].filter(Boolean).join(' &nbsp;')
+            const slotNumber = op.index ? String(op.index) : (op.name || '—').slice(0, 1).toUpperCase()
+            const slotName = op.index ? `Slot ${op.index}` : op.name || '—'
             return `
 <tr>
-    <td style="${rowStyle}">${htmlEscape(slotLabel)}</td>
-    <td style="${rowStyle}font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:90px;">${clockInCell}</td>
-    <td style="${rowStyle}width:180px;">${notesCell || '—'}</td>
+    <td style="${baseCell}width:90px;">
+        <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:999px;background:${slotChipBg};color:${slotChipFg};font-weight:700;font-size:11px;margin-right:8px;vertical-align:middle;">${htmlEscape(slotNumber)}</span>
+        <span style="font-weight:600;color:${isLeaveOff ? INK_FAINT : INK};font-size:12.5px;vertical-align:middle;">${htmlEscape(slotName)}</span>
+    </td>
+    <td style="${baseCell}font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;text-align:right;width:100px;font-weight:600;color:${isLeaveOff ? INK_FAINT : INK};">${clockInCell}</td>
+    <td style="${baseCell}">${notesCell || '<span style="color:#cbd5e1;">—</span>'}</td>
 </tr>`
         })
         .join('')
+    const th = (label, align, width) => `
+<th style="background:${NAVY};color:#ffffff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.1em;text-align:${align};padding:11px 12px;${width ? `width:${width};` : ''}">${label}</th>`
     return `
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;font-size:12.5px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;font-size:12.5px;border-radius:10px;overflow:hidden;border:1px solid ${BORDER};">
     <thead>
         <tr>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Slot</th>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:right;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Clock in</th>
-            <th style="background:#f1f5f9;color:#475569;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;">Notes</th>
+            ${th('Slot', 'left', '90px')}
+            ${th('Clock in', 'right', '100px')}
+            ${th('Notes', 'left', null)}
         </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -288,8 +336,8 @@ function renderNotes({ notes }) {
     if (!normalized) return ''
     const escaped = htmlEscape(normalized).replace(/\n/g, '<br/>')
     return `
-<h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${NAVY};margin:28px 0 12px;padding-bottom:6px;border-bottom:2px solid ${NAVY};">Dispatcher notes</h2>
-<div style="background:#fffbeb;border-left:3px solid #f59e0b;padding:14px 18px;font-size:13px;line-height:1.55;color:#78350f;border-radius:0 8px 8px 0;">
+${renderSectionHeader('Dispatcher notes', 'From the dispatcher')}
+<div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:16px 20px;font-size:13px;line-height:1.55;color:#78350f;border-radius:0 10px 10px 0;">
     ${escaped}
 </div>`
 }
@@ -353,21 +401,36 @@ export function buildDailyPlanEmail({
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="color-scheme" content="light"/>
+<meta name="supported-color-schemes" content="light"/>
 <title>${htmlEscape(subjectCore)}</title>
 </head>
-<body style="margin:0;padding:24px 12px;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="max-width:720px;width:100%;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08),0 8px 24px rgba(0,0,0,0.04);">
+<body style="margin:0;padding:32px 16px;background:#eef0f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${INK};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="max-width:760px;width:100%;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,0.06),0 12px 32px rgba(15,23,42,0.08);">
     <tr>
-        <td style="background:${ACCENT};color:#ffffff;padding:18px 28px;">
+        <td style="background:linear-gradient(135deg,${ACCENT} 0%,${ACCENT_DARK} 100%);background-color:${ACCENT};color:#ffffff;padding:24px 32px 22px;">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;">
                 <tr>
                     <td valign="middle">
-                        <div style="font-size:18px;font-weight:700;letter-spacing:0.02em;">Smyrna Ready Mix</div>
-                        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.12em;opacity:0.85;margin-top:2px;">Daily Dispatch Plan</div>
+                        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.18em;opacity:0.85;">Smyrna Ready Mix</div>
+                        <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em;margin-top:6px;line-height:1.1;">Daily Dispatch Plan</div>
                     </td>
-                    <td valign="middle" align="right" style="font-size:13px;font-weight:500;opacity:0.95;">
-                        ${htmlEscape(dateLong)}<br/>
-                        <span style="font-size:11px;opacity:0.8;">${htmlEscape(plantLabel)}</span>
+                    <td valign="middle" align="right" style="font-size:13px;line-height:1.45;text-align:right;">
+                        <div style="font-weight:600;">${htmlEscape(dateLong)}</div>
+                        <div style="font-size:12px;opacity:0.85;margin-top:3px;">${htmlEscape(plantLabel)}</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="background:${NAVY};color:#ffffff;padding:10px 32px;font-size:11.5px;letter-spacing:0.04em;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;">
+                <tr>
+                    <td valign="middle" style="opacity:0.85;">
+                        <strong style="text-transform:uppercase;letter-spacing:0.12em;font-size:10.5px;">Heads up</strong>
+                        &nbsp;&middot;&nbsp; Plans may be updated through 5:00 PM. You are responsible for reading any
+                        updates that come in &mdash; including after you have clocked out for the day.
                     </td>
                 </tr>
             </table>
@@ -375,32 +438,30 @@ export function buildDailyPlanEmail({
     </tr>
     ${testMode ? renderTestBanner({ intendedCc, intendedTo, plantLabel, testRedirectEmail }) : ''}
     <tr>
-        <td style="background:#fffbeb;border-bottom:1px solid #fde68a;padding:12px 28px;font-size:12px;color:#78350f;line-height:1.55;">
-            <strong style="color:#92400e;text-transform:uppercase;letter-spacing:0.05em;font-size:11px;">Heads up:</strong>
-            Plans may be updated through 5:00 PM. You are responsible for reading any updates that come in &mdash; including after you have clocked out for the day.
-        </td>
-    </tr>
-    <tr>
-        <td style="padding:28px;">
-            <p style="font-size:15px;margin:0 0 6px;">${greetingLine}</p>
-            <p style="font-size:13px;color:#64748b;margin:0 0 24px;line-height:1.5;">
-                Below is the dispatch plan for <strong>${htmlEscape(plantLabel)}</strong> on ${htmlEscape(dateLong)}. The plan auto-generated from today's schedule.
+        <td style="padding:28px 32px 32px;">
+            <p style="font-size:16px;margin:0 0 6px;color:${INK};font-weight:600;">${greetingLine}</p>
+            <p style="font-size:13.5px;color:${INK_MUTED};margin:0 0 24px;line-height:1.55;">
+                Below is the dispatch plan for <strong style="color:${INK};">${htmlEscape(plantLabel)}</strong> on
+                <strong style="color:${INK};">${htmlEscape(dateLong)}</strong>. The plan was auto-generated from the day&rsquo;s saved schedule &mdash; skim the highlights, scan for risk, and reach back to dispatch if anything looks off.
             </p>
             ${renderSummaryGrid({ kpi })}
-            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${NAVY};margin:28px 0 12px;padding-bottom:6px;border-bottom:2px solid ${NAVY};">Orders for today</h2>
+            ${renderSectionHeader('Orders for today', 'What you are pouring')}
             ${renderOrdersTable({ orders })}
-            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${NAVY};margin:28px 0 12px;padding-bottom:6px;border-bottom:2px solid ${NAVY};">Cross-plant help</h2>
+            ${renderSectionHeader('Cross-plant help', 'Who is coming, who is going')}
             ${renderHelpSection({ helpIn, helpOut })}
-            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${NAVY};margin:28px 0 12px;padding-bottom:6px;border-bottom:2px solid ${NAVY};">Operator clock-in roster</h2>
+            ${renderSectionHeader('Operator clock-in roster', 'How the day starts')}
             ${renderRoster({ roster })}
             ${renderNotes({ notes })}
         </td>
     </tr>
     <tr>
-        <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:18px 28px;font-size:11.5px;color:#64748b;line-height:1.55;text-align:center;">
-            Auto-generated by Smyrna Plan Tools &middot; ${htmlEscape(dateLong)}<br/>
-            <a href="${htmlEscape(frontendUrl)}" style="color:${NAVY};text-decoration:none;">View the live plan</a>
-            ${testMode ? `<div style="margin-top:6px;font-size:10.5px;color:#94a3b8;">Test message — production messages omit the redirect banner above and route to the intended TO + CC.</div>` : ''}
+        <td style="background:${NAVY_DARK};color:#cbd5e1;padding:22px 32px;font-size:11.5px;line-height:1.6;text-align:center;">
+            <div style="font-weight:700;color:#ffffff;letter-spacing:0.04em;">Smyrna Ready Mix &middot; Plan Tools</div>
+            <div style="margin-top:4px;opacity:0.75;">Auto-generated for ${htmlEscape(dateLong)}</div>
+            <div style="margin-top:10px;">
+                <a href="${htmlEscape(frontendUrl)}" style="display:inline-block;padding:9px 18px;background:#ffffff;color:${NAVY};border-radius:999px;text-decoration:none;font-weight:700;font-size:12px;letter-spacing:0.04em;">View the live plan &rarr;</a>
+            </div>
+            ${testMode ? `<div style="margin-top:14px;font-size:10.5px;color:#94a3b8;">Test message — production messages omit the redirect banner above and route to the intended TO + CC.</div>` : ''}
         </td>
     </tr>
 </table>

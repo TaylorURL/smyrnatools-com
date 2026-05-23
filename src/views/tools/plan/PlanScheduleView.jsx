@@ -37,6 +37,11 @@ function PlanScheduleView({
     assignments = [],
     detailByOrderId = {},
     filters = DEFAULT_SCHEDULE_FILTERS,
+    /** Behavioural risk index keyed by customer name. Threaded through to
+     *  every order row so the customer cell can render the "Likely to
+     *  Kick" / "Likely to Cancel/Move" badges sourced from the trailing
+     *  60-day history. Owned by `OperationsView` via `useCustomerRiskIndex`. */
+    customerRiskIndex,
     getTravelTime,
     isMaximized = false,
     isMobile = false,
@@ -412,6 +417,7 @@ function PlanScheduleView({
                                 <PlanScheduleTable
                                     accentColor={accentColor}
                                     clockInRows={clockInRows}
+                                    customerRiskIndex={customerRiskIndex}
                                     detailByOrderId={detailByOrderId}
                                     filteredPlantCode={singlePlant}
                                     firstLoadOutByPlant={firstLoadOutByPlant}
