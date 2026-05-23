@@ -1,5 +1,29 @@
 # Changelog
 
+## [2026.21.29] - 2026-05-23
+
+- New Schedules sub-page under Operations > Statistics
+  (`src/app/components/dayforce/DayforceSchedulesPage.jsx`,
+  registered in `PlanStatisticsSidebar.jsx`, wired in
+  `PlanStatisticsView.jsx`). Flat per-(operator × day) punch log
+  with scheduled in/out, actual in/out, hours, exception, and plant
+  — the per-shift detail the Hours summary aggregates away. Each
+  actual time renders a small `+5m / -8m` delta pill so chronic
+  early clock-ins or short clock-outs are visible at a glance.
+- `useDayforceOperatorMetrics` now exposes a `perShift` array — one
+  row per (employee × shift_date) with employee, matched-operator,
+  plant, raw punch timestamps, and exception text already resolved
+  on the row. Sorted most-recent first; tie-breaks by operator name.
+- `SORT_OPTIONS` in `useDayforceOperatorFilters` gained two
+  shift-friendly sorts: `dateDesc` (most recent day first) and
+  `operator` (operator A–Z + chronological within). Hours and Labor
+  Cost continue to use their existing sort sets unchanged.
+- PTO days collapse to a single inline `PTO · 8.0h` pill on the
+  schedule row instead of repeating the scheduled time columns.
+  Exception text renders as a secondary line under the row when
+  present (`In Time Exception: Early In`, etc.).
+
+
 ## [2026.21.28] - 2026-05-23
 
 - New Dayforce sync pipeline lands an end-to-end Hours and Labor Cost

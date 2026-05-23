@@ -70,6 +70,12 @@ export const PLAN_STATS_SECTIONS = [
         label: 'Hours'
     },
     {
+        description: 'Per-shift schedule from Dayforce — scheduled vs actual clock in/out per operator per day.',
+        icon: 'fa-calendar-days',
+        id: 'schedules',
+        label: 'Schedules'
+    },
+    {
         description: 'Labor cost from Dayforce — regular vs overtime, blended rate, per-operator and per-plant cost.',
         icon: 'fa-dollar-sign',
         id: 'laborCost',

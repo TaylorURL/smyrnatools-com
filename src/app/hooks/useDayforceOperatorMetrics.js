@@ -474,6 +474,53 @@ export default function useDayforceOperatorMetrics({
             filteredShifts.filter((s) => s.exception_code).map((s) => s.dayforce_employee_id)
         ).size
 
+        // Flat per-shift list — one row per (operator × day). Feeds the
+        // Schedules sub-page where each row shows the four timestamps
+        // (scheduled in/out + actual in/out) the dispatcher needs to
+        // audit a single day. Sorted by shift_date desc then operator
+        // name so the most recent activity sits on top.
+        const perShift = filteredShifts
+            .map((shift) => {
+                const employee = employeesById.get(shift.dayforce_employee_id)
+                const operator = operatorByEmployeeId.get(shift.dayforce_employee_id)
+                const { code, name } = resolveShiftPlant(shift)
+                const displayName =
+                    operator?.name ||
+                    employee?.display_name ||
+                    [employee?.first_name, employee?.last_name].filter(Boolean).join(' ') ||
+                    employee?.employee_badge ||
+                    `Employee ${shift.dayforce_employee_id}`
+                return {
+                    actualHours: Number(shift.actual_hours) || 0,
+                    actualInAt: shift.actual_in_at,
+                    actualInPunchAt: shift.actual_in_punch_at,
+                    actualOutAt: shift.actual_out_at,
+                    actualOutPunchAt: shift.actual_out_punch_at,
+                    badge: employee?.employee_badge || operator?.smyrnaId || null,
+                    dayforceEmployeeId: shift.dayforce_employee_id,
+                    dayforceShiftId: shift.dayforce_shift_id,
+                    exceptionText: shift.exception_text || null,
+                    isMatched: !!operator,
+                    isPto: !!shift.is_pto,
+                    name: displayName,
+                    plantCode: code,
+                    plantName: name,
+                    position: operator?.position || null,
+                    ptoHours: Number(shift.pto_hours) || 0,
+                    scheduledHours: Number(shift.scheduled_hours) || 0,
+                    scheduledInAt: shift.scheduled_in_at,
+                    scheduledOutAt: shift.scheduled_out_at,
+                    shiftDate: shift.shift_date
+                }
+            })
+            .sort((a, b) => {
+                // Most recent first; tie-break by operator name so the
+                // table reads predictably within a single day.
+                const dateCmp = String(b.shiftDate).localeCompare(String(a.shiftDate))
+                if (dateCmp !== 0) return dateCmp
+                return String(a.name).localeCompare(String(b.name))
+            })
+
         return {
             // Diagnostic counts so the empty-state messaging can tell
             // "tables empty" apart from "rows loaded but filtered out."
@@ -502,6 +549,7 @@ export default function useDayforceOperatorMetrics({
             },
             perOperator,
             perPlant,
+            perShift,
             perWeek,
             totals: {
                 avgHourlyRate: totalActualHours > 0 ? (totalRegCost + totalOtCost) / totalActualHours : 0,

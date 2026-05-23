@@ -5,6 +5,24 @@ import { useMemo, useState } from 'react'
  *  for "biggest first" (which is what users want for cost / hours). */
 export const SORT_OPTIONS = {
     cost: { compare: (a, b) => b.totalCost - a.totalCost, label: 'Highest cost' },
+    // Most-recent shift first. Tie-break by operator name so a single
+    // day reads predictably across rows. Schedules page default.
+    dateDesc: {
+        compare: (a, b) => {
+            const cmp = String(b.shiftDate).localeCompare(String(a.shiftDate))
+            return cmp !== 0 ? cmp : String(a.name).localeCompare(String(b.name))
+        },
+        label: 'Most recent day'
+    },
+    // Operator name, then chronological — useful for "show me this
+    // operator's whole week".
+    operator: {
+        compare: (a, b) => {
+            const cmp = String(a.name).localeCompare(String(b.name))
+            return cmp !== 0 ? cmp : String(a.shiftDate).localeCompare(String(b.shiftDate))
+        },
+        label: 'Operator (A–Z)'
+    },
     hours: { compare: (a, b) => b.actualHours - a.actualHours, label: 'Most hours' },
     name: { compare: (a, b) => String(a.name).localeCompare(String(b.name)), label: 'Name (A–Z)' },
     ot: { compare: (a, b) => b.otHours - a.otHours, label: 'Most overtime' },
