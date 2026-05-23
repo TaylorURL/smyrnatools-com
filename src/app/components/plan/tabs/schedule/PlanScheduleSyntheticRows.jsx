@@ -102,7 +102,7 @@ export function PlaceholderRow({ accentColor, animationDelayMs, bodyColSpan, pla
         >
             <td
                 className="px-3 py-2 font-mono font-bold whitespace-nowrap"
-                style={{ color: refOrder.startTime ? accent : 'var(--text-tertiary)' }}
+                style={{ color: refOrder.startTime ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
             >
                 {refOrder.startTime ? String(refOrder.startTime).slice(0, 5) : '—'}
             </td>
@@ -180,14 +180,14 @@ export function TradeoffRow({ accentColor, animationDelayMs, bodyColSpan, plantN
             accentColor="#d97706"
             chips={
                 <div className="mt-1.5 flex items-center gap-2 flex-wrap text-[11px]">
-                    <span className="inline-flex items-center gap-1 font-semibold text-[#0369a1]">
+                    <span className="inline-flex items-center gap-1 font-semibold text-text-primary">
                         <i className="fas fa-calendar-plus text-[9px]" />
                         Book:
                     </span>
                     {row.slots.map((slot) => (
                         <span
                             key={slot.key}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-semibold text-[10.5px] bg-[rgba(14,_165,_233,_0.12)] text-[#0369a1]"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-semibold text-[10.5px] bg-[rgba(14,_165,_233,_0.12)] text-text-primary"
                             title={`${slot.minTrucks}+ trucks idle for ~${Math.round((slot.durationMin / 60) * 10) / 10}h starting ${formatMinutesClock(slot.time)}`}
                         >
                             {slot.label}

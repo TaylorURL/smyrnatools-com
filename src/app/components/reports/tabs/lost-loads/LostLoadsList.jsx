@@ -78,7 +78,7 @@ const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, on
             onClick={() => onClick?.(report)}
         >
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-red-100 text-red-700">
+                <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-red-100 text-text-primary">
                     <i className="fas fa-truck text-[10px]" />
                 </div>
                 <div className="min-w-0">
@@ -100,7 +100,7 @@ const LostLoadRow = ({ report, getUserName, accentColor, canDelete, onDelete, on
                     </div>
                 </div>
             </div>
-            <span className={`${STATUS_PILL_BASE} bg-green-100 text-green-800`}>Submitted</span>
+            <span className={`${STATUS_PILL_BASE} bg-green-100 text-text-primary`}>Submitted</span>
             <button
                 className="ml-2 px-2 py-1 rounded text-white text-[10.5px] font-semibold shrink-0 hidden sm:inline-flex uppercase tracking-wider"
                 style={{ background: accentColor }}

@@ -1,6 +1,7 @@
 /* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+import { isDarkLikeTheme } from '../../constants/themeConstants'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import PlantDropdownModal from '../common/PlantDropdownModal'
@@ -31,8 +32,13 @@ const BADGE_PILL_TINTS = {
     Unassigned: '#a16207'
 }
 
-/** Inline badge — parses "X Label · Y Label" into a row of compact pills. */
-const Badge = ({ children, onClick, onPillClick, accentColor }) => {
+/** Inline badge — parses "X Label · Y Label" into a row of compact pills.
+ *  Text colour flips to white in dark / grayed-out modes and to black in
+ *  light mode so the count + label always reads against whatever theme
+ *  surface the pill sits on. The status tint stays on the background +
+ *  border so the colour cue (red = Shop, green = Active, etc.) is still
+ *  carried, just not at the cost of legibility on dark chrome. */
+const Badge = ({ children, onClick, onPillClick, accentColor, isDark }) => {
     const text = typeof children === 'string' ? children : ''
     const parts = text.split('·').map((s) => s.trim())
     const parsed = parts
@@ -41,6 +47,8 @@ const Badge = ({ children, onClick, onPillClick, accentColor }) => {
             return match ? { count: match[1], label: match[2] } : null
         })
         .filter(Boolean)
+
+    const textColor = isDark ? '#ffffff' : '#000000'
 
     if (parsed.length >= 2) {
         return (
@@ -60,7 +68,7 @@ const Badge = ({ children, onClick, onPillClick, accentColor }) => {
                             className={`inline-flex items-center gap-1 rounded text-[11px] font-semibold px-1.5 py-0.5${
                                 clickHandler ? ' border-none cursor-pointer hover:brightness-95' : ''
                             }`}
-                            style={{ background: `${color}14`, border: `1px solid ${color}30`, color }}
+                            style={{ background: `${color}14`, border: `1px solid ${color}30`, color: textColor }}
                             {...clickProps}
                         >
                             <span className="font-mono tabular-nums">{count}</span>
@@ -84,7 +92,7 @@ const Badge = ({ children, onClick, onPillClick, accentColor }) => {
         <Wrapper {...wrapperProps}>
             <span
                 className="inline-flex items-center gap-1 rounded text-[11px] font-semibold px-1.5 py-0.5"
-                style={{ background: `${accentColor}14`, border: `1px solid ${accentColor}30`, color: accentColor }}
+                style={{ background: `${accentColor}14`, border: `1px solid ${accentColor}30`, color: textColor }}
             >
                 {children}
             </span>
@@ -214,7 +222,7 @@ const ListHeader = ({ labels, colWidths, sortKey, sortDirection, onHeaderClick, 
                     className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider py-2 px-2 cursor-pointer select-none border-none bg-transparent"
                     style={{
                         ...(isFlex ? { flex: 1, minWidth: 0 } : { flexShrink: 0, width: colWidth }),
-                        color: isActive ? accentColor : 'var(--text-secondary)',
+                        color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                         textAlign: 'left'
                     }}
                     onClick={() => onHeaderClick?.(label)}
@@ -223,7 +231,7 @@ const ListHeader = ({ labels, colWidths, sortKey, sortDirection, onHeaderClick, 
                     {isActive && (
                         <i
                             className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} text-[9px]`}
-                            style={{ color: accentColor }}
+                            style={{ color: 'var(--text-primary)' }}
                         />
                     )}
                 </button>
@@ -248,7 +256,7 @@ const MobileViewToggle = ({ viewMode, onChange, accentColor }) => (
                     style={{
                         background: isActive ? `${accentColor}14` : 'var(--bg-secondary)',
                         border: `1px solid ${isActive ? accentColor : 'var(--border-light)'}`,
-                        color: isActive ? accentColor : 'var(--text-secondary)'
+                        color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)'
                     }}
                     onClick={() => onChange?.(mode)}
                     aria-label={`${label} view`}
@@ -320,6 +328,10 @@ function TopSection({
 }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
+    /** Pre-compute the dark-like flag once so every Badge mount picks up
+     *  the right text colour (white on dark / grayed surfaces, black on
+     *  light). Avoids each pill re-reading preferences. */
+    const isDarkBadgeTheme = isDarkLikeTheme(preferences.themeMode)
     const isMobile = useIsMobile()
     const [isPlantModalOpen, setIsPlantModalOpen] = useState(false)
     const [showMobileFilters, setShowMobileFilters] = useState(false)
@@ -422,7 +434,12 @@ function TopSection({
                             >
                                 <h1 className="text-[16px] font-bold m-0 truncate text-text-primary">{title}</h1>
                                 {badge && (
-                                    <Badge onClick={onBadgeClick} onPillClick={onPillClick} accentColor={accentColor}>
+                                    <Badge
+                                        onClick={onBadgeClick}
+                                        onPillClick={onPillClick}
+                                        accentColor={accentColor}
+                                        isDark={isDarkBadgeTheme}
+                                    >
                                         {badge}
                                     </Badge>
                                 )}
@@ -466,7 +483,7 @@ function TopSection({
                                 style={{
                                     background: showMobileFilters ? `${accentColor}14` : 'var(--bg-secondary)',
                                     border: `1px solid ${showMobileFilters ? accentColor : 'var(--border-light)'}`,
-                                    color: showMobileFilters ? accentColor : 'var(--text-secondary)'
+                                    color: showMobileFilters ? 'var(--text-primary)' : 'var(--text-secondary)'
                                 }}
                                 onClick={() => setShowMobileFilters(!showMobileFilters)}
                                 aria-label="Toggle filters"
@@ -584,7 +601,12 @@ function TopSection({
                                 {title}
                             </h1>
                             {badge && (
-                                <Badge onClick={onBadgeClick} onPillClick={onPillClick} accentColor={accentColor}>
+                                <Badge
+                                    onClick={onBadgeClick}
+                                    onPillClick={onPillClick}
+                                    accentColor={accentColor}
+                                    isDark={isDarkBadgeTheme}
+                                >
                                     {badge}
                                 </Badge>
                             )}

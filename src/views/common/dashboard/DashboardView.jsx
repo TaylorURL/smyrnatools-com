@@ -268,11 +268,11 @@ export default function DashboardView() {
 
                     <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                         {error && (
-                            <div className="flex items-center justify-between rounded text-red-600 px-4 py-3 bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.3)]">
+                            <div className="flex items-center justify-between rounded text-text-primary px-4 py-3 bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.3)]">
                                 <span className="text-[13px] font-semibold">{error}</span>
                                 <button
                                     onClick={() => setRefreshKey((v) => v + 1)}
-                                    className="bg-transparent border-none text-red-600 cursor-pointer font-semibold text-[12px]"
+                                    className="bg-transparent border-none text-text-primary cursor-pointer font-semibold text-[12px]"
                                 >
                                     Retry
                                 </button>

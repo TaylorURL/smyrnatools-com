@@ -2,7 +2,6 @@
 import React from 'react'
 
 import {
-    deltaColor,
     deltaPct,
     fmtDate,
     fmtInt,
@@ -21,8 +20,8 @@ export function ComparisonRow({ current, label, previous }) {
             <span className="font-semibold font-mono tabular-nums text-text-primary">{current.formatted}</span>
             <span className="font-mono tabular-nums text-text-tertiary">{previous ? previous.formatted : '—'}</span>
             <span
-                className="font-semibold font-mono tabular-nums text-right"
-                style={{ color: deltaColor(pct), minWidth: 60 }}
+                className="font-semibold font-mono tabular-nums text-right text-text-primary"
+                style={{ minWidth: 60 }}
             >
                 {pct == null ? '—' : fmtPct(pct)}
             </span>
@@ -283,7 +282,10 @@ export function PlantScorecardTable({
                                         {status && (
                                             <span
                                                 className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold"
-                                                style={{ background: `${status.color}1f`, color: status.color }}
+                                                style={{
+                                                    background: `${status.color}1f`,
+                                                    color: 'var(--text-primary)'
+                                                }}
                                             >
                                                 {status.label}
                                             </span>

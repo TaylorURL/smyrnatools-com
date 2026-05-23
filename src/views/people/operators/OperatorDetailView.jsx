@@ -441,7 +441,7 @@ function OperatorDetailView({ operatorId, onClose, allowedPlantCodes }) {
                                         disabled={!canEditOperator}
                                     >
                                         <i
-                                            className={`fas fa-star ${star <= rating ? 'text-amber-400' : 'text-border-light'}`}
+                                            className={`fas fa-star ${star <= rating ? 'text-text-primary' : 'text-border-light'}`}
                                         ></i>
                                     </button>
                                 ))}

@@ -43,9 +43,13 @@ function ContextStat({ label, value }) {
 
 function ContextActionButton({ accentColor, active = false, danger = false, icon, label, onClick }) {
     const styles = danger
-        ? { background: 'rgba(220, 38, 38, 0.08)', borderColor: 'rgba(220, 38, 38, 0.25)', color: '#dc2626' }
+        ? {
+              background: 'rgba(220, 38, 38, 0.08)',
+              borderColor: 'rgba(220, 38, 38, 0.25)',
+              color: 'var(--text-primary)'
+          }
         : active
-          ? { background: `${accentColor}14`, borderColor: `${accentColor}55`, color: accentColor }
+          ? { background: `${accentColor}14`, borderColor: `${accentColor}55`, color: 'var(--text-primary)' }
           : { background: 'var(--bg-secondary)', borderColor: 'var(--border-light)', color: 'var(--text-primary)' }
     return (
         <button

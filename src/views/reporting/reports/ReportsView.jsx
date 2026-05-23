@@ -394,7 +394,7 @@ function ReportsView() {
     return (
         <div className="bg-slate-50 min-h-screen w-full pb-16">
             {loadError && (
-                <div className="flex items-center gap-2 m-3 sm:m-4 p-3 sm:p-4 bg-red-100 text-red-700 rounded-lg text-sm font-medium">
+                <div className="flex items-center gap-2 m-3 sm:m-4 p-3 sm:p-4 bg-red-100 text-text-primary rounded-lg text-sm font-medium">
                     <i className="fas fa-exclamation-circle" />
                     {loadError}
                 </div>

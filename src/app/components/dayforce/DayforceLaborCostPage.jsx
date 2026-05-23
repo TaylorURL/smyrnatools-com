@@ -54,8 +54,9 @@ function OperatorCostRow({ canSeeRates, row }) {
                 {fmtHours(row.regHours)}
             </span>
             <span
-                className="font-mono tabular-nums w-16 text-right shrink-0 font-semibold"
-                style={{ color: row.otHours > 0 ? '#b45309' : 'var(--text-tertiary)' }}
+                className={`font-mono tabular-nums w-16 text-right shrink-0 font-semibold ${
+                    row.otHours > 0 ? 'text-text-primary' : 'text-text-tertiary'
+                }`}
             >
                 {row.otHours > 0 ? fmtHours(row.otHours) : '—'}
             </span>
@@ -96,7 +97,10 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
         return (
             <Panel title="Couldn't load Dayforce data" innerClassName="p-3">
                 <div className="flex items-start gap-3 text-[12.5px]">
-                    <i className="fas fa-circle-exclamation text-[14px] mt-0.5" style={{ color: '#b91c1c' }} />
+                    <i
+                        className="fas fa-circle-exclamation text-[14px] mt-0.5"
+                        style={{ color: 'var(--text-primary)' }}
+                    />
                     <div className="flex flex-col gap-1 min-w-0">
                         <span className="font-semibold text-text-primary">Query error</span>
                         <span className="text-text-secondary font-mono break-all">{diagnostics.loadError}</span>
@@ -145,7 +149,6 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
                         label="OT cost"
                         value={fmtMoney(totals.otCost)}
                         hint={`${fmtHours(totals.otHours)} · ${fmtFloat(otShare, 1)}% of total`}
-                        valueColor={totals.otCost > 0 ? '#b45309' : undefined}
                     />
                     {canSeeRates && (
                         <Stat
@@ -160,14 +163,6 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
                         value={totals.operatorCount > 0 ? fmtMoney(totals.totalCost / totals.operatorCount) : '—'}
                     />
                 </StatGroup>
-                {!isRoleLoading && (
-                    <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-text-tertiary italic">
-                        <i className={`fas ${canSeeRates ? 'fa-circle-info' : 'fa-lock'} text-[10px]`} />
-                        {canSeeRates
-                            ? 'Pay rates are visible only to Division Presidents.'
-                            : 'Per-employee hourly rates are hidden for this role — visible only to Division Presidents.'}
-                    </div>
-                )}
             </Panel>
 
             <DayforceFilters

@@ -105,7 +105,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center mt-0.5"
                     style={{ backgroundColor: `${color}15` }}
                 >
-                    <i className={`fas ${icon} text-sm`} style={{ color }} />
+                    <i className={`fas ${icon} text-sm`} style={{ color: 'var(--text-primary)' }} />
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-slate-800 truncate">{doc.name}</div>
@@ -136,7 +136,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                         {canDelete && (
                             <button
                                 onClick={() => onDelete(doc)}
-                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-red-200 bg-white text-red-500 cursor-pointer hover:bg-red-50 transition-colors"
+                                className="text-xs font-medium px-2.5 py-1 rounded-md border border-red-200 bg-white text-text-primary cursor-pointer hover:bg-red-50 transition-colors"
                             >
                                 <i className="fas fa-trash mr-1" />
                                 Delete
@@ -153,7 +153,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
             <div className="flex items-center gap-2 min-w-0">
                 <span
                     className="shrink-0 w-5 h-5 rounded flex items-center justify-center"
-                    style={{ background: `${color}14`, color }}
+                    style={{ background: `${color}14`, color: 'var(--text-primary)' }}
                 >
                     <i className={`fas ${icon} text-[10px]`} />
                 </span>
@@ -195,7 +195,7 @@ function DocumentRow({ doc, uploaderName, canDelete, onDelete, onPreview, isMobi
                     <button
                         type="button"
                         onClick={() => onDelete(doc)}
-                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90 text-red-600"
+                        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90 text-text-primary"
                         title="Delete"
                     >
                         <i className="fas fa-trash" />
@@ -392,13 +392,13 @@ export default function DocumentsView() {
                 <div className="mx-3 sm:mx-4 md:mx-6 lg:mx-8 mt-4">
                     <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3.5">
                         <i className="fas fa-circle-notch fa-spin" style={{ color: accentColor }} />
-                        <span className="text-sm text-blue-700 font-medium">Uploading document...</span>
+                        <span className="text-sm text-text-primary font-medium">Uploading document...</span>
                     </div>
                 </div>
             )}
             {error && (
                 <div className="mx-3 sm:mx-4 md:mx-6 lg:mx-8 mt-4">
-                    <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl text-red-600 px-5 py-3.5">
+                    <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl text-text-primary px-5 py-3.5">
                         <span className="text-sm">{error}</span>
                     </div>
                 </div>

@@ -89,7 +89,7 @@ function TopBarDropdown({
                                 key={item.id}
                                 style={{
                                     backgroundColor: isItemActive ? `${accentColor}12` : 'transparent',
-                                    color: isItemActive ? accentColor : 'var(--text-primary)',
+                                    color: 'var(--text-primary)',
                                     fontWeight: isItemActive ? 600 : 400,
                                     gap: '10px',
                                     padding: '10px 14px',
@@ -108,9 +108,7 @@ function TopBarDropdown({
                                 }
                             >
                                 <i className={`fas ${ICONS[item.id]} text-text-secondary text-sm w-[18px]`}></i>
-                                <span style={{ color: isItemActive ? accentColor : 'var(--text-primary)' }}>
-                                    {item.text}
-                                </span>
+                                <span style={{ color: 'var(--text-primary)' }}>{item.text}</span>
                             </div>
                         )
                     })}

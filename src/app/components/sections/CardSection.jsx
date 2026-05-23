@@ -57,7 +57,7 @@ function CardSection({
                         <div className="flex items-center text-text-secondary text-base font-semibold gap-1.5 m-0 text-left w-full">
                             {subtitle}
                             {subtitleWarning && (
-                                <span className="text-amber-400 text-lg ml-2" title={subtitleWarning}>
+                                <span className="text-text-primary text-lg ml-2" title={subtitleWarning}>
                                     <i className="fas fa-exclamation-triangle"></i>
                                 </span>
                             )}

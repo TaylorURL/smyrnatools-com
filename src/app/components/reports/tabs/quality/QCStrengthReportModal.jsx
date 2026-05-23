@@ -259,7 +259,7 @@ function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = nul
                 {/* Form */}
                 <div className="px-4 sm:px-6 py-4 sm:py-5 flex-1 sm:flex-none sm:max-h-[70vh] overflow-y-auto">
                     {error && (
-                        <div className="flex items-center gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <div className="flex items-center gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-text-primary text-sm">
                             <i className="fas fa-exclamation-circle shrink-0" />
                             {error}
                         </div>
@@ -269,7 +269,7 @@ function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = nul
                             <div key={field.name} className={field.type === 'textarea' ? 'sm:col-span-2' : ''}>
                                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
                                     {field.label}
-                                    {field.required && <span className="text-red-400 ml-0.5">*</span>}
+                                    {field.required && <span className="text-text-primary ml-0.5">*</span>}
                                 </label>
                                 {renderField(field)}
                             </div>

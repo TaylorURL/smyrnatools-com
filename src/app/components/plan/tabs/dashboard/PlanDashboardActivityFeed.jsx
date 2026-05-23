@@ -1,24 +1,49 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
-import { PLAN_META_KEY } from '../../../../../utils/PlanUtility'
+import { PLAN_META_KEY, plantBadgeColor } from '../../../../../utils/PlanUtility'
 
 const MAX_FEED_EVENTS = 30
 
-const trim = (v) => (v == null ? '' : String(v).trim())
+/** Schedule-tab vocabulary so the feed reads as a vertical compaction of the
+ *  schedule rows: monospace time anchor on the left, uppercase status pill
+ *  next to it, PlantBadge inline, subtle row tint per event kind. */
+const EVENT_TONE = {
+    complete: {
+        accent: '#15803d',
+        bg: 'rgba(22, 163, 74, 0.14)',
+        icon: 'fa-circle-check',
+        label: 'Complete',
+        rowTint: 'rgba(22, 163, 74, 0.05)'
+    },
+    load: {
+        accent: '#1d4ed8',
+        bg: 'rgba(37, 99, 235, 0.12)',
+        icon: 'fa-truck-fast',
+        label: 'Loaded',
+        rowTint: 'rgba(37, 99, 235, 0.04)'
+    }
+}
+
+const trim = (value) => (value == null ? '' : String(value).trim())
 
 const formatLoadedTime = (raw) => {
     if (!raw) return ''
     const cleaned = String(raw).trim()
-    // `loadedTime` from the dispatch service is "HH:MM:SS" — strip seconds
-    // for the at-a-glance feed; the ticket modal still shows full precision.
+    // `loadedTime` from the dispatch service is "HH:MM:SS" — strip seconds to
+    // match the schedule row's compact "HH:MM" formatting.
     const match = cleaned.match(/^(\d{1,2}):(\d{2})/)
     return match ? `${match[1].padStart(2, '0')}:${match[2]}` : cleaned
 }
 
-/** Build a flat `orderId → { customer, plantCode, scheduledYardage, orderNum }`
- *  lookup so the feed can attach customer / plant / scheduled-yardage context
- *  to each ticket — `detailByOrderId` itself only carries ticket rows. */
+const formatYardage = (value) => {
+    if (!Number.isFinite(value) || value <= 0) return ''
+    return Math.round(value) === value ? `${value} yd` : `${value.toFixed(1)} yd`
+}
+
+/** Flat `orderId → { customer, plantCode, scheduledYardage, orderNum }` lookup
+ *  so events can decorate themselves with order-level context that
+ *  `detailByOrderId` itself doesn't carry. */
 const buildOrderMeta = (plantProduction) => {
     const map = new Map()
     Object.entries(plantProduction || {}).forEach(([code, data]) => {
@@ -48,9 +73,9 @@ const buildEvents = (detailByOrderId, orderMetaByOrderId, plantNameByCode) => {
             if (!ts) return
             const ticketKey = trim(ticket?.ticketId) || `${orderId}-${idx}`
             // "From" plant = where the truck physically loaded (ticket's loaded
-            // plant). "For" plant = the order's assigned home plant from the
-            // schedule. They diverge when one plant covers another's order, so
-            // we surface both whenever they differ.
+            // plant). "For" plant = the order's assigned home plant. They
+            // diverge whenever one plant covers another's order; both are
+            // surfaced inline so the dispatcher sees cross-loading at a glance.
             const loadedPlantCode = trim(ticket?.plantId) || orderPlantCode
             events.push({
                 customer: trim(ticket?.customer) || meta?.customer || '',
@@ -79,7 +104,7 @@ const buildEvents = (detailByOrderId, orderMetaByOrderId, plantNameByCode) => {
                     key: `done-${orderId}`,
                     kind: 'complete',
                     orderNum: meta?.orderNum || '',
-                    // Suffix the timestamp so the completion event sorts ABOVE
+                    // Suffix the timestamp so the completion event sorts above
                     // the matching final-load event in the descending feed.
                     ts: `${lastTs}z`,
                     yardage: scheduled
@@ -91,91 +116,119 @@ const buildEvents = (detailByOrderId, orderMetaByOrderId, plantNameByCode) => {
     return events.slice(0, MAX_FEED_EVENTS)
 }
 
-/** Plant code chip — compact monospace label that mirrors the rest of the
- *  Plan tab's plant-code styling. The optional `tag` slot prefixes a tiny
- *  uppercase qualifier ("from" / "for") so the dispatcher can see at a
- *  glance which plant loaded the truck and which order's plant it serves. */
-function PlantChip({ code, name, tag, tone }) {
+/** Compact variant of the Schedule tab's `PlantBadge`. Same colored pill +
+ *  embedded code bubble vocabulary, dialled down for the 260px sidebar so the
+ *  full plant name still has room to render without truncating aggressively.
+ *
+ *  Background is the saturated per-plant color from `plantBadgeColor`, so
+ *  the text needs to stay WHITE in every theme — black-on-saturated would
+ *  disappear in light mode. Uses the `force-white-text` opt-out class to
+ *  beat the site-wide theme-aware badge rule. */
+function PlantChip({ code, fallback = '#64748b', name }) {
     if (!code) return null
+    const bg = plantBadgeColor(code, fallback)
     return (
         <span
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap"
-            style={{
-                background: `${tone}1f`,
-                boxShadow: `inset 0 0 0 1px ${tone}55`,
-                color: tone
-            }}
+            className="force-white-text inline-flex items-center gap-1 rounded-full pl-0.5 pr-1.5 py-0 font-semibold whitespace-nowrap min-w-0"
+            style={{ background: bg }}
             title={name ? `${code} · ${name}` : code}
         >
-            {tag && <span className="uppercase tracking-wider opacity-70 text-[8.5px]">{tag}</span>}
-            <span className="font-mono tabular-nums">{code}</span>
+            <span
+                className="inline-flex items-center justify-center rounded-full font-bold bg-[rgba(255,255,255,0.22)] h-[16px] px-1"
+                style={{ fontSize: 9.5, minWidth: 28 }}
+            >
+                {code}
+            </span>
+            {name && <span className="text-[10.5px] truncate">{name}</span>}
         </span>
     )
 }
 
-/** Single feed entry. `animate-fade-slide-in` runs once on mount, so newly
- *  appearing tickets fade-in from above while existing rows stay still
- *  (React reuses their DOM via stable `key`). */
+/** Status pill — same template as the Schedule row's `OrderStatusBadge` /
+ *  `ServiceBadge`: `px-2 py-0.5 rounded-full text-[10px] font-bold uppercase
+ *  tracking-wider` with a tinted background + saturated foreground. */
+function StatusPill({ tone, label, icon }) {
+    return (
+        <span
+            className="force-white-text inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
+            style={{ background: tone.accent }}
+        >
+            <i className={`fas ${icon} text-[8px]`} />
+            {label}
+        </span>
+    )
+}
+
+/**
+ * One feed entry — vertical compaction of a Schedule row.
+ *
+ * Header row mirrors the schedule's leftmost columns: monospace time anchor +
+ * uppercase status pill. Customer name reads as the primary content directly
+ * below. Footer row carries the `PlantBadge` (with a cross-load arrow when the
+ * "from" and "for" plants diverge) and a right-aligned yardage. Driver name
+ * tucks under as tertiary text. `animate-slide-in-row` matches the schedule
+ * table's per-row entry animation so new events feel like the schedule cells
+ * they describe.
+ */
 function ActivityEvent({ event }) {
     const isComplete = event.kind === 'complete'
-    const tone = isComplete ? '#16a34a' : '#2563eb'
-    const icon = isComplete ? 'fa-circle-check' : 'fa-truck-fast'
-    const headline = isComplete ? 'Job complete' : event.truckNum ? `Truck ${event.truckNum} loaded` : 'Truck loaded'
-    // Plant attribution: completion events only have a "for" plant. Load
-    // events show "from" + "for" when they diverge (a plant covering another
-    // plant's order); when they match we only render the single chip to
-    // avoid noise.
+    const tone = isComplete ? EVENT_TONE.complete : EVENT_TONE.load
     const showFromFor =
         !isComplete && event.fromPlantCode && event.forPlantCode && event.fromPlantCode !== event.forPlantCode
+    const yardageLabel = isComplete ? formatYardage(event.yardage) : formatYardage(event.quantity)
+    const statusLabel = isComplete ? tone.label : event.truckNum ? `Truck ${event.truckNum}` : tone.label
     return (
-        <li className="px-3 py-2 flex items-start gap-2 animate-fade-slide-in border-b border-border-light">
-            <div
-                className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                style={{
-                    background: `${tone}1f`,
-                    boxShadow: `inset 0 0 0 1px ${tone}55`,
-                    color: tone
-                }}
-            >
-                <i className={`fas ${icon} text-[10px]`} />
+        <li
+            className="px-3 py-2 border-t border-border-light animate-slide-in-row first:border-t-0"
+            style={{ background: tone.rowTint }}
+        >
+            <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono font-bold whitespace-nowrap shrink-0 text-text-primary">
+                    {formatLoadedTime(event.ts)}
+                </span>
+                <StatusPill tone={tone} label={statusLabel} icon={tone.icon} />
             </div>
-            <div className="flex-1 min-w-0">
-                <div className="text-[11.5px] font-semibold truncate text-text-primary">{headline}</div>
-                {event.customer && <div className="text-[10.5px] truncate text-text-secondary">{event.customer}</div>}
-                <div className="mt-1 flex items-center flex-wrap gap-1">
-                    {showFromFor ? (
-                        <>
-                            <PlantChip code={event.fromPlantCode} name={event.fromPlantName} tag="from" tone={tone} />
-                            <i className="fas fa-arrow-right text-[8px] text-text-tertiary" />
-                            <PlantChip code={event.forPlantCode} name={event.forPlantName} tag="for" tone="#64748b" />
-                        </>
-                    ) : (
-                        <PlantChip
-                            code={event.forPlantCode || event.fromPlantCode}
-                            name={event.forPlantName || event.fromPlantName}
-                            tone={tone}
-                        />
-                    )}
-                </div>
-                <div className="text-[10px] mt-1 flex items-center gap-1.5 text-text-tertiary">
-                    {isComplete && event.yardage > 0 && <span>{event.yardage.toLocaleString()} yd</span>}
-                    {!isComplete && event.quantity > 0 && <span>{event.quantity.toFixed(1)} yd</span>}
-                    {!isComplete && event.driverName && <span className="truncate">· {event.driverName}</span>}
-                </div>
+            <div className="mt-1 text-[12px] font-semibold truncate text-text-primary" title={event.customer}>
+                {event.customer || '—'}
             </div>
-            <span className="text-[10px] font-mono shrink-0 mt-0.5 text-text-tertiary">
-                {formatLoadedTime(event.ts)}
-            </span>
+            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                {showFromFor ? (
+                    <>
+                        <PlantChip code={event.fromPlantCode} name={event.fromPlantName} />
+                        <i className="fas fa-arrow-right text-[8px] text-text-tertiary" />
+                        <PlantChip code={event.forPlantCode} name={event.forPlantName} />
+                    </>
+                ) : (
+                    <PlantChip
+                        code={event.forPlantCode || event.fromPlantCode}
+                        name={event.forPlantName || event.fromPlantName}
+                    />
+                )}
+                {yardageLabel && (
+                    <span className="ml-auto text-[10.5px] font-mono font-bold tabular-nums whitespace-nowrap text-text-primary">
+                        {yardageLabel}
+                    </span>
+                )}
+            </div>
+            {!isComplete && event.driverName && (
+                <div className="mt-1 text-[10px] truncate text-text-tertiary" title={event.driverName}>
+                    <i className="fas fa-user text-[8px] mr-1" />
+                    {event.driverName}
+                </div>
+            )}
         </li>
     )
 }
 
 /**
- * Realtime activity feed for the Plan dashboard. Replaces the static
- * scrollspy nav with a chronological stream of "truck loaded" + "job
- * complete" events derived from `detailByOrderId` (which `useDetailOrders`
- * polls and refreshes on dispatch updates). New events fade-slide in on
- * mount so the feed feels live without re-animating older rows.
+ * Realtime activity feed for the Plan dashboard. Replaces the old static
+ * scrollspy nav with a chronological stream of "truck loaded" + "job complete"
+ * events derived from `detailByOrderId` (refreshed by `useDetailOrders` on
+ * every dispatch update). Visual language is borrowed from the Schedule tab's
+ * order rows so a dispatcher who recognises one surface immediately reads the
+ * other — monospace time anchor, uppercase status pills, the same `PlantBadge`
+ * coloring, subtle row tint per event kind, and the schedule's
+ * `animate-slide-in-row` entry animation.
  */
 export default function PlanDashboardActivityFeed({ detailByOrderId, plantNameByCode, plantProduction }) {
     const orderMetaByOrderId = useMemo(() => buildOrderMeta(plantProduction), [plantProduction])
@@ -194,7 +247,7 @@ export default function PlanDashboardActivityFeed({ detailByOrderId, plantNameBy
                 <h3 className="text-[12px] font-bold uppercase tracking-wider m-0 text-text-primary">
                     Latest Activity
                 </h3>
-                <span className="ml-auto inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider text-green-600">
+                <span className="ml-auto inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider text-text-primary">
                     <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-green-600" />
                     Live
                 </span>

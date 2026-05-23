@@ -28,11 +28,11 @@ function BreakdownBar({ cancelCount, editCount, moveCount }) {
 export function RankChip({ rank }) {
     const palette =
         rank === 1
-            ? { background: 'rgba(217, 119, 6, 0.18)', color: '#b45309' }
+            ? { background: 'rgba(217, 119, 6, 0.18)', color: 'var(--text-primary)' }
             : rank === 2
-              ? { background: 'rgba(148, 163, 184, 0.22)', color: '#475569' }
+              ? { background: 'rgba(148, 163, 184, 0.22)', color: 'var(--text-primary)' }
               : rank === 3
-                ? { background: 'rgba(180, 83, 9, 0.16)', color: '#92400e' }
+                ? { background: 'rgba(180, 83, 9, 0.16)', color: 'var(--text-primary)' }
                 : { background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }
     return (
         <span
@@ -54,14 +54,14 @@ function moveDirectionLabel(direction) {
     return parts.join(' ')
 }
 
-function SortHeader({ accent, activeKey, align = 'right', children, onSelect, sortKey }) {
+function SortHeader({ activeKey, align = 'right', children, onSelect, sortKey }) {
     const isActive = activeKey === sortKey
     const alignClass = align === 'left' ? 'text-left' : 'text-right'
     return (
         <th
             scope="col"
             className={`text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 border-b border-border-light bg-bg-tertiary whitespace-nowrap ${alignClass}`}
-            style={{ color: isActive ? accent || 'var(--text-primary)' : 'var(--text-tertiary)' }}
+            style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
         >
             <button
                 type="button"
@@ -106,7 +106,7 @@ function CustomerRow({ customer, isActive, onSelect, rank }) {
             </td>
             <td className="px-3 py-2.5 align-middle text-right text-[14px] tabular-nums font-semibold whitespace-nowrap">
                 {customer.cancelCount > 0 ? (
-                    <span style={{ color: HEAVY }}>{fmtInt(customer.cancelCount)}</span>
+                    <span className="text-text-primary">{fmtInt(customer.cancelCount)}</span>
                 ) : (
                     <span className="text-text-tertiary">—</span>
                 )}
@@ -114,7 +114,7 @@ function CustomerRow({ customer, isActive, onSelect, rank }) {
             <td className="px-3 py-2.5 align-middle text-right text-[14px] tabular-nums font-semibold whitespace-nowrap">
                 {customer.moveCount > 0 ? (
                     <span className="inline-flex flex-col items-end leading-tight">
-                        <span style={{ color: SOFT }}>{fmtInt(customer.moveCount)}</span>
+                        <span className="text-text-primary">{fmtInt(customer.moveCount)}</span>
                         {directionHint && (
                             <span className="text-[10px] font-normal text-text-tertiary">{directionHint}</span>
                         )}
@@ -125,7 +125,7 @@ function CustomerRow({ customer, isActive, onSelect, rank }) {
             </td>
             <td className="px-3 py-2.5 align-middle text-right text-[13px] tabular-nums whitespace-nowrap">
                 {customer.editCount > 0 ? (
-                    <span style={{ color: NEUTRAL }}>{fmtInt(customer.editCount)}</span>
+                    <span className="text-text-secondary">{fmtInt(customer.editCount)}</span>
                 ) : (
                     <span className="text-text-tertiary">—</span>
                 )}
@@ -169,10 +169,10 @@ export default function PlanStatisticsMovesCancelsTable({
                         <th scope="col" className={`${headerCls} text-left w-[130px]`}>
                             Mix
                         </th>
-                        <SortHeader accent={HEAVY} activeKey={sortKey} onSelect={onSortChange} sortKey="cancels">
+                        <SortHeader activeKey={sortKey} onSelect={onSortChange} sortKey="cancels">
                             Cancels
                         </SortHeader>
-                        <SortHeader accent={SOFT} activeKey={sortKey} onSelect={onSortChange} sortKey="moves">
+                        <SortHeader activeKey={sortKey} onSelect={onSortChange} sortKey="moves">
                             Moves
                         </SortHeader>
                         <SortHeader activeKey={sortKey} onSelect={onSortChange} sortKey="edits">

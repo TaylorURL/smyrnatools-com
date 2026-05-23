@@ -14,11 +14,11 @@ const getRegionType = (region) => region?.type || region?.region_type || ''
 
 /** Color + icon per region type — used in pills and grid card headers. */
 const REGION_TYPE_META = {
-    Aggregate: { badge: 'bg-amber-100 text-amber-700', icon: 'fa-mountain' },
-    Concrete: { badge: 'bg-blue-100 text-blue-700', icon: 'fa-industry' },
-    Office: { badge: 'bg-purple-100 text-purple-700', icon: 'fa-building' }
+    Aggregate: { badge: 'bg-amber-100 text-text-primary', icon: 'fa-mountain' },
+    Concrete: { badge: 'bg-blue-100 text-text-primary', icon: 'fa-industry' },
+    Office: { badge: 'bg-purple-100 text-text-primary', icon: 'fa-building' }
 }
-const DEFAULT_TYPE_META = { badge: 'bg-slate-100 text-slate-600', icon: 'fa-map-marker-alt' }
+const DEFAULT_TYPE_META = { badge: 'bg-slate-100 text-text-primary', icon: 'fa-map-marker-alt' }
 
 /** Slim filter select — matches the FilterSelect atom inside TopSection so admin
  *  views read with the same rhythm as Mixers / Operators / AssetView. */

@@ -42,15 +42,17 @@ const goodPctColor = (pct) => {
     return BOTH_COLOR
 }
 
-/** Two-line tag explaining why a single bad order was bad. */
+/** Two-line tag explaining why a single bad order was bad. Background
+ *  tint carries the severity (amber = late, orange = slow); text + icon
+ *  stay theme-aware so they read in both light and dark themes. */
 function FailureTags({ isLate, isSlow }) {
     if (!isLate && !isSlow) return null
     return (
         <div className="flex items-center gap-1 flex-wrap">
             {isLate && (
                 <span
-                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ background: `${LATE_COLOR}20`, color: LATE_COLOR }}
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-primary"
+                    style={{ background: `${LATE_COLOR}20` }}
                 >
                     <i className="fas fa-clock text-[9px]" />
                     Late
@@ -58,8 +60,8 @@ function FailureTags({ isLate, isSlow }) {
             )}
             {isSlow && (
                 <span
-                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ background: `${SLOW_COLOR}20`, color: SLOW_COLOR }}
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-primary"
+                    style={{ background: `${SLOW_COLOR}20` }}
                 >
                     <i className="fas fa-gauge-simple-low text-[9px]" />
                     Slow
@@ -217,32 +219,16 @@ function PlantScorecardTable({ colocationMap, plantNameByCode, rows }) {
                                 <td className="px-3 py-2 text-right text-[12.5px] tabular-nums text-text-secondary">
                                     {fmtInt(row.goodJobs)}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12.5px] tabular-nums"
-                                    style={{
-                                        color: row.tierCounts?.notGood > 0 ? '#f59e0b' : 'var(--text-secondary)'
-                                    }}
-                                >
+                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums text-text-secondary">
                                     {fmtInt(row.tierCounts?.notGood || 0)}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12.5px] tabular-nums"
-                                    style={{ color: row.tierCounts?.bad > 0 ? '#dc2626' : 'var(--text-secondary)' }}
-                                >
+                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums text-text-secondary">
                                     {fmtInt(row.tierCounts?.bad || 0)}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12.5px] tabular-nums font-semibold"
-                                    style={{
-                                        color: row.tierCounts?.veryBad > 0 ? '#7f1d1d' : 'var(--text-secondary)'
-                                    }}
-                                >
+                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums font-semibold text-text-secondary">
                                     {fmtInt(row.tierCounts?.veryBad || 0)}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12.5px] tabular-nums"
-                                    style={{ color: row.slowJobs > 0 ? SLOW_COLOR : 'var(--text-secondary)' }}
-                                >
+                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums text-text-secondary">
                                     {fmtInt(row.slowJobs)}
                                 </td>
                                 <td className="px-3 py-2 text-right">
@@ -546,10 +532,7 @@ function WorstOrdersTable({ colocationMap, plantNameByCode, rows }) {
                             <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-secondary">
                                 {m.firstLoadTime || '—'}
                             </td>
-                            <td
-                                className="px-3 py-2 text-right text-[12px] tabular-nums font-bold"
-                                style={{ color: m.isLate ? LATE_COLOR : 'var(--text-tertiary)' }}
-                            >
+                            <td className="px-3 py-2 text-right text-[12px] tabular-nums font-bold text-text-primary">
                                 {m.isLate ? fmtMinutes(m.latenessMin) : '—'}
                             </td>
                             <td className="px-3 py-2 text-right">
@@ -602,12 +585,6 @@ function MomentumPanel({ loading, momentum }) {
     }
     const trajLabel =
         momentum.trajectory === 'improving' ? 'Improving' : momentum.trajectory === 'declining' ? 'Declining' : 'Stable'
-    const trajColor =
-        momentum.trajectory === 'improving'
-            ? GOOD_COLOR
-            : momentum.trajectory === 'declining'
-              ? BOTH_COLOR
-              : 'var(--text-secondary)'
     // momentum.recent.score / prior.score arrive as 0–100 percentages;
     // divide by 100 to plug into the 0–1 star-rating helper.
     const recentPct = momentum.recent.score == null ? null : momentum.recent.score / 100
@@ -633,7 +610,6 @@ function MomentumPanel({ loading, momentum }) {
                             ? 'Need both windows scored'
                             : `${momentum.delta >= 0 ? '+' : ''}${momentum.delta}pp delta`
                     }
-                    valueColor={trajColor}
                 />
             </StatGroup>
         </Panel>
@@ -708,19 +684,16 @@ export default function PlanStatisticsServicePage({
                             <Stat
                                 label="Late jobs"
                                 value={fmtInt(kpi.lateJobs)}
-                                valueColor={kpi.lateJobs > 0 ? LATE_COLOR : 'var(--text-primary)'}
                                 hint={`First load > ${threshold} min past scheduled start`}
                             />
                             <Stat
                                 label="Slow jobs"
                                 value={fmtInt(kpi.slowJobs)}
-                                valueColor={kpi.slowJobs > 0 ? SLOW_COLOR : 'var(--text-primary)'}
                                 hint="Pour rate under 70% of requested yd/hr"
                             />
                             <Stat
                                 label="Late + slow"
                                 value={fmtInt(kpi.lateAndSlow)}
-                                valueColor={kpi.lateAndSlow > 0 ? BOTH_COLOR : 'var(--text-primary)'}
                                 hint="Worst-case overlap — both failures on one order"
                             />
                         </StatGroup>

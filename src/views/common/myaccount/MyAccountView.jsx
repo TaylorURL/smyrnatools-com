@@ -235,7 +235,7 @@ function MyAccountView({ onSelectView, userId }) {
             <Suspense
                 fallback={
                     <div className="flex h-screen items-center justify-center">
-                        <i className="fas fa-spinner fa-spin text-2xl" style={{ color: accentColor }} />
+                        <i className="fas fa-spinner fa-spin text-2xl text-text-primary" />
                     </div>
                 }
             >
@@ -275,11 +275,10 @@ function MyAccountView({ onSelectView, userId }) {
                     <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                         {message && (
                             <div
-                                className="flex items-center gap-3 rounded-lg px-4 py-3"
+                                className="flex items-center gap-3 rounded-lg px-4 py-3 text-text-primary"
                                 style={{
                                     background: messageIsError ? 'rgba(220, 38, 38, 0.12)' : 'rgba(22, 163, 74, 0.12)',
-                                    border: `1px solid ${messageIsError ? 'rgba(220, 38, 38, 0.35)' : 'rgba(22, 163, 74, 0.35)'}`,
-                                    color: messageIsError ? '#dc2626' : '#16a34a'
+                                    border: `1px solid ${messageIsError ? 'rgba(220, 38, 38, 0.35)' : 'rgba(22, 163, 74, 0.35)'}`
                                 }}
                             >
                                 <i

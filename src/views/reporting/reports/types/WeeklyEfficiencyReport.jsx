@@ -82,7 +82,7 @@ function WarningsBar({ messages }) {
             {messages.map((msg, i) => (
                 <div
                     key={i}
-                    className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium bg-[rgba(217,_119,_6,_0.12)] border border-[rgba(217,_119,_6,_0.35)] text-[#92400e]"
+                    className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium bg-[rgba(217,_119,_6,_0.12)] border border-[rgba(217,_119,_6,_0.35)] text-text-primary"
                 >
                     <i className="fas fa-triangle-exclamation text-[10px]" />
                     <span>{msg}</span>

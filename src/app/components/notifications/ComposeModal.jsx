@@ -111,7 +111,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                 <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
                     {sent ? (
                         <div className="flex flex-col items-center gap-3 py-6 text-center">
-                            <div className="w-12 h-12 rounded flex items-center justify-center bg-green-100 text-[#166534]">
+                            <div className="w-12 h-12 rounded flex items-center justify-center bg-green-100 text-text-primary">
                                 <i className="fas fa-check text-lg" />
                             </div>
                             <div className="text-[14px] font-semibold text-text-primary">Message Sent</div>
@@ -256,7 +256,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                             </div>
 
                             {error && (
-                                <div className="px-2.5 py-1.5 rounded text-[12px] font-medium bg-red-100 text-red-700">
+                                <div className="px-2.5 py-1.5 rounded text-[12px] font-medium bg-red-100 text-text-primary">
                                     <i className="fas fa-exclamation-triangle mr-1.5" />
                                     {error}
                                 </div>

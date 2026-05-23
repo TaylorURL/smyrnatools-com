@@ -126,7 +126,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                 <div className="flex-1 overflow-y-auto px-5 py-4">
                     {sent ? (
                         <div className="flex flex-col items-center gap-3 py-6 text-center">
-                            <i className="fas fa-check-circle text-3xl text-green-500" />
+                            <i className="fas fa-check-circle text-3xl text-text-primary" />
                             <span className="text-sm font-medium text-text-primary">
                                 Sent to {selectedManager?.firstName} {selectedManager?.lastName}
                             </span>
@@ -322,7 +322,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                             />
 
                             {error && (
-                                <div className="flex items-center gap-2 rounded-lg text-[13px] font-medium mb-3 px-3 py-2.5 bg-red-50 text-red-600">
+                                <div className="flex items-center gap-2 rounded-lg text-[13px] font-medium mb-3 px-3 py-2.5 bg-red-50 text-text-primary">
                                     <i className="fas fa-exclamation-triangle text-xs" />
                                     {error}
                                 </div>

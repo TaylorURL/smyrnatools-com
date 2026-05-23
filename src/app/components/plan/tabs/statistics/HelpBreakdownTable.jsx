@@ -6,11 +6,11 @@ import { formatColocatedCodeLabel } from '../../../../../utils/PlantColocationUt
 import { plantBadgeColor } from '../../../../../utils/PlanUtility'
 import { Panel } from '../../../ui/Panel'
 
-/** 1-to-5 star score row. Filled stars are amber; unfilled are
- *  rendered in the tertiary background tone so the row reads as a
- *  rating gauge instead of a row of disconnected glyphs. A null score
- *  renders as an em-dash so a plant that simply didn't participate
- *  isn't conflated with a balanced one. */
+/** 1-to-5 star score row. Filled stars use the primary text tone;
+ *  unfilled are rendered in the tertiary background tone so the row
+ *  reads as a rating gauge instead of a row of disconnected glyphs.
+ *  A null score renders as an em-dash so a plant that simply didn't
+ *  participate isn't conflated with a balanced one. */
 function StarScore({ score, total = 5 }) {
     if (score == null) {
         return <span className="text-[12px] text-text-tertiary">—</span>
@@ -23,7 +23,7 @@ function StarScore({ score, total = 5 }) {
                     key={idx}
                     aria-hidden="true"
                     className="fas fa-star text-[12px]"
-                    style={{ color: idx < safeScore ? '#f59e0b' : 'var(--bg-tertiary)' }}
+                    style={{ color: idx < safeScore ? 'var(--text-primary)' : 'var(--bg-tertiary)' }}
                 />
             ))}
         </div>
@@ -34,7 +34,7 @@ function StarScore({ score, total = 5 }) {
  *  the directional arrow + full plant label + count and explicit unit,
  *  so the dispatcher reads "→ 403 Baytown — 8 operators" instead of
  *  guessing what the bare number means. */
-function RecipientList({ items, getPrimary, max = 4, plantNameByCode, unitLabel, color, colocationMap }) {
+function RecipientList({ items, getPrimary, max = 4, plantNameByCode, unitLabel, colocationMap }) {
     const ranked = useMemo(
         () => [...items].filter((it) => getPrimary(it) > 0).sort((a, b) => getPrimary(b) - getPrimary(a)),
         [items, getPrimary]
@@ -60,13 +60,20 @@ function RecipientList({ items, getPrimary, max = 4, plantNameByCode, unitLabel,
                         className="flex items-center gap-1.5 text-[11.5px] min-w-0"
                         title={`${formatted} ${unitLabel} → ${name || codeLabel}`}
                     >
-                        <i className="fas fa-arrow-right text-[9px] shrink-0" aria-hidden="true" style={{ color }} />
+                        <i
+                            className="fas fa-arrow-right text-[9px] shrink-0"
+                            aria-hidden="true"
+                            style={{ color: 'var(--text-primary)' }}
+                        />
                         <span className="font-mono tabular-nums font-semibold text-text-primary shrink-0">
                             {codeLabel}
                         </span>
                         {name && <span className="truncate text-text-secondary">{name}</span>}
                         <span className="text-text-tertiary">—</span>
-                        <span className="font-mono tabular-nums font-semibold whitespace-nowrap" style={{ color }}>
+                        <span
+                            className="font-mono tabular-nums font-semibold whitespace-nowrap"
+                            style={{ color: 'var(--text-primary)' }}
+                        >
                             {formatted} {unitLabel}
                         </span>
                     </div>
@@ -82,16 +89,16 @@ function RecipientList({ items, getPrimary, max = 4, plantNameByCode, unitLabel,
 }
 
 const SCORE_BANDS = [
-    { color: '#f59e0b', label: 'Heavy net giver — gives ≥ 10% more than receives', stars: 5 },
-    { color: '#f59e0b', label: 'Mild net giver — gives 3–10% more', stars: 4 },
-    { color: '#9ca3af', label: 'Balanced — within ±3% (or no production data)', stars: 3 },
-    { color: '#9ca3af', label: 'Mild net receiver — receives 3–10% more', stars: 2 },
-    { color: '#9ca3af', label: 'Heavy net receiver — receives ≥ 10% more', stars: 1 }
+    { label: 'Heavy net giver — gives ≥ 10% more than receives', stars: 5 },
+    { label: 'Mild net giver — gives 3–10% more', stars: 4 },
+    { label: 'Balanced — within ±3% (or no production data)', stars: 3 },
+    { label: 'Mild net receiver — receives 3–10% more', stars: 2 },
+    { label: 'Heavy net receiver — receives ≥ 10% more', stars: 1 }
 ]
 
 /** Inline star row used inside the help-score legend popover so the
  *  band labels read in the same visual language as the table column. */
-function PopoverStarRow({ filled, total = 5, color = '#f59e0b' }) {
+function PopoverStarRow({ filled, total = 5 }) {
     return (
         <span className="inline-flex items-center gap-0.5 shrink-0">
             {Array.from({ length: total }, (_, idx) => (
@@ -99,7 +106,7 @@ function PopoverStarRow({ filled, total = 5, color = '#f59e0b' }) {
                     key={idx}
                     aria-hidden="true"
                     className="fas fa-star text-[10px]"
-                    style={{ color: idx < filled ? color : 'var(--bg-tertiary)' }}
+                    style={{ color: idx < filled ? 'var(--text-primary)' : 'var(--bg-tertiary)' }}
                 />
             ))}
         </span>
@@ -141,7 +148,7 @@ function HelpScoreInfo() {
                 <div className="mt-2.5 flex flex-col gap-1">
                     {SCORE_BANDS.map((band) => (
                         <div key={band.stars} className="flex items-center gap-2 text-[11px] text-text-secondary">
-                            <PopoverStarRow filled={band.stars} color={band.color} />
+                            <PopoverStarRow filled={band.stars} />
                             <span className="truncate">{band.label}</span>
                         </div>
                     ))}
@@ -161,15 +168,7 @@ function HelpScoreInfo() {
  * vs actual cross-loaded) each followed by their recipient breakdown,
  * with a per-plant 1–5 star help score column at the end.
  */
-export default function HelpBreakdownTable({
-    accentColor,
-    colocationMap,
-    deadheadColor,
-    crossLoadColor,
-    helpByGiverPlant,
-    plantNameByCode,
-    range
-}) {
+export default function HelpBreakdownTable({ accentColor, colocationMap, helpByGiverPlant, plantNameByCode, range }) {
     return (
         <Panel
             title="Help breakdown by plant"
@@ -194,13 +193,11 @@ export default function HelpBreakdownTable({
                             <th
                                 className="text-center font-semibold uppercase tracking-wider text-[10px] px-2 py-2 border-l border-border-light"
                                 colSpan={2}
-                                style={{ color: deadheadColor }}
                             >
                                 Planned deadhead help
                             </th>
                             <th
                                 className="text-left font-semibold uppercase tracking-wider text-[10px] px-2 py-2 border-l border-border-light"
-                                style={{ color: deadheadColor }}
                                 rowSpan={2}
                             >
                                 Where the operators went
@@ -208,13 +205,11 @@ export default function HelpBreakdownTable({
                             <th
                                 className="text-center font-semibold uppercase tracking-wider text-[10px] px-2 py-2 border-l border-border-light"
                                 colSpan={3}
-                                style={{ color: crossLoadColor }}
                             >
                                 Actual cross-loaded help
                             </th>
                             <th
                                 className="text-left font-semibold uppercase tracking-wider text-[10px] px-3 py-2 border-l border-border-light"
-                                style={{ color: crossLoadColor }}
                                 rowSpan={2}
                             >
                                 Whose orders they loaded
@@ -287,10 +282,9 @@ export default function HelpBreakdownTable({
                                         </div>
                                     </td>
                                     <td
-                                        className="px-2 py-2 text-right font-mono tabular-nums font-semibold align-top border-l border-border-light"
-                                        style={{
-                                            color: row.deadheadDrivers > 0 ? deadheadColor : 'var(--text-tertiary)'
-                                        }}
+                                        className={`px-2 py-2 text-right font-mono tabular-nums font-semibold align-top border-l border-border-light ${
+                                            row.deadheadDrivers > 0 ? 'text-text-primary' : 'text-text-tertiary'
+                                        }`}
                                     >
                                         {row.deadheadDrivers > 0 ? `${fmtInt(row.deadheadDrivers)} op` : '—'}
                                     </td>
@@ -299,7 +293,6 @@ export default function HelpBreakdownTable({
                                     </td>
                                     <td className="px-2 py-2 align-top border-l border-border-light">
                                         <RecipientList
-                                            color={deadheadColor}
                                             colocationMap={colocationMap}
                                             getPrimary={(r) => r.deadheadDrivers}
                                             items={row.recipients}
@@ -308,10 +301,9 @@ export default function HelpBreakdownTable({
                                         />
                                     </td>
                                     <td
-                                        className="px-2 py-2 text-right font-mono tabular-nums font-semibold align-top border-l border-border-light"
-                                        style={{
-                                            color: row.crossLoadYardage > 0 ? crossLoadColor : 'var(--text-tertiary)'
-                                        }}
+                                        className={`px-2 py-2 text-right font-mono tabular-nums font-semibold align-top border-l border-border-light ${
+                                            row.crossLoadYardage > 0 ? 'text-text-primary' : 'text-text-tertiary'
+                                        }`}
                                     >
                                         {row.crossLoadYardage > 0 ? `${fmtYards(row.crossLoadYardage)} yd³` : '—'}
                                     </td>
@@ -323,7 +315,6 @@ export default function HelpBreakdownTable({
                                     </td>
                                     <td className="px-3 py-2 align-top border-l border-border-light">
                                         <RecipientList
-                                            color={crossLoadColor}
                                             colocationMap={colocationMap}
                                             getPrimary={(r) => r.crossLoadYardage}
                                             items={row.recipients}

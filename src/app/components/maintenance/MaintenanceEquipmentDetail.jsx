@@ -133,7 +133,7 @@ export function MaintenanceEquipmentDetail({
                                 <button
                                     type="button"
                                     onClick={() => setConfirmDelete(true)}
-                                    className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 cursor-pointer bg-red-100 border border-red-300 text-red-700"
+                                    className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1 cursor-pointer bg-red-100 border border-red-300 text-text-primary"
                                 >
                                     <i className="fas fa-trash-alt text-[10px]" />
                                     Delete

@@ -44,7 +44,7 @@ function FieldLabel({ children, icon, required }) {
         <label className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5 text-text-tertiary`}>
             {icon && <i className={`fas ${icon} text-[10px]`} />}
             {children}
-            {required && <span className="ml-0.5 text-red-600">*</span>}
+            {required && <span className="ml-0.5 text-text-primary">*</span>}
         </label>
     )
 }
@@ -258,7 +258,7 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                     </div>
 
                     {error && (
-                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
+                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-text-primary">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>

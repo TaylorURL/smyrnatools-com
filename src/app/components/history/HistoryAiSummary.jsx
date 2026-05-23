@@ -44,7 +44,7 @@ export default function HistoryAiSummary({
     if (aiSummaryError) {
         return (
             <div className="flex flex-col items-center justify-center gap-1.5 py-10 px-4 text-text-tertiary">
-                <i className="fas fa-exclamation-triangle text-[20px] text-red-600" />
+                <i className="fas fa-exclamation-triangle text-[20px] text-text-primary" />
                 <p className="m-0 text-[12.5px] font-semibold text-text-primary">Failed to generate analysis.</p>
                 <button
                     onClick={handleRegenerateAISummary}

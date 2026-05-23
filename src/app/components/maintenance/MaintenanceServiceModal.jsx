@@ -93,7 +93,7 @@ export function MaintenanceServiceModal({ isOpen, onClose, onSaved, equipment, s
 
                 <div className="px-4 py-3 flex flex-col gap-3">
                     {error && (
-                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
+                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-text-primary">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>
@@ -101,7 +101,7 @@ export function MaintenanceServiceModal({ isOpen, onClose, onSaved, equipment, s
 
                     <div>
                         <label className={FIELD_LABEL_CLS} style={{ color: 'var(--text-secondary)' }}>
-                            Service Date <span className="text-red-600">*</span>
+                            Service Date <span className="text-text-primary">*</span>
                         </label>
                         <input
                             className={FIELD_INPUT_CLS}

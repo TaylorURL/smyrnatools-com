@@ -190,12 +190,7 @@ function PlantRow({ accentColor, isActive, onClick, onDelete, row }) {
             <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                     <PlantChip code={row.plantCode} />
-                    <div
-                        className="text-[12.5px] font-semibold truncate"
-                        style={{ color: isActive ? accentColor : 'var(--text-primary)' }}
-                    >
-                        {title}
-                    </div>
+                    <div className="text-[12.5px] font-semibold truncate text-text-primary">{title}</div>
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5 text-[10.5px] flex-wrap text-text-secondary">
                     {dateLabel && <span className="font-mono tabular-nums">{dateLabel}</span>}

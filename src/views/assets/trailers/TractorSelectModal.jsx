@@ -137,7 +137,7 @@ function TractorSelectModal({
                             found
                         </span>
                         {assignedPlant && (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-text-primary rounded-md text-xs font-medium">
                                 <i className="fas fa-building"></i>
                                 Plant: {assignedPlant}
                             </span>
@@ -215,7 +215,7 @@ function TractorSelectModal({
                                                 Tractor #{tractor.truckNumber || 'Unknown'}
                                             </span>
                                             {tractor.status && tractor.status !== 'Active' && (
-                                                <span className="text-xs font-mono bg-amber-100 text-amber-600 px-2 py-0.5 rounded">
+                                                <span className="text-xs font-mono bg-amber-100 text-text-primary px-2 py-0.5 rounded">
                                                     {tractor.status}
                                                 </span>
                                             )}
@@ -228,7 +228,7 @@ function TractorSelectModal({
                                                 </span>
                                             )}
                                             {isAssigned && (
-                                                <span className="inline-flex items-center gap-1 text-red-500">
+                                                <span className="inline-flex items-center gap-1 text-text-primary">
                                                     <i className="fas fa-link"></i>
                                                     Already Assigned
                                                 </span>

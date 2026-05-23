@@ -82,7 +82,7 @@ function StatusPill({ status, size = 'sm' }) {
             style={{
                 background: `${def.color}1f`,
                 border: `1px solid ${def.color}55`,
-                color: def.color,
+                color: 'var(--text-primary)',
                 fontSize
             }}
         >
@@ -98,10 +98,7 @@ function StatTile({ accent, hint, label, value }) {
             <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                 {label}
             </span>
-            <span
-                className="text-[16px] font-bold leading-tight tabular-nums"
-                style={{ color: accent || 'var(--text-primary)' }}
-            >
+            <span className="text-[16px] font-bold leading-tight tabular-nums" style={{ color: 'var(--text-primary)' }}>
                 {value}
             </span>
             {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
@@ -137,7 +134,7 @@ function StatusFilterChips({ activeStatus, counts, onChange }) {
                         style={{
                             background: active ? ACTIVE_BG(def.color) : 'var(--bg-secondary)',
                             border: `1px solid ${active ? `${def.color}55` : 'var(--border-light)'}`,
-                            color: active ? def.color : 'var(--text-secondary)'
+                            color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
                         }}
                     >
                         <i className={`fas ${def.icon} text-[9px]`} />
@@ -396,7 +393,7 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                     Loading issues…
                                 </div>
                             ) : error ? (
-                                <div className="m-3 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
+                                <div className="m-3 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-text-primary">
                                     <i className="fas fa-exclamation-circle text-[11px]" />
                                     {error}
                                 </div>
@@ -472,7 +469,7 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                                             {sev ? (
                                                                 <span
                                                                     className="text-[11.5px] font-semibold uppercase tracking-wider"
-                                                                    style={{ color: sev.color }}
+                                                                    style={{ color: 'var(--text-primary)' }}
                                                                 >
                                                                     {sev.label}
                                                                 </span>

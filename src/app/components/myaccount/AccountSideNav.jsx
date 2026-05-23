@@ -29,7 +29,7 @@ export default function AccountSideNav({ accentColor, activeId, onJump, sections
                         >
                             <i
                                 className={`fas ${icon} text-[12px] w-3.5`}
-                                style={{ color: isActive ? accentColor : 'var(--text-tertiary)' }}
+                                style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
                             />
                             <span className="flex-1 truncate">{label}</span>
                         </button>

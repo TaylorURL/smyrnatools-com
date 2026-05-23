@@ -40,7 +40,7 @@ export function TrainerTable({ onRemove, plants, position, readOnly, trainers })
                         {getPlantNameFromList(trainer.plant, plants)}
                     </td>
                     <td className={TD_BASE}>
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold bg-[rgba(22,_163,_74,_0.12)] text-green-700">
+                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold bg-[rgba(22,_163,_74,_0.12)] text-text-primary">
                             {trainer.status}
                         </span>
                     </td>

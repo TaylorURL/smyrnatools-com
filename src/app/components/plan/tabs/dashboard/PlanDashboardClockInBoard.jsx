@@ -141,14 +141,11 @@ const buildPlantBreakdowns = ({
         .filter((b) => b.base > 0 || b.needed > 0 || b.totalYardage > 0)
 }
 
-function KeyStat({ accent, label, value }) {
+function KeyStat({ label, value }) {
     return (
         <div className="flex flex-col gap-0.5 min-w-0">
             <span className="text-[9.5px] uppercase tracking-wider truncate text-text-tertiary">{label}</span>
-            <span
-                className="text-[14px] font-bold leading-tight font-mono font-heading"
-                style={{ color: accent || 'var(--text-primary)' }}
-            >
+            <span className="text-[14px] font-bold leading-tight font-mono font-heading text-text-primary">
                 {value}
             </span>
         </div>
@@ -181,7 +178,10 @@ function ClockInPlantCard({ accentColor, breakdown }) {
             <div className="flex items-center gap-2 px-3 py-2 border-b border-border-light">
                 <div
                     className="w-8 h-8 rounded flex items-center justify-center shrink-0 font-mono font-bold font-heading"
-                    style={{ background: `${accentColor}29`, color: accentColor, fontSize: 11 }}
+                    /* Plant code text colour falls through to `--text-primary`
+                     * so the number reads white on dark / grayed themes and
+                     * dark on light, sitting on the accent-tinted square. */
+                    style={{ background: `${accentColor}29`, color: 'var(--text-primary)', fontSize: 11 }}
                 >
                     {code}
                 </div>
@@ -206,17 +206,9 @@ function ClockInPlantCard({ accentColor, breakdown }) {
                 )}
             </div>
             <div className="grid grid-cols-3 gap-2 px-3 py-2 border-b border-border-light">
-                <KeyStat
-                    label="Earliest clock-in"
-                    value={earliestClockIn || '—'}
-                    accent={earliestClockIn ? '#16a34a' : 'var(--text-tertiary)'}
-                />
+                <KeyStat label="Earliest clock-in" value={earliestClockIn || '—'} />
                 <KeyStat label="Operators needed" value={`${needed}/${base}`} />
-                <KeyStat
-                    label="Leave off"
-                    value={leaveOffCount}
-                    accent={leaveOffCount > 0 ? '#d97706' : 'var(--text-tertiary)'}
-                />
+                <KeyStat label="Leave off" value={leaveOffCount} />
             </div>
             <div className="px-3 py-2 flex flex-col gap-1">
                 {needed === 0 ? (

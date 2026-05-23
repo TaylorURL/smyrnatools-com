@@ -64,7 +64,7 @@ const PermissionRow = ({ permission, onRemove, hasITAccess, isSaving }) => {
                 <button
                     onClick={() => onRemove(permission)}
                     disabled={isSaving}
-                    className="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer border-none bg-transparent shrink-0 disabled:opacity-30"
+                    className="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-text-primary hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer border-none bg-transparent shrink-0 disabled:opacity-30"
                     title="Remove permission"
                 >
                     <i className="fas fa-times text-[10px]" />
@@ -168,7 +168,7 @@ const RoleCard = ({
                             {role.name}
                         </span>
                         {isElevated && (
-                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
+                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-text-primary">
                                 Elevated
                             </span>
                         )}
@@ -178,11 +178,11 @@ const RoleCard = ({
                             <i className="fas fa-balance-scale text-[9px]" />
                             <span className="font-mono tabular-nums">{role.weight || 0}</span>
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-teal-50 text-teal-700">
+                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-teal-50 text-text-primary">
                             <span className="font-mono tabular-nums">{permissions.length}</span>
                             <span>perms</span>
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-cyan-50 text-cyan-700">
+                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-cyan-50 text-text-primary">
                             <span className="font-mono tabular-nums">{namespaces.length}</span>
                             <span>namespaces</span>
                         </span>
@@ -225,17 +225,7 @@ const RoleCard = ({
                         )}
                         <div className="flex items-center gap-2 ml-auto">
                             {pasteStatus && (
-                                <span
-                                    className={`text-[11px] font-semibold ${
-                                        pasteStatus.type === 'success'
-                                            ? 'text-emerald-600'
-                                            : pasteStatus.type === 'error'
-                                              ? 'text-red-600'
-                                              : 'text-slate-500'
-                                    }`}
-                                >
-                                    {pasteStatus.text}
-                                </span>
+                                <span className="text-[11px] font-semibold text-text-primary">{pasteStatus.text}</span>
                             )}
                             <button
                                 onClick={(e) => {
@@ -697,7 +687,7 @@ function RolesView() {
                                 <i className="fas fa-layer-group" />
                                 Bulk Add
                             </button>
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 text-text-primary rounded-lg text-xs font-semibold">
                                 <i className="fas fa-shield-alt text-[10px]" />
                                 IT Access
                             </div>
@@ -709,13 +699,13 @@ function RolesView() {
             <div className="px-3 py-4 sm:px-4 md:px-6 lg:px-8">
                 {/* Alerts */}
                 {message && (
-                    <div className="flex items-center gap-2 mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm">
+                    <div className="flex items-center gap-2 mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-text-primary text-sm">
                         <i className="fas fa-check-circle shrink-0" />
                         {message}
                     </div>
                 )}
                 {error && (
-                    <div className="flex items-center gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    <div className="flex items-center gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-text-primary text-sm">
                         <i className="fas fa-exclamation-circle shrink-0" />
                         {error}
                     </div>

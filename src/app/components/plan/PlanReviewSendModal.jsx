@@ -116,7 +116,7 @@ function PlantAccordionRow({ plant, expanded, onToggle }) {
                             </div>
                             <RecipientList items={plant.cc} emptyLabel="No district manager assigned to this plant." />
                             {plant.cc.length === 0 && plant.dmDebug && (
-                                <pre className="mt-2 max-h-[200px] overflow-auto rounded-md border border-amber-300 bg-amber-50 p-2 text-[11px] font-mono text-amber-900 whitespace-pre-wrap">
+                                <pre className="mt-2 max-h-[200px] overflow-auto rounded-md border border-amber-300 bg-amber-50 p-2 text-[11px] font-mono text-text-primary whitespace-pre-wrap">
                                     {JSON.stringify(plant.dmDebug, null, 2)}
                                 </pre>
                             )}
@@ -318,7 +318,7 @@ export function PlanReviewSendModal({
                             </span>
                             <span
                                 className="text-[18px] font-bold leading-none font-mono tabular-nums"
-                                style={{ color: plantsMissingManager > 0 ? '#b91c1c' : 'var(--text-primary)' }}
+                                style={{ color: 'var(--text-primary)' }}
                             >
                                 {plantsMissingManager}
                             </span>
@@ -332,7 +332,7 @@ export function PlanReviewSendModal({
                             </span>
                             <span
                                 className="text-[18px] font-bold leading-none font-mono tabular-nums"
-                                style={{ color: plantsMissingDM > 0 ? '#b45309' : 'var(--text-primary)' }}
+                                style={{ color: 'var(--text-primary)' }}
                             >
                                 {plantsMissingDM}
                             </span>
@@ -344,7 +344,7 @@ export function PlanReviewSendModal({
                 )}
 
                 {testMode && !previewState.loading && (
-                    <div className="px-5 py-2 text-[11.5px] border-b border-border-light bg-amber-50 text-amber-900">
+                    <div className="px-5 py-2 text-[11.5px] border-b border-border-light bg-amber-50 text-text-primary">
                         <i className="fas fa-vial mr-1.5" />
                         <span className="font-semibold">Test mode is on</span> — every email will route to{' '}
                         <span className="font-mono">{testInbox}</span> instead of the real recipients. The intended TO
@@ -360,7 +360,7 @@ export function PlanReviewSendModal({
                         </div>
                     )}
                     {previewState.error && (
-                        <div className="rounded-md border border-red-200 bg-red-50 text-red-700 text-[12.5px] p-3">
+                        <div className="rounded-md border border-red-200 bg-red-50 text-text-primary text-[12.5px] p-3">
                             <strong>Preview failed:</strong> {previewState.error}
                         </div>
                     )}
@@ -389,7 +389,10 @@ export function PlanReviewSendModal({
                     <div className="text-[12px] text-text-secondary flex-1 min-w-0">
                         {sendState.result ? (
                             <span className="font-semibold text-text-primary">
-                                <i className="fas fa-circle-check text-[11px] mr-1" style={{ color: '#16a34a' }} />
+                                <i
+                                    className="fas fa-circle-check text-[11px] mr-1"
+                                    style={{ color: 'var(--text-primary)' }}
+                                />
                                 Sent {sentCount} of {totalCount} plant{totalCount === 1 ? '' : 's'}.
                             </span>
                         ) : plantsResolved.length === 0 ? (
@@ -408,7 +411,7 @@ export function PlanReviewSendModal({
                             </>
                         )}
                         {sendState.error && (
-                            <span className="text-red-600 ml-2">
+                            <span className="text-text-primary ml-2">
                                 <i className="fas fa-exclamation-circle text-[11px] mr-1" />
                                 {sendState.error}
                             </span>

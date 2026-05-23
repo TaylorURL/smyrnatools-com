@@ -50,7 +50,7 @@ export default function PasswordModal({
                 </div>
                 <form onSubmit={onSubmit} className="px-5 py-5 flex flex-col gap-4">
                     {passwordError && (
-                        <div className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium bg-[rgba(220,_38,_38,_0.12)] border border-[rgba(220,_38,_38,_0.35)] text-red-600">
+                        <div className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium bg-[rgba(220,_38,_38,_0.12)] border border-[rgba(220,_38,_38,_0.35)] text-text-primary">
                             <i className="fas fa-exclamation-circle text-[13px]" />
                             <span>{passwordError}</span>
                         </div>

@@ -49,7 +49,6 @@ export function AssetStatisticsFleetStatusPage({ accentColor, onSelectAsset, sta
                     onSelect={onSelectAsset}
                     rows={longestInStatus}
                     valueAccessor={(row) => row.days}
-                    valueColor={(value) => (value > 180 ? '#b91c1c' : value > 60 ? '#b45309' : 'var(--text-primary)')}
                     valueFormatter={(value) => `${fmtInt(value)}d`}
                 />
             </Panel>

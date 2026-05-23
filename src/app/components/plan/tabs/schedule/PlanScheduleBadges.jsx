@@ -31,7 +31,7 @@ export function ServiceBadge({ service }) {
         return (
             <span
                 className={SERVICE_BADGE_BASE}
-                style={{ background: 'rgba(22, 163, 74, 0.14)', color: '#15803d' }}
+                style={{ background: 'rgba(22, 163, 74, 0.14)', color: 'var(--text-primary)' }}
                 title="On-time start, on-pace pour"
             >
                 <i className="fas fa-circle-check text-[9px]" />
@@ -52,7 +52,7 @@ export function ServiceBadge({ service }) {
         return (
             <span
                 className={SERVICE_BADGE_BASE}
-                style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
+                style={{ background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' }}
                 title={issues.join(' · ') || 'Service flagged'}
             >
                 <i className="fas fa-circle-exclamation text-[9px]" />
@@ -66,12 +66,11 @@ export function ServiceBadge({ service }) {
                 ? `${service.ticketsLoaded}/${service.expectedTrucks}`
                 : `${service.ticketsLoaded ?? 0} loaded`
         const isLate = service.isLate
-        const color = isLate ? '#b45309' : '#1d4ed8'
         const bg = isLate ? 'rgba(217, 119, 6, 0.14)' : 'rgba(37, 99, 235, 0.12)'
         return (
             <span
                 className={SERVICE_BADGE_BASE}
-                style={{ background: bg, color }}
+                style={{ background: bg, color: 'var(--text-primary)' }}
                 title={
                     isLate
                         ? `Pour in progress · started ${service.startLateness} min late · ${counts} loaded`
@@ -97,7 +96,7 @@ export function ServiceBadge({ service }) {
             return (
                 <span
                     className={SERVICE_BADGE_BASE}
-                    style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
+                    style={{ background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' }}
                     title={`Scheduled start was ${lateText} ago — no trucks loaded yet.`}
                 >
                     <i className="fas fa-circle-exclamation text-[9px]" />
@@ -108,7 +107,7 @@ export function ServiceBadge({ service }) {
         return (
             <span
                 className={SERVICE_BADGE_BASE}
-                style={{ background: 'rgba(217, 119, 6, 0.12)', color: '#b45309' }}
+                style={{ background: 'rgba(217, 119, 6, 0.12)', color: 'var(--text-primary)' }}
                 title="Past scheduled start with no tickets loaded yet"
             >
                 <i className="fas fa-hourglass-half text-[9px]" />
@@ -131,7 +130,7 @@ export function SatisfactionBadge({ score }) {
     return (
         <span
             className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5"
-            style={{ background: `${color}1a`, color }}
+            style={{ background: `${color}1a`, color: 'var(--text-primary)' }}
             title={`${labels[tier]} · weighted blend of pour pace, on-time start, and yardage completion across the day's tickets`}
         >
             <i className="fas fa-face-smile text-[9px]" />
@@ -153,7 +152,7 @@ export function YardageDeltaBadge({ comparisonLabel, comparisonYardage, pct }) {
     return (
         <span
             className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5"
-            style={{ background: `${color}1a`, color }}
+            style={{ background: `${color}1a`, color: 'var(--text-primary)' }}
             title={`Day-over-day change · ${label} ${comparisonYardage.toLocaleString()} yd`}
         >
             <i className={`fas ${icon} text-[9px]`} />
@@ -260,7 +259,7 @@ export function LikelyKickerBadge({ rate }) {
     return (
         <span
             className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
-            style={{ background: 'rgba(220, 38, 38, 0.14)', color: '#b91c1c' }}
+            style={{ background: 'rgba(220, 38, 38, 0.14)', color: 'var(--text-primary)' }}
             title={`Likely to Kick — kicker rate ${pct}% over the last 60 working days. This customer regularly calls in extra yardage mid-pour.`}
             aria-label="Likely to call in a kicker"
         >
@@ -274,7 +273,7 @@ export function LikelyChurnBadge({ rate }) {
     return (
         <span
             className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
-            style={{ background: 'rgba(217, 119, 6, 0.16)', color: '#b45309' }}
+            style={{ background: 'rgba(217, 119, 6, 0.16)', color: 'var(--text-primary)' }}
             title={`Likely to Cancel/Move — combined cancel + move rate ${pct}% over the last 60 working days. This order may shift after the 5:30 PM commit.`}
             aria-label="Likely to cancel or move"
         >
@@ -309,19 +308,20 @@ export function OrderStatusBadge({ status }) {
 
 /** Plant identifier chip — colored badge with the plant code on the left and
  *  optional plant name on the right. Color is sourced from
- *  `plantBadgeColor` so every Plan surface paints the same plant the same. */
+ *  `plantBadgeColor` so every Plan surface paints the same plant the same.
+ *  Text colour falls through to the site-wide monochrome-badge rule so
+ *  the chip renders white on dark / grayed themes and dark on light,
+ *  regardless of the saturated chip background. */
 export function PlantBadge({ code, fallback, name }) {
     const bg = plantBadgeColor(code, fallback)
-    // Dark-on-yellow reads better than white-on-yellow.
-    const fg = bg && bg.toLowerCase() === '#eab308' ? '#3f2d00' : '#fff'
     return (
         <span
-            className="inline-flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-0.5 font-semibold whitespace-nowrap"
-            style={{ background: bg, color: fg }}
+            className="force-white-text inline-flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-0.5 font-semibold whitespace-nowrap"
+            style={{ background: bg }}
         >
             <span
-                className="inline-flex items-center justify-center rounded-full font-bold bg-[rgba(255,255,255,0.22)] font-heading h-[18px]"
-                style={{ color: fg, fontSize: 10.5, minWidth: 34 }}
+                className="force-white-text inline-flex items-center justify-center rounded-full font-bold bg-[rgba(255,255,255,0.22)] font-heading h-[18px]"
+                style={{ fontSize: 10.5, minWidth: 34 }}
             >
                 {code}
             </span>

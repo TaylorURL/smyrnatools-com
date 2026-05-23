@@ -79,20 +79,17 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
         year: 'numeric'
     })
 
-    const allocationColor = allocation >= 80 ? '#16a34a' : allocation >= 50 ? '#d97706' : '#dc2626'
-    const verifiedColor = verified >= 90 ? '#16a34a' : verified >= 70 ? '#d97706' : '#dc2626'
-
     const rows = [
         { label: 'Fleet total', value: (stats.fleetTotal || 0).toLocaleString() },
-        { color: '#16a34a', label: 'Active', value: active.toLocaleString() },
-        { color: '#7c3aed', label: 'Spare', value: spare.toLocaleString() },
-        { color: '#1e40af', label: 'In shop', value: inShop.toLocaleString() },
-        { color: '#a16207', label: 'Stationary', value: stationary.toLocaleString() },
-        { color: allocationColor, label: 'Allocation', value: `${allocation}%` },
-        { color: verifiedColor, label: 'Verified', value: `${verified}%` },
+        { label: 'Active', value: active.toLocaleString() },
+        { label: 'Spare', value: spare.toLocaleString() },
+        { label: 'In shop', value: inShop.toLocaleString() },
+        { label: 'Stationary', value: stationary.toLocaleString() },
+        { label: 'Allocation', value: `${allocation}%` },
+        { label: 'Verified', value: `${verified}%` },
         { label: 'Operators', value: (ops.active || 0).toLocaleString() },
-        { color: alertCount > 0 ? '#dc2626' : undefined, label: 'Open alerts', value: (alertCount || 0).toString() },
-        { color: openIssues > 0 ? '#d97706' : undefined, label: 'Open issues', value: (openIssues || 0).toString() }
+        { label: 'Open alerts', value: (alertCount || 0).toString() },
+        { label: 'Open issues', value: (openIssues || 0).toString() }
     ]
 
     return (
@@ -108,10 +105,7 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
                         className="flex items-baseline justify-between py-1.5 border-b border-border-light"
                     >
                         <span className="text-[12px] text-text-secondary">{row.label}</span>
-                        <span
-                            className="text-[13px] font-semibold font-mono tabular-nums"
-                            style={{ color: row.color || 'var(--text-primary)' }}
-                        >
+                        <span className="text-[13px] font-semibold font-mono tabular-nums text-text-primary">
                             {row.value}
                         </span>
                     </div>

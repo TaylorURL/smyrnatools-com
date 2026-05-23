@@ -54,7 +54,7 @@ export function CallListCustomerCardRow({ isActive, onSelect, row }) {
                 </div>
                 <div
                     className={`font-semibold tabular-nums leading-none shrink-0 ${isCustomerOnSchedule(row.days_since_last_pour) ? 'text-[11px] uppercase tracking-wider' : 'text-[20px]'}`}
-                    style={{ color: tone }}
+                    style={{ color: 'var(--text-primary)' }}
                     title={
                         isCustomerOnSchedule(row.days_since_last_pour)
                             ? 'Booked on an upcoming schedule'
@@ -95,7 +95,7 @@ export function CallListCustomerCardRow({ isActive, onSelect, row }) {
                         className="truncate"
                         title={row.last_call_by_name ? `By ${row.last_call_by_name}` : undefined}
                     >
-                        <span style={{ color: lastOutcomeColor || 'var(--text-tertiary)' }} className="font-semibold">
+                        <span style={{ color: 'var(--text-tertiary)' }} className="font-semibold">
                             {CALL_OUTCOME_LABELS[row.last_call_outcome] || '—'}
                         </span>
                         <span> · {formatRelativeDays(row.last_call_at)}</span>
@@ -202,7 +202,7 @@ export function CallListCustomerDetail({
                         <span className="text-[11px] text-text-tertiary font-normal ml-2">#{row.customer_num}</span>
                     </h3>
                     <div className="text-[11.5px] text-text-tertiary tabular-nums mt-0.5 flex flex-wrap gap-x-1.5">
-                        <span style={{ color: tone }} className="font-semibold">
+                        <span style={{ color: 'var(--text-primary)' }} className="font-semibold">
                             {isCustomerOnSchedule(row.days_since_last_pour)
                                 ? 'On Schedule'
                                 : `${row.days_since_last_pour}d dormant`}
@@ -230,7 +230,6 @@ export function CallListCustomerDetail({
                 <StatBlock
                     label={isCustomerOnSchedule(row.days_since_last_pour) ? 'Status' : 'Dormant'}
                     value={formatDormancyLabel(row.days_since_last_pour)}
-                    valueColor={tone}
                     sub={
                         row.last_pour_date
                             ? `${isCustomerOnSchedule(row.days_since_last_pour) ? 'Booked' : 'Since'} ${DateUtility.formatDate(row.last_pour_date)}`
@@ -246,7 +245,6 @@ export function CallListCustomerDetail({
                 <StatBlock
                     label="Last call"
                     value={row.last_call_at ? formatRelativeDays(row.last_call_at) : 'Never'}
-                    valueColor={lastOutcomeColor || undefined}
                     sub={
                         row.last_call_at
                             ? `${CALL_OUTCOME_LABELS[row.last_call_outcome] || '—'}${
@@ -378,12 +376,12 @@ function CustomerPresenceBanner({ viewers }) {
             }}
             role="status"
         >
-            <i className="fas fa-triangle-exclamation text-[14px] mt-0.5" style={{ color: '#b45309' }} />
+            <i className="fas fa-triangle-exclamation text-[14px] mt-0.5" style={{ color: 'var(--text-primary)' }} />
             <div className="flex-1 min-w-0">
-                <div className="text-[12.5px] font-semibold" style={{ color: '#92400e' }}>
+                <div className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {message}
                 </div>
-                <div className="text-[11px] mt-0.5" style={{ color: '#b45309' }}>
+                <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                     Coordinate before calling so this customer isn&apos;t dialled twice.
                 </div>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -393,11 +391,11 @@ function CustomerPresenceBanner({ viewers }) {
                             className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
                             style={{
                                 background: 'rgba(245, 158, 11, 0.18)',
-                                color: '#92400e'
+                                color: 'var(--text-primary)'
                             }}
                             title={v.role || undefined}
                         >
-                            <i className="fas fa-circle text-[6px]" style={{ color: '#16a34a' }} />
+                            <i className="fas fa-circle text-[6px]" style={{ color: 'var(--text-primary)' }} />
                             {v.name}
                             {v.role && <span className="opacity-70">· {v.role}</span>}
                         </span>
@@ -494,7 +492,7 @@ function ContactsSection({
                                     {entry.isPrimary && (
                                         <span
                                             className="text-[9px] uppercase tracking-wider font-bold rounded-sm px-1 py-0.5"
-                                            style={{ background: '#16a34a22', color: '#16a34a' }}
+                                            style={{ background: '#16a34a22', color: 'var(--text-primary)' }}
                                             title="Primary number"
                                         >
                                             Primary
@@ -514,7 +512,7 @@ function ContactsSection({
                                     <button
                                         type="button"
                                         onClick={() => handleDelete(entry)}
-                                        className="inline-flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer bg-transparent text-text-tertiary hover:text-red-600"
+                                        className="inline-flex items-center justify-center w-6 h-6 rounded border-none cursor-pointer bg-transparent text-text-tertiary hover:text-text-primary"
                                         title="Remove this number"
                                         aria-label="Remove contact"
                                     >
@@ -618,7 +616,7 @@ function ContactEditor({ initial, isSaving, onCancel, onSave }) {
                         style={{
                             background: '#2563eb22',
                             boxShadow: 'inset 0 0 0 1px #2563eb55',
-                            color: '#2563eb'
+                            color: 'var(--text-primary)'
                         }}
                     >
                         <i className="fas fa-floppy-disk text-[10px]" />

@@ -259,40 +259,54 @@ html.theme-transitioning *::after {
         box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 8%, transparent);
     }
 
+    /* Badge text is theme-aware (black in light, white in dark/grayed).
+     * The tinted background carries the semantic meaning so the text
+     * doesn't need to repeat the color, and pinning text to the
+     * theme-aware token guarantees contrast at every theme without
+     * per-shade tuning. */
     .allocation-pill-high {
-        @apply bg-[#dcfce7] text-[#16a34a];
+        @apply bg-[#dcfce7];
+        color: var(--text-primary);
     }
 
     .allocation-pill-medium {
-        @apply bg-[#fef9c3] text-[#ca8a04];
+        @apply bg-[#fef9c3];
+        color: var(--text-primary);
     }
 
     .allocation-pill-low {
-        @apply bg-[#fee2e2] text-[#dc2626];
+        @apply bg-[#fee2e2];
+        color: var(--text-primary);
     }
 
     .status-badge {
         @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 capitalize;
+        color: var(--text-primary);
     }
 
     .status-badge-danger {
-        @apply bg-[#fee2e2] text-[#dc2626];
+        @apply bg-[#fee2e2];
+        color: var(--text-primary);
     }
 
     .status-badge-warning {
-        @apply bg-[#fef9c3] text-[#ca8a04];
+        @apply bg-[#fef9c3];
+        color: var(--text-primary);
     }
 
     .status-badge-success {
-        @apply bg-[#dcfce7] text-[#16a34a];
+        @apply bg-[#dcfce7];
+        color: var(--text-primary);
     }
 
     .status-badge-info {
-        @apply bg-[#dbeafe] text-[#2563eb];
+        @apply bg-[#dbeafe];
+        color: var(--text-primary);
     }
 
     .status-badge-neutral {
-        @apply bg-[#f1f5f9] text-[#64748b];
+        @apply bg-[#f1f5f9];
+        color: var(--text-primary);
     }
 
     /*
@@ -1803,20 +1817,21 @@ html.dark .border-\[\#fef08a\] {
     border-color: #3d3815;
 }
 
-/* Allocation pills, dark variants */
+/* Allocation pills, dark variants — text-primary so it matches the
+ * site-wide monochrome-badge-text rule (white in dark, black in light). */
 html.dark .allocation-pill-high {
     background-color: #0a1a0a;
-    color: #4ade80;
+    color: var(--text-primary);
 }
 
 html.dark .allocation-pill-medium {
     background-color: #1a170a;
-    color: #fbbf24;
+    color: var(--text-primary);
 }
 
 html.dark .allocation-pill-low {
     background-color: #1a0a0a;
-    color: #f87171;
+    color: var(--text-primary);
 }
 
 /* Colored status pills in freight/trailer breakdowns */
@@ -1944,35 +1959,36 @@ html.dark .text-sky-700 {
     color: #7dd3fc;
 }
 
-/* Status badge dark variants */
+/* Status badge dark variants — backgrounds keep the semantic tint, text
+ * is theme-aware (var(--text-primary) = white in dark, black in light). */
 html.dark .status-badge-danger {
     background-color: #1a0a0a;
-    color: #f87171;
+    color: var(--text-primary);
 }
 
 html.dark .status-badge-warning {
     background-color: #1a170a;
-    color: #fbbf24;
+    color: var(--text-primary);
 }
 
 html.dark .status-badge-success {
     background-color: #0a1a0a;
-    color: #4ade80;
+    color: var(--text-primary);
 }
 
 html.dark .status-badge-info {
     background-color: #0a0f1a;
-    color: #60a5fa;
+    color: var(--text-primary);
 }
 
 html.dark .status-badge-neutral {
     background-color: #171717;
-    color: #777777;
+    color: var(--text-primary);
 }
 
 html.dark .trainer-badge {
     background-color: #0a0f1a;
-    color: #93c5fd;
+    color: var(--text-primary);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -2183,32 +2199,32 @@ html.dark.theme-grayed .metric-card {
  * gray bg so the colored chip still reads as a chip, not a black block. */
 html.dark.theme-grayed .status-badge-danger {
     background-color: #6e525a;
-    color: #fca5a5;
+    color: var(--text-primary);
 }
 
 html.dark.theme-grayed .status-badge-warning {
     background-color: #6c624c;
-    color: #fcd34d;
+    color: var(--text-primary);
 }
 
 html.dark.theme-grayed .status-badge-success {
     background-color: #4f6e5c;
-    color: #86efac;
+    color: var(--text-primary);
 }
 
 html.dark.theme-grayed .status-badge-info {
     background-color: #525d70;
-    color: #93c5fd;
+    color: var(--text-primary);
 }
 
 html.dark.theme-grayed .status-badge-neutral {
     background-color: #5b6270;
-    color: #c4c8d2;
+    color: var(--text-primary);
 }
 
 html.dark.theme-grayed .trainer-badge {
     background-color: #525d70;
-    color: #93c5fd;
+    color: var(--text-primary);
 }
 
 html.dark.theme-grayed .bg-emerald-100 {
@@ -2320,4 +2336,66 @@ html.dark.theme-grayed textarea:-webkit-autofill {
     -webkit-text-fill-color: var(--text-primary);
     -webkit-box-shadow: 0 0 0 30px var(--bg-secondary) inset;
     caret-color: var(--text-primary);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Site-wide badge text — always white.
+ *
+ * Badges across the app use varied patterns: named classes
+ * (`.status-badge-*`, `.allocation-pill-*`, `.trainer-badge`) plus a long
+ * tail of inline-styled pills (StatusPill in AssetStatisticsTables, plant
+ * badges, verification chips, mode tags, schedule pills, navbar counters,
+ * etc.) painted with `color: <hex>` inline.
+ *
+ * The rule: any badge-shaped element renders white text regardless of
+ * theme. The COLORED BACKGROUND carries the semantic meaning (green =
+ * good, red = bad, amber = warning, blue = info, etc.) — the text just
+ * has to read against it, and white reads against every saturated tint
+ * we ship. A specific badge that needs darker text on a light tint can
+ * opt out by setting `color` inline to a non-white value (e.g. the
+ * yellow PlantBadge already passes `#3f2d00` for the dark-on-yellow
+ * case, and that won't match the white-text selectors below — the
+ * named-class fallback then catches the rare case where someone forgot
+ * an inline color).
+ *
+ * Badge detection: either a `rounded-full` Tailwind class, an inline
+ * `border-radius: 999`, or one of the named badge classes. Same shape
+ * the previous theme-aware rule used — we're just changing the color
+ * from `var(--text-primary)` to `#ffffff`.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+.rounded-full[style*='color: #'],
+.rounded-full[style*='color:#'],
+.rounded-full[style*='color: rgb'],
+[style*='border-radius: 999'][style*='color: #'],
+[style*='border-radius:999'][style*='color:#'],
+[style*='border-radius: 999'][style*='color: rgb'],
+[style*='border-radius:999'][style*='color: rgb'],
+.status-badge,
+.status-badge-danger,
+.status-badge-warning,
+.status-badge-success,
+.status-badge-info,
+.status-badge-neutral,
+.allocation-pill-high,
+.allocation-pill-medium,
+.allocation-pill-low,
+.trainer-badge {
+    color: var(--text-primary) !important;
+}
+
+/* Opt-in escape hatch for the handful of badges that need WHITE text in
+ * every theme — solid-fill nav counters, Plan dashboard activity feed
+ * StatusPills, Operations > Schedule plant badges, etc. The class is
+ * TRIPLED (`.force-white-text.force-white-text.force-white-text`) to
+ * push its specificity to 0,3,0 — beats any 0,2,0 theme-aware rule
+ * upstream (the global monochrome-badge enforcer is 0,2,0, Tailwind's
+ * `.text-text-primary` is 0,1,0). The doubled descendant variant
+ * catches nested text spans inside the badge (plant name span inside
+ * PlantBadge, label span inside StatusPill, etc.). Apply by adding the
+ * `force-white-text` class to the OUTER badge element — descendants
+ * inherit via the descendant combinator. */
+.force-white-text.force-white-text.force-white-text,
+.force-white-text.force-white-text.force-white-text * {
+    color: #ffffff !important;
 }

@@ -83,8 +83,8 @@ export default function OrderAuditModal({ accentColor = '#2563eb', onClose, orde
             >
                 <div className="flex items-start gap-3 px-5 py-3 border-b border-border-light">
                     <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: `${accentColor}14`, color: accentColor }}
+                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-text-primary"
+                        style={{ background: `${accentColor}14` }}
                     >
                         <i className="fas fa-clock-rotate-left text-[14px]" />
                     </div>
@@ -117,7 +117,7 @@ export default function OrderAuditModal({ accentColor = '#2563eb', onClose, orde
                             <div className="text-[13px]">Loading snapshot…</div>
                         </div>
                     ) : snapshotMissing ? (
-                        <div className="rounded-xl px-4 py-4 bg-amber-50 border border-amber-200 text-[13px] text-amber-800">
+                        <div className="rounded-xl px-4 py-4 bg-amber-50 border border-amber-200 text-[13px] text-text-primary">
                             <div className="font-semibold mb-1">No snapshot for this day.</div>
                             Snapshots are captured at 5:30 PM Central the evening before. Sundays and empty days are
                             skipped — for those dates the audit has nothing to compare against.
@@ -127,7 +127,7 @@ export default function OrderAuditModal({ accentColor = '#2563eb', onClose, orde
                             Couldn&apos;t resolve this order for diffing.
                         </div>
                     ) : (
-                        <DiffBody accentColor={accentColor} diff={diff} snapshot={snapshot} />
+                        <DiffBody diff={diff} snapshot={snapshot} />
                     )}
                 </div>
             </div>
@@ -135,7 +135,7 @@ export default function OrderAuditModal({ accentColor = '#2563eb', onClose, orde
     )
 }
 
-function DiffBody({ accentColor, diff, snapshot }) {
+function DiffBody({ diff, snapshot }) {
     const kindLabel = {
         added: 'Added since 5:30 PM',
         changed: `${diff.changes.length} change${diff.changes.length === 1 ? '' : 's'} since 5:30 PM`,
@@ -143,9 +143,9 @@ function DiffBody({ accentColor, diff, snapshot }) {
         unchanged: 'No changes since 5:30 PM'
     }[diff.kind]
     const kindClass = {
-        added: 'bg-green-50 border-green-200 text-green-700',
-        changed: 'bg-amber-50 border-amber-200 text-amber-800',
-        removed: 'bg-red-50 border-red-200 text-red-700',
+        added: 'bg-green-50 border-green-200 text-text-primary',
+        changed: 'bg-amber-50 border-amber-200 text-text-primary',
+        removed: 'bg-red-50 border-red-200 text-text-primary',
         unchanged: 'bg-bg-secondary border-border-light text-text-secondary'
     }[diff.kind]
     const kindIcon = {
@@ -212,7 +212,7 @@ function DiffBody({ accentColor, diff, snapshot }) {
                                     <td className="px-3 py-2 font-mono text-text-secondary line-through">
                                         {change.before || '—'}
                                     </td>
-                                    <td className="px-3 py-2 font-mono font-semibold" style={{ color: accentColor }}>
+                                    <td className="px-3 py-2 font-mono font-semibold text-text-primary">
                                         {change.after || '—'}
                                     </td>
                                 </tr>

@@ -71,15 +71,11 @@ export function AssetStatisticsServicePage({ accentColor, onSelectAsset, stats }
                     label="Past-due service"
                     value={fmtInt(summary.overdueService)}
                     hint={`${fmtPct(overdueRate)} of fleet`}
-                    valueColor={summary.overdueService > 0 ? '#b91c1c' : '#15803d'}
                 />
                 <Stat
                     label="No service on record"
                     value={fmtInt(operationalItems.filter((item) => !item.lastServiceDate).length)}
                     hint="lastServiceDate blank"
-                    valueColor={
-                        operationalItems.filter((item) => !item.lastServiceDate).length > 0 ? '#b45309' : undefined
-                    }
                 />
                 <Stat
                     label="Within last 30d"
@@ -95,12 +91,7 @@ export function AssetStatisticsServicePage({ accentColor, onSelectAsset, stats }
                     hint="needs scheduling soon"
                 />
                 {summary.hasChip && (
-                    <Stat
-                        label="Chips overdue"
-                        value={fmtInt(summary.overdueChip)}
-                        hint=">90d since last chip"
-                        valueColor={summary.overdueChip > 0 ? '#b45309' : undefined}
-                    />
+                    <Stat label="Chips overdue" value={fmtInt(summary.overdueChip)} hint=">90d since last chip" />
                 )}
             </StatGroup>
 
@@ -123,7 +114,6 @@ export function AssetStatisticsServicePage({ accentColor, onSelectAsset, stats }
                     onSelect={onSelectAsset}
                     rows={overdueServiceList}
                     valueAccessor={(row) => row.daysSinceService}
-                    valueColor={(value) => (value > 365 ? '#b91c1c' : value > 270 ? '#b45309' : 'var(--text-primary)')}
                     valueFormatter={(value, row) => {
                         const base =
                             value == null

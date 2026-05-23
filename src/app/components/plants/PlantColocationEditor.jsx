@@ -126,7 +126,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                                 )}
                                 <button
                                     type="button"
-                                    className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary hover:bg-bg-hover hover:text-red-600 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary hover:bg-bg-hover hover:text-text-primary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                                     onClick={() => remove(row.plantCode)}
                                     disabled={disabled}
                                     aria-label={`Remove ${row.plantCode} from co-location`}
@@ -221,7 +221,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                         Add code
                     </button>
                 </div>
-                {customCodeError && <div className="text-[11.5px] text-red-600">{customCodeError}</div>}
+                {customCodeError && <div className="text-[11.5px] text-text-primary">{customCodeError}</div>}
             </div>
         </div>
     )

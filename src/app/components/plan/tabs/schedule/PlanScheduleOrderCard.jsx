@@ -118,14 +118,14 @@ export default function PlanScheduleOrderCard({
                                     type="button"
                                     onClick={() => onPickPlant(plantCode)}
                                     className="font-semibold underline-offset-2 hover:underline border-none bg-transparent p-0 cursor-pointer"
-                                    style={{ color: accentColor }}
+                                    style={{ color: 'var(--text-primary)' }}
                                     title={`Filter to plant ${plantCode}`}
                                 >
                                     {plantCode}
                                     {plantName ? ` · ${plantName}` : ''}
                                 </button>
                             ) : (
-                                <span className="font-semibold" style={{ color: accentColor }}>
+                                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                                     {plantCode}
                                     {plantName ? ` · ${plantName}` : ''}
                                 </span>
@@ -149,7 +149,7 @@ export default function PlanScheduleOrderCard({
                                     type="button"
                                     onClick={() => onOpenLocation(order)}
                                     className="text-[12px] flex items-center gap-1.5 border-none bg-transparent p-0 cursor-pointer underline-offset-2 hover:underline w-full text-left"
-                                    style={{ color: accentColor }}
+                                    style={{ color: 'var(--text-primary)' }}
                                     title="Open route map"
                                 >
                                     <i className="fas fa-location-dot text-[10px] opacity-80" />
@@ -159,7 +159,7 @@ export default function PlanScheduleOrderCard({
                                 </button>
                                 {closerPlant && (
                                     <span
-                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start bg-[rgba(37,_99,_235,_0.12)] text-blue-700"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start bg-[rgba(37,_99,_235,_0.12)] text-text-primary"
                                         title={`Live drive time: ${closerPlant.minutes} min from plant ${closerPlant.plantCode}${closerPlant.plantName ? ` (${closerPlant.plantName})` : ''} vs ${closerPlant.assignedMinutes} min from assigned plant ${plantCode}. Saves ~${closerPlant.savings} min one-way.`}
                                     >
                                         <i className="fas fa-route text-[9px]" />
@@ -191,7 +191,7 @@ export default function PlanScheduleOrderCard({
                         className="rounded-md px-2.5 py-1.5 flex items-center gap-2 border cursor-pointer text-left bg-bg-secondary border-border-light"
                         title={`Filter to product ${clean(order.productCode)}`}
                     >
-                        <i className="fas fa-cube text-[10px]" style={{ color: accentColor }} />
+                        <i className="fas fa-cube text-[10px]" style={{ color: 'var(--text-primary)' }} />
                         <span className="text-[12px] font-mono font-semibold text-text-primary">
                             {clean(order.productCode)}
                         </span>
@@ -201,7 +201,7 @@ export default function PlanScheduleOrderCard({
                     </button>
                 ) : (
                     <div className="rounded-md px-2.5 py-1.5 flex items-center gap-2 bg-bg-secondary border border-border-light">
-                        <i className="fas fa-cube text-[10px]" style={{ color: accentColor }} />
+                        <i className="fas fa-cube text-[10px]" style={{ color: 'var(--text-primary)' }} />
                         <span className="text-[12px] font-mono font-semibold text-text-primary">
                             {clean(order.productCode)}
                         </span>

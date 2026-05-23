@@ -35,7 +35,7 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
                 className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
                 style={{
                     backgroundColor: active ? `${accentColor}20` : 'var(--bg-tertiary)',
-                    color: active ? accentColor : 'var(--text-secondary)'
+                    color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
                 }}
                 title={title}
                 type="button"
@@ -56,7 +56,7 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
                             className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
                             style={{
                                 backgroundColor: activeId === opt.id ? `${accentColor}15` : 'transparent',
-                                color: activeId === opt.id ? accentColor : 'var(--text-primary)'
+                                color: 'var(--text-primary)'
                             }}
                             type="button"
                         >
@@ -80,7 +80,7 @@ function SearchPill({ accentColor, onChange, value }) {
             className="inline-flex items-center gap-1.5 rounded-lg cursor-text text-xs font-semibold px-3 py-2 flex-1 min-w-[160px] max-w-[260px]"
             style={{
                 backgroundColor: active ? `${accentColor}20` : 'var(--bg-tertiary)',
-                color: active ? accentColor : 'var(--text-secondary)'
+                color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
             }}
         >
             <i className="fas fa-magnifying-glass text-[11px]" />
@@ -100,7 +100,7 @@ function SearchPill({ accentColor, onChange, value }) {
                         e.preventDefault()
                         onChange('')
                     }}
-                    style={{ color: accentColor }}
+                    style={{ color: 'var(--text-primary)' }}
                     type="button"
                 >
                     <i className="fas fa-xmark" />

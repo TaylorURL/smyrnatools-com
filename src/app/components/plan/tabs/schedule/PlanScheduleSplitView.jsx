@@ -312,7 +312,7 @@ export default function PlanScheduleSplitView({
     }
     if (!snapshot) {
         return (
-            <div className="rounded-xl px-4 py-4 bg-amber-50 border border-amber-200 text-[13px] text-amber-800">
+            <div className="rounded-xl px-4 py-4 bg-amber-50 border border-amber-200 text-[13px] text-text-primary">
                 <div className="font-semibold mb-1">No snapshot for {planDate || 'this day'}.</div>
                 Snapshots are captured at 5:30 PM Central the evening before. Sundays and empty days are skipped, and
                 future dates won&apos;t have a snapshot until their preceding 5:30 PM cycle runs.
@@ -423,7 +423,7 @@ function SummaryStrip({ accentColor, liveCount, onToggleShowAllColumns, showAllC
     return (
         <div className="rounded-xl flex flex-wrap items-center gap-3 px-3 py-2 bg-bg-secondary border border-border-light">
             <span className="text-[11.5px] font-semibold text-text-secondary">
-                <i className="fas fa-code-compare text-[10px] mr-1.5" style={{ color: accentColor }} />
+                <i className="fas fa-code-compare text-[10px] mr-1.5" style={{ color: 'var(--text-primary)' }} />
                 Comparing original vs. live
                 {snapshot?.captured_at && (
                     <span className="ml-2 text-text-tertiary font-normal">
@@ -464,7 +464,7 @@ function SummaryStrip({ accentColor, liveCount, onToggleShowAllColumns, showAllC
 function ColumnLabel({ accentColor, icon, text }) {
     return (
         <div className="px-1 text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 text-text-secondary">
-            <i className={`fas ${icon} text-[10px]`} style={{ color: accentColor }} />
+            <i className={`fas ${icon} text-[10px]`} style={{ color: 'var(--text-primary)' }} />
             {text}
         </div>
     )

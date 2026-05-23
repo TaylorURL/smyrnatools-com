@@ -103,7 +103,7 @@ function EfficiencyReportCard({ effIdx, effReports, setEffIdx }) {
 export function GmEfficiencyReportsSection({ effIdx, effReports, setEffIdx }) {
     const badge =
         effReports.length > 0 ? (
-            <span className="inline-flex rounded-md bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
+            <span className="inline-flex rounded-md bg-sky-100 px-2.5 py-1 text-xs font-semibold text-text-primary">
                 {effIdx + 1} of {effReports.length}
             </span>
         ) : null

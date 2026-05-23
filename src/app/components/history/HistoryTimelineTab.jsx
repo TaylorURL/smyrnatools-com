@@ -22,7 +22,7 @@ function HistoryChangeCard({ entry, formatValue, type }) {
             </div>
             {isCreatedEntry ? (
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="text-[12px] font-semibold text-green-700">
+                    <span className="text-[12px] font-semibold text-text-primary">
                         {formatValue(fieldName, entry.newValue ?? entry.new_value)}
                     </span>
                 </div>

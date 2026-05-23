@@ -103,8 +103,8 @@ function HelpGivenBarChart({ accentColor, colocationMap, data, metricKey, plantN
 }
 
 /** Legend strip — describes what the two methods mean before the user
- *  hits the data. Reads in plain English so first-time viewers don't have
- *  to infer terminology from column headers. */
+ *  hits the data. The colored left border is the only signal carrier;
+ *  the title text stays in theme to keep the page calm. */
 function MethodLegend() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -112,9 +112,7 @@ function MethodLegend() {
                 className="rounded border border-border-light px-3 py-2 text-[12px] text-text-secondary"
                 style={{ borderLeft: `3px solid ${METHOD.deadhead.color}` }}
             >
-                <div className="font-semibold text-text-primary mb-0.5" style={{ color: METHOD.deadhead.color }}>
-                    {METHOD.deadhead.title}
-                </div>
+                <div className="font-semibold text-text-primary mb-0.5">{METHOD.deadhead.title}</div>
                 The dispatcher scheduled operators from this plant to drive empty over to another plant to help them
                 out. Counted from <span className="font-semibold">Planner tab</span> assignments.
             </div>
@@ -122,9 +120,7 @@ function MethodLegend() {
                 className="rounded border border-border-light px-3 py-2 text-[12px] text-text-secondary"
                 style={{ borderLeft: `3px solid ${METHOD.crossLoad.color}` }}
             >
-                <div className="font-semibold text-text-primary mb-0.5" style={{ color: METHOD.crossLoad.color }}>
-                    {METHOD.crossLoad.title}
-                </div>
+                <div className="font-semibold text-text-primary mb-0.5">{METHOD.crossLoad.title}</div>
                 This plant&apos;s mixers actually loaded a ticket for an order that belongs to another plant. Counted
                 from <span className="font-semibold">dispatch tickets</span>.
             </div>
@@ -178,13 +174,11 @@ export default function PlanStatisticsHelpCrossLoadingPage({
                     hint={`across ${fmtInt(safeKpi.deadheadTrips)} planned trip${safeKpi.deadheadTrips === 1 ? '' : 's'}`}
                     label="Operators planned to help other plants"
                     value={`${fmtInt(safeKpi.deadheadDrivers)} operators`}
-                    valueColor={METHOD.deadhead.color}
                 />
                 <Stat
                     hint={`across ${fmtInt(safeKpi.crossLoadTickets)} ticket${safeKpi.crossLoadTickets === 1 ? '' : 's'}`}
                     label="Yardage actually loaded for other plants"
                     value={`${fmtYards(safeKpi.crossLoadYardage)} yd³`}
-                    valueColor={METHOD.crossLoad.color}
                 />
                 <Stat
                     hint="distinct plants sending help"
@@ -214,8 +208,6 @@ export default function PlanStatisticsHelpCrossLoadingPage({
                     <HelpBreakdownTable
                         accentColor={accentColor}
                         colocationMap={colocationMap}
-                        crossLoadColor={METHOD.crossLoad.color}
-                        deadheadColor={METHOD.deadhead.color}
                         helpByGiverPlant={helpByGiverPlant}
                         plantNameByCode={plantNameByCode}
                         range={range}

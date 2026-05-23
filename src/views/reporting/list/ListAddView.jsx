@@ -271,7 +271,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                         autoFocus
                                     />
                                     {aiError && (
-                                        <div className="flex items-center gap-2 mt-1 text-red-600 text-xs bg-red-50 rounded-lg px-3 py-2">
+                                        <div className="flex items-center gap-2 mt-1 text-text-primary text-xs bg-red-50 rounded-lg px-3 py-2">
                                             <i className="fas fa-exclamation-triangle text-[10px]" />
                                             <span>{aiError}</span>
                                         </div>
@@ -334,14 +334,14 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                                     return (
                                                         <div
                                                             key={code}
-                                                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm"
+                                                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-text-primary rounded-lg text-sm"
                                                         >
                                                             <span>
                                                                 ({plant?.plant_code}) {plant?.plant_name}
                                                             </span>
                                                             <button
                                                                 type="button"
-                                                                className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-200 text-blue-700 hover:bg-blue-300 transition-colors"
+                                                                className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-200 text-text-primary hover:bg-blue-300 transition-colors"
                                                                 onClick={() =>
                                                                     setSelectedPlantCodes((prev) =>
                                                                         prev.filter((c) => c !== code)
@@ -455,8 +455,8 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                     : 'Add Item'}
                         </button>
                     </div>
-                    {errors.description && <div className="text-red-500 text-sm mt-2">{errors.description}</div>}
-                    {errors.plantCode && <div className="text-red-500 text-sm mt-2">{errors.plantCode}</div>}
+                    {errors.description && <div className="text-text-primary text-sm mt-2">{errors.description}</div>}
+                    {errors.plantCode && <div className="text-text-primary text-sm mt-2">{errors.plantCode}</div>}
                 </form>
             </AddViewSection>
             {isPlantModalOpen && (

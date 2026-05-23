@@ -10,9 +10,9 @@ import {
 } from '../../constants/verificationModalConstants'
 
 const STATUS_TONES = {
-    done: { color: '#16a34a', icon: 'fa-check' },
-    attention: { color: '#dc2626', icon: 'fa-circle' },
-    warn: { color: '#d97706', icon: 'fa-circle' },
+    done: { color: 'var(--text-primary)', icon: 'fa-check' },
+    attention: { color: 'var(--text-primary)', icon: 'fa-circle' },
+    warn: { color: 'var(--text-primary)', icon: 'fa-circle' },
     info: { color: 'var(--text-tertiary)', icon: 'fa-circle' }
 }
 
@@ -82,7 +82,7 @@ export function FieldLabel({ children, required }) {
         <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
             {children}
             {required && (
-                <span className="text-red-600" aria-label="required">
+                <span className="text-text-primary" aria-label="required">
                     *
                 </span>
             )}
@@ -115,7 +115,7 @@ export function Hint({ children }) {
 /** Inline error hint for missing required values. */
 export function RequiredHint({ children }) {
     return (
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-red-600">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-text-primary">
             <i className="fas fa-exclamation-circle text-[10px]" />
             {children}
         </div>
@@ -156,7 +156,7 @@ export function OperatorRow({ label, last, mono, required, value }) {
                 <span className="text-[12px] font-medium text-text-secondary">
                     {label}
                     {required && (
-                        <span className="ml-1 text-red-600" aria-label="required">
+                        <span className="ml-1 text-text-primary" aria-label="required">
                             *
                         </span>
                     )}

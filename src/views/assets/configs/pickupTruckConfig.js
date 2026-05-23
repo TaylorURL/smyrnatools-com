@@ -191,7 +191,7 @@ const pickupTruckConfig = {
                 key: 'mileage',
                 label: 'Mileage',
                 type: 'number',
-                warningClassName: 'bg-red-50 text-red-800 rounded text-[10px] font-bold ml-2 px-2 py-1',
+                warningClassName: 'bg-red-50 text-text-primary rounded text-[10px] font-bold ml-2 px-2 py-1',
                 warningTitle: 'High mileage',
                 width: '10%'
             },

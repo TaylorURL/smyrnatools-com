@@ -255,7 +255,7 @@ function OrderInfoModal({
                             className="relative bg-transparent border-0 cursor-pointer py-2.5 text-[12.5px] font-medium"
                             style={{
                                 borderBottom: active ? `2px solid ${accentColor}` : '2px solid transparent',
-                                color: active ? accentColor : 'var(--text-secondary)',
+                                color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
                                 marginBottom: -1
                             }}
                         >
@@ -265,7 +265,7 @@ function OrderInfoModal({
                                     className="ml-1.5 text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded"
                                     style={{
                                         background: active ? `${accentColor}22` : 'var(--bg-tertiary)',
-                                        color: active ? accentColor : 'var(--text-secondary)'
+                                        color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
                                     }}
                                 >
                                     {badge}

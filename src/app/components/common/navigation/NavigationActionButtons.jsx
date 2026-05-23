@@ -23,7 +23,7 @@ export function TwoLevelIconButton({
             ))}
             {badge > 0 && (
                 <span
-                    className="absolute flex items-center justify-center rounded-full font-bold h-4"
+                    className="force-white-text absolute flex items-center justify-center rounded-full font-bold h-4"
                     style={{
                         backgroundColor: badgeColor,
                         border: `2px solid ${accentColor}`,
@@ -84,7 +84,7 @@ export function TopBarMessagesButton({ onClick, combinedCount, accentColor, isTa
             <i className="fas fa-envelope" style={{ fontSize: isTablet ? '11px' : '13px' }} />
             {combinedCount > 0 && (
                 <span
-                    className="items-center bg-red-500 rounded-[10px] flex font-bold justify-center absolute"
+                    className="force-white-text items-center bg-red-500 rounded-[10px] flex font-bold justify-center absolute"
                     style={{
                         border: `2px solid ${accentColor}`,
                         boxShadow: '0 2px 8px #ef444466',
@@ -144,7 +144,7 @@ export function TopBarIconButton({
             <i className={`fas ${icon}`} style={{ fontSize: isTablet ? '13px' : '16px' }}></i>
             {badge > 0 && (
                 <span
-                    className="items-center rounded-[10px] flex font-bold justify-center absolute"
+                    className="force-white-text items-center rounded-[10px] flex font-bold justify-center absolute"
                     style={{
                         backgroundColor: badgeColor,
                         border: `2px solid ${accentColor}`,

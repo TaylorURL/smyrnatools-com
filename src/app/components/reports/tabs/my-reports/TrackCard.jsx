@@ -29,10 +29,10 @@ const ICON_BY_NAME = {
 }
 
 const STATUS_CONFIG = {
-    in_progress: { badge: 'bg-amber-100 text-amber-700', label: 'Draft', tone: '#ca8a04' },
-    not_started: { badge: 'bg-slate-100 text-slate-600', label: 'Not started', tone: '#64748b' },
-    overdue: { badge: 'bg-red-100 text-red-700', label: 'Overdue', tone: '#dc2626' },
-    submitted: { badge: 'bg-emerald-100 text-emerald-700', label: 'Submitted', tone: '#16a34a' }
+    in_progress: { badge: 'bg-amber-100 text-text-primary', label: 'Draft', tone: '#ca8a04' },
+    not_started: { badge: 'bg-slate-100 text-text-primary', label: 'Not started', tone: '#64748b' },
+    overdue: { badge: 'bg-red-100 text-text-primary', label: 'Overdue', tone: '#dc2626' },
+    submitted: { badge: 'bg-emerald-100 text-text-primary', label: 'Submitted', tone: '#16a34a' }
 }
 
 const HISTORY_COLORS = {

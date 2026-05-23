@@ -14,6 +14,8 @@ export const SORT_OPTIONS = {
         },
         label: 'Most recent day'
     },
+    hours: { compare: (a, b) => b.actualHours - a.actualHours, label: 'Most hours' },
+    name: { compare: (a, b) => String(a.name).localeCompare(String(b.name)), label: 'Name (A–Z)' },
     // Operator name, then chronological — useful for "show me this
     // operator's whole week".
     operator: {
@@ -23,13 +25,13 @@ export const SORT_OPTIONS = {
         },
         label: 'Operator (A–Z)'
     },
-    hours: { compare: (a, b) => b.actualHours - a.actualHours, label: 'Most hours' },
-    name: { compare: (a, b) => String(a.name).localeCompare(String(b.name)), label: 'Name (A–Z)' },
     ot: { compare: (a, b) => b.otHours - a.otHours, label: 'Most overtime' },
     varianceDesc: {
         compare: (a, b) => Math.abs(b.actualHours - b.scheduledHours) - Math.abs(a.actualHours - a.scheduledHours),
         label: 'Largest variance'
-    }
+    },
+    yards: { compare: (a, b) => (b.yards || 0) - (a.yards || 0), label: 'Most yards' },
+    yph: { compare: (a, b) => (b.yph || 0) - (a.yph || 0), label: 'Highest YPH' }
 }
 
 /** Distinct, sorted list of operator positions present in the rows.

@@ -187,10 +187,9 @@ export default function DashboardPodcastPanel() {
             <div className="rounded-xl border border-border-light bg-bg-primary overflow-hidden">
                 <div className="flex items-start gap-3 px-3 pt-3">
                     <div
-                        className="shrink-0 rounded-md overflow-hidden flex items-center justify-center"
+                        className="shrink-0 rounded-md overflow-hidden flex items-center justify-center text-text-primary"
                         style={{
                             background: selected?.artwork ? 'transparent' : `${accent}1f`,
-                            color: accent,
                             height: 56,
                             width: 56
                         }}

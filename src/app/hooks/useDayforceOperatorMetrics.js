@@ -4,10 +4,13 @@ import { Database } from '../../services/DatabaseService'
 import { OperatorService } from '../../services/OperatorService'
 import { PlantService } from '../../services/PlantService'
 
-/** Federal OT threshold — anything beyond this in a single workweek is
- *  paid at the OT multiplier. Lives here (not in a per-region settings
- *  table) because the bridge currently only covers Texas RMX sites and
- *  federal rules apply uniformly there. */
+/** Overtime rules: any hours past 8 in a single day OR past 40 in a
+ *  single week count as overtime, paid at the OT multiplier. Daily
+ *  hours that have already been counted toward daily OT do NOT also
+ *  count toward the weekly cap — only the first 8 (regular) hours of
+ *  each day stack into the weekly total. Mirrors the standard "daily
+ *  AND weekly" OT pattern used by states like California. */
+const OT_DAILY_THRESHOLD_HOURS = 8
 const OT_WEEKLY_THRESHOLD_HOURS = 40
 const OT_MULTIPLIER = 1.5
 
@@ -36,12 +39,36 @@ const weekKey = (dateString) => {
     return `${target.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`
 }
 
-/** Splits a week's total hours into regular + overtime buckets and
- *  returns the corresponding labor cost at the given hourly rate. */
-const computeWeeklyCost = (hours, hourlyRate) => {
-    if (!hourlyRate || !hours) return { cost: 0, otCost: 0, otHours: 0, regCost: 0, regHours: 0 }
-    const regHours = Math.min(hours, OT_WEEKLY_THRESHOLD_HOURS)
-    const otHours = Math.max(0, hours - OT_WEEKLY_THRESHOLD_HOURS)
+/** Splits a week's hours into regular + overtime buckets using the
+ *  daily-AND-weekly rule:
+ *    1. For each day, any hours past 8 are daily OT.
+ *    2. The first 8 hours of each day stack into the weekly base; any
+ *       portion of that base past 40 is weekly OT.
+ *    3. Hours already counted as daily OT do NOT also accrue toward the
+ *       weekly cap (no double-dipping).
+ *
+ *  Takes the bucket's `totalHours` (week sum) plus `dailyHours` (Map of
+ *  `dateString → hoursOnThatDay`). When `dailyHours` is missing or empty,
+ *  falls back to weekly-only OT — keeps the function safe for callers
+ *  that haven't been updated yet. */
+const computeWeeklyCost = (totalHours, hourlyRate, dailyHours) => {
+    if (!hourlyRate || !totalHours) return { cost: 0, otCost: 0, otHours: 0, regCost: 0, regHours: 0 }
+
+    let dailyOtHours = 0
+    let weeklyBase = 0
+    if (dailyHours && dailyHours.size > 0) {
+        for (const hours of dailyHours.values()) {
+            if (!Number.isFinite(hours) || hours <= 0) continue
+            const dayOt = Math.max(0, hours - OT_DAILY_THRESHOLD_HOURS)
+            dailyOtHours += dayOt
+            weeklyBase += hours - dayOt
+        }
+    } else {
+        weeklyBase = totalHours
+    }
+    const weeklyOtHours = Math.max(0, weeklyBase - OT_WEEKLY_THRESHOLD_HOURS)
+    const otHours = dailyOtHours + weeklyOtHours
+    const regHours = Math.max(0, totalHours - otHours)
     const regCost = regHours * hourlyRate
     const otCost = otHours * hourlyRate * OT_MULTIPLIER
     return { cost: regCost + otCost, otCost, otHours, regCost, regHours }
@@ -334,13 +361,22 @@ export default function useDayforceOperatorMetrics({
             const key = `${shift.dayforce_employee_id}|${wk}`
             const bucket = employeeWeekBuckets.get(key) || {
                 actualHours: 0,
+                /** Per-day hour totals within this week — keyed by ISO
+                 *  date string. Drives the daily-OT (>8h) leg of the
+                 *  weekly cost calc; weekly OT (>40h after daily-OT is
+                 *  carved out) is computed from the sum. */
+                dailyHours: new Map(),
                 dayforceEmployeeId: shift.dayforce_employee_id,
                 hourlyRate: null,
                 ptoHours: 0,
                 scheduledHours: 0,
                 week: wk
             }
-            bucket.actualHours += Number(shift.actual_hours) || 0
+            const shiftHours = Number(shift.actual_hours) || 0
+            bucket.actualHours += shiftHours
+            if (shift.shift_date && shiftHours > 0) {
+                bucket.dailyHours.set(shift.shift_date, (bucket.dailyHours.get(shift.shift_date) || 0) + shiftHours)
+            }
             bucket.scheduledHours += Number(shift.scheduled_hours) || 0
             if (shift.is_pto) bucket.ptoHours += Number(shift.pto_hours) || 0
             const snapRate = Number(shift.hourly_rate_snapshot) || null
@@ -361,7 +397,11 @@ export default function useDayforceOperatorMetrics({
             const employee = employeesById.get(bucket.dayforceEmployeeId)
             const operator = operatorByEmployeeId.get(bucket.dayforceEmployeeId)
             const rate = bucket.hourlyRate || Number(employee?.hourly_rate) || 0
-            const { otCost, otHours, regCost, regHours } = computeWeeklyCost(bucket.actualHours, rate)
+            const { otCost, otHours, regCost, regHours } = computeWeeklyCost(
+                bucket.actualHours,
+                rate,
+                bucket.dailyHours
+            )
 
             totalActualHours += bucket.actualHours
             totalScheduledHours += bucket.scheduledHours
@@ -451,22 +491,34 @@ export default function useDayforceOperatorMetrics({
         for (const bucket of employeeWeekBuckets.values()) {
             const employee = employeesById.get(bucket.dayforceEmployeeId)
             const rate = bucket.hourlyRate || Number(employee?.hourly_rate) || 0
-            const { cost } = computeWeeklyCost(bucket.actualHours, rate)
+            const { cost, otHours, regHours } = computeWeeklyCost(bucket.actualHours, rate)
             const row = perWeekMap.get(bucket.week) || {
                 actualHours: 0,
                 cost: 0,
                 operatorIds: new Set(),
+                operatorsOverOt: new Set(),
+                otHours: 0,
+                regHours: 0,
                 scheduledHours: 0,
                 week: bucket.week
             }
             row.actualHours += bucket.actualHours
             row.scheduledHours += bucket.scheduledHours
             row.cost += cost
+            row.otHours += otHours
+            row.regHours += regHours
             row.operatorIds.add(bucket.dayforceEmployeeId)
+            if (otHours > 0) row.operatorsOverOt.add(bucket.dayforceEmployeeId)
             perWeekMap.set(bucket.week, row)
         }
         const perWeek = Array.from(perWeekMap.values())
-            .map((row) => ({ ...row, operatorCount: row.operatorIds.size, operatorIds: undefined }))
+            .map((row) => ({
+                ...row,
+                operatorCount: row.operatorIds.size,
+                operatorIds: undefined,
+                operatorsOverOt: undefined,
+                operatorsOverOtCount: row.operatorsOverOt.size
+            }))
             .sort((a, b) => a.week.localeCompare(b.week))
 
         const exceptionsCount = filteredShifts.filter((s) => s.exception_code).length

@@ -84,7 +84,7 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
                 </button>
                 {usingFallback && (
                     <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 bg-[rgba(217,_119,_6,_0.15)] text-[#b45309]"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 bg-[rgba(217,_119,_6,_0.15)] text-text-primary"
                         title={`City wasn't entered by dispatch — we filled in "${fallbackCity}" from plant ${order.plantCode}. The actual delivery city could be different.`}
                     >
                         <i className="fas fa-circle-exclamation text-[9px]" />
@@ -94,7 +94,7 @@ function AddressCell({ getCloserPlantForOrder, onOpenLocation, order, plantCityB
             </div>
             {closerPlant && (
                 <span
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start bg-[rgba(37,_99,_235,_0.12)] text-blue-700"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap self-start bg-[rgba(37,_99,_235,_0.12)] text-text-primary"
                     title={`Live drive time: ${closerPlant.minutes} min from plant ${closerPlant.plantCode}${closerPlant.plantName ? ` (${closerPlant.plantName})` : ''} vs ${closerPlant.assignedMinutes} min from assigned plant ${order.plantCode}. Saves ~${closerPlant.savings} min one-way.`}
                 >
                     <i className="fas fa-route text-[9px]" />
@@ -140,7 +140,7 @@ function TrucksCell({
             <div className="flex flex-col items-end gap-0.5">
                 <span
                     className="inline-flex items-center gap-1 justify-end font-semibold"
-                    style={{ color: differsFromDispatch ? '#d97706' : 'var(--text-primary)' }}
+                    style={{ color: 'var(--text-primary)' }}
                 >
                     {differsFromDispatch && <i className="fas fa-circle-info text-[10px]" />}
                     {computed != null ? computed : '—'}
@@ -151,12 +151,10 @@ function TrucksCell({
                             //   0–2   → amber (tight margin — 1–2 trucks left
                             //           is close to the edge, 0 is break-even)
                             //   ≥ 3   → green (comfortable headroom)
-                            const pillColor =
-                                poolAfterEffective < 0 ? '#dc2626' : poolAfterEffective <= 2 ? '#d97706' : '#16a34a'
                             return (
                                 <span
                                     className="font-semibold"
-                                    style={{ color: pillColor }}
+                                    style={{ color: 'var(--text-primary)' }}
                                     title={
                                         poolAfterEffective < 0
                                             ? `${-poolAfterEffective} truck${poolAfterEffective === -1 ? '' : 's'} short — pour runs below scheduled rate`

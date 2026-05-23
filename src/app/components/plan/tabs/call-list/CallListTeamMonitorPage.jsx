@@ -126,12 +126,10 @@ function SummaryStrip({ bookingRate, callerCount, isLoading, totalBooked, totalC
                 label="Booked"
                 sub={`${fmtScorePct(bookingRate)} booking rate`}
                 value={isLoading ? '—' : fmtInt(totalBooked)}
-                valueColor="#16a34a"
             />
             <SummaryStat
                 label="Will book again"
                 value={isLoading ? '—' : fmtInt(totalWillBookAgain)}
-                valueColor="#2563eb"
                 sub="Warm follow-ups queued"
             />
             <SummaryStat
@@ -143,16 +141,11 @@ function SummaryStrip({ bookingRate, callerCount, isLoading, totalBooked, totalC
     )
 }
 
-function SummaryStat({ label, sub, value, valueColor }) {
+function SummaryStat({ label, sub, value }) {
     return (
         <div className="flex flex-col gap-0.5">
             <div className="text-[11px] text-text-tertiary">{label}</div>
-            <div
-                className="text-[20px] font-semibold tabular-nums leading-tight"
-                style={{ color: valueColor || 'var(--text-primary)' }}
-            >
-                {value}
-            </div>
+            <div className="text-[20px] font-semibold tabular-nums leading-tight text-text-primary">{value}</div>
             {sub && <div className="text-[10.5px] text-text-tertiary">{sub}</div>}
         </div>
     )
@@ -184,16 +177,10 @@ function CallerActivityCard({ row }) {
             <OutcomeMixBar row={row} />
 
             <div className="grid grid-cols-3 gap-2 text-[11px]">
-                <MiniStat
-                    label="Booked"
-                    value={fmtInt(row.booked || 0)}
-                    valueColor="#16a34a"
-                    sub={fmtScorePct(bookingRate)}
-                />
+                <MiniStat label="Booked" value={fmtInt(row.booked || 0)} sub={fmtScorePct(bookingRate)} />
                 <MiniStat
                     label="Will book again"
                     value={fmtInt(row.will_book_again || 0)}
-                    valueColor="#2563eb"
                     sub={fmtScorePct(productiveRate)}
                 />
                 <MiniStat label="Customers" value={fmtInt(row.unique_customers || 0)} sub="unique" />
@@ -207,7 +194,7 @@ function CallerActivityCard({ row }) {
                 </span>
                 <span
                     title={isStale ? 'No calls logged in the last 2 weeks — follow up with this caller' : undefined}
-                    style={{ color: isStale ? '#dc2626' : 'var(--text-tertiary)', fontWeight: isStale ? 600 : 400 }}
+                    style={{ color: 'var(--text-tertiary)', fontWeight: isStale ? 600 : 400 }}
                 >
                     {row.last_call_at ? `Last call ${formatRelativeDays(row.last_call_at)}` : 'No calls yet'}
                 </span>
@@ -216,16 +203,11 @@ function CallerActivityCard({ row }) {
     )
 }
 
-function MiniStat({ label, sub, value, valueColor }) {
+function MiniStat({ label, sub, value }) {
     return (
         <div className="flex flex-col gap-0.5 min-w-0">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider">{label}</div>
-            <div
-                className="text-[15px] font-semibold tabular-nums leading-none"
-                style={{ color: valueColor || 'var(--text-primary)' }}
-            >
-                {value}
-            </div>
+            <div className="text-[15px] font-semibold tabular-nums leading-none text-text-primary">{value}</div>
             {sub && <div className="text-[10px] text-text-tertiary tabular-nums">{sub}</div>}
         </div>
     )

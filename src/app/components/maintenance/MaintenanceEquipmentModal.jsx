@@ -136,7 +136,7 @@ export function MaintenanceEquipmentModal({
 
                 <div className="px-4 py-3 flex flex-col gap-3">
                     {error && (
-                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
+                        <div className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-text-primary">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>
@@ -144,7 +144,7 @@ export function MaintenanceEquipmentModal({
 
                     <div>
                         <label className={FIELD_LABEL_CLS} style={{ color: 'var(--text-secondary)' }}>
-                            Equipment Name <span className="text-red-600">*</span>
+                            Equipment Name <span className="text-text-primary">*</span>
                         </label>
                         <input
                             className={FIELD_INPUT_CLS}
@@ -157,7 +157,7 @@ export function MaintenanceEquipmentModal({
 
                     <div>
                         <label className={FIELD_LABEL_CLS} style={{ color: 'var(--text-secondary)' }}>
-                            Category <span className="text-red-600">*</span>
+                            Category <span className="text-text-primary">*</span>
                         </label>
                         <select
                             className={SELECT_CLS}
@@ -176,7 +176,7 @@ export function MaintenanceEquipmentModal({
 
                     <div>
                         <label className={FIELD_LABEL_CLS} style={{ color: 'var(--text-secondary)' }}>
-                            Plant <span className="text-red-600">*</span>
+                            Plant <span className="text-text-primary">*</span>
                         </label>
                         <button
                             type="button"

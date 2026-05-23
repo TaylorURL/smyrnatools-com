@@ -16,14 +16,14 @@ function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) 
             style={{ color: 'var(--text-secondary)' }}
         >
             <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider">
-                <i className={`fas ${icon} text-[11px]`} style={{ color: accent }} />
+                <i className={`fas ${icon} text-[11px] text-text-primary`} />
                 {label}
             </span>
             <span className="font-mono tabular-nums font-bold leading-none text-text-primary" style={{ fontSize: 22 }}>
                 {value}
             </span>
             {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
-            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold" style={{ color: accent }}>
+            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-text-primary">
                 Open
                 <i className="fas fa-arrow-right text-[9px]" />
             </span>
@@ -34,19 +34,13 @@ function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) 
 /** A single Highlight row inside the period-spotlight / watchlist panels.
  *  Big icon, label, value, optional hint underneath — mirrors the visual
  *  rhythm of the Plan Statistics overview. */
-function HighlightRow({ hint, icon, label, value, valueColor }) {
+function HighlightRow({ hint, icon, label, value }) {
     return (
         <div className="flex items-start gap-3 px-3 py-2.5 border-t border-border-light first:border-t-0">
-            <i
-                className={`fas ${icon} text-[11px] mt-1 w-4 text-center`}
-                style={{ color: valueColor || 'var(--text-tertiary)' }}
-            />
+            <i className={`fas ${icon} text-[11px] mt-1 w-4 text-center text-text-tertiary`} />
             <div className="flex-1 min-w-0">
                 <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary">{label}</div>
-                <div
-                    className="font-semibold truncate text-text-primary"
-                    style={{ color: valueColor || 'var(--text-primary)', fontSize: 13.5 }}
-                >
+                <div className="font-semibold truncate text-text-primary" style={{ fontSize: 13.5 }}>
                     {value}
                 </div>
                 {hint && <div className="text-[11px] text-text-tertiary truncate">{hint}</div>}
@@ -80,7 +74,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
     const healthiest = plantHealth.slice(0, 3)
     const needsAttention = [...plantHealth].sort((a, b) => a.score - b.score).slice(0, 3)
 
-    const verifiedColor = summary.verifiedRate >= 0.9 ? '#15803d' : summary.verifiedRate >= 0.75 ? '#b45309' : '#b91c1c'
     const shopHint = summary.shopCount > 0 ? `${fmtInt(summary.shopCount)} in shop` : 'no shop entries'
 
     return (
@@ -98,7 +91,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                         label="Verified"
                         value={summary.total > 0 ? `${fmtPct((summary.verifiedRate || 0) * 100)}` : '—'}
                         hint={`${fmtInt(summary.unverified)} unverified · ${fmtInt(summary.assetsMissingAnyField)} missing data`}
-                        valueColor={verifiedColor}
                     />
                 )}
                 {summary.hasService && (
@@ -109,7 +101,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                             summary.overdueService > 0 ? `${fmtInt(summary.overdueService)} overdue` : 'All caught up'
                         }
                         hint={summary.hasChip ? `${fmtInt(summary.overdueChip)} overdue chips` : 'past-due > 180 days'}
-                        valueColor={summary.overdueService > 0 ? '#b91c1c' : '#15803d'}
                     />
                 )}
                 {summary.openIssues > 0 ? (
@@ -118,15 +109,9 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                         label="Open issues"
                         value={`${fmtInt(summary.openIssues)} issues`}
                         hint={`across ${fmtInt(summary.assetsWithOpenIssues)} assets`}
-                        valueColor="#b91c1c"
                     />
                 ) : (
-                    <HighlightRow
-                        icon="fa-circle-check"
-                        label="Open issues"
-                        value="None reported"
-                        valueColor="#15803d"
-                    />
+                    <HighlightRow icon="fa-circle-check" label="Open issues" value="None reported" />
                 )}
                 {summary.hasCleanliness && (
                     <HighlightRow
@@ -135,15 +120,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                         value={summary.cleanlinessAvg != null ? `${fmtFloat(summary.cleanlinessAvg)} ★ avg` : '—'}
                         hint={
                             summary.dirtyCount > 0 ? `${fmtInt(summary.dirtyCount)} assets below 3★` : 'no dirty assets'
-                        }
-                        valueColor={
-                            summary.cleanlinessAvg == null
-                                ? undefined
-                                : summary.cleanlinessAvg >= 4
-                                  ? '#15803d'
-                                  : summary.cleanlinessAvg >= 3
-                                    ? '#b45309'
-                                    : '#b91c1c'
                         }
                     />
                 )}
@@ -157,7 +133,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                                 : 'Fully covered'
                         }
                         hint={`${fmtInt(summary.activeCount)} active assets`}
-                        valueColor={summary.unassignedActive > 0 ? '#b45309' : '#15803d'}
                     />
                 )}
                 {stats.hoursStats?.hasHours && (
@@ -174,7 +149,6 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                                 ? `${fmtInt(stats.hoursStats.hoursRecorded)} reporting · ${fmtInt(stats.hoursStats.hoursUnrecorded)} missing`
                                 : `${fmtInt(stats.hoursStats.hoursRecorded)} reporting · all caught up`
                         }
-                        valueColor={stats.hoursStats.hoursUnrecorded > 0 ? '#b45309' : '#15803d'}
                     />
                 )}
                 <HighlightRow
@@ -215,8 +189,7 @@ export function AssetStatisticsOverviewPage({ accentColor, config, onSelectSecti
                                     <button
                                         type="button"
                                         onClick={() => onSelectSection?.('plants')}
-                                        className="text-[11px] font-semibold bg-transparent border-none cursor-pointer"
-                                        style={{ color: accent }}
+                                        className="text-[11px] font-semibold bg-transparent border-none cursor-pointer text-text-primary"
                                     >
                                         View →
                                     </button>

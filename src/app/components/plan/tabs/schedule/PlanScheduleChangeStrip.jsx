@@ -105,10 +105,10 @@ function classifyTimeShift(change) {
 }
 
 const PILL_TONES = {
-    added: { background: 'rgba(22, 163, 74, 0.12)', color: '#15803d' },
-    changed: { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' },
+    added: { background: 'rgba(22, 163, 74, 0.12)', color: 'var(--text-primary)' },
+    changed: { background: 'rgba(245, 158, 11, 0.14)', color: 'var(--text-primary)' },
     neutral: { background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' },
-    removed: { background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }
+    removed: { background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' }
 }
 
 function ChangePill({ count, label, tone = 'neutral', sign = '' }) {

@@ -78,7 +78,7 @@ export function AssetStatisticsHoursPage({ accentColor, onSelectAsset, stats }) 
                 </StatGroup>
                 <Panel title="No hours data in scope" innerClassName="p-6">
                     <div className="flex items-center justify-center gap-2 py-4 text-[12.5px] text-text-secondary">
-                        <i className="fas fa-circle-info text-[18px]" style={{ color: '#0ea5e9' }} />
+                        <i className="fas fa-circle-info text-[18px]" />
                         Add hours readings on individual asset detail views to start populating this page.
                     </div>
                 </Panel>
@@ -104,12 +104,7 @@ export function AssetStatisticsHoursPage({ accentColor, onSelectAsset, stats }) 
                     value={avgHoursPerYear != null ? `${fmtInt(Math.round(avgHoursPerYear))}h` : '—'}
                     hint="hours ÷ age, recorded"
                 />
-                <Stat
-                    label="Missing data"
-                    value={fmtInt(hoursUnrecorded)}
-                    hint="assets with no hours"
-                    valueColor={hoursUnrecorded > 0 ? '#b45309' : '#15803d'}
-                />
+                <Stat label="Missing data" value={fmtInt(hoursUnrecorded)} hint="assets with no hours" />
             </StatGroup>
 
             <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
@@ -136,9 +131,6 @@ export function AssetStatisticsHoursPage({ accentColor, onSelectAsset, stats }) 
                     onSelect={onSelectAsset}
                     rows={topByHours}
                     valueAccessor={(row) => row.hours}
-                    valueColor={(value) =>
-                        value >= 25000 ? '#b91c1c' : value >= 15000 ? '#b45309' : 'var(--text-primary)'
-                    }
                     valueFormatter={(value, row) =>
                         row.age != null
                             ? `${fmtInt(Math.round(value))}h · ${row.age}yr`
@@ -158,9 +150,6 @@ export function AssetStatisticsHoursPage({ accentColor, onSelectAsset, stats }) 
                     onSelect={onSelectAsset}
                     rows={hoursPerYearTopList}
                     valueAccessor={(row) => row.hoursPerYear}
-                    valueColor={(value) =>
-                        value >= 2500 ? '#b91c1c' : value >= 1800 ? '#b45309' : 'var(--text-primary)'
-                    }
                     valueFormatter={(value, row) =>
                         `${fmtFloat(value, 0)}h/yr · ${fmtInt(Math.round(row.hours))}h total`
                     }

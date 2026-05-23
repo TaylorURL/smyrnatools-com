@@ -90,7 +90,7 @@ export default function PlantManagersQuickEditModal({ plant, onClose, onSaved })
                 <div className="px-5 py-4">
                     <PlantManagersEditor managerIds={managerIds} onChange={setManagerIds} disabled={isSaving} />
                     {error && (
-                        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">
+                        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-text-primary">
                             {error}
                         </div>
                     )}

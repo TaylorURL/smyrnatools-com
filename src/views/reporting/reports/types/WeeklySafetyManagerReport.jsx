@@ -40,7 +40,6 @@ export function SafetyManagerSubmitPlugin({ form, plants, readOnly, setForm }) {
             <SafetyCardHeader
                 icon="fa-exclamation-circle"
                 iconBg="rgba(220, 38, 38, 0.12)"
-                iconColor="#b91c1c"
                 label="Safety"
                 title="Issues & Incidents"
                 sub="Document any safety-related issues that occurred during this reporting period."
@@ -101,7 +100,6 @@ export function SafetyManagerReviewPlugin({ form }) {
                 <SafetyCardHeader
                     icon="fa-shield-alt"
                     iconBg="rgba(22, 163, 74, 0.12)"
-                    iconColor="#15803d"
                     label="Safety"
                     title="Issues & Incidents"
                     sub="No safety incidents reported for this period."
@@ -115,12 +113,11 @@ export function SafetyManagerReviewPlugin({ form }) {
             <SafetyCardHeader
                 icon="fa-exclamation-circle"
                 iconBg="rgba(220, 38, 38, 0.12)"
-                iconColor="#b91c1c"
                 label="Safety"
                 title="Issues & Incidents"
                 sub={`${issues.length} issue${issues.length > 1 ? 's' : ''} reported for this period.`}
                 right={
-                    <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums bg-[rgba(220,_38,_38,_0.12)] text-red-700">
+                    <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-semibold tabular-nums bg-[rgba(220,_38,_38,_0.12)] text-text-primary">
                         <i className="fas fa-clipboard-list text-[9px]" />
                         {issues.length} Incident{issues.length > 1 ? 's' : ''}
                     </span>

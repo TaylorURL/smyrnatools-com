@@ -15,14 +15,11 @@ function Heading({ children }) {
 }
 
 /** Coverage value row — number + label, no icon, no tinted background. */
-function CoverageStat({ hint, label, value, valueColor }) {
+function CoverageStat({ hint, label, value }) {
     return (
         <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-border-light last:border-b-0">
             <span className="text-[12px] text-text-secondary">{label}</span>
-            <span
-                className="text-[13px] font-semibold font-mono tabular-nums shrink-0"
-                style={{ color: valueColor || 'var(--text-primary)' }}
-            >
+            <span className="text-[13px] font-semibold font-mono tabular-nums shrink-0 text-text-primary">
                 {value}
                 {hint && <span className="ml-2 text-[10.5px] font-normal text-text-tertiary">{hint}</span>}
             </span>
@@ -54,8 +51,6 @@ export default function OrderCoverageView({ coverage }) {
         yardage
     } = coverage
     const shortfall = Number.isFinite(poolAfterEffective) ? Math.max(0, -poolAfterEffective) : 0
-    const overbookedColor = '#d97706'
-    const okColor = '#16a34a'
 
     const verdictBody = overbooked
         ? `Plant ${plantCode} is short ${shortfall} truck${shortfall === 1 ? '' : 's'}${
@@ -76,9 +71,7 @@ export default function OrderCoverageView({ coverage }) {
     return (
         <div className="flex flex-col gap-5">
             <div className="text-[13px] leading-snug">
-                <span className="font-semibold" style={{ color: overbooked ? overbookedColor : okColor }}>
-                    {overbooked ? 'Short.' : 'On pace.'}
-                </span>{' '}
+                <span className="font-semibold text-text-primary">{overbooked ? 'Short.' : 'On pace.'}</span>{' '}
                 <span className="text-text-secondary">{verdictBody}</span>
             </div>
 
@@ -90,32 +83,14 @@ export default function OrderCoverageView({ coverage }) {
                     hint={bigPour ? `big pour ${yardage}+ yd` : null}
                 />
                 {Number.isFinite(dispatchTrucks) && dispatchTrucks > 0 && (
-                    <CoverageStat
-                        label="Dispatch booked"
-                        value={dispatchTrucks}
-                        valueColor={differsFromDispatch ? overbookedColor : null}
-                    />
+                    <CoverageStat label="Dispatch booked" value={dispatchTrucks} />
                 )}
                 {poolSource && (
                     <CoverageStat label={`Active at ${plantCode}`} value={poolSource.base} hint={poolHint || null} />
                 )}
-                {Number.isFinite(poolAtStart) && (
-                    <CoverageStat
-                        label="In rotation at start"
-                        value={poolAtStart}
-                        valueColor={overbooked ? overbookedColor : null}
-                    />
-                )}
-                {Number.isFinite(poolAfter) && (
-                    <CoverageStat
-                        label="Remaining after dispatch"
-                        value={poolAfter}
-                        valueColor={poolAfter < 0 ? overbookedColor : null}
-                    />
-                )}
-                {helpInWindow > 0 && (
-                    <CoverageStat label="Help arriving mid-pour" value={`+${helpInWindow}`} valueColor={okColor} />
-                )}
+                {Number.isFinite(poolAtStart) && <CoverageStat label="In rotation at start" value={poolAtStart} />}
+                {Number.isFinite(poolAfter) && <CoverageStat label="Remaining after dispatch" value={poolAfter} />}
+                {helpInWindow > 0 && <CoverageStat label="Help arriving mid-pour" value={`+${helpInWindow}`} />}
                 {kickerHeld > 0 && (
                     <CoverageStat
                         label="Kicker reserve held"
@@ -132,7 +107,6 @@ export default function OrderCoverageView({ coverage }) {
                         <CoverageStat
                             label="First truck on site"
                             value={formatMinutesClock(timing.firstArrivalMin)}
-                            valueColor={timing.firstTruckIsLate ? overbookedColor : okColor}
                             hint={timing.firstTruckIsLate ? 'late' : 'on time'}
                         />
                     )}
@@ -140,7 +114,6 @@ export default function OrderCoverageView({ coverage }) {
                         <CoverageStat
                             label="Pour rate"
                             value={`${timing.effectiveRateYph} yd/hr`}
-                            valueColor={overbookedColor}
                             hint={`vs scheduled ${timing.scheduledRateYph}`}
                         />
                     )}
@@ -148,7 +121,6 @@ export default function OrderCoverageView({ coverage }) {
                         <CoverageStat
                             label="Finishes"
                             value={formatMinutesClock(timing.estimatedCompletionMin)}
-                            valueColor={timing.delayMin > 0 ? overbookedColor : null}
                             hint={
                                 Number.isFinite(timing.scheduledCompletionMin)
                                     ? `vs scheduled ${formatMinutesClock(timing.scheduledCompletionMin)}`
@@ -160,7 +132,6 @@ export default function OrderCoverageView({ coverage }) {
                         <CoverageStat
                             label="Delay"
                             value={`~${dur(timing.delayMin)}`}
-                            valueColor={overbookedColor}
                             hint={
                                 Number.isFinite(timing.actualTrucks) && Number.isFinite(timing.requiredTrucks)
                                     ? `${timing.actualTrucks}/${timing.requiredTrucks} trucks cycling`

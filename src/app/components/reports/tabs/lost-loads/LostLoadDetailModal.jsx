@@ -137,7 +137,7 @@ function LostLoadDetailModal({ report, getUserName, onClose }) {
                     {data.attachment_url && (
                         <div className="flex items-start gap-3 py-3 border-b border-border-light">
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-bg-tertiary">
-                                <i className="fas fa-file-pdf text-xs text-red-500" />
+                                <i className="fas fa-file-pdf text-xs text-text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="text-[11px] font-semibold uppercase tracking-wide mb-0.5 text-text-secondary">

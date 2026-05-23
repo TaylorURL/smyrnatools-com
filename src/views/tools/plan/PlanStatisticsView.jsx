@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 
 import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons'
 import TabFadeIn from '../../../app/components/common/TabFadeIn'
+import DayforceEfficiencyPage from '../../../app/components/dayforce/DayforceEfficiencyPage'
 import DayforceHoursPage from '../../../app/components/dayforce/DayforceHoursPage'
 import DayforceLaborCostPage from '../../../app/components/dayforce/DayforceLaborCostPage'
 import DayforceSchedulesPage from '../../../app/components/dayforce/DayforceSchedulesPage'
@@ -321,6 +322,16 @@ function PlanStatisticsView({
         if (activeSection === 'laborCost') {
             return (
                 <DayforceLaborCostPage
+                    accentColor={accentColor}
+                    dateRange={range.current}
+                    plantCodes={availablePlantCodes}
+                    selectedPlant={selectedPlant}
+                />
+            )
+        }
+        if (activeSection === 'efficiency') {
+            return (
+                <DayforceEfficiencyPage
                     accentColor={accentColor}
                     dateRange={range.current}
                     plantCodes={availablePlantCodes}

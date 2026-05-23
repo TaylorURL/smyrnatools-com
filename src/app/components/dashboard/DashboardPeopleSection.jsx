@@ -13,10 +13,7 @@ function CountRow({ color, label, value }) {
                     <span>{label}</span>
                 </div>
             </td>
-            <td
-                className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold border-b border-border-light"
-                style={{ color: color || 'var(--text-primary)' }}
-            >
+            <td className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold border-b border-border-light text-text-primary">
                 {value.toLocaleString()}
             </td>
         </tr>

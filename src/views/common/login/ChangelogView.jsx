@@ -175,7 +175,7 @@ function ChangelogView({ onBack }) {
                                                     v{entry.version}
                                                 </span>
                                                 {isLatest && (
-                                                    <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full">
+                                                    <span className="bg-emerald-50 text-text-primary border border-emerald-200 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full">
                                                         Latest
                                                     </span>
                                                 )}

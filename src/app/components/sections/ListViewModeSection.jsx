@@ -1,6 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import { isDarkLikeTheme } from '../../constants/themeConstants'
+import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
 
 const BASE_ROW_DELAY_MS = 80
@@ -21,15 +23,28 @@ function getRowDelay(index) {
 
 /**
  * Status badge — colors sourced from mixerConfig.statusBadgeClasses so the
- * list view reads identically to Fleet Overview / Schedule tab.
+ * list view reads identically to Fleet Overview / Schedule tab. We keep
+ * the colour tint on the background and split text into per-theme
+ * variants:
+ *   - light theme: dark tint that matches the bg colour cue
+ *   - dark / grayed themes: white text so the badge reads against the
+ *     darker chrome the rest of those themes use
  */
-const STATUS_BADGE_COLORS = {
-    Active: 'bg-[#dcfce7] text-[#166534]',
-    'Down In Yard': 'bg-[#fee2e2] text-[#dc2626]',
-    'In Shop': 'bg-[#dbeafe] text-[#1e40af]',
-    Spare: 'bg-[#f3e8ff] text-[#7c3aed]',
-    'Third Party Work': 'bg-[#fef9c3] text-[#a16207]',
-    'Waiting For Shop': 'bg-[#ffedd5] text-[#c2410c]'
+const STATUS_BADGE_BG = {
+    Active: 'bg-[#dcfce7]',
+    'Down In Yard': 'bg-[#fee2e2]',
+    'In Shop': 'bg-[#dbeafe]',
+    Spare: 'bg-[#f3e8ff]',
+    'Third Party Work': 'bg-[#fef9c3]',
+    'Waiting For Shop': 'bg-[#ffedd5]'
+}
+const STATUS_BADGE_TEXT_LIGHT = {
+    Active: 'text-text-primary',
+    'Down In Yard': 'text-text-primary',
+    'In Shop': 'text-text-primary',
+    Spare: 'text-text-primary',
+    'Third Party Work': 'text-text-primary',
+    'Waiting For Shop': 'text-text-primary'
 }
 
 /** Minimal row icon button — 20px tap target, no chrome, hover brightness. */
@@ -62,6 +77,12 @@ function ListViewModeSection({
     onVerify
 }) {
     const isMobile = useIsMobile()
+    const { preferences } = usePreferences()
+    /** Status + verified pills flip their text colour to white on the
+     *  dark / grayed themes so the count + label reads against the
+     *  darker chrome. The tinted background stays so each pill still
+     *  carries the per-status colour cue. */
+    const isDarkBadgeTheme = isDarkLikeTheme(preferences.themeMode)
     const cellBase = 'text-[12px] font-medium text-left align-middle whitespace-nowrap py-1.5 px-2.5'
     const cellHighlight = `font-bold text-left align-middle whitespace-nowrap font-mono tabular-nums py-1.5 ${
         isMobile ? 'text-[12px] px-2' : 'text-[12.5px] px-2.5'
@@ -71,14 +92,16 @@ function ListViewModeSection({
     }`
 
     const statusBadge = (status) => {
-        const colors = STATUS_BADGE_COLORS[status] || 'bg-bg-tertiary text-text-secondary'
-        return `inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${colors}`
+        const bg = STATUS_BADGE_BG[status] || 'bg-bg-tertiary'
+        const text = isDarkBadgeTheme ? 'text-white' : STATUS_BADGE_TEXT_LIGHT[status] || 'text-text-secondary'
+        return `inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${bg} ${text}`
     }
 
     const verifyBtnClass = (isVerified) => {
-        const colors = isVerified ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#fef3c7] text-[#92400e] hover:brightness-95'
+        const bg = isVerified ? 'bg-[#dcfce7]' : 'bg-[#fef3c7] hover:brightness-95'
+        const text = isDarkBadgeTheme ? 'text-white' : 'text-text-primary'
         const cursor = isVerified ? 'cursor-default' : 'cursor-pointer'
-        return `inline-flex items-center gap-1 border-none rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${cursor} ${colors}`
+        return `inline-flex items-center gap-1 border-none rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${cursor} ${bg} ${text}`
     }
 
     // Horizontal scroll lives on the outer wrapper; the inner container sets a

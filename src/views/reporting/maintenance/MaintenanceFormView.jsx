@@ -22,10 +22,9 @@ function CardHeader({ accent, icon, label, sub, title, right }) {
         <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 min-w-0">
                 <div
-                    className="flex h-7 w-7 items-center justify-center rounded shrink-0"
+                    className="flex h-7 w-7 items-center justify-center rounded shrink-0 text-text-primary"
                     style={{
-                        background: accent ? `${accent}1a` : 'var(--bg-tertiary)',
-                        color: accent || 'var(--text-secondary)'
+                        background: accent ? `${accent}1a` : 'var(--bg-tertiary)'
                     }}
                 >
                     <i className={`fas ${icon} text-[11.5px]`} />
@@ -52,15 +51,11 @@ function PageHeader({ accentColor, dueDate, onBack, plantCode, status, statusCol
                 type="button"
                 onClick={onBack}
                 aria-label="Back"
-                className="flex h-7 w-7 items-center justify-center rounded border-none cursor-pointer bg-bg-tertiary"
-                style={{ color: accentColor }}
+                className="flex h-7 w-7 items-center justify-center rounded border-none cursor-pointer bg-bg-tertiary text-text-primary"
             >
                 <i className="fas fa-arrow-left text-[11px]" />
             </button>
-            <div
-                className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary"
-                style={{ color: accentColor }}
-            >
+            <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-bg-tertiary text-text-primary">
                 <i className="fas fa-file-pdf text-[11px]" />
             </div>
             <div className="min-w-0 flex-1">
@@ -80,7 +75,7 @@ function PageHeader({ accentColor, dueDate, onBack, plantCode, status, statusCol
                     style={{
                         background: `${statusColor}1f`,
                         border: `1px solid ${statusColor}55`,
-                        color: statusColor
+                        color: 'var(--text-primary)'
                     }}
                 >
                     {status}
@@ -194,7 +189,7 @@ function HistoryStatusPill({ submission }) {
     return (
         <span
             className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
-            style={{ background: `${status.color}1f`, color: status.color }}
+            style={{ background: `${status.color}1f`, color: 'var(--text-primary)' }}
         >
             {status.label}
         </span>
@@ -219,8 +214,8 @@ function HistoryRow({ accentColor, isCurrent, submission }) {
                     </div>
                     {isCurrent && (
                         <span
-                            className="inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider shrink-0"
-                            style={{ background: `${accentColor}20`, color: accentColor }}
+                            className="inline-flex items-center rounded px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider shrink-0 text-text-primary"
+                            style={{ background: `${accentColor}20` }}
                         >
                             Viewing
                         </span>
@@ -413,7 +408,7 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
                         sub="Print the PDF, hand-fill every required field, then scan the completed sheet."
                         right={
                             downloadedAt && (
-                                <span className="text-[10.5px] text-green-600">
+                                <span className="text-[10.5px] text-text-primary">
                                     <i className="fas fa-check mr-1 text-[9px]" />
                                     Downloaded
                                 </span>
@@ -454,7 +449,7 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
                     >
                         {pdfFile ? (
                             <div className="flex flex-col items-center gap-1">
-                                <i className="fas fa-file-circle-check text-[22px]" style={{ color: accentColor }} />
+                                <i className="fas fa-file-circle-check text-[22px] text-text-primary" />
                                 <div className="text-[12.5px] font-semibold">{pdfFile.name}</div>
                                 <div className="text-[11px] text-text-tertiary">
                                     {(pdfFile.size / 1024).toFixed(0)} KB · click to replace
@@ -495,13 +490,13 @@ function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, 
                         style={FIELD_STYLE}
                     />
                     {error && (
-                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
+                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-text-primary">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>
                     )}
                     {success && (
-                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-[rgba(22,_163,_74,_0.12)] border border-[rgba(22,_163,_74,_0.45)] text-green-700">
+                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-[rgba(22,_163,_74,_0.12)] border border-[rgba(22,_163,_74,_0.45)] text-text-primary">
                             <i className="fas fa-check-circle text-[11px]" />
                             Submitted for review.
                         </div>
@@ -606,7 +601,7 @@ function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submissio
                         style={FIELD_STYLE}
                     />
                     {error && (
-                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-red-700">
+                        <div className="mt-2 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-medium bg-red-100 border border-red-300 text-text-primary">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                             {error}
                         </div>

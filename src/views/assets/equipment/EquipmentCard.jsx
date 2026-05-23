@@ -62,9 +62,7 @@ function EquipmentCard({ equipment, plantName, onSelect, onShowCommentModal, onS
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-gray-500 dark:text-gray-400">Last Service</div>
-                <div
-                    className={`text-sm font-medium ${equipment.lastServiceDate && isServiceOverdue ? 'text-red-600' : ''}`}
-                >
+                <div className="text-sm font-medium">
                     {equipment.lastServiceDate ? new Date(equipment.lastServiceDate).toLocaleDateString() : 'Unknown'}
                 </div>
             </div>
@@ -82,7 +80,7 @@ function EquipmentCard({ equipment, plantName, onSelect, onShowCommentModal, onS
                             {[...Array(5)].map((_, i) => (
                                 <i
                                     key={i}
-                                    className={`fas fa-star ${i < equipment.cleanlinessRating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                    className={`fas fa-star ${i < equipment.cleanlinessRating ? 'text-text-primary' : 'text-gray-300'}`}
                                     aria-hidden="true"
                                 ></i>
                             ))}
@@ -100,7 +98,7 @@ function EquipmentCard({ equipment, plantName, onSelect, onShowCommentModal, onS
                             {[...Array(5)].map((_, i) => (
                                 <i
                                     key={i}
-                                    className={`fas fa-star ${i < equipment.conditionRating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                    className={`fas fa-star ${i < equipment.conditionRating ? 'text-text-primary' : 'text-gray-300'}`}
                                     aria-hidden="true"
                                 ></i>
                             ))}

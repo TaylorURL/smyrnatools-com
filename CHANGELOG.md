@@ -1,5 +1,65 @@
 # Changelog
 
+## [2026.21.32] - 2026-05-23
+
+- New **Operations > Statistics > Workforce > Efficiency** tab
+  (`src/app/components/dayforce/DayforceEfficiencyPage.jsx` +
+  `DayforceEfficiencyPieces.jsx`) joins Dayforce actual hours to
+  dispatch ticket yardage via `canonicalNameKey` and surfaces
+  yards-per-hour at the operator and plant level. KPI strip leads with
+  fleet YPH, median operator YPH, below/above-target counts, and the
+  two data-mismatch counts (hours-with-no-yards / yards-with-no-hours).
+  Three-column spotlight callouts — Top performers, Below target, Data
+  check — let the dispatcher scan the names that need a conversation
+  without paging through the table. Per-operator table renders a
+  0..5 YPH scale bar with tick marks at the 3 (target) and 5
+  (exceptional) thresholds. Wired into `PlanStatisticsSidebar`
+  (workforce group) and `PlanStatisticsView` routing.
+- `useOperatorYardageByDay` now also returns `yardageByOperatorByPlant`
+  keyed by each ticket's loaded `plantId`. When the Efficiency page is
+  filtered to a single plant, yards are credited only to that plant
+  (so a driver who clocked at plant 403 but cross-loaded at 408 no
+  longer inflates their plant-403 YPH with another plant's pours), and
+  phantoms in the Data Check column only surface drivers loading at
+  the selected plant — operators from other plants no longer flood
+  the column.
+- `useDayforceOperatorMetrics` enriches `perWeek` with `regHours` /
+  `otHours` / `operatorsOverOtCount` so weekly trends can show the OT
+  chunk in-bar instead of a single actual-hours total.
+- Hours tab rewritten for dispatch-manager actionability
+  (`DayforceHoursPage.jsx`). Scheduled-hours focus dropped; KPI strip
+  now leads with Actual hours, OT hours + cost, Operators in OT, Avg
+  weekly hours, PTO, Exceptions. New three-column spotlights — Over
+  OT, Approaching OT, Under-utilized — render name chips so the OT
+  exposure is visible without scrolling. Per-operator table shows
+  Actual / OT / OT % / PTO with a stacked bar visualizing the OT chunk
+  inside the workload. Removed the per-plant rollup and weekly-trend
+  panels from the bottom of the page on request.
+- Statistics-wide colored-text neutralization across asset, people,
+  Plan, and Dayforce sub-pages. `tierColor` in `ScorePercent` and
+  `deltaColor` in `PlanStatisticsFormatUtility` now return `undefined`
+  so ScorePercent values and Δ% cells render in theme text;
+  `pctColor`, `satisfactionColor`, and the three person-stats text
+  colorizers (`colorForRating`, `colorForLogin`, `daysUntilColor`)
+  deleted as dead code. ~180 `valueColor` and inline `style.color`
+  overrides removed across `PlanStatisticsServicePage`,
+  `PlanStatisticsCustomerLookupPage`,
+  `PlanStatisticsKickersPage`, `PlanStatisticsMovesCancels*`,
+  `PlanStatisticsHelpCrossLoadingPage`, `HelpBreakdownTable`,
+  `PlanStatisticsPages`, `PlanStatisticsTables`, `CustomerServiceContext`,
+  and every asset / people stats sub-page. Tinted-background pills
+  (Same-day, Cancel/Move/Edit, operator-status, home-plant,
+  No-managers, RankChip, StatusPill, Failure tags) intentionally keep
+  their matching text colors. Dayforce Schedules operational red
+  flags (long shift, late punch, low YPH) also preserved.
+- `useDayforceOperatorFilters` adds `yph` and `yards` sort modes so
+  the Efficiency page's filter rail can sort by YPH or total yards
+  alongside the existing hours / name / cost / OT modes.
+- `HighlightRow` and `AssetWatchlistTable` `valueColor` prop signatures
+  trimmed since the cascade refactor removed every caller — kept the
+  rendered cells in default theme text without breaking the call
+  sites.
+
 ## [2026.21.31] - 2026-05-23
 
 - Plant Manager Report has been retired now that operator hours flow

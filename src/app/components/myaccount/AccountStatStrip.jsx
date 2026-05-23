@@ -34,12 +34,7 @@ export default function AccountStatStrip({ additionalPlants, joinedAt, plantCode
         <section className="scroll-mt-4" id="overview">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 rounded overflow-hidden border border-border-light">
                 <StatCell label="Account age" value={formatAccountAge(joinedAt)} hint={formatJoinedDate(joinedAt)} />
-                <StatCell
-                    label="Sessions"
-                    value={sessions.length}
-                    valueColor={sessions.length > 0 ? '#16a34a' : undefined}
-                    hint={sessionsHint}
-                />
+                <StatCell label="Sessions" value={sessions.length} hint={sessionsHint} />
                 <StatCell label="Region" value={regionName || '—'} />
                 <StatCell
                     label="Home plant"
@@ -50,7 +45,6 @@ export default function AccountStatStrip({ additionalPlants, joinedAt, plantCode
                 <StatCell
                     label="Last sign-in"
                     value={currentSession ? formatRelativeTime(currentSession.lastActive) : '—'}
-                    valueColor={currentSession?.isCurrent ? '#16a34a' : undefined}
                     hint={
                         currentSession
                             ? [currentSession.browser, currentSession.os].filter(Boolean).join(' · ') || null

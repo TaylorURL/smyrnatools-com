@@ -3,11 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { OperatorService } from '../../../../../services/OperatorService'
 import { fmtFloat, fmtInt, fmtRange, fmtYards, parseIsoLocal } from '../../../../../utils/PlanStatisticsFormatUtility'
-import {
-    BIG_POUR_SPACING_THRESHOLD_MIN,
-    BIG_POUR_YARDAGE_THRESHOLD,
-    plantBadgeColor
-} from '../../../../../utils/PlanUtility'
+import { BIG_POUR_SPACING_THRESHOLD_MIN, BIG_POUR_YARDAGE_THRESHOLD } from '../../../../../utils/PlanUtility'
 import CommentModalSection from '../../../sections/CommentModalSection'
 import HistoryViewSection from '../../../sections/HistoryViewSection'
 import { Panel } from '../../../ui/Panel'
@@ -204,10 +200,7 @@ function SatisfactionSummary({ aggregate, loading, onSelect }) {
                         </div>
                         <div className="rounded p-2 flex flex-col bg-bg-secondary border border-border-light">
                             <span className="text-[10px] text-text-tertiary">Bad</span>
-                            <span
-                                className="font-mono tabular-nums font-semibold"
-                                style={{ color: aggregate.badService > 0 ? '#dc2626' : 'var(--text-primary)' }}
-                            >
+                            <span className="font-mono tabular-nums font-semibold text-text-primary">
                                 {fmtInt(aggregate.badService)}
                             </span>
                         </div>
@@ -230,7 +223,7 @@ function SatisfactionSummary({ aggregate, loading, onSelect }) {
 /** Launchpad tile linking to a deep-dive sub-page. Each tile carries a single
  *  teaser metric so the Overview answers "what should I look at next?" rather
  *  than trying to replay any sub-page's content. */
-function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) {
+function LaunchpadTile({ hint, icon, label, onSelect, section, value }) {
     return (
         <button
             type="button"
@@ -239,14 +232,14 @@ function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) 
             style={{ color: 'var(--text-secondary)' }}
         >
             <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider">
-                <i className={`fas ${icon} text-[11px]`} style={{ color: accent }} />
+                <i className={`fas ${icon} text-[11px] text-text-primary`} />
                 {label}
             </span>
             <span className="font-mono tabular-nums font-bold leading-none text-text-primary" style={{ fontSize: 22 }}>
                 {value}
             </span>
             {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
-            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold" style={{ color: accent }}>
+            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-text-primary">
                 Open
                 <i className="fas fa-arrow-right text-[9px]" />
             </span>
@@ -257,19 +250,13 @@ function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) 
 /** One row inside the Period-highlights / Watchlist cards. Big label, big
  *  value, optional hint underneath. Mirrors the at-a-glance density of the
  *  dashboard "Stat" components without forcing a column grid. */
-function HighlightRow({ icon, label, hint, value, valueColor }) {
+function HighlightRow({ icon, label, hint, value }) {
     return (
         <div className="flex items-start gap-3 px-3 py-2.5 border-t border-border-light first:border-t-0">
-            <i
-                className={`fas ${icon} text-[11px] mt-1 w-4 text-center`}
-                style={{ color: valueColor || 'var(--text-tertiary)' }}
-            />
+            <i className={`fas ${icon} text-[11px] mt-1 w-4 text-center text-text-tertiary`} />
             <div className="flex-1 min-w-0">
                 <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary">{label}</div>
-                <div
-                    className="font-semibold truncate text-text-primary"
-                    style={{ color: valueColor || 'var(--text-primary)', fontSize: 13.5 }}
-                >
+                <div className="font-semibold truncate text-text-primary" style={{ fontSize: 13.5 }}>
                     {value}
                 </div>
                 {hint && <div className="text-[11px] text-text-tertiary truncate">{hint}</div>}
@@ -290,7 +277,6 @@ const formatDayLabel = (iso) => {
  *  one. Reads as a launchpad: the period story up top, what stood out, what
  *  needs attention, and quick jumps into the deep-dive pages. */
 export function PlanStatisticsOverviewPage({
-    accentColor,
     currentDays,
     currentSummary,
     knownPlantSummary,
@@ -301,7 +287,6 @@ export function PlanStatisticsOverviewPage({
     satisfactionAggregate,
     satisfactionLoading
 }) {
-    const accent = accentColor || '#1e3a5f'
     const isEmpty = isEmptyAfterLoad(loading, currentDays)
 
     if (loading && currentDays.length === 0) {
@@ -426,7 +411,6 @@ export function PlanStatisticsOverviewPage({
                                 ? `${fmtYards(topPlantShare.yardage)} yd³ · ${(topPlantShare.share * 100).toFixed(0)}% share`
                                 : null
                         }
-                        valueColor={topPlantShare ? plantBadgeColor(topPlantShare.code, accent) : null}
                     />
                     <HighlightRow
                         icon="fa-handshake"
@@ -450,7 +434,6 @@ export function PlanStatisticsOverviewPage({
             <Panel title="Drill into details" innerClassName="p-3">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-industry"
                         label="Production"
                         section="production"
@@ -459,7 +442,6 @@ export function PlanStatisticsOverviewPage({
                         onSelect={onSelectSection}
                     />
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-thumbs-up"
                         label="Service"
                         section="service"
@@ -472,7 +454,6 @@ export function PlanStatisticsOverviewPage({
                         onSelect={onSelectSection}
                     />
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-id-badge"
                         label="Operators"
                         section="operators"
@@ -481,7 +462,6 @@ export function PlanStatisticsOverviewPage({
                         onSelect={onSelectSection}
                     />
                     <LaunchpadTile
-                        accent={accent}
                         icon="fa-arrows-rotate"
                         label="Help & cross-loading"
                         section="helpCrossLoading"
@@ -763,10 +743,10 @@ export function PlanStatisticsBigPoursPage({
  * ────────────────────────────────────────────────────────────────────────── */
 
 const MISMATCH_BADGES = {
-    multiTruck: { bg: 'rgba(194, 65, 12, 0.16)', fg: '#9a3412', icon: 'fa-shuffle', label: 'Multi-truck' },
-    unassigned: { bg: 'rgba(220, 38, 38, 0.14)', fg: '#b91c1c', icon: 'fa-user-slash', label: 'Unassigned' },
-    wrongPlant: { bg: 'rgba(217, 119, 6, 0.14)', fg: '#92400e', icon: 'fa-industry', label: 'Wrong plant' },
-    wrongTruck: { bg: 'rgba(234, 179, 8, 0.18)', fg: '#854d0e', icon: 'fa-truck', label: 'Wrong truck' }
+    multiTruck: { bg: 'rgba(194, 65, 12, 0.16)', icon: 'fa-shuffle', label: 'Multi-truck' },
+    unassigned: { bg: 'rgba(220, 38, 38, 0.14)', icon: 'fa-user-slash', label: 'Unassigned' },
+    wrongPlant: { bg: 'rgba(217, 119, 6, 0.14)', icon: 'fa-industry', label: 'Wrong plant' },
+    wrongTruck: { bg: 'rgba(234, 179, 8, 0.18)', icon: 'fa-truck', label: 'Wrong truck' }
 }
 
 function MismatchBadge({ tone }) {
@@ -774,8 +754,8 @@ function MismatchBadge({ tone }) {
     if (!cfg) return null
     return (
         <span
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-            style={{ background: cfg.bg, color: cfg.fg }}
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-text-primary"
+            style={{ background: cfg.bg }}
             title={cfg.label}
         >
             <i className={`fas ${cfg.icon} text-[9px]`} />
@@ -800,10 +780,9 @@ function TruckCell({ assignedTruck, trucksDriven }) {
                 return (
                     <span
                         key={truck}
-                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums font-semibold"
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums font-semibold text-text-primary"
                         style={{
-                            background: isAssigned ? 'rgba(22, 163, 74, 0.14)' : 'var(--bg-tertiary)',
-                            color: isAssigned ? '#15803d' : 'var(--text-primary)'
+                            background: isAssigned ? 'rgba(22, 163, 74, 0.14)' : 'var(--bg-tertiary)'
                         }}
                         title={
                             isAssigned
@@ -950,10 +929,10 @@ function UnmatchedDriversRow({
             <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                        <i className="fas fa-triangle-exclamation text-[13px] text-[#854d0e]" aria-hidden="true" />
+                        <i className="fas fa-triangle-exclamation text-[13px] text-text-primary" aria-hidden="true" />
                         <span className="font-semibold text-text-primary">Unmatched operators</span>
                         <span
-                            className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold italic text-[#854d0e]"
+                            className="inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold italic text-text-primary"
                             style={{ background: 'rgba(202, 138, 4, 0.16)' }}
                         >
                             {fmtInt(unmatchedNames.length)} unique · {fmtInt(row.loads)} load
@@ -981,21 +960,14 @@ function UnmatchedDriversRow({
                     <button
                         type="button"
                         onClick={handleCopy}
-                        className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none shrink-0"
+                        className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border border-border-light shrink-0 text-text-primary"
                         style={{
                             background:
                                 copyState === 'copied'
                                     ? 'rgba(22, 163, 74, 0.15)'
                                     : copyState === 'error'
                                       ? 'rgba(220, 38, 38, 0.15)'
-                                      : 'var(--bg-primary)',
-                            border: '1px solid var(--border-light)',
-                            color:
-                                copyState === 'copied'
-                                    ? '#15803d'
-                                    : copyState === 'error'
-                                      ? '#b91c1c'
-                                      : 'var(--text-primary)'
+                                      : 'var(--bg-primary)'
                         }}
                         title="Copy the full unmatched-names list to your clipboard (tab-separated; pastes into Sheets / Excel / Slack cleanly)"
                     >
@@ -1341,7 +1313,7 @@ export function PlanStatisticsOperatorsPage({
                             {totals.mismatched > 0 && (
                                 <>
                                     {' · '}
-                                    <span className="font-semibold text-red-600">
+                                    <span className="font-semibold text-text-primary">
                                         {fmtInt(totals.mismatched)} mismatch{totals.mismatched === 1 ? '' : 'es'}
                                     </span>
                                 </>
@@ -1440,7 +1412,7 @@ export function PlanStatisticsOperatorsPage({
                                                         className="inline-flex items-center rounded px-1 py-0.5 text-[9.5px] font-bold uppercase tracking-wide"
                                                         style={{
                                                             background: 'rgba(220, 38, 38, 0.12)',
-                                                            color: '#b91c1c'
+                                                            color: 'var(--text-primary)'
                                                         }}
                                                         title={`Operator status: ${statusLabel}`}
                                                     >
@@ -1466,12 +1438,11 @@ export function PlanStatisticsOperatorsPage({
                                                     return (
                                                         <span
                                                             key={plant}
-                                                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11.5px] font-mono tabular-nums"
+                                                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11.5px] font-mono tabular-nums text-text-primary"
                                                             style={{
                                                                 background: isHome
                                                                     ? 'rgba(22, 163, 74, 0.14)'
-                                                                    : 'var(--bg-tertiary)',
-                                                                color: isHome ? '#15803d' : 'var(--text-primary)'
+                                                                    : 'var(--bg-tertiary)'
                                                             }}
                                                             title={
                                                                 isHome

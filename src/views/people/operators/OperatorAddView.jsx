@@ -303,7 +303,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                             ))}
                                     </select>
                                     {operators.filter((op) => op.isTrainer).length === 0 && (
-                                        <span className="text-xs text-amber-600">No trainers available</span>
+                                        <span className="text-xs text-text-primary">No trainers available</span>
                                     )}
                                 </div>
                             </div>

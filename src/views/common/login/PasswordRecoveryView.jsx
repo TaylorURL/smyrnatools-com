@@ -65,13 +65,13 @@ function PasswordRecoveryView({ onBackToLogin }) {
                                 />
                             </div>
                             {error && (
-                                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-text-primary text-sm">
                                     <i className="fas fa-exclamation-circle" />
                                     <span>{error}</span>
                                 </div>
                             )}
                             {message && (
-                                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-text-primary text-sm">
                                     <i className="fas fa-check-circle" />
                                     <span>{message}</span>
                                 </div>
@@ -94,7 +94,7 @@ function PasswordRecoveryView({ onBackToLogin }) {
                         <div className="mt-6 text-center">
                             <button
                                 type="button"
-                                className="text-[#1e3a5f] hover:underline font-semibold text-sm inline-flex items-center gap-2"
+                                className="text-text-primary hover:underline font-semibold text-sm inline-flex items-center gap-2"
                                 onClick={onBackToLogin}
                             >
                                 <i className="fas fa-arrow-left" />

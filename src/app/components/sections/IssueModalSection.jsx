@@ -167,10 +167,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
             >
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border-light">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                            className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary"
-                            style={{ color: accent }}
-                        >
+                        <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-primary">
                             <i className="fas fa-paper-plane text-[12px]" />
                         </div>
                         <div className="min-w-0">
@@ -193,7 +190,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                 <div className="flex-1 overflow-y-auto px-4 py-3">
                     {sent ? (
                         <div className="flex flex-col items-center gap-3 py-8 text-center">
-                            <div className="w-12 h-12 rounded flex items-center justify-center bg-green-100 text-[#166534]">
+                            <div className="w-12 h-12 rounded flex items-center justify-center bg-green-100 text-text-primary">
                                 <i className="fas fa-check text-[18px]" />
                             </div>
                             <div className="text-[14px] font-semibold text-text-primary">Message Sent</div>
@@ -223,8 +220,8 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                             {itemNumber || 'N/A'}
                                         </span>
                                         <span
-                                            className={PILL_BASE + ' ml-auto'}
-                                            style={{ background: sevConfig.bg, color: sevConfig.fg }}
+                                            className={PILL_BASE + ' ml-auto text-text-primary'}
+                                            style={{ background: sevConfig.bg }}
                                         >
                                             <i className={`fas ${sevConfig.icon} text-[8px]`} />
                                             {issue.severity}
@@ -353,10 +350,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                                     </div>
                                                                 </div>
                                                                 {isSelected && (
-                                                                    <i
-                                                                        className="fas fa-check text-[10px]"
-                                                                        style={{ color: accent }}
-                                                                    />
+                                                                    <i className="fas fa-check text-[10px] text-text-primary" />
                                                                 )}
                                                             </button>
                                                         )
@@ -383,7 +377,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                             </div>
 
                             {error && (
-                                <div className="rounded px-3 py-2 mb-3 text-[11px] font-semibold bg-red-100 text-red-700">
+                                <div className="rounded px-3 py-2 mb-3 text-[11px] font-semibold bg-red-100 text-text-primary">
                                     <i className="fas fa-exclamation-triangle mr-2 text-[10px]" />
                                     {error}
                                 </div>
@@ -648,7 +642,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                                 className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
                                                 style={{
                                                     background: isActive ? config.bg : 'var(--bg-tertiary)',
-                                                    color: isActive ? config.fg : 'var(--text-secondary)'
+                                                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)'
                                                 }}
                                             >
                                                 <i className={`fas ${config.icon} text-[9px]`} />
@@ -711,8 +705,8 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                                 {creatorName}
                                             </span>
                                             <span
-                                                className={PILL_BASE}
-                                                style={{ background: sevConfig.bg, color: sevConfig.fg }}
+                                                className={`${PILL_BASE} text-text-primary`}
+                                                style={{ background: sevConfig.bg }}
                                             >
                                                 <i className={`fas ${sevConfig.icon} text-[8px]`} />
                                                 {issue.severity}
@@ -725,7 +719,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                             {issue.issue}
                                         </p>
                                         {isResolved && (
-                                            <div className="flex items-center gap-1 mt-1 text-[10.5px] font-semibold text-[#166534]">
+                                            <div className="flex items-center gap-1 mt-1 text-[10.5px] font-semibold text-text-primary">
                                                 <i className="fas fa-check text-[9px]" />
                                                 Resolved {formatDate(issue.time_completed)}
                                             </div>
@@ -737,7 +731,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                                 <button
                                                     onClick={() => handleCompleteIssue(issue.id)}
                                                     title="Mark resolved"
-                                                    className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-green-500"
+                                                    className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-primary"
                                                     onMouseEnter={(e) =>
                                                         (e.currentTarget.style.background = 'var(--bg-tertiary)')
                                                     }
@@ -750,8 +744,7 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                                 <button
                                                     onClick={() => setMessageIssue(issue)}
                                                     title="Send message"
-                                                    className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent"
-                                                    style={{ color: accent }}
+                                                    className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-primary"
                                                     onMouseEnter={(e) =>
                                                         (e.currentTarget.style.background = 'var(--bg-tertiary)')
                                                     }

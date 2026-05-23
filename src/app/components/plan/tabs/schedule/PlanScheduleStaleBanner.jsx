@@ -39,7 +39,7 @@ export function PlanScheduleStaleBanner({ planDate, scheduleFileUpdatedAt }) {
     return (
         <div className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border-b shrink-0 bg-[rgba(245,_158,_11,_0.12)] border-[rgba(245,_158,_11,_0.4)] text-text-primary">
             <i
-                className={`fas ${isPastDate ? 'fa-clock-rotate-left' : 'fa-triangle-exclamation'} text-[11px] text-amber-600`}
+                className={`fas ${isPastDate ? 'fa-clock-rotate-left' : 'fa-triangle-exclamation'} text-[11px] text-text-primary`}
             />
             <span>
                 {isPastDate ? (

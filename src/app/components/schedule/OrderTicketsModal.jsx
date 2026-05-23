@@ -218,8 +218,8 @@ function OrderTicketsModal({
         >
             <div className="flex items-start gap-3 px-5 py-3 border-b border-border-light">
                 <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: `${accentColor}14`, color: accentColor }}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-text-primary"
+                    style={{ background: `${accentColor}14` }}
                 >
                     <i className="fas fa-ticket text-[14px]" />
                 </div>
@@ -241,11 +241,8 @@ function OrderTicketsModal({
                             Loaded
                         </div>
                         <div
-                            className="font-mono font-bold text-[14px]"
-                            style={{
-                                color: orderTotal > 0 && totalLoaded >= orderTotal ? '#16a34a' : 'var(--text-primary)',
-                                fontVariantNumeric: 'tabular-nums'
-                            }}
+                            className="font-mono font-bold text-[14px] text-text-primary"
+                            style={{ fontVariantNumeric: 'tabular-nums' }}
                         >
                             {Number.isInteger(totalLoaded) ? totalLoaded : totalLoaded.toFixed(2)}
                             <span className="text-[12px] ml-1 text-text-tertiary">/ {orderTotal || '—'} yd</span>
@@ -280,14 +277,6 @@ function OrderTicketsModal({
                         realized.yph != null && realized.targetYph && realized.targetYph > 0
                             ? realized.yph / realized.targetYph
                             : null
-                    const paceColor =
-                        paceRatio == null
-                            ? undefined
-                            : paceRatio >= 1
-                              ? '#16a34a'
-                              : paceRatio >= 0.7
-                                ? '#d97706'
-                                : '#dc2626'
                     const paceHint = (() => {
                         if (realized.yph == null) return 'no original yardage to pace'
                         const span = formatDuration(realized.effectiveSpan)
@@ -323,13 +312,7 @@ function OrderTicketsModal({
                             <MetricTile
                                 hint={paceHint}
                                 label={realized.hasKicker ? 'Actual pace (original)' : 'Actual pace'}
-                                value={
-                                    paceColor && realized.yph != null ? (
-                                        <span style={{ color: paceColor }}>{formatYph(realized.yph)}</span>
-                                    ) : (
-                                        formatYph(realized.yph)
-                                    )
-                                }
+                                value={formatYph(realized.yph)}
                             />
                             {realized.hasKicker && (
                                 <MetricTile
@@ -472,11 +455,8 @@ function OrderTicketsModal({
                                             {idx + 1}
                                             {isFirstKickerRow && (
                                                 <span
-                                                    className="ml-1.5 inline-block text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                                                    style={{
-                                                        background: 'rgba(217, 119, 6, 0.15)',
-                                                        color: '#b45309'
-                                                    }}
+                                                    className="ml-1.5 inline-block text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-text-primary"
+                                                    style={{ background: 'rgba(217, 119, 6, 0.15)' }}
                                                     title="First load after a gap — treated as a kicker (customer added yardage mid-pour). Excluded from pace calc."
                                                 >
                                                     Kicker
@@ -492,7 +472,7 @@ function OrderTicketsModal({
                                             )}
                                             {!isHomePlant && plantCode && (
                                                 <span
-                                                    className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider bg-[rgba(217,_119,_6,_0.15)] text-[#b45309]"
+                                                    className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider bg-[rgba(217,_119,_6,_0.15)] text-text-primary"
                                                     title={`Loaded from ${plantCode} for an order whose home plant is ${homePlantCode}`}
                                                 >
                                                     <i className="fas fa-shuffle text-[9px]" />

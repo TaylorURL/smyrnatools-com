@@ -33,12 +33,7 @@ export function AssetStatisticsPlantDistributionPage({ accentColor, config, stat
                     value={fleetSpread > 0 ? fmtInt(Math.round(total / fleetSpread)) : '—'}
                     hint="fleet ÷ plants"
                 />
-                <Stat
-                    label="Shop concentration"
-                    value={fmtInt(summary.shopCount)}
-                    hint="across all plants"
-                    valueColor={summary.shopCount > 0 ? '#b45309' : undefined}
-                />
+                <Stat label="Shop concentration" value={fmtInt(summary.shopCount)} hint="across all plants" />
             </StatGroup>
 
             <Panel title="Top plants by fleet count" innerClassName="p-3">

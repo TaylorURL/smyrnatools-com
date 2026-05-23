@@ -5,13 +5,10 @@ import { fmtDate, fmtInt, fmtScorePct } from '../../../../../utils/PlanStatistic
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
 import ScorePercent from './ScorePercent'
 
-/* Two-state colour system, matching the Customer Lookup page palette.
- * `HEAVY` lights the customers who drag the schedule the most — used
- * for the big number on every card and the "Heavy kickers" filter
- * threshold.  `SOFT` is the muted accent used for the secondary chart
- * fill and supplementary stats. */
+/* `HEAVY` is the accent that lights kicker dots in the per-customer trail
+ * and the kicker share-bar — kept as a background-only signal so the
+ * value text itself reads in the theme's primary color. */
 const HEAVY = '#dc2626'
-const SOFT = '#f59e0b'
 
 /* Customers whose AVERAGE kicker meets or exceeds this many yards land
  * in the "Heavy kickers" filter. Tuned so a typical 3-yard top-up
@@ -133,8 +130,7 @@ function CustomerCard({ customer, isActive, onSelect, orders }) {
                     )}
                 </div>
                 <div
-                    className="text-[20px] font-semibold tabular-nums leading-none shrink-0"
-                    style={{ color: HEAVY }}
+                    className="text-[20px] font-semibold tabular-nums leading-none shrink-0 text-text-primary"
                     title="Average kicker size on jobs where this customer kicked"
                 >
                     {fmtYards(customer.avgKickerYards)}
@@ -155,16 +151,11 @@ function CustomerCard({ customer, isActive, onSelect, orders }) {
     )
 }
 
-function StatBlock({ label, sub, value, valueColor }) {
+function StatBlock({ label, sub, value }) {
     return (
         <div className="flex flex-col gap-0.5">
             <div className="text-[11px] text-text-tertiary">{label}</div>
-            <div
-                className="text-[18px] font-semibold tabular-nums leading-tight"
-                style={{ color: valueColor || 'var(--text-primary)' }}
-            >
-                {value}
-            </div>
+            <div className="text-[18px] font-semibold tabular-nums leading-tight text-text-primary">{value}</div>
             {sub && <div className="text-[10.5px] text-text-tertiary">{sub}</div>}
         </div>
     )
@@ -218,10 +209,7 @@ function CustomerKickersTable({ colocationMap, orders, plantNameByCode }) {
                                 <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-secondary">
                                     {fmtYards(m.scheduledYards)}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12px] tabular-nums font-semibold"
-                                    style={{ color: HEAVY }}
-                                >
+                                <td className="px-3 py-2 text-right text-[12px] tabular-nums font-semibold text-text-primary">
                                     +{fmtYards(m.kickerYards)}
                                 </td>
                                 <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-secondary">
@@ -280,13 +268,11 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                     label="Avg kicker"
                     sub={`per kicker job (${fmtInt(customer.kickerJobs)})`}
                     value={fmtYards(customer.avgKickerYards)}
-                    valueColor={HEAVY}
                 />
                 <StatBlock
                     label="Avg per job"
                     sub={`across all ${fmtInt(customer.jobs)} jobs`}
                     value={fmtYards(customer.avgKickPerJob)}
-                    valueColor={SOFT}
                 />
                 <StatBlock
                     label="Total kicked"
@@ -296,7 +282,6 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                             : null
                     }
                     value={fmtYards(customer.kickerYards)}
-                    valueColor={HEAVY}
                 />
                 <StatBlock
                     label="Kicker rate"

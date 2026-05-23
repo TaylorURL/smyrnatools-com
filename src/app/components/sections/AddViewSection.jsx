@@ -112,7 +112,7 @@ function AddViewSection({ title, onClose, children, error, isListItem = false })
                     <div className="flex-1 min-h-0 overflow-y-auto">
                         <div className="flex flex-col gap-5 p-6">
                             <div className="flex flex-col items-center gap-3.5 bg-bg-primary border border-border-light rounded-[10px] py-12 px-8 text-center">
-                                <i className="fas fa-ban text-red-500 text-5xl mb-2 opacity-30"></i>
+                                <i className="fas fa-ban text-text-primary text-5xl mb-2 opacity-30"></i>
                                 <p className="text-text-primary text-base font-semibold leading-relaxed m-0">
                                     You are not permitted to create assets or items.
                                 </p>

@@ -159,7 +159,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                 {/* Form */}
                 <div className="px-4 sm:px-6 py-4 sm:py-5 flex-1 sm:flex-none sm:max-h-[70vh] overflow-y-auto">
                     {error && (
-                        <div className="flex items-center gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <div className="flex items-center gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-text-primary text-sm">
                             <i className="fas fa-exclamation-circle shrink-0" />
                             {error}
                         </div>
@@ -284,7 +284,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                             className="flex items-center gap-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"
                                         >
                                             <i
-                                                className={`fas ${isVideo(file) ? 'fa-video text-blue-500' : 'fa-image text-emerald-500'} text-sm shrink-0`}
+                                                className={`fas ${isVideo(file) ? 'fa-video' : 'fa-image'} text-text-primary text-sm shrink-0`}
                                             />
                                             <span className="text-sm text-slate-700 truncate flex-1">{file.name}</span>
                                             <span className="text-xs text-slate-400 shrink-0">
@@ -293,7 +293,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                             <button
                                                 type="button"
                                                 onClick={() => removeFile(i)}
-                                                className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent shrink-0"
+                                                className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-text-primary hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent shrink-0"
                                             >
                                                 <i className="fas fa-times text-[10px]" />
                                             </button>

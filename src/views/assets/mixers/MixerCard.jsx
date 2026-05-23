@@ -101,15 +101,13 @@ function MixerCard({
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-gray-500 dark:text-gray-400">Last Service</div>
-                <div
-                    className={`text-sm font-medium ${mixer.lastServiceDate && isServiceOverdue ? 'text-red-600' : ''}`}
-                >
+                <div className="text-sm font-medium">
                     {mixer.lastServiceDate ? new Date(mixer.lastServiceDate).toLocaleDateString() : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-gray-500 dark:text-gray-400">Last Chip</div>
-                <div className={`text-sm font-medium ${mixer.lastChipDate && isChipOverdue ? 'text-red-600' : ''}`}>
+                <div className="text-sm font-medium">
                     {mixer.lastChipDate ? new Date(mixer.lastChipDate).toLocaleDateString() : 'Unknown'}
                 </div>
             </div>
@@ -124,7 +122,7 @@ function MixerCard({
                                 {[...Array(5)].map((_, i) => (
                                     <i
                                         key={i}
-                                        className={`fas fa-star ${i < mixer.cleanlinessRating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                        className={`fas fa-star ${i < mixer.cleanlinessRating ? 'text-text-primary' : 'text-gray-300'}`}
                                         aria-hidden="true"
                                     ></i>
                                 ))}
@@ -132,7 +130,7 @@ function MixerCard({
                             {mixer.cleanlinessRating < 3 && (
                                 <span
                                     title="This truck cannot run loads until the cleanliness is 3 stars or better. Do not ignore this warning."
-                                    className="bg-[#fee2e2] text-[#dc2626] rounded text-[11px] font-bold px-1.5 py-0.5 cursor-help"
+                                    className="bg-[#fee2e2] text-text-primary rounded text-[11px] font-bold px-1.5 py-0.5 cursor-help"
                                 >
                                     DIRTY
                                 </span>

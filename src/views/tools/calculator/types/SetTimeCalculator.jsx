@@ -342,12 +342,12 @@ const SetTimeCalculator = () => {
                                 </div>
                             )}
                             {locationError && (
-                                <div className="flex flex-col items-center gap-2 text-red-500 text-sm text-center">
+                                <div className="flex flex-col items-center gap-2 text-text-primary text-sm text-center">
                                     <i className="fas fa-exclamation-circle text-xl" />
                                     <span>{locationError}</span>
                                     <button
                                         onClick={getLocation}
-                                        className="bg-[var(--card-background)] border border-red-500 rounded text-red-500 cursor-pointer text-xs font-semibold py-1 px-2 hover:bg-red-50"
+                                        className="bg-[var(--card-background)] border border-red-500 rounded text-text-primary cursor-pointer text-xs font-semibold py-1 px-2 hover:bg-red-50"
                                     >
                                         <i className="fas fa-redo" /> Retry
                                     </button>
@@ -401,12 +401,12 @@ const SetTimeCalculator = () => {
 
                 {result?.riskMessage && (
                     <div
-                        className={`flex items-start gap-3 rounded-lg border text-sm font-medium p-3 ${
+                        className={`flex items-start gap-3 rounded-lg border text-sm font-medium p-3 text-text-primary ${
                             result.riskLevel === 'hot'
-                                ? 'bg-red-50 border-red-300 text-red-900'
+                                ? 'bg-red-50 border-red-300'
                                 : result.riskLevel === 'cold' || result.riskLevel === 'cool'
-                                  ? 'bg-blue-50 border-blue-300 text-blue-800'
-                                  : 'bg-amber-50 border-amber-300 text-amber-800'
+                                  ? 'bg-blue-50 border-blue-300'
+                                  : 'bg-amber-50 border-amber-300'
                         }`}
                     >
                         <i className="fas fa-exclamation-triangle mt-0.5" />

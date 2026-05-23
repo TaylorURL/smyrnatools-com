@@ -895,7 +895,6 @@ export default function NRMCAView() {
                                   ? 'All current'
                                   : 'None tracked'
                         }
-                        valueColor={expiredPlantCount > 0 ? '#dc2626' : undefined}
                     />
                     <SharedStat
                         label="Scales"
@@ -907,19 +906,16 @@ export default function NRMCAView() {
                                   ? 'All current'
                                   : 'None tracked'
                         }
-                        valueColor={overdueScaleCount > 0 ? '#dc2626' : undefined}
                     />
                     <SharedStat
                         label="Expired Certs"
                         value={expiredPlantCount}
                         hint={expiredPlantCount === 0 ? 'No action needed' : 'Renew now'}
-                        valueColor={expiredPlantCount > 0 ? '#dc2626' : '#16a34a'}
                     />
                     <SharedStat
                         label="Overdue Calibrations"
                         value={overdueScaleCount}
                         hint={overdueScaleCount === 0 ? 'No action needed' : 'Schedule today'}
-                        valueColor={overdueScaleCount > 0 ? '#dc2626' : '#16a34a'}
                     />
                 </StatGroup>
 

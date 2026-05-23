@@ -55,21 +55,11 @@ export function AssetStatisticsCleanlinessPage({ accentColor, onSelectAsset, sta
                     label="Avg rating"
                     value={summary.cleanlinessAvg != null ? `${fmtFloat(summary.cleanlinessAvg)} ★` : '—'}
                     hint={`across ${fmtInt(summary.cleanlinessSamples)} rated assets`}
-                    valueColor={
-                        summary.cleanlinessAvg == null
-                            ? undefined
-                            : summary.cleanlinessAvg >= 4
-                              ? '#15803d'
-                              : summary.cleanlinessAvg >= 3
-                                ? '#b45309'
-                                : '#b91c1c'
-                    }
                 />
                 <Stat
                     label="Dirty assets"
                     value={fmtInt(summary.dirtyCount)}
                     hint={`${fmtPct(dirtyRatePct)} of fleet`}
-                    valueColor={summary.dirtyCount > 0 ? '#b91c1c' : '#15803d'}
                 />
                 <Stat
                     label="Not yet rated"
@@ -103,7 +93,6 @@ export function AssetStatisticsCleanlinessPage({ accentColor, onSelectAsset, sta
                     onSelect={onSelectAsset}
                     rows={dirtyAssets}
                     valueAccessor={(row) => row.rating}
-                    valueColor={() => '#b91c1c'}
                     valueFormatter={(value) => <StarStrip rating={value} />}
                 />
             </Panel>

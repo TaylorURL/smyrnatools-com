@@ -53,7 +53,7 @@ function PlanNotesSection({
                 <div className="rounded-lg px-4 py-3.5 bg-bg-secondary border border-border-light">
                     <MarkdownView source={displaySource} />
                     {error && (
-                        <div className="text-[11px] mt-2 text-[#b45309]">
+                        <div className="text-[11px] mt-2 text-text-primary">
                             <i className="fas fa-triangle-exclamation mr-1" />
                             {error}
                         </div>
@@ -77,7 +77,10 @@ function PlanNotesStatusBar({ accentColor, loading, mode }) {
         <div className="flex items-center gap-2 text-[11px] text-text-tertiary">
             {mode === 'view' && loading && (
                 <>
-                    <i className="fas fa-wand-magic-sparkles fa-fade text-[11px]" style={{ color: accentColor }} />
+                    <i
+                        className="fas fa-wand-magic-sparkles fa-fade text-[11px]"
+                        style={{ color: 'var(--text-primary)' }}
+                    />
                     <span>Formatting with AI…</span>
                 </>
             )}

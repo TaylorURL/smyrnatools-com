@@ -1,7 +1,6 @@
 /**
  * PlanStatisticsFormatUtility — display formatters for the Plan Statistics
- * dashboard. Numbers, percentages, time strings, date ranges, and the
- * theme-aware colors that drive delta% pills and satisfaction badges.
+ * dashboard. Numbers, percentages, time strings, and date ranges.
  *
  * Pure functions. No DOM, no React. Mirror the Schedule tab's headline
  * styling so cross-tab numbers always read the same.
@@ -72,18 +71,8 @@ export const deltaPct = (current: number | null | undefined, previous: number | 
     return (((current as number) - (previous as number)) / (previous as number)) * 100
 }
 
-/** Color for a delta% pill — green up, red down, neutral when within 0.1pp of zero. */
-export const deltaColor = (pct: number | null | undefined): string | undefined => {
-    if (pct == null) return undefined
-    if (Math.abs(pct) < 0.1) return 'var(--text-secondary)'
-    return pct > 0 ? '#16a34a' : '#dc2626'
-}
-
-/** Tier-color a 0-100 score — green >= 90 (Schedule-tab "happy"), amber >= 75
- *  ("watching"), red below ("bad service"). */
-export const satisfactionColor = (score100: number | null | undefined): string => {
-    if (score100 == null) return 'var(--text-tertiary)'
-    if (score100 >= 90) return '#15803d'
-    if (score100 >= 75) return '#b45309'
-    return '#b91c1c'
-}
+/** Delta% color helper — retained for API stability with existing callers.
+ *  Returns undefined so the rendered text falls back to the inherited theme
+ *  color in light, dark, and grayed-out themes. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const deltaColor = (_pct: number | null | undefined): string | undefined => undefined

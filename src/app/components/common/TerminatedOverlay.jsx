@@ -22,7 +22,7 @@ function TerminatedOverlay() {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85">
             <div className="w-[90%] max-w-[440px] rounded-[20px] bg-white p-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
                 <img src={SmyrnaLogo} alt="Smyrna Logo" className="mb-6 h-auto w-[120px]" />
-                <h1 className="mb-4 text-[28px] font-bold text-red-800">Access Revoked</h1>
+                <h1 className="mb-4 text-[28px] font-bold text-text-primary">Access Revoked</h1>
                 <p className="mb-8 text-base leading-relaxed text-slate-500">
                     Your access to this application has been revoked. Please contact your district manager for more
                     information.

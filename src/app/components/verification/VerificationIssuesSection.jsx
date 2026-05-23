@@ -209,7 +209,7 @@ export default function VerificationIssuesSection({
                     )}
                     {openIssues.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-4 text-text-tertiary">
-                            <i className="fas fa-check-circle text-[20px] mb-1.5 text-green-600" />
+                            <i className="fas fa-check-circle text-[20px] mb-1.5 text-text-primary" />
                             <span className="text-[12.5px]">No open maintenance issues</span>
                         </div>
                     ) : (

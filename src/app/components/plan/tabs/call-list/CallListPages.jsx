@@ -147,7 +147,7 @@ function ListOrDetailPane({
     if (isLoading) return <CallListCustomerListSkeleton />
     if (rosterError) {
         return (
-            <div className="rounded-lg p-3 text-[12px] bg-[rgba(220,38,38,0.1)] border border-[rgba(220,38,38,0.25)] text-red-700">
+            <div className="rounded-lg p-3 text-[12px] bg-[rgba(220,38,38,0.1)] border border-[rgba(220,38,38,0.25)] text-text-primary">
                 {rosterError}
             </div>
         )
@@ -654,13 +654,12 @@ function ActivityMetrics({ accentColor, isLoading, metrics, rangeLabel }) {
     const bookedPct = Math.round((metrics.bookedRate || 0) * 100)
     return (
         <div className="rounded-lg overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 bg-bg-primary border border-border-light">
-            <MetricCell label="Calls today" value={metrics.callsToday} accent={accentColor} />
+            <MetricCell label="Calls today" value={metrics.callsToday} />
             <MetricCell label="Calls this week" value={metrics.callsWeek} sub={`Range · ${rangeLabel}`} />
             <MetricCell
                 label="Booked"
                 sub={metrics.total > 0 ? `${bookedPct}% of activity` : 'No activity'}
                 value={metrics.outcomeCounts.booked || 0}
-                valueColor={metrics.outcomeCounts.booked ? '#16a34a' : undefined}
             />
             <MetricCell label="Customers contacted" sub="Unique customer #" value={metrics.uniqueCustomers} />
             <MetricCell
@@ -677,13 +676,12 @@ function ActivityMetrics({ accentColor, isLoading, metrics, rangeLabel }) {
     )
 }
 
-function MetricCell({ accent, label, sub, value, valueColor, valueText }) {
+function MetricCell({ label, sub, value, valueText }) {
     return (
         <div className="px-3 py-2.5 flex flex-col gap-0.5 bg-bg-primary border-r last:border-r-0 border-b sm:border-b-0 border-border-light">
             <span className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-text-tertiary">{label}</span>
             <span
-                className={`leading-tight font-semibold tabular-nums ${valueText ? 'text-[14px] truncate' : 'text-[20px] font-mono'}`}
-                style={{ color: valueColor || (accent && !valueText ? accent : 'var(--text-primary)') }}
+                className={`leading-tight font-semibold tabular-nums text-text-primary ${valueText ? 'text-[14px] truncate' : 'text-[20px] font-mono'}`}
                 title={valueText ? String(value) : undefined}
             >
                 {value}

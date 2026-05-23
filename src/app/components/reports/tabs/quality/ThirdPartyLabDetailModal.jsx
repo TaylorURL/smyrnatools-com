@@ -168,12 +168,12 @@ function ThirdPartyLabDetailModal({ report, getUserName, onClose, onReviewed }) 
                 <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200">
                     <div>
                         {report?.reviewed ? (
-                            <span className="inline-flex items-center gap-1.5 text-emerald-600 text-sm font-semibold">
+                            <span className="inline-flex items-center gap-1.5 text-text-primary text-sm font-semibold">
                                 <i className="fas fa-check-circle" />
                                 Reviewed
                             </span>
                         ) : (
-                            <span className="inline-flex items-center gap-1.5 text-amber-600 text-sm font-semibold">
+                            <span className="inline-flex items-center gap-1.5 text-text-primary text-sm font-semibold">
                                 <i className="fas fa-flag" />
                                 Pending Review
                             </span>

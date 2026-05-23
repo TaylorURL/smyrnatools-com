@@ -26,11 +26,11 @@ const getPlantType = (region) => REGION_TYPE_TO_PLANT_TYPE[region?.type] || 'N/A
 
 /** Tailwind class + icon per plant type — used in both grid cards and list pills. */
 const PLANT_TYPE_META = {
-    'Aggregate Location': { badge: 'bg-amber-100 text-amber-700', icon: 'fa-mountain' },
-    'Concrete Plant': { badge: 'bg-blue-100 text-blue-700', icon: 'fa-industry' },
-    'Office Location': { badge: 'bg-purple-100 text-purple-700', icon: 'fa-building' }
+    'Aggregate Location': { badge: 'bg-amber-100 text-text-primary', icon: 'fa-mountain' },
+    'Concrete Plant': { badge: 'bg-blue-100 text-text-primary', icon: 'fa-industry' },
+    'Office Location': { badge: 'bg-purple-100 text-text-primary', icon: 'fa-building' }
 }
-const DEFAULT_TYPE_META = { badge: 'bg-slate-100 text-slate-600', icon: 'fa-map-marker-alt' }
+const DEFAULT_TYPE_META = { badge: 'bg-slate-100 text-text-primary', icon: 'fa-map-marker-alt' }
 
 /** Slim filter select — matches the FilterSelect atom inside TopSection so admin
  *  views read with the same rhythm as Mixers / Operators / AssetView. */

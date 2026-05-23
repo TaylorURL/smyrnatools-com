@@ -51,7 +51,7 @@ const PasswordStrengthBar = memo(function PasswordStrengthBar({ strength }) {
                         }}
                     />
                 </div>
-                <span className="text-[0.7rem] font-semibold" style={{ color: strength.color }}>
+                <span className="text-[0.7rem] font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {strength.value}
                 </span>
             </div>
@@ -72,7 +72,7 @@ const getInputClasses = (isFocused) =>
     `w-full bg-white border-0 rounded-none text-slate-800 text-base outline-none pt-4 pb-3 border-b-2 transition-colors placeholder-transparent autofill:shadow-[inset_0_0_0px_1000px_white] autofill:[-webkit-text-fill-color:theme(colors.slate.800)] ${isFocused ? 'border-[#1e3a5f]' : 'border-slate-200'}`
 /** Returns Tailwind classes for floating labels above inputs. */
 const getLabelClasses = (isFocused, hasValue) =>
-    `absolute left-0 pointer-events-none font-medium transition-all ${isFocused || hasValue ? 'top-0 text-[0.7rem]' : 'top-4 text-[0.9rem]'} ${isFocused ? 'text-[#1e3a5f]' : 'text-slate-400'}`
+    `absolute left-0 pointer-events-none font-medium transition-all ${isFocused || hasValue ? 'top-0 text-[0.7rem]' : 'top-4 text-[0.9rem]'} ${isFocused ? 'text-text-primary' : 'text-slate-400'}`
 /**
  * Full-screen login/signup view with a lazy-loaded video background,
  * animated fleet stats, password strength indicator, and links to
@@ -249,7 +249,7 @@ function LoginView() {
             <Suspense
                 fallback={
                     <div className="flex items-center justify-center h-screen bg-white">
-                        <i className="fas fa-spinner fa-spin text-[#1e3a5f] text-2xl" />
+                        <i className="fas fa-spinner fa-spin text-text-primary text-2xl" />
                     </div>
                 }
             >
@@ -262,7 +262,7 @@ function LoginView() {
             <Suspense
                 fallback={
                     <div className="flex items-center justify-center h-screen bg-white">
-                        <i className="fas fa-spinner fa-spin text-[#1e3a5f] text-2xl" />
+                        <i className="fas fa-spinner fa-spin text-text-primary text-2xl" />
                     </div>
                 }
             >
@@ -300,7 +300,7 @@ function LoginView() {
                         {!isMobile && (
                             <div className="lg:hidden mb-8 text-center">
                                 <img src={SrmLogo} alt="SRM" className="h-12 mb-2 inline" loading="eager" />
-                                <div className="text-[#1e3a5f] text-xl font-bold">Smyrna Tools</div>
+                                <div className="text-text-primary text-xl font-bold">Smyrna Tools</div>
                             </div>
                         )}
                         <div className="mb-10">
@@ -406,7 +406,7 @@ function LoginView() {
                                             required
                                         />
                                         {confirmPassword && password === confirmPassword && (
-                                            <i className="fas fa-check absolute right-0 bottom-3 text-green-500" />
+                                            <i className="fas fa-check absolute right-0 bottom-3 text-text-primary" />
                                         )}
                                     </div>
                                 </div>
@@ -416,20 +416,20 @@ function LoginView() {
                                     <button
                                         type="button"
                                         onClick={openRecovery}
-                                        className="bg-transparent border-none text-[#1e3a5f] cursor-pointer text-[0.8rem] font-medium p-0"
+                                        className="bg-transparent border-none text-text-primary cursor-pointer text-[0.8rem] font-medium p-0"
                                     >
                                         Forgot password?
                                     </button>
                                 </div>
                             )}
                             {errorMessage && (
-                                <div className="flex items-center gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in bg-red-50 border border-red-200 text-red-600">
+                                <div className="flex items-center gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in bg-red-50 border border-red-200 text-text-primary">
                                     <i className="fas fa-exclamation-circle shrink-0 text-[0.9rem]" />
                                     <span>{errorMessage}</span>
                                 </div>
                             )}
                             {successMessage && (
-                                <div className="flex items-center gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in bg-green-50 border border-green-200 text-green-600">
+                                <div className="flex items-center gap-2 rounded-lg text-[0.85rem] mb-6 py-3 px-4 animate-msg-in bg-green-50 border border-green-200 text-text-primary">
                                     <i className="fas fa-check-circle shrink-0 text-[0.9rem]" />
                                     <span>{successMessage}</span>
                                 </div>
@@ -458,7 +458,7 @@ function LoginView() {
                             <button
                                 type="button"
                                 onClick={toggleSignUp}
-                                className="bg-transparent border-none text-[#1e3a5f] cursor-pointer text-[0.85rem] font-semibold p-0"
+                                className="bg-transparent border-none text-text-primary cursor-pointer text-[0.85rem] font-semibold p-0"
                             >
                                 {isSignUp ? 'Sign in' : 'Sign up'}
                             </button>

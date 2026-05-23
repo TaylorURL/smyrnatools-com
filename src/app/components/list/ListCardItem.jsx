@@ -57,8 +57,8 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
             )}
             <div className="flex items-center flex-wrap gap-1.5">
                 <span
-                    className="inline-flex items-center rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border"
-                    style={{ background: pc.bg, borderColor: pc.border, color: pc.color }}
+                    className="inline-flex items-center rounded text-[9px] font-bold uppercase tracking-wider gap-1 px-1.5 py-0.5 border text-text-primary"
+                    style={{ background: pc.bg, borderColor: pc.border }}
                 >
                     <i className={`fas ${pc.icon} text-[8px]`} />
                     {pc.label}
@@ -67,7 +67,7 @@ export default function ListCardItem({ accentColor, isSelected, item, onSelectIt
                     className="inline-flex items-center gap-1 text-[10px] font-mono tabular-nums rounded px-1.5 py-0.5"
                     style={{
                         background: isItemOverdue ? 'rgba(220,38,38,0.08)' : 'var(--bg-tertiary)',
-                        color: isItemOverdue ? '#dc2626' : 'var(--text-secondary)',
+                        color: isItemOverdue ? 'var(--text-primary)' : 'var(--text-secondary)',
                         fontWeight: isItemOverdue ? 700 : 500
                     }}
                 >

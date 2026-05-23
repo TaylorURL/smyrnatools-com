@@ -32,7 +32,7 @@ function CleanlinessRating({ canEditTractor, cleanlinessRating, setCleanlinessRa
                         >
                             <i
                                 className={`fas fa-star ${star <= cleanlinessRating ? 'filled' : ''}`}
-                                style={star <= cleanlinessRating ? { color: '#f59e0b' } : {}}
+                                style={star <= cleanlinessRating ? { color: 'var(--text-primary)' } : {}}
                             ></i>
                         </button>
                     ))}

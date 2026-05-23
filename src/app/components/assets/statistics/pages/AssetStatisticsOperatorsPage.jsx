@@ -37,21 +37,10 @@ export function AssetStatisticsOperatorsPage({ accentColor, onSelectAsset, stats
                     label="Coverage"
                     value={fmtPct(coverageRate)}
                     hint={`${fmtInt(assignedAssets)} of ${fmtInt(activeAssets)} active`}
-                    valueColor={coverageRate >= 90 ? '#15803d' : coverageRate >= 75 ? '#b45309' : '#b91c1c'}
                 />
-                <Stat
-                    label="Unassigned active"
-                    value={fmtInt(unassignedAssets)}
-                    hint="active asset, no operator"
-                    valueColor={unassignedAssets > 0 ? '#b45309' : undefined}
-                />
+                <Stat label="Unassigned active" value={fmtInt(unassignedAssets)} hint="active asset, no operator" />
                 <Stat label="Active operators" value={fmtInt(activeOperators)} hint="in scope" />
-                <Stat
-                    label="On the bench"
-                    value={fmtInt(benchedOperators)}
-                    hint="active operator, no asset"
-                    valueColor={benchedOperators > 0 ? '#b45309' : undefined}
-                />
+                <Stat label="On the bench" value={fmtInt(benchedOperators)} hint="active operator, no asset" />
             </StatGroup>
 
             <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">

@@ -13,7 +13,7 @@ export default function PageHeader({ accentColor, conversationCount = 0, onCompo
                 {conversationCount === 1 ? '' : 's'}
             </span>
             {unreadCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1 bg-[rgba(220,38,38,0.12)] border border-[rgba(220,38,38,0.3)] text-red-600">
+                <span className="inline-flex items-center gap-1.5 rounded text-[12px] font-medium px-2.5 py-1 bg-[rgba(220,38,38,0.12)] border border-[rgba(220,38,38,0.3)] text-text-primary">
                     <i className="fas fa-envelope text-[10px]" />
                     <span className="font-mono tabular-nums">{unreadCount}</span> unread
                 </span>

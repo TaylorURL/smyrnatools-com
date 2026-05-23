@@ -96,19 +96,12 @@ export function AssetStatisticsVerificationPage({ accentColor, config, onSelectA
                     label="Verified"
                     value={fmtPct(verifiedRatePct)}
                     hint={`${fmtInt(summary.verified)} of ${fmtInt(summary.total)}`}
-                    valueColor={verifiedRatePct >= 90 ? '#15803d' : verifiedRatePct >= 75 ? '#b45309' : '#b91c1c'}
                 />
-                <Stat
-                    label="Unverified"
-                    value={fmtInt(summary.unverified)}
-                    hint="not checked this week"
-                    valueColor={summary.unverified > 0 ? '#b91c1c' : undefined}
-                />
+                <Stat label="Unverified" value={fmtInt(summary.unverified)} hint="not checked this week" />
                 <Stat
                     label="Data complete"
                     value={fmtPct(completeRatePct)}
                     hint={`${fmtInt(summary.assetsMissingAnyField)} assets missing fields`}
-                    valueColor={completeRatePct >= 95 ? '#15803d' : completeRatePct >= 85 ? '#b45309' : '#b91c1c'}
                 />
                 <Stat
                     label="Fields blank"
@@ -157,15 +150,6 @@ export function AssetStatisticsVerificationPage({ accentColor, config, onSelectA
                     onSelect={onSelectAsset}
                     rows={unverifiedAssets}
                     valueAccessor={(row) => row.days}
-                    valueColor={(value) =>
-                        value == null
-                            ? 'var(--text-tertiary)'
-                            : value > 30
-                              ? '#b91c1c'
-                              : value > 7
-                                ? '#b45309'
-                                : 'var(--text-primary)'
-                    }
                     valueFormatter={(value) => (value == null ? 'Never' : `${fmtInt(value)}d`)}
                 />
             </Panel>
@@ -181,7 +165,6 @@ export function AssetStatisticsVerificationPage({ accentColor, config, onSelectA
                     onSelect={onSelectAsset}
                     rows={missingDataAssets}
                     valueAccessor={(row) => row.missing.length}
-                    valueColor={(value) => (value >= 3 ? '#b91c1c' : value === 2 ? '#b45309' : '#0ea5e9')}
                     valueFormatter={(_value, row) => row.missing.join(', ')}
                 />
             </Panel>

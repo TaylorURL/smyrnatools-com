@@ -66,9 +66,7 @@ function TractorCard({
             </div>
             <div className="flex justify-between items-center py-1">
                 <div className="text-sm text-gray-500 dark:text-gray-400">Last Service</div>
-                <div
-                    className={`text-sm font-medium ${tractor.lastServiceDate && isServiceOverdue ? 'text-red-600' : ''}`}
-                >
+                <div className="text-sm font-medium">
                     {tractor.lastServiceDate ? new Date(tractor.lastServiceDate).toLocaleDateString() : 'Unknown'}
                 </div>
             </div>
@@ -84,7 +82,7 @@ function TractorCard({
                             {[...Array(5)].map((_, i) => (
                                 <i
                                     key={i}
-                                    className={`fas fa-star ${i < tractor.cleanlinessRating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                    className={`fas fa-star ${i < tractor.cleanlinessRating ? 'text-text-primary' : 'text-gray-300'}`}
                                     aria-hidden="true"
                                 ></i>
                             ))}

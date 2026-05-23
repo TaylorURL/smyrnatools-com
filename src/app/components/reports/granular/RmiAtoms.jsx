@@ -30,15 +30,14 @@ export function CardHeader({ icon, label, right, sub, title }) {
 
 /** Small text+icon pill used for Pull / Add / Clear actions in section
  *  headers. */
-export function ActionChip({ accent, children, disabled, icon, onClick, title }) {
+export function ActionChip({ children, disabled, icon, onClick, title }) {
     return (
         <button
             type="button"
             onClick={onClick}
             disabled={disabled}
             title={title}
-            className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed bg-bg-secondary border border-border-light"
-            style={{ color: accent || 'var(--text-secondary)' }}
+            className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary"
         >
             {icon && <i className={`fas ${icon} text-[10px]`} />}
             {children}
@@ -109,7 +108,7 @@ export function TableRowActionButton({ onClick, title }) {
             type="button"
             onClick={onClick}
             title={title}
-            className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-red-700 h-[22px] w-[22px]"
+            className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-[22px] w-[22px]"
         >
             <i className="fas fa-times text-[10px]" />
         </button>
@@ -180,7 +179,7 @@ export function ModalField({ children, icon, label, required }) {
             <label className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5 text-text-tertiary`}>
                 {icon && <i className={`fas ${icon} text-[10px]`} />}
                 {label}
-                {required && <span className="ml-0.5 text-red-600">*</span>}
+                {required && <span className="ml-0.5 text-text-primary">*</span>}
             </label>
             {children}
         </div>

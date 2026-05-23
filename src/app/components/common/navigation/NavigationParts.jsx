@@ -29,7 +29,7 @@ export function MobileMenuItem({ item, isActive, onClick, accentColor = '#1e3a5f
             onClick={onClick}
             style={{
                 backgroundColor: isActive ? `${accentColor}12` : 'transparent',
-                color: isActive ? accentColor : 'var(--text-primary)',
+                color: 'var(--text-primary)',
                 fontWeight: isActive ? 600 : 400,
                 gap: '12px',
                 marginBottom: '4px',
@@ -39,7 +39,7 @@ export function MobileMenuItem({ item, isActive, onClick, accentColor = '#1e3a5f
         >
             <i
                 className={`fas ${ICONS[item.id] || 'fa-circle'} text-base w-5`}
-                style={{ color: isActive ? accentColor : 'var(--text-secondary)' }}
+                style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
             ></i>
             <span className="text-[15px]">{item.text}</span>
         </div>

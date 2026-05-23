@@ -1961,13 +1961,13 @@ function PlanFlowMapView({
                         </span>
                     </div>
                     {pickingDestination && (
-                        <span className="pf-tool-pill pf-tool-pill-picking inline-flex items-center gap-1.5 rounded-full text-[11px] font-semibold px-2.5 py-1 bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.4)] text-[#b45309]">
+                        <span className="pf-tool-pill pf-tool-pill-picking inline-flex items-center gap-1.5 rounded-full text-[11px] font-semibold px-2.5 py-1 bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.4)] text-text-primary">
                             <i className="fas fa-crosshairs text-[10px]" />
                             Click a plant to set the destination
                             <button
                                 type="button"
                                 onClick={() => setPickingDestination(false)}
-                                className="ml-1 border-none bg-transparent cursor-pointer p-0 text-[#b45309] font-bold transition-transform hover:scale-110"
+                                className="ml-1 border-none bg-transparent cursor-pointer p-0 text-text-primary font-bold transition-transform hover:scale-110"
                                 aria-label="Cancel picking"
                             >
                                 ×
@@ -1997,7 +1997,7 @@ function PlanFlowMapView({
                         </span>
                     )}
                     {(pendingPlantGeocodes > 0 || pendingRoutes > 0) && (
-                        <span className="pf-tool-pill inline-flex items-center gap-1.5 rounded-full text-[11px] font-semibold px-2.5 py-1 bg-[rgba(37,99,235,0.12)] border border-[rgba(37,99,235,0.35)] text-blue-600">
+                        <span className="pf-tool-pill inline-flex items-center gap-1.5 rounded-full text-[11px] font-semibold px-2.5 py-1 bg-[rgba(37,99,235,0.12)] border border-[rgba(37,99,235,0.35)] text-text-primary">
                             <i className="fas fa-circle-notch fa-spin text-[10px]" />
                             {pendingPlantGeocodes > 0 ? `Locating ${pendingPlantGeocodes}` : `Routing ${pendingRoutes}`}
                             …

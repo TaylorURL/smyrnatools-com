@@ -23,8 +23,7 @@ export function PersonStatisticsKpiStrip({ kind, summary }) {
         {
             hint: 'plant field blank',
             label: 'Missing plant',
-            value: fmtInt(summary.missingPlant),
-            valueColor: summary.missingPlant > 0 ? '#b45309' : undefined
+            value: fmtInt(summary.missingPlant)
         }
     ]
 
@@ -48,21 +47,14 @@ export function PersonStatisticsKpiStrip({ kind, summary }) {
         tiles.push({
             hint: 'have never logged in',
             label: 'Never logged in',
-            value: fmtInt(summary.neverLoggedIn),
-            valueColor: summary.neverLoggedIn > 0 ? '#b45309' : undefined
+            value: fmtInt(summary.neverLoggedIn)
         })
     }
 
     return (
         <StatGroup columns={5}>
             {tiles.slice(0, 5).map((tile) => (
-                <Stat
-                    key={tile.label}
-                    hint={tile.hint}
-                    label={tile.label}
-                    value={tile.value}
-                    valueColor={tile.valueColor}
-                />
+                <Stat key={tile.label} hint={tile.hint} label={tile.label} value={tile.value} />
             ))}
         </StatGroup>
     )

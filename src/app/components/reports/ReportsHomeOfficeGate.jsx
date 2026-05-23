@@ -57,7 +57,7 @@ export function ReportsHomeOfficeGate({ userId }) {
                 <div className="flex items-start gap-3">
                     <span
                         className="inline-flex items-center justify-center w-10 h-10 rounded-full shrink-0"
-                        style={{ background: '#1e3a5f1f', color: '#1e3a5f' }}
+                        style={{ background: '#1e3a5f1f', color: 'var(--text-primary)' }}
                     >
                         <i className="fas fa-globe text-[18px]" />
                     </span>

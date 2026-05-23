@@ -366,7 +366,7 @@ function ManagersView({ title = 'Managers', onSelectManager }) {
                                         const cellHighlightCls =
                                             'text-text-primary text-[12.5px] font-bold py-1.5 px-2.5 text-left align-middle'
                                         const roleBadgeCls =
-                                            'inline-flex items-center bg-[#e0e7ff] text-[#4338ca] rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5'
+                                            'inline-flex items-center bg-[#e0e7ff] text-text-primary rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5'
                                         return (
                                             <tr
                                                 key={manager.id}

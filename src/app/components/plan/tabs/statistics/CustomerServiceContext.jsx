@@ -17,7 +17,6 @@ export const SERVICE_COLOR_LATE = '#f59e0b'
 export const SERVICE_COLOR_SLOW = '#ea580c'
 export const SERVICE_COLOR_KICKER = '#dc2626'
 export const SERVICE_COLOR_SAME_DAY = '#d97706'
-export const SERVICE_GOOD_THRESHOLD = 0.85
 
 const TIER_TO_COLOR = {
     bad: SERVICE_COLOR_BAD,
@@ -46,9 +45,6 @@ export const verdictLabel = (m) => {
     }
 }
 
-export const pctColor = (pct) =>
-    pct == null ? 'var(--text-tertiary)' : pct >= SERVICE_GOOD_THRESHOLD ? SERVICE_COLOR_GOOD : SERVICE_COLOR_BAD
-
 /** Format a yardage value with a trailing unit. Drops the decimal when
  *  the value lands on a whole yard so the table reads cleanly. */
 const fmtYards = (n) => {
@@ -65,16 +61,11 @@ const fmtMinutes = (n) => {
     return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
 
-export function StatBlock({ label, sub, value, valueColor }) {
+export function StatBlock({ label, sub, value }) {
     return (
         <div className="flex flex-col gap-0.5">
             <div className="text-[11px] text-text-tertiary">{label}</div>
-            <div
-                className="text-[18px] font-semibold tabular-nums leading-tight"
-                style={{ color: valueColor || 'var(--text-primary)' }}
-            >
-                {value}
-            </div>
+            <div className="text-[18px] font-semibold tabular-nums leading-tight text-text-primary">{value}</div>
             {sub && <div className="text-[10.5px] text-text-tertiary">{sub}</div>}
         </div>
     )
@@ -172,7 +163,7 @@ export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plant
                                     </span>
                                     {formatColocatedPlantLabel(m.plantCode, plantNameByCode, colocationMap)}
                                 </td>
-                                <td className="px-3 py-2 text-[12px] font-semibold" style={{ color: verdictColor(m) }}>
+                                <td className="px-3 py-2 text-[12px] font-semibold">
                                     <div className="flex items-center gap-1.5">
                                         <span>{verdictLabel(m)}</span>
                                         {m.isSameDay && (
@@ -181,7 +172,7 @@ export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plant
                                                 className="rounded-sm px-1 py-0.5 text-[9.5px] font-bold uppercase tracking-wider"
                                                 style={{
                                                     background: `${SERVICE_COLOR_SAME_DAY}1a`,
-                                                    color: SERVICE_COLOR_SAME_DAY
+                                                    color: 'var(--text-primary)'
                                                 }}
                                             >
                                                 <i className="fas fa-bolt mr-0.5 text-[8px]" />
@@ -196,10 +187,7 @@ export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plant
                                 <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-secondary">
                                     {m.firstLoadTime || '—'}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12px] tabular-nums"
-                                    style={{ color: m.isLate ? SERVICE_COLOR_LATE : 'var(--text-tertiary)' }}
-                                >
+                                <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-primary">
                                     {m.isLate ? fmtMinutes(m.latenessMin) : '—'}
                                 </td>
                                 <td className="px-3 py-2 text-right">
@@ -210,8 +198,7 @@ export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plant
                                     )}
                                 </td>
                                 <td
-                                    className="px-3 py-2 text-right text-[12px] tabular-nums font-semibold"
-                                    style={{ color: kickerLabel ? SERVICE_COLOR_KICKER : 'var(--text-tertiary)' }}
+                                    className="px-3 py-2 text-right text-[12px] tabular-nums font-semibold text-text-primary"
                                     title={
                                         kickerLabel
                                             ? `${m.kickerLoads} kicker load${m.kickerLoads === 1 ? '' : 's'}`
@@ -273,7 +260,6 @@ export function CustomerServiceContext({ aggregate, colocationMap, emptyMessage,
                 <StatBlock
                     label="Late"
                     value={fmtInt(aggregate.lateJobs)}
-                    valueColor={aggregate.lateJobs > 0 ? SERVICE_COLOR_LATE : undefined}
                     sub={
                         aggregate.lateJobs > 0
                             ? `Avg ${fmtMinutes(aggregate.avgLateMin)} · worst ${fmtMinutes(aggregate.worstLateMin)}`
@@ -283,14 +269,9 @@ export function CustomerServiceContext({ aggregate, colocationMap, emptyMessage,
                 <StatBlock
                     label="Slow"
                     value={fmtInt(aggregate.slowJobs)}
-                    valueColor={aggregate.slowJobs > 0 ? SERVICE_COLOR_SLOW : undefined}
                     sub={lateAndSlow > 0 ? `${fmtInt(lateAndSlow)} also late` : null}
                 />
-                <StatBlock
-                    label="Bad total"
-                    value={fmtInt(aggregate.badJobs)}
-                    valueColor={aggregate.badJobs > 0 ? SERVICE_COLOR_BAD : undefined}
-                />
+                <StatBlock label="Bad total" value={fmtInt(aggregate.badJobs)} />
             </div>
 
             {aggregate.tierCounts && (

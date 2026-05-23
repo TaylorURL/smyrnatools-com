@@ -36,9 +36,9 @@ const deltaTone = (live, base) => {
 }
 
 const TONE_STYLES = {
-    down: { background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' },
+    down: { background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' },
     neutral: { background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' },
-    up: { background: 'rgba(22, 163, 74, 0.12)', color: '#15803d' }
+    up: { background: 'rgba(22, 163, 74, 0.12)', color: 'var(--text-primary)' }
 }
 
 /** Inline before/after pill shown next to a stat's value when the
@@ -187,7 +187,7 @@ export default function PlanScheduleStatStrip({
                         <span className="inline-flex items-center gap-1.5">
                             {customerSatisfaction.isLive && (
                                 <span
-                                    className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[rgba(220,_38,_38,_0.12)] text-red-600"
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[rgba(220,_38,_38,_0.12)] text-text-primary"
                                     title="Live — score updates as orders complete throughout the day"
                                 >
                                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-600" />
@@ -222,7 +222,7 @@ export default function PlanScheduleStatStrip({
                     badge={
                         <span className="inline-flex items-center gap-1.5">
                             <span
-                                className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[rgba(14,_165,_233,_0.14)] text-[#0ea5e9]"
+                                className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[rgba(14,_165,_233,_0.14)] text-text-primary"
                                 title="Forecast — based on which orders the pool simulation flags as NEEDS HELP"
                             >
                                 <i className="fas fa-wand-magic-sparkles text-[8px]" />

@@ -1,7 +1,4 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
-
-import { usePreferences } from '../../../../context/PreferencesContext'
 
 const ONE_OFFS = [
     {
@@ -28,9 +25,9 @@ const ONE_OFFS = [
 ]
 
 const RECENT_ICON = {
-    lost_load: { color: 'text-red-500', icon: 'fa-truck' },
-    qc_strength: { color: 'text-violet-600', icon: 'fa-flask' },
-    third_party_lab: { color: 'text-rose-600', icon: 'fa-vial' }
+    lost_load: { color: 'text-text-primary', icon: 'fa-truck' },
+    qc_strength: { color: 'text-text-primary', icon: 'fa-flask' },
+    third_party_lab: { color: 'text-text-primary', icon: 'fa-vial' }
 }
 
 /**
@@ -46,8 +43,6 @@ function QuickRail({
     onOpenLostLoad,
     recentItems = []
 }) {
-    const { preferences } = usePreferences()
-    const accent = preferences.accentColor || '#1e3a5f'
     const availability = {
         lost_load: hasLostLoadsPermission,
         qc_strength: hasQCStrengthPermission,
@@ -65,7 +60,7 @@ function QuickRail({
             {visible.length > 0 && (
                 <>
                     <div className="flex items-center gap-2 mb-3">
-                        <i className="fas fa-bolt text-[13px]" style={{ color: accent }} />
+                        <i className="fas fa-bolt text-[13px] text-text-primary" />
                         <span className="font-bold text-[14px] text-text-primary font-heading">One-off reports</span>
                         <span className="ml-auto text-[11px] text-text-secondary">Submit anytime</span>
                     </div>
@@ -88,7 +83,7 @@ function QuickRail({
                                     </div>
                                     <div className="text-[10.5px] truncate text-text-secondary">{o.sub}</div>
                                 </div>
-                                <i className="fas fa-plus text-[11px]" style={{ color: accent }} />
+                                <i className="fas fa-plus text-[11px] text-text-primary" />
                             </button>
                         ))}
                     </div>
@@ -98,7 +93,7 @@ function QuickRail({
                 <div className="mt-3.5 px-3 py-2.5 rounded-lg bg-bg-tertiary">
                     <div className="text-[11px] font-semibold mb-1.5 text-text-secondary">Recent</div>
                     {recentItems.slice(0, 3).map((r, idx) => {
-                        const cfg = RECENT_ICON[r.kind] || { color: 'text-slate-500', icon: 'fa-file-alt' }
+                        const cfg = RECENT_ICON[r.kind] || { color: 'text-text-primary', icon: 'fa-file-alt' }
                         return (
                             <div
                                 key={r.id || idx}

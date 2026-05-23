@@ -55,7 +55,7 @@ export function AiAnalysisCard({ aiAnalysis, aiError, aiLoading, onRegenerate, p
     }
     if (aiError) {
         return (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900 mb-6">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-text-primary mb-6">
                 <i className="fas fa-exclamation-triangle mr-2"></i>
                 Failed to generate AI analysis.
                 <button

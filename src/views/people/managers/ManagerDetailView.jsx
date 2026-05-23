@@ -522,13 +522,13 @@ function ManagerDetailView({ managerId, onClose }) {
                                     return (
                                         <span
                                             key={code}
-                                            className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700"
+                                            className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-text-primary"
                                         >
                                             ({code}) {p?.plant_name || ''}
                                             {!isReadOnly && canEditManager && (
                                                 <button
                                                     type="button"
-                                                    className="ml-1 text-blue-400 hover:text-blue-700"
+                                                    className="ml-1 text-text-tertiary hover:text-text-primary"
                                                     onClick={() =>
                                                         setAdditionalPlants((prev) => prev.filter((c) => c !== code))
                                                     }

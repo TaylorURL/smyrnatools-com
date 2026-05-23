@@ -217,7 +217,7 @@ function DetailViewSection({
                     className="flex h-20 w-20 items-center justify-center rounded-[20px]"
                     style={{ background: `${accent}12` }}
                 >
-                    <i className="fas fa-search text-[32px]" style={{ color: accent }}></i>
+                    <i className="fas fa-search text-[32px] text-text-primary"></i>
                 </div>
                 <div>
                     <h2 className="m-0 mb-2 text-[22px] font-bold text-slate-800">{notFoundMessage}</h2>
@@ -265,7 +265,7 @@ function DetailViewSection({
                         </button>
                         <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2.5">
-                                {icon && <i className={icon} style={{ color: accent, fontSize: 20 }}></i>}
+                                {icon && <i className={`${icon} text-text-primary`} style={{ fontSize: 20 }}></i>}
                                 <h1 className="dv-header-title m-0 truncate text-[22px] font-bold text-slate-900">
                                     {title}
                                 </h1>
@@ -411,7 +411,7 @@ function DetailViewSection({
                             <div className="w-full max-w-[360px] overflow-hidden rounded bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
                                 <div className="p-6 text-center">
                                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded bg-red-50">
-                                        <i className="fas fa-trash-alt text-2xl text-red-600"></i>
+                                        <i className="fas fa-trash-alt text-2xl text-text-primary"></i>
                                     </div>
                                     <h3 className="m-0 mb-1.5 text-lg font-bold text-slate-800">{deleteTitle}</h3>
                                     <p className="m-0 text-[13px] text-slate-500">{deleteMessage}</p>
@@ -521,7 +521,7 @@ function DetailViewSection({
                                         </div>
                                     )}
                                     {transferErr && (
-                                        <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-xs text-red-600">
+                                        <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-xs text-text-primary">
                                             <i className="fas fa-exclamation-circle"></i>
                                             {transferErr}
                                         </div>
@@ -610,7 +610,7 @@ DetailViewSection.Section = function Section({ id, title, icon, children }) {
                     className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[14px]"
                     style={{ background: `${accent}12` }}
                 >
-                    <i className={icon} style={{ color: accent, fontSize: 20 }}></i>
+                    <i className={`${icon} text-text-primary`} style={{ fontSize: 20 }}></i>
                 </div>
                 <h2 className="m-0 text-[22px] font-bold text-slate-800">{title}</h2>
             </div>
@@ -628,7 +628,7 @@ DetailViewSection.Card = function Card({ title, icon, children, actions, fullWid
             {title && (
                 <div className="flex items-center justify-between gap-2.5 border-b border-border-light bg-slate-50 px-5 py-3.5">
                     <div className="flex items-center gap-2.5 text-[15px] font-semibold text-slate-800">
-                        {icon && <i className={icon} style={{ color: accent, fontSize: 15 }}></i>}
+                        {icon && <i className={`${icon} text-text-primary`} style={{ fontSize: 15 }}></i>}
                         {title}
                     </div>
                     {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -651,7 +651,7 @@ DetailViewSection.Field = function Field({ label, value, empty = '-', icon }) {
     return (
         <div className="flex flex-col gap-1.5">
             <span className="flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">
-                {icon && <i className={icon} style={{ color: accent, fontSize: 11 }}></i>}
+                {icon && <i className={`${icon} text-text-primary`} style={{ fontSize: 11 }}></i>}
                 {label}
             </span>
             <span
@@ -669,7 +669,7 @@ DetailViewSection.Input = function Input({ label, icon, ...props }) {
         <div className="flex flex-col gap-1.5">
             {label && (
                 <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-700">
-                    {icon && <i className={icon} style={{ color: accent, fontSize: 12 }}></i>}
+                    {icon && <i className={`${icon} text-text-primary`} style={{ fontSize: 12 }}></i>}
                     {label}
                 </label>
             )}
@@ -690,7 +690,7 @@ DetailViewSection.Select = function Select({ label, icon, options = [], placehol
         <div className="flex flex-col gap-1.5">
             {label && (
                 <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-700">
-                    {icon && <i className={icon} style={{ color: accent, fontSize: 12 }}></i>}
+                    {icon && <i className={`${icon} text-text-primary`} style={{ fontSize: 12 }}></i>}
                     {label}
                 </label>
             )}
@@ -723,7 +723,7 @@ DetailViewSection.Textarea = function Textarea({ label, icon, ...props }) {
         <div className="flex flex-col gap-1.5">
             {label && (
                 <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-700">
-                    {icon && <i className={icon} style={{ color: accent, fontSize: 12 }}></i>}
+                    {icon && <i className={`${icon} text-text-primary`} style={{ fontSize: 12 }}></i>}
                     {label}
                 </label>
             )}
@@ -766,10 +766,10 @@ DetailViewSection.Divider = function Divider() {
 }
 DetailViewSection.Banner = function Banner({ type = 'info', icon, children }) {
     const types = {
-        error: { bg: '#fef2f2', border: '#fecaca', color: '#991b1b', icon: 'fa-times-circle' },
-        info: { bg: '#eff6ff', border: '#bfdbfe', color: '#1e40af', icon: 'fa-info-circle' },
-        success: { bg: '#f0fdf4', border: '#bbf7d0', color: '#166534', icon: 'fa-check-circle' },
-        warning: { bg: '#fffbeb', border: '#fde68a', color: '#92400e', icon: 'fa-exclamation-triangle' }
+        error: { bg: '#fef2f2', border: '#fecaca', icon: 'fa-times-circle' },
+        info: { bg: '#eff6ff', border: '#bfdbfe', icon: 'fa-info-circle' },
+        success: { bg: '#f0fdf4', border: '#bbf7d0', icon: 'fa-check-circle' },
+        warning: { bg: '#fffbeb', border: '#fde68a', icon: 'fa-exclamation-triangle' }
     }
     const t = types[type] || types.info
     return (
@@ -778,7 +778,7 @@ DetailViewSection.Banner = function Banner({ type = 'info', icon, children }) {
             style={{
                 background: t.bg,
                 border: `1px solid ${t.border}`,
-                color: t.color
+                color: 'var(--text-primary)'
             }}
         >
             <i className={`fas ${icon || t.icon}`}></i>

@@ -49,7 +49,7 @@ export default function BookOrderForm({
             <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
                 <div
                     className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 bg-bg-tertiary"
-                    style={{ color: accentColor }}
+                    style={{ color: 'var(--text-primary)' }}
                 >
                     <i className="fas fa-clipboard-list text-[16px]" />
                 </div>
@@ -80,9 +80,9 @@ export default function BookOrderForm({
                         className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
                         style={FIELD_STYLE}
                     />
-                    {dateError && <p className="mt-1.5 text-[11px] text-red-600">{dateError}</p>}
+                    {dateError && <p className="mt-1.5 text-[11px] text-text-primary">{dateError}</p>}
                     {!dateError && planDateIsSunday && (
-                        <p className="mt-1.5 text-[11px] text-red-600">
+                        <p className="mt-1.5 text-[11px] text-text-primary">
                             Plants are closed on Sundays — pick a weekday or Saturday.
                         </p>
                     )}
@@ -124,12 +124,12 @@ export default function BookOrderForm({
                             style={FIELD_STYLE}
                         />
                         {startTimeMalformed && (
-                            <p className="mt-1.5 text-[11px] text-red-600">
+                            <p className="mt-1.5 text-[11px] text-text-primary">
                                 Use 24-hour HH:MM (e.g. 09:00, 14:30, 23:15).
                             </p>
                         )}
                         {!startTimeMalformed && startTimeIsPast && (
-                            <p className="mt-1.5 text-[11px] text-red-600">
+                            <p className="mt-1.5 text-[11px] text-text-primary">
                                 Start time has already passed today — pick a later time or change the date.
                             </p>
                         )}
@@ -212,7 +212,7 @@ export default function BookOrderForm({
 
                 {request &&
                     (request.exceedsShiftLimit ? (
-                        <div className="rounded-lg px-3 py-2.5 text-[12px] flex flex-col gap-1.5 bg-[rgba(220,_38,_38,_0.08)] border border-[rgba(220,_38,_38,_0.35)] text-red-700">
+                        <div className="rounded-lg px-3 py-2.5 text-[12px] flex flex-col gap-1.5 bg-[rgba(220,_38,_38,_0.08)] border border-[rgba(220,_38,_38,_0.35)] text-text-primary">
                             <div className="flex items-center gap-1.5 font-semibold">
                                 <i className="fas fa-triangle-exclamation text-[11px]" />
                                 Pour exceeds the 14-hour shift limit
@@ -222,7 +222,7 @@ export default function BookOrderForm({
                                 {(request.projectedShiftMin / 60).toFixed(1)}h from first load-out to back-at-yard —
                                 over the 14h driver-shift cap.
                             </div>
-                            <div className="text-[11px] text-[#b45309]">
+                            <div className="text-[11px] text-text-secondary">
                                 Drop the spacing below it or shrink the yardage so the pour fits a single 14h shift.
                             </div>
                         </div>

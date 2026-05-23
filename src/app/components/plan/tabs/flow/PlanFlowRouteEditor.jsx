@@ -183,7 +183,7 @@ export function PlanFlowRouteEditor({
                     </button>
                 </div>
                 {pickingDestination && (
-                    <div className="text-[11px] mt-1 text-[#b45309]">
+                    <div className="text-[11px] mt-1 text-text-primary">
                         Click any plant on the map to set the destination.
                     </div>
                 )}
@@ -263,13 +263,13 @@ export function PlanFlowRouteEditor({
 
             {isCustom && <CustomTimeRows draft={draft} driverCount={driverCount} onUpdate={updateCustomTime} />}
 
-            <SummaryRow accentColor={accentColor} clockIn={clockIn} returnTime={returnTime} travel={travel} />
+            <SummaryRow clockIn={clockIn} returnTime={returnTime} travel={travel} />
 
             <div className="flex gap-2 pt-1">
                 {onDelete && (
                     <button
                         onClick={onDelete}
-                        className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-red-600"
+                        className="px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer border bg-bg-primary border-border-medium text-text-primary"
                     >
                         <i className="fas fa-trash mr-1" /> Delete
                     </button>
@@ -434,33 +434,23 @@ function CustomTimeRows({ draft, driverCount, onUpdate }) {
     )
 }
 
-function SummaryRow({ accentColor, clockIn, returnTime, travel }) {
+function SummaryRow({ clockIn, returnTime, travel }) {
     return (
         <div className="grid grid-cols-3 rounded-lg overflow-hidden border border-border-light">
             <SummaryCell label="Travel" value={travel != null ? `${travel}m` : '—'} />
-            <SummaryCell label="Clock-in" value={clockIn || '—'} valueColor={clockIn ? '#16a34a' : undefined} />
-            <SummaryCell
-                label="Return"
-                value={returnTime || '—'}
-                valueColor={returnTime ? accentColor : undefined}
-                isLast
-            />
+            <SummaryCell label="Clock-in" value={clockIn || '—'} />
+            <SummaryCell label="Return" value={returnTime || '—'} isLast />
         </div>
     )
 }
 
-function SummaryCell({ isLast = false, label, value, valueColor }) {
+function SummaryCell({ isLast = false, label, value }) {
     return (
         <div
             className={`px-3 py-2 flex flex-col gap-0.5 bg-bg-primary ${isLast ? '' : 'border-r border-border-light'}`}
         >
             <span className="text-[10.5px] text-text-secondary">{label}</span>
-            <span
-                className="text-[14px] font-semibold font-mono tabular-nums truncate"
-                style={{ color: valueColor || 'var(--text-primary)' }}
-            >
-                {value}
-            </span>
+            <span className="text-[14px] font-semibold font-mono tabular-nums truncate text-text-primary">{value}</span>
         </div>
     )
 }

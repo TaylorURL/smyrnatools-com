@@ -6,9 +6,13 @@ import UserUtility from '../../../utils/UserUtility'
  *  user's accent; danger flips to red. */
 function ChatHeaderIconButton({ accentColor, active = false, danger = false, icon, onClick, title }) {
     const styles = danger
-        ? { background: 'rgba(220, 38, 38, 0.12)', borderColor: 'rgba(220, 38, 38, 0.3)', color: '#dc2626' }
+        ? {
+              background: 'rgba(220, 38, 38, 0.12)',
+              borderColor: 'rgba(220, 38, 38, 0.3)',
+              color: 'var(--text-primary)'
+          }
         : active
-          ? { background: `${accentColor}1a`, borderColor: `${accentColor}55`, color: accentColor }
+          ? { background: `${accentColor}1a`, borderColor: `${accentColor}55`, color: 'var(--text-primary)' }
           : { background: 'var(--bg-secondary)', borderColor: 'var(--border-light)', color: 'var(--text-secondary)' }
     return (
         <button

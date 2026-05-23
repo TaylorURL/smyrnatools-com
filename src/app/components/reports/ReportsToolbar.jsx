@@ -182,10 +182,9 @@ export function ReportsActionBar({
             {onRefresh && <RefreshButton isRefreshing={isRefreshing} onClick={onRefresh} />}
             {scopeLabel && (
                 <span
-                    className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1"
+                    className="inline-flex items-center gap-1.5 rounded text-[11px] font-semibold px-2 py-1 text-text-primary"
                     style={{
-                        background: `${accentColor}${isDark ? '30' : '15'}`,
-                        color: accentColor
+                        background: `${accentColor}${isDark ? '30' : '15'}`
                     }}
                 >
                     <i className="fas fa-bullseye text-[9px]" />

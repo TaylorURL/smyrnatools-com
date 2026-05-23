@@ -77,14 +77,14 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
         return (
             <div className="flex flex-col gap-4">
                 <StatGroup columns={4}>
-                    <Stat label="In shop" value="0" hint="shop is empty" valueColor="#15803d" />
+                    <Stat label="In shop" value="0" hint="shop is empty" />
                     <Stat label="Shop rate" value="0%" hint="of operational fleet" />
                     <Stat label="Avg days in shop" value="—" hint="no shop entries" />
                     <Stat label={`Stuck > ${stuckThreshold}d`} value="0" hint="nothing flagged" />
                 </StatGroup>
                 <Panel title="Nothing in the shop right now" innerClassName="p-6">
                     <div className="flex items-center justify-center gap-2 py-4 text-[12.5px] text-text-secondary">
-                        <i className="fas fa-circle-check text-[18px]" style={{ color: '#15803d' }} />
+                        <i className="fas fa-circle-check text-[18px]" />
                         Every operational asset in scope is on the road or on standby.
                     </div>
                 </Panel>
@@ -95,30 +95,15 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
     return (
         <div className="flex flex-col gap-4">
             <StatGroup columns={4}>
-                <Stat
-                    label="In shop"
-                    value={fmtInt(totalInShop)}
-                    hint={`${fmtPct(shopRate * 100)} of fleet`}
-                    valueColor={totalInShop > 0 ? '#b45309' : '#15803d'}
-                />
+                <Stat label="In shop" value={fmtInt(totalInShop)} hint={`${fmtPct(shopRate * 100)} of fleet`} />
                 <Stat
                     label="Avg days in shop"
                     value={avgShopDays != null ? `${fmtFloat(avgShopDays)}d` : '—'}
                     hint={supportsSubStatuses ? 'across every sub-status' : 'time in shop status'}
                 />
-                <Stat
-                    label={`Stuck > ${stuckThreshold}d`}
-                    value={fmtInt(stuckCount)}
-                    hint="needs attention"
-                    valueColor={stuckCount > 0 ? '#b91c1c' : '#15803d'}
-                />
+                <Stat label={`Stuck > ${stuckThreshold}d`} value={fmtInt(stuckCount)} hint="needs attention" />
                 {supportsSubStatuses ? (
-                    <Stat
-                        label="Ready for pickup"
-                        value={fmtInt(readyForPickupCount)}
-                        hint="done, awaiting pickup"
-                        valueColor={readyForPickupCount > 0 ? '#15803d' : undefined}
-                    />
+                    <Stat label="Ready for pickup" value={fmtInt(readyForPickupCount)} hint="done, awaiting pickup" />
                 ) : (
                     <Stat label="Plants impacted" value={fmtInt(shopByPlant.length)} hint="plants with shop entries" />
                 )}
@@ -243,47 +228,19 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                                             </td>
                                             {supportsSubStatuses && (
                                                 <>
-                                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
+                                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                                         {row.inShop > 0 ? fmtInt(row.inShop) : '—'}
                                                     </td>
-                                                    <td
-                                                        className="px-2 py-2 text-right font-mono tabular-nums"
-                                                        style={{
-                                                            color:
-                                                                row.thirdParty > 0 ? '#b45309' : 'var(--text-secondary)'
-                                                        }}
-                                                    >
+                                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                                         {row.thirdParty > 0 ? fmtInt(row.thirdParty) : '—'}
                                                     </td>
-                                                    <td
-                                                        className="px-2 py-2 text-right font-mono tabular-nums"
-                                                        style={{
-                                                            color:
-                                                                row.readyForPickup > 0
-                                                                    ? '#15803d'
-                                                                    : 'var(--text-secondary)'
-                                                        }}
-                                                    >
+                                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                                         {row.readyForPickup > 0 ? fmtInt(row.readyForPickup) : '—'}
                                                     </td>
-                                                    <td
-                                                        className="px-2 py-2 text-right font-mono tabular-nums"
-                                                        style={{
-                                                            color:
-                                                                row.waitingForShop > 0
-                                                                    ? '#ea580c'
-                                                                    : 'var(--text-secondary)'
-                                                        }}
-                                                    >
+                                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                                         {row.waitingForShop > 0 ? fmtInt(row.waitingForShop) : '—'}
                                                     </td>
-                                                    <td
-                                                        className="px-2 py-2 text-right font-mono tabular-nums"
-                                                        style={{
-                                                            color:
-                                                                row.downInYard > 0 ? '#b91c1c' : 'var(--text-secondary)'
-                                                        }}
-                                                    >
+                                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                                         {row.downInYard > 0 ? fmtInt(row.downInYard) : '—'}
                                                     </td>
                                                 </>
@@ -312,7 +269,6 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                     onSelect={onSelectAsset}
                     rows={stuckInShop}
                     valueAccessor={(row) => row.days}
-                    valueColor={(value) => (value >= 60 ? '#b91c1c' : value >= 30 ? '#b45309' : 'var(--text-primary)')}
                     valueFormatter={(value) => (value == null ? '—' : `${fmtInt(value)}d`)}
                 />
             </Panel>
@@ -352,8 +308,7 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                                             <button
                                                 type="button"
                                                 onClick={() => onSelectAsset?.(row)}
-                                                className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left"
-                                                style={{ color: accent }}
+                                                className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left text-text-primary"
                                             >
                                                 {row.identifier}
                                             </button>
@@ -369,10 +324,7 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                                         <td className="px-2 py-2">
                                             <StatusPill status={row.status} />
                                         </td>
-                                        <td
-                                            className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                            style={{ color: row.days >= 14 ? '#b45309' : 'var(--text-primary)' }}
-                                        >
+                                        <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-text-primary">
                                             {row.days == null ? '—' : `${fmtInt(row.days)}d`}
                                         </td>
                                     </tr>
@@ -387,7 +339,7 @@ export function AssetStatisticsShopPerformancePage({ accentColor, onSelectAsset,
                 inline so the operations team can celebrate a clean shop. */}
             {summary.total > 0 && totalInShop / summary.total < 0.05 && (
                 <div className="flex items-center justify-center gap-2 py-2 text-[12px] text-text-secondary">
-                    <i className="fas fa-circle-check text-[14px]" style={{ color: '#15803d' }} />
+                    <i className="fas fa-circle-check text-[14px]" />
                     Shop is running lean — under 5% of the fleet is in repair.
                 </div>
             )}

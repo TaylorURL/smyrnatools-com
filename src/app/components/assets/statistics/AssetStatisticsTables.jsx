@@ -14,14 +14,14 @@ const STATUS_PILL_COLORS = {
     'Waiting For Shop': '#ea580c'
 }
 
-/** Small inline pill for asset status — matches the list view badge palette
- *  so the same status reads the same color in every surface. */
+/** Small inline pill for asset status — palette-tinted background carries
+ *  the status semantic; text is theme-aware so it reads in light/dark. */
 export function StatusPill({ status }) {
     const color = STATUS_PILL_COLORS[status] || '#64748b'
     return (
         <span
-            className="inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums"
-            style={{ background: `${color}1f`, color }}
+            className="inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums text-text-primary"
+            style={{ background: `${color}1f` }}
         >
             {status}
         </span>
@@ -107,44 +107,25 @@ export function PlantScorecardTable({ accent, config, hasService, rows, totalFle
                                 <td className="px-2 py-2 text-right font-mono tabular-nums text-text-secondary">
                                     {fmtInt(plant.spare)}
                                 </td>
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums"
-                                    style={{ color: plant.shop > 0 ? '#b45309' : 'var(--text-secondary)' }}
-                                >
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                     {fmtInt(plant.shop)}
                                 </td>
                                 {config?.hasVerification && (
-                                    <td
-                                        className="px-2 py-2 text-right font-mono tabular-nums"
-                                        style={{ color: verifiedRate >= 80 ? '#15803d' : '#b91c1c' }}
-                                    >
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                         {fmtPct(verifiedRate)}
                                     </td>
                                 )}
                                 {hasService && (
-                                    <td
-                                        className="px-2 py-2 text-right font-mono tabular-nums"
-                                        style={{
-                                            color: plant.overdueService > 0 ? '#b91c1c' : 'var(--text-secondary)'
-                                        }}
-                                    >
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                         {fmtInt(plant.overdueService)}
                                     </td>
                                 )}
                                 {config?.hasOperatorAssignment && (
-                                    <td
-                                        className="px-2 py-2 text-right font-mono tabular-nums"
-                                        style={{
-                                            color: plant.unassignedActive > 0 ? '#b45309' : 'var(--text-secondary)'
-                                        }}
-                                    >
+                                    <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                         {fmtInt(plant.unassignedActive)}
                                     </td>
                                 )}
-                                <td
-                                    className="px-2 py-2 text-right font-mono tabular-nums"
-                                    style={{ color: plant.openIssues > 0 ? '#b91c1c' : 'var(--text-secondary)' }}
-                                >
+                                <td className="px-2 py-2 text-right font-mono tabular-nums text-text-primary">
                                     {fmtInt(plant.openIssues)}
                                 </td>
                                 <td className="px-3 py-2 text-right font-mono tabular-nums text-text-secondary">
@@ -162,15 +143,7 @@ export function PlantScorecardTable({ accent, config, hasService, rows, totalFle
 /** Generic asset watchlist — identifier + plant + status + a single trailing
  *  metric column. Used by every "top N assets" surface across the pages so
  *  the table style stays consistent. */
-export function AssetWatchlistTable({
-    accent,
-    headerLabel,
-    onSelect,
-    rows,
-    valueAccessor,
-    valueColor,
-    valueFormatter
-}) {
+export function AssetWatchlistTable({ accent, headerLabel, onSelect, rows, valueAccessor, valueFormatter }) {
     if (!rows.length) {
         return (
             <div className="text-[12px] py-4 text-center text-text-tertiary">
@@ -201,15 +174,13 @@ export function AssetWatchlistTable({
                     {rows.map((row) => {
                         const value = valueAccessor(row)
                         const formatted = valueFormatter ? valueFormatter(value, row) : value
-                        const color = valueColor ? valueColor(value, row) : 'var(--text-primary)'
                         return (
                             <tr className="border-t border-border-light" key={row.id || row.identifier}>
                                 <td className="px-3 py-2">
                                     <button
                                         type="button"
                                         onClick={() => onSelect?.(row)}
-                                        className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left"
-                                        style={{ color: accent }}
+                                        className="font-mono tabular-nums font-semibold bg-transparent border-none cursor-pointer p-0 text-left text-text-primary"
                                     >
                                         {row.identifier}
                                     </button>
@@ -223,10 +194,7 @@ export function AssetWatchlistTable({
                                 <td className="px-2 py-2">
                                     <StatusPill status={row.status} />
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                    style={{ color }}
-                                >
+                                <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-text-primary">
                                     {formatted}
                                 </td>
                             </tr>
@@ -267,10 +235,7 @@ export function CleanlinessPlantList({ accent, rows }) {
                         <span className="font-mono tabular-nums font-semibold w-12 text-right shrink-0 text-text-primary">
                             {avg ? avg.toFixed(2) : '—'}
                         </span>
-                        <span
-                            className="font-mono tabular-nums w-16 text-right shrink-0"
-                            style={{ color: row.dirty > 0 ? '#b91c1c' : 'var(--text-tertiary)' }}
-                        >
+                        <span className="font-mono tabular-nums w-16 text-right shrink-0 text-text-tertiary">
                             {row.dirty > 0 ? `${row.dirty} dirty` : `${row.samples} rated`}
                         </span>
                     </div>

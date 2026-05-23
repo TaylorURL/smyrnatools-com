@@ -64,7 +64,7 @@ function AssetGridCard({
                 {config.hasVerification && isVerified !== undefined && (
                     <span
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold flex-shrink-0 ${
-                            isVerified ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#fef3c7] text-[#92400e]'
+                            isVerified ? 'bg-[#dcfce7] text-text-primary' : 'bg-[#fef3c7] text-text-primary'
                         }`}
                     >
                         <i className={`fas ${isVerified ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
@@ -153,21 +153,19 @@ function AssetGridCard({
                             <span className="text-[10px] font-medium uppercase tracking-wide text-[color:var(--text-secondary)]">
                                 {field.label}
                             </span>
-                            <span
-                                className={`text-[13px] font-semibold ${isOverdue ? 'text-red-600' : 'text-[color:var(--text-primary)]'}`}
-                            >
+                            <span className="text-[13px] font-semibold text-[color:var(--text-primary)]">
                                 {field.type === 'stars' ? (
                                     <span className="inline-flex items-center gap-1">
                                         <span className="inline-flex gap-px text-[11px]">
                                             {Array.from({ length: 5 }).map((_, i) => (
                                                 <i
                                                     key={i}
-                                                    className={`fas fa-star ${i < (value || 0) ? 'text-yellow-400' : 'text-[color:var(--border-light)]'}`}
+                                                    className={`fas fa-star ${i < (value || 0) ? 'text-text-primary' : 'text-[color:var(--border-light)]'}`}
                                                 />
                                             ))}
                                         </span>
                                         {warning && (
-                                            <span className="bg-red-100 text-red-600 text-[9px] font-bold px-1.5 py-0.5 rounded ml-1">
+                                            <span className="bg-red-100 text-text-primary text-[9px] font-bold px-1.5 py-0.5 rounded ml-1">
                                                 {warning}
                                             </span>
                                         )}
@@ -180,7 +178,7 @@ function AssetGridCard({
                                     <span className="inline-flex items-center gap-1.5">
                                         {value}
                                         {isOverdue && (
-                                            <span className="bg-red-100 text-red-600 text-[8px] font-bold px-1.5 py-0.5 rounded">
+                                            <span className="bg-red-100 text-text-primary text-[8px] font-bold px-1.5 py-0.5 rounded">
                                                 OVERDUE
                                             </span>
                                         )}

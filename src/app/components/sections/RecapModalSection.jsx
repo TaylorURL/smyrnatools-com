@@ -811,7 +811,7 @@ function RecapModalSection({
                                                         <span className="line-through text-[12px] truncate text-text-secondary">
                                                             {group.name}
                                                         </span>
-                                                        <span className="px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider rounded shrink-0 bg-red-100 text-red-700">
+                                                        <span className="px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider rounded shrink-0 bg-red-100 text-text-primary">
                                                             Terminated
                                                         </span>
                                                     </span>
@@ -855,11 +855,11 @@ function RecapModalSection({
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5 mt-0.5 text-[11px]">
-                                                                    <span className="px-1.5 py-0.5 rounded truncate max-w-[130px] font-mono tabular-nums bg-red-100 text-red-700">
+                                                                    <span className="px-1.5 py-0.5 rounded truncate max-w-[130px] font-mono tabular-nums bg-red-100 text-text-primary">
                                                                         {formatValue(entry.old_value, entry.field_name)}
                                                                     </span>
                                                                     <i className="fa-solid fa-arrow-right text-[8px] shrink-0 text-text-tertiary" />
-                                                                    <span className="px-1.5 py-0.5 rounded truncate max-w-[130px] font-mono tabular-nums bg-green-100 text-[#166534]">
+                                                                    <span className="px-1.5 py-0.5 rounded truncate max-w-[130px] font-mono tabular-nums bg-green-100 text-text-primary">
                                                                         {formatValue(entry.new_value, entry.field_name)}
                                                                     </span>
                                                                 </div>

@@ -179,7 +179,7 @@ function SettingRow({ error, field, onChange, value }) {
                 </label>
                 <p className="text-[11.5px] text-text-tertiary leading-snug mt-0.5">{field.helper}</p>
                 {error && (
-                    <p className="mt-1 text-[11.5px] font-semibold" style={{ color: '#dc2626' }}>
+                    <p className="mt-1 text-[11.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                         {error}
                     </p>
                 )}
@@ -272,14 +272,14 @@ function ActionBar({
 function StatusMessage({ dirtyCount, error, hasValidationErrors, isDirty, showSavedFlash }) {
     if (error) {
         return (
-            <div className="text-[12px] font-semibold" style={{ color: '#dc2626' }}>
+            <div className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {error}
             </div>
         )
     }
     if (hasValidationErrors) {
         return (
-            <div className="text-[12px] font-semibold" style={{ color: '#dc2626' }}>
+            <div className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Fix the highlighted fields before saving.
             </div>
         )
@@ -294,7 +294,7 @@ function StatusMessage({ dirtyCount, error, hasValidationErrors, isDirty, showSa
     }
     if (showSavedFlash) {
         return (
-            <div className="text-[12px] font-semibold" style={{ color: '#16a34a' }}>
+            <div className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                 <i className="fas fa-check mr-1.5" />
                 Settings saved.
             </div>

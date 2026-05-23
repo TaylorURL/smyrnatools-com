@@ -10,10 +10,7 @@ const GOOD = '#16a34a'
 const BAD = '#dc2626'
 const LATE = '#f59e0b'
 const SLOW = '#ea580c'
-const KICKER = '#dc2626'
 const SAME_DAY = '#d97706'
-
-const GOOD_THRESHOLD = 0.85
 
 /** Format a yardage value with a trailing unit. Drops the decimal when
  *  the kicker lands on a whole yard so the table reads cleanly. */
@@ -31,13 +28,10 @@ const fmtMinutes = (n) => {
     return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
 
-const pctColor = (pct) => (pct == null ? 'var(--text-tertiary)' : pct >= GOOD_THRESHOLD ? GOOD : BAD)
-
-/* Tier-aware verdict palette + labels. Lateness severity tiers
- * (Not Good / Bad / Very Bad) and slow are SEPARATE dimensions —
- * slow is a pour-pace failure, lateness is an arrival-time failure.
- * A slow-only on-time order reads "Slow" (orange), not "Not Good".
- * An order that's both late and slow reads "<Tier> + slow". */
+/* Tier-aware verdict palette. Lateness severity tiers (Not Good / Bad /
+ * Very Bad) and slow are SEPARATE dimensions — slow is a pour-pace
+ * failure, lateness is an arrival-time failure. Used as the dot fill in
+ * `VerdictTrail` so the timeline reads as a colored sparkline. */
 const TIER_TO_COLOR = { bad: BAD, good: GOOD, notGood: LATE, veryBad: '#7f1d1d' }
 
 const verdictColor = (m) => {
@@ -160,13 +154,13 @@ function CustomerCard({ customer, isActive, onSelect, orders }) {
                     {customer.lateJobs > 0 && (
                         <>
                             <span className="mx-1.5">·</span>
-                            <span style={{ color: LATE }}>{fmtInt(customer.lateJobs)} late</span>
+                            <span className="text-text-secondary">{fmtInt(customer.lateJobs)} late</span>
                         </>
                     )}
                     {customer.slowJobs > 0 && (
                         <>
                             <span className="mx-1.5">·</span>
-                            <span style={{ color: SLOW }}>{fmtInt(customer.slowJobs)} slow</span>
+                            <span className="text-text-secondary">{fmtInt(customer.slowJobs)} slow</span>
                         </>
                     )}
                 </div>
@@ -179,16 +173,11 @@ function CustomerCard({ customer, isActive, onSelect, orders }) {
     )
 }
 
-function StatBlock({ label, sub, value, valueColor }) {
+function StatBlock({ label, sub, value }) {
     return (
         <div className="flex flex-col gap-0.5">
             <div className="text-[11px] text-text-tertiary">{label}</div>
-            <div
-                className="text-[18px] font-semibold tabular-nums leading-tight"
-                style={{ color: valueColor || 'var(--text-primary)' }}
-            >
-                {value}
-            </div>
+            <div className="text-[18px] font-semibold tabular-nums leading-tight text-text-primary">{value}</div>
             {sub && <div className="text-[10.5px] text-text-tertiary">{sub}</div>}
         </div>
     )
@@ -250,7 +239,7 @@ function CustomerOrdersTable({ colocationMap, orders, plantNameByCode }) {
                                     </span>
                                     {formatColocatedPlantLabel(m.plantCode, plantNameByCode, colocationMap)}
                                 </td>
-                                <td className="px-3 py-2 text-[12px] font-semibold" style={{ color: verdictColor(m) }}>
+                                <td className="px-3 py-2 text-[12px] font-semibold">
                                     <div className="flex items-center gap-1.5">
                                         <span>{verdictLabel(m)}</span>
                                         {m.isSameDay && (
@@ -271,10 +260,7 @@ function CustomerOrdersTable({ colocationMap, orders, plantNameByCode }) {
                                 <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-secondary">
                                     {m.firstLoadTime || '—'}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12px] tabular-nums"
-                                    style={{ color: m.isLate ? LATE : 'var(--text-tertiary)' }}
-                                >
+                                <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-primary">
                                     {m.isLate ? fmtMinutes(m.latenessMin) : '—'}
                                 </td>
                                 <td className="px-3 py-2 text-right">
@@ -285,8 +271,7 @@ function CustomerOrdersTable({ colocationMap, orders, plantNameByCode }) {
                                     )}
                                 </td>
                                 <td
-                                    className="px-3 py-2 text-right text-[12px] tabular-nums font-semibold"
-                                    style={{ color: kickerLabel ? KICKER : 'var(--text-tertiary)' }}
+                                    className="px-3 py-2 text-right text-[12px] tabular-nums font-semibold text-text-primary"
                                     title={
                                         kickerLabel
                                             ? `${m.kickerLoads} kicker load${m.kickerLoads === 1 ? '' : 's'}`
@@ -345,7 +330,6 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                 <StatBlock
                     label="Late"
                     value={fmtInt(customer.lateJobs)}
-                    valueColor={customer.lateJobs > 0 ? LATE : undefined}
                     sub={
                         customer.lateJobs > 0
                             ? `Avg ${fmtMinutes(customer.avgLateMin)} · worst ${fmtMinutes(customer.worstLateMin)}`
@@ -355,14 +339,9 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                 <StatBlock
                     label="Slow"
                     value={fmtInt(customer.slowJobs)}
-                    valueColor={customer.slowJobs > 0 ? SLOW : undefined}
                     sub={lateAndSlow > 0 ? `${fmtInt(lateAndSlow)} also late` : null}
                 />
-                <StatBlock
-                    label="Bad total"
-                    value={fmtInt(customer.badJobs)}
-                    valueColor={customer.badJobs > 0 ? BAD : undefined}
-                />
+                <StatBlock label="Bad total" value={fmtInt(customer.badJobs)} />
             </div>
 
             {customer.tierCounts && (

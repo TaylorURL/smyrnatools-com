@@ -9,7 +9,7 @@ function OperatorExclusionReasonModal({ onConfirm, onCancel }) {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4">
             <div className="bg-bg-primary rounded-2xl p-5 sm:p-8 max-w-md w-full shadow-2xl">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-amber-100 text-text-primary">
                         <i className="fas fa-users-slash"></i>
                     </div>
                     <div>
@@ -36,7 +36,7 @@ function OperatorExclusionReasonModal({ onConfirm, onCancel }) {
                                 value={key}
                                 checked={selectedReason === key}
                                 onChange={() => setSelectedReason(key)}
-                                className="w-4 h-4 text-sky-600 focus:ring-sky-500"
+                                className="w-4 h-4 text-text-primary focus:ring-sky-500"
                             />
                             <div className="flex items-center gap-2">
                                 <i

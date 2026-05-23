@@ -55,7 +55,7 @@ export function FieldLabel({ children, icon, required }) {
         <label className={`${SECTION_LABEL_CLASS} flex items-center gap-1.5 text-text-tertiary`}>
             {icon && <i className={`fas ${icon} text-[10px]`} />}
             {children}
-            {required && <span className="text-red-600">*</span>}
+            {required && <span className="text-text-primary">*</span>}
         </label>
     )
 }
@@ -100,9 +100,9 @@ export function SafetyEmptyState({ success }) {
         <div className="flex flex-col items-center justify-center gap-1.5 py-8 px-4 rounded bg-bg-secondary border border-border-medium">
             <i
                 className={`fas ${success ? 'fa-circle-check' : 'fa-shield-alt'} text-[22px]`}
-                style={{ color: success ? '#16a34a' : 'var(--text-tertiary)' }}
+                style={{ color: 'var(--text-primary)' }}
             />
-            <div className="text-[12.5px] font-semibold" style={{ color: success ? '#15803d' : 'var(--text-primary)' }}>
+            <div className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {success ? 'All Clear' : 'No Issues Reported'}
             </div>
             <div className="text-[11.5px] text-text-tertiary">
@@ -124,12 +124,12 @@ export function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
                     {idx + 1}
                 </div>
                 {issue.plant && (
-                    <IssueChip color="#1e40af" icon="fas fa-industry" tint="rgba(59, 130, 246, 0.12)">
+                    <IssueChip icon="fas fa-industry" tint="rgba(59, 130, 246, 0.12)">
                         {issue.plant === 'All' ? 'All Plants' : `Plant ${issue.plant}`}
                     </IssueChip>
                 )}
                 {issue.date && (
-                    <IssueChip color="#15803d" icon="fas fa-calendar" tint="rgba(22, 163, 74, 0.12)">
+                    <IssueChip icon="fas fa-calendar" tint="rgba(22, 163, 74, 0.12)">
                         {new Date(issue.date + 'T00:00:00').toLocaleDateString('en-US', {
                             day: 'numeric',
                             month: 'short',
@@ -138,7 +138,7 @@ export function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
                     </IssueChip>
                 )}
                 {issue.affectsEfficiency && (
-                    <IssueChip color="#b91c1c" icon="fas fa-chart-line" tint="rgba(220, 38, 38, 0.12)">
+                    <IssueChip icon="fas fa-chart-line" tint="rgba(220, 38, 38, 0.12)">
                         Affects Efficiency
                     </IssueChip>
                 )}
@@ -148,7 +148,7 @@ export function IssueCardHeader({ idx, issue, onRemove, readOnly }) {
                     type="button"
                     onClick={onRemove}
                     title="Remove issue"
-                    className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-red-700 h-6 w-6"
+                    className="flex items-center justify-center rounded border-none cursor-pointer bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-6 w-6"
                 >
                     <i className="fas fa-trash-alt text-[10px]" />
                 </button>

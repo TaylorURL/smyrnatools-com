@@ -159,12 +159,12 @@ function OperatorSelectModal({
                             found
                         </span>
                         {assignedPlant ? (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-100 text-text-primary rounded-md text-xs font-medium">
                                 <i className="fas fa-building"></i>
                                 Plant: {assignedPlant}
                             </span>
                         ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-xs font-medium">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-100 text-text-primary rounded-md text-xs font-medium">
                                 <i className="fas fa-exclamation-triangle"></i>
                                 No plant selected
                             </span>
@@ -258,13 +258,13 @@ function OperatorSelectModal({
                                                 </span>
                                             )}
                                             {isInactive && (
-                                                <span className="inline-flex items-center gap-1 text-amber-600">
+                                                <span className="inline-flex items-center gap-1 text-text-primary">
                                                     <i className="fas fa-exclamation-triangle"></i>
                                                     {operator.status}
                                                 </span>
                                             )}
                                             {isAssigned && operator.status === 'Active' && (
-                                                <span className="inline-flex items-center gap-1 text-red-500">
+                                                <span className="inline-flex items-center gap-1 text-text-primary">
                                                     <i className="fas fa-user-slash"></i>
                                                     Already Assigned
                                                 </span>

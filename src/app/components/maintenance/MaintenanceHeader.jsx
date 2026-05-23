@@ -45,7 +45,7 @@ function RegionScopeChip({ regionLabel }) {
     if (!regionLabel) return null
     return (
         <span className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full bg-bg-secondary border border-border-light text-text-primary">
-            <i className="fas fa-location-dot text-[10px] text-green-600" />
+            <i className="fas fa-location-dot text-[10px] text-text-primary" />
             <span className="truncate">{regionLabel}</span>
         </span>
     )

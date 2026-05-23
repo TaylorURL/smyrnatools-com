@@ -4,7 +4,7 @@ import DeadlineFuse from '../../DeadlineFuse'
 
 /** A single stat cell — mirrors OperationsView's RegionTotalCell layout (icon box +
  *  uppercase label + mono value) so the two surfaces share a visual rhythm. */
-function SummaryCell({ accent, color, hint, icon, label, value, valueColor, warning }) {
+function SummaryCell({ accent, color, hint, icon, label, value, warning }) {
     const accentTint = `${accent}14`
     return (
         <div
@@ -18,17 +18,14 @@ function SummaryCell({ accent, color, hint, icon, label, value, valueColor, warn
                 className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
                 style={{
                     background: warning ? color || '#dc2626' : accentTint,
-                    color: warning ? '#fff' : accent
+                    color: warning ? '#fff' : 'var(--text-primary)'
                 }}
             >
                 <i className={`fas ${icon} text-[11px]`} />
             </div>
             <div className="flex flex-col leading-tight">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-text-secondary">{label}</span>
-                <span
-                    className="text-[14px] font-bold font-mono tabular-nums font-heading"
-                    style={{ color: valueColor || 'var(--text-primary)' }}
-                >
+                <span className="text-[14px] font-bold font-mono tabular-nums font-heading text-text-primary">
                     {value}
                 </span>
                 {hint && <span className="text-[10px] text-text-secondary">{hint}</span>}
@@ -76,7 +73,6 @@ export default function MyReportsSummaryBar({
                 icon="fa-circle-check"
                 label="Submitted"
                 value={totalAssigned > 0 ? `${submitted}/${totalAssigned}` : '—'}
-                valueColor={allDone ? '#16a34a' : undefined}
                 hint={completionPct != null ? `${completionPct}% complete` : undefined}
             />
 
@@ -86,7 +82,6 @@ export default function MyReportsSummaryBar({
                 icon="fa-hourglass-half"
                 label="Pending"
                 value={pending > 0 ? String(pending) : '—'}
-                valueColor={pending > 0 && urgent ? '#dc2626' : undefined}
                 hint={pending > 0 ? 'still due' : totalAssigned > 0 ? 'all in' : undefined}
                 warning={urgent}
             />
@@ -104,7 +99,7 @@ export default function MyReportsSummaryBar({
             )}
 
             {allDone && !isPast && (
-                <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-[#16a34a14] text-green-600">
+                <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-[#16a34a14] text-text-primary">
                     <i className="fas fa-check-circle text-[12px]" />
                     All caught up
                 </div>

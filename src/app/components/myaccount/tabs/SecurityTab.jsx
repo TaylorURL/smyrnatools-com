@@ -60,7 +60,7 @@ export default function SecurityTab({ accentColor, onOpenPasswordModal, onRevoke
                                                 background: session.isCurrent
                                                     ? 'rgba(22, 163, 74, 0.15)'
                                                     : 'var(--bg-tertiary)',
-                                                color: session.isCurrent ? '#16a34a' : 'var(--text-secondary)'
+                                                color: 'var(--text-primary)'
                                             }}
                                         >
                                             <i
@@ -73,7 +73,7 @@ export default function SecurityTab({ accentColor, onOpenPasswordModal, onRevoke
                                                     {session.browser}
                                                 </span>
                                                 {session.isCurrent && (
-                                                    <span className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[rgba(22,_163,_74,_0.15)] text-green-600">
+                                                    <span className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[rgba(22,_163,_74,_0.15)] text-text-primary">
                                                         Current
                                                     </span>
                                                 )}

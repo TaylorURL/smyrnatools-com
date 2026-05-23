@@ -162,7 +162,7 @@ export default function HistoryOperatorsTab({ item, operatorData, statusData }) 
                                 isCurrent={entry.isCurrent}
                                 badge={
                                     entry.isEmpty && !entry.isCurrent ? (
-                                        <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded uppercase">
+                                        <span className="text-[10px] font-bold text-text-primary bg-amber-100 px-1.5 py-0.5 rounded uppercase">
                                             No Operator
                                         </span>
                                     ) : null

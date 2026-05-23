@@ -35,13 +35,8 @@ export function AssetStatisticsAgingPage({ accentColor, onSelectAsset, stats }) 
                     value={summary.avgFleetYear || '—'}
                     hint={summary.avgFleetYear ? `${currentYear - summary.avgFleetYear}yr avg age` : 'no year data'}
                 />
-                <Stat label="Newer fleet" value={fmtInt(newFleetCount)} hint="≤ 5yr old" valueColor="#15803d" />
-                <Stat
-                    label="Aging fleet"
-                    value={fmtInt(oldFleetCount)}
-                    hint="> 15yr old"
-                    valueColor={oldFleetCount > 0 ? '#b45309' : undefined}
-                />
+                <Stat label="Newer fleet" value={fmtInt(newFleetCount)} hint="≤ 5yr old" />
+                <Stat label="Aging fleet" value={fmtInt(oldFleetCount)} hint="> 15yr old" />
                 <Stat
                     label="Avg hours"
                     value={summary.avgHours != null ? fmtInt(Math.round(summary.avgHours)) : '—'}
@@ -68,13 +63,6 @@ export function AssetStatisticsAgingPage({ accentColor, onSelectAsset, stats }) 
                     onSelect={onSelectAsset}
                     rows={oldestAssets}
                     valueAccessor={(row) => row.year}
-                    valueColor={(value) =>
-                        currentYear - value > 20
-                            ? '#b91c1c'
-                            : currentYear - value > 15
-                              ? '#b45309'
-                              : 'var(--text-primary)'
-                    }
                     valueFormatter={(value, row) =>
                         row.hours != null && row.hours > 0 ? `${value} · ${fmtInt(Math.round(row.hours))}h` : `${value}`
                     }

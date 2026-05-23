@@ -1,9 +1,9 @@
 import React from 'react'
 
 const TINTS = {
-    lost_load: { bg: 'bg-red-100', fg: 'text-red-600', icon: 'fa-truck' },
-    qc_strength: { bg: 'bg-violet-100', fg: 'text-violet-700', icon: 'fa-flask' },
-    third_party_lab: { bg: 'bg-rose-100', fg: 'text-rose-700', icon: 'fa-vial' }
+    lost_load: { bg: 'bg-red-100', fg: 'text-text-primary', icon: 'fa-truck' },
+    qc_strength: { bg: 'bg-violet-100', fg: 'text-text-primary', icon: 'fa-flask' },
+    third_party_lab: { bg: 'bg-rose-100', fg: 'text-text-primary', icon: 'fa-vial' }
 }
 
 const LABELS = {
@@ -59,7 +59,7 @@ function MyOneOffRail({ reports = [], title = 'Your submissions', onEdit, emptyL
                     {reports.map((report) => {
                         const tint = TINTS[report.name] || {
                             bg: 'bg-slate-100',
-                            fg: 'text-slate-600',
+                            fg: 'text-text-primary',
                             icon: 'fa-file-alt'
                         }
                         const when = formatShortDate(report.submittedAt || report.submitted_at)
@@ -83,7 +83,7 @@ function MyOneOffRail({ reports = [], title = 'Your submissions', onEdit, emptyL
                                         {report.reviewed && (
                                             <>
                                                 {' · '}
-                                                <span className="text-emerald-600 font-semibold">Reviewed</span>
+                                                <span className="text-text-primary font-semibold">Reviewed</span>
                                             </>
                                         )}
                                     </div>

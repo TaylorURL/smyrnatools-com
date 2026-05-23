@@ -60,7 +60,7 @@ function CardHeader({ accentColor, description, icon, required, title }) {
             <div className="min-w-0 flex-1">
                 <div className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
                     {title}
-                    {required && <span className="ml-1.5 text-red-600">*</span>}
+                    {required && <span className="ml-1.5 text-text-primary">*</span>}
                 </div>
                 {description && <div className="text-[11px] mt-0.5 text-text-tertiary">{description}</div>}
             </div>
@@ -72,7 +72,7 @@ function FieldLabel({ children, required }) {
     return (
         <label className={FIELD_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>
             {children}
-            {required && <span className="ml-1 text-red-600">*</span>}
+            {required && <span className="ml-1 text-text-primary">*</span>}
         </label>
     )
 }
@@ -101,7 +101,7 @@ function SubtleButton({ children, danger = false, disabled = false, icon, onClic
             className="inline-flex items-center gap-1.5 rounded text-[10.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:brightness-95 border border-border-light"
             style={{
                 background: danger ? '#fee2e2' : 'var(--bg-secondary)',
-                color: danger ? '#b91c1c' : 'var(--text-secondary)'
+                color: danger ? 'var(--text-primary)' : 'var(--text-secondary)'
             }}
         >
             {icon && <i className={`fas ${icon} text-[10px]`} />}
@@ -112,7 +112,7 @@ function SubtleButton({ children, danger = false, disabled = false, icon, onClic
 
 function IconButton({ bg, danger, disabled, fg, icon, onClick, title }) {
     const palette = danger
-        ? { bg: '#fee2e2', fg: '#b91c1c' }
+        ? { bg: '#fee2e2', fg: 'var(--text-primary)' }
         : { bg: bg || 'var(--bg-tertiary)', fg: fg || 'var(--text-secondary)' }
     return (
         <button
@@ -131,7 +131,7 @@ function IconButton({ bg, danger, disabled, fg, icon, onClick, title }) {
 
 function ErrorText({ children }) {
     return (
-        <div className="mt-1 flex items-center gap-1 text-[10.5px] text-red-600">
+        <div className="mt-1 flex items-center gap-1 text-[10.5px] text-text-primary">
             <i className="fas fa-exclamation-circle text-[10px]" />
             <span>{children}</span>
         </div>
@@ -813,7 +813,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                 </Card>
 
                 {errors.save && (
-                    <div className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-medium bg-red-100 border border-red-300 text-red-700">
+                    <div className="flex items-center gap-2 rounded px-3 py-2 text-[12px] font-medium bg-red-100 border border-red-300 text-text-primary">
                         <i className="fas fa-exclamation-circle text-[11px]" />
                         <span>{errors.save}</span>
                     </div>
@@ -842,7 +842,7 @@ export default function MaintenanceCreateFormView({ editingForm, onBack, onSaved
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light">
-                            <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-red-100 text-red-700">
+                            <div className="flex h-6 w-6 items-center justify-center rounded shrink-0 bg-red-100 text-text-primary">
                                 <i className="fas fa-trash text-[11px]" />
                             </div>
                             <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-secondary)' }}>

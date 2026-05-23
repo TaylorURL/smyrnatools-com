@@ -85,7 +85,7 @@ function PeriodNavigator({
             <button
                 onClick={() => setAnchor(getTodayDate())}
                 className="border-none bg-transparent cursor-pointer px-2 py-1 rounded text-xs font-semibold"
-                style={{ color: accentColor }}
+                style={{ color: 'var(--text-primary)' }}
             >
                 Today
             </button>
@@ -103,7 +103,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                 className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
                 style={{
                     backgroundColor: selectedPlant ? `${accentColor}20` : 'var(--bg-tertiary)',
-                    color: selectedPlant ? accentColor : 'var(--text-secondary)'
+                    color: selectedPlant ? 'var(--text-primary)' : 'var(--text-secondary)'
                 }}
                 title="Filter every chart and table to a single plant"
             >
@@ -125,7 +125,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                         className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
                         style={{
                             backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
-                            color: !selectedPlant ? accentColor : 'var(--text-primary)'
+                            color: 'var(--text-primary)'
                         }}
                     >
                         <span>All plants</span>
@@ -144,7 +144,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                                 className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
                                 style={{
                                     backgroundColor: selectedPlant === code ? `${accentColor}15` : 'transparent',
-                                    color: selectedPlant === code ? accentColor : 'var(--text-primary)'
+                                    color: 'var(--text-primary)'
                                 }}
                             >
                                 <span className="truncate">{label}</span>
@@ -168,7 +168,7 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
                 className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
                 style={{
                     backgroundColor: comparison !== 'none' ? `${accentColor}20` : 'var(--bg-tertiary)',
-                    color: comparison !== 'none' ? accentColor : 'var(--text-secondary)'
+                    color: comparison !== 'none' ? 'var(--text-primary)' : 'var(--text-secondary)'
                 }}
                 title="Compare against another period"
             >
@@ -192,7 +192,7 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
                             className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
                             style={{
                                 backgroundColor: comparison === id ? `${accentColor}15` : 'transparent',
-                                color: comparison === id ? accentColor : 'var(--text-primary)'
+                                color: 'var(--text-primary)'
                             }}
                         >
                             <span>{label}</span>

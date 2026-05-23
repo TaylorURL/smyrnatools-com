@@ -1,7 +1,7 @@
 import React from 'react'
 /** Amber banner shown when a manager is editing another user's report. */
 const ManagerEditBanner = ({ editingUserName }) => (
-    <div className="flex items-center gap-2 px-4 py-3 bg-amber-100 text-amber-800 font-medium text-sm">
+    <div className="flex items-center gap-2 px-4 py-3 bg-amber-100 text-text-primary font-medium text-sm">
         <i className="fas fa-edit" />
         {`Editing ${editingUserName}'s Report`}
     </div>
@@ -9,7 +9,7 @@ const ManagerEditBanner = ({ editingUserName }) => (
 const StatusBadge = ({ isCompleted, readOnly }) => {
     const completed = isCompleted
     const bgClass = completed ? 'bg-emerald-100' : 'bg-amber-100'
-    const textClass = completed ? 'text-emerald-700' : 'text-amber-700'
+    const textClass = 'text-text-primary'
     const icon = completed ? 'fa-check-circle' : 'fa-edit'
     const label = readOnly ? 'View Only' : completed ? 'Submitted' : 'Editing'
     return (
@@ -92,7 +92,9 @@ function SubmitHeader({
                 )}
             </div>
             {exportError && (
-                <div className="mx-4 sm:mx-6 mt-3 p-3 bg-red-100 text-red-700 rounded-lg text-sm">{exportError}</div>
+                <div className="mx-4 sm:mx-6 mt-3 p-3 bg-red-100 text-text-primary rounded-lg text-sm">
+                    {exportError}
+                </div>
             )}
         </div>
     )

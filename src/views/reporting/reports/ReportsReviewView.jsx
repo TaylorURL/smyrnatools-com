@@ -37,7 +37,7 @@ const getFieldIcon = (fieldName) => {
 const getFieldLabel = (field) => field.label
 const StatusBadge = ({ isSubmitted }) => (
     <div
-        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold ${isSubmitted ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}
+        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold ${isSubmitted ? 'bg-green-100 text-text-primary' : 'bg-amber-100 text-text-primary'}`}
     >
         <i className={`fas ${isSubmitted ? 'fa-check-circle' : 'fa-save'}`}></i>
         <span className="hidden xs:inline">{isSubmitted ? 'Submitted' : 'Draft'}</span>
@@ -174,7 +174,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     >
                         <label className={REVIEW_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                             {getFieldLabel(field)}
-                            {field.required && <span className="ml-0.5 text-red-600">*</span>}
+                            {field.required && <span className="ml-0.5 text-text-primary">*</span>}
                         </label>
                         {field.type === 'textarea' ||
                         (typeof form[field.name] === 'string' && form[field.name].length > 80) ? (
@@ -295,7 +295,7 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                 )}
             </div>
             {exportError && (
-                <div className="bg-red-100 text-red-600 p-4 mx-6 my-4 rounded-lg text-sm font-medium">
+                <div className="bg-red-100 text-text-primary p-4 mx-6 my-4 rounded-lg text-sm font-medium">
                     {exportError}
                 </div>
             )}
@@ -304,18 +304,18 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
                     <div className="flex items-start gap-4">
                         <div className="w-10 h-10 rounded-lg bg-amber-200/60 flex items-center justify-center flex-shrink-0">
                             <i
-                                className={`fas ${operatorExclusionReason === 'operators_sent_to_other_location' ? 'fa-truck-loading' : 'fa-industry'} text-amber-700 text-sm`}
+                                className={`fas ${operatorExclusionReason === 'operators_sent_to_other_location' ? 'fa-truck-loading' : 'fa-industry'} text-text-primary text-sm`}
                             ></i>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-amber-600">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
                                 All Operators Excluded
                             </span>
-                            <span className="text-sm font-semibold text-amber-900">
+                            <span className="text-sm font-semibold text-text-primary">
                                 {OPERATOR_EXCLUSION_REASONS[operatorExclusionReason] || 'Plant was shut down'}
                             </span>
                             {reportDateVerbose && (
-                                <span className="text-xs text-amber-700/70">{reportDateVerbose}</span>
+                                <span className="text-xs text-text-tertiary">{reportDateVerbose}</span>
                             )}
                         </div>
                     </div>

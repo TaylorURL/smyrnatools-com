@@ -32,15 +32,6 @@ const CHART_OPTIONS = [
     { group: 'Insights', icon: 'fa-flask', key: 'products', label: 'Product mix' }
 ]
 
-/** Color scheme for utilization KPI: red over 100%, amber over 85%, green
- *  otherwise — same thresholds the schedule tab uses for the truck-pool
- *  health indicator. */
-const utilizationColor = (pct) => {
-    if (pct > 100) return '#dc2626'
-    if (pct > 85) return '#d97706'
-    return '#16a34a'
-}
-
 /** Render the active chart for the chosen mode. Lifted out of the main
  *  component body so the JSX stays linear. */
 function DemandChart({ accentColor, chartMode, data, plantColorByCode }) {
@@ -136,7 +127,6 @@ function PlanDemandView({
           })
         : ''
 
-    const utilColor = utilizationColor(data.capacityUtilization)
     const scopeLabel = formatPlantFilterDisplay({
         plantFilter,
         plantNameByCode,
@@ -201,7 +191,6 @@ function PlanDemandView({
                     <Stat
                         label="Utilization"
                         value={`${data.capacityUtilization}%`}
-                        valueColor={utilColor}
                         hint={data.totalBase > 0 ? `${data.peakHour.total}/${data.totalBase} at peak` : null}
                     />
                     <Stat

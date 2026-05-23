@@ -28,9 +28,9 @@ function MissingPanel({ missing = [], getUserName, onNudge, weekRangeLabel }) {
     return (
         <aside className="bg-bg-primary border border-gray-200 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-1">
-                <i className="fas fa-exclamation-circle text-[13px] text-red-600" />
+                <i className="fas fa-exclamation-circle text-[13px] text-text-primary" />
                 <span className="font-bold text-[14px] font-heading">Missing</span>
-                <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-text-primary">
                     {missing.length}
                 </span>
             </div>
@@ -41,7 +41,7 @@ function MissingPanel({ missing = [], getUserName, onNudge, weekRangeLabel }) {
             )}
             {missing.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-slate-400">
-                    <i className="fas fa-circle-check text-2xl mb-2 text-emerald-500" />
+                    <i className="fas fa-circle-check text-2xl mb-2 text-text-primary" />
                     <div className="text-[12px]">Nothing missing for this week</div>
                 </div>
             ) : (
@@ -57,7 +57,7 @@ function MissingPanel({ missing = [], getUserName, onNudge, weekRangeLabel }) {
                                 key={`mp-${item.id || `${item.plant_code || item.plant}-${weekIso}-${item.report_name || item.name}`}`}
                                 className="flex items-start gap-2.5 py-2.5 border-b border-slate-100 last:border-b-0"
                             >
-                                <div className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 mt-0.5">
+                                <div className="w-6 h-6 rounded-full bg-red-100 text-text-primary flex items-center justify-center shrink-0 mt-0.5">
                                     <i className="fas fa-exclamation text-[10px]" />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -71,7 +71,9 @@ function MissingPanel({ missing = [], getUserName, onNudge, weekRangeLabel }) {
                                         {daysLate !== null && daysLate > 0 && (
                                             <>
                                                 {dueLabel && <span className="text-slate-300"> · </span>}
-                                                <span className="text-red-600 font-semibold">{daysLate}d late</span>
+                                                <span className="text-text-primary font-semibold">
+                                                    {daysLate}d late
+                                                </span>
                                             </>
                                         )}
                                     </div>

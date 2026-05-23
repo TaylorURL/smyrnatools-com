@@ -213,7 +213,7 @@ export default function PlantManagersEditor({ managerIds, onChange, disabled = f
                                 type="button"
                                 onClick={() => removeManager(id)}
                                 disabled={disabled}
-                                className="rounded-lg border border-border-light bg-bg-primary px-2.5 py-1 text-[11.5px] font-semibold text-red-600 transition-colors hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="rounded-lg border border-border-light bg-bg-primary px-2.5 py-1 text-[11.5px] font-semibold text-text-primary transition-colors hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Remove manager"
                             >
                                 <i className="fas fa-times mr-1 text-[10px]" />

@@ -49,26 +49,23 @@ const SORT_COLUMNS = [
 
 const SORT_BY_KEY = Object.fromEntries(SORT_COLUMNS.map((s) => [s.key, s]))
 
-/** KPI tile — uppercase tracked-out label, oversized value, small sub. */
+/** KPI tile — uppercase tracked-out label, oversized value, small sub. The
+ *  accent only tints the icon chip (pill with background + matching fg);
+ *  the headline number stays in theme text. */
 function StatTile({ accent, icon, label, sub, value }) {
     return (
         <div className="flex items-start gap-3">
             {icon && (
                 <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: `${accent || NEUTRAL}1a`, color: accent || NEUTRAL }}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-text-primary"
+                    style={{ background: `${accent || NEUTRAL}1a` }}
                 >
                     <i className={`fas ${icon} text-[14px]`} />
                 </div>
             )}
             <div className="min-w-0">
                 <div className="text-[10.5px] font-semibold uppercase tracking-wider text-text-tertiary">{label}</div>
-                <div
-                    className="text-[22px] font-semibold tabular-nums leading-tight"
-                    style={{ color: accent || 'var(--text-primary)' }}
-                >
-                    {value}
-                </div>
+                <div className="text-[22px] font-semibold tabular-nums leading-tight text-text-primary">{value}</div>
                 {sub && <div className="text-[10.5px] text-text-tertiary leading-tight">{sub}</div>}
             </div>
         </div>
@@ -84,8 +81,8 @@ function SpotlightCard({ accent, customers, emptyHint, icon, label, metric, onSe
             <div className="rounded-md p-4 bg-bg-primary border border-border-light">
                 <div className="flex items-center gap-2 mb-2">
                     <span
-                        className="w-7 h-7 rounded-md flex items-center justify-center"
-                        style={{ background: `${accent}1a`, color: accent }}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-text-primary"
+                        style={{ background: `${accent}1a` }}
                     >
                         <i className={`fas ${icon} text-[12px]`} />
                     </span>
@@ -100,8 +97,8 @@ function SpotlightCard({ accent, customers, emptyHint, icon, label, metric, onSe
         <div className="rounded-md p-4 bg-bg-primary border border-border-light flex flex-col gap-2.5">
             <div className="flex items-center gap-2">
                 <span
-                    className="w-7 h-7 rounded-md flex items-center justify-center"
-                    style={{ background: `${accent}1a`, color: accent }}
+                    className="w-7 h-7 rounded-md flex items-center justify-center text-text-primary"
+                    style={{ background: `${accent}1a` }}
                 >
                     <i className={`fas ${icon} text-[12px]`} />
                 </span>
@@ -125,7 +122,7 @@ function SpotlightCard({ accent, customers, emptyHint, icon, label, metric, onSe
                                 >
                                     {c.name}
                                 </span>
-                                <span className="text-[13px] font-semibold tabular-nums" style={{ color: accent }}>
+                                <span className="text-[13px] font-semibold tabular-nums text-text-primary">
                                     {fmtInt(value)}
                                 </span>
                             </button>
@@ -160,7 +157,7 @@ function SnapshotCoverageBanner({ daysAnalyzed, daysWithSnapshot, isLoading }) {
     }
     const missing = daysAnalyzed - daysWithSnapshot
     return (
-        <div className="text-[11.5px] text-amber-700">
+        <div className="text-[11.5px] text-text-secondary">
             <i className="fas fa-triangle-exclamation mr-1" />
             {fmtInt(daysWithSnapshot)} of {fmtInt(daysAnalyzed)} days have a 5:30 PM snapshot — {fmtInt(missing)} day
             {missing === 1 ? ' is' : 's are'} excluded (Sunday skip or pre-snapshot date).

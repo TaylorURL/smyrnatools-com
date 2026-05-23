@@ -77,21 +77,21 @@ export function PlanTimelineHomeBar({ homeCount, prod, recvLanesCount }) {
                 <div className="flex items-center gap-2 px-2 whitespace-nowrap">
                     <OperatorCountBadge effectiveOps={effectiveOps} recvLanesCount={recvLanesCount} />
                     {metrics.hasProd && (
-                        <span className="text-[9px] font-semibold" style={{ color: `${HOME_COLOR}CC` }}>
+                        <span className="text-[9px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
                             {prod.firstJobTime}–{prod.lastJobTime}
                         </span>
                     )}
                     {metrics.yards > 0 && (
                         <span
                             className="text-[9px] font-bold rounded-full px-1.5 py-px"
-                            style={{ background: `${HOME_COLOR}15`, color: HOME_COLOR }}
+                            style={{ background: `${HOME_COLOR}15`, color: 'var(--text-primary)' }}
                         >
                             {prod.totalYardage} yds
                         </span>
                     )}
                     {metrics.ydsPerHrOp !== null && <YphBadge metrics={metrics} />}
                     {metrics.availableToSend !== null && metrics.availableToSend > 0 && (
-                        <span className="text-[9px] font-bold rounded-full px-1.5 py-px bg-[#16a34a18] text-green-600">
+                        <span className="text-[9px] font-bold rounded-full px-1.5 py-px bg-[#16a34a18] text-text-primary">
                             <i className="fas fa-paper-plane text-[7px] mr-0.5" />
                             {metrics.availableToSend} avail
                         </span>
@@ -106,11 +106,11 @@ export function PlanTimelineHomeBar({ homeCount, prod, recvLanesCount }) {
 
 function OperatorCountBadge({ effectiveOps, recvLanesCount }) {
     return (
-        <span className="text-[9px] font-extrabold flex items-center gap-1" style={{ color: HOME_COLOR }}>
+        <span className="text-[9px] font-extrabold flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
             <i className="fas fa-hard-hat text-[8px]" />
             {effectiveOps}
             {recvLanesCount > 0 && (
-                <span className="font-semibold" style={{ color: RECV_COLOR }}>
+                <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
                     (+{recvLanesCount})
                 </span>
             )}
@@ -120,7 +120,7 @@ function OperatorCountBadge({ effectiveOps, recvLanesCount }) {
 
 function YphBadge({ metrics }) {
     const { overMax, underTarget, ydsPerHrOp } = metrics
-    const color = overMax ? '#fff' : underTarget ? '#d97706' : HOME_COLOR
+    const color = overMax ? '#fff' : 'var(--text-primary)'
     const background = overMax ? '#ef444490' : underTarget ? '#d9770620' : `${HOME_COLOR}15`
     return (
         <span className="text-[9px] font-bold rounded-full px-1.5 py-px" style={{ background, color }}>
@@ -131,7 +131,7 @@ function YphBadge({ metrics }) {
 
 function BehindScheduleBadge() {
     return (
-        <span className="text-[9px] font-extrabold flex items-center gap-0.5 text-red-500">
+        <span className="text-[9px] font-extrabold flex items-center gap-0.5 text-text-primary">
             <i className="fas fa-triangle-exclamation text-[8px]" />
             Likely behind
         </span>
@@ -140,7 +140,7 @@ function BehindScheduleBadge() {
 
 function LeaveOffBadge({ count }) {
     return (
-        <span className="text-[9px] font-bold rounded-full px-1.5 py-px flex items-center gap-0.5 bg-[#d9770618] text-amber-600">
+        <span className="text-[9px] font-bold rounded-full px-1.5 py-px flex items-center gap-0.5 bg-[#d9770618] text-text-primary">
             <i className="fas fa-user-minus text-[7px]" />
             Leave {count} off
         </span>

@@ -31,16 +31,8 @@ export function PlanDashboardAtAGlance({
         { label: 'Routes', value: (validAssignmentCount || 0).toString() },
         { label: 'Operators', value: (totalOps || 0).toString() },
         { label: 'Yardage', value: totalYardage.toLocaleString() },
-        {
-            color: earliestClockIn ? '#16a34a' : undefined,
-            label: 'Earliest clock-in',
-            value: earliestClockIn || '—'
-        },
-        {
-            color: shiftSpanHours && shiftSpanHours > 10 ? '#d97706' : undefined,
-            label: 'Shift span',
-            value: shiftSpanHours ? `${shiftSpanHours}h` : '—'
-        },
+        { label: 'Earliest clock-in', value: earliestClockIn || '—' },
+        { label: 'Shift span', value: shiftSpanHours ? `${shiftSpanHours}h` : '—' },
         { label: 'Extra diligence', value: ((specialCount || 0) + (qcCount || 0)).toString() }
     ]
     return (
@@ -53,12 +45,7 @@ export function PlanDashboardAtAGlance({
                         className="flex items-baseline justify-between py-1.5 border-b border-border-light"
                     >
                         <span className="text-[12px] text-text-secondary">{row.label}</span>
-                        <span
-                            className="text-[13px] font-semibold font-mono"
-                            style={{ color: row.color || 'var(--text-primary)' }}
-                        >
-                            {row.value}
-                        </span>
+                        <span className="text-[13px] font-semibold font-mono text-text-primary">{row.value}</span>
                     </div>
                 ))}
             </div>

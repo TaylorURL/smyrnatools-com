@@ -58,7 +58,7 @@ export default function BookOrderResultsPane({
                             <i className="fas fa-triangle-exclamation text-[16px]" />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-[15px] font-bold text-red-700">
+                            <div className="text-[15px] font-bold text-text-primary">
                                 Pour exceeds the 14-hour shift limit
                             </div>
                             <div className="text-[12.5px] mt-1 leading-snug text-text-secondary">
@@ -103,7 +103,7 @@ export default function BookOrderResultsPane({
             </FadeIn>
 
             <FadeIn show={showSunday}>
-                <div className="rounded-lg p-6 text-center bg-[rgba(220,_38,_38,_0.08)] border border-[rgba(220,_38,_38,_0.35)] text-red-700">
+                <div className="rounded-lg p-6 text-center bg-[rgba(220,_38,_38,_0.08)] border border-[rgba(220,_38,_38,_0.35)] text-text-primary">
                     <i className="fas fa-ban text-2xl mb-2" />
                     <div className="text-[14px] font-semibold">Plants are closed on Sundays.</div>
                     <div className="text-[12px] mt-1">Pick a weekday or Saturday to see a recommendation.</div>
@@ -122,7 +122,7 @@ export default function BookOrderResultsPane({
             </FadeIn>
 
             <FadeIn show={showNoPlants}>
-                <div className="rounded-lg p-6 text-center bg-[rgba(217,_119,_6,_0.1)] border border-[rgba(217,_119,_6,_0.35)] text-[#b45309]">
+                <div className="rounded-lg p-6 text-center bg-[rgba(217,_119,_6,_0.1)] border border-[rgba(217,_119,_6,_0.35)] text-text-primary">
                     <i className="fas fa-triangle-exclamation text-2xl mb-2" />
                     <div className="text-[14px] font-semibold">No plants within {TRAVEL_MIN_HORIZON} minutes.</div>
                     <div className="text-[12px] mt-1">

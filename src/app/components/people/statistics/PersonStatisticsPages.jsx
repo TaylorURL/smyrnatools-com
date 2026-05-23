@@ -5,35 +5,15 @@ import { fmtFloat, fmtInt, fmtPct } from '../../../../utils/PlanStatisticsFormat
 import { CategoricalBarChart, StatusPieChart } from '../../assets/statistics/AssetStatisticsCharts'
 import { Panel, Stat, StatGroup } from '../../ui/Panel'
 
-const colorForRating = (rating) => {
-    if (!rating || rating === 0) return 'var(--text-tertiary)'
-    if (rating < 3) return '#b91c1c'
-    if (rating < 4) return '#b45309'
-    return '#15803d'
-}
-
-const colorForLogin = (days) => {
-    if (days == null) return '#94a3b8'
-    if (days <= 30) return '#15803d'
-    if (days <= 90) return '#b45309'
-    return '#b91c1c'
-}
-
 /** Highlight row used by the Overview snapshot card — mirrors the asset
  *  surface so the two products read as one. */
-function HighlightRow({ hint, icon, label, value, valueColor }) {
+function HighlightRow({ hint, icon, label, value }) {
     return (
         <div className="flex items-start gap-3 px-3 py-2.5 border-t border-border-light first:border-t-0">
-            <i
-                className={`fas ${icon} text-[11px] mt-1 w-4 text-center`}
-                style={{ color: valueColor || 'var(--text-tertiary)' }}
-            />
+            <i className={`fas ${icon} text-[11px] mt-1 w-4 text-center text-text-tertiary`} />
             <div className="flex-1 min-w-0">
                 <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary">{label}</div>
-                <div
-                    className="font-semibold truncate text-text-primary"
-                    style={{ color: valueColor || 'var(--text-primary)', fontSize: 13.5 }}
-                >
+                <div className="font-semibold truncate text-text-primary" style={{ fontSize: 13.5 }}>
                     {value}
                 </div>
                 {hint && <div className="text-[11px] text-text-tertiary truncate">{hint}</div>}
@@ -49,18 +29,17 @@ function LaunchpadTile({ accent, hint, icon, label, onSelect, section, value }) 
         <button
             type="button"
             onClick={() => onSelect?.(section)}
-            className="flex flex-col gap-1 items-start rounded-lg border bg-bg-secondary border-border-light cursor-pointer p-3 text-left hover:border-current transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
+            className="flex flex-col gap-1 items-start rounded-lg border bg-bg-secondary border-border-light cursor-pointer p-3 text-left hover:border-current transition-colors text-text-secondary"
         >
             <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider">
-                <i className={`fas ${icon} text-[11px]`} style={{ color: accent }} />
+                <i className={`fas ${icon} text-[11px] text-text-primary`} />
                 {label}
             </span>
             <span className="font-mono tabular-nums font-bold leading-none text-text-primary" style={{ fontSize: 22 }}>
                 {value}
             </span>
             {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
-            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold" style={{ color: accent }}>
+            <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-text-primary">
                 Open
                 <i className="fas fa-arrow-right text-[9px]" />
             </span>
@@ -90,7 +69,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                         label="Rating"
                         value={summary.avgRating != null ? `${fmtFloat(summary.avgRating)} ★ avg` : '—'}
                         hint={`${fmtInt(summary.ratingSamples)} rated operators`}
-                        valueColor={colorForRating(summary.avgRating)}
                     />
                 )}
                 {!isOperators && (
@@ -107,7 +85,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                                 ? `${fmtInt(summary.neverLoggedIn)} have never logged in`
                                 : 'every manager has signed in'
                         }
-                        valueColor={summary.neverLoggedIn > 0 ? '#b45309' : '#15803d'}
                     />
                 )}
                 {!isOperators && stats.managerCoverage && (
@@ -124,13 +101,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                             stats.managerCoverage.recentAdditions.length > 0
                                 ? `${fmtInt(stats.managerCoverage.recentAdditions.length)} added in last 30 d`
                                 : 'roster stable last 30 d'
-                        }
-                        valueColor={
-                            stats.managerCoverage.uncoveredPlants.length > 0
-                                ? '#b91c1c'
-                                : stats.managerCoverage.spofPlants.length > 0
-                                  ? '#b45309'
-                                  : '#15803d'
                         }
                     />
                 )}
@@ -152,7 +122,6 @@ export function PersonOverviewPage({ accentColor, kind, onSelectSection, stats }
                                 : 'Empty'
                         }
                         hint={`${fmtInt(stats.hiringTraining.trainers.length)} trainer${stats.hiringTraining.trainers.length === 1 ? '' : 's'} · ${fmtInt(stats.hiringTraining.recentHires.length)} new in 90 d`}
-                        valueColor={stats.hiringTraining.pendingStarts.length > 0 ? '#b45309' : '#15803d'}
                     />
                 )}
                 <HighlightRow
@@ -309,21 +278,13 @@ export function PersonStatusPage({ accentColor, stats }) {
     return (
         <div className="flex flex-col gap-4">
             <StatGroup columns={4}>
-                <Stat
-                    label="Active"
-                    value={fmtInt(summary.activeCount)}
-                    hint="on the roster today"
-                    valueColor="#15803d"
-                />
+                <Stat label="Active" value={fmtInt(summary.activeCount)} hint="on the roster today" />
                 <Stat label="Inactive" value={fmtInt(summary.retiredCount)} hint="terminated / no-hire" />
                 <Stat label="Trainers" value={fmtInt(summary.trainerCount)} hint="flagged as trainer" />
                 <Stat
                     label="Missing data"
                     value={fmtInt(summary.missingPlant + summary.missingName + summary.missingPhone)}
                     hint="plant + name + phone gaps"
-                    valueColor={
-                        summary.missingPlant + summary.missingName + summary.missingPhone > 0 ? '#b45309' : '#15803d'
-                    }
                 />
             </StatGroup>
             <Panel title="Roster status mix" innerClassName="p-3">
@@ -366,12 +327,7 @@ export function PersonPlantsPage({ accentColor, kind, stats }) {
                         hint={`${fmtInt(summary.trainerCount)} trainers total`}
                     />
                 ) : (
-                    <Stat
-                        label="Missing plant"
-                        value={fmtInt(summary.missingPlant)}
-                        hint="managers without plant"
-                        valueColor={summary.missingPlant > 0 ? '#b45309' : undefined}
-                    />
+                    <Stat label="Missing plant" value={fmtInt(summary.missingPlant)} hint="managers without plant" />
                 )}
             </StatGroup>
             <Panel title="Top plants by active roster" innerClassName="p-3">
@@ -510,14 +466,6 @@ const formatEventDate = (iso) => {
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-const daysUntilColor = (days) => {
-    if (days == null) return 'var(--text-tertiary)'
-    if (days < 0) return '#b91c1c'
-    if (days <= 7) return '#16a34a'
-    if (days <= 30) return '#b45309'
-    return 'var(--text-primary)'
-}
-
 const daysUntilLabel = (days) => {
     if (days == null) return 'TBD'
     if (days === 0) return 'today'
@@ -567,24 +515,13 @@ export function PersonHiringTrainingPage({ stats }) {
                 the selected time range. Collapses to lifetime totals when
                 the period is all-time so the strip is always useful. */}
             <StatGroup columns={4}>
-                <Stat
-                    label="Hired"
-                    value={fmtInt(counts.hired)}
-                    hint={periodHint}
-                    valueColor={counts.hired > 0 ? '#15803d' : undefined}
-                />
+                <Stat label="Hired" value={fmtInt(counts.hired)} hint={periodHint} />
                 <Stat label="Started training" value={fmtInt(counts.startedTraining)} hint={periodHint} />
-                <Stat
-                    label="Activated"
-                    value={fmtInt(counts.activated)}
-                    hint={periodHint}
-                    valueColor={counts.activated > 0 ? '#15803d' : undefined}
-                />
+                <Stat label="Activated" value={fmtInt(counts.activated)} hint={periodHint} />
                 <Stat
                     label="Terminated"
                     value={fmtInt(counts.terminated)}
                     hint={counts.noHire > 0 ? `${periodHint} · ${fmtInt(counts.noHire)} declined` : periodHint}
-                    valueColor={counts.terminated > 0 ? '#b91c1c' : undefined}
                 />
             </StatGroup>
 
@@ -601,7 +538,6 @@ export function PersonHiringTrainingPage({ stats }) {
                               ? `${fmtInt(startingSoon)} starting in 7 d`
                               : 'no active pipeline'
                     }
-                    valueColor={overdueStarts > 0 ? '#b91c1c' : pendingStarts.length > 0 ? '#b45309' : '#15803d'}
                 />
                 <Stat label="In training" value={fmtInt(inTraining.length)} hint="currently on-site with trainer" />
                 <Stat
@@ -609,12 +545,7 @@ export function PersonHiringTrainingPage({ stats }) {
                     value={fmtInt(trainers.length)}
                     hint={`covering ${fmtInt(trainers.reduce((sum, t) => sum + t.mentees, 0))} mentees`}
                 />
-                <Stat
-                    label="Recent hires"
-                    value={fmtInt(recentHires.length)}
-                    hint="active, hired within 90 d"
-                    valueColor={recentHires.length > 0 ? '#15803d' : undefined}
-                />
+                <Stat label="Recent hires" value={fmtInt(recentHires.length)} hint="active, hired within 90 d" />
             </StatGroup>
 
             <Panel
@@ -659,10 +590,7 @@ export function PersonHiringTrainingPage({ stats }) {
                                         <td className="px-2 py-2 text-text-secondary">
                                             {formatPendingDate(row.pendingStartDate)}
                                         </td>
-                                        <td
-                                            className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                            style={{ color: daysUntilColor(row.daysUntilStart) }}
-                                        >
+                                        <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                                             {daysUntilLabel(row.daysUntilStart)}
                                         </td>
                                     </tr>
@@ -716,15 +644,7 @@ export function PersonHiringTrainingPage({ stats }) {
                                                     <span className="italic text-text-tertiary">No trainer</span>
                                                 )}
                                             </td>
-                                            <td
-                                                className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                                style={{
-                                                    color:
-                                                        row.daysInTraining != null && row.daysInTraining > 30
-                                                            ? '#b45309'
-                                                            : 'var(--text-primary)'
-                                                }}
-                                            >
+                                            <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                                                 {row.daysInTraining == null ? '—' : `${fmtInt(row.daysInTraining)} d`}
                                             </td>
                                         </tr>
@@ -770,10 +690,7 @@ export function PersonHiringTrainingPage({ stats }) {
                                                 {row.plant}
                                             </td>
                                             <td className="px-2 py-2 text-text-secondary">{row.position}</td>
-                                            <td
-                                                className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                                style={{ color: row.mentees > 0 ? '#15803d' : 'var(--text-tertiary)' }}
-                                            >
+                                            <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                                                 {fmtInt(row.mentees)}
                                             </td>
                                         </tr>
@@ -881,10 +798,7 @@ export function PersonHiringTrainingPage({ stats }) {
                                                     {row.plant}
                                                 </td>
                                                 <td className="px-2 py-2 text-text-secondary">{row.position}</td>
-                                                <td
-                                                    className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                                    style={{ color: '#b91c1c' }}
-                                                >
+                                                <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                                                     {formatEventDate(row.eventDate)}
                                                 </td>
                                             </tr>
@@ -988,10 +902,7 @@ export function PersonHiringTrainingPage({ stats }) {
                                                     <span className="ml-2 text-text-secondary">{row.name}</span>
                                                 )}
                                             </td>
-                                            <td
-                                                className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                                style={{ color: row.active > 0 ? '#b45309' : 'var(--text-tertiary)' }}
-                                            >
+                                            <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                                                 {fmtInt(row.active)}
                                             </td>
                                         </tr>
@@ -1045,7 +956,7 @@ export function PersonHiringTrainingPage({ stats }) {
 
             {summary.total > 0 && pendingStarts.length === 0 && inTraining.length === 0 && (
                 <div className="flex items-center justify-center gap-2 py-2 text-[12px] text-text-secondary">
-                    <i className="fas fa-circle-check text-[14px]" style={{ color: '#15803d' }} />
+                    <i className="fas fa-circle-check text-[14px]" />
                     Hiring pipeline is empty — every operator is either training or already in production.
                 </div>
             )}
@@ -1063,13 +974,11 @@ export function PersonRatingPage({ accentColor, stats }) {
                     label="Avg rating"
                     value={summary.avgRating != null ? `${fmtFloat(summary.avgRating)} ★` : '—'}
                     hint={`${fmtInt(summary.ratingSamples)} rated`}
-                    valueColor={colorForRating(summary.avgRating)}
                 />
                 <Stat
                     label="At 5 ★"
                     value={fmtInt(ratingDistribution.find((r) => r.label === '5 ★')?.count || 0)}
                     hint="top performers"
-                    valueColor="#15803d"
                 />
                 <Stat
                     label="At 1–2 ★"
@@ -1078,7 +987,6 @@ export function PersonRatingPage({ accentColor, stats }) {
                             (ratingDistribution.find((r) => r.label === '2 ★')?.count || 0)
                     )}
                     hint="needs attention"
-                    valueColor="#b91c1c"
                 />
                 <Stat
                     label="Unrated"
@@ -1131,10 +1039,7 @@ export function PersonRatingPage({ accentColor, stats }) {
                                         </td>
                                         <td className="px-2 py-2 text-text-secondary">{row.position}</td>
                                         <td className="px-2 py-2 text-text-secondary">{row.status}</td>
-                                        <td
-                                            className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                            style={{ color: colorForRating(row.rating) }}
-                                        >
+                                        <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                                             {row.rating.toFixed(1)} ★
                                         </td>
                                     </tr>
@@ -1163,7 +1068,6 @@ export function PersonActivityPage({ accentColor, stats }) {
                     label="Recent (≤ 7d)"
                     value={fmtInt(lastLoginDistribution.find((r) => r.label === '< 7 d')?.count || 0)}
                     hint="signed in this week"
-                    valueColor="#15803d"
                 />
                 <Stat
                     label="Stale (> 90d)"
@@ -1172,14 +1076,8 @@ export function PersonActivityPage({ accentColor, stats }) {
                             (lastLoginDistribution.find((r) => r.label === '> 180 d')?.count || 0)
                     )}
                     hint="long inactive"
-                    valueColor="#b45309"
                 />
-                <Stat
-                    label="Never"
-                    value={fmtInt(summary.neverLoggedIn)}
-                    hint="never logged in"
-                    valueColor={summary.neverLoggedIn > 0 ? '#b91c1c' : undefined}
-                />
+                <Stat label="Never" value={fmtInt(summary.neverLoggedIn)} hint="never logged in" />
             </StatGroup>
             <Panel title="Login recency" innerClassName="p-3">
                 <CategoricalBarChart accent={accent} data={lastLoginDistribution} height={240} />
@@ -1218,10 +1116,7 @@ export function PersonActivityPage({ accentColor, stats }) {
                                             {row.plant}
                                         </td>
                                         <td className="px-2 py-2 text-text-secondary">{row.role}</td>
-                                        <td
-                                            className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                            style={{ color: colorForLogin(row.daysSince) }}
-                                        >
+                                        <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                                             {row.daysSince == null ? 'Never' : `${fmtInt(row.daysSince)} d`}
                                         </td>
                                     </tr>
@@ -1295,25 +1190,17 @@ export function PersonCoveragePage({ accentColor, stats }) {
                     label="Uncovered plants"
                     value={fmtInt(uncoveredPlants.length)}
                     hint={uncoveredPlants.length > 0 ? 'no managers assigned' : 'every plant covered'}
-                    valueColor={uncoveredPlants.length > 0 ? '#b91c1c' : '#15803d'}
                 />
                 <Stat
                     label="Single-point-of-failure"
                     value={fmtInt(spofPlants.length)}
                     hint={spofPlants.length > 0 ? 'plants with only 1 manager' : 'all plants have backup'}
-                    valueColor={spofPlants.length > 0 ? '#b45309' : '#15803d'}
                 />
-                <Stat
-                    label="Recent additions"
-                    value={fmtInt(recentAdditions.length)}
-                    hint="added in last 30 d"
-                    valueColor={recentAdditions.length > 0 ? '#15803d' : undefined}
-                />
+                <Stat label="Recent additions" value={fmtInt(recentAdditions.length)} hint="added in last 30 d" />
                 <Stat
                     label="Stale accounts"
                     value={fmtInt(loginHealth.stale + loginHealth.never)}
                     hint={`${fmtInt(loginHealth.stale)} > 90 d · ${fmtInt(loginHealth.never)} never`}
-                    valueColor={loginHealth.stale + loginHealth.never > 0 ? '#b45309' : '#15803d'}
                 />
             </StatGroup>
 
@@ -1378,8 +1265,8 @@ export function PersonCoveragePage({ accentColor, stats }) {
                                             </td>
                                             <td className="px-3 py-2">
                                                 <span
-                                                    className="inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-semibold"
-                                                    style={{ background: '#b91c1c1f', color: '#b91c1c' }}
+                                                    className="inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-semibold text-text-primary"
+                                                    style={{ background: '#b91c1c1f' }}
                                                 >
                                                     No managers
                                                 </span>
@@ -1430,10 +1317,7 @@ export function PersonCoveragePage({ accentColor, stats }) {
                                                     <span className="ml-2 text-text-secondary">{row.name}</span>
                                                 )}
                                             </td>
-                                            <td
-                                                className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                                style={{ color: '#b45309' }}
-                                            >
+                                            <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
                                                 {row.count}
                                             </td>
                                         </tr>

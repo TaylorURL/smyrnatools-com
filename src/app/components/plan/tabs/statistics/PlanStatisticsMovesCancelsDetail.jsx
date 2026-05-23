@@ -9,26 +9,23 @@ const SOFT = '#f59e0b'
 const NEUTRAL = '#64748b'
 
 /** Inline KPI tile mirroring the one on the parent page so the per-customer
- *  drawer reads with the same vocabulary as the top-of-page strip. */
+ *  drawer reads with the same vocabulary as the top-of-page strip. The
+ *  accent only tints the icon chip (tinted bg + matching fg); the headline
+ *  number stays in theme text. */
 function StatTile({ accent, icon, label, sub, value }) {
     return (
         <div className="flex items-start gap-3">
             {icon && (
                 <div
                     className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: `${accent || NEUTRAL}1a`, color: accent || NEUTRAL }}
+                    style={{ background: `${accent || NEUTRAL}1a`, color: 'var(--text-primary)' }}
                 >
                     <i className={`fas ${icon} text-[14px]`} />
                 </div>
             )}
             <div className="min-w-0">
                 <div className="text-[10.5px] font-semibold uppercase tracking-wider text-text-tertiary">{label}</div>
-                <div
-                    className="text-[22px] font-semibold tabular-nums leading-tight"
-                    style={{ color: accent || 'var(--text-primary)' }}
-                >
-                    {value}
-                </div>
+                <div className="text-[22px] font-semibold tabular-nums leading-tight text-text-primary">{value}</div>
                 {sub && <div className="text-[10.5px] text-text-tertiary leading-tight">{sub}</div>}
             </div>
         </div>
@@ -40,7 +37,7 @@ function EventBadge({ event }) {
         return (
             <span
                 className="inline-flex items-center gap-1 rounded-full text-[10.5px] font-semibold px-2 py-0.5"
-                style={{ background: 'rgba(220, 38, 38, 0.12)', color: HEAVY }}
+                style={{ background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' }}
             >
                 <i className="fas fa-circle-minus text-[9px]" />
                 Cancel
@@ -57,7 +54,7 @@ function EventBadge({ event }) {
         return (
             <span
                 className="inline-flex items-center gap-1 rounded-full text-[10.5px] font-semibold px-2 py-0.5"
-                style={{ background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' }}
+                style={{ background: 'rgba(245, 158, 11, 0.14)', color: 'var(--text-primary)' }}
             >
                 <i className={`fas ${arrow} text-[9px]`} />
                 Move
@@ -67,7 +64,7 @@ function EventBadge({ event }) {
     return (
         <span
             className="inline-flex items-center gap-1 rounded-full text-[10.5px] font-semibold px-2 py-0.5"
-            style={{ background: 'var(--bg-tertiary)', color: NEUTRAL }}
+            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
         >
             <i className="fas fa-pen-to-square text-[9px]" />
             Edit

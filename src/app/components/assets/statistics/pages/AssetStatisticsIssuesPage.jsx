@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
 import { fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
@@ -23,12 +22,7 @@ export function AssetStatisticsIssuesPage({ accentColor, onSelectAsset, stats })
     return (
         <div className="flex flex-col gap-4">
             <StatGroup columns={4}>
-                <Stat
-                    label="Open issues"
-                    value={fmtInt(summary.openIssues)}
-                    hint="across all in-scope assets"
-                    valueColor={summary.openIssues > 0 ? '#b91c1c' : '#15803d'}
-                />
+                <Stat label="Open issues" value={fmtInt(summary.openIssues)} hint="across all in-scope assets" />
                 <Stat
                     label="Assets affected"
                     value={fmtInt(summary.assetsWithOpenIssues)}
@@ -57,7 +51,6 @@ export function AssetStatisticsIssuesPage({ accentColor, onSelectAsset, stats })
                     onSelect={onSelectAsset}
                     rows={topIssueAssets}
                     valueAccessor={(row) => row.openIssues}
-                    valueColor={(value) => (value >= 3 ? '#b91c1c' : value === 2 ? '#b45309' : '#0ea5e9')}
                     valueFormatter={(value) => fmtInt(value)}
                 />
             </Panel>
@@ -98,10 +91,7 @@ export function AssetStatisticsIssuesPage({ accentColor, onSelectAsset, stats })
                                                 <span className="ml-2 text-text-secondary">{row.name}</span>
                                             )}
                                         </td>
-                                        <td
-                                            className="px-3 py-2 text-right font-mono tabular-nums font-semibold"
-                                            style={{ color: '#b91c1c' }}
-                                        >
+                                        <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold text-text-primary">
                                             {fmtInt(row.openIssues)}
                                         </td>
                                         <td className="px-3 py-2 text-right font-mono tabular-nums text-text-secondary">

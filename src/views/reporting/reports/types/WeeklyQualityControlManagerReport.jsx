@@ -57,7 +57,7 @@ function DailyRecapSection({ form, handleChange, readOnly }) {
                                 <div className="flex items-center gap-1.5">
                                     <i className="fas fa-calendar-day text-[10px] text-text-tertiary" />
                                     <span className="text-[11.5px] font-semibold text-text-primary">{day.label}</span>
-                                    {!readOnly && <span className="text-red-600">*</span>}
+                                    {!readOnly && <span className="text-text-primary">*</span>}
                                 </div>
                                 <span className="text-[10px] tabular-nums text-text-tertiary">{value.length}</span>
                             </div>

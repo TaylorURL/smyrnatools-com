@@ -110,12 +110,7 @@ function PerPlantRow({ color, peak, plant }) {
             </td>
             <td className="px-3 py-2 text-right whitespace-nowrap">
                 <div className="flex flex-col items-end">
-                    <span
-                        className="font-mono font-bold text-[14px] tabular-nums"
-                        style={{ color: peak > supply && supply > 0 ? '#dc2626' : 'var(--text-primary)' }}
-                    >
-                        {peak}
-                    </span>
+                    <span className="font-mono font-bold text-[14px] tabular-nums text-text-primary">{peak}</span>
                     <span
                         className="text-[10.5px] font-mono text-text-tertiary"
                         title="Peak concurrent trucks the schedule needs at any hour"
@@ -148,8 +143,8 @@ function PerPlantRow({ color, peak, plant }) {
                         )}
                     </div>
                     <span
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
-                        style={{ background: `${verdict.color}1f`, color: verdict.color }}
+                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 text-text-primary"
+                        style={{ background: `${verdict.color}1f` }}
                     >
                         {verdict.label}
                         {coveragePct != null && <span className="font-mono opacity-85">· {coveragePct}%</span>}

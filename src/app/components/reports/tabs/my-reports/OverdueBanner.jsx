@@ -27,9 +27,9 @@ function OverdueBanner({ count, title, dueLabel, onSubmit }) {
                 <i className="fas fa-triangle-exclamation text-[13px]" />
             </div>
             <div className="flex-1 min-w-0">
-                <div className="font-bold text-[13px] text-red-700">{headline}</div>
+                <div className="font-bold text-[13px] text-text-primary">{headline}</div>
                 {title && (
-                    <div className="text-xs mt-0.5 truncate text-red-600">
+                    <div className="text-xs mt-0.5 truncate text-text-secondary">
                         {title}
                         {dueLabel ? ` · was due ${dueLabel}` : ''}
                     </div>

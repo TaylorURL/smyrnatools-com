@@ -71,10 +71,10 @@ export const CalcField = ({
 }
 
 const STATUS_PILL = {
-    danger: { background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' },
-    info: { background: 'rgba(37, 99, 235, 0.12)', color: '#1d4ed8' },
-    success: { background: 'rgba(22, 163, 74, 0.12)', color: '#15803d' },
-    warning: { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' }
+    danger: { background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' },
+    info: { background: 'rgba(37, 99, 235, 0.12)', color: 'var(--text-primary)' },
+    success: { background: 'rgba(22, 163, 74, 0.12)', color: 'var(--text-primary)' },
+    warning: { background: 'rgba(245, 158, 11, 0.14)', color: 'var(--text-primary)' }
 }
 
 /**
@@ -148,13 +148,7 @@ const CalculatorShell = ({
                                 columns={stats.length > 3 ? 4 : 3}
                             >
                                 {stats.map((s, i) => (
-                                    <Stat
-                                        key={i}
-                                        hint={s.hint}
-                                        label={s.label}
-                                        value={s.value}
-                                        valueColor={s.valueColor}
-                                    />
+                                    <Stat key={i} hint={s.hint} label={s.label} value={s.value} />
                                 ))}
                             </StatGroup>
                         )}

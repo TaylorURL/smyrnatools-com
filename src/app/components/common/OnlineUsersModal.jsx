@@ -136,8 +136,8 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                                                 <div className="mt-0.5 flex items-center gap-1.5">
                                                     {user.roles?.length > 0 && (
                                                         <span
-                                                            className="rounded px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider"
-                                                            style={{ background: tintBg, color: roleColor }}
+                                                            className="force-white-text rounded px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider"
+                                                            style={{ background: roleColor }}
                                                         >
                                                             {user.roles[0]}
                                                         </span>

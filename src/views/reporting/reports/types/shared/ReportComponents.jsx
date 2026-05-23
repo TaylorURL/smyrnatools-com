@@ -14,7 +14,9 @@ export function EmptyState({ icon = 'fa-inbox', title, subtitle, success = false
             className={`text-center p-8 rounded-lg text-[0.9375rem] text-slate-500 ${success ? 'bg-green-50' : 'bg-slate-50'}`}
         >
             {icon && (
-                <i className={`fas ${icon} text-4xl mb-3 block ${success ? 'text-green-500' : 'text-slate-300'}`}></i>
+                <i
+                    className={`fas ${icon} text-4xl mb-3 block ${success ? 'text-text-primary' : 'text-slate-300'}`}
+                ></i>
             )}
             {title && <h4>{title}</h4>}
             {subtitle && <p>{subtitle}</p>}
@@ -26,7 +28,7 @@ export function SectionHeader({ icon, title, subtitle }) {
     return (
         <div className="flex items-start gap-3 mb-5">
             {icon && (
-                <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-sky-100 text-sky-700 text-base">
+                <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-sky-100 text-text-primary text-base">
                     <i className={`fas ${icon}`}></i>
                 </div>
             )}

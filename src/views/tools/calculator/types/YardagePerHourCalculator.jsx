@@ -148,7 +148,7 @@ const YardagePerHourCalculator = () => {
                         />
                         <CalcField label={isOngoing ? 'Now' : 'Last Poured'}>
                             {isOngoing ? (
-                                <div className="flex items-center gap-2 w-full rounded-lg bg-green-50 border border-green-200 text-green-700 font-bold text-sm py-2.5 px-3">
+                                <div className="flex items-center gap-2 w-full rounded-lg bg-green-50 border border-green-200 text-text-primary font-bold text-sm py-2.5 px-3">
                                     <i className="fas fa-circle text-[6px] animate-pulse" />
                                     <span className="tabular-nums">{values.completionTime}</span>
                                 </div>

@@ -86,7 +86,7 @@ export default function RecommendationAdvice({ accentColor, recommendedSlot, req
             )}
             {recommendedSlot?.tighterAlternative && (
                 <div className="rounded-md p-3 flex items-start gap-2.5 text-[12.5px] leading-snug bg-[rgba(217,_119,_6,_0.08)] border border-[rgba(217,_119,_6,_0.30)] text-text-primary">
-                    <i className="fas fa-circle-info text-[12px] mt-0.5 shrink-0 text-[#b45309]" />
+                    <i className="fas fa-circle-info text-[12px] mt-0.5 shrink-0 text-text-primary" />
                     <div>
                         <strong>Heads up:</strong> {recommendedTime} starts the day{' '}
                         {Math.round(

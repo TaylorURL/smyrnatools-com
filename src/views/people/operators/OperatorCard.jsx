@@ -1,5 +1,6 @@
 import React from 'react'
 
+import OperatorClockIndicator from '../../../app/components/common/OperatorClockIndicator'
 import PhoneLink from '../../../app/components/common/PhoneLink'
 import CardSection from '../../../app/components/sections/CardSection'
 import DateUtility from '../../../utils/DateUtility'
@@ -45,18 +46,23 @@ function OperatorCard({
         <CardSection
             item={operator}
             itemType="Operator"
-            itemNumber={operator.name}
+            itemNumber={
+                <span className="inline-flex items-center gap-1.5">
+                    <OperatorClockIndicator badge={operator.smyrnaId || operator.employeeId} size="md" />
+                    {operator.name}
+                </span>
+            }
             onSelect={onSelect ? () => onSelect(operator) : undefined}
             statusColor={statusColor}
         >
             {hasScheduledOff && (
-                <span className="absolute top-2 right-2 text-blue-500 text-xs">
+                <span className="absolute top-2 right-2 text-text-primary text-xs">
                     <i className="fas fa-calendar-alt"></i>
                 </span>
             )}
             {isDuplicateName && (
                 <i
-                    className="fas fa-exclamation-triangle absolute top-2 right-8 text-amber-500 text-xs"
+                    className="fas fa-exclamation-triangle absolute top-2 right-8 text-text-primary text-xs"
                     title="Duplicate name"
                     aria-label="Duplicate name"
                 ></i>
@@ -92,7 +98,7 @@ function OperatorCard({
                 <div className="text-sm text-gray-500 dark:text-gray-400">Role</div>
                 <div className="text-sm font-medium">
                     {operator.isTrainer ? (
-                        <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded">
+                        <span className="bg-blue-100 text-text-primary text-xs font-semibold px-2 py-0.5 rounded">
                             Trainer
                         </span>
                     ) : (
@@ -119,7 +125,7 @@ function OperatorCard({
                         {[...Array(5)].map((_, i) => (
                             <i
                                 key={i}
-                                className={`fas fa-star ${i < displayRating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                className={`fas fa-star ${i < displayRating ? 'text-text-primary' : 'text-gray-300'}`}
                                 aria-hidden="true"
                             ></i>
                         ))}

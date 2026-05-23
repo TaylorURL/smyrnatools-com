@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react'
 export function PlanFlowEmptyPanel({ accentColor }) {
     return (
         <div className="flex flex-col items-center justify-center text-center px-6 py-10 flex-1">
-            <i className="fas fa-arrow-pointer text-[26px] mb-3" style={{ color: accentColor }} />
+            <i className="fas fa-arrow-pointer text-[26px] mb-3" style={{ color: 'var(--text-primary)' }} />
             <div className="text-[14px] font-semibold mb-1 text-text-primary">Pick a plant</div>
             <div className="text-[12px] max-w-[240px] text-text-secondary">
                 Click a plant on the map to inspect it, edit its routes, or send trucks elsewhere.
@@ -63,12 +63,7 @@ export function PlanFlowPlantOverview({
             <StatRow>
                 <StatCell label="Eff ops" value={selected.eff} />
                 <StatCell label="Yardage" value={production.totalYardage || '—'} />
-                <StatCell
-                    label="YPH"
-                    value={yph ?? '—'}
-                    valueColor={yph != null ? yphColorFor(yph, accentColor) : undefined}
-                    isLast
-                />
+                <StatCell label="YPH" value={yph ?? '—'} isLast />
             </StatRow>
 
             {canEdit && isSaturday && onSaturdayOverrideChange ? (
@@ -189,16 +184,13 @@ function StatRow({ children }) {
     return <div className="grid grid-cols-3 rounded-lg overflow-hidden border border-border-light">{children}</div>
 }
 
-function StatCell({ isLast = false, label, value, valueColor }) {
+function StatCell({ isLast = false, label, value }) {
     return (
         <div
             className={`px-3 py-2 flex flex-col gap-0.5 bg-bg-primary ${isLast ? '' : 'border-r border-border-light'}`}
         >
             <span className="text-[10.5px] text-text-secondary">{label}</span>
-            <span
-                className="text-[16px] font-semibold leading-tight font-mono tabular-nums truncate"
-                style={{ color: valueColor || 'var(--text-primary)' }}
-            >
+            <span className="text-[16px] font-semibold leading-tight font-mono tabular-nums truncate text-text-primary">
                 {value}
             </span>
         </div>
@@ -230,7 +222,7 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
                 <div className="flex items-center gap-2 min-w-0">
                     <i
                         className="fas fa-user-slash text-[12px] shrink-0"
-                        style={{ color: hasMissing ? '#dc2626' : 'var(--text-tertiary)' }}
+                        style={{ color: hasMissing ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
                     />
                     <SectionLabel>Missing operators</SectionLabel>
                 </div>
@@ -297,7 +289,7 @@ function SaturdayOverrideEditor({ halfFleetDefault, onChange, override, rosterCo
                 <div className="flex items-center gap-2 min-w-0">
                     <i
                         className="fas fa-calendar-day text-[12px] shrink-0"
-                        style={{ color: hasOverride ? '#0ea5e9' : 'var(--text-tertiary)' }}
+                        style={{ color: hasOverride ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
                     />
                     <SectionLabel>Saturday operator count</SectionLabel>
                 </div>
@@ -434,7 +426,7 @@ function RouteRow({ accentColor, assignment, canEdit, clockIn, onDelete, onEdit,
     const ops = parseInt(assignment.driverCount, 10) || 0
     return (
         <div className="rounded-lg px-3 py-2 flex items-center gap-2.5 bg-bg-primary border border-border-light">
-            <div className="flex items-center gap-1 font-semibold text-[12px]" style={{ color: accentColor }}>
+            <div className="flex items-center gap-1 font-semibold text-[12px]" style={{ color: 'var(--text-primary)' }}>
                 <span>{assignment.fromPlant}</span>
                 <i className="fas fa-arrow-right text-[9px] text-text-tertiary" />
                 <span>{assignment.toPlant}</span>
@@ -459,7 +451,7 @@ function RouteRow({ accentColor, assignment, canEdit, clockIn, onDelete, onEdit,
                     </button>
                     <button
                         onClick={onDelete}
-                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-red-600"
+                        className="w-6 h-6 rounded border-none bg-transparent cursor-pointer text-text-primary"
                         title="Delete"
                     >
                         <i className="fas fa-trash text-[10px]" />

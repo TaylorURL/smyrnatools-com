@@ -10,10 +10,7 @@ export function Card({ children, className = '' }) {
 export function CardHeader({ accentColor, description, icon, title }) {
     return (
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-            <div
-                className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 bg-bg-tertiary"
-                style={{ color: accentColor }}
-            >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0 bg-bg-tertiary text-text-primary">
                 <i className={`fas ${icon} text-[16px]`} />
             </div>
             <div className="min-w-0">
@@ -51,7 +48,7 @@ export function SubtleButton({ children, danger = false, disabled = false, icon,
             style={{
                 background: danger ? 'rgba(220, 38, 38, 0.12)' : 'var(--bg-secondary)',
                 border: `1px solid ${danger ? 'rgba(220, 38, 38, 0.35)' : 'var(--border-light)'}`,
-                color: danger ? '#dc2626' : 'var(--text-secondary)'
+                color: danger ? 'var(--text-primary)' : 'var(--text-secondary)'
             }}
         >
             {icon && <i className={`fas ${icon} text-[12px]`} />}
@@ -122,14 +119,11 @@ export function DetailRow({ icon, label, mono, value }) {
 }
 
 /** Single cell in the at-a-glance stat strip. Flat label / mono value / hint. */
-export function StatCell({ hint, label, value, valueColor }) {
+export function StatCell({ hint, label, value }) {
     return (
         <div className="px-3 py-2.5 flex flex-col gap-0.5 bg-bg-primary border-r border-border-light">
             <span className="text-[11px] text-text-secondary">{label}</span>
-            <span
-                className="font-semibold text-[20px] leading-tight font-mono tabular-nums"
-                style={{ color: valueColor || 'var(--text-primary)' }}
-            >
+            <span className="font-semibold text-[20px] leading-tight font-mono tabular-nums text-text-primary">
                 {value}
             </span>
             {hint && <span className="text-[11px] text-text-tertiary">{hint}</span>}

@@ -19,7 +19,7 @@ export default function CockpitHeader({
             <h1 className="text-lg font-bold tracking-tight m-0 shrink-0 text-text-primary">Account</h1>
             {regionLabel && (
                 <span className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full bg-bg-secondary border border-border-light text-text-primary">
-                    <i className="fas fa-location-dot text-[10px] text-green-600" />
+                    <i className="fas fa-location-dot text-[10px] text-text-primary" />
                     <span className="truncate">{regionLabel}</span>
                 </span>
             )}
@@ -52,7 +52,7 @@ export default function CockpitHeader({
                     type="button"
                     onClick={onSignOut}
                     title="Sign out"
-                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95 bg-[rgba(220,_38,_38,_0.12)] text-red-600"
+                    className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 transition-colors hover:brightness-95 bg-[rgba(220,_38,_38,_0.12)] text-text-primary"
                 >
                     <i className="fas fa-arrow-right-from-bracket" />
                     {!isMobile && <span>Sign out</span>}

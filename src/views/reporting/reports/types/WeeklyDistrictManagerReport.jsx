@@ -246,7 +246,7 @@ function DailyRecapSection({ form, handleChange, readOnly }) {
                                 <div className="flex items-center gap-1.5">
                                     <i className="fas fa-calendar-day text-[10px] text-text-tertiary" />
                                     <span className="text-[11.5px] font-semibold text-text-primary">{day.label}</span>
-                                    {!readOnly && <span className="text-red-600">*</span>}
+                                    {!readOnly && <span className="text-text-primary">*</span>}
                                 </div>
                                 <span className="text-[10px] tabular-nums text-text-tertiary">{value.length}</span>
                             </div>
@@ -268,10 +268,10 @@ function DailyRecapSection({ form, handleChange, readOnly }) {
 }
 
 /** Inline pill stat — same compact style as the Plan-tab KPI badges. */
-function StatPill({ accent = 'var(--text-secondary)', icon, label, value }) {
+function StatPill({ icon, label, value }) {
     return (
         <div className="flex items-center gap-2 rounded px-2.5 py-1.5 bg-bg-secondary border border-border-light">
-            <i className={`fas ${icon} text-[11px]`} style={{ color: accent }} />
+            <i className={`fas ${icon} text-[11px] text-text-primary`} />
             <div className="flex items-baseline gap-1.5">
                 <span className="text-[15px] font-bold leading-none tabular-nums text-text-primary">{value}</span>
                 <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
@@ -327,7 +327,7 @@ function MaintenanceItemsTable({ items, plants }) {
                     </thead>
                     <tbody>
                         {items.map((item) => {
-                            const { color, icon } = getItemIcon(item)
+                            const { icon } = getItemIcon(item)
                             return (
                                 <tr
                                     className="border-t border-border-light"
@@ -337,8 +337,7 @@ function MaintenanceItemsTable({ items, plants }) {
                                     <td className="px-3 py-2 align-top">
                                         <div className="flex items-start gap-2">
                                             <i
-                                                className={`fas ${icon} text-[12px] mt-0.5 shrink-0`}
-                                                style={{ color }}
+                                                className={`fas ${icon} text-[12px] mt-0.5 shrink-0 text-text-primary`}
                                             />
                                             <span
                                                 className="text-[12px] leading-snug text-text-primary"
@@ -360,7 +359,7 @@ function MaintenanceItemsTable({ items, plants }) {
                                         {item.deadline ? ReportUtility.formatDate(item.deadline) : '—'}
                                     </td>
                                     <td className="px-3 py-2 align-top whitespace-nowrap">
-                                        <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums bg-[rgba(22,_163,_74,_0.12)] text-green-700">
+                                        <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10.5px] font-semibold tabular-nums bg-[rgba(22,_163,_74,_0.12)] text-text-primary">
                                             <i className="fas fa-check text-[9px]" />
                                             {item.completed_at ? ReportUtility.formatDate(item.completed_at) : '—'}
                                         </span>
@@ -542,19 +541,9 @@ function DistrictManagerPlugin({
                             sub="Maintenance items closed during this reporting week."
                         />
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <StatPill
-                                accent="#16a34a"
-                                icon="fa-circle-check"
-                                label="Completed"
-                                value={completedCount}
-                            />
+                            <StatPill icon="fa-circle-check" label="Completed" value={completedCount} />
                             {overdueCount > 0 && (
-                                <StatPill
-                                    accent="#dc2626"
-                                    icon="fa-triangle-exclamation"
-                                    label="Were Overdue"
-                                    value={overdueCount}
-                                />
+                                <StatPill icon="fa-triangle-exclamation" label="Were Overdue" value={overdueCount} />
                             )}
                         </div>
                     </div>

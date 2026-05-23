@@ -73,9 +73,9 @@ function UserLabel({ userId, showInitials = false, showIcon = false, size = 'med
         return (
             <span className={baseClass} title={`Error: ${error}`}>
                 {showIcon ? (
-                    <i className="fas fa-exclamation-triangle text-amber-500" />
+                    <i className="fas fa-exclamation-triangle text-text-primary" />
                 ) : showInitials ? (
-                    <span className={`${initialsBaseClass} bg-red-50 text-red-800`}>!</span>
+                    <span className={`${initialsBaseClass} bg-red-50 text-text-primary`}>!</span>
                 ) : null}
                 <span className="font-medium text-gray-700">Unknown User</span>
             </span>

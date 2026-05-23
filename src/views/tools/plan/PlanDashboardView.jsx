@@ -246,7 +246,6 @@ function PlanDashboardView({
                             <SharedStat
                                 label="Plants"
                                 value={`${stats.length}/${regionPlantCount || stats.length}`}
-                                valueColor={stats.length < regionPlantCount ? '#d97706' : undefined}
                                 hint={
                                     stats.length < regionPlantCount
                                         ? `${regionPlantCount - stats.length} not in plan`
@@ -264,20 +263,15 @@ function PlanDashboardView({
                                           ? `Avg ${avgYardagePerPlant} yd / plant`
                                           : 'No production'
                                 }
-                                valueColor={
-                                    plantsMissingProduction > 0 && plantsWithYardage > 0 ? '#d97706' : undefined
-                                }
                             />
                             <SharedStat
                                 label="Earliest clock-in"
                                 value={earliestClockIn || '—'}
-                                valueColor={earliestClockIn ? '#16a34a' : undefined}
                                 hint={earliestClockIn ? 'First departure' : 'No routes'}
                             />
                             <SharedStat
                                 label="Shift span"
                                 value={shiftSpanHours ? `${shiftSpanHours}h` : '—'}
-                                valueColor={shiftSpanHours && shiftSpanHours > 10 ? '#d97706' : undefined}
                                 hint={
                                     shiftSpanHours
                                         ? shiftSpanHours > 10
@@ -289,13 +283,6 @@ function PlanDashboardView({
                             <SharedStat
                                 label="Overall Job Coverage"
                                 value={jobCoverage ? `${jobCoverage.covered}/${jobCoverage.totalJobs}` : '—'}
-                                valueColor={
-                                    jobCoverage && jobCoverage.needHelp > 0
-                                        ? '#d97706'
-                                        : jobCoverage
-                                          ? '#16a34a'
-                                          : undefined
-                                }
                                 hint={
                                     jobCoverage
                                         ? jobCoverage.needHelp > 0
@@ -351,7 +338,7 @@ function PlanDashboardView({
                                                 onClick={() => jumpTo('special')}
                                                 className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5 text-text-secondary"
                                             >
-                                                <span className="text-amber-600">•</span>
+                                                <span className="text-text-primary">•</span>
                                                 <span className="flex-1 truncate">{job.title || 'Untitled'}</span>
                                                 {job.time && <span className="font-mono text-[11px]">{job.time}</span>}
                                             </button>
@@ -362,7 +349,7 @@ function PlanDashboardView({
                                                 onClick={() => jumpTo('qc')}
                                                 className="text-left text-[12px] border-none cursor-pointer bg-transparent flex items-baseline gap-2 px-0 py-0.5 text-text-secondary"
                                             >
-                                                <span className="text-[#7c3aed]">•</span>
+                                                <span className="text-text-primary">•</span>
                                                 <span className="flex-1 truncate">{job.title || 'Untitled'}</span>
                                                 {job.time && <span className="font-mono text-[11px]">{job.time}</span>}
                                             </button>

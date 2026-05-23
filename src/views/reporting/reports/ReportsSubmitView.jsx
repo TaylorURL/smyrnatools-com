@@ -426,7 +426,7 @@ function ReportsSubmitView({
                 <div className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light">
                     <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                         Plant
-                        <span className="ml-0.5 text-red-600">*</span>
+                        <span className="ml-0.5 text-text-primary">*</span>
                     </label>
                     <select
                         value={form.plant ?? ''}
@@ -450,7 +450,7 @@ function ReportsSubmitView({
                 <div className="flex flex-col gap-1.5 rounded p-2.5 bg-bg-secondary border border-border-light">
                     <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                         Report Date
-                        <span className="ml-0.5 text-red-600">*</span>
+                        <span className="ml-0.5 text-text-primary">*</span>
                     </label>
                     <input
                         type="date"
@@ -496,7 +496,7 @@ function ReportsSubmitView({
                             </>
                         ) : (
                             <>
-                                <i className="fas fa-check-circle text-[10px] text-emerald-600" />
+                                <i className="fas fa-check-circle text-[10px] text-text-primary" />
                                 <span>
                                     1st Load and Total Loads auto-filled from this report day&apos;s dispatch tickets —
                                     not editable.
@@ -647,7 +647,7 @@ function ReportsSubmitView({
                                 <button
                                     type="button"
                                     onClick={() => removeOperatorRow(carouselIndex)}
-                                    className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none bg-[rgba(220,_38,_38,_0.1)] border border-[rgba(220,_38,_38,_0.3)] text-red-700"
+                                    className="inline-flex items-center gap-1.5 rounded text-[11.5px] font-semibold uppercase tracking-wider px-2.5 py-1.5 cursor-pointer border-none bg-[rgba(220,_38,_38,_0.1)] border border-[rgba(220,_38,_38,_0.3)] text-text-primary"
                                 >
                                     <i className="fas fa-user-minus text-[10px]" />
                                     Exclude
@@ -696,7 +696,7 @@ function ReportsSubmitView({
                                         key={opId}
                                         type="button"
                                         onClick={() => addOperatorRow(opId, mixers)}
-                                        className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11.5px] font-semibold cursor-pointer border-none bg-[rgba(14,_165,_233,_0.12)] border border-[rgba(14,_165,_233,_0.35)] text-[#0369a1]"
+                                        className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11.5px] font-semibold cursor-pointer border-none bg-[rgba(14,_165,_233,_0.12)] border border-[rgba(14,_165,_233,_0.35)] text-text-primary"
                                     >
                                         <i className="fas fa-user-plus text-[10px]" />
                                         {op?.label || opId}
@@ -742,7 +742,7 @@ function ReportsSubmitView({
                                 />
                                 <span className={FORM_SECTION_LABEL_CLASS}>
                                     {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                                    {field.required && <span className="ml-0.5 text-red-600">*</span>}
+                                    {field.required && <span className="ml-0.5 text-text-primary">*</span>}
                                 </span>
                             </label>
                             {renderFieldInput(field, FORM_FIELD_BASE_CLASS)}
@@ -788,7 +788,7 @@ function ReportsSubmitView({
                     >
                         <label className={FORM_SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
                             {field.name === 'yardage' ? 'Total Yardage' : field.label}
-                            {field.required && <span className="ml-0.5 text-red-600">*</span>}
+                            {field.required && <span className="ml-0.5 text-text-primary">*</span>}
                         </label>
                         {renderFieldInput(field)}
                     </div>
@@ -854,12 +854,12 @@ function ReportsSubmitView({
                     />
                 )}
                 {success && (
-                    <div className="bg-green-100 text-green-700 p-4 rounded-lg mx-4 my-4 text-sm font-medium">
+                    <div className="bg-green-100 text-text-primary p-4 rounded-lg mx-4 my-4 text-sm font-medium">
                         Report submitted successfully.
                     </div>
                 )}
                 {saveMessage && (
-                    <div className="bg-green-100 text-green-700 p-4 rounded-lg mx-4 my-4 text-sm font-medium">
+                    <div className="bg-green-100 text-text-primary p-4 rounded-lg mx-4 my-4 text-sm font-medium">
                         {saveMessage}
                     </div>
                 )}
@@ -875,7 +875,7 @@ function ReportsSubmitView({
                         </button>
                         <button
                             type="button"
-                            className="px-4 sm:px-6 py-2.5 sm:py-3 bg-sky-100 text-sky-700 rounded-lg text-sm font-semibold hover:bg-sky-200 transition-colors order-2"
+                            className="px-4 sm:px-6 py-2.5 sm:py-3 bg-sky-100 text-text-primary rounded-lg text-sm font-semibold hover:bg-sky-200 transition-colors order-2"
                             onClick={handleSaveDraft}
                             disabled={submitting || savingDraft}
                         >

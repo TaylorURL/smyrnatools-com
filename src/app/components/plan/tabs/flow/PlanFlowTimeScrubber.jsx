@@ -137,9 +137,8 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
                         return (
                             <span
                                 key={wp.hour}
-                                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-colors"
+                                className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-colors ${reached ? 'text-text-primary' : 'text-text-tertiary'}`}
                                 style={{
-                                    color: reached ? accentColor : 'var(--text-tertiary)',
                                     fontSize: 9,
                                     left: `${left}%`,
                                     opacity: reached ? 1 : 0.55
@@ -182,10 +181,9 @@ export function PlanFlowTimeScrubber({ accentColor, hasActivity, isPlaying, onCh
 
             {activityLabel && (
                 <span
-                    className="pf-scrubber-activity hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold whitespace-nowrap shrink-0 transition-colors"
+                    className={`pf-scrubber-activity hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold whitespace-nowrap shrink-0 transition-colors ${activityActive ? 'text-text-primary' : 'text-text-tertiary'}`}
                     style={{
-                        background: activityActive ? 'rgba(22, 163, 74, 0.12)' : 'var(--bg-secondary)',
-                        color: activityActive ? '#16a34a' : 'var(--text-tertiary)'
+                        background: activityActive ? 'rgba(22, 163, 74, 0.12)' : 'var(--bg-secondary)'
                     }}
                 >
                     {activityActive ? (

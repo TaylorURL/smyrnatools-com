@@ -17,8 +17,8 @@ export default function PlanScheduleClosedBanner({ isSaturday, plantsClosed }) {
             }}
         >
             <i
-                className={`fas ${plantsClosed ? 'fa-ban' : 'fa-calendar-day'} mt-0.5`}
-                style={{ color: plantsClosed ? '#dc2626' : '#d97706', fontSize: 14 }}
+                className={`fas ${plantsClosed ? 'fa-ban' : 'fa-calendar-day'} mt-0.5 text-text-primary`}
+                style={{ fontSize: 14 }}
             />
             <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-bold text-text-primary">

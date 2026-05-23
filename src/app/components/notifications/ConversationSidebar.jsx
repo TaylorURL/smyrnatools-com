@@ -14,7 +14,7 @@ function SidebarSection({ accentColor, badge, children, icon, label }) {
                 </span>
                 {badge != null && badge > 0 && (
                     <span
-                        className="font-mono tabular-nums rounded px-1 text-[9px] font-bold text-white"
+                        className="force-white-text font-mono tabular-nums rounded px-1 text-[9px] font-bold"
                         style={{ background: accentColor }}
                     >
                         {badge}
@@ -53,14 +53,14 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
         >
             <div className="relative shrink-0">
                 <div
-                    className="flex h-9 w-9 items-center justify-center rounded text-[12px] font-bold text-white"
+                    className="force-white-text flex h-9 w-9 items-center justify-center rounded text-[12px] font-bold"
                     style={{ background: accentColor }}
                 >
                     {initials}
                 </div>
                 {hasUnread && (
                     <span
-                        className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold text-white font-mono tabular-nums bg-red-600"
+                        className="force-white-text absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold font-mono tabular-nums bg-red-600"
                         style={{ border: '1.5px solid var(--bg-primary)' }}
                     >
                         {conversation.unread}
@@ -72,8 +72,8 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
                     <span className="flex items-center gap-1.5 min-w-0">
                         {pinned && (
                             <i
-                                className="fas fa-thumbtack text-[9px]"
-                                style={{ color: accentColor, transform: 'rotate(40deg)' }}
+                                className="fas fa-thumbtack text-[9px] text-text-primary"
+                                style={{ transform: 'rotate(40deg)' }}
                             />
                         )}
                         {muted && <i className="fas fa-bell-slash text-[9px] text-text-tertiary" />}
@@ -104,8 +104,8 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
                 {attachmentLabel && (
                     <div className="mt-1 flex items-center gap-1.5">
                         <span
-                            className="inline-flex items-center gap-1 rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5"
-                            style={{ background: `${accentColor}1a`, color: accentColor }}
+                            className="inline-flex items-center gap-1 rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 text-text-primary"
+                            style={{ background: `${accentColor}1a` }}
                         >
                             <i className={`${attachmentIcon} text-[8.5px]`} />
                             <span className="font-mono tabular-nums">{attachmentLabel}</span>
@@ -186,11 +186,13 @@ export default function ConversationSidebar({
                             key={id}
                             type="button"
                             onClick={() => onFilterChange?.(id)}
-                            className="inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-colors"
+                            className={`inline-flex items-center gap-1 rounded text-[11px] font-semibold border cursor-pointer px-1.5 py-0.5 transition-colors ${
+                                isActive ? 'force-white-text' : ''
+                            }`}
                             style={{
                                 background: isActive ? accentColor : 'var(--bg-secondary)',
                                 borderColor: isActive ? accentColor : 'var(--border-light)',
-                                color: isActive ? '#fff' : 'var(--text-secondary)'
+                                color: isActive ? undefined : 'var(--text-secondary)'
                             }}
                         >
                             <i className={`fas ${icon} text-[9.5px]`} />
@@ -199,7 +201,7 @@ export default function ConversationSidebar({
                                 className="font-mono tabular-nums rounded px-1 text-[10px]"
                                 style={{
                                     background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--bg-tertiary)',
-                                    color: isActive ? '#fff' : 'var(--text-tertiary)'
+                                    color: isActive ? undefined : 'var(--text-tertiary)'
                                 }}
                             >
                                 {count}

@@ -48,11 +48,11 @@ function QualityReportRow({ accent, getUserName, onDelete, onOpen, report }) {
                 </div>
             </div>
             {report.reviewed ? (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-green-100 text-green-800">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-green-100 text-text-primary">
                     Reviewed
                 </span>
             ) : (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-amber-100 text-amber-800">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0 bg-amber-100 text-text-primary">
                     Pending
                 </span>
             )}

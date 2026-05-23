@@ -61,7 +61,7 @@ function IssueCardHeader({ isCompleted, sevPalette, severity }) {
         <div className="flex items-center gap-1.5 mb-1 flex-wrap">
             <i
                 className={isCompleted ? 'fas fa-check-circle text-[11px]' : 'fas fa-exclamation-circle text-[11px]'}
-                style={{ color: isCompleted ? '#16a34a' : '#d97706' }}
+                style={{ color: 'var(--text-primary)' }}
             />
             <span
                 className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
@@ -70,7 +70,7 @@ function IssueCardHeader({ isCompleted, sevPalette, severity }) {
                 {severity}
             </span>
             {isCompleted && (
-                <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[rgba(22,_163,_74,_0.15)] text-green-700">
+                <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[rgba(22,_163,_74,_0.15)] text-text-primary">
                     Resolved
                 </span>
             )}
@@ -93,7 +93,7 @@ function IssueCardFooter({ entry, getCreatorName, issue, onCompleteIssue }) {
                 </span>
             </div>
             {entry.isCompleted && entry.completedDate && (
-                <span className="text-[11px] font-semibold tabular-nums text-green-700">
+                <span className="text-[11px] font-semibold tabular-nums text-text-primary">
                     <i className="fas fa-check mr-1 text-[9px]" />
                     {HistoryUtility.formatHistoryDate(issue.time_completed)}
                 </span>
@@ -102,7 +102,7 @@ function IssueCardFooter({ entry, getCreatorName, issue, onCompleteIssue }) {
                 <button
                     onClick={() => onCompleteIssue(issue.id)}
                     title="Mark as resolved"
-                    className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider rounded px-2 py-0.5 cursor-pointer border-none bg-[rgba(22,_163,_74,_0.12)] text-green-700"
+                    className="inline-flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider rounded px-2 py-0.5 cursor-pointer border-none bg-[rgba(22,_163,_74,_0.12)] text-text-primary"
                 >
                     <i className="fas fa-check text-[9px]" />
                     Mark Resolved
@@ -148,7 +148,7 @@ function IssueRow({ entry, getCreatorName, isLast, onCompleteIssue, onDeleteIssu
                     <button
                         onClick={() => onDeleteIssue(issue.id)}
                         title="Delete issue"
-                        className="rounded border-none cursor-pointer flex items-center justify-center bg-[rgba(220,_38,_38,_0.12)] text-red-700 h-[22px] w-[22px]"
+                        className="rounded border-none cursor-pointer flex items-center justify-center bg-[rgba(220,_38,_38,_0.12)] text-text-primary h-[22px] w-[22px]"
                     >
                         <i className="fas fa-trash text-[10px]" />
                     </button>

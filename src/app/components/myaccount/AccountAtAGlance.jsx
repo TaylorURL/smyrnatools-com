@@ -18,7 +18,6 @@ export default function AccountAtAGlance({
         { label: 'Email', mono: false, value: email || '—' },
         { label: 'Joined', value: formatJoinedDate(joinedAt) },
         {
-            color: currentSession?.isCurrent ? '#16a34a' : undefined,
             hint: currentSession ? `${currentSession.browser || ''} · ${currentSession.os || ''}`.trim() : null,
             label: 'Last sign-in',
             value: currentSession ? formatRelativeTime(currentSession.lastActive) : '—'
@@ -54,8 +53,7 @@ export default function AccountAtAGlance({
                             {row.label}
                         </span>
                         <span
-                            className={`font-semibold text-[13px] ${row.mono === false ? '' : 'font-mono tabular-nums'} truncate`}
-                            style={{ color: row.color || 'var(--text-primary)' }}
+                            className={`font-semibold text-[13px] text-text-primary ${row.mono === false ? '' : 'font-mono tabular-nums'} truncate`}
                             title={row.value}
                         >
                             {row.value}

@@ -1,6 +1,7 @@
 /* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
+import OperatorClockIndicator from '../../../app/components/common/OperatorClockIndicator'
 import PhoneLink from '../../../app/components/common/PhoneLink'
 import StatusHistoryBar from '../../../app/components/common/StatusHistoryBar'
 import TabFadeIn from '../../../app/components/common/TabFadeIn'
@@ -506,7 +507,7 @@ function OperatorsView({
             stars.push(
                 <i
                     key={i}
-                    className={`fas fa-star text-base ${i <= rating ? 'text-amber-400' : 'text-border-light'} ${i < 5 ? 'mr-0.5' : ''}`}
+                    className={`fas fa-star text-base ${i <= rating ? 'text-text-primary' : 'text-border-light'} ${i < 5 ? 'mr-0.5' : ''}`}
                 ></i>
             )
         }
@@ -526,7 +527,7 @@ function OperatorsView({
         embedded ? null : (
             <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-4 md:px-6 pt-3 pb-2 border-b border-border-light bg-bg-primary">
                 <div className="flex items-center gap-3">
-                    <i className="fas fa-id-badge text-[14px]" style={{ color: accentColor }} />
+                    <i className="fas fa-id-badge text-[14px] text-text-primary" />
                     <span className="text-[14px] font-bold text-text-primary">{title}</span>
                 </div>
                 <PersonViewTabBar accentColor={accentColor} activeTab={activeTab} onChange={setActiveTab} />
@@ -698,16 +699,33 @@ function OperatorsView({
                                                     'text-text-primary text-[12.5px] font-bold py-1.5 px-2.5 text-left align-middle'
                                                 const statusBadgeStyle = (status) => {
                                                     const colorMap = {
-                                                        Active: 'bg-[#dcfce7] text-[#166534]',
-                                                        'Light Duty': 'bg-[#fef3c7] text-[#92400e]',
-                                                        'No Hire': 'bg-[#fee2e2] text-[#b91c1c]',
-                                                        'Pending Start': 'bg-[#dbeafe] text-[#1e40af]',
-                                                        Terminated: 'bg-[#fecaca] text-[#991b1b]',
-                                                        Training: 'bg-[#e0e7ff] text-[#4338ca]'
+                                                        Active: 'bg-[#dcfce7] text-text-primary',
+                                                        'Light Duty': 'bg-[#fef3c7] text-text-primary',
+                                                        'No Hire': 'bg-[#fee2e2] text-text-primary',
+                                                        'Pending Start': 'bg-[#dbeafe] text-text-primary',
+                                                        Terminated: 'bg-[#fecaca] text-text-primary',
+                                                        Training: 'bg-[#e0e7ff] text-text-primary'
                                                     }
                                                     const colors =
                                                         colorMap[status] || 'bg-bg-tertiary text-text-secondary'
                                                     return `inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${colors}`
+                                                }
+                                                /** Solid-fill colour per status — pulled from the
+                                                 *  darker text hex in the class map above so the
+                                                 *  vocabulary stays consistent with AssetListRow.
+                                                 *  Used inline to force white text on a saturated
+                                                 *  background, beating the Tailwind utility classes. */
+                                                const statusBadgeInlineStyle = (status) => {
+                                                    const solidMap = {
+                                                        Active: '#166534',
+                                                        'Light Duty': '#92400e',
+                                                        'No Hire': '#b91c1c',
+                                                        'Pending Start': '#1e40af',
+                                                        Terminated: '#991b1b',
+                                                        Training: '#4338ca'
+                                                    }
+                                                    const bg = solidMap[status]
+                                                    return bg ? { background: bg } : undefined
                                                 }
                                                 const actionBtnCls =
                                                     'inline-flex items-center justify-center w-5 h-5 mr-0.5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90'
@@ -724,6 +742,9 @@ function OperatorsView({
                                                             className={`${cellHighlightCls} w-[24%] group-hover:bg-bg-tertiary`}
                                                         >
                                                             <div className="flex items-center gap-1.5">
+                                                                <OperatorClockIndicator
+                                                                    badge={operator.smyrnaId || operator.employeeId}
+                                                                />
                                                                 <span className={duplicate ? 'duplicate' : ''}>
                                                                     {operator.name}
                                                                 </span>
@@ -760,7 +781,10 @@ function OperatorsView({
                                                             className={`${cellSecondaryCls} w-[14%] group-hover:bg-bg-tertiary`}
                                                         >
                                                             <div>
-                                                                <span className={statusBadgeStyle(operator.status)}>
+                                                                <span
+                                                                    className={`force-white-text ${statusBadgeStyle(operator.status)}`}
+                                                                    style={statusBadgeInlineStyle(operator.status)}
+                                                                >
                                                                     {operator.status || '\u2014'}
                                                                     {operator.status &&
                                                                         operator.status !== 'Terminated' &&

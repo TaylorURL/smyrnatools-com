@@ -88,7 +88,7 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                         key={`missing-${item.id || `${item.plant_code || item.plant}-${weekIso}-${item.report_name || item.name}`}`}
                         className="flex items-center gap-2.5 px-3 py-2 border-b border-border-light"
                     >
-                        <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-red-100 text-red-700">
+                        <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-red-100 text-text-primary">
                             <i className="fas fa-exclamation-circle text-[11px]" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -102,7 +102,7 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                                 {daysLate !== null && daysLate > 0 && (
                                     <>
                                         {' · '}
-                                        <span className="font-semibold text-red-600">{daysLate}d late</span>
+                                        <span className="font-semibold text-text-primary">{daysLate}d late</span>
                                     </>
                                 )}
                             </div>
@@ -144,12 +144,12 @@ function MergedReviewList({ missing = [], review = [], reviewedByCurrentUser, ge
                             </div>
                         </div>
                         {submittedLate && (
-                            <span className={`${STATUS_PILL_BASE} bg-orange-100 text-orange-800`}>Late</span>
+                            <span className={`${STATUS_PILL_BASE} bg-orange-100 text-text-primary`}>Late</span>
                         )}
                         {isReviewed ? (
-                            <span className={`${STATUS_PILL_BASE} bg-green-100 text-green-800`}>Reviewed</span>
+                            <span className={`${STATUS_PILL_BASE} bg-green-100 text-text-primary`}>Reviewed</span>
                         ) : (
-                            <span className={`${STATUS_PILL_BASE} bg-amber-100 text-amber-800`}>Pending</span>
+                            <span className={`${STATUS_PILL_BASE} bg-amber-100 text-text-primary`}>Pending</span>
                         )}
                         <button
                             type="button"

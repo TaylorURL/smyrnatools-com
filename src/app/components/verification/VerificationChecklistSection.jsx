@@ -101,7 +101,7 @@ export default function VerificationChecklistSection({
                         {vin && !vinOk && (
                             <div className="mt-1.5 space-y-0.5">
                                 {vinInfo.reasons.map((reason) => (
-                                    <div key={reason} className="text-[11.5px] text-red-600">
+                                    <div key={reason} className="text-[11.5px] text-text-primary">
                                         {reason}
                                     </div>
                                 ))}
@@ -143,7 +143,7 @@ export default function VerificationChecklistSection({
                         />
                         <Hint>Read the meter on the asset and confirm the current hours.</Hint>
                         {!hoursOk && String(hours ?? '').trim() && (
-                            <div className="mt-1.5 text-[11.5px] text-red-600">
+                            <div className="mt-1.5 text-[11.5px] text-text-primary">
                                 Enter a valid number (0 or greater).
                             </div>
                         )}

@@ -1,25 +1,13 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-/** Tier colours matched to the same buckets the old StarRating used so
- *  the new percentage badge keeps the same green→amber→red signal at a
- *  glance. */
-const tierColor = (value) => {
-    if (value == null || !Number.isFinite(value)) return 'var(--text-tertiary)'
-    if (value >= 0.9) return '#16a34a'
-    if (value >= 0.75) return '#65a30d'
-    if (value >= 0.5) return '#d97706'
-    if (value >= 0.25) return '#dc2626'
-    return '#b91c1c'
-}
-
 /**
- * Renders a 0–1 fraction as a coloured percentage — the universal
- * "score" display for any percentage-shaped metric (good-service rate,
- * pace score, kicker rate, etc.) across the Statistics, Assets, and
- * People pages.
+ * Renders a 0–1 fraction as a percentage — the universal "score" display
+ * for any percentage-shaped metric (good-service rate, pace score, kicker
+ * rate, etc.) across the Statistics, Assets, and People pages.
  *
- * Use this anywhere the underlying value is a percentage. Keep the
+ * The percent value itself is the signal, so the number renders in the
+ * inherited theme text color (light, dark, and grayed-out themes all just
+ * work). Use this anywhere the underlying value is a percentage. Keep the
  * star glyphs only for genuine 1–5 ratings (operator rating, asset
  * cleanliness, asset condition).
  *
@@ -34,11 +22,7 @@ export function ScorePercent({ size = 'lg', value }) {
     const pct = Math.round(value * 100)
     const sizeClass = size === 'sm' ? 'text-[12.5px]' : 'text-[20px]'
     return (
-        <span
-            className={`font-mono font-semibold tabular-nums leading-none ${sizeClass}`}
-            style={{ color: tierColor(value) }}
-            title={`${pct}%`}
-        >
+        <span className={`font-mono font-semibold tabular-nums leading-none ${sizeClass}`} title={`${pct}%`}>
             {pct}%
         </span>
     )

@@ -302,13 +302,13 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                 </div>
                 <div className="px-4 sm:px-6 py-4 sm:py-5 flex flex-col gap-4 overflow-y-auto">
                     {error && (
-                        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-text-primary">
                             <i className="fas fa-exclamation-circle shrink-0" />
                             {error}
                         </div>
                     )}
                     {emailError && (
-                        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-text-primary">
                             <i className="fas fa-exclamation-triangle shrink-0 mt-0.5" />
                             <div>
                                 <div className="font-semibold mb-0.5">Report submitted — email notification failed</div>
@@ -340,7 +340,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                            Date of Lost Load <span className="text-red-500">*</span>
+                            Date of Lost Load <span className="text-text-primary">*</span>
                         </label>
                         <input
                             type="date"
@@ -500,7 +500,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                         />
                         {attachment ? (
                             <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-bg-secondary border border-border-light">
-                                <i className="fas fa-file-pdf text-red-500" />
+                                <i className="fas fa-file-pdf text-text-primary" />
                                 <span className="flex-1 min-w-0 text-sm font-medium text-text-primary truncate">
                                     {attachment.name}
                                 </span>
@@ -513,7 +513,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                         setAttachment(null)
                                         if (fileInputRef.current) fileInputRef.current.value = ''
                                     }}
-                                    className="w-6 h-6 flex items-center justify-center rounded text-text-secondary hover:text-red-500 transition-colors shrink-0"
+                                    className="w-6 h-6 flex items-center justify-center rounded text-text-secondary hover:text-text-primary transition-colors shrink-0"
                                 >
                                     <i className="fas fa-times text-xs" />
                                 </button>
@@ -531,7 +531,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                            Dump Location <span className="text-red-500">*</span>
+                            Dump Location <span className="text-text-primary">*</span>
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                             {DUMP_LOCATIONS.map((loc) => (

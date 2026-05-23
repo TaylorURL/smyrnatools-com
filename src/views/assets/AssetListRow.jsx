@@ -1,6 +1,7 @@
 /* eslint-disable max-lines, react/forbid-dom-props */
 import React from 'react'
 
+import OperatorClockIndicator from '../../app/components/common/OperatorClockIndicator'
 import StatusHistoryBar from '../../app/components/common/StatusHistoryBar'
 
 /**
@@ -29,6 +30,16 @@ export default function AssetListRow({
     tractors
 }) {
     const { columns } = config.listConfig
+    /** Status pills + verify button render as solid saturated fills with
+     *  white text. We pull the saturated hex out of the config's text
+     *  class string and reuse it as the inline background; inline
+     *  `color: '#fff'` beats any Tailwind text-color from the same
+     *  string. */
+    const solidColorFromBadgeClass = (cls) => {
+        if (typeof cls !== 'string') return null
+        const match = cls.match(/text-\[(#[0-9a-fA-F]{3,8})\]/)
+        return match ? match[1] : null
+    }
 
     const cellBase = {
         borderBottom: '1px solid var(--border-light)',
@@ -93,11 +104,19 @@ export default function AssetListRow({
                 ? Math.max(1, Math.floor((Date.now() - new Date(dateToUse).getTime()) / 86400000))
                 : 1
             const daysSuffix = displayStatus && displayStatus !== 'Retired' ? ` · ${days}d` : ''
+            // Swap the pastel `bg-[#tint] text-[#dark]` pair for a solid
+            // saturated bg + white text. Inline styles beat the config's
+            // Tailwind classes so the per-asset palette stays the source
+            // of truth for which hex to use — we just remap dark→bg,
+            // text→white.
+            const solidColor = solidColorFromBadgeClass(badgeClasses)
+            const badgeStyle = solidColor ? { background: solidColor } : undefined
             return (
                 <td key={col.key} style={style}>
                     <div className="flex flex-col gap-1">
                         <span
-                            className={`inline-flex items-center self-start rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${badgeClasses}`}
+                            className={`force-white-text inline-flex items-center self-start rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${badgeClasses}`}
+                            style={badgeStyle}
                         >
                             {displayStatus || '---'}
                             {daysSuffix}
@@ -141,6 +160,7 @@ export default function AssetListRow({
                     {operator?.name ? (
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1">
+                                <OperatorClockIndicator badge={operator.smyrnaId || operator.employeeId} />
                                 <span className="font-medium">{operator.name}</span>
                                 {copyButton(operator.name, 'Copy operator name')}
                             </div>
@@ -149,7 +169,7 @@ export default function AssetListRow({
                                     {assignedTrainees.map((trainee) => (
                                         <span
                                             key={trainee.employeeId}
-                                            className="inline-flex items-center gap-1 rounded bg-amber-50 text-amber-800 text-[9.5px] font-semibold px-1 py-0.5"
+                                            className="inline-flex items-center gap-1 rounded bg-amber-50 text-text-primary text-[9.5px] font-semibold px-1 py-0.5"
                                             title={`Trainee: ${trainee.name}`}
                                         >
                                             <i className="fas fa-user-graduate text-[8px]" />
@@ -211,11 +231,11 @@ export default function AssetListRow({
                                 <i
                                     key={i}
                                     className="fas fa-star text-[9px]"
-                                    style={{ color: i < rating ? '#f59e0b' : 'var(--bg-tertiary)' }}
+                                    style={{ color: i < rating ? 'var(--text-primary)' : 'var(--bg-tertiary)' }}
                                 />
                             ))}
                             {col.dirtyWarning && rating > 0 && rating < 3 && (
-                                <span className="bg-[#fee2e2] text-[#dc2626] rounded text-[9px] font-bold uppercase tracking-wider ml-1.5 px-1 py-0.5">
+                                <span className="bg-[#fee2e2] text-text-primary rounded text-[9px] font-bold uppercase tracking-wider ml-1.5 px-1 py-0.5">
                                     Dirty
                                 </span>
                             )}
@@ -232,9 +252,15 @@ export default function AssetListRow({
                 const base =
                     'inline-flex items-center border-none rounded font-bold uppercase tracking-wider whitespace-nowrap text-[9.5px] gap-1 px-1.5 py-0.5'
                 return v
-                    ? `${base} bg-[#dcfce7] text-[#166534] cursor-default`
-                    : `${base} bg-[#fef3c7] text-[#92400e] cursor-pointer hover:brightness-95`
+                    ? `${base} bg-[#dcfce7] text-text-primary cursor-default`
+                    : `${base} bg-[#fef3c7] text-text-primary cursor-pointer hover:brightness-95`
             }
+            // Same solid-fill + white-text treatment as the status pills.
+            // Verified rows get the darker green (#166534), unverified
+            // get the darker amber (#92400e) — sourced from the existing
+            // class strings so the colour vocabulary stays consistent
+            // across the row.
+            const verifyBtnStyle = { background: isVerified ? '#166534' : '#92400e' }
             return (
                 <td key={col.key} style={style}>
                     {item.status === 'Retired' ? (
@@ -249,7 +275,8 @@ export default function AssetListRow({
                                 onVerify?.(item.id, config.getModalIdentifier(item))
                             }}
                             title={isVerified ? 'Verified' : 'Click to verify'}
-                            className={verifyBtnClass(isVerified)}
+                            className={`force-white-text ${verifyBtnClass(isVerified)}`}
+                            style={verifyBtnStyle}
                         >
                             <i
                                 className={`fas ${isVerified ? 'fa-check-circle' : 'fa-exclamation-circle'} text-[8px]`}
@@ -292,7 +319,7 @@ export default function AssetListRow({
                             {copyButton(vinVal, 'Copy VIN')}
                             {isDuplicate && (
                                 <span
-                                    className="bg-amber-50 text-amber-800 rounded text-[9px] font-bold uppercase tracking-wider px-1 py-0.5"
+                                    className="bg-amber-50 text-text-primary rounded text-[9px] font-bold uppercase tracking-wider px-1 py-0.5"
                                     title="Duplicate VIN"
                                 >
                                     <i className="fas fa-exclamation-triangle text-[8px]" />
@@ -316,7 +343,7 @@ export default function AssetListRow({
                     {val || '---'}
                     {isDuplicate && (
                         <span
-                            className="bg-amber-50 text-amber-800 rounded text-[9px] font-bold uppercase tracking-wider ml-1.5 px-1 py-0.5"
+                            className="bg-amber-50 text-text-primary rounded text-[9px] font-bold uppercase tracking-wider ml-1.5 px-1 py-0.5"
                             title={col.warningTitle}
                         >
                             <i className="fas fa-exclamation-triangle text-[8px]" />
@@ -339,7 +366,7 @@ export default function AssetListRow({
                                 <span
                                     className={
                                         col.warningClassName ||
-                                        'bg-red-50 text-red-800 rounded text-[9px] font-bold uppercase tracking-wider px-1 py-0.5'
+                                        'bg-red-50 text-text-primary rounded text-[9px] font-bold uppercase tracking-wider px-1 py-0.5'
                                     }
                                     title={col.warningTitle}
                                 >
