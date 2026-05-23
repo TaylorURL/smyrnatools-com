@@ -3,21 +3,6 @@ import React from 'react'
 
 import { Panel } from '../ui/Panel'
 
-/**
- * Canonical asset status palette — sourced from mixerConfig.statusBadgeClasses
- * so the dashboard reads identical to the MixersView fleet badges.
- *   Active   → #166534
- *   Spare    → #7c3aed
- *   In Shop  → #1e40af
- *   Stationary — pickup-truck only
- */
-const STATUS_TINTS = {
-    active: '#166534',
-    inShop: '#1e40af',
-    spare: '#7c3aed',
-    stationary: '#a16207'
-}
-
 /** Inline horizontal allocation bar — track + fill + percent text. The
  *  fixed minimums only kick in at `sm+`; on mobile the bar shrinks with
  *  the column so the table fits inside a phone viewport. */
@@ -29,10 +14,7 @@ function AllocationBar({ percent }) {
             <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
                 <div className="h-full rounded-full" style={{ background: color, width: `${pct}%` }} />
             </div>
-            <span
-                className="text-[11px] sm:text-[11.5px] font-semibold font-mono tabular-nums sm:min-w-[36px] text-right"
-                style={{ color }}
-            >
+            <span className="text-[11px] sm:text-[11.5px] font-semibold font-mono tabular-nums sm:min-w-[36px] text-right text-text-primary">
                 {pct}%
             </span>
         </div>
@@ -60,27 +42,21 @@ function FleetRow({ active, allocation, dotColor, isTotal, label, shop, spare, s
             <td className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold text-text-primary">
                 {total ?? '—'}
             </td>
-            <td
-                className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
-                style={{ color: STATUS_TINTS.active }}
-            >
+            <td className="px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold text-text-primary">
                 {active ?? '—'}
             </td>
             <td
                 className="hidden sm:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
-                style={{ color: spare != null ? STATUS_TINTS.spare : 'var(--text-tertiary)' }}
+                style={{ color: spare != null ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
             >
                 {spare ?? '—'}
             </td>
-            <td
-                className="hidden sm:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
-                style={{ color: STATUS_TINTS.inShop }}
-            >
+            <td className="hidden sm:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold text-text-primary">
                 {shop ?? '—'}
             </td>
             <td
                 className="hidden md:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
-                style={{ color: stationary != null ? STATUS_TINTS.stationary : 'var(--text-tertiary)' }}
+                style={{ color: stationary != null ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
             >
                 {stationary ?? '—'}
             </td>

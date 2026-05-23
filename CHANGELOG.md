@@ -1,5 +1,32 @@
 # Changelog
 
+## [2026.21.31] - 2026-05-23
+
+- Plant Manager Report has been retired now that operator hours flow
+  from Dayforce. `src/app/types/ReportTypes.js` gains a `disabled`
+  flag on the type definition; `createReportType()` accepts and
+  persists it. The `plant_manager` entry is marked `disabled: true`
+  with an explanatory comment. The exported `reportTypes` array is
+  now filtered to exclude disabled entries — it disappears from
+  weekly cards, "what's due" prompts, the submission picker, and the
+  review queue. The exported `reportTypeMap` keeps every type
+  (including disabled) so historical reports already in the database
+  still resolve their title + field schema when surfaced from the
+  detail / review views.
+- Removed the orphaned `src/app/constants/plantManagerReportConstants.js`
+  helper (`PM_TH` / `PM_TD` / `PM_INPUT` / `YPH_GRADES` /
+  `formatYphValue` / `GRADE_COLORS`) — only the now-unreachable Plant
+  Manager Report UI referenced it.
+- `FleetOverviewSection.jsx` on the dashboard dropped the
+  `STATUS_TINTS` palette (Active/Spare/In-Shop/Stationary). The
+  per-status colored numbers in the per-plant allocation table now
+  read as plain `text-text-primary` — the colored allocation bar to
+  the right of each row already conveys utilization, and the second
+  colour layer was reading as visual noise rather than information.
+  Null cells continue to render as `text-text-tertiary` so empty
+  columns still feel different from populated ones.
+
+
 ## [2026.21.30] - 2026-05-23
 
 - Hourly rates on the Operations > Statistics > Labor Cost page are now

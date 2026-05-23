@@ -1,6 +1,7 @@
-function createReportType({ name, title, frequency, assignment, review, fields }) {
+function createReportType({ name, title, frequency, assignment, review, fields, disabled }) {
     return {
         assignment: Array.isArray(assignment) ? assignment : [],
+        disabled: !!disabled,
         fields: Array.isArray(fields)
             ? fields.map((f) => ({
                   ...f,
@@ -15,7 +16,12 @@ function createReportType({ name, title, frequency, assignment, review, fields }
         title
     }
 }
-const reportTypes = [
+// Master list, including disabled types — preserved so historical
+// reports already submitted under a since-retired type still resolve
+// through `reportTypeMap`. The exported `reportTypes` strips disabled
+// entries so they don't appear in active submission prompts, weekly
+// cards, or review queues.
+const allReportTypes = [
     createReportType({
         assignment: ['reports.assigned.district_manager'],
         fields: [
@@ -33,11 +39,15 @@ const reportTypes = [
     }),
     createReportType({
         assignment: ['reports.assigned.plant_manager'],
-        /* Yardage and operators-sent-to-help moved to the Plan tab's
-         * Help & Cross-Loading view (driven by live dispatch tickets +
-         * planner assignments) — the Plant Manager Report now only
-         * captures total operator hours, with the rest derived
-         * automatically on the analytics side. */
+        /* Retired in 2026.21 — operator hours now flow from Dayforce
+         * via the dayforce-bridge userscript and surface under
+         * Operations > Statistics > Hours. The previous yardage and
+         * operators-sent-to-help fields had already moved to the Plan
+         * tab's Help & Cross-Loading view. `disabled: true` removes
+         * this from active submission prompts / weekly cards / review
+         * queues; the type definition stays so historical reports
+         * still resolve through `reportTypeMap` for backward-compat. */
+        disabled: true,
         fields: [{ label: 'Total Hours', name: 'total_hours', required: true, type: 'number' }],
         frequency: 'weekly',
         name: 'plant_manager',
@@ -236,5 +246,9 @@ const oneOffReportTypes = [
     }
 ]
 const oneOffReportTypeMap = Object.fromEntries(oneOffReportTypes.map((rt) => [rt.name, rt]))
-const reportTypeMap = Object.fromEntries(reportTypes.map((rt) => [rt.name, rt]))
+// Lookup map keeps every type (including disabled) so historical reports
+// of a retired type still render their title / fields when surfaced from
+// the DB. UI iteration goes through `reportTypes` (filtered) instead.
+const reportTypeMap = Object.fromEntries(allReportTypes.map((rt) => [rt.name, rt]))
+const reportTypes = allReportTypes.filter((rt) => !rt.disabled)
 export { oneOffReportTypeMap, oneOffReportTypes, reportTypeMap, reportTypes }
