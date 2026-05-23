@@ -1,0 +1,126 @@
+/* eslint-disable react/forbid-dom-props */
+import React, { useMemo, useState } from 'react'
+
+import { StatisticsTimeRange } from '../../common/StatisticsTimeRange'
+
+/**
+ * Plant filter for the Statistics page. The asset list view has its own
+ * persisted plant filter inside `useAssetFilters`; this one is intentionally
+ * separate so the user can hold both views in different states. Defaults to
+ * "All plants" on first mount because the most-asked Statistics question is
+ * a region-wide health read.
+ */
+function PlantFilterMenu({ accentColor, availablePlants, plantNames, selectedPlant, setSelectedPlant }) {
+    const [open, setOpen] = useState(false)
+    return (
+        <div className="relative">
+            <button
+                onClick={() => setOpen((s) => !s)}
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
+                style={{
+                    backgroundColor: selectedPlant ? `${accentColor}20` : 'var(--bg-tertiary)',
+                    color: selectedPlant ? accentColor : 'var(--text-secondary)'
+                }}
+                title="Filter every chart and table to a single plant"
+            >
+                <i className="fas fa-industry text-[11px]" />
+                <span>
+                    {selectedPlant
+                        ? `Plant · ${plantNames?.get(selectedPlant) ? selectedPlant : selectedPlant}`
+                        : 'All plants'}
+                </span>
+                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
+            </button>
+            {open && (
+                <div className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light">
+                    <button
+                        onClick={() => {
+                            setSelectedPlant('')
+                            setOpen(false)
+                        }}
+                        className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                        style={{
+                            backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
+                            color: !selectedPlant ? accentColor : 'var(--text-primary)'
+                        }}
+                    >
+                        <span>All plants</span>
+                        {!selectedPlant && <i className="fas fa-check text-[10px]" />}
+                    </button>
+                    {availablePlants.length === 0 ? (
+                        <div className="px-3 py-2 text-[11px] text-text-tertiary">No plants with assets in scope</div>
+                    ) : (
+                        availablePlants.map(({ code, label }) => (
+                            <button
+                                key={code}
+                                onClick={() => {
+                                    setSelectedPlant(code)
+                                    setOpen(false)
+                                }}
+                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                                style={{
+                                    backgroundColor: selectedPlant === code ? `${accentColor}15` : 'transparent',
+                                    color: selectedPlant === code ? accentColor : 'var(--text-primary)'
+                                }}
+                            >
+                                <span className="truncate">{label}</span>
+                                {selectedPlant === code && <i className="fas fa-check text-[10px]" />}
+                            </button>
+                        ))
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
+/**
+ * Top-bar controls for the asset Statistics page. Pairs the plant filter
+ * with the shared time-range selector so users can scope every chart and
+ * table to a date window (defaults to "All-time" since asset data is
+ * inventory-style, not time-series). The time range filters items by
+ * `updatedAt` inside `useAssetStatistics`.
+ */
+export function AssetStatisticsControls({
+    accentColor,
+    availablePlantCodes,
+    period,
+    plantNames,
+    selectedPlant,
+    setSelectedPlant,
+    ...periodProps
+}) {
+    const availablePlants = useMemo(
+        () =>
+            availablePlantCodes.map((code) => ({
+                code,
+                label: plantNames?.get(code) ? `${code} · ${plantNames.get(code)}` : code
+            })),
+        [availablePlantCodes, plantNames]
+    )
+
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            <StatisticsTimeRange accentColor={accentColor} period={period} {...periodProps} />
+            <span className="hidden md:inline-block w-px h-5 bg-border-light mx-1" aria-hidden="true" />
+            <PlantFilterMenu
+                accentColor={accentColor}
+                availablePlants={availablePlants}
+                plantNames={plantNames}
+                selectedPlant={selectedPlant}
+                setSelectedPlant={setSelectedPlant}
+            />
+            {selectedPlant && (
+                <button
+                    type="button"
+                    onClick={() => setSelectedPlant('')}
+                    className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary"
+                >
+                    Clear plant
+                </button>
+            )}
+        </div>
+    )
+}
+
+export default AssetStatisticsControls

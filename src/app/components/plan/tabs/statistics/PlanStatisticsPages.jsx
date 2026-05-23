@@ -176,7 +176,7 @@ function SatisfactionSummary({ aggregate, loading, onSelect }) {
         <Panel
             title="Customer satisfaction"
             innerClassName="p-0"
-            right={loading ? <RefreshingHint when /> : <ViewDetails onSelect={onSelect} section="satisfaction" />}
+            right={loading ? <RefreshingHint when /> : <ViewDetails onSelect={onSelect} section="service" />}
         >
             {!aggregate && !loading ? (
                 <EmptySection icon="fa-circle-info" message="No ticket data scored in this window yet." />
@@ -460,9 +460,9 @@ export function PlanStatisticsOverviewPage({
                     />
                     <LaunchpadTile
                         accent={accent}
-                        icon="fa-face-smile"
-                        label="Customer satisfaction"
-                        section="satisfaction"
+                        icon="fa-thumbs-up"
+                        label="Service"
+                        section="service"
                         value={goodPct != null ? `${goodPct}%` : '—'}
                         hint={
                             satisfactionAggregate

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import AssetView from '../AssetView'
+import AssetViewShell from '../../../app/components/assets/AssetViewShell'
 import equipmentConfig from '../configs/equipmentConfig'
 
 function EquipmentsView({
@@ -11,13 +11,13 @@ function EquipmentsView({
     exactMatch = false
 }) {
     return (
-        <AssetView
+        <AssetViewShell
             config={equipmentConfig}
-            title={title}
-            onSelectItem={onSelectEquipment}
             embedded={embedded}
-            initialSearch={initialSearch}
             exactMatch={exactMatch}
+            initialSearch={initialSearch}
+            onSelectItem={onSelectEquipment}
+            title={title}
         />
     )
 }

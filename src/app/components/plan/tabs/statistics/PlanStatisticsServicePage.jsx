@@ -13,11 +13,12 @@ import {
     YAxis
 } from 'recharts'
 
-import { fmtDate, fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtDate, fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { PLAN_STATS_CHART_TOOLTIP_STYLE } from '../../../../../utils/PlanStatisticsUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
 import { Panel, Stat, StatGroup } from '../../../ui/Panel'
 import { EmptySection, RefreshingHint } from './PlanStatisticsPages'
+import ScorePercent from './ScorePercent'
 import ServiceTierBreakdown from './ServiceTierBreakdown'
 
 const GOOD_COLOR = '#16a34a'
@@ -198,7 +199,6 @@ function PlantScorecardTable({ colocationMap, plantNameByCode, rows }) {
                 </thead>
                 <tbody>
                     {sorted.map((row) => {
-                        const pctColor = goodPctColor(row.goodPct)
                         const codeLabel = formatColocatedCodeLabel(row.code, colocationMap)
                         const plantLabel = formatColocatedPlantLabel(row.code, plantNameByCode, colocationMap)
                         return (
@@ -245,23 +245,10 @@ function PlantScorecardTable({ colocationMap, plantNameByCode, rows }) {
                                 >
                                     {fmtInt(row.slowJobs)}
                                 </td>
-                                <td className="px-3 py-2 text-right text-[12.5px] tabular-nums font-semibold">
-                                    {row.goodPct == null ? (
-                                        <span className="text-text-tertiary">—</span>
-                                    ) : (
-                                        <div className="flex items-center gap-2 justify-end">
-                                            <div className="w-[60px] rounded h-2 overflow-hidden bg-bg-tertiary">
-                                                <div
-                                                    className="h-full"
-                                                    style={{
-                                                        background: pctColor,
-                                                        width: `${Math.max(2, row.goodPct * 100)}%`
-                                                    }}
-                                                />
-                                            </div>
-                                            <span style={{ color: pctColor }}>{fmtPct(row.goodPct)}</span>
-                                        </div>
-                                    )}
+                                <td className="px-3 py-2 text-right">
+                                    <div className="flex items-center gap-2 justify-end">
+                                        <ScorePercent size="sm" value={row.goodPct} />
+                                    </div>
                                 </td>
                                 <td className="px-3 py-2 text-right text-[12.5px] tabular-nums text-text-secondary">
                                     {row.lateJobs > 0 ? fmtMinutes(row.avgLateMin) : '—'}
@@ -303,13 +290,8 @@ function CustomerList({ emptyMessage, rows }) {
                         <ServiceTierBreakdown tierCounts={row.tierCounts} compact />
                     </div>
                     <div className="text-right shrink-0">
-                        <div
-                            className="text-[14px] font-bold tabular-nums"
-                            style={{ color: goodPctColor(row.goodPct) }}
-                        >
-                            {fmtPct(row.goodPct)}
-                        </div>
-                        <div className="text-[10px] text-text-tertiary">good</div>
+                        <ScorePercent value={row.goodPct} />
+                        <div className="text-[10px] text-text-tertiary mt-0.5">good</div>
                     </div>
                 </div>
             ))}
@@ -381,12 +363,7 @@ function HourOfDayChart({ accentColor, data }) {
                             className="flex items-center justify-between rounded px-2 py-1 bg-bg-tertiary"
                         >
                             <span className="truncate">{b.label}</span>
-                            <span
-                                className="font-semibold tabular-nums shrink-0"
-                                style={{ color: goodPctColor(b.goodPct) }}
-                            >
-                                {fmtPct(b.goodPct)}
-                            </span>
+                            <ScorePercent size="sm" value={b.goodPct} />
                         </div>
                     ))}
             </div>
@@ -492,8 +469,9 @@ function OutcomesBreakdown({ accentColor, outcomes }) {
                                     style={{ background: b.color, width: `${Math.max(2, pct * 100)}%` }}
                                 />
                             </div>
-                            <div className="w-[110px] text-[12px] text-text-secondary text-right tabular-nums shrink-0">
-                                {fmtInt(b.count)} · {fmtPct(pct)}
+                            <div className="w-[150px] text-[12px] text-text-secondary text-right shrink-0 inline-flex items-center justify-end gap-2">
+                                <span className="tabular-nums">{fmtInt(b.count)}</span>
+                                <ScorePercent size="sm" value={pct} />
                             </div>
                         </div>
                     )
@@ -574,11 +552,12 @@ function WorstOrdersTable({ colocationMap, plantNameByCode, rows }) {
                             >
                                 {m.isLate ? fmtMinutes(m.latenessMin) : '—'}
                             </td>
-                            <td
-                                className="px-3 py-2 text-right text-[12px] tabular-nums"
-                                style={{ color: m.isSlow ? SLOW_COLOR : 'var(--text-tertiary)' }}
-                            >
-                                {m.paceScore == null ? '—' : fmtPct(m.paceScore)}
+                            <td className="px-3 py-2 text-right">
+                                {m.paceScore == null ? (
+                                    <span className="text-text-tertiary">—</span>
+                                ) : (
+                                    <ScorePercent size="sm" value={m.paceScore} />
+                                )}
                             </td>
                         </tr>
                     ))}
@@ -600,10 +579,107 @@ function WorstOrdersTable({ colocationMap, plantNameByCode, rows }) {
  * driver — drivers don't control either lateness or pour pace, so
  * blaming them with a leaderboard would be misleading.
  */
+/** 7-day momentum panel — recent week's good-service rate vs the prior
+ *  week's. Lifted from the old Customer Satisfaction page so the Service
+ *  surface owns the "is service trending?" answer. */
+function MomentumPanel({ loading, momentum }) {
+    if (loading && !momentum) {
+        return (
+            <Panel title="7-day momentum" innerClassName="p-0">
+                <EmptySection loading message="Computing trailing 7-day windows…" />
+            </Panel>
+        )
+    }
+    if (!momentum) {
+        return (
+            <Panel title="7-day momentum" innerClassName="p-0">
+                <EmptySection
+                    icon="fa-circle-info"
+                    message="Need at least 14 days of ticket data to compute momentum."
+                />
+            </Panel>
+        )
+    }
+    const trajLabel =
+        momentum.trajectory === 'improving' ? 'Improving' : momentum.trajectory === 'declining' ? 'Declining' : 'Stable'
+    const trajColor =
+        momentum.trajectory === 'improving'
+            ? GOOD_COLOR
+            : momentum.trajectory === 'declining'
+              ? BOTH_COLOR
+              : 'var(--text-secondary)'
+    // momentum.recent.score / prior.score arrive as 0–100 percentages;
+    // divide by 100 to plug into the 0–1 star-rating helper.
+    const recentPct = momentum.recent.score == null ? null : momentum.recent.score / 100
+    const priorPct = momentum.prior.score == null ? null : momentum.prior.score / 100
+    return (
+        <Panel title="7-day momentum" innerClassName="p-0">
+            <StatGroup columns={3}>
+                <Stat
+                    label="Last 7 days"
+                    value={<ScorePercent value={recentPct} />}
+                    hint={`${fmtInt(momentum.recent.samples)} order${momentum.recent.samples === 1 ? '' : 's'}`}
+                />
+                <Stat
+                    label="Previous 7 days"
+                    value={<ScorePercent value={priorPct} />}
+                    hint={`${fmtInt(momentum.prior.samples)} order${momentum.prior.samples === 1 ? '' : 's'}`}
+                />
+                <Stat
+                    label="Trajectory"
+                    value={trajLabel}
+                    hint={
+                        momentum.delta == null
+                            ? 'Need both windows scored'
+                            : `${momentum.delta >= 0 ? '+' : ''}${momentum.delta}pp delta`
+                    }
+                    valueColor={trajColor}
+                />
+            </StatGroup>
+        </Panel>
+    )
+}
+
+/** Mon–Sat good-service breakdown — bars in user accent, star rating
+ *  above each bar so the weekday quality reads at a glance without a
+ *  raw percentage. Lifted from the retired Satisfaction page. */
+function WeekdayChart({ accentColor, data }) {
+    const valid = data.filter((d) => d.score != null)
+    if (valid.length === 0) {
+        return <EmptySection icon="fa-calendar-week" message="No weekday ticket data yet." />
+    }
+    return (
+        <div className="flex items-end justify-between gap-2 h-[160px] py-2">
+            {data.map((bucket) => {
+                const pct = bucket.score == null ? null : bucket.score / 100
+                const h = pct == null ? 4 : Math.max(8, pct * 100)
+                const opacity = pct == null ? 0.25 : 0.35 + pct * 0.55
+                return (
+                    <div key={bucket.label} className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                        <div className="flex flex-col items-center justify-end h-[120px]">
+                            <ScorePercent size="sm" value={pct} />
+                            <div
+                                className="w-full rounded-t-sm mt-1"
+                                style={{ background: accentColor, height: h, opacity }}
+                            />
+                        </div>
+                        <span className="text-[10.5px] font-semibold text-text-secondary">{bucket.label}</span>
+                        <span className="text-[9.5px] tabular-nums text-text-tertiary">
+                            {bucket.samples ? `${fmtInt(bucket.samples)} ord` : ''}
+                        </span>
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
 export default function PlanStatisticsServicePage({
     accentColor,
+    byWeekday = [],
     colocationMap,
     loading,
+    momentum,
     plansLoading,
     plantNameByCode,
     serviceLoading,
@@ -626,8 +702,7 @@ export default function PlanStatisticsServicePage({
                         <StatGroup columns={4}>
                             <Stat
                                 label="Good service"
-                                value={fmtPct(kpi.goodPct)}
-                                valueColor={goodPctColor(kpi.goodPct)}
+                                value={<ScorePercent value={kpi.goodPct} />}
                                 hint={`${fmtInt(kpi.goodJobs)} of ${fmtInt(kpi.totalJobs)} jobs — neither late nor slow`}
                             />
                             <Stat
@@ -673,6 +748,8 @@ export default function PlanStatisticsServicePage({
                 )}
             </Panel>
 
+            <MomentumPanel loading={isLoading} momentum={momentum} />
+
             <Panel title="Service quality by plant" right={isLoading ? <RefreshingHint when /> : null}>
                 {visiblePlantRows.length > 0 ? (
                     <>
@@ -708,6 +785,25 @@ export default function PlanStatisticsServicePage({
                     "afternoon pours fall behind pace." Attribution lands on the dispatcher's booking decision.
                 </div>
                 <HourOfDayChart data={byHour} accentColor={accentColor} />
+            </Panel>
+
+            <Panel
+                title="Good service % by weekday"
+                innerClassName="p-3"
+                right={isLoading ? <RefreshingHint when /> : null}
+            >
+                <div className="text-[11.5px] mb-2 text-text-secondary">
+                    Mon–Sat good-service rate. Spot whether one weekday consistently runs worse than the rest — the
+                    answer to "is Friday always our problem day?".
+                </div>
+                {byWeekday.filter((d) => d.score != null).length === 0 ? (
+                    <EmptySection
+                        loading={isLoading}
+                        message={isLoading ? 'Loading per-weekday scores…' : 'No weekday ticket data yet.'}
+                    />
+                ) : (
+                    <WeekdayChart accentColor={accentColor} data={byWeekday} />
+                )}
             </Panel>
 
             <Panel title="Outcome mix" innerClassName="p-3">

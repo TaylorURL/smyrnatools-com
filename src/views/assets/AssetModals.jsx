@@ -39,7 +39,14 @@ const AssetModals = forwardRef(function AssetModals(
         setItems,
         setShowAddSheet,
         showAddSheet,
-        verification
+        verification,
+        /**
+         * When provided, the comment, issue, and operator-comment "modals" are
+         * delegated to the parent — invoked as a right-side panel next to the
+         * table on list-view layouts. When `null`, those three render here as
+         * centered portal modals (default behavior on grid / detail / mobile).
+         */
+        onSidePanelOpen = null
     },
     ref
 ) {
@@ -58,11 +65,17 @@ const AssetModals = forwardRef(function AssetModals(
         setModals((prev) => ({ ...prev, [key]: true }))
     }, [])
 
-    // Expose open functions to parent via ref
+    // Expose open functions to parent via ref. When `onSidePanelOpen` is wired,
+    // the comment / issue / operator-comment surfaces are delegated to the
+    // parent so it can render them as a right-side panel next to the list.
     useImperativeHandle(
         ref,
         () => ({
             openCommentModal(id, number) {
+                if (onSidePanelOpen) {
+                    onSidePanelOpen({ itemId: id, itemNumber: number, kind: 'comment' })
+                    return
+                }
                 setModalItemId(id)
                 setModalItemNumber(number)
                 openModal('comment')
@@ -72,11 +85,19 @@ const AssetModals = forwardRef(function AssetModals(
                 openModal('history')
             },
             openIssueModal(id, number) {
+                if (onSidePanelOpen) {
+                    onSidePanelOpen({ itemId: id, itemNumber: number, kind: 'issue' })
+                    return
+                }
                 setModalItemId(id)
                 setModalItemNumber(number)
                 openModal('issue')
             },
             openOperatorCommentModal(op) {
+                if (onSidePanelOpen) {
+                    onSidePanelOpen({ kind: 'operatorComment', operator: op })
+                    return
+                }
                 setOperatorModalTarget(op)
                 openModal('operatorComment')
             },
@@ -92,7 +113,7 @@ const AssetModals = forwardRef(function AssetModals(
                 openModal('sendMessage')
             }
         }),
-        [openModal]
+        [openModal, onSidePanelOpen]
     )
 
     const AddView = config.AddView

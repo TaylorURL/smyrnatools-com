@@ -1,6 +1,6 @@
 import React from 'react'
 
-import AssetView from '../AssetView'
+import AssetViewShell from '../../../app/components/assets/AssetViewShell'
 import trailerConfig from '../configs/trailerConfig'
 
 function TrailersView({
@@ -11,13 +11,13 @@ function TrailersView({
     exactMatch = false
 }) {
     return (
-        <AssetView
+        <AssetViewShell
             config={trailerConfig}
-            title={title}
-            onSelectItem={onSelectTrailer}
             embedded={embedded}
-            initialSearch={initialSearch}
             exactMatch={exactMatch}
+            initialSearch={initialSearch}
+            onSelectItem={onSelectTrailer}
+            title={title}
         />
     )
 }

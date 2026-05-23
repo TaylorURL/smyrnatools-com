@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState, useTransition } from 'react'
 
 import { PlanTabSkeleton } from '../../../app/components/common/PlanSkeletons'
+import TabFadeIn from '../../../app/components/common/TabFadeIn'
 import { PlanHeader } from '../../../app/components/plan/PlanHeader'
 import { PlanLoadErrorBanner } from '../../../app/components/plan/PlanLoadErrorBanner'
 import { PlanPresenceOverlay } from '../../../app/components/plan/PlanPresenceOverlay'
 import { PlanReadOnlyBanner } from '../../../app/components/plan/PlanReadOnlyBanner'
 import { PlanReviewSendModal } from '../../../app/components/plan/PlanReviewSendModal'
 import { PlanScheduleStaleBanner } from '../../../app/components/plan/tabs/schedule/PlanScheduleStaleBanner'
+import { isDarkLikeTheme } from '../../../app/constants/themeConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { usePlanActions } from '../../../app/hooks/usePlanActions'
@@ -72,7 +74,7 @@ function OperationsRegionBlocker({ accentColor }) {
 function OperationsView() {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
-    const isDark = preferences.themeMode === 'dark'
+    const isDark = isDarkLikeTheme(preferences.themeMode)
     if (preferences.selectedRegion?.name !== OPERATIONS_ALLOWED_REGION_NAME) {
         return <OperationsRegionBlocker accentColor={accentColor} />
     }
@@ -281,7 +283,7 @@ function OperationsViewImpl({ accentColor, isDark }) {
                 })() ? (
                     <PlanTabSkeleton mode={effectiveViewMode} />
                 ) : (
-                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden animate-fade-in-fast">
+                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                         {planLoadError && <PlanLoadErrorBanner message={planLoadError} onRetry={retryPlanLoad} />}
                         {!canEdit && (
                             <PlanReadOnlyBanner
@@ -291,120 +293,125 @@ function OperationsViewImpl({ accentColor, isDark }) {
                         )}
                         <PlanScheduleStaleBanner planDate={planDate} scheduleFileUpdatedAt={scheduleFileUpdatedAt} />
 
-                        {effectiveViewMode === 'dashboard' && (
-                            <PlanDashboardView
-                                accentColor={accentColor}
-                                assignments={assignments}
-                                calcClockIn={calcClockIn}
-                                canEdit={canEdit}
-                                detailByOrderId={detailByOrderId}
-                                earliestClockIn={earliestClockIn}
-                                getTravelTime={getTravelTime}
-                                mixerCountsByPlant={mixerCountsByPlant}
-                                notes={notes}
-                                onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
-                                planDate={planDate}
-                                planInsights={planInsights}
-                                plantNameByCode={plantNameByCode}
-                                plantProduction={plantProduction}
-                                plants={plants}
-                                setNotes={setNotes}
-                                setPlantProduction={setPlantProduction}
-                                shiftSpanHours={shiftSpanHours}
-                                stats={stats}
-                                totalOps={totalOps}
-                                validAssignmentCount={validAssignmentCount}
-                                yourPlantScope={yourPlantScope}
-                            />
-                        )}
-
-                        {effectiveViewMode === 'flow' && (
-                            <div className="relative flex flex-1 min-h-0 w-full flex-col">
-                                <PlanFlowMapView
+                        <TabFadeIn
+                            animationKey={effectiveViewMode}
+                            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+                        >
+                            {effectiveViewMode === 'dashboard' && (
+                                <PlanDashboardView
                                     accentColor={accentColor}
                                     assignments={assignments}
                                     calcClockIn={calcClockIn}
                                     canEdit={canEdit}
+                                    detailByOrderId={detailByOrderId}
+                                    earliestClockIn={earliestClockIn}
                                     getTravelTime={getTravelTime}
                                     mixerCountsByPlant={mixerCountsByPlant}
+                                    notes={notes}
+                                    onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
                                     planDate={planDate}
+                                    planInsights={planInsights}
+                                    plantNameByCode={plantNameByCode}
                                     plantProduction={plantProduction}
                                     plants={plants}
-                                    setAssignments={setAssignments}
+                                    setNotes={setNotes}
                                     setPlantProduction={setPlantProduction}
+                                    shiftSpanHours={shiftSpanHours}
+                                    stats={stats}
+                                    totalOps={totalOps}
+                                    validAssignmentCount={validAssignmentCount}
+                                    yourPlantScope={yourPlantScope}
+                                />
+                            )}
+
+                            {effectiveViewMode === 'flow' && (
+                                <div className="relative flex flex-1 min-h-0 w-full flex-col">
+                                    <PlanFlowMapView
+                                        accentColor={accentColor}
+                                        assignments={assignments}
+                                        calcClockIn={calcClockIn}
+                                        canEdit={canEdit}
+                                        getTravelTime={getTravelTime}
+                                        mixerCountsByPlant={mixerCountsByPlant}
+                                        planDate={planDate}
+                                        plantProduction={plantProduction}
+                                        plants={plants}
+                                        setAssignments={setAssignments}
+                                        setPlantProduction={setPlantProduction}
+                                        stats={stats}
+                                    />
+                                    <PlanPresenceOverlay users={presenceUsers} />
+                                </div>
+                            )}
+
+                            {effectiveViewMode === 'schedule' && (
+                                <PlanScheduleView
+                                    accentColor={accentColor}
+                                    adjacentProduction={adjacentProduction}
+                                    assignments={assignments}
+                                    detailByOrderId={detailByOrderId}
+                                    filters={scheduleFilters}
+                                    getTravelTime={getTravelTime}
+                                    isMaximized={isScheduleMaximized}
+                                    isMobile={isMobile}
+                                    onChangeFilter={updateScheduleFilter}
+                                    onChangeMaximized={setIsScheduleMaximized}
+                                    onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
+                                    planDate={planDate}
+                                    plantAddressByCode={plantAddressByCode}
+                                    plantNameByCode={plantNameByCode}
+                                    plantProduction={plantProduction}
+                                    /* PlantDropdownModal in the filter bar reads
+                                     * `plant.districts` for the district groups —
+                                     * pass the enriched list. */
+                                    plants={plantsWithDistricts}
                                     stats={stats}
                                 />
-                                <PlanPresenceOverlay users={presenceUsers} />
-                            </div>
-                        )}
+                            )}
 
-                        {effectiveViewMode === 'schedule' && (
-                            <PlanScheduleView
-                                accentColor={accentColor}
-                                adjacentProduction={adjacentProduction}
-                                assignments={assignments}
-                                detailByOrderId={detailByOrderId}
-                                filters={scheduleFilters}
-                                getTravelTime={getTravelTime}
-                                isMaximized={isScheduleMaximized}
-                                isMobile={isMobile}
-                                onChangeFilter={updateScheduleFilter}
-                                onChangeMaximized={setIsScheduleMaximized}
-                                onSwitchToPlanner={isMobile ? null : () => setViewMode('flow')}
-                                planDate={planDate}
-                                plantAddressByCode={plantAddressByCode}
-                                plantNameByCode={plantNameByCode}
-                                plantProduction={plantProduction}
-                                /* PlantDropdownModal in the filter bar reads
-                                 * `plant.districts` for the district groups —
-                                 * pass the enriched list. */
-                                plants={plantsWithDistricts}
-                                stats={stats}
-                            />
-                        )}
+                            {effectiveViewMode === 'demand' && (
+                                <PlanDemandView
+                                    accentColor={accentColor}
+                                    planDate={planDate}
+                                    plantNameByCode={plantNameByCode}
+                                    plantProduction={plantProduction}
+                                    plants={plantsWithDistricts}
+                                    stats={stats}
+                                    userPlantCode={userPlantCode}
+                                />
+                            )}
 
-                        {effectiveViewMode === 'demand' && (
-                            <PlanDemandView
-                                accentColor={accentColor}
-                                planDate={planDate}
-                                plantNameByCode={plantNameByCode}
-                                plantProduction={plantProduction}
-                                plants={plantsWithDistricts}
-                                stats={stats}
-                                userPlantCode={userPlantCode}
-                            />
-                        )}
+                            {effectiveViewMode === 'statistics' && (
+                                <PlanStatisticsView
+                                    accentColor={accentColor}
+                                    liveProduction={plantProduction}
+                                    mixerCountsByPlant={mixerCountsByPlant}
+                                    planColocationMap={plantColocationMap}
+                                    planDate={planDate}
+                                    plantNameByCode={plantNameByCode}
+                                />
+                            )}
 
-                        {effectiveViewMode === 'statistics' && (
-                            <PlanStatisticsView
-                                accentColor={accentColor}
-                                liveProduction={plantProduction}
-                                mixerCountsByPlant={mixerCountsByPlant}
-                                planColocationMap={plantColocationMap}
-                                planDate={planDate}
-                                plantNameByCode={plantNameByCode}
-                            />
-                        )}
+                            {effectiveViewMode === 'call-list' && (
+                                <CallListView
+                                    accentColor={accentColor}
+                                    planColocationMap={plantColocationMap}
+                                    plantNameByCode={plantNameByCode}
+                                />
+                            )}
 
-                        {effectiveViewMode === 'call-list' && (
-                            <CallListView
-                                accentColor={accentColor}
-                                planColocationMap={plantColocationMap}
-                                plantNameByCode={plantNameByCode}
-                            />
-                        )}
-
-                        {effectiveViewMode === 'settings' && canSeeSettingsTab && (
-                            <PlanSettingsView
-                                accentColor={accentColor}
-                                addTravelTime={addTravelTime}
-                                newTravelTime={newTravelTime}
-                                plants={plants}
-                                removeTravelTime={removeTravelTime}
-                                setNewTravelTime={setNewTravelTime}
-                                travelTimes={travelTimes}
-                            />
-                        )}
+                            {effectiveViewMode === 'settings' && canSeeSettingsTab && (
+                                <PlanSettingsView
+                                    accentColor={accentColor}
+                                    addTravelTime={addTravelTime}
+                                    newTravelTime={newTravelTime}
+                                    plants={plants}
+                                    removeTravelTime={removeTravelTime}
+                                    setNewTravelTime={setNewTravelTime}
+                                    travelTimes={travelTimes}
+                                />
+                            )}
+                        </TabFadeIn>
                     </div>
                 )}
             </div>

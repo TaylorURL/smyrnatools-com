@@ -1,6 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import { isDarkLikeTheme } from '../../constants/themeConstants'
 import { usePreferences } from '../../context/PreferencesContext'
 
 /* Plan-tab inspired atoms shared by every Maintenance form surface — kept in
@@ -51,7 +52,7 @@ const ICON_BY_STATUS = {
 /** Resolve a tint pair against the user's current theme. */
 function useTint(palette) {
     const { preferences } = usePreferences()
-    const isDark = preferences?.themeMode === 'dark'
+    const isDark = isDarkLikeTheme(preferences?.themeMode)
     return {
         background: isDark ? palette.darkBg : palette.bg,
         color: isDark ? palette.darkFg : palette.fg

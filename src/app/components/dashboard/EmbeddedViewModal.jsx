@@ -6,6 +6,7 @@ import MixersView from '../../../views/assets/mixers/MixersView'
 import TractorsView from '../../../views/assets/tractors/TractorsView'
 import TrailersView from '../../../views/assets/trailers/TrailersView'
 import OperatorsView from '../../../views/people/operators/OperatorsView'
+
 /** Maps view keys to their component, icon, and display title. */
 const VIEW_CONFIG = {
     equipment: { component: EquipmentsView, icon: 'fa-snowplow', title: 'Equipment' },

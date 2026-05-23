@@ -410,7 +410,22 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
     )
 }
 
-function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
+/**
+ * Issue tracker for an asset or person.
+ *
+ * @param {Object}   props
+ * @param {string}   props.itemId
+ * @param {string}   props.itemNumber
+ * @param {string}   props.itemType
+ * @param {Function} props.onClose
+ * @param {Object}   props.service
+ * @param {'modal'|'panel'} [props.displayMode='modal']
+ *        'modal' renders a centered portal with overlay (default).
+ *        'panel' renders inline as a flush-fitting card for use as a right-side
+ *        side panel on the asset/people list views. The nested SendIssueMessageModal
+ *        stays a portal modal regardless of displayMode.
+ */
+function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, displayMode = 'modal' }) {
     const { preferences } = usePreferences()
     const accent = preferences?.accentColor || '#1e3a5f'
     const [issues, setIssues] = useState([])
@@ -565,223 +580,218 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
         )
     }
 
-    return ReactDOM.createPortal(
-        <>
-            <div
-                onClick={handleBackdropClick}
-                className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
-            >
-                <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex flex-col max-h-[90vh] max-w-[580px] w-full overflow-hidden rounded bg-bg-primary border border-border-light"
-                >
-                    <div className="px-4 py-3 border-b border-border-light">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-secondary">
-                                    <i className="fas fa-exclamation-circle text-[12px]" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                                        {itemType} · Issues
-                                    </div>
-                                    <div className="text-[14px] font-semibold font-mono tabular-nums truncate text-text-primary">
-                                        {itemNumber || itemId}
-                                    </div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={onClose}
-                                className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
-                                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
-                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                            >
-                                <i className="fas fa-times text-[12px]" />
-                            </button>
+    const isPanel = displayMode === 'panel'
+
+    const card = (
+        <div
+            onClick={isPanel ? undefined : (e) => e.stopPropagation()}
+            className={
+                isPanel
+                    ? 'flex flex-col h-full w-full overflow-hidden rounded bg-bg-primary border border-border-light'
+                    : 'flex flex-col max-h-[90vh] max-w-[580px] w-full overflow-hidden rounded bg-bg-primary border border-border-light'
+            }
+        >
+            <div className="px-4 py-3 border-b border-border-light">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-secondary">
+                            <i className="fas fa-exclamation-circle text-[12px]" />
                         </div>
-                        <div className="flex gap-1.5 mt-2.5">
-                            <TabBtn id="open" label="Open" count={openIssues.length} icon="fa-clock" />
-                            <TabBtn
-                                id="resolved"
-                                label="Resolved"
-                                count={resolvedIssues.length}
-                                icon="fa-check-circle"
-                            />
+                        <div className="min-w-0">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                                {itemType} · Issues
+                            </div>
+                            <div className="text-[14px] font-semibold font-mono tabular-nums truncate text-text-primary">
+                                {itemNumber || itemId}
+                            </div>
                         </div>
                     </div>
-
-                    <div className="flex-1 overflow-y-auto px-4 py-3">
-                        <ErrorMessage message={error} onDismiss={() => setError(null)} />
-
-                        {activeTab === 'open' && (
-                            <form onSubmit={handleAddIssue} className="mb-3">
-                                <div className="rounded p-2.5 bg-bg-secondary border border-border-light">
-                                    <textarea
-                                        value={newIssue}
-                                        onChange={(e) => setNewIssue(e.target.value)}
-                                        placeholder="What's the issue?"
-                                        disabled={isSubmitting}
-                                        rows="2"
-                                        className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary"
-                                    />
-                                    <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                            {['Low', 'Medium', 'High'].map((sev) => {
-                                                const config = SEVERITY_PALETTE[sev]
-                                                const isActive = severity === sev
-                                                return (
-                                                    <button
-                                                        key={sev}
-                                                        type="button"
-                                                        onClick={() => setSeverity(sev)}
-                                                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
-                                                        style={{
-                                                            background: isActive ? config.bg : 'var(--bg-tertiary)',
-                                                            color: isActive ? config.fg : 'var(--text-secondary)'
-                                                        }}
-                                                    >
-                                                        <i className={`fas ${config.icon} text-[9px]`} />
-                                                        {sev}
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={isSubmitting || !newIssue.trim()}
-                                            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
-                                            style={{
-                                                background:
-                                                    isSubmitting || !newIssue.trim() ? 'var(--bg-tertiary)' : accent,
-                                                color:
-                                                    isSubmitting || !newIssue.trim() ? 'var(--text-tertiary)' : '#fff',
-                                                cursor: isSubmitting || !newIssue.trim() ? 'not-allowed' : 'pointer'
-                                            }}
-                                        >
-                                            <i className="fas fa-paper-plane text-[10px]" />
-                                            {isSubmitting ? 'Submitting' : 'Submit'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        )}
-
-                        {isLoading ? (
-                            <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                                <SkeletonStack count={3} gapClassName="gap-0">
-                                    {() => <IssueRowSkeleton />}
-                                </SkeletonStack>
-                            </div>
-                        ) : displayIssues.length === 0 ? (
-                            <div className="flex flex-col items-center py-8 px-4 text-center text-text-tertiary">
-                                <i
-                                    className={`fas ${activeTab === 'open' ? 'fa-clipboard-check' : 'fa-trophy'} text-2xl mb-2`}
-                                />
-                                <p className="text-[12px] m-0 font-semibold text-text-secondary">
-                                    {activeTab === 'open' ? 'No open issues' : 'No resolved issues yet'}
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
-                                {displayIssues.map((issue) => {
-                                    const sevConfig = SEVERITY_PALETTE[issue.severity] || SEVERITY_PALETTE.Medium
-                                    const isResolved = !!issue.time_completed
-                                    const creatorName = getCreatorName(issue)
-                                    return (
-                                        <div
-                                            key={issue.id}
-                                            className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light"
-                                            style={{ opacity: isResolved ? 0.7 : 1 }}
-                                        >
-                                            <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold bg-bg-tertiary text-text-secondary">
-                                                {getNameInitials(creatorName)}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                                    <span className="text-[12px] font-semibold text-text-primary">
-                                                        {creatorName}
-                                                    </span>
-                                                    <span
-                                                        className={PILL_BASE}
-                                                        style={{ background: sevConfig.bg, color: sevConfig.fg }}
-                                                    >
-                                                        <i className={`fas ${sevConfig.icon} text-[8px]`} />
-                                                        {issue.severity}
-                                                    </span>
-                                                    <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
-                                                        {formatDate(issue.time_created)}
-                                                    </span>
-                                                </div>
-                                                <p className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap break-words text-text-secondary">
-                                                    {issue.issue}
-                                                </p>
-                                                {isResolved && (
-                                                    <div className="flex items-center gap-1 mt-1 text-[10.5px] font-semibold text-[#166534]">
-                                                        <i className="fas fa-check text-[9px]" />
-                                                        Resolved {formatDate(issue.time_completed)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex shrink-0 gap-1">
-                                                {!isResolved && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleCompleteIssue(issue.id)}
-                                                            title="Mark resolved"
-                                                            className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-green-500"
-                                                            onMouseEnter={(e) =>
-                                                                (e.currentTarget.style.background =
-                                                                    'var(--bg-tertiary)')
-                                                            }
-                                                            onMouseLeave={(e) =>
-                                                                (e.currentTarget.style.background = 'transparent')
-                                                            }
-                                                        >
-                                                            <i className="fas fa-check text-[10px]" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setMessageIssue(issue)}
-                                                            title="Send message"
-                                                            className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent"
-                                                            style={{ color: accent }}
-                                                            onMouseEnter={(e) =>
-                                                                (e.currentTarget.style.background =
-                                                                    'var(--bg-tertiary)')
-                                                            }
-                                                            onMouseLeave={(e) =>
-                                                                (e.currentTarget.style.background = 'transparent')
-                                                            }
-                                                        >
-                                                            <i className="fas fa-paper-plane text-[10px]" />
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {canDelete && (
-                                                    <button
-                                                        onClick={() => handleDeleteIssue(issue.id)}
-                                                        title="Delete"
-                                                        className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-tertiary"
-                                                        onMouseEnter={(e) => {
-                                                            e.currentTarget.style.background = 'var(--bg-tertiary)'
-                                                            e.currentTarget.style.color = '#dc2626'
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                            e.currentTarget.style.background = 'transparent'
-                                                            e.currentTarget.style.color = 'var(--text-tertiary)'
-                                                        }}
-                                                    >
-                                                        <i className="fas fa-trash text-[10px]" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        )}
-                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-7 h-7 flex items-center justify-center rounded transition-colors bg-transparent text-text-secondary"
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                        <i className="fas fa-times text-[12px]" />
+                    </button>
+                </div>
+                <div className="flex gap-1.5 mt-2.5">
+                    <TabBtn id="open" label="Open" count={openIssues.length} icon="fa-clock" />
+                    <TabBtn id="resolved" label="Resolved" count={resolvedIssues.length} icon="fa-check-circle" />
                 </div>
             </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+                <ErrorMessage message={error} onDismiss={() => setError(null)} />
+
+                {activeTab === 'open' && (
+                    <form onSubmit={handleAddIssue} className="mb-3">
+                        <div className="rounded p-2.5 bg-bg-secondary border border-border-light">
+                            <textarea
+                                value={newIssue}
+                                onChange={(e) => setNewIssue(e.target.value)}
+                                placeholder="What's the issue?"
+                                disabled={isSubmitting}
+                                rows="2"
+                                className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary"
+                            />
+                            <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    {['Low', 'Medium', 'High'].map((sev) => {
+                                        const config = SEVERITY_PALETTE[sev]
+                                        const isActive = severity === sev
+                                        return (
+                                            <button
+                                                key={sev}
+                                                type="button"
+                                                onClick={() => setSeverity(sev)}
+                                                className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
+                                                style={{
+                                                    background: isActive ? config.bg : 'var(--bg-tertiary)',
+                                                    color: isActive ? config.fg : 'var(--text-secondary)'
+                                                }}
+                                            >
+                                                <i className={`fas ${config.icon} text-[9px]`} />
+                                                {sev}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting || !newIssue.trim()}
+                                    className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
+                                    style={{
+                                        background: isSubmitting || !newIssue.trim() ? 'var(--bg-tertiary)' : accent,
+                                        color: isSubmitting || !newIssue.trim() ? 'var(--text-tertiary)' : '#fff',
+                                        cursor: isSubmitting || !newIssue.trim() ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    <i className="fas fa-paper-plane text-[10px]" />
+                                    {isSubmitting ? 'Submitting' : 'Submit'}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                )}
+
+                {isLoading ? (
+                    <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+                        <SkeletonStack count={3} gapClassName="gap-0">
+                            {() => <IssueRowSkeleton />}
+                        </SkeletonStack>
+                    </div>
+                ) : displayIssues.length === 0 ? (
+                    <div className="flex flex-col items-center py-8 px-4 text-center text-text-tertiary">
+                        <i
+                            className={`fas ${activeTab === 'open' ? 'fa-clipboard-check' : 'fa-trophy'} text-2xl mb-2`}
+                        />
+                        <p className="text-[12px] m-0 font-semibold text-text-secondary">
+                            {activeTab === 'open' ? 'No open issues' : 'No resolved issues yet'}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="rounded overflow-hidden bg-bg-primary border border-border-light">
+                        {displayIssues.map((issue) => {
+                            const sevConfig = SEVERITY_PALETTE[issue.severity] || SEVERITY_PALETTE.Medium
+                            const isResolved = !!issue.time_completed
+                            const creatorName = getCreatorName(issue)
+                            return (
+                                <div
+                                    key={issue.id}
+                                    className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light"
+                                    style={{ opacity: isResolved ? 0.7 : 1 }}
+                                >
+                                    <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold bg-bg-tertiary text-text-secondary">
+                                        {getNameInitials(creatorName)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                            <span className="text-[12px] font-semibold text-text-primary">
+                                                {creatorName}
+                                            </span>
+                                            <span
+                                                className={PILL_BASE}
+                                                style={{ background: sevConfig.bg, color: sevConfig.fg }}
+                                            >
+                                                <i className={`fas ${sevConfig.icon} text-[8px]`} />
+                                                {issue.severity}
+                                            </span>
+                                            <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
+                                                {formatDate(issue.time_created)}
+                                            </span>
+                                        </div>
+                                        <p className="text-[12px] leading-relaxed m-0 whitespace-pre-wrap break-words text-text-secondary">
+                                            {issue.issue}
+                                        </p>
+                                        {isResolved && (
+                                            <div className="flex items-center gap-1 mt-1 text-[10.5px] font-semibold text-[#166534]">
+                                                <i className="fas fa-check text-[9px]" />
+                                                Resolved {formatDate(issue.time_completed)}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex shrink-0 gap-1">
+                                        {!isResolved && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleCompleteIssue(issue.id)}
+                                                    title="Mark resolved"
+                                                    className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-green-500"
+                                                    onMouseEnter={(e) =>
+                                                        (e.currentTarget.style.background = 'var(--bg-tertiary)')
+                                                    }
+                                                    onMouseLeave={(e) =>
+                                                        (e.currentTarget.style.background = 'transparent')
+                                                    }
+                                                >
+                                                    <i className="fas fa-check text-[10px]" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setMessageIssue(issue)}
+                                                    title="Send message"
+                                                    className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent"
+                                                    style={{ color: accent }}
+                                                    onMouseEnter={(e) =>
+                                                        (e.currentTarget.style.background = 'var(--bg-tertiary)')
+                                                    }
+                                                    onMouseLeave={(e) =>
+                                                        (e.currentTarget.style.background = 'transparent')
+                                                    }
+                                                >
+                                                    <i className="fas fa-paper-plane text-[10px]" />
+                                                </button>
+                                            </>
+                                        )}
+                                        {canDelete && (
+                                            <button
+                                                onClick={() => handleDeleteIssue(issue.id)}
+                                                title="Delete"
+                                                className="w-6 h-6 flex items-center justify-center rounded transition-colors bg-transparent text-text-tertiary"
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.background = 'var(--bg-tertiary)'
+                                                    e.currentTarget.style.color = '#dc2626'
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.background = 'transparent'
+                                                    e.currentTarget.style.color = 'var(--text-tertiary)'
+                                                }}
+                                            >
+                                                <i className="fas fa-trash text-[10px]" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+
+    const overlays = (
+        <>
             {messageIssue && (
                 <SendIssueMessageModal
                     issue={messageIssue}
@@ -800,6 +810,27 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service }) {
                 confirmLabel="Delete"
                 variant="danger"
             />
+        </>
+    )
+
+    if (isPanel) {
+        return (
+            <>
+                {card}
+                {overlays}
+            </>
+        )
+    }
+
+    return ReactDOM.createPortal(
+        <>
+            <div
+                onClick={handleBackdropClick}
+                className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(15,_23,_42,_0.65)]"
+            >
+                {card}
+            </div>
+            {overlays}
         </>,
         document.body
     )

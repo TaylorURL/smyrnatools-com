@@ -23,12 +23,13 @@ interface FieldConfig {
 }
 
 interface ChangeRecord {
-    [key: string]: string | null | undefined
     changed_at: string
     changed_by: string
     field_name: string
     new_value: string | null
     old_value: string | null
+
+    [key: string]: string | null | undefined
 }
 
 interface TimelineEntry {

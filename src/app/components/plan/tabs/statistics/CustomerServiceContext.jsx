@@ -1,8 +1,9 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
-import { fmtDate, fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtDate, fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
+import ScorePercent from './ScorePercent'
 import ServiceTierBreakdown from './ServiceTierBreakdown'
 
 /** Shared palette + helpers for any UI that surfaces per-customer
@@ -201,11 +202,12 @@ export function CustomerOrdersTable({ colocationMap, emptyMessage, orders, plant
                                 >
                                     {m.isLate ? fmtMinutes(m.latenessMin) : '—'}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12px] tabular-nums"
-                                    style={{ color: m.isSlow ? SERVICE_COLOR_SLOW : 'var(--text-tertiary)' }}
-                                >
-                                    {m.paceScore == null ? '—' : fmtPct(m.paceScore)}
+                                <td className="px-3 py-2 text-right">
+                                    {m.paceScore == null ? (
+                                        <span className="text-text-tertiary">—</span>
+                                    ) : (
+                                        <ScorePercent size="sm" value={m.paceScore} />
+                                    )}
                                 </td>
                                 <td
                                     className="px-3 py-2 text-right text-[12px] tabular-nums font-semibold"
@@ -265,8 +267,7 @@ export function CustomerServiceContext({ aggregate, colocationMap, emptyMessage,
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-5 pb-4 border-b border-border-light">
                 <StatBlock
                     label="Good service"
-                    value={fmtPct(aggregate.goodPct)}
-                    valueColor={pctColor(aggregate.goodPct)}
+                    value={<ScorePercent value={aggregate.goodPct} />}
                     sub={`${fmtInt(aggregate.goodJobs)} of ${fmtInt(aggregate.jobs)}`}
                 />
                 <StatBlock

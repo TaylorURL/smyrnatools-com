@@ -1483,6 +1483,7 @@ export function usePlanStatistics({
         availablePlantCodes,
         comparison,
         currentDays,
+        currentRows,
         currentSummary,
         customEnd,
         customStart,

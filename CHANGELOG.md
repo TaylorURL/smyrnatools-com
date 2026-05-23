@@ -1,5 +1,99 @@
 # Changelog
 
+## [2026.21.27] - 2026-05-22
+
+- Comment and issue surfaces on the asset and people list views now
+  render as a right-side panel instead of a centered modal whenever
+  the user is in list view on a wide viewport
+  (`src/app/components/sections/CommentModalSection.jsx`,
+  `src/app/components/sections/IssueModalSection.jsx`,
+  `src/views/assets/AssetView.jsx`,
+  `src/views/assets/AssetModals.jsx`,
+  `src/views/people/operators/OperatorsView.jsx`). The table shrinks
+  to a `flex-1 min-w-0` column on the left, the panel docks at 440px
+  on the right, and `TopSection` lives inside the same left column
+  so its column headers reflow with the now-narrower table. Mobile,
+  grid view, embedded mounts (dashboard pickers), detail views, and
+  Plan Statistics drill-downs keep the original centered popup.
+  Driven by a new `useIsWideViewport` hook
+  (`src/app/hooks/useIsWideViewport.js`) subscribed to `matchMedia`
+  at the Tailwind `lg` (1024px) breakpoint, plus a `displayMode`
+  prop on the two modal components — `'modal'` is the default for
+  everywhere else.
+- Statistics surfaces no longer fake percentages as 5-star ratings.
+  The retired `StarRating` component is gone, replaced by
+  `ScorePercent`
+  (`src/app/components/plan/tabs/statistics/ScorePercent.jsx`) which
+  renders a 0–100% in the same green→amber→red tier colours the
+  stars used. Every percentage-shaped metric across
+  `PlanStatisticsServicePage`, `PlanStatisticsCustomerLookupPage`,
+  `PlanStatisticsKickersPage`, `CustomerServiceContext`, the
+  moves-and-cancels pages, and the Call List Team Monitor now reads
+  as a plain percentage. Stars stay where the underlying data is a
+  genuine 1–5 rating: operator rating, asset cleanliness, asset
+  condition, the help-score band in `HelpBreakdownTable`. `fmtStars`
+  / `starsForPct` removed from
+  `src/utils/PlanStatisticsFormatUtility.ts` and replaced with a
+  `fmtScorePct(0–1) → "X%"` helper.
+- New Asset Statistics view
+  (`src/app/components/assets/statistics/AssetStatisticsView.jsx`)
+  wired into every asset list page (mixers, tractors, trailers,
+  equipment, pickup trucks). 11 sub-pages covering Overview, Aging,
+  Cleanliness, Fleet Status, Hours, Issues, Operators, Plant
+  Distribution, Service, Shop Performance, and Verification, sharing
+  one sidebar (`AssetStatisticsSidebar.jsx`) and a common controls
+  strip (`AssetStatisticsControls.jsx`,
+  `AssetStatisticsKpiStrip.jsx`, `AssetStatisticsTables.jsx`,
+  `AssetStatisticsCharts.jsx`). Driven by the new
+  `useAssetStatistics` hook (`src/app/hooks/useAssetStatistics.js`)
+  which slices the per-asset data into the panels each sub-page
+  needs.
+- New Person Statistics view
+  (`src/app/components/people/statistics/PersonStatisticsView.jsx`)
+  wired into the operator roster. Sub-pages render via
+  `PersonStatisticsPages.jsx` with sidebar navigation, KPI strip,
+  and a shared controls row. Backed by `usePersonStatistics`
+  (`src/app/hooks/usePersonStatistics.js`). A new
+  `PersonViewTabBar` (`src/app/components/people/PersonViewTabBar.jsx`)
+  toggles between the list view and the statistics view so the page
+  header stays consistent across both.
+- Operations → Statistics restructured. The standalone Customer
+  Satisfaction page is retired
+  (`src/app/components/plan/tabs/statistics/PlanStatisticsSatisfactionPage.jsx`
+  removed); the headline "good service vs. bad service" picture,
+  the 7-day momentum panel, and the Mon–Sat weekday breakdown all
+  live inside the Service page now
+  (`PlanStatisticsServicePage.jsx`), so the two surfaces can no
+  longer disagree on a verdict. New Moves & Cancels detail
+  (`PlanStatisticsMovesCancelsDetail.jsx`), page
+  (`PlanStatisticsMovesCancelsPage.jsx`), and table
+  (`PlanStatisticsMovesCancelsTable.jsx`) split out so the
+  move-vs-cancel ranking is its own surface instead of a section
+  embedded in something else. Sidebar updated to match
+  (`PlanStatisticsSidebar.jsx`).
+- New shared statistics primitives: `useStatisticsPeriod`
+  (`src/app/hooks/useStatisticsPeriod.js`) for the day / week /
+  month / quarter / year / custom window selector reused by every
+  statistics view, `useMovesCancelsStats`
+  (`src/app/hooks/useMovesCancelsStats.js`) for the moves-and-cancels
+  aggregation, and `StatisticsTimeRange`
+  (`src/app/components/common/StatisticsTimeRange.jsx`) for the
+  time-range chip row. `TabFadeIn`
+  (`src/app/components/common/TabFadeIn.jsx`) gives every tab swap a
+  consistent fade transition.
+- Role-specific user guide PDFs added under `documentation/` —
+  Dispatch Manager, Dispatcher, District Manager, General Manager,
+  Plant Manager.
+- Theme tokens extended (`src/app/constants/themeConstants.js`),
+  `src/app/index.css` picks up the new statistics-related utility
+  classes, and `useThemeMode` exposes a small additional control
+  surface (`src/app/hooks/useThemeMode.js`).
+- Workflow map regenerated (`docs/workflows.html`,
+  `docs/workflows.json`) so the documentation diagram picks up the
+  new asset-statistics + person-statistics packages, the
+  moves-and-cancels split, and the comment / issue side-panel
+  paths.
+
 ## [2026.21.26] - 2026-05-22
 
 - Plant Manager Weekly Efficiency Report now allows +10 min leniency

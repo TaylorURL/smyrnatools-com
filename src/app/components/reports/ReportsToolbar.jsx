@@ -3,6 +3,7 @@ import React from 'react'
 
 import TopSection from '../../../app/components/sections/TopSection'
 import PlantFilterButton from '../../../app/components/ui/PlantFilterButton'
+import { isDarkLikeTheme } from '../../../app/constants/themeConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 
 /* ── Shared atoms — all flat, Plan-tab aesthetic ────────────────────────── */
@@ -173,7 +174,7 @@ export function ReportsActionBar({
 }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#1e3a5f'
-    const isDark = preferences.themeMode === 'dark'
+    const isDark = isDarkLikeTheme(preferences.themeMode)
     const safeTabs = Array.isArray(tabs) ? tabs : []
 
     return (

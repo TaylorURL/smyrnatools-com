@@ -20,12 +20,6 @@ export const PLAN_STATS_SECTIONS = [
         label: 'Production'
     },
     {
-        description: 'Short / medium / long-term horizons, plant comparison, year-over-year.',
-        icon: 'fa-face-smile',
-        id: 'satisfaction',
-        label: 'Customer Satisfaction'
-    },
-    {
         description: 'Load counts per operator across the selected window.',
         icon: 'fa-id-badge',
         id: 'operators',
@@ -62,6 +56,12 @@ export const PLAN_STATS_SECTIONS = [
         icon: 'fa-bolt',
         id: 'kickers',
         label: 'Kickers Analysis'
+    },
+    {
+        description: 'Customers ranked by how often their jobs got moved or cancelled after the 5:30 PM commit.',
+        icon: 'fa-shuffle',
+        id: 'movesCancels',
+        label: 'Moves & Cancels'
     }
 ]
 

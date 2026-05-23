@@ -7,6 +7,7 @@ import { MaintenanceLogSidebar } from '../../../app/components/maintenance/Maint
 import { ContentSkeleton } from '../../../app/components/maintenance/MaintenanceLogSkeleton'
 import { MaintenanceLogTable } from '../../../app/components/maintenance/MaintenanceLogTable'
 import { MaintenanceServiceModal } from '../../../app/components/maintenance/MaintenanceServiceModal'
+import { isDarkLikeTheme } from '../../../app/constants/themeConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useIsMobile } from '../../../app/hooks/useIsMobile'
 import { useMaintenanceLogActions } from '../../../app/hooks/useMaintenanceLogActions'
@@ -37,7 +38,7 @@ export default function MaintenanceLogView({
 }) {
     const { preferences } = usePreferences()
     const accentColor = preferences.accentColor || '#2A3163'
-    const isDark = preferences.themeMode === 'dark'
+    const isDark = isDarkLikeTheme(preferences.themeMode)
     const isMobile = useIsMobile()
 
     const [calendarDate, setCalendarDate] = useState(new Date())

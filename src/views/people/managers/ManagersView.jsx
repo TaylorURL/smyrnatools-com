@@ -1,6 +1,9 @@
-/* eslint-disable max-lines */
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
+import TabFadeIn from '../../../app/components/common/TabFadeIn'
+import PersonViewTabBar from '../../../app/components/people/PersonViewTabBar'
+import PersonStatisticsView from '../../../app/components/people/statistics/PersonStatisticsView'
 import GridViewModeSection from '../../../app/components/sections/GridViewModeSection'
 import ListViewModeSection from '../../../app/components/sections/ListViewModeSection'
 import TopSection from '../../../app/components/sections/TopSection'
@@ -22,6 +25,11 @@ import ManagerDetailView from './ManagerDetailView'
  */
 function ManagersView({ title = 'Managers', onSelectManager }) {
     const { preferences, updateManagerFilter, resetManagerFilters } = usePreferences()
+    const accentColor = preferences.accentColor || '#1e3a5f'
+    /** Always open the list — tab choice is per-session so navigating away
+     *  and back doesn't strand the user on a statistics tab they no longer
+     *  want. */
+    const [activeTab, setActiveTab] = useState('list')
     const [managers, setManagers] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -232,11 +240,34 @@ function ManagersView({ title = 'Managers', onSelectManager }) {
     const statusFilterValue = roleFilter ? roleFilter : 'All Roles'
     const showReset = searchText || selectedPlant || roleFilter
     const isOfficeRegion = preferences.selectedRegion?.type === 'Office'
+
+    const renderTabHeader = () => (
+        <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-4 md:px-6 pt-3 pb-2 border-b border-border-light bg-bg-primary">
+            <div className="flex items-center gap-3">
+                <i className="fas fa-user-tie text-[14px]" style={{ color: accentColor }} />
+                <span className="text-[14px] font-bold text-text-primary">{title}</span>
+            </div>
+            <PersonViewTabBar accentColor={accentColor} activeTab={activeTab} onChange={setActiveTab} />
+        </div>
+    )
+
+    if (activeTab === 'statistics') {
+        return (
+            <div className="flex flex-col h-full managers-view">
+                {renderTabHeader()}
+                <TabFadeIn animationKey="managers-statistics" className="flex-1 min-h-0 flex flex-col">
+                    <PersonStatisticsView kind="managers" title={title} />
+                </TabFadeIn>
+            </div>
+        )
+    }
+
     return (
         <>
             <div
-                className={`global-dashboard-container dashboard-container global-flush-top flush-top managers-view${showDetailView && selectedManager ? ' detail-open' : ''}`}
+                className={`global-dashboard-container dashboard-container global-flush-top flush-top managers-view animate-fade-in-fast${showDetailView && selectedManager ? ' detail-open' : ''}`}
             >
+                {renderTabHeader()}
                 {showDetailView && selectedManager ? (
                     <ManagerDetailView
                         managerId={selectedManager.id}

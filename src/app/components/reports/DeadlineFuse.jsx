@@ -3,41 +3,62 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import { usePreferences } from '../../context/PreferencesContext'
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+/** Mon → Mon, 8-day cutoff window. The submission window opens Monday and
+ *  closes the following Monday at 7:00 AM CST, so the strip has 8 cells. */
+const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S', 'M']
 
-const GRADIENT_CALM = 'linear-gradient(90deg, #16a34a 0%, #84cc16 55%, #f59e0b 100%)'
-const GRADIENT_URGENT = 'linear-gradient(90deg, #f59e0b 0%, #f97316 55%, #dc2626 100%)'
-const GRADIENT_PAST = 'linear-gradient(90deg, #94a3b8 0%, #64748b 100%)'
-const GRADIENT_FUTURE = 'linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%)'
+const COLOR_DONE = '#16a34a'
+const COLOR_PAST = '#94a3b8'
+const COLOR_URGENT = '#dc2626'
+const COLOR_EMPTY = 'var(--bg-tertiary)'
 
-function DeadlineFuse({ daysLeft, cutoffLabel = 'Mon · 7:00 AM CST', todayIndex, caption, mode = 'current' }) {
+/**
+ * Compact deadline indicator. The previous gradient + day-row design was
+ * hard to read at a glance and clashed with the surrounding chrome.
+ * This version uses 8 discrete day pills (one per day in the Mon→Mon
+ * cutoff window):
+ *   - past days fill with a muted slate
+ *   - today fills with the accent color and gets a 2px ring
+ *   - future days are empty (`bg-tertiary`)
+ *   - urgent mode (≤ 2 days left in current week) swaps the active fill
+ *     to red and pulses today's pill so the dispatcher can't miss it
+ * To the right of the pills sits a bold days-left counter and the
+ * cutoff label so the absolute deadline is always visible.
+ *
+ * Renders inline-friendly markup (no outer card) when `embedded` is
+ * true so it can drop into the summary bar without doubling borders.
+ */
+function DeadlineFuse({
+    caption,
+    cutoffLabel = 'Mon · 7:00 AM CST',
+    daysLeft,
+    embedded = false,
+    mode = 'current',
+    todayIndex
+}) {
     const { preferences } = usePreferences()
     const accent = preferences.accentColor || '#1e3a5f'
-    // Cutoff is now Monday 7am CST (the Monday after the report week), so the
-    // visible window spans 8 days at the start of the week instead of 7.
-    const MAX_DAYS = 8
+
+    const MAX_DAYS = DAY_LETTERS.length
     const safeDaysLeft = Math.max(0, Math.min(MAX_DAYS, Number.isFinite(daysLeft) ? daysLeft : 0))
     const isPast = mode === 'past'
     const isFuture = mode === 'future'
-    const pct = isPast ? 100 : isFuture ? 0 : Math.max(4, Math.min(100, ((MAX_DAYS - safeDaysLeft) / MAX_DAYS) * 100))
-    const resolvedTodayIndex = Number.isInteger(todayIndex) ? todayIndex : -1
     const urgent = mode === 'current' && safeDaysLeft <= 2
+    const resolvedTodayIndex = Number.isInteger(todayIndex) ? todayIndex : -1
+
     const numberColor = isPast
         ? 'var(--text-tertiary)'
         : isFuture
           ? 'var(--text-secondary)'
           : urgent
-            ? '#dc2626'
+            ? COLOR_URGENT
             : 'var(--text-primary)'
     const resolvedCaption =
         caption || (isPast ? 'week closed' : isFuture ? 'until opens' : `day${safeDaysLeft === 1 ? '' : 's'} left`)
-    const gradient = isPast ? GRADIENT_PAST : isFuture ? GRADIENT_FUTURE : urgent ? GRADIENT_URGENT : GRADIENT_CALM
-    const showShimmer = mode === 'current' && !isFuture && pct < 100
-    const showPulse = urgent
+
     const [displayDays, setDisplayDays] = useState(safeDaysLeft)
     const frameRef = useRef(null)
     const startRef = useRef(null)
-
     useEffect(() => {
         if (displayDays === safeDaysLeft) return
         if (frameRef.current) cancelAnimationFrame(frameRef.current)
@@ -59,62 +80,88 @@ function DeadlineFuse({ daysLeft, cutoffLabel = 'Mon · 7:00 AM CST', todayIndex
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [safeDaysLeft])
-
     const renderedDays = isPast ? '—' : Math.round(displayDays)
+
+    const inner = (
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full">
+            {/* Day pills: when embedded the row stretches to fill its
+             *  parent (each pill column is flex-1), giving the deadline
+             *  block real horizontal presence next to the summary cells.
+             *  Standalone (Review tab) keeps fixed-width columns. */}
+            <div className={embedded ? 'flex items-end gap-1.5 flex-1 min-w-0' : 'flex items-end gap-1 shrink-0'}>
+                {DAY_LETTERS.map((letter, i) => {
+                    const isToday = !isPast && !isFuture && i === resolvedTodayIndex
+                    const isPastDay = isPast || (!isFuture && i < resolvedTodayIndex)
+                    let fill = COLOR_EMPTY
+                    if (isToday) fill = urgent ? COLOR_URGENT : accent
+                    else if (isPastDay) fill = isPast ? COLOR_PAST : COLOR_DONE
+                    const labelColor = isToday
+                        ? urgent
+                            ? COLOR_URGENT
+                            : accent
+                        : isPastDay
+                          ? 'var(--text-secondary)'
+                          : 'var(--text-tertiary)'
+                    return (
+                        <div
+                            key={`${letter}-${i}`}
+                            className={
+                                embedded
+                                    ? 'flex flex-col items-center gap-0.5 flex-1 min-w-0'
+                                    : 'flex flex-col items-center gap-0.5 w-3.5'
+                            }
+                        >
+                            <span className="text-[9px] font-bold uppercase leading-none" style={{ color: labelColor }}>
+                                {letter}
+                            </span>
+                            <span
+                                className={`block ${embedded ? 'w-full' : 'w-2.5'} h-4 rounded-sm transition-colors duration-300${
+                                    isToday && urgent ? ' animate-fuse-pulse' : ''
+                                }`}
+                                style={{
+                                    background: fill,
+                                    boxShadow: isToday ? `0 0 0 1.5px ${urgent ? COLOR_URGENT : accent}` : 'none'
+                                }}
+                            />
+                        </div>
+                    )
+                })}
+            </div>
+            <div className="flex flex-col items-end leading-tight shrink-0 min-w-0">
+                <div className="flex items-baseline gap-1">
+                    <span
+                        className="font-mono text-[22px] sm:text-[20px] font-semibold tabular-nums leading-none transition-colors duration-300"
+                        style={{ color: numberColor }}
+                    >
+                        {renderedDays}
+                    </span>
+                    {!isPast && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">d</span>
+                    )}
+                </div>
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-text-secondary mt-0.5">
+                    {resolvedCaption}
+                </span>
+                {!isPast && (
+                    <span
+                        className="text-[9.5px] font-mono tabular-nums text-text-tertiary mt-0.5 whitespace-nowrap"
+                        title="Cutoff time"
+                    >
+                        to {cutoffLabel}
+                    </span>
+                )}
+            </div>
+        </div>
+    )
+
+    if (embedded) return inner
 
     return (
         <div
-            className="rounded px-3 py-2.5 flex items-center gap-4 flex-col sm:flex-row overflow-hidden bg-bg-primary border border-border-light"
+            className="rounded-lg px-3 py-2 bg-bg-primary border border-border-light"
             style={{ transition: 'border-color 0.4s ease' }}
         >
-            <div className="w-full sm:w-auto">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">Cutoff</div>
-                <div className="text-[13px] font-semibold mt-0.5 font-mono tabular-nums text-text-primary">
-                    {cutoffLabel}
-                </div>
-            </div>
-            <div className="flex-1 relative w-full pt-5">
-                <div className="h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
-                    <div
-                        className={`relative h-full overflow-hidden rounded-full transition-[width,background] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]${showPulse ? ' animate-fuse-pulse' : ''}`}
-                        style={{ background: gradient, width: `${pct}%` }}
-                    >
-                        {showShimmer && (
-                            <span className="pointer-events-none absolute inset-y-0 w-2/5 animate-fuse-shimmer bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.55)_50%,rgba(255,255,255,0)_100%)]" />
-                        )}
-                    </div>
-                </div>
-                <div className="absolute top-0 left-0 right-0 flex justify-between text-[9.5px] font-semibold uppercase tracking-wider">
-                    {DAY_LABELS.map((d, i) => {
-                        const isToday = i === resolvedTodayIndex
-                        const isPastDay = !isFuture && !isPast && i < resolvedTodayIndex
-                        const color = isToday
-                            ? accent
-                            : isPastDay
-                              ? 'var(--text-secondary)'
-                              : isPast
-                                ? 'var(--text-secondary)'
-                                : 'var(--text-tertiary)'
-                        return (
-                            <span key={d} style={{ color, fontWeight: isToday ? 700 : 600 }}>
-                                {d}
-                                {isToday ? ' •' : ''}
-                            </span>
-                        )
-                    })}
-                </div>
-            </div>
-            <div className="flex items-baseline gap-2 sm:block text-left sm:text-right w-full sm:w-auto">
-                <div
-                    className="font-mono text-[22px] font-semibold leading-none tabular-nums transition-colors duration-[400ms]"
-                    style={{ color: numberColor }}
-                >
-                    {renderedDays}
-                </div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider mt-0 sm:mt-1 text-text-secondary">
-                    {resolvedCaption}
-                </div>
-            </div>
+            {inner}
         </div>
     )
 }

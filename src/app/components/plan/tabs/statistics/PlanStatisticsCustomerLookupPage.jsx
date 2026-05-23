@@ -1,8 +1,9 @@
 /* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
-import { fmtDate, fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtDate, fmtInt } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
+import ScorePercent from './ScorePercent'
 import ServiceTierBreakdown from './ServiceTierBreakdown'
 
 const GOOD = '#16a34a'
@@ -142,11 +143,8 @@ function CustomerCard({ customer, isActive, onSelect, orders }) {
                         </div>
                     )}
                 </div>
-                <div
-                    className="text-[20px] font-semibold tabular-nums leading-none shrink-0"
-                    style={{ color: pctColor(customer.goodPct) }}
-                >
-                    {fmtPct(customer.goodPct)}
+                <div className="shrink-0">
+                    <ScorePercent value={customer.goodPct} />
                 </div>
             </div>
             <MixBar
@@ -279,11 +277,12 @@ function CustomerOrdersTable({ colocationMap, orders, plantNameByCode }) {
                                 >
                                     {m.isLate ? fmtMinutes(m.latenessMin) : '—'}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12px] tabular-nums"
-                                    style={{ color: m.isSlow ? SLOW : 'var(--text-tertiary)' }}
-                                >
-                                    {m.paceScore == null ? '—' : fmtPct(m.paceScore)}
+                                <td className="px-3 py-2 text-right">
+                                    {m.paceScore == null ? (
+                                        <span className="text-text-tertiary">—</span>
+                                    ) : (
+                                        <ScorePercent size="sm" value={m.paceScore} />
+                                    )}
                                 </td>
                                 <td
                                     className="px-3 py-2 text-right text-[12px] tabular-nums font-semibold"
@@ -340,8 +339,7 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-5 pb-4 border-b border-border-light">
                 <StatBlock
                     label="Good service"
-                    value={fmtPct(customer.goodPct)}
-                    valueColor={pctColor(customer.goodPct)}
+                    value={<ScorePercent value={customer.goodPct} />}
                     sub={`${fmtInt(customer.goodJobs)} of ${fmtInt(customer.jobs)}`}
                 />
                 <StatBlock

@@ -31,7 +31,7 @@ function WeekRibbon({ weeks, activeIso, onPick }) {
     return (
         <div
             ref={scrollerRef}
-            className="flex gap-2.5 py-1 overflow-x-auto -mx-1 px-1 scroll-smooth snap-x snap-mandatory"
+            className="flex gap-2 py-0.5 overflow-x-auto -mx-1 px-1 scroll-smooth snap-x snap-mandatory"
             style={{ scrollbarWidth: 'thin' }}
         >
             {weeks.map((wk) => {
@@ -41,32 +41,44 @@ function WeekRibbon({ weeks, activeIso, onPick }) {
                 const tone = isActive ? { bg: accent, fg: accent } : toneBase
                 const borderColor = isActive ? accent : 'var(--border-light)'
                 const borderWidth = isActive ? '2px' : '1px'
-                const padding = isActive ? '13px 15px' : '14px 16px'
+                // Equalize the visual padding between active and idle cards so
+                // the 1px → 2px border swap doesn't shift the inner content.
+                const padding = isActive ? '5px 11px' : '6px 12px'
                 return (
                     <button
                         key={wk.iso}
                         ref={isActive ? activeRef : undefined}
                         type="button"
                         onClick={() => onPick?.(wk.iso)}
-                        className="shrink-0 w-[180px] snap-start text-left bg-bg-primary rounded-lg transition-all duration-150 hover:-translate-y-px hover:shadow-md cursor-pointer"
+                        className="shrink-0 w-[180px] snap-start text-left bg-bg-primary rounded-lg transition-all duration-150 hover:-translate-y-px hover:shadow-md cursor-pointer flex items-center gap-2.5"
                         style={{
                             border: `${borderWidth} solid ${borderColor}`,
                             padding
                         }}
                     >
-                        <div
-                            className="text-[10px] font-bold uppercase tracking-[.08em]"
-                            style={{ color: isActive ? accent : 'var(--text-tertiary)' }}
-                        >
-                            {wk.label}
-                        </div>
-                        <div className="font-bold text-[15px] mt-0.5 font-heading">{wk.range}</div>
-                        <div
-                            className="flex items-center gap-1.5 mt-1.5 text-[11px] font-semibold"
-                            style={{ color: tone.fg }}
-                        >
-                            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: tone.bg }} />
-                            {wk.hint}
+                        <span
+                            className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ background: tone.bg }}
+                        />
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-baseline gap-2 leading-tight">
+                                <span
+                                    className="text-[9.5px] font-bold uppercase tracking-[.08em] shrink-0"
+                                    style={{ color: isActive ? accent : 'var(--text-tertiary)' }}
+                                >
+                                    {wk.label}
+                                </span>
+                                <span
+                                    className="text-[10px] font-semibold ml-auto truncate"
+                                    style={{ color: tone.fg }}
+                                    title={wk.hint}
+                                >
+                                    {wk.hint}
+                                </span>
+                            </div>
+                            <div className="font-bold text-[13px] font-heading leading-tight truncate mt-px">
+                                {wk.range}
+                            </div>
                         </div>
                     </button>
                 )

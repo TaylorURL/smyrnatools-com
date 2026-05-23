@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
+
 /**
  * Asset summary card used in grid view mode.
  * Displays a colored status bar, item number, subtitle, verification flag,

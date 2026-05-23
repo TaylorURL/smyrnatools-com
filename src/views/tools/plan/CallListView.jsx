@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { CallListSkeleton } from '../../../app/components/common/PlanSkeletons'
+import TabFadeIn from '../../../app/components/common/TabFadeIn'
 import {
     CallListActivityPage,
     CallListDirectoryPage,
@@ -190,7 +191,7 @@ function CallListView({ accentColor, planColocationMap, plantNameByCode }) {
                         onSelect={setActiveSection}
                         userRoleWeight={userRoleWeight}
                     />
-                    <div className="flex-1 min-w-0 flex flex-col gap-3">
+                    <TabFadeIn animationKey={activeSection} className="flex-1 min-w-0 flex flex-col gap-3">
                         {activeSection === 'outreach' && (
                             <CallListOutreachPage
                                 accentColor={tone}
@@ -264,7 +265,7 @@ function CallListView({ accentColor, planColocationMap, plantNameByCode }) {
                                 selectedCustomerNum={selectedCustomerNum}
                             />
                         )}
-                    </div>
+                    </TabFadeIn>
                 </div>
             </div>
         </div>

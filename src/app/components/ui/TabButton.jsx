@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
+
 /** Plan-tab pill button — same chrome as the report toolbar tabs and the
  *  Plan filter chips. */
 export default function TabButton({ label, isActive, onClick }) {

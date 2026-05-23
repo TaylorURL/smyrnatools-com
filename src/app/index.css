@@ -119,6 +119,38 @@ html.dark {
     --success: #22c55e;
 }
 
+/* ── "Grayed Out" theme ──────────────────────────────────────────────────────
+ * A medium-gray surface variant. Sits clearly between Light (white) and
+ * Dark (black) — the user reads this as "gray theme", not "dark theme",
+ * so the palette leans noticeably lighter than the dark token block.
+ * Pairs with `html.dark` so Tailwind `dark:` variants still apply; the
+ * more-specific selector here overrides the dark token block with the
+ * gray palette. */
+html.dark.theme-grayed {
+    /* color-scheme: light keeps native form controls (date / time / color
+     * pickers, autofill chrome, scrollbars) rendering in their light style
+     * so they read against the gray surface instead of dropping to the
+     * browser's dark-mode near-black. */
+    color-scheme: light;
+    --background-color: #5b6270;
+    --card-background: #656c7a;
+    --text-color: #f5f5f5;
+    --text-light: #d5d8de;
+    --border-color: #6d7381;
+    --bg-primary: #5b6270;
+    --bg-secondary: #565d6b;
+    --bg-tertiary: #515663;
+    --bg-hover: #6a7180;
+    --text-primary: #f5f5f5;
+    --text-secondary: #d5d8de;
+    --text-tertiary: #a8acb6;
+    --border-light: #6d7381;
+    --border-medium: #7d8391;
+    --border-dark: #8b919e;
+    --shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
 html.theme-transitioning,
 html.theme-transitioning *,
 html.theme-transitioning *::before,
@@ -1941,4 +1973,351 @@ html.dark .status-badge-neutral {
 html.dark .trainer-badge {
     background-color: #0a0f1a;
     color: #93c5fd;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * "Grayed Out" theme — surface re-mapping
+ *
+ * The dark shim above repaints every raw color utility (bg-white, bg-gray-50,
+ * bg-slate-100, dark:bg-gray-900, etc.) to near-black surfaces. For the
+ * Grayed Out theme we want the same utilities to land on a medium gray
+ * palette — readable, "slightly dark", but never black. These selectors carry
+ * `html.dark.theme-grayed` so they automatically beat the `html.dark` rules
+ * via specificity, and the cascade order (later rules win on ties) keeps the
+ * map deterministic.
+ *
+ * Palette anchors (see also the theme-token block above):
+ *   --bg-primary:   #4a4f5c   (main surface)
+ *   --bg-secondary: #424754
+ *   --bg-tertiary:  #3a3f4b
+ *   --bg-hover:     #565b69
+ *   --border-light: #5d6271
+ *   --border-medium:#6d7381
+ *   --border-dark:  #7a8090
+ *
+ * Anything not listed here either reads from the token block (already
+ * grayed) or stays the same as the dark theme on purpose (semantic
+ * badges, accents, etc.).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+/* Surfaces — whites / gray-N / slate-N. Palette matches the token block:
+ * primary #5b6270, secondary #565d6b, tertiary #515663, hover #6a7180. */
+html.dark.theme-grayed .bg-white {
+    background-color: #5b6270;
+}
+
+html.dark.theme-grayed .bg-white\/95 {
+    background-color: rgba(91, 98, 112, 0.95);
+}
+
+html.dark.theme-grayed .bg-white\/90 {
+    background-color: rgba(91, 98, 112, 0.9);
+}
+
+html.dark.theme-grayed .bg-white\/80 {
+    background-color: rgba(91, 98, 112, 0.8);
+}
+
+html.dark.theme-grayed .bg-white\/60 {
+    background-color: rgba(91, 98, 112, 0.6);
+}
+
+html.dark.theme-grayed .bg-gray-50 {
+    background-color: #565d6b;
+}
+
+html.dark.theme-grayed .bg-gray-100 {
+    background-color: #515663;
+}
+
+html.dark.theme-grayed .bg-gray-200 {
+    background-color: #6a7180;
+}
+
+html.dark.theme-grayed .bg-gray-300 {
+    background-color: #767d8b;
+}
+
+html.dark.theme-grayed .bg-slate-50 {
+    background-color: #565d6b;
+}
+
+html.dark.theme-grayed .bg-slate-50\/80 {
+    background-color: rgba(86, 93, 107, 0.8);
+}
+
+html.dark.theme-grayed .bg-slate-100 {
+    background-color: #515663;
+}
+
+html.dark.theme-grayed .bg-slate-200 {
+    background-color: #6a7180;
+}
+
+html.dark.theme-grayed .bg-slate-300 {
+    background-color: #767d8b;
+}
+
+/* Tailwind-compiled dark: variants (currently only gray-800 / gray-900 are
+ * used as `dark:bg-*` in source). Map them to the same gray surface set so
+ * darker-meaning utilities still degrade to gray rather than near-black. */
+html.dark.theme-grayed .dark\:bg-gray-800 {
+    background-color: #565d6b;
+}
+
+html.dark.theme-grayed .dark\:bg-gray-900 {
+    background-color: #515663;
+}
+
+/* Gradients */
+html.dark.theme-grayed .from-slate-50 {
+    --tw-gradient-from: #565d6b var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(86 93 107 / 0) var(--tw-gradient-to-position);
+}
+
+html.dark.theme-grayed .to-slate-100 {
+    --tw-gradient-to: #515663 var(--tw-gradient-to-position);
+}
+
+/* Hover */
+html.dark.theme-grayed .hover\:bg-gray-50:hover,
+html.dark.theme-grayed .hover\:bg-slate-50:hover {
+    background-color: #565d6b;
+}
+
+html.dark.theme-grayed .hover\:bg-gray-100:hover,
+html.dark.theme-grayed .hover\:bg-slate-100:hover {
+    background-color: #5f6675;
+}
+
+html.dark.theme-grayed .hover\:bg-gray-200:hover,
+html.dark.theme-grayed .hover\:bg-slate-200:hover {
+    background-color: #6a7180;
+}
+
+html.dark.theme-grayed .hover\:bg-white:hover {
+    background-color: #5f6675;
+}
+
+/* Text — keep the dark-theme readability tier but lift slightly so contrast
+ * against the lighter gray bg stays comfortable. */
+html.dark.theme-grayed .text-gray-900,
+html.dark.theme-grayed .text-slate-900 {
+    color: #ffffff;
+}
+
+html.dark.theme-grayed .text-gray-800,
+html.dark.theme-grayed .text-slate-800 {
+    color: #f1f3f7;
+}
+
+html.dark.theme-grayed .text-gray-700,
+html.dark.theme-grayed .text-slate-700 {
+    color: #dde0e6;
+}
+
+html.dark.theme-grayed .text-gray-600,
+html.dark.theme-grayed .text-slate-600 {
+    color: #c4c8d2;
+}
+
+html.dark.theme-grayed .text-gray-500,
+html.dark.theme-grayed .text-slate-500 {
+    color: #a6abb8;
+}
+
+html.dark.theme-grayed .text-gray-400,
+html.dark.theme-grayed .text-slate-400 {
+    color: #888d99;
+}
+
+html.dark.theme-grayed .text-gray-300,
+html.dark.theme-grayed .text-slate-300 {
+    color: #7a8090;
+}
+
+/* Borders — visible on gray bg without being harsh */
+html.dark.theme-grayed .border-gray-100,
+html.dark.theme-grayed .border-slate-100 {
+    border-color: #6d7381;
+}
+
+html.dark.theme-grayed .border-gray-200,
+html.dark.theme-grayed .border-slate-200 {
+    border-color: #7d8391;
+}
+
+html.dark.theme-grayed .border-gray-300,
+html.dark.theme-grayed .border-slate-300 {
+    border-color: #8b919e;
+}
+
+html.dark.theme-grayed .border-white\/15 {
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+html.dark.theme-grayed .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #6d7381;
+}
+
+html.dark.theme-grayed .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #7d8391;
+}
+
+html.dark.theme-grayed .ring-gray-100 {
+    --tw-ring-color: #6d7381;
+}
+
+html.dark.theme-grayed .ring-gray-200 {
+    --tw-ring-color: #7d8391;
+}
+
+/* Component overrides — gradient-driven metric card needs the gray gradient,
+ * unassign button needs to read as a button against the lighter surface. */
+html.dark.theme-grayed .metric-card {
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+/* Semantic badges — the dark-theme tints (near-black with colored text) read
+ * heavy against the lighter gray surface. Lift the backgrounds toward the
+ * gray bg so the colored chip still reads as a chip, not a black block. */
+html.dark.theme-grayed .status-badge-danger {
+    background-color: #6e525a;
+    color: #fca5a5;
+}
+
+html.dark.theme-grayed .status-badge-warning {
+    background-color: #6c624c;
+    color: #fcd34d;
+}
+
+html.dark.theme-grayed .status-badge-success {
+    background-color: #4f6e5c;
+    color: #86efac;
+}
+
+html.dark.theme-grayed .status-badge-info {
+    background-color: #525d70;
+    color: #93c5fd;
+}
+
+html.dark.theme-grayed .status-badge-neutral {
+    background-color: #5b6270;
+    color: #c4c8d2;
+}
+
+html.dark.theme-grayed .trainer-badge {
+    background-color: #525d70;
+    color: #93c5fd;
+}
+
+html.dark.theme-grayed .bg-emerald-100 {
+    background-color: #4f6e5c;
+}
+
+html.dark.theme-grayed .bg-red-100,
+html.dark.theme-grayed .bg-red-200 {
+    background-color: #6e525a;
+}
+
+html.dark.theme-grayed .bg-amber-100,
+html.dark.theme-grayed .bg-yellow-100 {
+    background-color: #6c624c;
+}
+
+html.dark.theme-grayed .bg-blue-100 {
+    background-color: #525d70;
+}
+
+html.dark.theme-grayed .bg-green-100,
+html.dark.theme-grayed .bg-green-200 {
+    background-color: #4f6e5c;
+}
+
+html.dark.theme-grayed .bg-sky-50,
+html.dark.theme-grayed .bg-sky-100 {
+    background-color: #525d70;
+}
+
+html.dark.theme-grayed .border-sky-200 {
+    border-color: #6d7686;
+}
+
+/* Native form controls — keep the chevron lifted against the gray bg and
+ * make sure inputs / textareas read as fields on the gray surface. The
+ * native dark-mode chrome (color-scheme: dark) was rendering them near-
+ * black; the grayed theme uses color-scheme: light instead, and these
+ * rules pin background / text / border to gray tokens so any consumer
+ * style still composes cleanly. */
+html.dark.theme-grayed select {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+    /* Lighter chevron stroke so it reads against the gray field. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d5d8de'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+}
+
+html.dark.theme-grayed input[type='text'],
+html.dark.theme-grayed input[type='tel'],
+html.dark.theme-grayed input[type='email'],
+html.dark.theme-grayed input[type='password'],
+html.dark.theme-grayed input[type='number'],
+html.dark.theme-grayed input[type='search'],
+html.dark.theme-grayed input[type='url'],
+html.dark.theme-grayed input[type='date'],
+html.dark.theme-grayed input[type='datetime-local'],
+html.dark.theme-grayed input[type='time'],
+html.dark.theme-grayed input[type='month'],
+html.dark.theme-grayed input[type='week'],
+html.dark.theme-grayed textarea {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+html.dark.theme-grayed input::placeholder,
+html.dark.theme-grayed textarea::placeholder {
+    color: var(--text-tertiary);
+    opacity: 1;
+}
+
+/* Date / time / month / week picker indicator — the dark-rendered icon
+ * leaks through even with color-scheme: light on some platforms; invert
+ * tip so it stays readable against the gray field. */
+html.dark.theme-grayed input[type='date']::-webkit-calendar-picker-indicator,
+html.dark.theme-grayed input[type='datetime-local']::-webkit-calendar-picker-indicator,
+html.dark.theme-grayed input[type='time']::-webkit-calendar-picker-indicator,
+html.dark.theme-grayed input[type='month']::-webkit-calendar-picker-indicator,
+html.dark.theme-grayed input[type='week']::-webkit-calendar-picker-indicator {
+    filter: invert(0.85);
+}
+
+/* Form scaffolding wrappers — the add-view-form rules in @layer components
+ * pin background to var(--bg-primary); that's already gray via the token
+ * block. The section card also reads from var(--bg-secondary). These two
+ * rules cover the legacy hardcoded white-card pattern still used by a
+ * couple of older modals. */
+html.dark.theme-grayed .add-view-form input,
+html.dark.theme-grayed .add-view-form select,
+html.dark.theme-grayed .add-view-form textarea {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+html.dark.theme-grayed .add-view-form .form-section {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-light);
+}
+
+/* Autofill — Chrome paints autofilled inputs with its own beige/blue tint
+ * that ignores background-color. Use box-shadow inset + text-fill to mask
+ * it back to the gray surface. */
+html.dark.theme-grayed input:-webkit-autofill,
+html.dark.theme-grayed input:-webkit-autofill:hover,
+html.dark.theme-grayed input:-webkit-autofill:focus,
+html.dark.theme-grayed textarea:-webkit-autofill {
+    -webkit-text-fill-color: var(--text-primary);
+    -webkit-box-shadow: 0 0 0 30px var(--bg-secondary) inset;
+    caret-color: var(--text-primary);
 }

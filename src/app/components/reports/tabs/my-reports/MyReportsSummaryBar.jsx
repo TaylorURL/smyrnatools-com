@@ -1,5 +1,7 @@
 import React from 'react'
 
+import DeadlineFuse from '../../DeadlineFuse'
+
 /** A single stat cell — mirrors OperationsView's RegionTotalCell layout (icon box +
  *  uppercase label + mono value) so the two surfaces share a visual rhythm. */
 function SummaryCell({ accent, color, hint, icon, label, value, valueColor, warning }) {
@@ -41,11 +43,13 @@ export default function MyReportsSummaryBar({
     accent,
     cutoffLabel,
     daysLeft,
+    fuseCaption,
     isFuture,
     isPast,
     overdueCarryover,
     pending,
     submitted,
+    todayIndex,
     weekLabel,
     weekRange
 }) {
@@ -53,8 +57,7 @@ export default function MyReportsSummaryBar({
     const completionPct = totalAssigned > 0 ? Math.round((submitted / totalAssigned) * 100) : null
     const allDone = totalAssigned > 0 && pending === 0
     const urgent = !isFuture && !isPast && daysLeft <= 1 && pending > 0
-    const daysValue = isPast ? 'Closed' : isFuture ? `${daysLeft}d` : `${daysLeft}d`
-    const daysHint = isPast ? 'cutoff passed' : isFuture ? 'until opens' : `to ${cutoffLabel}`
+    const fuseMode = isPast ? 'past' : isFuture ? 'future' : 'current'
     return (
         <div
             className="shrink-0 flex items-center gap-2 overflow-x-auto px-3 py-2 rounded-lg border"
@@ -88,17 +91,6 @@ export default function MyReportsSummaryBar({
                 warning={urgent}
             />
 
-            <SummaryCell
-                accent={accent}
-                color="#d97706"
-                icon="fa-clock"
-                label="Window"
-                value={daysValue}
-                valueColor={urgent ? '#dc2626' : undefined}
-                hint={daysHint}
-                warning={urgent}
-            />
-
             {overdueCarryover > 0 && (
                 <SummaryCell
                     accent={accent}
@@ -111,14 +103,28 @@ export default function MyReportsSummaryBar({
                 />
             )}
 
-            <div className="flex-1" />
-
             {allDone && !isPast && (
                 <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-[#16a34a14] text-green-600">
                     <i className="fas fa-check-circle text-[12px]" />
                     All caught up
                 </div>
             )}
+
+            {/* Deadline indicator — pulled in from the old standalone
+             *  DeadlineFuse card and rendered inline on the right. We
+             *  give it `flex-1` so the day-pill row stretches across the
+             *  empty space at the end of the bar instead of sitting in a
+             *  tight cluster next to the stats. */}
+            <div className="flex-1 min-w-[260px] hidden sm:flex">
+                <DeadlineFuse
+                    caption={fuseCaption}
+                    cutoffLabel={cutoffLabel}
+                    daysLeft={daysLeft}
+                    embedded
+                    mode={fuseMode}
+                    todayIndex={todayIndex}
+                />
+            </div>
         </div>
     )
 }

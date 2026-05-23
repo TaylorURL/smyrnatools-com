@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
+import LoginView from '../common/login/LoginView'
 
 // --- Mocks ---
 
@@ -54,8 +55,6 @@ jest.mock(
 )
 
 jest.mock('../../assets/images/srm-logo.svg', () => 'srm-logo.svg')
-
-import LoginView from '../common/login/LoginView'
 
 describe('LoginView', () => {
     beforeEach(() => {

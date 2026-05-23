@@ -1,6 +1,6 @@
 import React from 'react'
 
-import AssetView from '../AssetView'
+import AssetViewShell from '../../../app/components/assets/AssetViewShell'
 import mixerConfig from '../configs/mixerConfig'
 
 function MixersView({
@@ -12,14 +12,14 @@ function MixersView({
     exactMatch = false
 }) {
     return (
-        <AssetView
+        <AssetViewShell
             config={mixerConfig}
-            title={title}
+            embedded={embedded}
+            exactMatch={exactMatch}
+            initialSearch={initialSearch}
             onSelectItem={onSelectMixer}
             setSelectedView={setSelectedView}
-            embedded={embedded}
-            initialSearch={initialSearch}
-            exactMatch={exactMatch}
+            title={title}
         />
     )
 }

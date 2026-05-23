@@ -1,17 +1,18 @@
 import React, { useMemo, useState } from 'react'
 
 import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons'
+import TabFadeIn from '../../../app/components/common/TabFadeIn'
 import { PlanStatisticsControls } from '../../../app/components/plan/tabs/statistics/PlanStatisticsControls'
 import PlanStatisticsCustomerLookupPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsCustomerLookupPage'
 import PlanStatisticsHelpCrossLoadingPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsHelpCrossLoadingPage'
 import PlanStatisticsKickersPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsKickersPage'
 import { PlanStatisticsKpiStrip } from '../../../app/components/plan/tabs/statistics/PlanStatisticsKpiStrip'
+import PlanStatisticsMovesCancelsPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsMovesCancelsPage'
 import {
     PlanStatisticsOperatorsPage,
     PlanStatisticsOverviewPage,
     PlanStatisticsProductionPage
 } from '../../../app/components/plan/tabs/statistics/PlanStatisticsPages'
-import { PlanStatisticsSatisfactionPage } from '../../../app/components/plan/tabs/statistics/PlanStatisticsSatisfactionPage'
 import PlanStatisticsServicePage from '../../../app/components/plan/tabs/statistics/PlanStatisticsServicePage'
 import {
     PLAN_STATS_SECTIONS,
@@ -21,6 +22,7 @@ import {
 import PlanStatisticsTicketLookupPage from '../../../app/components/plan/tabs/statistics/PlanStatisticsTicketLookupPage'
 import { useHelpCrossLoadingStats } from '../../../app/hooks/useHelpCrossLoadingStats'
 import { useKickerStats } from '../../../app/hooks/useKickerStats'
+import { useMovesCancelsStats } from '../../../app/hooks/useMovesCancelsStats'
 import { usePlanStatistics } from '../../../app/hooks/usePlanStatistics'
 import { useServiceQualityStats } from '../../../app/hooks/useServiceQualityStats'
 
@@ -44,24 +46,23 @@ function PlanStatisticsView({
     plantNameByCode
 }) {
     const [activeSection, setActiveSection] = useState('overview')
-    /** Satisfaction-side memos (per-plant rank, trend, per-day, aggregate) are
-     *  the most expensive work the hook does. Only run them when a sub-page
-     *  that actually displays satisfaction is mounted — currently Overview
-     *  (renders the aggregate summary card) and Satisfaction (full deep-dive
-     *  page). The other sub-pages don't read those fields, so computing
-     *  them eagerly was running thousands of operations per render for
-     *  nothing. */
-    const satisfactionEnabled = activeSection === 'satisfaction' || activeSection === 'overview'
     const operatorsEnabled = activeSection === 'operators'
     const helpCrossLoadingEnabled = activeSection === 'helpCrossLoading'
     const plantsEnabled = activeSection === 'production'
     const customerLookupEnabled = activeSection === 'customerLookup'
     const ticketLookupEnabled = activeSection === 'ticketLookup'
     const kickersEnabled = activeSection === 'kickers'
+    const movesCancelsEnabled = activeSection === 'movesCancels'
     // Service-quality classifier feeds both the Service page and the
     // Customer Lookup page — enable the underlying ticket-detail fetch
     // and the per-order verdict memo whenever either is active.
     const serviceEnabled = activeSection === 'service' || customerLookupEnabled
+    /** Satisfaction-side memos (momentum, weekday breakdown, aggregate) used
+     *  to back a dedicated Satisfaction sub-page that's now folded into
+     *  Service. Keep them on for Overview (which still surfaces the
+     *  aggregate summary card) and Service (which now renders the
+     *  momentum + weekday panels). */
+    const satisfactionEnabled = serviceEnabled || activeSection === 'overview'
     const stats = usePlanStatistics({
         colocationMap: planColocationMap,
         helpCrossLoadingEnabled,
@@ -79,6 +80,7 @@ function PlanStatisticsView({
         availablePlantCodes,
         comparison,
         currentDays,
+        currentRows,
         currentSummary,
         customEnd,
         customStart,
@@ -90,20 +92,15 @@ function PlanStatisticsView({
         operatorRosterCount,
         operatorRosterReady,
         perPlantLoadAttribution,
-        perPlantSatisfaction,
         period,
         plansByDate,
         plansLoading,
-        previousSatisfactionAggregate,
         previousSummary,
         range,
         satisfactionAggregate,
         satisfactionByWeekday,
         satisfactionLoading,
         satisfactionMomentum,
-        satisfactionTrend,
-        satisfactionWorstCustomers,
-        satisfactionWorstOrders,
         selectedPlant,
         setAnchor,
         setComparison,
@@ -155,6 +152,17 @@ function PlanStatisticsView({
         selectedPlant
     })
 
+    /* Moves & cancels — diffs each day's live schedule against the 5:30 PM
+     * snapshot and rolls every cancel / time-or-plant move / other edit up
+     * to the customer that owned the order. Gated so the per-day snapshot
+     * fetches don't fire on every page mount. */
+    const movesCancelsStats = useMovesCancelsStats({
+        colocationMap: planColocationMap,
+        currentRows,
+        enabled: movesCancelsEnabled,
+        selectedPlant
+    })
+
     /** The schedule HTML occasionally lists ghost plant codes (956, 601, 265, …)
      *  that are sentinels or stale entries — not real production plants. The
      *  authoritative list of real plants is `plantNameByCode`, populated from
@@ -203,26 +211,6 @@ function PlanStatisticsView({
             trendComparison,
             trendData
         }
-        if (activeSection === 'satisfaction') {
-            return (
-                <PlanStatisticsSatisfactionPage
-                    accentColor={accentColor}
-                    aggregate={satisfactionAggregate}
-                    byWeekday={satisfactionByWeekday}
-                    loading={satisfactionLoading || loading}
-                    momentum={satisfactionMomentum}
-                    onSelectPlant={(code) => setSelectedPlant((current) => (current === code ? null : code))}
-                    perPlant={perPlantSatisfaction}
-                    plantNameByCode={plantNameByCode}
-                    previousAggregate={previousSatisfactionAggregate}
-                    range={range.current}
-                    selectedPlant={selectedPlant}
-                    trend={satisfactionTrend}
-                    worstCustomers={satisfactionWorstCustomers}
-                    worstOrders={satisfactionWorstOrders}
-                />
-            )
-        }
         if (activeSection === 'production') return <PlanStatisticsProductionPage {...commonProps} />
         if (activeSection === 'operators')
             return (
@@ -251,8 +239,10 @@ function PlanStatisticsView({
             return (
                 <PlanStatisticsServicePage
                     accentColor={accentColor}
+                    byWeekday={satisfactionByWeekday}
                     colocationMap={planColocationMap}
                     loading={loading}
+                    momentum={satisfactionMomentum}
                     plansLoading={plansLoading}
                     plantNameByCode={plantNameByCode}
                     serviceLoading={satisfactionLoading}
@@ -278,6 +268,17 @@ function PlanStatisticsView({
                     colocationMap={planColocationMap}
                     kickerStats={kickerStats}
                     loading={loading || satisfactionLoading}
+                    plansLoading={plansLoading}
+                    plantNameByCode={plantNameByCode}
+                />
+            )
+        }
+        if (activeSection === 'movesCancels') {
+            return (
+                <PlanStatisticsMovesCancelsPage
+                    colocationMap={planColocationMap}
+                    loading={loading}
+                    movesCancelsStats={movesCancelsStats}
                     plansLoading={plansLoading}
                     plantNameByCode={plantNameByCode}
                 />
@@ -355,14 +356,14 @@ function PlanStatisticsView({
                         activeSection={activeSection}
                         onSelect={setActiveSection}
                     />
-                    <div className="flex-1 min-w-0 flex flex-col gap-3">
+                    <TabFadeIn animationKey={activeSection} className="flex-1 min-w-0 flex flex-col gap-3">
                         <div className="flex items-baseline gap-2">
                             <h2 className="text-[15px] font-bold m-0 text-text-primary">{sectionMeta.label}</h2>
                             <span className="text-[11.5px] text-text-tertiary">{sectionMeta.description}</span>
                         </div>
 
                         {renderActiveSection()}
-                    </div>
+                    </TabFadeIn>
                 </div>
             </div>
         </div>

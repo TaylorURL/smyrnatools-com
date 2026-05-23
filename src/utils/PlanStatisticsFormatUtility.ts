@@ -37,6 +37,12 @@ export const fmtYards = (n: number | null | undefined): string => {
 export const fmtPct = (n: number | null | undefined): string =>
     Number.isFinite(n as number) ? `${(n as number) > 0 ? '+' : ''}${(n as number).toFixed(1)}%` : '\u2014'
 
+/** Score percentage \u2014 0\u20131 fraction rendered as "X%" with no sign prefix.
+ *  Use for any rate or score (good-service %, cancel rate, kicker rate,
+ *  booking rate). For period-over-period deltas keep using `fmtPct`. */
+export const fmtScorePct = (n: number | null | undefined): string =>
+    Number.isFinite(n as number) ? `${Math.round((n as number) * 100)}%` : '\u2014'
+
 export const fmtDate = (iso: string | null | undefined): string => {
     const d = parseIsoLocal(iso)
     if (!d) return iso || ''

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import React from 'react'
+import MixersView from '../assets/mixers/MixersView'
 
 // --- Mocks ---
 
@@ -149,8 +150,6 @@ jest.mock(
             return null
         }
 )
-
-import MixersView from '../assets/mixers/MixersView'
 
 describe('MixersView', () => {
     it('renders the mixer list with all items', async () => {

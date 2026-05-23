@@ -30,7 +30,9 @@ export const START_PAGE_OPTIONS = [
 
 export const ACCENT_PRESETS = [
     { color: '#2A3163', name: 'Navy' },
+    { color: '#709FFC', name: 'Sky' },
     { color: '#7f1d1d', name: 'Red' },
+    { color: '#C34845', name: 'Brick' },
     { color: '#374151', name: 'Gray' },
     { color: '#0a0a0a', name: 'Black' }
 ]

@@ -128,6 +128,7 @@ export default function PreferencesTab({
                                 accentColor={accentColor}
                                 options={[
                                     { icon: 'fa-sun', label: 'Light', value: 'light' },
+                                    { icon: 'fa-circle-half-stroke', label: 'Grayed Out', value: 'grayed' },
                                     { icon: 'fa-moon', label: 'Dark', value: 'dark' }
                                 ]}
                                 value={themeMode}

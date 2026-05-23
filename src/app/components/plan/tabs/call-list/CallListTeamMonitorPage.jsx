@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { CALL_OUTCOME_COLORS, CALL_OUTCOME_LABELS, formatRelativeDays } from '../../../../../utils/CallListUtility'
-import { fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtInt, fmtScorePct } from '../../../../../utils/PlanStatisticsFormatUtility'
 
 /* Time-range catalog. Mirrors the Activity feed's selector so both
  * surfaces read the same. `days` is what the backend's leaderboard RPC
@@ -124,7 +124,7 @@ function SummaryStrip({ bookingRate, callerCount, isLoading, totalBooked, totalC
             />
             <SummaryStat
                 label="Booked"
-                sub={`${fmtPct(bookingRate)} booking rate`}
+                sub={`${fmtScorePct(bookingRate)} booking rate`}
                 value={isLoading ? '—' : fmtInt(totalBooked)}
                 valueColor="#16a34a"
             />
@@ -188,13 +188,13 @@ function CallerActivityCard({ row }) {
                     label="Booked"
                     value={fmtInt(row.booked || 0)}
                     valueColor="#16a34a"
-                    sub={fmtPct(bookingRate)}
+                    sub={fmtScorePct(bookingRate)}
                 />
                 <MiniStat
                     label="Will book again"
                     value={fmtInt(row.will_book_again || 0)}
                     valueColor="#2563eb"
-                    sub={fmtPct(productiveRate)}
+                    sub={fmtScorePct(productiveRate)}
                 />
                 <MiniStat label="Customers" value={fmtInt(row.unique_customers || 0)} sub="unique" />
             </div>

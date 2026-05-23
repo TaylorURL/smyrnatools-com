@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import EmbeddedViewModal from '../../app/components/dashboard/EmbeddedViewModal'
 import { exportAssetIssuesSheet } from '../../app/components/modules/export/issues/AssetIssuesExport'
+import CommentModalSection from '../../app/components/sections/CommentModalSection'
+import IssueModalSection from '../../app/components/sections/IssueModalSection'
 import ListViewModeSection from '../../app/components/sections/ListViewModeSection'
 import TopSection from '../../app/components/sections/TopSection'
 import AssetListSkeleton from '../../app/components/ui/AssetListSkeleton'
@@ -10,6 +12,8 @@ import { usePreferences } from '../../app/context/PreferencesContext'
 import useAssetData from '../../app/hooks/useAssetData'
 import useAssetFilters from '../../app/hooks/useAssetFilters'
 import useAssetVerification from '../../app/hooks/useAssetVerification'
+import useIsWideViewport from '../../app/hooks/useIsWideViewport'
+import { OperatorService } from '../../services/OperatorService'
 import { PlantService } from '../../services/PlantService'
 import { UserService } from '../../services/UserService'
 import AssetStatsUtility from '../../utils/AssetStatsUtility'
@@ -232,6 +236,18 @@ function AssetView({
     const [showAddSheet, setShowAddSheet] = useState(false)
     const [isExportingIssues, setIsExportingIssues] = useState(false)
     const [embeddedModal, setEmbeddedModal] = useState(null)
+
+    // --- Side panel state (comment / issue / operatorComment in list view) ---
+    const isWideViewport = useIsWideViewport()
+    const [sidePanel, setSidePanel] = useState(null)
+    const useSidePanel = !embedded && filters.viewMode === 'list' && isWideViewport
+    const sidePanelDelegate = useSidePanel ? setSidePanel : null
+
+    // If the viewport shrinks or the user switches to grid, fall back to modal
+    // behavior by closing any open side panel.
+    useEffect(() => {
+        if (!useSidePanel && sidePanel) setSidePanel(null)
+    }, [useSidePanel, sidePanel])
 
     // --- Verification ---
     const verification = useAssetVerification({
@@ -738,94 +754,132 @@ function AssetView({
                 />
             ) : (
                 <>
-                    <TopSection
-                        isLoading={data.isLoading || data.isRegionLoading}
-                        title={pageTitle}
-                        badge={
-                            canShowOperatorBadge
-                                ? `${totalCount} Total · ${activeOperatorsCount + unassignedActiveOperatorsCount} Active · ${spareCount} Spare · ${unassignedActiveOperatorsCount} Unassigned · ${shopCount} Shop`
-                                : canShowAssetBadge
-                                  ? `${totalCount} Total · ${activeCount} Active · ${spareCount} Spare · ${shopCount} Shop`
-                                  : null
-                        }
-                        onPillClick={(label) => {
-                            const STATUS_MAP = { Active: 'Active', Shop: 'In Shop', Spare: 'Spare' }
-                            if (label === 'Unassigned' && canShowOperatorBadge) {
-                                setEmbeddedModal({
-                                    props: {
-                                        initialPositionFilter: config.operatorConfig.positionLabel,
-                                        initialStatusFilter: 'Unassigned Active'
-                                    },
-                                    view: 'operators'
-                                })
-                            } else if (label === 'Total') {
-                                filters.setStatusFilter('')
-                                updateFilter?.('statusFilter', '')
-                            } else if (STATUS_MAP[label]) {
-                                filters.setStatusFilter(STATUS_MAP[label])
-                                updateFilter?.('statusFilter', STATUS_MAP[label])
-                            }
-                        }}
-                        addButtonLabel={config.addButtonLabel}
-                        onAddClick={() => setShowAddSheet(true)}
-                        customActions={customActions}
-                        searchInput={filters.searchInput}
-                        onSearchInputChange={(v) => {
-                            filters.setSearchInput(v)
-                            filters.debouncedSetSearchText(v)
-                        }}
-                        onClearSearch={() => {
-                            filters.setSearchInput('')
-                            filters.debouncedSetSearchText('')
-                        }}
-                        searchPlaceholder={config.searchPlaceholder}
-                        viewMode={filters.viewMode}
-                        onViewModeChange={filters.handleViewModeChange}
-                        plants={data.plants}
-                        regionPlantCodes={data.regionPlantCodes}
-                        selectedPlant={filters.selectedPlant}
-                        onSelectedPlantChange={(v) => {
-                            filters.setSelectedPlant(v)
-                            updateFilter?.('selectedPlant', v)
-                        }}
-                        statusFilter={filters.statusFilter}
-                        statusOptions={config.statusOptions}
-                        onStatusFilterChange={(v) => {
-                            filters.setStatusFilter(v)
-                            updateFilter?.('statusFilter', v)
-                        }}
-                        freightFilter={config.freightOptions ? filters.freightFilter : undefined}
-                        freightOptions={config.freightOptions}
-                        onFreightFilterChange={
-                            config.freightOptions
-                                ? (v) => {
-                                      filters.setFreightFilter(v)
-                                      updateFilter?.('freightFilter', v)
-                                  }
-                                : undefined
-                        }
-                        customFilters={customFiltersJSX}
-                        showReset={filters.showReset}
-                        onReset={() => {
-                            filters.setSearchText('')
-                            filters.setSearchInput('')
-                            filters.setSelectedPlant('')
-                            filters.setStatusFilter('')
-                            filters.setFreightFilter('')
-                            filters.setExtraTypeFilter('')
-                            if (resetFilters) {
-                                resetFilters({ currentViewMode: filters.viewMode, keepViewMode: true })
-                            }
-                        }}
-                        listLabels={config.listConfig.headerLabels}
-                        colWidths={config.listConfig.colWidths}
-                        forwardedRef={headerRef}
-                        onHeaderClick={filters.handleHeaderClick}
-                        sortKey={filters.sortKey}
-                        sortDirection={filters.sortDirection}
-                        userPlantCode={userPlantCode}
-                    />
-                    <div className="w-full max-w-full overflow-x-hidden">{content}</div>
+                    <div className="flex w-full max-w-full">
+                        <div className="flex-1 min-w-0">
+                            <TopSection
+                                isLoading={data.isLoading || data.isRegionLoading}
+                                title={pageTitle}
+                                badge={
+                                    canShowOperatorBadge
+                                        ? `${totalCount} Total · ${activeOperatorsCount + unassignedActiveOperatorsCount} Active · ${spareCount} Spare · ${unassignedActiveOperatorsCount} Unassigned · ${shopCount} Shop`
+                                        : canShowAssetBadge
+                                          ? `${totalCount} Total · ${activeCount} Active · ${spareCount} Spare · ${shopCount} Shop`
+                                          : null
+                                }
+                                onPillClick={(label) => {
+                                    const STATUS_MAP = { Active: 'Active', Shop: 'In Shop', Spare: 'Spare' }
+                                    if (label === 'Unassigned' && canShowOperatorBadge) {
+                                        setEmbeddedModal({
+                                            props: {
+                                                initialPositionFilter: config.operatorConfig.positionLabel,
+                                                initialStatusFilter: 'Unassigned Active'
+                                            },
+                                            view: 'operators'
+                                        })
+                                    } else if (label === 'Total') {
+                                        filters.setStatusFilter('')
+                                        updateFilter?.('statusFilter', '')
+                                    } else if (STATUS_MAP[label]) {
+                                        filters.setStatusFilter(STATUS_MAP[label])
+                                        updateFilter?.('statusFilter', STATUS_MAP[label])
+                                    }
+                                }}
+                                addButtonLabel={config.addButtonLabel}
+                                onAddClick={() => setShowAddSheet(true)}
+                                customActions={customActions}
+                                searchInput={filters.searchInput}
+                                onSearchInputChange={(v) => {
+                                    filters.setSearchInput(v)
+                                    filters.debouncedSetSearchText(v)
+                                }}
+                                onClearSearch={() => {
+                                    filters.setSearchInput('')
+                                    filters.debouncedSetSearchText('')
+                                }}
+                                searchPlaceholder={config.searchPlaceholder}
+                                viewMode={filters.viewMode}
+                                onViewModeChange={filters.handleViewModeChange}
+                                plants={data.plants}
+                                regionPlantCodes={data.regionPlantCodes}
+                                selectedPlant={filters.selectedPlant}
+                                onSelectedPlantChange={(v) => {
+                                    filters.setSelectedPlant(v)
+                                    updateFilter?.('selectedPlant', v)
+                                }}
+                                statusFilter={filters.statusFilter}
+                                statusOptions={config.statusOptions}
+                                onStatusFilterChange={(v) => {
+                                    filters.setStatusFilter(v)
+                                    updateFilter?.('statusFilter', v)
+                                }}
+                                freightFilter={config.freightOptions ? filters.freightFilter : undefined}
+                                freightOptions={config.freightOptions}
+                                onFreightFilterChange={
+                                    config.freightOptions
+                                        ? (v) => {
+                                              filters.setFreightFilter(v)
+                                              updateFilter?.('freightFilter', v)
+                                          }
+                                        : undefined
+                                }
+                                customFilters={customFiltersJSX}
+                                showReset={filters.showReset}
+                                onReset={() => {
+                                    filters.setSearchText('')
+                                    filters.setSearchInput('')
+                                    filters.setSelectedPlant('')
+                                    filters.setStatusFilter('')
+                                    filters.setFreightFilter('')
+                                    filters.setExtraTypeFilter('')
+                                    if (resetFilters) {
+                                        resetFilters({ currentViewMode: filters.viewMode, keepViewMode: true })
+                                    }
+                                }}
+                                listLabels={config.listConfig.headerLabels}
+                                colWidths={config.listConfig.colWidths}
+                                forwardedRef={headerRef}
+                                onHeaderClick={filters.handleHeaderClick}
+                                sortKey={filters.sortKey}
+                                sortDirection={filters.sortDirection}
+                                userPlantCode={userPlantCode}
+                            />
+                            <div className="w-full max-w-full overflow-x-hidden">{content}</div>
+                        </div>
+                        {sidePanel && (
+                            <aside className="hidden lg:flex w-[440px] shrink-0 self-start sticky top-[var(--sticky-cover-height,0px)] flex-col h-[calc(100vh-var(--sticky-cover-height,0px)-12px)]">
+                                {sidePanel.kind === 'comment' && (
+                                    <CommentModalSection
+                                        displayMode="panel"
+                                        itemId={sidePanel.itemId}
+                                        itemNumber={sidePanel.itemNumber}
+                                        itemType={config.itemTypeLabel}
+                                        onClose={() => setSidePanel(null)}
+                                        service={config.service}
+                                    />
+                                )}
+                                {sidePanel.kind === 'issue' && (
+                                    <IssueModalSection
+                                        displayMode="panel"
+                                        itemId={sidePanel.itemId}
+                                        itemNumber={sidePanel.itemNumber}
+                                        itemType={config.itemTypeLabel}
+                                        onClose={() => setSidePanel(null)}
+                                        service={config.service}
+                                    />
+                                )}
+                                {sidePanel.kind === 'operatorComment' && sidePanel.operator && (
+                                    <CommentModalSection
+                                        displayMode="panel"
+                                        itemId={sidePanel.operator.employeeId}
+                                        itemNumber={sidePanel.operator.name}
+                                        itemType="Operator"
+                                        onClose={() => setSidePanel(null)}
+                                        service={OperatorService}
+                                    />
+                                )}
+                            </aside>
+                        )}
+                    </div>
 
                     <AssetModals
                         ref={modalsRef}
@@ -836,6 +890,7 @@ function AssetView({
                         isLoading={data.isLoading}
                         items={data.items}
                         itemsLoaded={data.itemsLoaded}
+                        onSidePanelOpen={sidePanelDelegate}
                         operators={data.operators}
                         plants={data.plants}
                         selectedPlant={filters.selectedPlant}

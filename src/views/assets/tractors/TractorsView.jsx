@@ -1,6 +1,6 @@
 import React from 'react'
 
-import AssetView from '../AssetView'
+import AssetViewShell from '../../../app/components/assets/AssetViewShell'
 import tractorConfig from '../configs/tractorConfig'
 
 function TractorsView({
@@ -11,13 +11,13 @@ function TractorsView({
     exactMatch = false
 }) {
     return (
-        <AssetView
+        <AssetViewShell
             config={tractorConfig}
-            title={title}
-            setSelectedView={setSelectedView}
             embedded={embedded}
-            initialSearch={initialSearch}
             exactMatch={exactMatch}
+            initialSearch={initialSearch}
+            setSelectedView={setSelectedView}
+            title={title}
         />
     )
 }

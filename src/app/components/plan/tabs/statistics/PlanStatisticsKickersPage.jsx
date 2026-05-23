@@ -1,8 +1,9 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
-import { fmtDate, fmtInt, fmtPct } from '../../../../../utils/PlanStatisticsFormatUtility'
+import { fmtDate, fmtInt, fmtScorePct } from '../../../../../utils/PlanStatisticsFormatUtility'
 import { formatColocatedCodeLabel, formatColocatedPlantLabel } from '../../../../../utils/PlantColocationUtility'
+import ScorePercent from './ScorePercent'
 
 /* Two-state colour system, matching the Customer Lookup page palette.
  * `HEAVY` lights the customers who drag the schedule the most — used
@@ -146,7 +147,7 @@ function CustomerCard({ customer, isActive, onSelect, orders }) {
                     <span className="mx-1.5">·</span>
                     {fmtYards(customer.kickerYards)} total
                     <span className="mx-1.5">·</span>
-                    {fmtPct(customer.kickerRate)} rate
+                    {fmtScorePct(customer.kickerRate)} rate
                 </div>
                 <KickerTrail orders={orders} />
             </div>
@@ -226,13 +227,12 @@ function CustomerKickersTable({ colocationMap, orders, plantNameByCode }) {
                                 <td className="px-3 py-2 text-right text-[12px] tabular-nums text-text-secondary">
                                     {fmtInt(m.kickerLoads)}
                                 </td>
-                                <td
-                                    className="px-3 py-2 text-right text-[12px] tabular-nums"
-                                    style={{
-                                        color: overPct != null && overPct >= 0.5 ? HEAVY : 'var(--text-tertiary)'
-                                    }}
-                                >
-                                    {overPct == null ? '—' : fmtPct(overPct)}
+                                <td className="px-3 py-2 text-right">
+                                    {overPct == null ? (
+                                        <span className="text-text-tertiary">—</span>
+                                    ) : (
+                                        <ScorePercent size="sm" value={overPct} />
+                                    )}
                                 </td>
                             </tr>
                         )
@@ -292,7 +292,7 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                     label="Total kicked"
                     sub={
                         customer.scheduledYards > 0
-                            ? `${fmtPct(customer.kickerYards / customer.scheduledYards)} of scheduled`
+                            ? `${fmtScorePct(customer.kickerYards / customer.scheduledYards)} of scheduled`
                             : null
                     }
                     value={fmtYards(customer.kickerYards)}
@@ -301,8 +301,7 @@ function CustomerDetail({ colocationMap, customer, onClose, orders, plantNameByC
                 <StatBlock
                     label="Kicker rate"
                     sub={`worst single ${fmtYards(customer.maxKickerYards)}`}
-                    value={fmtPct(customer.kickerRate)}
-                    valueColor={customer.kickerRate >= FREQUENT_KICKER_RATE ? HEAVY : undefined}
+                    value={<ScorePercent value={customer.kickerRate} />}
                 />
             </div>
 

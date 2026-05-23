@@ -1,9 +1,11 @@
-/* eslint-disable max-lines */
+/* eslint-disable max-lines, react/forbid-dom-props */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import PhoneLink from '../../../app/components/common/PhoneLink'
 import StatusHistoryBar from '../../../app/components/common/StatusHistoryBar'
-import { exportOperatorRatingsSheet } from '../../../app/components/modules/export/operators/OperatorRatingsExport'
+import TabFadeIn from '../../../app/components/common/TabFadeIn'
+import PersonViewTabBar from '../../../app/components/people/PersonViewTabBar'
+import PersonStatisticsView from '../../../app/components/people/statistics/PersonStatisticsView'
 import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import GridViewModeSection from '../../../app/components/sections/GridViewModeSection'
 import HistoryViewSection from '../../../app/components/sections/HistoryViewSection'
@@ -11,6 +13,7 @@ import ListViewModeSection from '../../../app/components/sections/ListViewModeSe
 import TopSection from '../../../app/components/sections/TopSection'
 import AssetListSkeleton from '../../../app/components/ui/AssetListSkeleton'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import useIsWideViewport from '../../../app/hooks/useIsWideViewport'
 import { Database } from '../../../services/DatabaseService'
 import { MixerService } from '../../../services/MixerService'
 import { OperatorService } from '../../../services/OperatorService'
@@ -48,7 +51,12 @@ function OperatorsView({
     exactMatch = false
 }) {
     const { preferences, updateOperatorFilter, resetOperatorFilters } = usePreferences()
+    const accentColor = preferences.accentColor || '#1e3a5f'
     const headerRef = useRef(null)
+    /** Always open the list — tab choice is per-session so navigating away
+     *  and back doesn't strand the user on a statistics tab they no longer
+     *  want. */
+    const [activeTab, setActiveTab] = useState('list')
     const [operators, setOperators] = useState([])
     const [plants, setPlants] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -105,17 +113,11 @@ function OperatorsView({
     const [showCommentModal, setShowCommentModal] = useState(false)
     const [modalOperatorId, setModalOperatorId] = useState(null)
     const [modalOperatorName, setModalOperatorName] = useState('')
-    const [isExporting, setIsExporting] = useState(false)
-    const handleExportRatings = async () => {
-        setIsExporting(true)
-        try {
-            await exportOperatorRatingsSheet({ operators, plants })
-        } catch (err) {
-            console.error('Export ratings failed:', err)
-        } finally {
-            setIsExporting(false)
-        }
-    }
+    // On wide viewports + list view, the comment surface renders as a right-side
+    // panel next to the table rather than a centered modal. State is shared
+    // across both render paths so the open thread survives viewport changes.
+    const isWideViewport = useIsWideViewport()
+    const useSidePanel = !embedded && viewMode === 'list' && isWideViewport
     useEffect(() => {
         if (initialSearch) {
             const timer = setTimeout(() => {
@@ -517,11 +519,37 @@ function OperatorsView({
         }
         return renderStars(operator.rating)
     }
+    /** Embedded mode (dashboard modal popup) skips the tab UI entirely so
+     *  the modal stays a pure roster picker. The tab bar lives just below
+     *  the global header for non-embedded mounts. */
+    const renderTabHeader = () =>
+        embedded ? null : (
+            <div className="flex items-center justify-between flex-wrap gap-2 px-3 sm:px-4 md:px-6 pt-3 pb-2 border-b border-border-light bg-bg-primary">
+                <div className="flex items-center gap-3">
+                    <i className="fas fa-id-badge text-[14px]" style={{ color: accentColor }} />
+                    <span className="text-[14px] font-bold text-text-primary">{title}</span>
+                </div>
+                <PersonViewTabBar accentColor={accentColor} activeTab={activeTab} onChange={setActiveTab} />
+            </div>
+        )
+
+    if (!embedded && activeTab === 'statistics') {
+        return (
+            <div className="flex flex-col h-full operators-view">
+                {renderTabHeader()}
+                <TabFadeIn animationKey="operators-statistics" className="flex-1 min-h-0 flex flex-col">
+                    <PersonStatisticsView kind="operators" title={title} />
+                </TabFadeIn>
+            </div>
+        )
+    }
+
     return (
         <>
             <div
-                className={`global-dashboard-container dashboard-container global-flush-top flush-top operators-view${showDetailView && selectedOperator ? ' detail-open' : ''}`}
+                className={`global-dashboard-container dashboard-container global-flush-top flush-top operators-view animate-fade-in-fast${showDetailView && selectedOperator ? ' detail-open' : ''}`}
             >
+                {renderTabHeader()}
                 {showDetailView && selectedOperator && (
                     <OperatorDetailView
                         operatorId={selectedOperator.employeeId}
@@ -535,280 +563,305 @@ function OperatorsView({
                 )}
                 {!showDetailView && (
                     <>
-                        <TopSection
-                            isLoading={isLoading}
-                            title={title}
-                            flushTop={true}
-                            showCoverOverlay={true}
-                            forwardedRef={headerRef}
-                            addButtonLabel="Add Operator"
-                            onAddClick={() => setShowAddSheet(true)}
-                            customActions={
-                                <button
-                                    className="flex items-center gap-2 rounded-xl border-none bg-gray-500 px-4 py-3 text-sm font-semibold text-white cursor-pointer transition-all duration-150 disabled:opacity-50"
-                                    onClick={handleExportRatings}
-                                    disabled={isExporting || operators.length === 0}
-                                    type="button"
-                                    aria-label="Export Ratings Sheet"
-                                >
-                                    <i className={`fas ${isExporting ? 'fa-spinner fa-spin' : 'fa-file-export'}`} />
-                                    <span>{isExporting ? 'Exporting...' : 'Export Ratings'}</span>
-                                </button>
-                            }
-                            searchInput={searchText}
-                            onSearchInputChange={(value) => {
-                                setSearchText(value)
-                                updateOperatorFilter('searchText', value)
-                            }}
-                            onClearSearch={() => {
-                                setSearchText('')
-                                updateOperatorFilter('searchText', '')
-                            }}
-                            searchPlaceholder="Search by name or ID..."
-                            viewMode={viewMode}
-                            onViewModeChange={handleViewModeChange}
-                            plants={plants.map((p) => ({ plantCode: p.plantCode, plantName: p.plantName }))}
-                            regionPlantCodes={regionPlantCodes}
-                            selectedPlant={selectedPlant}
-                            onSelectedPlantChange={(value) => {
-                                setSelectedPlant(value)
-                                updateOperatorFilter('selectedPlant', value)
-                            }}
-                            statusFilter={statusFilter}
-                            statusOptions={filterOptions}
-                            onStatusFilterChange={(value) => {
-                                setStatusFilter(value)
-                                updateOperatorFilter('statusFilter', value)
-                            }}
-                            positionFilter={positionFilter}
-                            positionOptions={positionOptions}
-                            onPositionFilterChange={(value) => {
-                                setPositionFilter(value)
-                                updateOperatorFilter('positionFilter', value)
-                            }}
-                            showReset={showReset}
-                            onReset={handleResetFilters}
-                            listLabels={['Plant', 'Name', 'Phone', 'Status', 'Rating', 'Trainer', 'More']}
-                            colWidths={['10%', '24%', '14%', '14%', '12%', '14%', '12%']}
-                            sticky={true}
-                            hidePlantFilter={plants.length === 0}
-                            onHeaderClick={handleHeaderClick}
-                            sortKey={sortKey}
-                            sortDirection={sortDirection}
-                        />
-                        <div className="w-full max-w-full overflow-x-hidden">
-                            {isLoading ? (
-                                <AssetListSkeleton viewMode={viewMode} />
-                            ) : filteredOperators.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
-                                        <i className="fas fa-users text-3xl text-slate-400"></i>
-                                    </div>
-                                    <h3 className="text-xl font-bold text-slate-800 mb-2">No Operators Found</h3>
-                                    <p className="text-slate-500 mb-6 max-w-md">
-                                        {searchText ||
-                                        selectedPlant ||
-                                        (statusFilter && statusFilter !== 'All Statuses') ||
-                                        positionFilter
-                                            ? 'No operators match your search criteria.'
-                                            : 'There are no operators in the system yet.'}
-                                    </p>
-                                    <button
-                                        className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors"
-                                        onClick={() => setShowAddSheet(true)}
-                                    >
-                                        Add Operator
-                                    </button>
-                                </div>
-                            ) : viewMode === 'grid' ? (
-                                <GridViewModeSection
-                                    filteredItems={filteredOperators}
-                                    handleSelectItem={handleSelectOperator}
-                                    cardComponent={OperatorCard}
-                                    itemPropName="operator"
-                                    gridClassName="grid"
-                                    getCardProps={(operator) => {
-                                        const trainerObj = trainers.find(
-                                            (t) => t.employeeId === operator.assignedTrainer
-                                        )
-                                        const duplicate = duplicateNamesSet.has(
-                                            (operator.name || '').trim().toLowerCase()
-                                        )
-                                        return {
-                                            isDuplicateName: duplicate,
-                                            trainerName: trainerObj ? trainerObj.name : ''
-                                        }
+                        <div className="flex w-full max-w-full">
+                            <div className="flex-1 min-w-0">
+                                <TopSection
+                                    isLoading={isLoading}
+                                    title={title}
+                                    flushTop={true}
+                                    showCoverOverlay={true}
+                                    forwardedRef={headerRef}
+                                    addButtonLabel="Add Operator"
+                                    onAddClick={() => setShowAddSheet(true)}
+                                    searchInput={searchText}
+                                    onSearchInputChange={(value) => {
+                                        setSearchText(value)
+                                        updateOperatorFilter('searchText', value)
                                     }}
-                                />
-                            ) : (
-                                <ListViewModeSection
-                                    filteredItems={filteredOperators}
-                                    handleSelectItem={handleSelectOperator}
-                                    headerLabels={['Plant', 'Name', 'Phone', 'Status', 'Rating', 'Trainer', 'More']}
+                                    onClearSearch={() => {
+                                        setSearchText('')
+                                        updateOperatorFilter('searchText', '')
+                                    }}
+                                    searchPlaceholder="Search by name or ID..."
+                                    viewMode={viewMode}
+                                    onViewModeChange={handleViewModeChange}
+                                    plants={plants.map((p) => ({ plantCode: p.plantCode, plantName: p.plantName }))}
+                                    regionPlantCodes={regionPlantCodes}
+                                    selectedPlant={selectedPlant}
+                                    onSelectedPlantChange={(value) => {
+                                        setSelectedPlant(value)
+                                        updateOperatorFilter('selectedPlant', value)
+                                    }}
+                                    statusFilter={statusFilter}
+                                    statusOptions={filterOptions}
+                                    onStatusFilterChange={(value) => {
+                                        setStatusFilter(value)
+                                        updateOperatorFilter('statusFilter', value)
+                                    }}
+                                    positionFilter={positionFilter}
+                                    positionOptions={positionOptions}
+                                    onPositionFilterChange={(value) => {
+                                        setPositionFilter(value)
+                                        updateOperatorFilter('positionFilter', value)
+                                    }}
+                                    showReset={showReset}
+                                    onReset={handleResetFilters}
+                                    listLabels={['Plant', 'Name', 'Phone', 'Status', 'Rating', 'Trainer', 'More']}
                                     colWidths={['10%', '24%', '14%', '14%', '12%', '14%', '12%']}
-                                    renderRow={(
-                                        operator,
-                                        handleSelect,
-                                        _onComment,
-                                        _onIssue,
-                                        _onVerify,
-                                        _onHistory,
-                                        _index,
-                                        _alternatingBg
-                                    ) => {
-                                        const duplicate = duplicateNamesSet.has(
-                                            (operator.name || '').trim().toLowerCase()
-                                        )
-                                        const trainerObj = trainers.find(
-                                            (t) => t.employeeId === operator.assignedTrainer
-                                        )
-                                        const cellCls =
-                                            'text-text-primary text-[12px] font-medium py-1.5 px-2.5 text-left align-middle'
-                                        const cellSecondaryCls =
-                                            'text-text-secondary text-[11.5px] py-1.5 px-2.5 text-left align-middle'
-                                        const cellHighlightCls =
-                                            'text-text-primary text-[12.5px] font-bold py-1.5 px-2.5 text-left align-middle'
-                                        const statusBadgeStyle = (status) => {
-                                            const colorMap = {
-                                                Active: 'bg-[#dcfce7] text-[#166534]',
-                                                'Light Duty': 'bg-[#fef3c7] text-[#92400e]',
-                                                'No Hire': 'bg-[#fee2e2] text-[#b91c1c]',
-                                                'Pending Start': 'bg-[#dbeafe] text-[#1e40af]',
-                                                Terminated: 'bg-[#fecaca] text-[#991b1b]',
-                                                Training: 'bg-[#e0e7ff] text-[#4338ca]'
-                                            }
-                                            const colors = colorMap[status] || 'bg-bg-tertiary text-text-secondary'
-                                            return `inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${colors}`
-                                        }
-                                        const actionBtnCls =
-                                            'inline-flex items-center justify-center w-5 h-5 mr-0.5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90'
-                                        return (
-                                            <tr
-                                                key={operator.employeeId}
-                                                onClick={() => handleSelect(operator)}
-                                                className="border-b border-border-light cursor-pointer group"
-                                            >
-                                                <td className={`${cellCls} w-[10%] group-hover:bg-bg-tertiary`}>
-                                                    {operator.plantCode || '\u2014'}
-                                                </td>
-                                                <td
-                                                    className={`${cellHighlightCls} w-[24%] group-hover:bg-bg-tertiary`}
-                                                >
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className={duplicate ? 'duplicate' : ''}>
-                                                            {operator.name}
-                                                        </span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                navigator.clipboard.writeText(operator.name)
-                                                                const icon = e.currentTarget.querySelector('i')
-                                                                icon.className = 'fas fa-check'
-                                                                icon.style.color = '#22c55e'
-                                                                setTimeout(() => {
-                                                                    icon.className = 'fas fa-copy'
-                                                                    icon.style.color = ''
-                                                                }, 1500)
-                                                            }}
-                                                            title="Copy name"
-                                                            className="inline-flex items-center bg-transparent border-none text-text-secondary cursor-pointer text-xs p-0.5"
-                                                        >
-                                                            <i className="fas fa-copy"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                                <td
-                                                    className={`${cellSecondaryCls} w-[14%] group-hover:bg-bg-tertiary`}
-                                                >
-                                                    {operator.phone ? <PhoneLink phone={operator.phone} /> : '\u2014'}
-                                                </td>
-                                                <td
-                                                    className={`${cellSecondaryCls} w-[14%] group-hover:bg-bg-tertiary`}
-                                                >
-                                                    <div>
-                                                        <span className={statusBadgeStyle(operator.status)}>
-                                                            {operator.status || '\u2014'}
-                                                            {operator.status &&
-                                                                operator.status !== 'Terminated' &&
-                                                                (() => {
-                                                                    const dateToUse =
-                                                                        operator.statusChangedAt || operator.createdAt
-                                                                    const days = dateToUse
-                                                                        ? Math.max(
-                                                                              1,
-                                                                              Math.floor(
-                                                                                  (Date.now() -
-                                                                                      new Date(dateToUse).getTime()) /
-                                                                                      86400000
-                                                                              )
-                                                                          )
-                                                                        : 1
-                                                                    return ` · ${days}d`
-                                                                })()}
-                                                        </span>
-                                                        <StatusHistoryBar
-                                                            itemId={operator.employeeId}
-                                                            itemType="operator"
-                                                            currentStatus={operator.status}
-                                                            createdAt={operator.createdAt}
-                                                        />
-                                                    </div>
-                                                </td>
-                                                <td
-                                                    className={`${cellSecondaryCls} w-[12%] group-hover:bg-bg-tertiary`}
-                                                >
-                                                    {renderStarsOrNA(operator)}
-                                                </td>
-                                                <td
-                                                    className={`${cellSecondaryCls} w-[14%] group-hover:bg-bg-tertiary`}
-                                                >
-                                                    {trainerObj ? trainerObj.name : '\u2014'}
-                                                </td>
-                                                <td
-                                                    className={`${cellSecondaryCls} w-[12%] group-hover:bg-bg-tertiary`}
-                                                >
-                                                    <div className="flex items-center">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setModalOperatorId(operator.employeeId)
-                                                                setModalOperatorName(operator.name)
-                                                                setShowCommentModal(true)
-                                                            }}
-                                                            type="button"
-                                                            title="View comments"
-                                                            className={`${actionBtnCls} relative`}
-                                                        >
-                                                            <i className="fas fa-comments"></i>
-                                                            {operator.commentsCount > 0 && (
-                                                                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[12px] h-3 px-0.5 bg-blue-500 text-white text-[8px] font-bold rounded leading-none">
-                                                                    {operator.commentsCount > 9
-                                                                        ? '9+'
-                                                                        : operator.commentsCount}
-                                                                </span>
-                                                            )}
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                setSelectedOperatorForHistory(operator)
-                                                                setShowHistoryModal(true)
-                                                            }}
-                                                            type="button"
-                                                            title="View history"
-                                                            className={actionBtnCls}
-                                                        >
-                                                            <i className="fas fa-history"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )
-                                    }}
-                                    containerClassName="list-table-container"
-                                    tableClassName="list-table"
+                                    sticky={true}
+                                    hidePlantFilter={plants.length === 0}
+                                    onHeaderClick={handleHeaderClick}
+                                    sortKey={sortKey}
+                                    sortDirection={sortDirection}
                                 />
+                                <div className="w-full max-w-full overflow-x-hidden">
+                                    {isLoading ? (
+                                        <AssetListSkeleton viewMode={viewMode} />
+                                    ) : filteredOperators.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
+                                                <i className="fas fa-users text-3xl text-slate-400"></i>
+                                            </div>
+                                            <h3 className="text-xl font-bold text-slate-800 mb-2">
+                                                No Operators Found
+                                            </h3>
+                                            <p className="text-slate-500 mb-6 max-w-md">
+                                                {searchText ||
+                                                selectedPlant ||
+                                                (statusFilter && statusFilter !== 'All Statuses') ||
+                                                positionFilter
+                                                    ? 'No operators match your search criteria.'
+                                                    : 'There are no operators in the system yet.'}
+                                            </p>
+                                            <button
+                                                className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors"
+                                                onClick={() => setShowAddSheet(true)}
+                                            >
+                                                Add Operator
+                                            </button>
+                                        </div>
+                                    ) : viewMode === 'grid' ? (
+                                        <GridViewModeSection
+                                            filteredItems={filteredOperators}
+                                            handleSelectItem={handleSelectOperator}
+                                            cardComponent={OperatorCard}
+                                            itemPropName="operator"
+                                            gridClassName="grid"
+                                            getCardProps={(operator) => {
+                                                const trainerObj = trainers.find(
+                                                    (t) => t.employeeId === operator.assignedTrainer
+                                                )
+                                                const duplicate = duplicateNamesSet.has(
+                                                    (operator.name || '').trim().toLowerCase()
+                                                )
+                                                return {
+                                                    isDuplicateName: duplicate,
+                                                    trainerName: trainerObj ? trainerObj.name : ''
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        <ListViewModeSection
+                                            filteredItems={filteredOperators}
+                                            handleSelectItem={handleSelectOperator}
+                                            headerLabels={[
+                                                'Plant',
+                                                'Name',
+                                                'Phone',
+                                                'Status',
+                                                'Rating',
+                                                'Trainer',
+                                                'More'
+                                            ]}
+                                            colWidths={['10%', '24%', '14%', '14%', '12%', '14%', '12%']}
+                                            renderRow={(
+                                                operator,
+                                                handleSelect,
+                                                _onComment,
+                                                _onIssue,
+                                                _onVerify,
+                                                _onHistory,
+                                                _index,
+                                                _alternatingBg
+                                            ) => {
+                                                const duplicate = duplicateNamesSet.has(
+                                                    (operator.name || '').trim().toLowerCase()
+                                                )
+                                                const trainerObj = trainers.find(
+                                                    (t) => t.employeeId === operator.assignedTrainer
+                                                )
+                                                const cellCls =
+                                                    'text-text-primary text-[12px] font-medium py-1.5 px-2.5 text-left align-middle'
+                                                const cellSecondaryCls =
+                                                    'text-text-secondary text-[11.5px] py-1.5 px-2.5 text-left align-middle'
+                                                const cellHighlightCls =
+                                                    'text-text-primary text-[12.5px] font-bold py-1.5 px-2.5 text-left align-middle'
+                                                const statusBadgeStyle = (status) => {
+                                                    const colorMap = {
+                                                        Active: 'bg-[#dcfce7] text-[#166534]',
+                                                        'Light Duty': 'bg-[#fef3c7] text-[#92400e]',
+                                                        'No Hire': 'bg-[#fee2e2] text-[#b91c1c]',
+                                                        'Pending Start': 'bg-[#dbeafe] text-[#1e40af]',
+                                                        Terminated: 'bg-[#fecaca] text-[#991b1b]',
+                                                        Training: 'bg-[#e0e7ff] text-[#4338ca]'
+                                                    }
+                                                    const colors =
+                                                        colorMap[status] || 'bg-bg-tertiary text-text-secondary'
+                                                    return `inline-flex items-center rounded text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${colors}`
+                                                }
+                                                const actionBtnCls =
+                                                    'inline-flex items-center justify-center w-5 h-5 mr-0.5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90'
+                                                return (
+                                                    <tr
+                                                        key={operator.employeeId}
+                                                        onClick={() => handleSelect(operator)}
+                                                        className="border-b border-border-light cursor-pointer group"
+                                                    >
+                                                        <td className={`${cellCls} w-[10%] group-hover:bg-bg-tertiary`}>
+                                                            {operator.plantCode || '\u2014'}
+                                                        </td>
+                                                        <td
+                                                            className={`${cellHighlightCls} w-[24%] group-hover:bg-bg-tertiary`}
+                                                        >
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className={duplicate ? 'duplicate' : ''}>
+                                                                    {operator.name}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        navigator.clipboard.writeText(operator.name)
+                                                                        const icon = e.currentTarget.querySelector('i')
+                                                                        icon.className = 'fas fa-check'
+                                                                        icon.style.color = '#22c55e'
+                                                                        setTimeout(() => {
+                                                                            icon.className = 'fas fa-copy'
+                                                                            icon.style.color = ''
+                                                                        }, 1500)
+                                                                    }}
+                                                                    title="Copy name"
+                                                                    className="inline-flex items-center bg-transparent border-none text-text-secondary cursor-pointer text-xs p-0.5"
+                                                                >
+                                                                    <i className="fas fa-copy"></i>
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                        <td
+                                                            className={`${cellSecondaryCls} w-[14%] group-hover:bg-bg-tertiary`}
+                                                        >
+                                                            {operator.phone ? (
+                                                                <PhoneLink phone={operator.phone} />
+                                                            ) : (
+                                                                '\u2014'
+                                                            )}
+                                                        </td>
+                                                        <td
+                                                            className={`${cellSecondaryCls} w-[14%] group-hover:bg-bg-tertiary`}
+                                                        >
+                                                            <div>
+                                                                <span className={statusBadgeStyle(operator.status)}>
+                                                                    {operator.status || '\u2014'}
+                                                                    {operator.status &&
+                                                                        operator.status !== 'Terminated' &&
+                                                                        (() => {
+                                                                            const dateToUse =
+                                                                                operator.statusChangedAt ||
+                                                                                operator.createdAt
+                                                                            const days = dateToUse
+                                                                                ? Math.max(
+                                                                                      1,
+                                                                                      Math.floor(
+                                                                                          (Date.now() -
+                                                                                              new Date(
+                                                                                                  dateToUse
+                                                                                              ).getTime()) /
+                                                                                              86400000
+                                                                                      )
+                                                                                  )
+                                                                                : 1
+                                                                            return ` · ${days}d`
+                                                                        })()}
+                                                                </span>
+                                                                <StatusHistoryBar
+                                                                    itemId={operator.employeeId}
+                                                                    itemType="operator"
+                                                                    currentStatus={operator.status}
+                                                                    createdAt={operator.createdAt}
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td
+                                                            className={`${cellSecondaryCls} w-[12%] group-hover:bg-bg-tertiary`}
+                                                        >
+                                                            {renderStarsOrNA(operator)}
+                                                        </td>
+                                                        <td
+                                                            className={`${cellSecondaryCls} w-[14%] group-hover:bg-bg-tertiary`}
+                                                        >
+                                                            {trainerObj ? trainerObj.name : '\u2014'}
+                                                        </td>
+                                                        <td
+                                                            className={`${cellSecondaryCls} w-[12%] group-hover:bg-bg-tertiary`}
+                                                        >
+                                                            <div className="flex items-center">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setModalOperatorId(operator.employeeId)
+                                                                        setModalOperatorName(operator.name)
+                                                                        setShowCommentModal(true)
+                                                                    }}
+                                                                    type="button"
+                                                                    title="View comments"
+                                                                    className={`${actionBtnCls} relative`}
+                                                                >
+                                                                    <i className="fas fa-comments"></i>
+                                                                    {operator.commentsCount > 0 && (
+                                                                        <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[12px] h-3 px-0.5 bg-blue-500 text-white text-[8px] font-bold rounded leading-none">
+                                                                            {operator.commentsCount > 9
+                                                                                ? '9+'
+                                                                                : operator.commentsCount}
+                                                                        </span>
+                                                                    )}
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setSelectedOperatorForHistory(operator)
+                                                                        setShowHistoryModal(true)
+                                                                    }}
+                                                                    type="button"
+                                                                    title="View history"
+                                                                    className={actionBtnCls}
+                                                                >
+                                                                    <i className="fas fa-history"></i>
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            }}
+                                            containerClassName="list-table-container"
+                                            tableClassName="list-table"
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                            {useSidePanel && showCommentModal && modalOperatorId && (
+                                <aside className="hidden lg:flex w-[440px] shrink-0 self-start sticky top-[var(--sticky-cover-height,0px)] flex-col h-[calc(100vh-var(--sticky-cover-height,0px)-12px)]">
+                                    <CommentModalSection
+                                        displayMode="panel"
+                                        itemId={modalOperatorId}
+                                        itemNumber={modalOperatorName}
+                                        itemType="Operator"
+                                        onClose={() => {
+                                            setShowCommentModal(false)
+                                            fetchOperators(regionPlantCodes)
+                                        }}
+                                        service={OperatorService}
+                                    />
+                                </aside>
                             )}
                         </div>
                         {showAddSheet && (
@@ -828,7 +881,7 @@ function OperatorsView({
                                 onClose={() => setShowHistoryModal(false)}
                             />
                         )}
-                        {showCommentModal && modalOperatorId && (
+                        {!useSidePanel && showCommentModal && modalOperatorId && (
                             <CommentModalSection
                                 itemId={modalOperatorId}
                                 itemNumber={modalOperatorName}

@@ -21,9 +21,9 @@ import { computeScheduleHeadlineMetrics } from '../../../utils/PlanScheduleUtili
 
 /**
  * Schedule view — flat, filterable, sortable table (or grouped cards) of every
- * order pulled from the Daily Order Listing HTML import. Dispatchers can
- * narrow by plant, customer, product, time bucket, truck class, minimum
- * yardage, and a free-text search across customer/address/PO.
+ * dispatch order auto-ingested for the day. Dispatchers can narrow by plant,
+ * customer, product, time bucket, truck class, minimum yardage, and a
+ * free-text search across customer/address/PO.
  *
  * Stays a thin orchestrator: every derived value lives in `usePlanScheduleData`
  * (and the smaller setter / maximize / roster / adjacent-totals hooks), every

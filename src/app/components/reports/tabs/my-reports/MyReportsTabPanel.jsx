@@ -8,7 +8,6 @@ import {
     RV_SPLIT_PARENT,
     RV_SPLIT_RAIL_SLOT
 } from '../../../../constants/reportsViewConstants'
-import DeadlineFuse from '../../DeadlineFuse'
 import WeekRibbon from '../../WeekRibbon'
 import MyReportsSummaryBar from './MyReportsSummaryBar'
 import OverdueBanner from './OverdueBanner'
@@ -52,22 +51,17 @@ export default function MyReportsTabPanel({
                 accent={accent}
                 cutoffLabel={ReportUtility.getLateCutoffLabel()}
                 daysLeft={fuseForSelectedWeek.daysLeft}
+                fuseCaption={fuseForSelectedWeek.caption}
                 isFuture={fuseForSelectedWeek.mode === 'future'}
                 isPast={fuseForSelectedWeek.mode === 'past'}
                 overdueCarryover={myReportsSummary.overdueCarryover}
                 pending={myReportsSummary.pending}
                 submitted={myReportsSummary.submitted}
+                todayIndex={fuseForSelectedWeek.todayIndex}
                 weekLabel={isSelectedWeekFuture ? 'Next week' : isSelectedWeekThis ? 'This week' : 'Archived week'}
                 weekRange={selectedWeekRange}
             />
             <WeekRibbon weeks={weekRibbonData} activeIso={selectedWeekIso} onPick={onPickWeek} />
-            <DeadlineFuse
-                daysLeft={fuseForSelectedWeek.daysLeft}
-                cutoffLabel={ReportUtility.getLateCutoffLabel()}
-                todayIndex={fuseForSelectedWeek.todayIndex}
-                mode={fuseForSelectedWeek.mode}
-                caption={fuseForSelectedWeek.caption}
-            />
             {overdueSourceItems.length > 0 && (
                 <OverdueBanner
                     count={overdueSourceItems.length}

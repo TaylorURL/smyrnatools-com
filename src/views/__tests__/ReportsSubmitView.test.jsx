@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
+import ReportsSubmitView from '../reporting/reports/ReportsSubmitView'
 
 // --- Mocks ---
 
@@ -119,8 +120,6 @@ jest.mock('../reporting/reports/types/WeeklyReadyMixInstructorReport', () => ({
     ReadyMixInstructorSubmitPlugin: () => null
 }))
 jest.mock('../reporting/reports/types/WeeklySafetyManagerReport', () => ({ SafetyManagerSubmitPlugin: () => null }))
-
-import ReportsSubmitView from '../reporting/reports/ReportsSubmitView'
 
 const DEFAULT_REPORT = {
     fields: [{ label: 'Total Hours', name: 'total_hours', required: true, type: 'number' }],
