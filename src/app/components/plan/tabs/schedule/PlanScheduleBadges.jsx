@@ -243,23 +243,28 @@ export function HoursLimitBadge({ limit }) {
     )
 }
 
-/** Pre-emptive risk pill — fires on customers whose trailing 60-day history
- *  has them adding yardage mid-pour on ≥30% of jobs ("Likely to Kick") or
- *  cancelling / moving ≥25% of jobs after the 5:30 PM commit snapshot
- *  ("Likely to Cancel/Move"). Both signals come from `useCustomerRiskIndex`,
- *  which folds the existing Kickers + Moves & Cancels classifiers into a
- *  single per-customer lookup. The pill is suppressed under `compareMode`
+/** Pre-emptive risk indicator — fires on customers whose trailing 60-day
+ *  history has them adding yardage mid-pour on ≥30% of jobs ("Likely to
+ *  Kick") or cancelling / moving ≥25% of jobs after the 5:30 PM commit
+ *  snapshot ("Likely to Cancel/Move"). Both signals come from
+ *  `useCustomerRiskIndex`, which folds the existing Kickers + Moves &
+ *  Cancels classifiers into a single per-customer lookup.
+ *
+ *  Renders as a compact icon-only chip (~20px) so it can sit as a leading
+ *  prefix to the customer name without competing for the cell's
+ *  horizontal space. The native tooltip exposes the full label + the
+ *  underlying rate for power users. Suppressed under `compareMode`
  *  alongside the other annotation badges. */
 export function LikelyKickerBadge({ rate }) {
     const pct = Math.round((rate || 0) * 100)
     return (
         <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
-            style={{ background: 'rgba(220, 38, 38, 0.12)', color: '#b91c1c' }}
-            title={`Kicker rate ${pct}% over the last 60 working days — likely to call in extra yardage mid-pour.`}
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
+            style={{ background: 'rgba(220, 38, 38, 0.14)', color: '#b91c1c' }}
+            title={`Likely to Kick — kicker rate ${pct}% over the last 60 working days. This customer regularly calls in extra yardage mid-pour.`}
+            aria-label="Likely to call in a kicker"
         >
-            <i className="fas fa-bolt text-[9px]" />
-            Likely to Kick
+            <i className="fas fa-bolt text-[10px]" />
         </span>
     )
 }
@@ -268,12 +273,12 @@ export function LikelyChurnBadge({ rate }) {
     const pct = Math.round((rate || 0) * 100)
     return (
         <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0"
-            style={{ background: 'rgba(217, 119, 6, 0.14)', color: '#b45309' }}
-            title={`Cancel + move rate ${pct}% over the last 60 working days — order may shift after the 5:30 PM commit.`}
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
+            style={{ background: 'rgba(217, 119, 6, 0.16)', color: '#b45309' }}
+            title={`Likely to Cancel/Move — combined cancel + move rate ${pct}% over the last 60 working days. This order may shift after the 5:30 PM commit.`}
+            aria-label="Likely to cancel or move"
         >
-            <i className="fas fa-shuffle text-[9px]" />
-            Likely to Cancel/Move
+            <i className="fas fa-shuffle text-[10px]" />
         </span>
     )
 }

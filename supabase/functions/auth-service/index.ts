@@ -252,27 +252,57 @@ Deno.serve(async (req) => {
                     return errorResponse('Profile creation failed', headers, 500)
                 }
 
-                await Promise.all([
-                    supabase.from(PREFERENCES_TABLE).upsert(
-                        {
-                            user_id: userId,
-                            default_view_mode: null,
-                            equipment_filters: DEFAULT_BASE_FILTERS,
-                            mixer_filters: DEFAULT_BASE_FILTERS,
-                            operator_filters: DEFAULT_BASE_FILTERS,
-                            tractor_filters: DEFAULT_BASE_FILTERS,
-                            trailer_filters: DEFAULT_BASE_FILTERS,
-                            manager_filters: DEFAULT_ROLE_FILTERS,
-                            last_viewed_filters: null,
-                            selected_region: null,
-                            region_overlay_minimized: true,
-                            created_at: now,
-                            updated_at: now
-                        },
-                        { onConflict: 'user_id' }
-                    ),
+                /* Side effects — non-fatal. Earlier, this was a single
+                 * `Promise.all` that threw on any failure; a schema drift
+                 * in `users_preferences` (e.g. a column missing from the
+                 * upsert payload that doesn't exist in the table yet) would
+                 * 500 the entire sign-up after the user row was already
+                 * inserted, leaving an orphaned account and a generic
+                 * "Internal server error" on the client. Switching to
+                 * `Promise.allSettled` lets the user creation succeed; the
+                 * preference row is auto-created on first save by the
+                 * PreferencesContext, and the Guest role can be assigned
+                 * by an admin if it didn't land here. Failures are logged
+                 * so they show up in the function dashboard, and surface
+                 * as a non-blocking `warnings` array on the response so
+                 * the client can flag them later. */
+                const sideEffectResults = await Promise.allSettled([
+                    supabase
+                        .from(PREFERENCES_TABLE)
+                        .upsert(
+                            {
+                                user_id: userId,
+                                default_view_mode: null,
+                                equipment_filters: DEFAULT_BASE_FILTERS,
+                                mixer_filters: DEFAULT_BASE_FILTERS,
+                                operator_filters: DEFAULT_BASE_FILTERS,
+                                tractor_filters: DEFAULT_BASE_FILTERS,
+                                trailer_filters: DEFAULT_BASE_FILTERS,
+                                manager_filters: DEFAULT_ROLE_FILTERS,
+                                last_viewed_filters: null,
+                                selected_region: null,
+                                region_overlay_minimized: true,
+                                created_at: now,
+                                updated_at: now
+                            },
+                            { onConflict: 'user_id' }
+                        )
+                        .then(({ error: prefError }) => {
+                            if (prefError) throw prefError
+                        }),
                     assignGuestRole(supabase, userId, now)
                 ])
+                const warnings: string[] = []
+                if (sideEffectResults[0].status === 'rejected') {
+                    const r = sideEffectResults[0].reason
+                    console.error('[sign-up] preferences upsert failed:', r?.message || r)
+                    warnings.push(`preferences:${r?.code || r?.message || 'unknown'}`)
+                }
+                if (sideEffectResults[1].status === 'rejected') {
+                    const r = sideEffectResults[1].reason
+                    console.error('[sign-up] guest role assign failed:', r?.message || r)
+                    warnings.push(`role:${r?.code || r?.message || 'unknown'}`)
+                }
 
                 const signUpSessionId = crypto.randomUUID()
                 await supabase.from(SESSIONS_TABLE).insert({
@@ -301,7 +331,8 @@ Deno.serve(async (req) => {
                         profile,
                         sessionId: signUpSessionId,
                         jwt: signUpJwt,
-                        expiresIn: signUpExpiresIn
+                        expiresIn: signUpExpiresIn,
+                        ...(warnings.length > 0 ? { warnings } : {})
                     },
                     headers,
                     buildSessionCookieHeaders(userId, signUpSessionId)
@@ -760,6 +791,16 @@ Deno.serve(async (req) => {
                 return errorResponse('Invalid endpoint', headers, 404, { path: url.pathname })
         }
     } catch (error) {
-        return errorResponse('Internal server error', headers, 500)
+        /* Surface the actual error message + code so the client (and the
+         * dashboard logs) can see WHICH step failed instead of the generic
+         * "Internal server error". The error fields exposed here are
+         * already produced by our own code paths or by Supabase / pg —
+         * no untrusted user input is reflected back. */
+        const err = error as { message?: string; code?: string; details?: string }
+        console.error('[auth-service] unhandled error:', err?.message || error, err?.code || '', err?.details || '')
+        return errorResponse(err?.message || 'Internal server error', headers, 500, {
+            code: err?.code || 'UNKNOWN',
+            details: err?.details || null
+        })
     }
 })

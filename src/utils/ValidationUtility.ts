@@ -116,18 +116,53 @@ async function isValidUUID(uuid: string): Promise<boolean> {
     return res.ok && typeof json.isValid === 'boolean' ? json.isValid : false
 }
 
-async function normalizeName(name: string): Promise<string> {
-    const { res, json } = await APIUtility.post(`${AUTH_FUNCTION}/normalize-name`, { name })
-    return res.ok ? (json.normalizedName as string) || '' : ''
+/** Title-cases the first character, lowercases the rest, after a basic
+ *  trim. Mirrors `normalizeName` on the server (`auth-helpers.ts`) so the
+ *  values sent to `/auth-service/sign-up` match what the server validates.
+ *
+ *  Originally a network round-trip to `/auth-service/normalize-name`. That
+ *  was fragile — any failure (preflight, transient 5xx, network blip)
+ *  silently returned an empty string and the sign-up call below would
+ *  reject with "All fields are required". Inlining the logic kills the
+ *  failure mode and removes a pointless round-trip; the server still
+ *  enforces the same shape on the actual sign-up request. */
+function normalizeName(name: string): string {
+    const trimmed = String(name || '').trim()
+    if (!trimmed) return ''
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
 }
 
 function optionalString(v: unknown): string | typeof v {
     return typeof v === 'string' ? v.trim() : v
 }
 
-async function passwordStrength(password: string): Promise<string> {
-    const { res, json } = await APIUtility.post(`${AUTH_FUNCTION}/password-strength`, { password })
-    return res.ok ? (json.value as string) || 'weak' : 'weak'
+/** Returns 'weak' | 'medium' | 'strong' for the supplied password. Mirrors
+ *  the server-side `validatePasswordStrength` (`auth-helpers.ts`) so the
+ *  client-side strength meter reads the same scale the server uses to
+ *  accept or reject the password on the actual sign-up request.
+ *
+ *  Originally a network round-trip to `/auth-service/password-strength`.
+ *  When the call failed (preflight, anon-key, transient 5xx) the helper
+ *  silently returned 'weak', making the meter show weak forever even on
+ *  a genuinely strong password. Inlining the scoring removes the failure
+ *  mode; the server still re-validates on submit.
+ *
+ *  Scoring keeps the server's exact thresholds:
+ *    score < 4 → weak, score 4 → medium, score >= 5 → strong. */
+function passwordStrength(password: string): string {
+    const value = String(password || '')
+    if (!value || value.length < 10) return 'weak'
+    let score = 0
+    if (value.length >= 10) score += 1
+    if (value.length >= 12) score += 1
+    if (value.length >= 16) score += 1
+    if (/[A-Z]/.test(value)) score += 1
+    if (/[a-z]/.test(value)) score += 1
+    if (/[0-9]/.test(value)) score += 1
+    if (/[^A-Za-z0-9]/.test(value)) score += 1
+    if (score < 4) return 'weak'
+    if (score < 5) return 'medium'
+    return 'strong'
 }
 
 function positiveInt(v: unknown, msg = 'Positive integer required'): number {

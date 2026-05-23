@@ -280,6 +280,14 @@ export default function PlanScheduleOrderRow({
             {showColumn('customer') && (
                 <td className="px-3 py-2 max-w-[260px] text-text-primary" title={clean(order.customer)}>
                     <div className="flex items-center gap-2 min-w-0 flex-nowrap">
+                        {/* Risk indicators sit as compact icon-only chips
+                            leading the customer name. They're fixed-width
+                            (~20px each) and `shrink-0`, so the customer
+                            name still gets `flex-1 min-w-0` and truncates
+                            the same as before — the icons can't crowd it
+                            out the way full-text badges did. */}
+                        {!compareMode && riskBadges?.likelyToKick && <LikelyKickerBadge rate={riskBadges.kickerRate} />}
+                        {!compareMode && riskBadges?.likelyToChurn && <LikelyChurnBadge rate={riskBadges.churnRate} />}
                         <span
                             className="font-semibold truncate flex-1 min-w-0"
                             style={{
@@ -291,8 +299,6 @@ export default function PlanScheduleOrderRow({
                         {!compareMode && status && <OrderStatusBadge status={status} />}
                         {!compareMode && !suppressSecondaryBadges && <ServiceBadge service={service} />}
                         {!compareMode && !suppressSecondaryBadges && <HoursLimitBadge limit={hoursLimit} />}
-                        {!compareMode && riskBadges?.likelyToKick && <LikelyKickerBadge rate={riskBadges.kickerRate} />}
-                        {!compareMode && riskBadges?.likelyToChurn && <LikelyChurnBadge rate={riskBadges.churnRate} />}
                     </div>
                 </td>
             )}

@@ -13,6 +13,13 @@ const ONE_DAY_MS = 86_400_000
  *  surface within a few weeks. */
 const DEFAULT_LOOKBACK_DAYS = 60
 
+/** Fields whose change between snapshot and live counts as a "move"
+ *  (same definition useMovesCancelsStats uses). Anything else inside
+ *  `diff.changed` is an "edit" we don't count toward churn. The
+ *  ScheduleDiffUtility doesn't return a pre-bucketed `moved` array —
+ *  consumers derive it from `changed` themselves. */
+const MOVE_FIELDS = new Set(['startTime', 'plantCode'])
+
 /** Risk thresholds. A customer needs at least this many jobs in the
  *  window before either badge can fire — otherwise a single bad job
  *  would tag every new account. */
@@ -138,13 +145,22 @@ export function useCustomerRiskIndex({ enabled = false, lookbackDays = DEFAULT_L
             const detailForDate = detailByDate[date] || {}
             const snapshot = snapshotsByDate?.[date] || null
             const diff = snapshot ? diffScheduleAgainstSnapshot(snapshot, production) : null
+            // ScheduleDiffUtility returns added/removed/changed/unchanged
+            // — there is no pre-bucketed `moved` array. A change counts as
+            // a move when at least one of MOVE_FIELDS shifted; everything
+            // else inside `changed` is a non-churning edit.
+            const movedEntries = diff
+                ? diff.changed.filter(
+                      (entry) => Array.isArray(entry.changes) && entry.changes.some((c) => MOVE_FIELDS.has(c.field))
+                  )
+                : []
             const churnedKeys = new Set()
             if (diff) {
                 for (const entry of diff.removed) {
                     const key = normalizeCustomerKey(entry.snapshotOrder?.customer)
                     if (key) churnedKeys.add(`${entry.snapshotOrder?.orderId || ''}|cancel`)
                 }
-                for (const entry of diff.moved) {
+                for (const entry of movedEntries) {
                     const key = normalizeCustomerKey(entry.liveOrder?.customer || entry.snapshotOrder?.customer)
                     if (key) churnedKeys.add(`${entry.liveOrder?.orderId || entry.snapshotOrder?.orderId || ''}|move`)
                 }
@@ -218,7 +234,7 @@ export function useCustomerRiskIndex({ enabled = false, lookbackDays = DEFAULT_L
                     }
                     result.get(key).churnEvents += 1
                 }
-                for (const entry of diff.moved) {
+                for (const entry of movedEntries) {
                     const customerSource = entry.liveOrder?.customer || entry.snapshotOrder?.customer
                     const key = normalizeCustomerKey(customerSource)
                     if (!key) continue

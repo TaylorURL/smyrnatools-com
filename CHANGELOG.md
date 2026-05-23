@@ -1,5 +1,61 @@
 # Changelog
 
+## [2026.21.30] - 2026-05-23
+
+- Hourly rates on the Operations > Statistics > Labor Cost page are now
+  gated by role weight. Users at weight ≤ 71 see the "Avg blended rate"
+  summary stat dropped and the per-operator "Rate" column hidden;
+  everyone retains the aggregate cost columns. A footnote under the
+  summary stats explains the policy in both states — info-icon variant
+  for Division Presidents ("Pay rates are visible only to Division
+  Presidents.") and lock-icon variant for everyone else
+  ("Per-employee hourly rates are hidden for this role — visible only
+  to Division Presidents."). The page defaults to redacted while the
+  role weight is still resolving so a slow auth fetch never briefly
+  exposes rates on first paint.
+- New shared hook `src/app/hooks/useCurrentUserRoleWeight.js` —
+  `{ roleWeight, isLoading }` keyed off `useAuth()` and
+  `UserService.getHighestRole`. Centralises the duplicated "fetch
+  highest role and stash the weight in local state" pattern that lived
+  inline across `ManagerDetailView`, `useDashboardInit`, and
+  `useMyAccountLoad`.
+- Fixed a crash on the Operations Schedule tab introduced when
+  `useCustomerRiskIndex` was added — it read `diff.moved` from
+  `diffScheduleAgainstSnapshot` but that utility never returns a
+  `moved` bucket (only `added` / `removed` / `changed` / `unchanged`).
+  Now derives moves from `diff.changed` by filtering on
+  `MOVE_FIELDS = { startTime, plantCode }` — same definition
+  `useMovesCancelsStats` already uses. Resolves
+  `TypeError: undefined is not an object (evaluating 'E.moved')`
+  raised on schedule mount whenever a snapshot existed for the day.
+- `LikelyKickerBadge` / `LikelyChurnBadge` on the Schedule tab
+  collapse to compact icon-only chips (`fa-bolt` / `fa-shuffle`,
+  ~20px) sitting as leading prefixes to the customer name instead of
+  full-text pills crowding the cell. The native tooltip exposes the
+  full label + the underlying trailing-60-day rate for power users.
+  Customer-cell layout in `PlanScheduleOrderRow.jsx` reflowed so the
+  customer name keeps `flex-1 min-w-0` and truncates predictably.
+- `auth-service/sign-up` no longer fails the whole request when one of
+  its post-creation side effects errors. Preferences upsert + guest
+  role assign moved from `Promise.all` (any rejection = 500 on the
+  user) to `Promise.allSettled` with non-fatal handling: the user row
+  still lands, failures are logged in the function dashboard, and a
+  `warnings` array is returned to the client so the failure is
+  recoverable instead of leaving an orphaned account. The generic
+  500-handler at the bottom of the function also surfaces the actual
+  Postgres / Supabase error code + message now instead of swallowing
+  it as "Internal server error".
+- `ValidationUtility.normalizeName` and `passwordStrength` no longer
+  round-trip to `/auth-service/normalize-name` and
+  `/auth-service/password-strength`. Any failure on those calls
+  (preflight, transient 5xx, anon-key blip) silently returned `""` /
+  `"weak"` and the sign-up call would then reject as "All fields are
+  required" or the strength meter would stick on weak forever. Both
+  helpers now run client-side, mirroring the server's logic in
+  `_shared/auth-helpers.ts` exactly — the server still re-validates
+  on the actual sign-up request, so the trust boundary doesn't move.
+
+
 ## [2026.21.29] - 2026-05-23
 
 - New Schedules sub-page under Operations > Statistics

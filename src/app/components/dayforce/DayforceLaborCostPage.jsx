@@ -2,6 +2,7 @@
 import React from 'react'
 
 import { fmtFloat, fmtInt, fmtRange } from '../../../utils/PlanStatisticsFormatUtility'
+import useCurrentUserRoleWeight from '../../hooks/useCurrentUserRoleWeight'
 import useDayforceOperatorFilters from '../../hooks/useDayforceOperatorFilters'
 import useDayforceOperatorMetrics from '../../hooks/useDayforceOperatorMetrics'
 import { Panel, Stat, StatGroup } from '../ui/Panel'
@@ -9,6 +10,14 @@ import { EmptySection, RefreshingHint } from '../plan/tabs/statistics/PlanStatis
 import { DayforceFilters } from './DayforceFilters'
 
 const COST_SORT_IDS = ['cost', 'ot', 'hours', 'name']
+
+/** Role weight gate for hourly-rate visibility. Anyone with a weight at
+ *  or below this threshold sees the rate column / blended-rate stat
+ *  replaced with a redacted placeholder. The threshold is intentionally
+ *  set above the typical manager weight so plant managers, dispatchers,
+ *  and ops leads see the page WITHOUT per-employee rates — only HR / GM
+ *  tier accounts (weight > 71) get the full view. */
+const HOURLY_RATE_VISIBILITY_THRESHOLD = 71
 
 const USD = new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 0, style: 'currency' })
 const USD_CENTS = new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 2, style: 'currency' })
@@ -26,7 +35,7 @@ function LoadingSkeleton() {
     )
 }
 
-function OperatorCostRow({ row }) {
+function OperatorCostRow({ canSeeRates, row }) {
     return (
         <div className="flex items-center gap-2 px-3 py-1.5 text-[12px] border-t border-border-light first:border-t-0 hover:bg-bg-secondary transition-colors">
             <span className="font-mono tabular-nums w-14 shrink-0 text-text-tertiary">{row.badge || '—'}</span>
@@ -50,9 +59,11 @@ function OperatorCostRow({ row }) {
             >
                 {row.otHours > 0 ? fmtHours(row.otHours) : '—'}
             </span>
-            <span className="font-mono tabular-nums w-20 text-right shrink-0 text-text-tertiary">
-                {row.hourlyRate ? USD_CENTS.format(row.hourlyRate) : '—'}
-            </span>
+            {canSeeRates && (
+                <span className="font-mono tabular-nums w-20 text-right shrink-0 text-text-tertiary">
+                    {row.hourlyRate ? USD_CENTS.format(row.hourlyRate) : '—'}
+                </span>
+            )}
             <span className="font-mono tabular-nums w-24 text-right shrink-0 text-text-primary font-semibold">
                 {fmtMoney(row.totalCost)}
             </span>
@@ -73,6 +84,11 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
     const dayforceMetrics = useDayforceOperatorMetrics({ dateRange, plantCodes, selectedPlant })
     const { diagnostics, excluded, hasSyncedData, isLoading, perOperator, perPlant, perWeek, totals } = dayforceMetrics
     const filters = useDayforceOperatorFilters({ defaultSort: 'cost', rows: perOperator })
+    // Hourly-rate gate. Default to redacted (false) until the role
+    // weight resolves, so a slow auth fetch never briefly exposes
+    // rates on first paint.
+    const { isLoading: isRoleLoading, roleWeight } = useCurrentUserRoleWeight()
+    const canSeeRates = !isRoleLoading && roleWeight > HOURLY_RATE_VISIBILITY_THRESHOLD
 
     if (isLoading && diagnostics.shiftsLoaded === 0) return <LoadingSkeleton />
 
@@ -118,7 +134,7 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
                 }
                 innerClassName="p-3"
             >
-                <StatGroup columns={6}>
+                <StatGroup columns={canSeeRates ? 6 : 5}>
                     <Stat label="Total labor cost" value={fmtMoney(totals.totalCost)} />
                     <Stat
                         label="Regular cost"
@@ -131,17 +147,27 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
                         hint={`${fmtHours(totals.otHours)} · ${fmtFloat(otShare, 1)}% of total`}
                         valueColor={totals.otCost > 0 ? '#b45309' : undefined}
                     />
-                    <Stat
-                        label="Avg blended rate"
-                        value={totals.avgHourlyRate ? USD_CENTS.format(totals.avgHourlyRate) : '—'}
-                        hint="cost ÷ actual hours"
-                    />
+                    {canSeeRates && (
+                        <Stat
+                            label="Avg blended rate"
+                            value={totals.avgHourlyRate ? USD_CENTS.format(totals.avgHourlyRate) : '—'}
+                            hint="cost ÷ actual hours"
+                        />
+                    )}
                     <Stat label="Operators" value={fmtInt(totals.operatorCount)} />
                     <Stat
                         label="Cost / operator"
                         value={totals.operatorCount > 0 ? fmtMoney(totals.totalCost / totals.operatorCount) : '—'}
                     />
                 </StatGroup>
+                {!isRoleLoading && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-text-tertiary italic">
+                        <i className={`fas ${canSeeRates ? 'fa-circle-info' : 'fa-lock'} text-[10px]`} />
+                        {canSeeRates
+                            ? 'Pay rates are visible only to Division Presidents.'
+                            : 'Per-employee hourly rates are hidden for this role — visible only to Division Presidents.'}
+                    </div>
+                )}
             </Panel>
 
             <DayforceFilters
@@ -182,11 +208,11 @@ export function DayforceLaborCostPage({ accentColor, dateRange, plantCodes, sele
                             <span className="flex-1">Operator</span>
                             <span className="w-16 text-right shrink-0">Reg</span>
                             <span className="w-16 text-right shrink-0">OT</span>
-                            <span className="w-20 text-right shrink-0">Rate</span>
+                            {canSeeRates && <span className="w-20 text-right shrink-0">Rate</span>}
                             <span className="w-24 text-right shrink-0">Cost</span>
                         </div>
                         {filters.filtered.map((row) => (
-                            <OperatorCostRow key={row.dayforceEmployeeId} row={row} />
+                            <OperatorCostRow key={row.dayforceEmployeeId} canSeeRates={canSeeRates} row={row} />
                         ))}
                     </div>
                 )}
