@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import React, { useCallback, useEffect, useState } from 'react'
 
 import ConfirmDialog from '../../../app/components/common/ConfirmDialog'

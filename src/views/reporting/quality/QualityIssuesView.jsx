@@ -1,8 +1,9 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
+/* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { QualityIssueService } from '../../../services/QualityIssueService'
+import StatsSidebar from './parts/StatsSidebar'
 import QualityIssueModal from './QualityIssueModal'
 
 /* ── Plan-tab design tokens ──────────────────────────────────────────────── */
@@ -92,20 +93,6 @@ function StatusPill({ status, size = 'sm' }) {
     )
 }
 
-function StatTile({ accent, hint, label, value }) {
-    return (
-        <div className="rounded p-2.5 flex flex-col gap-0.5 bg-bg-secondary border border-border-light">
-            <span className={SECTION_LABEL_CLASS} style={{ color: 'var(--text-tertiary)' }}>
-                {label}
-            </span>
-            <span className="text-[16px] font-bold leading-tight tabular-nums" style={{ color: 'var(--text-primary)' }}>
-                {value}
-            </span>
-            {hint && <span className="text-[10.5px] text-text-tertiary">{hint}</span>}
-        </div>
-    )
-}
-
 function StatusFilterChips({ activeStatus, counts, onChange }) {
     const ACTIVE_BG = (color) => `${color}26`
     return (
@@ -143,96 +130,6 @@ function StatusFilterChips({ activeStatus, counts, onChange }) {
                     </button>
                 )
             })}
-        </div>
-    )
-}
-
-function StatsSidebar({ accentColor, issues, onRefresh, refreshing }) {
-    const counts = useMemo(() => {
-        const out = { active: 0, closed: 0, follow_up: 0, holding: 0, total: issues.length }
-        for (const issue of issues) {
-            const s = issue.status || ''
-            if (out[s] !== undefined) out[s] += 1
-        }
-        return out
-    }, [issues])
-
-    const closedIssues = useMemo(() => issues.filter((i) => i.status === 'closed'), [issues])
-
-    const totalCost = useMemo(
-        () => closedIssues.reduce((sum, i) => sum + (Number(i.cost_to_close) || 0), 0),
-        [closedIssues]
-    )
-
-    const avgCost = closedIssues.length ? totalCost / closedIssues.length : 0
-
-    const monthCost = useMemo(() => {
-        const now = new Date()
-        const year = now.getFullYear()
-        const month = now.getMonth()
-        return closedIssues.reduce((sum, i) => {
-            if (!i.closed_at) return sum
-            const d = new Date(i.closed_at)
-            return d.getFullYear() === year && d.getMonth() === month ? sum + (Number(i.cost_to_close) || 0) : sum
-        }, 0)
-    }, [closedIssues])
-
-    const avgDaysToClose = useMemo(() => {
-        if (closedIssues.length === 0) return null
-        const totalDays = closedIssues.reduce((sum, i) => {
-            if (!i.opened_at || !i.closed_at) return sum
-            const days = (new Date(i.closed_at) - new Date(i.opened_at)) / 86400000
-            return sum + Math.max(0, days)
-        }, 0)
-        return totalDays / closedIssues.length
-    }, [closedIssues])
-
-    return (
-        <div className="rounded p-3 flex flex-col gap-2.5" style={CARD_STYLE}>
-            <CardHeader
-                icon="fa-chart-pie"
-                label="Quality"
-                title="Issue stats"
-                sub="Live counts and cost rollups across the visible scope."
-                right={
-                    <button
-                        type="button"
-                        onClick={onRefresh}
-                        disabled={refreshing}
-                        className="inline-flex items-center gap-1 rounded text-[10.5px] font-semibold cursor-pointer border-none px-2 py-1 bg-bg-secondary border border-border-light text-text-secondary"
-                        title="Refresh"
-                    >
-                        <i
-                            className={`fas ${refreshing ? 'fa-circle-notch fa-spin' : 'fa-rotate-right'} text-[10px]`}
-                        />
-                    </button>
-                }
-            />
-            <div className="grid grid-cols-2 gap-2">
-                {STATUS_ORDER.map((status) => (
-                    <StatTile
-                        key={status}
-                        accent={STATUS_DEFS[status].color}
-                        label={STATUS_DEFS[status].label}
-                        value={counts[status] || 0}
-                    />
-                ))}
-            </div>
-            <div className="h-px bg-[var(--border-light)]" />
-            <div className="grid grid-cols-1 gap-2">
-                <StatTile
-                    accent={accentColor}
-                    label="Total cost incurred"
-                    value={formatCurrency(totalCost)}
-                    hint={`${closedIssues.length} closed issue${closedIssues.length === 1 ? '' : 's'}`}
-                />
-                <StatTile label="This month" value={formatCurrency(monthCost)} hint="Closed in current month" />
-                <StatTile label="Avg cost / closed" value={formatCurrency(avgCost)} />
-                <StatTile
-                    label="Avg time to close"
-                    value={avgDaysToClose !== null ? `${avgDaysToClose.toFixed(1)} d` : '—'}
-                />
-            </div>
         </div>
     )
 }
@@ -508,12 +405,7 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                     </div>
 
                     <div className="lg:sticky lg:top-3 self-start min-w-0">
-                        <StatsSidebar
-                            accentColor={accentColor}
-                            issues={issues}
-                            onRefresh={reload}
-                            refreshing={refreshing}
-                        />
+                        <StatsSidebar issues={issues} onRefresh={reload} refreshing={refreshing} />
                     </div>
                 </div>
             </div>

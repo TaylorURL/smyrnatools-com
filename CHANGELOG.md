@@ -1,5 +1,78 @@
 # Changelog
 
+## [2026.21.34] - 2026-05-23
+
+- `npm run lint` and CI are now actually enforcing what they claim to.
+  Removed `/* eslint-disable max-lines */` from every file that carried
+  it (45 files total). 21 pre-existing lint errors fixed in the
+  process — autofixable import-sort and `no-extra-semi` errors run
+  through `--fix`, and the nine `react/no-unescaped-entities` errors
+  in `PlanStatisticsServicePage.jsx` got proper `&ldquo;` / `&apos;`
+  escapes. Repo lint is now 0 errors (288 warnings, all pre-existing
+  `react/forbid-dom-props` inline-style + `react-hooks/exhaustive-deps`
+  notes).
+- `.github/workflows/lint.yml` now runs on `push` and `pull_request`
+  for both `main` and `core` (previously PR-to-main only). `ci.yml`
+  already gates `npm run lint` on push/PR to `core`, so every release
+  commit on `core` will now actually fail CI if a lint error sneaks
+  in. Previously all v2026.21.x release CI runs were failing on lint
+  but going unnoticed because nothing was blocking on them.
+- 29 oversize components and views split into ~100 sub-component
+  files under sibling directories — every touched file is now under
+  the project's 500-effective-line ceiling. Split targets in views/:
+  `PlanFlowMapView.jsx` 2087→298 (extracted leaflet layer + marker +
+  geocoding + autoplay hooks into `flow-map/`), `ReportsSubmitView.jsx`
+  996→455 (`submit/`), `EquipmentDetailView.jsx` 992→180 (`detail/`),
+  `NRMCAView.jsx` 969→269 (`parts/`), `OperatorsView.jsx` 926→490
+  (`list/`), `AssetView.jsx` 918→361 (`parts/`),
+  `MaintenanceCreateFormView.jsx` 874→103 (`create/`),
+  `TrailerDetailView.jsx` 871→456 (`detail/`),
+  `MaintenanceFormView.jsx` 739→56 (`form-view/`),
+  `RolesView.jsx` 725→212 (`parts/`),
+  `ManagerDetailView.jsx` 605→306 (`detail/`),
+  `OperatorDetailView.jsx` 573→210 (`detail/`),
+  `WeeklyDistrictManagerReport.jsx` 535→226 (`weekly-dm/`),
+  `ListDetailView.jsx` 534→474 (`detail/`),
+  `PickupTrucksDetailView.jsx` 504→463 (`detail/`),
+  `QualityIssuesView.jsx` 502→402 (`parts/`).
+- Component splits under `src/app/components/`:
+  `PlanStatisticsPages.jsx` 1574→6 (barrel re-export; pages moved to
+  `statistics/pages/`, the widely-imported `EmptySection` /
+  `RefreshingHint` / `ComparisonPanel` still importable from the
+  original path), `PersonStatisticsPages.jsx` 1425→8 (same barrel
+  pattern), `CallListPages.jsx` 1012→3 (barrel),
+  `PlanStatisticsServicePage.jsx` 759→192 (`service/`),
+  `RecapModalSection.jsx` 894→231 (`recap/`),
+  `DetailViewSection.jsx` 825→203 (`detail-view/` — all 12 namespaced
+  sub-components on the default export preserved),
+  `IssueModalSection.jsx` 776→440 (`issue-modal/`),
+  `CallListCustomerCard.jsx` 759→~360 (`customer-card/`),
+  `LostLoadReportModal.jsx` 694→310 (`modal/`),
+  `TopSection.jsx` 677→194 (`top-section/`; desktop / mobile +
+  reveal-on-load and CSS-var publishing hooks split out),
+  `DayforceSchedulesPage.jsx` 627→160 (`schedules/`),
+  `PlanStatisticsCustomerLookupPage.jsx` 579→207 (`customer-lookup/`),
+  `PlanScheduleTable.jsx` 550→365 (`table/`; row builder + context
+  menu portal extracted).
+- Every default and named export from each split file is preserved
+  via barrel re-exports where applicable, so no consumer import had
+  to change — the routing in `App.js` / `App.jsx`, the lazy imports
+  in `OperatorsView`, `MaintenanceLogView`, `PlanStatisticsView`,
+  and every section consumer of `DetailViewSection.*` / `TopSection`
+  / `RecapModalSection` / `IssueModalSection` keep working unmodified.
+- Two unused vars cleaned up while in the area: `MaintenanceFormView`
+  PageHeader `accentColor` → `_accentColor` (it was destructured but
+  never used), and `QualityIssuesView`'s `StatTile` lost its dead
+  `accent` prop (parent was passing it; nothing read it).
+- Two stray top-level migration SQL files removed —
+  `daily_plan_email_saturday_cron.sql` and `dayforce_rls_fix.sql`
+  were sibling drafts at the repo root that never moved into
+  `supabase/migrations/`. The canonical migrations
+  (`20260523_daily_plan_email_saturday_cron.sql` and
+  `20260523_dayforce_data.sql`) are still in place.
+- README + `public/release.json` version anchors synced to the new
+  CalVer. `vitest run` still passes (4 test files, 123 tests).
+
 ## [2026.21.33] - 2026-05-23
 
 - Maintenance log status badges (OK / Due Soon / Overdue / Never

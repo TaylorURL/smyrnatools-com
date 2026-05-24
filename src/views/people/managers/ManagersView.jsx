@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
+/* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import TabFadeIn from '../../../app/components/common/TabFadeIn'

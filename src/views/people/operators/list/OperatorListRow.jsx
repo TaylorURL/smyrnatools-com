@@ -1,0 +1,120 @@
+/* eslint-disable react/forbid-dom-props */
+import React from 'react'
+
+import OperatorClockIndicator from '../../../../app/components/common/OperatorClockIndicator'
+import PhoneLink from '../../../../app/components/common/PhoneLink'
+import StatusHistoryBar from '../../../../app/components/common/StatusHistoryBar'
+import { renderStarsOrNA } from './operatorRatingHelpers'
+import { statusBadgeClass, statusBadgeInlineStyle } from './operatorStatusBadge'
+
+const CELL_BASE = 'text-text-primary text-[12px] font-medium py-1.5 px-2.5 text-left align-middle'
+const CELL_SECONDARY = 'text-text-secondary text-[11.5px] py-1.5 px-2.5 text-left align-middle'
+const CELL_HIGHLIGHT = 'text-text-primary text-[12.5px] font-bold py-1.5 px-2.5 text-left align-middle'
+const ACTION_BUTTON =
+    'inline-flex items-center justify-center w-5 h-5 mr-0.5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90'
+
+const computeDaysSinceStatusChange = (operator) => {
+    const dateToUse = operator.statusChangedAt || operator.createdAt
+    if (!dateToUse) return 1
+    return Math.max(1, Math.floor((Date.now() - new Date(dateToUse).getTime()) / 86400000))
+}
+
+const handleCopyName = (event, name) => {
+    event.stopPropagation()
+    navigator.clipboard.writeText(name)
+    const icon = event.currentTarget.querySelector('i')
+    icon.className = 'fas fa-check'
+    icon.style.color = '#22c55e'
+    setTimeout(() => {
+        icon.className = 'fas fa-copy'
+        icon.style.color = ''
+    }, 1500)
+}
+
+/**
+ * Renders one operator row inside the ListViewModeSection table. All visual
+ * vocabulary (status pills, copy affordance, action buttons, badges) is
+ * unchanged from the original inline renderRow callback.
+ */
+function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, duplicate, trainerName }) {
+    return (
+        <tr
+            key={operator.employeeId}
+            onClick={() => onSelect(operator)}
+            className="border-b border-border-light cursor-pointer group"
+        >
+            <td className={`${CELL_BASE} w-[10%] group-hover:bg-bg-tertiary`}>{operator.plantCode || '—'}</td>
+            <td className={`${CELL_HIGHLIGHT} w-[24%] group-hover:bg-bg-tertiary`}>
+                <div className="flex items-center gap-1.5">
+                    <OperatorClockIndicator badge={operator.smyrnaId || operator.employeeId} />
+                    <span className={duplicate ? 'duplicate' : ''}>{operator.name}</span>
+                    <button
+                        type="button"
+                        onClick={(e) => handleCopyName(e, operator.name)}
+                        title="Copy name"
+                        className="inline-flex items-center bg-transparent border-none text-text-secondary cursor-pointer text-xs p-0.5"
+                    >
+                        <i className="fas fa-copy"></i>
+                    </button>
+                </div>
+            </td>
+            <td className={`${CELL_SECONDARY} w-[14%] group-hover:bg-bg-tertiary`}>
+                {operator.phone ? <PhoneLink phone={operator.phone} /> : '—'}
+            </td>
+            <td className={`${CELL_SECONDARY} w-[14%] group-hover:bg-bg-tertiary`}>
+                <div>
+                    <span
+                        className={`force-white-text ${statusBadgeClass(operator.status)}`}
+                        style={statusBadgeInlineStyle(operator.status)}
+                    >
+                        {operator.status || '—'}
+                        {operator.status &&
+                            operator.status !== 'Terminated' &&
+                            ` · ${computeDaysSinceStatusChange(operator)}d`}
+                    </span>
+                    <StatusHistoryBar
+                        itemId={operator.employeeId}
+                        itemType="operator"
+                        currentStatus={operator.status}
+                        createdAt={operator.createdAt}
+                    />
+                </div>
+            </td>
+            <td className={`${CELL_SECONDARY} w-[12%] group-hover:bg-bg-tertiary`}>{renderStarsOrNA(operator)}</td>
+            <td className={`${CELL_SECONDARY} w-[14%] group-hover:bg-bg-tertiary`}>{trainerName || '—'}</td>
+            <td className={`${CELL_SECONDARY} w-[12%] group-hover:bg-bg-tertiary`}>
+                <div className="flex items-center">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onOpenComments(operator)
+                        }}
+                        type="button"
+                        title="View comments"
+                        className={`${ACTION_BUTTON} relative`}
+                    >
+                        <i className="fas fa-comments"></i>
+                        {operator.commentsCount > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[12px] h-3 px-0.5 bg-blue-500 text-white text-[8px] font-bold rounded leading-none">
+                                {operator.commentsCount > 9 ? '9+' : operator.commentsCount}
+                            </span>
+                        )}
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onOpenHistory(operator)
+                        }}
+                        type="button"
+                        title="View history"
+                        className={ACTION_BUTTON}
+                    >
+                        <i className="fas fa-history"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    )
+}
+
+export default OperatorListRow

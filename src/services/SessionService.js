@@ -91,6 +91,6 @@ export const hasActiveSession = () => Boolean(currentSessionUserId)
  * Empty when running off cookies — the dev path keeps these populated.
  */
 export const getSessionCredentialFields = () => ({
-    __sessionUserId: currentSessionUserId || undefined,
-    __sessionId: currentSessionId || undefined
+    __sessionId: currentSessionId || undefined,
+    __sessionUserId: currentSessionUserId || undefined
 })

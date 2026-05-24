@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
+/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -10,6 +10,7 @@ import { usePreferences } from '../../../app/context/PreferencesContext'
 import { PickupTruckService } from '../../../services/PickupTruckService'
 import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
+import PickupVehicleInfoCard from './detail/PickupVehicleInfoCard'
 
 /**
  * Full detail/edit view for a single pickup truck. Supports editing VIN,
@@ -456,61 +457,19 @@ function PickupTrucksDetailView({ pickupId, onClose, onSaved }) {
                             />
                         </div>
                     </DetailViewSection.Card>
-                    <DetailViewSection.Card title="Vehicle Information" icon="fas fa-car">
-                        <div className="form-group">
-                            <label>VIN</label>
-                            <input
-                                type="text"
-                                value={vin}
-                                onChange={(e) => setVin(e.target.value.toUpperCase().replace(/[IOQ]/g, ''))}
-                                maxLength="17"
-                                className="form-control"
-                                disabled={!canEditPickup}
-                            />
-                        </div>
-                        <div className="form-row-2">
-                            <div className="form-group">
-                                <label>Make</label>
-                                <input
-                                    type="text"
-                                    value={make}
-                                    onChange={(e) => setMake(e.target.value)}
-                                    className="form-control"
-                                    disabled={!canEditPickup}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Model</label>
-                                <input
-                                    type="text"
-                                    value={model}
-                                    onChange={(e) => setModel(e.target.value)}
-                                    className="form-control"
-                                    disabled={!canEditPickup}
-                                />
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label>Year</label>
-                            <input
-                                type="text"
-                                value={year}
-                                onChange={(e) => setYear(e.target.value)}
-                                className="form-control"
-                                disabled={!canEditPickup}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Comments</label>
-                            <textarea
-                                value={comments}
-                                onChange={(e) => setComments(e.target.value)}
-                                className="form-control"
-                                rows={3}
-                                disabled={!canEditPickup}
-                            />
-                        </div>
-                    </DetailViewSection.Card>
+                    <PickupVehicleInfoCard
+                        vin={vin}
+                        onVinChange={setVin}
+                        make={make}
+                        onMakeChange={setMake}
+                        model={model}
+                        onModelChange={setModel}
+                        year={year}
+                        onYearChange={setYear}
+                        comments={comments}
+                        onCommentsChange={setComments}
+                        canEditPickup={canEditPickup}
+                    />
                 </DetailViewSection.Section>
             </DetailViewSection>
         </>

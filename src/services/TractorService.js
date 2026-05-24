@@ -51,15 +51,6 @@ const base = createAssetService({
 /** Tractor CRUD, history, comments, issues, and verification service. */
 export const TractorService = {
     ...base,
-    createTractor(tractor, userId) {
-        return base._base.create(tractor, userId)
-    },
-    deleteTractor(id) {
-        return base._base.delete(id)
-    },
-    fetchTractorById(id) {
-        return base._base.fetchById(id)
-    },
     /** Batch-corrects null operator fields by setting affected tractors to Spare. */
     cleanupNullOperators(tractors = null) {
         return CleanupUtility.cleanupNullOperators(
@@ -67,6 +58,18 @@ export const TractorService = {
             (id, updates, userId) => this.updateTractor(id, updates, userId),
             () => this.getAllTractors()
         )
+    },
+
+    createTractor(tractor, userId) {
+        return base._base.create(tractor, userId)
+    },
+
+    deleteTractor(id) {
+        return base._base.delete(id)
+    },
+
+    fetchTractorById(id) {
+        return base._base.fetchById(id)
     },
 
     fetchTractors() {

@@ -1,0 +1,88 @@
+/* eslint-disable react/forbid-dom-props */
+import React from 'react'
+
+import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
+
+/**
+ * "Trailer Details" card containing trailer number, type, plant button, and
+ * status select. Pure presentational — all state lives in the parent.
+ */
+export default function TrailerBasicInfoCard({
+    trailerNumber,
+    onTrailerNumberChange,
+    trailerType,
+    onTrailerTypeChange,
+    canEditTrailer,
+    plantDisplayText,
+    onOpenPlantModal,
+    status,
+    onStatusChange,
+    assignedTractor
+}) {
+    return (
+        <DetailViewSection.Card title="Trailer Details" icon="fas fa-info-circle">
+            <div className="form-group">
+                <label>Trailer Number</label>
+                <input
+                    type="text"
+                    value={trailerNumber}
+                    onChange={(e) => onTrailerNumberChange(e.target.value)}
+                    className="form-control"
+                    readOnly={!canEditTrailer}
+                />
+            </div>
+            <div className="form-group">
+                <label>Trailer Type</label>
+                <select
+                    value={trailerType}
+                    onChange={(e) => onTrailerTypeChange(e.target.value)}
+                    disabled={!canEditTrailer}
+                    className="form-control"
+                >
+                    <option value="">Select Trailer Type</option>
+                    <option value="Cement">Cement</option>
+                    <option value="End Dump">End Dump</option>
+                </select>
+            </div>
+            <div className="form-group">
+                <label>Assigned Plant</label>
+                <button
+                    className="operator-select-button form-control"
+                    onClick={() => canEditTrailer && onOpenPlantModal()}
+                    type="button"
+                    disabled={!canEditTrailer}
+                    style={
+                        !canEditTrailer
+                            ? {
+                                  backgroundColor: 'var(--card-bg)',
+                                  cursor: 'not-allowed',
+                                  opacity: 0.8
+                              }
+                            : {}
+                    }
+                >
+                    <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
+                        {plantDisplayText}
+                    </span>
+                </button>
+            </div>
+            <div className="form-group">
+                <label>Active Status</label>
+                <select
+                    value={status}
+                    onChange={(e) => onStatusChange(e.target.value)}
+                    disabled={!canEditTrailer}
+                    className="form-control"
+                >
+                    <option value="">Select Status</option>
+                    <option value="Active" disabled={!assignedTractor}>
+                        Active{!assignedTractor ? ' (Cannot set without a tractor assigned)' : ''}
+                    </option>
+                    <option value="Spare">Spare</option>
+                    <option value="In Shop">In Shop</option>
+                    <option value="Retired">Retired</option>
+                </select>
+            </div>
+        </DetailViewSection.Card>
+    )
+}

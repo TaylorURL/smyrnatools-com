@@ -10,10 +10,10 @@ import {
 } from '../../constants/verificationModalConstants'
 
 const STATUS_TONES = {
-    done: { color: 'var(--text-primary)', icon: 'fa-check' },
     attention: { color: 'var(--text-primary)', icon: 'fa-circle' },
-    warn: { color: 'var(--text-primary)', icon: 'fa-circle' },
-    info: { color: 'var(--text-tertiary)', icon: 'fa-circle' }
+    done: { color: 'var(--text-primary)', icon: 'fa-check' },
+    info: { color: 'var(--text-tertiary)', icon: 'fa-circle' },
+    warn: { color: 'var(--text-primary)', icon: 'fa-circle' }
 }
 
 /** Small leading indicator next to a section title. Replaces verbose colored pills. */
@@ -126,10 +126,10 @@ export function RequiredHint({ children }) {
 export function Banner({ children, icon, tone = 'warn' }) {
     const palette =
         tone === 'danger'
-            ? { stripe: '#dc2626', bg: 'rgba(220, 38, 38, 0.06)', fg: '#b91c1c' }
+            ? { bg: 'rgba(220, 38, 38, 0.06)', fg: '#b91c1c', stripe: '#dc2626' }
             : tone === 'info'
-              ? { stripe: 'var(--text-tertiary)', bg: 'var(--bg-secondary)', fg: 'var(--text-secondary)' }
-              : { stripe: '#d97706', bg: 'rgba(217, 119, 6, 0.06)', fg: '#92400e' }
+              ? { bg: 'var(--bg-secondary)', fg: 'var(--text-secondary)', stripe: 'var(--text-tertiary)' }
+              : { bg: 'rgba(217, 119, 6, 0.06)', fg: '#92400e', stripe: '#d97706' }
     return (
         <div
             className="flex items-start gap-2 rounded-md px-3 py-2 text-[12px] leading-snug mb-2.5"

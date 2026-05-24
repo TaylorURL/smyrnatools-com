@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
+/* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -9,6 +9,8 @@ import { ListService } from '../../../services/ListService'
 import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
 import GrammarUtility from '../../../utils/GrammarUtility'
+import CommentsHistoryCard from './detail/CommentsHistoryCard'
+import { RESPONSIBLE_ROLE_OPTIONS, STATUS_OPTIONS } from './detail/listDetailConstants'
 
 /**
  * Detail/edit view for a single task list item. Supports editing description,
@@ -33,20 +35,9 @@ function ListDetailView({ itemId, onClose }) {
     const [plants, setPlants] = useState([])
     const [message, setMessage] = useState('')
     const [isImprovingDescription, setIsImprovingDescription] = useState(false)
-    const statusOptions = [
-        { label: 'Pending', value: 'pending' },
-        { label: 'In Progress', value: 'in_progress' },
-        { label: 'Ordered Materials / Parts', value: 'ordered_materials' },
-        { label: 'Waiting', value: 'waiting' },
-        { label: 'Completed', value: 'completed' }
-    ]
+    const statusOptions = STATUS_OPTIONS
     const priorityOptions = ListService.getPriorityOptions()
-    const responsibleRoleOptions = [
-        { label: 'Unassigned', value: '' },
-        { label: 'Maintenance', value: 'maintenance' },
-        { label: 'Plant Manager', value: 'plant_manager' },
-        { label: 'District Manager', value: 'district_manager' }
-    ]
+    const responsibleRoleOptions = RESPONSIBLE_ROLE_OPTIONS
     const [regionPlantCodes, setRegionPlantCodes] = useState(new Set())
     const [showPlantModal, setShowPlantModal] = useState(false)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -468,66 +459,15 @@ function ListDetailView({ itemId, onClose }) {
                     </DetailViewSection.Card>
                 </DetailViewSection.Section>
                 <DetailViewSection.Section id="details" title="Additional Details" icon="fas fa-clipboard">
-                    <DetailViewSection.Card title="Comments & History" icon="fas fa-comment-alt">
-                        <div className="form-group">
-                            <label htmlFor="comments">Comments</label>
-                            <textarea
-                                id="comments"
-                                name="comments"
-                                value={formData.comments}
-                                onChange={handleChange}
-                                onBlur={() =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        comments: GrammarUtility.cleanComments(prev.comments)
-                                    }))
-                                }
-                                disabled={!canEdit || !canEditList}
-                                className="form-control"
-                                rows="4"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Created By</label>
-                            <input
-                                type="text"
-                                value={creator ? `${creator.first_name} ${creator.last_name}` : 'Unknown'}
-                                disabled
-                                className="form-control"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Created On</label>
-                            <input
-                                type="text"
-                                value={ListService.formatDate(item.created_at)}
-                                disabled
-                                className="form-control"
-                            />
-                        </div>
-                        {item.completed && (
-                            <>
-                                <div className="form-group">
-                                    <label>Completed By</label>
-                                    <input
-                                        type="text"
-                                        value={completer ? `${completer.first_name} ${completer.last_name}` : 'Unknown'}
-                                        disabled
-                                        className="form-control"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Completed On</label>
-                                    <input
-                                        type="text"
-                                        value={ListService.formatDate(item.completed_at)}
-                                        disabled
-                                        className="form-control"
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </DetailViewSection.Card>
+                    <CommentsHistoryCard
+                        canEdit={canEdit}
+                        canEditList={canEditList}
+                        completer={completer}
+                        creator={creator}
+                        formData={formData}
+                        item={item}
+                        setFormData={setFormData}
+                    />
                 </DetailViewSection.Section>
             </DetailViewSection>
             {showPlantModal && (

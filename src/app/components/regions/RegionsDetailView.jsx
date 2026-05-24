@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
+/* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useState } from 'react'
 
 import { PlantService } from '../../../services/PlantService'

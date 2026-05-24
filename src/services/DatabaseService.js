@@ -26,9 +26,9 @@ const sessionJwtFetch = (input, init = {}) => {
          * AuthContext is still restoring the session. */
         return Promise.resolve(
             new Response(JSON.stringify({ code: 'PGRST301', message: 'Not authenticated' }), {
+                headers: { 'Content-Type': 'application/json' },
                 status: 401,
-                statusText: 'Unauthorized',
-                headers: { 'Content-Type': 'application/json' }
+                statusText: 'Unauthorized'
             })
         )
     }

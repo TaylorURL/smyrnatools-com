@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import React, { useCallback, useEffect, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'

@@ -40,22 +40,6 @@ const base = createAssetService({
  */
 export const MixerService = {
     ...base,
-    createMixer(mixer, userId) {
-        return base._base.create(mixer, userId)
-    },
-    deleteMixer(id) {
-        return base._base.delete(id)
-    },
-    fetchMixerById(id) {
-        return base._base.fetchById(id)
-    },
-    /** Mixer-specific: fetches the image gallery rows attached to one mixer. */
-    async fetchMixerImages(mixerId) {
-        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
-        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-images`, { mixerId }, 'Failed to fetch mixer images')
-        return (json?.data ?? []).map(MixerImage.fromRow)
-    },
-
     /** Batch-corrects null operator fields by setting affected mixers to Spare. */
     cleanupNullOperators(mixers = null) {
         return CleanupUtility.cleanupNullOperators(
@@ -65,8 +49,12 @@ export const MixerService = {
         )
     },
 
-    fetchMixers() {
-        return this.getAllMixers()
+    createMixer(mixer, userId) {
+        return base._base.create(mixer, userId)
+    },
+
+    deleteMixer(id) {
+        return base._base.delete(id)
     },
 
     /** Sets unassigned-operator mixers to Spare status in batch. */
@@ -84,6 +72,21 @@ export const MixerService = {
             m.updatedAt = null
             m.updatedBy = null
         })
+    },
+
+    fetchMixerById(id) {
+        return base._base.fetchById(id)
+    },
+
+    /** Mixer-specific: fetches the image gallery rows attached to one mixer. */
+    async fetchMixerImages(mixerId) {
+        ValidationUtility.requireUUID(mixerId, 'Mixer ID is required')
+        const json = await apiPostOrThrow(`${SERVICE_PREFIX}/fetch-images`, { mixerId }, 'Failed to fetch mixer images')
+        return (json?.data ?? []).map(MixerImage.fromRow)
+    },
+
+    fetchMixers() {
+        return this.getAllMixers()
     },
 
     fetchMixersWithDetails(regionCodes = null) {

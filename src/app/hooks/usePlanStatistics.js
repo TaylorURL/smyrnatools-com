@@ -119,7 +119,7 @@ const mergePlanAndDispatchRows = (plansRows, dispatchRows) => {
         // would mean the dispatcher booked something never imported).
         const dispatchOrderIds = new Set()
         Object.values(dispatchProduction).forEach((block) => {
-            ;(block?.orders || []).forEach((o) => {
+            (block?.orders || []).forEach((o) => {
                 if (o?.orderId) dispatchOrderIds.add(o.orderId)
             })
         })
@@ -586,7 +586,7 @@ export function usePlanStatistics({
     const scheduleMetaByDate = useMemo(() => {
         const out = new Map()
         const ingest = (rows) => {
-            ;(rows || []).forEach((row) => {
+            (rows || []).forEach((row) => {
                 const date = row?.plan_date
                 if (!date) return
                 const production =

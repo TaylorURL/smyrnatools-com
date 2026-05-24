@@ -1,25 +1,22 @@
-/* eslint-disable max-lines */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import EmbeddedViewModal from '../../app/components/dashboard/EmbeddedViewModal'
 import { exportAssetIssuesSheet } from '../../app/components/modules/export/issues/AssetIssuesExport'
-import CommentModalSection from '../../app/components/sections/CommentModalSection'
-import IssueModalSection from '../../app/components/sections/IssueModalSection'
-import ListViewModeSection from '../../app/components/sections/ListViewModeSection'
-import TopSection from '../../app/components/sections/TopSection'
 import AssetListSkeleton from '../../app/components/ui/AssetListSkeleton'
 import { usePreferences } from '../../app/context/PreferencesContext'
+import useAssetCounts from '../../app/hooks/useAssetCounts'
 import useAssetData from '../../app/hooks/useAssetData'
+import useAssetFilteredResult from '../../app/hooks/useAssetFilteredResult'
 import useAssetFilters from '../../app/hooks/useAssetFilters'
 import useAssetVerification from '../../app/hooks/useAssetVerification'
 import useIsWideViewport from '../../app/hooks/useIsWideViewport'
-import { OperatorService } from '../../services/OperatorService'
 import { PlantService } from '../../services/PlantService'
 import { UserService } from '../../services/UserService'
-import AssetStatsUtility from '../../utils/AssetStatsUtility'
-import AssetGridCard from './AssetGridCard'
 import AssetListRow from './AssetListRow'
 import AssetModals from './AssetModals'
+import AssetMainContent from './parts/AssetMainContent'
+import AssetSidePanel from './parts/AssetSidePanel'
+import AssetTopSection from './parts/AssetTopSection'
 
 /**
  * Unified asset list/grid view driven by a config object.
@@ -40,7 +37,6 @@ function AssetView({
     const headerRef = useRef(null)
     const modalsRef = useRef(null)
 
-    // Resolve filter persistence functions from PreferencesContext
     const fp = config.filterPersistence
     const updateFilter = fp ? prefsContext[fp.updateFnKey] : null
     const updateFilterRef = useRef(updateFilter)
@@ -49,7 +45,6 @@ function AssetView({
     const savedFilters = fp ? preferences[fp.filterKey] : null
     const saveLastViewedFilters = prefsContext.saveLastViewedFilters
 
-    // Fetch current user's plant code for district filtering in PlantDropdownModal
     const [userPlantCode, setUserPlantCode] = useState('')
     useEffect(() => {
         let cancelled = false
@@ -65,7 +60,6 @@ function AssetView({
         }
     }, [])
 
-    // --- Filter & sort state (initialized before data hook so searchText is available) ---
     const filters = useAssetFilters({
         config,
         embedded,
@@ -75,7 +69,6 @@ function AssetView({
         updateFilterRef
     })
 
-    // --- Data fetching & realtime ---
     const data = useAssetData({
         config,
         onResetSelectedPlant: () => filters.setSelectedPlant(''),
@@ -85,171 +78,22 @@ function AssetView({
         updateFilterRef
     })
 
-    // Build a set of plant codes when a district is selected
-    const districtPlantCodes = useMemo(() => {
-        if (!filters.selectedPlant?.startsWith('DISTRICT:')) return null
-        const districtName = filters.selectedPlant.slice(9)
-        const codes = new Set()
-        data.plants.forEach((p) => {
-            const plantCode = p.plantCode || p.plant_code || ''
-            const districts = p.districts || []
-            districts.forEach((d) => {
-                const name = typeof d === 'string' ? d : d?.name
-                if (name === districtName) codes.add(plantCode.trim().toUpperCase())
-            })
-        })
-        return codes
-    }, [filters.selectedPlant, data.plants])
+    const { districtPlantCodes, filteredResult } = useAssetFilteredResult({ config, data, exactMatch, filters })
 
-    // --- Re-derive filtered results with live data ---
-    // useAssetFilters was initialized with empty arrays; recompute with actual data
-    const filteredResult = useMemo(() => {
-        const q = filters.searchText.trim().toLowerCase()
-        const normalizedSearch = q.replace(/\s+/g, '')
-        const filtered = []
-        const potentialMatches = []
-        const hasActiveFilters =
-            (filters.selectedPlant && filters.selectedPlant !== 'All') ||
-            (filters.statusFilter && filters.statusFilter !== 'All Statuses' && filters.statusFilter !== '') ||
-            !!filters.freightFilter ||
-            !!filters.extraTypeFilter
-
-        data.items.forEach((item) => {
-            let matchesSearch = true
-            if (normalizedSearch) {
-                if (config.searchFields) {
-                    if (exactMatch && config.exactMatchFn) {
-                        matchesSearch = config.exactMatchFn(item, normalizedSearch)
-                    } else {
-                        matchesSearch = config.searchFields(item, q, {
-                            exactMatch,
-                            operators: data.operators,
-                            tractors: data.tractors
-                        })
-                    }
-                }
-            }
-
-            const itemPlantCode = String(item.assignedPlant || '')
-                .trim()
-                .toUpperCase()
-            const matchesPlant =
-                !filters.selectedPlant ||
-                filters.selectedPlant === 'All' ||
-                (districtPlantCodes
-                    ? districtPlantCodes.has(itemPlantCode)
-                    : itemPlantCode === filters.selectedPlant.toUpperCase())
-
-            const matchesRegion =
-                !data.regionPlantCodes ||
-                data.regionPlantCodes.size === 0 ||
-                data.regionPlantCodes.has(
-                    String(item.assignedPlant || '')
-                        .trim()
-                        .toUpperCase()
-                )
-
-            let matchesStatus = true
-            if (filters.statusFilter && filters.statusFilter !== 'All Statuses' && filters.statusFilter !== '') {
-                const specialFilter = config.specialStatusFilters?.[filters.statusFilter]
-                if (specialFilter) {
-                    matchesStatus = specialFilter(item)
-                } else {
-                    matchesStatus = String(item.status || '').trim() === filters.statusFilter
-                }
-            }
-
-            const matchesFreight =
-                !filters.freightFilter ||
-                filters.freightFilter === 'All Freight' ||
-                item.freight === filters.freightFilter
-
-            let matchesExtraType = true
-            if (filters.extraTypeFilter && config.extraTypeFilter) {
-                matchesExtraType = config.extraTypeFilter.matchFn(item, filters.extraTypeFilter)
-            }
-
-            if (matchesSearch && matchesPlant && matchesRegion && matchesStatus && matchesFreight && matchesExtraType) {
-                filtered.push(item)
-            } else if (config.hasPotentialMatches && matchesSearch && hasActiveFilters && filters.searchText.trim()) {
-                potentialMatches.push(item)
-            }
-        })
-
-        const sortFn = (a, b) => {
-            if (!filters.sortKey) {
-                return AssetStatsUtility.compareByStatusThenNumber(
-                    a,
-                    b,
-                    config.defaultSortFields.statusField,
-                    config.defaultSortFields.numberField
-                )
-            }
-            const customComparator = config.customSortComparators?.[filters.sortKey]
-            if (customComparator) {
-                const result = customComparator(a, b, {
-                    operators: data.operators,
-                    plants: data.plants,
-                    sortDirection: filters.sortDirection,
-                    tractors: data.tractors
-                })
-                return filters.sortDirection === 'asc' ? result : -result
-            }
-            const prop = config.sortMappings[filters.sortKey]
-            if (!prop) return 0
-            const aVal = a[prop]
-            const bVal = b[prop]
-            if (typeof aVal === 'number' && typeof bVal === 'number') {
-                return filters.sortDirection === 'asc' ? aVal - bVal : bVal - aVal
-            }
-            const aStr = String(aVal || '').toLowerCase()
-            const bStr = String(bVal || '').toLowerCase()
-            if (aStr < bStr) return filters.sortDirection === 'asc' ? -1 : 1
-            if (aStr > bStr) return filters.sortDirection === 'asc' ? 1 : -1
-            return 0
-        }
-
-        return {
-            filtered: AssetStatsUtility.sortWithRetiredLast(filtered, sortFn, 'status'),
-            potentialMatches: AssetStatsUtility.sortWithRetiredLast(potentialMatches, sortFn, 'status')
-        }
-    }, [
-        config,
-        data.items,
-        data.operators,
-        data.plants,
-        data.regionPlantCodes,
-        data.tractors,
-        districtPlantCodes,
-        exactMatch,
-        filters.extraTypeFilter,
-        filters.freightFilter,
-        filters.searchText,
-        filters.selectedPlant,
-        filters.sortDirection,
-        filters.sortKey,
-        filters.statusFilter
-    ])
-
-    // --- Detail view state ---
     const [selectedId, setSelectedId] = useState(null)
     const [showAddSheet, setShowAddSheet] = useState(false)
     const [isExportingIssues, setIsExportingIssues] = useState(false)
     const [embeddedModal, setEmbeddedModal] = useState(null)
 
-    // --- Side panel state (comment / issue / operatorComment in list view) ---
     const isWideViewport = useIsWideViewport()
     const [sidePanel, setSidePanel] = useState(null)
     const useSidePanel = !embedded && filters.viewMode === 'list' && isWideViewport
     const sidePanelDelegate = useSidePanel ? setSidePanel : null
 
-    // If the viewport shrinks or the user switches to grid, fall back to modal
-    // behavior by closing any open side panel.
     useEffect(() => {
         if (!useSidePanel && sidePanel) setSidePanel(null)
     }, [useSidePanel, sidePanel])
 
-    // --- Verification ---
     const verification = useAssetVerification({
         allItems: data.allItems,
         config,
@@ -258,7 +102,6 @@ function AssetView({
         setItems: data.setItems
     })
 
-    // --- Restore persisted filters on preferences change ---
     useEffect(() => {
         if (embedded || !savedFilters) return
         filters.setSearchText(savedFilters.searchText || '')
@@ -279,7 +122,6 @@ function AssetView({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [preferences])
 
-    // --- Sticky cover height ---
     useEffect(() => {
         function updateStickyCoverHeight() {
             const el = headerRef.current
@@ -300,7 +142,6 @@ function AssetView({
         config.viewClassName
     ])
 
-    // --- Select item ---
     const handleSelectItem = useCallback(
         (itemId) => {
             const item = data.items.find((m) => m.id === itemId)
@@ -312,90 +153,13 @@ function AssetView({
         [data.items, saveLastViewedFilters, onSelectItem, config.selectsFullObject]
     )
 
-    // --- Operator counts (active assigned + unassigned) ---
-    const { activeOperatorsCount, unassignedActiveOperatorsCount } = useMemo(() => {
-        if (!config.operatorConfig) return { activeOperatorsCount: 0, unassignedActiveOperatorsCount: 0 }
-
-        // When a district is selected, scope by the resolved plant codes instead of the raw filter value
-        const effectivePlant = districtPlantCodes ? '' : filters.selectedPlant
-        const effectiveRegionCodes = districtPlantCodes || data.regionPlantCodes
-
-        const scopeOpts = {
-            position: config.operatorConfig.position,
-            regionPlantCodes: effectiveRegionCodes,
-            selectedPlant: effectivePlant
-        }
-        const total = AssetStatsUtility.countActiveOperatorsInScope(data.operators, scopeOpts)
-        const unassigned = AssetStatsUtility.countUnassignedActiveOperators(
-            data.items,
-            data.operators,
-            filters.searchText,
-            {
-                assignedOperatorField: config.operatorConfig.assignedField,
-                assignedPlantField: 'assignedPlant',
-                operatorIdField: 'employeeId',
-                ...scopeOpts
-            }
-        )
-        return { activeOperatorsCount: total - unassigned, unassignedActiveOperatorsCount: unassigned }
-    }, [
-        data.operators,
-        data.items,
-        districtPlantCodes,
-        filters.selectedPlant,
-        filters.searchText,
-        data.regionPlantCodes,
-        config.operatorConfig
-    ])
-
-    // Status counts scoped to current plant/region/search filters (excluding status filter)
-    const { activeCount, shopCount, spareCount, totalCount } = useMemo(() => {
-        if (!data.items?.length) return { activeCount: 0, shopCount: 0, spareCount: 0, totalCount: 0 }
-        const q = filters.searchText.trim().toLowerCase()
-        const scoped = data.items.filter((item) => {
-            let matchesSearch = true
-            if (q && config.searchFields) {
-                matchesSearch = config.searchFields(item, q, {
-                    operators: data.operators,
-                    tractors: data.tractors
-                })
-            }
-            const itemPlantCode = String(item.assignedPlant || '')
-                .trim()
-                .toUpperCase()
-            const matchesPlant =
-                !filters.selectedPlant ||
-                filters.selectedPlant === 'All' ||
-                (districtPlantCodes
-                    ? districtPlantCodes.has(itemPlantCode)
-                    : itemPlantCode === filters.selectedPlant.toUpperCase())
-            const matchesRegion =
-                !data.regionPlantCodes || data.regionPlantCodes.size === 0 || data.regionPlantCodes.has(itemPlantCode)
-            return matchesSearch && matchesPlant && matchesRegion
-        })
-        const counts = AssetStatsUtility.getStatusCounts(scoped)
-        return {
-            activeCount: counts.Active || 0,
-            shopCount: counts['In Shop'] || 0,
-            spareCount: counts.Spare || 0,
-            totalCount: counts.Total || 0
-        }
-    }, [
-        data.items,
-        data.operators,
-        data.tractors,
-        data.regionPlantCodes,
-        filters.searchText,
-        filters.selectedPlant,
-        districtPlantCodes,
-        config
-    ])
+    const { activeCount, activeOperatorsCount, shopCount, spareCount, totalCount, unassignedActiveOperatorsCount } =
+        useAssetCounts({ config, data, districtPlantCodes, filters })
 
     const canShowOperatorBadge =
         config.hasOperatorAssignment && data.itemsLoaded && data.operatorsLoaded && !data.isLoading
     const canShowAssetBadge = data.itemsLoaded && !data.isLoading && data.items?.length > 0
 
-    // --- Duplicate sets ---
     const duplicates = useMemo(() => {
         const result = {}
         for (const check of config.duplicateChecks || []) {
@@ -404,7 +168,6 @@ function AssetView({
         return result
     }, [data.items, config.duplicateChecks])
 
-    // --- Recap operators (Mixer) ---
     const filteredOperatorsForRecap = useMemo(() => {
         if (!config.recapConfig) return []
         return data.operators.filter((op) => {
@@ -421,7 +184,6 @@ function AssetView({
         })
     }, [data.operators, filters.selectedPlant, data.regionPlantCodes, config.recapConfig])
 
-    // --- Export issues ---
     async function handleExportIssues() {
         setIsExportingIssues(true)
         try {
@@ -439,7 +201,6 @@ function AssetView({
         }
     }
 
-    // --- Render list row ---
     const renderRow = useCallback(
         (item, handleSelect, onComment, onIssue, onVerify, onHistory, _index, alternatingBg) => (
             <AssetListRow
@@ -464,175 +225,13 @@ function AssetView({
         [config, duplicates, data.operators, data.plants, data.tractors]
     )
 
-    // --- Content ---
-    const content = useMemo(() => {
-        if (data.isLoading || data.isRegionLoading) return <AssetListSkeleton viewMode={filters.viewMode} />
-
-        const hasPotential = filteredResult.potentialMatches.length > 0
-        const hasFiltered = filteredResult.filtered.length > 0
-
-        if (!hasFiltered && !hasPotential) {
-            return (
-                <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-bg-hover">
-                        <i className={`fas ${config.emptyState.icon} text-3xl text-text-secondary`} />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2 text-text-primary">{config.emptyState.title}</h3>
-                    <p className="text-sm mb-6 max-w-md text-text-secondary">
-                        {filters.searchText ||
-                        filters.selectedPlant ||
-                        (filters.statusFilter && filters.statusFilter !== 'All Statuses')
-                            ? 'No items match your search criteria.'
-                            : `There are no ${config.pluralLabel.toLowerCase()} in the system yet.`}
-                    </p>
-                    {!filters.searchText && (
-                        <button
-                            className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors"
-                            onClick={() => setShowAddSheet(true)}
-                        >
-                            {config.emptyState.addLabel}
-                        </button>
-                    )}
-                </div>
-            )
-        }
-
-        const onShowCommentModal = (id, number) => modalsRef.current?.openCommentModal(id, number)
-        const onShowIssueModal = (id, number) => modalsRef.current?.openIssueModal(id, number)
-        const onShowHistoryModal = (item) => modalsRef.current?.openHistoryModal(item)
-
-        const statusCol = config.listConfig.columns.find((c) => c.type === 'status')
-        const getDisplayStatus = (item) =>
-            statusCol?.getDisplayStatus ? statusCol.getDisplayStatus(item) : item.status
-        const getStatusDays = (item) => {
-            const dateToUse = item.statusChangedAt || item.createdAt
-            if (!dateToUse || item.status === 'Retired') return null
-            return Math.max(1, Math.floor((Date.now() - new Date(dateToUse).getTime()) / 86400000))
-        }
-
-        const renderGridCards = (itemsToRender) => {
-            const baseDelay = 80
-            const minDelay = baseDelay / 2
-            const delayDecrement = Math.max(0, (baseDelay - minDelay) / Math.max(itemsToRender.length, 1))
-            return (
-                <div className="overflow-auto" style={{ marginBottom: 24, maxHeight: 'calc(100vh - 250px)' }}>
-                    <div
-                        className="grid gap-4 p-4"
-                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}
-                    >
-                        {itemsToRender.map((item, index) => {
-                            const operator = data.operators?.find((op) => op.employeeId === item.assignedOperator)
-                            const plant = data.plants?.find((p) => p.code === item.assignedPlant)
-                            const tractor = data.tractors?.find((t) => t.id === item.assignedTractor)
-                            const isVer =
-                                typeof item.isVerified === 'function'
-                                    ? item.isVerified(item.latestHistoryDate)
-                                    : undefined
-                            const number = config.getModalIdentifier(item)
-                            const delay = Math.max(minDelay, baseDelay - delayDecrement * index)
-                            return (
-                                <div
-                                    key={item.id}
-                                    className="animate-fade-in-up"
-                                    style={{ animationDelay: `${index * delay}ms` }}
-                                >
-                                    <AssetGridCard
-                                        item={item}
-                                        config={config}
-                                        operator={operator}
-                                        tractor={tractor}
-                                        plantName={plant?.name || item.assignedPlant || '---'}
-                                        isVerified={isVer}
-                                        displayStatus={getDisplayStatus(item)}
-                                        statusDays={getStatusDays(item)}
-                                        onSelect={handleSelectItem}
-                                        onShowCommentModal={() => onShowCommentModal(item.id, number)}
-                                        onShowIssueModal={() => onShowIssueModal(item.id, number)}
-                                        onShowHistoryModal={() => onShowHistoryModal(item)}
-                                        onShowOperatorCommentModal={(op) =>
-                                            modalsRef.current?.openOperatorCommentModal(op)
-                                        }
-                                        onShowOperatorHistoryModal={(op) =>
-                                            modalsRef.current?.openOperatorHistoryModal(op)
-                                        }
-                                    />
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
-            )
-        }
-
-        const listProps = {
-            colWidths: config.listConfig.colWidths,
-            containerClassName: 'list-table-container',
-            handleSelectItem,
-            headerLabels: config.listConfig.headerLabels,
-            onShowCommentModal,
-            onShowHistoryModal,
-            onShowIssueModal,
-            onVerify: config.hasVerification ? verification.handleVerify : undefined,
-            renderRow,
-            tableClassName: 'list-table',
-            ...(config.hasOperatorAssignment ? { operators: data.operators, plants: data.plants } : {})
-        }
-
-        const renderViewSection = (itemsToRender) =>
-            filters.viewMode === 'grid' ? (
-                renderGridCards(itemsToRender)
-            ) : (
-                <ListViewModeSection filteredItems={itemsToRender} {...listProps} />
-            )
-
-        const mainContent = hasFiltered ? renderViewSection(filteredResult.filtered) : null
-
-        const potentialContent = hasPotential ? (
-            <>
-                <div className="flex items-center gap-3 px-4 py-3 mt-4 rounded-lg bg-bg-hover">
-                    <i className="fas fa-filter text-xs text-text-secondary" />
-                    <span className="text-sm font-semibold text-text-primary">
-                        {hasFiltered ? 'Potential Matches' : 'Results Outside Current Filters'}
-                    </span>
-                    <span className="text-xs text-text-secondary">
-                        {hasFiltered
-                            ? '(hidden by active filters)'
-                            : 'No exact filter matches — showing results that match your search'}
-                    </span>
-                    <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-bg-secondary text-text-secondary">
-                        {filteredResult.potentialMatches.length}
-                    </span>
-                </div>
-                <div className={hasFiltered ? 'opacity-60' : ''}>
-                    {renderViewSection(filteredResult.potentialMatches)}
-                </div>
-            </>
-        ) : null
-
-        return (
-            <>
-                {mainContent}
-                {potentialContent}
-            </>
+    function refetchAllItems() {
+        data.setIsLoading(true)
+        PlantService.getAllowedPlantCodes(preferences.selectedRegion?.code).then((codes) =>
+            data.fetchAllItems(codes).finally(() => data.setIsLoading(false))
         )
-    }, [
-        config,
-        data.isLoading,
-        data.isRegionLoading,
-        data.operators,
-        data.plants,
-        data.tractors,
-        filteredResult,
-        filters.searchText,
-        filters.selectedPlant,
-        filters.statusFilter,
-        filters.viewMode,
-        handleSelectItem,
-        renderRow,
-        verification.handleVerify
-    ])
+    }
 
-    // --- Detail saved handler ---
     function handleDetailSaved(updated) {
         if (updated?.id) {
             data.setItems((prev) => {
@@ -644,103 +243,33 @@ function AssetView({
             })
         }
         setSelectedId(null)
-        PlantService.getAllowedPlantCodes(preferences.selectedRegion?.code).then((codes) => {
-            data.setIsLoading(true)
-            data.fetchAllItems(codes).finally(() => data.setIsLoading(false))
-        })
+        refetchAllItems()
     }
 
-    // --- Detail close handler ---
     function handleDetailClose() {
         setSelectedId(null)
-        if (config.refetchOnDetailClose) {
-            data.setIsLoading(true)
-            PlantService.getAllowedPlantCodes(preferences.selectedRegion?.code).then((codes) =>
-                data.fetchAllItems(codes).finally(() => data.setIsLoading(false))
-            )
-        }
+        if (config.refetchOnDetailClose) refetchAllItems()
     }
 
     const DetailView = config.DetailView
     const selectedIdValue = config.selectsFullObject ? selectedId?.id : selectedId
 
-    // --- Custom actions for TopSection ---
-    // Both buttons use the Plan-tab subtle `ActionButton` aesthetic so they
-    // sit flush with the rest of the top toolbar — bg-secondary, 1px border,
-    // 12px font, no accent fill.
-    const customActions = useMemo(() => {
-        const subtleClass =
-            'hidden md:flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
-        const subtleStyle = {
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-light)',
-            color: 'var(--text-primary)'
-        }
-        const recapButton = config.hasRecap ? (
-            <button
-                type="button"
-                className={subtleClass}
-                style={subtleStyle}
-                onClick={() => modalsRef.current?.openRecap()}
-                aria-label="Recap"
-            >
-                <i className="fa-solid fa-clock-rotate-left" />
-                <span>Recap</span>
-            </button>
-        ) : null
+    const badge = canShowOperatorBadge
+        ? `${totalCount} Total · ${activeOperatorsCount + unassignedActiveOperatorsCount} Active · ${spareCount} Spare · ${unassignedActiveOperatorsCount} Unassigned · ${shopCount} Shop`
+        : canShowAssetBadge
+          ? `${totalCount} Total · ${activeCount} Active · ${spareCount} Spare · ${shopCount} Shop`
+          : null
 
-        const isExportDisabled = isExportingIssues || data.items.length === 0
-        const exportButton = (
-            <button
-                type="button"
-                className={subtleClass}
-                style={subtleStyle}
-                onClick={handleExportIssues}
-                disabled={isExportDisabled}
-                aria-label="Export Issues"
-            >
-                <i className={`fas ${isExportingIssues ? 'fa-spinner fa-spin' : 'fa-file-export'}`} />
-                <span>{isExportingIssues ? 'Exporting…' : 'Export Issues'}</span>
-            </button>
-        )
+    const handleOpenEmbeddedOperators = () =>
+        setEmbeddedModal({
+            props: {
+                initialPositionFilter: config.operatorConfig.positionLabel,
+                initialStatusFilter: 'Unassigned Active'
+            },
+            view: 'operators'
+        })
 
-        return config.hasRecap ? (
-            <>
-                {recapButton}
-                {exportButton}
-            </>
-        ) : (
-            exportButton
-        )
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [config.hasRecap, isExportingIssues, data.items.length])
-
-    // --- Custom filters JSX for TopSection ---
-    // Matches the Plan-tab `FilterSelect` chrome — flat 1px border, 12px font.
-    const customFiltersJSX = useMemo(() => {
-        if (!config.extraTypeFilter) return undefined
-        return (
-            <select
-                className="text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 bg-bg-secondary border border-border-light text-text-primary"
-                style={{ minWidth: 130 }}
-                value={filters.extraTypeFilter}
-                onChange={(e) => {
-                    filters.setExtraTypeFilter(e.target.value)
-                    if (config.extraTypeFilter.persistKey) {
-                        updateFilterRef.current?.(config.extraTypeFilter.persistKey, e.target.value)
-                    }
-                }}
-                aria-label={config.extraTypeFilter.label}
-            >
-                <option value="">{config.extraTypeFilter.allLabel}</option>
-                {config.extraTypeFilter.options.map((opt) => (
-                    <option key={opt} value={opt}>
-                        {opt}
-                    </option>
-                ))}
-            </select>
-        )
-    }, [config.extraTypeFilter, filters])
+    const showLoadingSkeleton = data.isLoading || data.isRegionLoading
 
     return (
         <div
@@ -756,129 +285,43 @@ function AssetView({
                 <>
                     <div className="flex w-full max-w-full">
                         <div className="flex-1 min-w-0">
-                            <TopSection
-                                isLoading={data.isLoading || data.isRegionLoading}
-                                title={pageTitle}
-                                badge={
-                                    canShowOperatorBadge
-                                        ? `${totalCount} Total · ${activeOperatorsCount + unassignedActiveOperatorsCount} Active · ${spareCount} Spare · ${unassignedActiveOperatorsCount} Unassigned · ${shopCount} Shop`
-                                        : canShowAssetBadge
-                                          ? `${totalCount} Total · ${activeCount} Active · ${spareCount} Spare · ${shopCount} Shop`
-                                          : null
-                                }
-                                onPillClick={(label) => {
-                                    const STATUS_MAP = { Active: 'Active', Shop: 'In Shop', Spare: 'Spare' }
-                                    if (label === 'Unassigned' && canShowOperatorBadge) {
-                                        setEmbeddedModal({
-                                            props: {
-                                                initialPositionFilter: config.operatorConfig.positionLabel,
-                                                initialStatusFilter: 'Unassigned Active'
-                                            },
-                                            view: 'operators'
-                                        })
-                                    } else if (label === 'Total') {
-                                        filters.setStatusFilter('')
-                                        updateFilter?.('statusFilter', '')
-                                    } else if (STATUS_MAP[label]) {
-                                        filters.setStatusFilter(STATUS_MAP[label])
-                                        updateFilter?.('statusFilter', STATUS_MAP[label])
-                                    }
-                                }}
-                                addButtonLabel={config.addButtonLabel}
-                                onAddClick={() => setShowAddSheet(true)}
-                                customActions={customActions}
-                                searchInput={filters.searchInput}
-                                onSearchInputChange={(v) => {
-                                    filters.setSearchInput(v)
-                                    filters.debouncedSetSearchText(v)
-                                }}
-                                onClearSearch={() => {
-                                    filters.setSearchInput('')
-                                    filters.debouncedSetSearchText('')
-                                }}
-                                searchPlaceholder={config.searchPlaceholder}
-                                viewMode={filters.viewMode}
-                                onViewModeChange={filters.handleViewModeChange}
-                                plants={data.plants}
-                                regionPlantCodes={data.regionPlantCodes}
-                                selectedPlant={filters.selectedPlant}
-                                onSelectedPlantChange={(v) => {
-                                    filters.setSelectedPlant(v)
-                                    updateFilter?.('selectedPlant', v)
-                                }}
-                                statusFilter={filters.statusFilter}
-                                statusOptions={config.statusOptions}
-                                onStatusFilterChange={(v) => {
-                                    filters.setStatusFilter(v)
-                                    updateFilter?.('statusFilter', v)
-                                }}
-                                freightFilter={config.freightOptions ? filters.freightFilter : undefined}
-                                freightOptions={config.freightOptions}
-                                onFreightFilterChange={
-                                    config.freightOptions
-                                        ? (v) => {
-                                              filters.setFreightFilter(v)
-                                              updateFilter?.('freightFilter', v)
-                                          }
-                                        : undefined
-                                }
-                                customFilters={customFiltersJSX}
-                                showReset={filters.showReset}
-                                onReset={() => {
-                                    filters.setSearchText('')
-                                    filters.setSearchInput('')
-                                    filters.setSelectedPlant('')
-                                    filters.setStatusFilter('')
-                                    filters.setFreightFilter('')
-                                    filters.setExtraTypeFilter('')
-                                    if (resetFilters) {
-                                        resetFilters({ currentViewMode: filters.viewMode, keepViewMode: true })
-                                    }
-                                }}
-                                listLabels={config.listConfig.headerLabels}
-                                colWidths={config.listConfig.colWidths}
+                            <AssetTopSection
+                                badge={badge}
+                                canShowOperatorBadge={canShowOperatorBadge}
+                                config={config}
+                                data={data}
+                                filters={filters}
                                 forwardedRef={headerRef}
-                                onHeaderClick={filters.handleHeaderClick}
-                                sortKey={filters.sortKey}
-                                sortDirection={filters.sortDirection}
+                                isExportingIssues={isExportingIssues}
+                                onAddClick={() => setShowAddSheet(true)}
+                                onExportIssues={handleExportIssues}
+                                onOpenEmbeddedOperators={handleOpenEmbeddedOperators}
+                                onOpenRecap={() => modalsRef.current?.openRecap()}
+                                pageTitle={pageTitle}
+                                resetFilters={resetFilters}
+                                updateFilter={updateFilter}
+                                updateFilterRef={updateFilterRef}
                                 userPlantCode={userPlantCode}
                             />
-                            <div className="w-full max-w-full overflow-x-hidden">{content}</div>
+                            <div className="w-full max-w-full overflow-x-hidden">
+                                {showLoadingSkeleton ? (
+                                    <AssetListSkeleton viewMode={filters.viewMode} />
+                                ) : (
+                                    <AssetMainContent
+                                        config={config}
+                                        data={data}
+                                        filteredResult={filteredResult}
+                                        filters={filters}
+                                        handleSelectItem={handleSelectItem}
+                                        modalsRef={modalsRef}
+                                        onAdd={() => setShowAddSheet(true)}
+                                        renderRow={renderRow}
+                                        verification={verification}
+                                    />
+                                )}
+                            </div>
                         </div>
-                        {sidePanel && (
-                            <aside className="hidden lg:flex w-[440px] shrink-0 self-start sticky top-[var(--sticky-cover-height,0px)] flex-col h-[calc(100vh-var(--sticky-cover-height,0px)-12px)]">
-                                {sidePanel.kind === 'comment' && (
-                                    <CommentModalSection
-                                        displayMode="panel"
-                                        itemId={sidePanel.itemId}
-                                        itemNumber={sidePanel.itemNumber}
-                                        itemType={config.itemTypeLabel}
-                                        onClose={() => setSidePanel(null)}
-                                        service={config.service}
-                                    />
-                                )}
-                                {sidePanel.kind === 'issue' && (
-                                    <IssueModalSection
-                                        displayMode="panel"
-                                        itemId={sidePanel.itemId}
-                                        itemNumber={sidePanel.itemNumber}
-                                        itemType={config.itemTypeLabel}
-                                        onClose={() => setSidePanel(null)}
-                                        service={config.service}
-                                    />
-                                )}
-                                {sidePanel.kind === 'operatorComment' && sidePanel.operator && (
-                                    <CommentModalSection
-                                        displayMode="panel"
-                                        itemId={sidePanel.operator.employeeId}
-                                        itemNumber={sidePanel.operator.name}
-                                        itemType="Operator"
-                                        onClose={() => setSidePanel(null)}
-                                        service={OperatorService}
-                                    />
-                                )}
-                            </aside>
-                        )}
+                        <AssetSidePanel config={config} onClose={() => setSidePanel(null)} sidePanel={sidePanel} />
                     </div>
 
                     <AssetModals
@@ -903,9 +346,9 @@ function AssetView({
                     />
                     {embeddedModal && (
                         <EmbeddedViewModal
+                            accentColor={preferences.accentColor || '#1e3a5f'}
                             embeddedView={embeddedModal.view}
                             embeddedViewProps={embeddedModal.props}
-                            accentColor={preferences.accentColor || '#1e3a5f'}
                             onClose={() => setEmbeddedModal(null)}
                         />
                     )}

@@ -21,19 +21,25 @@ import { ItemIcon, PlantChip, StatusBadge } from './MaintenanceFormAtoms'
  */
 
 const STATUS_PRIORITY = {
-    rejected: 5, // most urgent: needs resubmit
-    overdue: 4, // past due_date with no matching submission
-    submitted: 3, // waiting on a reviewer
+    // waiting on a reviewer
     approved: 2,
+
     completed: 1,
+
+    // most urgent: needs resubmit
+    overdue: 4,
+
+    rejected: 5,
+    // past due_date with no matching submission
+    submitted: 3,
     upcoming: 0 // future due_date — surfaces only when no submission exists
 }
 
 const ROW_KIND = {
     due: 'due',
+    mine: 'mine',
     pending: 'pending',
-    reviewed: 'reviewed',
-    mine: 'mine'
+    reviewed: 'reviewed'
 }
 
 /** YYYY-MM-DD for "today" so future/overdue checks ignore the clock. */

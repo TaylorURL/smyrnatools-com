@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { DispatchDataService } from '../../services/DispatchDataService'
 import { ScheduleSnapshotService } from '../../services/ScheduleSnapshotService'
-import { diffScheduleAgainstSnapshot } from '../../utils/ScheduleDiffUtility'
 import { splitTicketsAtKicker } from '../../utils/plan/planCustomerSat'
 import { isExcludedOrder, parseDurationMinutes, PLAN_META_KEY, timeToMinutes } from '../../utils/PlanUtility'
+import { diffScheduleAgainstSnapshot } from '../../utils/ScheduleDiffUtility'
 
 const ONE_DAY_MS = 86_400_000
 /** Trailing window driving the per-customer behaviour rollup. 60 working

@@ -1,502 +1,17 @@
-/* eslint-disable max-lines */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import Skeleton, { SkeletonStack } from '../../../app/components/common/Skeleton'
 import TopSection from '../../../app/components/sections/TopSection'
-import RoleModal, {
-    RoleFormField,
-    RoleModalBody,
-    RoleModalFooter,
-    RoleTextInput
-} from '../../../app/components/ui/RoleModal'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useRolesData } from '../../../app/hooks/useRolesData'
+import BulkAddModal from './parts/BulkAddModal'
+import CreateRoleModal from './parts/CreateRoleModal'
+import EditWeightModal from './parts/EditWeightModal'
+import RoleCard from './parts/RoleCard'
+import RolesLoadingSkeleton from './parts/RolesLoadingSkeleton'
+import { useRolePermissionHandlers } from './parts/useRolePermissionHandlers'
 
-const getNamespace = (perm) => {
-    const dot = perm.indexOf('.')
-    return dot > 0 ? perm.substring(0, dot) : perm
-}
-
-const NAMESPACE_ICONS = {
-    dashboard: 'fa-tachometer-alt',
-    equipment: 'fa-truck',
-    managers: 'fa-user-tie',
-    mixers: 'fa-blender',
-    operators: 'fa-hard-hat',
-    plants: 'fa-industry',
-    regions: 'fa-map-marked-alt',
-    reports: 'fa-chart-bar',
-    roles: 'fa-shield-alt',
-    system: 'fa-cog',
-    tractors: 'fa-truck-monster',
-    trailers: 'fa-trailer',
-    users: 'fa-users'
-}
-
-const NAMESPACE_COLORS = {
-    dashboard: 'bg-blue-600',
-    equipment: 'bg-slate-600',
-    managers: 'bg-purple-600',
-    mixers: 'bg-teal-600',
-    operators: 'bg-orange-500',
-    plants: 'bg-emerald-600',
-    regions: 'bg-cyan-600',
-    reports: 'bg-indigo-600',
-    roles: 'bg-red-600',
-    system: 'bg-slate-700',
-    tractors: 'bg-amber-600',
-    trailers: 'bg-lime-600',
-    users: 'bg-violet-600'
-}
-
-/** Single permission row inside a role card. */
-const PermissionRow = ({ permission, onRemove, hasITAccess, isSaving }) => {
-    const ns = getNamespace(permission)
-    const icon = NAMESPACE_ICONS[ns] || 'fa-key'
-    const bgColor = NAMESPACE_COLORS[ns] || 'bg-slate-500'
-    return (
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-50 group transition-colors">
-            <div className={`w-5 h-5 rounded ${bgColor} flex items-center justify-center shrink-0`}>
-                <i className={`fas ${icon} text-white text-[8px]`} />
-            </div>
-            <span className="text-sm text-slate-700 flex-1 font-mono text-[13px]">{permission}</span>
-            {hasITAccess && (
-                <button
-                    onClick={() => onRemove(permission)}
-                    disabled={isSaving}
-                    className="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-text-primary hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer border-none bg-transparent shrink-0 disabled:opacity-30"
-                    title="Remove permission"
-                >
-                    <i className="fas fa-times text-[10px]" />
-                </button>
-            )}
-        </div>
-    )
-}
-
-/** Expandable role card showing name, weight, permission count, and permission list. */
-const RoleCard = ({
-    role,
-    isExpanded,
-    onToggle,
-    hasITAccess,
-    accentColor,
-    onRemovePermission,
-    onAddPermission,
-    onPastePermissions,
-    onEditWeight,
-    savingPerms
-}) => {
-    const [addingPerm, setAddingPerm] = useState(false)
-    const [newPerm, setNewPerm] = useState('')
-    const [copied, setCopied] = useState(false)
-    const [pasteStatus, setPasteStatus] = useState(null)
-    const permissions = Array.isArray(role.permissions) ? [...role.permissions].sort() : []
-    const namespaces = [...new Set(permissions.map(getNamespace))].sort()
-    const isElevated = (role.weight || 0) > 75
-
-    const handleAddPerm = () => {
-        const trimmed = newPerm.trim()
-        if (!trimmed) return
-        onAddPermission(role.id, trimmed)
-        setNewPerm('')
-        setAddingPerm(false)
-    }
-
-    const handlePastePermissions = async () => {
-        try {
-            const text = await navigator.clipboard.readText()
-            const incoming = text
-                .split(/\r?\n/)
-                .map((line) => line.trim())
-                .filter(Boolean)
-            if (incoming.length === 0) {
-                setPasteStatus({ text: 'Clipboard is empty', type: 'error' })
-                setTimeout(() => setPasteStatus(null), 2000)
-                return
-            }
-            const existing = new Set(permissions)
-            const toAdd = incoming.filter((p) => !existing.has(p))
-            if (toAdd.length === 0) {
-                setPasteStatus({ text: 'Already has all', type: 'info' })
-                setTimeout(() => setPasteStatus(null), 2000)
-                return
-            }
-            await onPastePermissions(role.id, [...permissions, ...toAdd])
-            setPasteStatus({ text: `Added ${toAdd.length}`, type: 'success' })
-            setTimeout(() => setPasteStatus(null), 2000)
-        } catch {
-            setPasteStatus({ text: 'Paste failed', type: 'error' })
-            setTimeout(() => setPasteStatus(null), 2000)
-        }
-    }
-
-    const handleCopyPermissions = async () => {
-        if (permissions.length === 0) return
-        try {
-            await navigator.clipboard.writeText(permissions.join('\n'))
-            setCopied(true)
-            setTimeout(() => setCopied(false), 1500)
-        } catch {
-            const textarea = document.createElement('textarea')
-            textarea.value = permissions.join('\n')
-            document.body.appendChild(textarea)
-            textarea.select()
-            document.execCommand('copy')
-            document.body.removeChild(textarea)
-            setCopied(true)
-            setTimeout(() => setCopied(false), 1500)
-        }
-    }
-
-    return (
-        <div className="overflow-hidden rounded border border-border-light bg-bg-primary shadow-sm transition-all duration-200 hover:shadow-lg">
-            {/* Header — asset-card visual rhythm: 40x40 accent icon + bold name + stat pills + chevron. */}
-            <div
-                className="flex items-center gap-3 px-5 py-4 cursor-pointer transition-colors hover:bg-slate-50"
-                onClick={onToggle}
-            >
-                <div
-                    className="w-10 h-10 rounded flex items-center justify-center text-white text-lg flex-shrink-0"
-                    style={{ background: accentColor }}
-                >
-                    <i className="fas fa-shield-alt" />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-lg font-extrabold tracking-tight truncate text-text-primary">
-                            {role.name}
-                        </span>
-                        {isElevated && (
-                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-text-primary">
-                                Elevated
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600">
-                            <i className="fas fa-balance-scale text-[9px]" />
-                            <span className="font-mono tabular-nums">{role.weight || 0}</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-teal-50 text-text-primary">
-                            <span className="font-mono tabular-nums">{permissions.length}</span>
-                            <span>perms</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-cyan-50 text-text-primary">
-                            <span className="font-mono tabular-nums">{namespaces.length}</span>
-                            <span>namespaces</span>
-                        </span>
-                    </div>
-                </div>
-                <i
-                    className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-slate-300 text-xs transition-transform`}
-                />
-            </div>
-
-            {/* Expanded content */}
-            {isExpanded && (
-                <div className="border-t border-border-light">
-                    {/* Actions bar */}
-                    <div className="flex items-center gap-2 px-5 py-3 bg-slate-50 border-b border-border-light">
-                        {hasITAccess && (
-                            <>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setAddingPerm(true)
-                                    }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border-none cursor-pointer transition-colors"
-                                    style={{ background: `${accentColor}15`, color: accentColor }}
-                                >
-                                    <i className="fas fa-plus text-[9px]" />
-                                    Add Permission
-                                </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onEditWeight(role)
-                                    }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors"
-                                >
-                                    <i className="fas fa-balance-scale text-[9px]" />
-                                    Edit Weight
-                                </button>
-                            </>
-                        )}
-                        <div className="flex items-center gap-2 ml-auto">
-                            {pasteStatus && (
-                                <span className="text-[11px] font-semibold text-text-primary">{pasteStatus.text}</span>
-                            )}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleCopyPermissions()
-                                }}
-                                disabled={permissions.length === 0}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                title="Copy all permission nodes — one per line"
-                            >
-                                <i className={`fas ${copied ? 'fa-check' : 'fa-copy'} text-[9px]`} />
-                                {copied ? 'Copied' : 'Copy'}
-                            </button>
-                            {hasITAccess && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        handlePastePermissions()
-                                    }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer hover:bg-slate-300 transition-colors"
-                                    title="Paste permissions from clipboard — merges with existing"
-                                >
-                                    <i className="fas fa-paste text-[9px]" />
-                                    Paste
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Add permission inline */}
-                    {addingPerm && (
-                        <div className="flex items-center gap-2 px-5 py-3 bg-blue-50 border-b border-blue-100">
-                            <input
-                                type="text"
-                                value={newPerm}
-                                onChange={(e) => setNewPerm(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddPerm()}
-                                placeholder="e.g. reports.qc_strength"
-                                autoFocus
-                                className="flex-1 bg-white border border-border-light rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-                            />
-                            <button
-                                onClick={handleAddPerm}
-                                disabled={!newPerm.trim()}
-                                className="px-3 py-2 rounded-lg text-xs font-semibold text-white border-none cursor-pointer disabled:opacity-40"
-                                style={{ background: accentColor }}
-                            >
-                                Add
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setAddingPerm(false)
-                                    setNewPerm('')
-                                }}
-                                className="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-200 text-slate-600 border-none cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Permissions grouped by namespace */}
-                    <div className="px-4 py-3">
-                        {permissions.length === 0 ? (
-                            <div className="text-center py-6 text-slate-400 text-sm">
-                                <i className="fas fa-lock text-2xl mb-2 block" />
-                                No permissions assigned
-                            </div>
-                        ) : (
-                            namespaces.map((ns) => {
-                                const nsPerms = permissions.filter((p) => getNamespace(p) === ns)
-                                const icon = NAMESPACE_ICONS[ns] || 'fa-key'
-                                return (
-                                    <div key={ns} className="mb-3 last:mb-0">
-                                        <div className="flex items-center gap-2 px-1 mb-1">
-                                            <i className={`fas ${icon} text-[10px] text-slate-400`} />
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                                {ns}
-                                            </span>
-                                            <span className="text-[10px] text-slate-300">{nsPerms.length}</span>
-                                        </div>
-                                        {nsPerms.map((perm) => (
-                                            <PermissionRow
-                                                key={perm}
-                                                permission={perm}
-                                                hasITAccess={hasITAccess}
-                                                isSaving={savingPerms.has(`${role.id}:${perm}`)}
-                                                onRemove={(p) => onRemovePermission(role.id, p)}
-                                            />
-                                        ))}
-                                    </div>
-                                )
-                            })
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    )
-}
-
-/** Modal for creating a new role. */
-const CreateRoleModal = ({ isOpen, onClose, onCreate }) => {
-    const [name, setName] = useState('')
-    const [weight, setWeight] = useState(10)
-    if (!isOpen) return null
-    return (
-        <RoleModal isOpen={isOpen} onClose={onClose} title="Create Role">
-            <RoleModalBody>
-                <RoleFormField label="Role Name">
-                    <RoleTextInput value={name} onChange={setName} placeholder="e.g. Plant Manager" autoFocus />
-                </RoleFormField>
-                <RoleFormField label="Weight">
-                    <RoleTextInput value={weight} onChange={(v) => setWeight(Number(v) || 0)} type="number" />
-                </RoleFormField>
-            </RoleModalBody>
-            <RoleModalFooter
-                onCancel={onClose}
-                onSubmit={() => {
-                    if (!name.trim()) return
-                    onCreate(name.trim(), weight)
-                    setName('')
-                    setWeight(10)
-                    onClose()
-                }}
-                submitText="Create"
-                disabled={!name.trim()}
-            />
-        </RoleModal>
-    )
-}
-
-/** Modal for editing role weight. */
-const EditWeightModal = ({ role, onClose, onSave }) => {
-    const [weight, setWeight] = useState(role?.weight || 0)
-    if (!role) return null
-    return (
-        <RoleModal isOpen={true} onClose={onClose} title={`Edit Weight — ${role.name}`}>
-            <RoleModalBody>
-                <RoleFormField label="Weight" hint="Roles with weight > 75 are elevated (admin)">
-                    <RoleTextInput value={weight} onChange={(v) => setWeight(Number(v) || 0)} type="number" autoFocus />
-                </RoleFormField>
-            </RoleModalBody>
-            <RoleModalFooter
-                onCancel={onClose}
-                onSubmit={() => {
-                    onSave(role.id, weight)
-                    onClose()
-                }}
-                submitText="Save"
-            />
-        </RoleModal>
-    )
-}
-
-/** Modal for bulk-adding a permission to one or more roles. */
-const BulkAddModal = ({ isOpen, onClose, roles, onBulkAdd, accentColor: _accentColor }) => {
-    const [permission, setPermission] = useState('')
-    const [selectedRoleIds, setSelectedRoleIds] = useState(new Set())
-    const [saving, setSaving] = useState(false)
-
-    const toggleRole = (id) => {
-        setSelectedRoleIds((prev) => {
-            const next = new Set(prev)
-            next.has(id) ? next.delete(id) : next.add(id)
-            return next
-        })
-    }
-
-    const selectAll = () => {
-        setSelectedRoleIds(new Set(roles.map((r) => r.id)))
-    }
-
-    const selectNone = () => {
-        setSelectedRoleIds(new Set())
-    }
-
-    const handleSubmit = async () => {
-        if (!permission.trim() || selectedRoleIds.size === 0) return
-        setSaving(true)
-        await onBulkAdd(selectedRoleIds, permission.trim())
-        setSaving(false)
-        setPermission('')
-        setSelectedRoleIds(new Set())
-        onClose()
-    }
-
-    if (!isOpen) return null
-
-    const sortedRoles = [...roles].sort((a, b) => (b.weight || 0) - (a.weight || 0))
-    const alreadyHave = sortedRoles.filter(
-        (r) => permission.trim() && Array.isArray(r.permissions) && r.permissions.includes(permission.trim())
-    )
-
-    return (
-        <RoleModal isOpen={isOpen} onClose={onClose} title="Bulk Add Permission">
-            <RoleModalBody>
-                <RoleFormField label="Permission Node">
-                    <RoleTextInput
-                        value={permission}
-                        onChange={setPermission}
-                        placeholder="e.g. reports.qc_strength"
-                        autoFocus
-                    />
-                </RoleFormField>
-                {permission.trim() && alreadyHave.length > 0 && (
-                    <div className="text-xs text-slate-400 -mt-2 mb-2 px-1">
-                        Already on: {alreadyHave.map((r) => r.name).join(', ')}
-                    </div>
-                )}
-                <RoleFormField label="Add to Roles">
-                    <div className="flex items-center gap-2 mb-2">
-                        <button
-                            onClick={selectAll}
-                            className="text-[11px] font-semibold px-2 py-1 rounded bg-slate-100 text-slate-600 border-none cursor-pointer hover:bg-slate-200"
-                        >
-                            Select All
-                        </button>
-                        <button
-                            onClick={selectNone}
-                            className="text-[11px] font-semibold px-2 py-1 rounded bg-slate-100 text-slate-600 border-none cursor-pointer hover:bg-slate-200"
-                        >
-                            Select None
-                        </button>
-                        <span className="text-[11px] text-slate-400 ml-auto">{selectedRoleIds.size} selected</span>
-                    </div>
-                    <div className="max-h-[280px] overflow-y-auto border border-border-light rounded-lg">
-                        {sortedRoles.map((role) => {
-                            const isSelected = selectedRoleIds.has(role.id)
-                            const alreadyHasIt =
-                                permission.trim() &&
-                                Array.isArray(role.permissions) &&
-                                role.permissions.includes(permission.trim())
-                            return (
-                                <label
-                                    key={role.id}
-                                    className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors border-b border-border-light last:border-b-0 ${
-                                        isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'
-                                    } ${alreadyHasIt ? 'opacity-40' : ''}`}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={isSelected}
-                                        onChange={() => toggleRole(role.id)}
-                                        disabled={alreadyHasIt}
-                                        className="w-4 h-4 rounded cursor-pointer accent-blue-600"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                        <span className="text-sm font-medium text-slate-800">{role.name}</span>
-                                        <span className="text-xs text-slate-400 ml-2">w:{role.weight || 0}</span>
-                                    </div>
-                                    {alreadyHasIt && (
-                                        <span className="text-[10px] text-slate-400 shrink-0">already has</span>
-                                    )}
-                                </label>
-                            )
-                        })}
-                    </div>
-                </RoleFormField>
-            </RoleModalBody>
-            <RoleModalFooter
-                onCancel={onClose}
-                onSubmit={handleSubmit}
-                submitText={`Add to ${selectedRoleIds.size} Role${selectedRoleIds.size !== 1 ? 's' : ''}`}
-                loadingText="Adding..."
-                isLoading={saving}
-                disabled={!permission.trim() || selectedRoleIds.size === 0}
-            />
-        </RoleModal>
-    )
-}
+const ELEVATED_WEIGHT_THRESHOLD = 75
+const DEFAULT_ACCENT_COLOR = '#1e3a5f'
 
 function RolesView() {
     const {
@@ -515,13 +30,12 @@ function RolesView() {
         updateRoleWeight
     } = useRolesData()
     const { preferences } = usePreferences()
-    const accentColor = preferences.accentColor || '#1e3a5f'
+    const accentColor = preferences.accentColor || DEFAULT_ACCENT_COLOR
     const [searchQuery, setSearchQuery] = useState('')
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [showBulkAddModal, setShowBulkAddModal] = useState(false)
     const [editingWeightRole, setEditingWeightRole] = useState(null)
     const [expandedRoleId, setExpandedRoleId] = useState(null)
-    const [savingPerms, setSavingPerms] = useState(new Set())
 
     useEffect(() => {
         loadData()
@@ -550,69 +64,13 @@ function RolesView() {
     }, [roles])
 
     /** Number of roles whose weight crosses the elevated threshold (> 75). */
-    const elevatedCount = useMemo(() => roles.filter((r) => (r.weight || 0) > 75).length, [roles])
-
-    const handleRemovePermission = useCallback(
-        async (roleId, permission) => {
-            if (!hasITAccess) return
-            const cellKey = `${roleId}:${permission}`
-            setSavingPerms((prev) => new Set(prev).add(cellKey))
-            try {
-                const role = roles.find((r) => r.id === roleId)
-                if (!role) return
-                const currentPerms = Array.isArray(role.permissions) ? role.permissions : []
-                const newPerms = currentPerms.filter((p) => p !== permission)
-                await updateRolePermissions(roleId, newPerms.join('\n'))
-            } catch (err) {
-                setError(`Failed to remove: ${err.message}`)
-            } finally {
-                setSavingPerms((prev) => {
-                    const next = new Set(prev)
-                    next.delete(cellKey)
-                    return next
-                })
-            }
-        },
-        [hasITAccess, roles, updateRolePermissions, setError]
+    const elevatedCount = useMemo(
+        () => roles.filter((r) => (r.weight || 0) > ELEVATED_WEIGHT_THRESHOLD).length,
+        [roles]
     )
 
-    const handleAddPermission = useCallback(
-        async (roleId, permission) => {
-            if (!hasITAccess) return
-            const cellKey = `${roleId}:${permission}`
-            setSavingPerms((prev) => new Set(prev).add(cellKey))
-            try {
-                const role = roles.find((r) => r.id === roleId)
-                if (!role) return
-                const currentPerms = Array.isArray(role.permissions) ? role.permissions : []
-                if (currentPerms.includes(permission)) return
-                const newPerms = [...currentPerms, permission]
-                await updateRolePermissions(roleId, newPerms.join('\n'))
-            } catch (err) {
-                setError(`Failed to add: ${err.message}`)
-            } finally {
-                setSavingPerms((prev) => {
-                    const next = new Set(prev)
-                    next.delete(cellKey)
-                    return next
-                })
-            }
-        },
-        [hasITAccess, roles, updateRolePermissions, setError]
-    )
-
-    const handlePastePermissions = useCallback(
-        async (roleId, mergedPermissions) => {
-            if (!hasITAccess) return
-            try {
-                await updateRolePermissions(roleId, mergedPermissions.join('\n'))
-            } catch (err) {
-                setError(`Failed to paste permissions: ${err.message}`)
-                throw err
-            }
-        },
-        [hasITAccess, updateRolePermissions, setError]
-    )
+    const { savingPerms, handleRemovePermission, handleAddPermission, handlePastePermissions } =
+        useRolePermissionHandlers({ hasITAccess, roles, setError, updateRolePermissions })
 
     const handleCreateRole = useCallback(
         async (name, weight) => {
@@ -636,32 +94,20 @@ function RolesView() {
         [updateRoleWeight, setError]
     )
 
+    const handleBulkAdd = useCallback(
+        async (roleIds, permission) => {
+            try {
+                await bulkAddPermissions(roleIds, permission)
+            } catch (err) {
+                setError(`Bulk add failed: ${err.message}`)
+            }
+        },
+        [bulkAddPermissions, setError]
+    )
+
     const badge = `${roles.length} Roles · ${totalPermissions} Permissions · ${elevatedCount} Elevated`
 
-    if (isLoading && roles.length === 0) {
-        return (
-            <div className="min-h-screen bg-slate-50 p-6">
-                <Skeleton className="h-8 w-48 mb-6" />
-                <SkeletonStack count={6} gapClassName="gap-3">
-                    {() => (
-                        <div className="rounded border border-border-light bg-white p-4">
-                            <div className="flex items-center gap-3">
-                                <Skeleton className="w-10 h-10" rounded="rounded" />
-                                <div className="flex-1">
-                                    <Skeleton className="h-4 w-40 mb-1.5" />
-                                    <div className="flex gap-1.5">
-                                        <Skeleton className="h-3.5 w-12" rounded="rounded" />
-                                        <Skeleton className="h-3.5 w-16" rounded="rounded" />
-                                        <Skeleton className="h-3.5 w-20" rounded="rounded" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </SkeletonStack>
-            </div>
-        )
-    }
+    if (isLoading && roles.length === 0) return <RolesLoadingSkeleton />
 
     return (
         <div className="min-h-screen bg-slate-50 pb-16">
@@ -757,15 +203,10 @@ function RolesView() {
                 onClose={() => setShowBulkAddModal(false)}
                 roles={roles}
                 accentColor={accentColor}
-                onBulkAdd={async (roleIds, permission) => {
-                    try {
-                        await bulkAddPermissions(roleIds, permission)
-                    } catch (err) {
-                        setError(`Bulk add failed: ${err.message}`)
-                    }
-                }}
+                onBulkAdd={handleBulkAdd}
             />
         </div>
     )
 }
+
 export default RolesView

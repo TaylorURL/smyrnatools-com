@@ -5,8 +5,8 @@ import { fmtFloat, fmtInt, fmtRange } from '../../../utils/PlanStatisticsFormatU
 import useCurrentUserRoleWeight from '../../hooks/useCurrentUserRoleWeight'
 import useDayforceOperatorFilters from '../../hooks/useDayforceOperatorFilters'
 import useDayforceOperatorMetrics from '../../hooks/useDayforceOperatorMetrics'
-import { Panel, Stat, StatGroup } from '../ui/Panel'
 import { EmptySection, RefreshingHint } from '../plan/tabs/statistics/PlanStatisticsPages'
+import { Panel, Stat, StatGroup } from '../ui/Panel'
 import { DayforceFilters } from './DayforceFilters'
 
 const COST_SORT_IDS = ['cost', 'ot', 'hours', 'name']

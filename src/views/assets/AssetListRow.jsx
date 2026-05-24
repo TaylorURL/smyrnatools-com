@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import OperatorClockIndicator from '../../app/components/common/OperatorClockIndicator'

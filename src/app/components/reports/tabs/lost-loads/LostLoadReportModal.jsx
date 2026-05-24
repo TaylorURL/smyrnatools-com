@@ -1,46 +1,16 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+/* eslint-disable react/forbid-dom-props */
+import React, { useRef, useState } from 'react'
 
 import { usePreferences } from '../../../../../app/context/PreferencesContext'
-import { Database } from '../../../../../services/DatabaseService'
-import { EmailService } from '../../../../../services/EmailService'
-import { MixerService } from '../../../../../services/MixerService'
-import { OperatorService } from '../../../../../services/OperatorService'
-import { UserService } from '../../../../../services/UserService'
-import APIUtility from '../../../../../utils/APIUtility'
+import AttachmentField from './modal/AttachmentField'
+import { ALLOWED_FILE_TYPE, DUMP_LOCATIONS, MAX_FILE_SIZE_MB, REASONS } from './modal/constants'
+import { parseInitialDumpLocation, parseInitialReason } from './modal/helpers'
+import OptionRadioGroup from './modal/OptionRadioGroup'
+import ReprimandToggles from './modal/ReprimandToggles'
+import TruckPicker from './modal/TruckPicker'
+import { useLostLoadFormData } from './modal/useLostLoadFormData'
+import { useLostLoadSubmit } from './modal/useLostLoadSubmit'
 
-const STORAGE_BUCKET = 'smyrna'
-const STORAGE_PREFIX = 'lost-loads'
-const MAX_FILE_SIZE_MB = 10
-const ALLOWED_FILE_TYPE = 'application/pdf'
-
-function getCurrentWeekBounds() {
-    const d = new Date()
-    const day = d.getDay()
-    const diff = day === 0 ? -6 : 1 - day
-    const monday = new Date(d)
-    monday.setDate(d.getDate() + diff)
-    monday.setHours(12, 0, 0, 0)
-    const saturday = new Date(monday)
-    saturday.setDate(monday.getDate() + 5)
-    return { monday: monday.toISOString(), saturday: saturday.toISOString() }
-}
-
-/** Uploads a PDF to storage and returns the public URL. */
-async function uploadWriteup(file, userId) {
-    const fileName = `${STORAGE_PREFIX}/${userId}_${Date.now()}.pdf`
-    const { error } = await Database.storage.from(STORAGE_BUCKET).upload(fileName, file, {
-        cacheControl: '3600',
-        contentType: ALLOWED_FILE_TYPE,
-        upsert: false
-    })
-    if (error) throw new Error('Failed to upload writeup: ' + error.message)
-    const { data: urlData } = Database.storage.from(STORAGE_BUCKET).getPublicUrl(fileName)
-    return urlData?.publicUrl || fileName
-}
-
-const REASONS = ['Plant Manager Error', 'Operator Error', 'Plant Issue', 'Truck Issues', 'Other']
-const DUMP_LOCATIONS = ['Yard', 'Job Site', 'Blocks', 'Other']
 /** Modal form for submitting or editing a lost load report. Plant is
  *  auto-populated from the user's assigned plant. When `initialReport` is
  *  provided the modal runs in edit mode and UPDATEs the existing row. */
@@ -50,108 +20,42 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
     const fileInputRef = useRef(null)
     const isEditing = !!initialReport?.id
     const initialData = initialReport?.data || {}
-    const initialReasonCategory = (() => {
-        const full = initialData.reason || ''
-        if (!full) return ''
-        const [cat] = full.split(':')
-        const trimmed = (cat || '').trim()
-        return REASONS.includes(trimmed) ? trimmed : 'Other'
-    })()
-    const initialExplanation = (() => {
-        const full = initialData.reason || ''
-        const idx = full.indexOf(':')
-        return idx === -1 ? full : full.slice(idx + 1).trim()
-    })()
-    const initialDumpCategory = DUMP_LOCATIONS.includes(initialData.dump_location)
-        ? initialData.dump_location
-        : initialData.dump_location
-          ? 'Other'
-          : ''
-    const initialDumpOther =
-        initialData.dump_location && !DUMP_LOCATIONS.includes(initialData.dump_location)
-            ? initialData.dump_location
-            : ''
+    const initialReason = parseInitialReason(initialData.reason)
+    const initialDump = parseInitialDumpLocation(initialData.dump_location)
+
     const [plant, setPlant] = useState(initialData.plant || '')
     const [lostLoadDate, setLostLoadDate] = useState(initialData.lost_load_date || '')
     const [yardage, setYardage] = useState(initialData.yardage != null ? String(initialData.yardage) : '')
     const [truckNumber, setTruckNumber] = useState(initialData.truck_number || '')
     const [customerName, setCustomerName] = useState(initialData.customer_name || '')
     const [ticketNumber, setTicketNumber] = useState(initialData.ticket_number || '')
-    const [reason, setReason] = useState(initialReasonCategory)
-    const [explanation, setExplanation] = useState(initialExplanation)
-    const [dumpLocation, setDumpLocation] = useState(initialDumpCategory)
-    const [dumpLocationOther, setDumpLocationOther] = useState(initialDumpOther)
+    const [reason, setReason] = useState(initialReason.category)
+    const [explanation, setExplanation] = useState(initialReason.explanation)
+    const [dumpLocation, setDumpLocation] = useState(initialDump.category)
+    const [dumpLocationOther, setDumpLocationOther] = useState(initialDump.other)
     const [operatorReprimanded, setOperatorReprimanded] = useState(!!initialData.operator_reprimanded)
     const [plantManagerReprimanded, setPlantManagerReprimanded] = useState(!!initialData.plant_manager_reprimanded)
     const [attachment, setAttachment] = useState(null)
-    const [submitting, setSubmitting] = useState(false)
-    const [error, setError] = useState('')
-    const [emailError, setEmailError] = useState('')
-    const [mixers, setMixers] = useState([])
-    const [operators, setOperators] = useState([])
     const [truckPickerOpen, setTruckPickerOpen] = useState(false)
     const [truckSearch, setTruckSearch] = useState('')
-    useEffect(() => {
-        if (!user?.id || isEditing) return
-        UserService.getUserPlant(user.id)
-            .then((code) => {
-                if (code) setPlant(code)
-            })
-            .catch((e) => console.error('Failed to fetch user plant:', e))
-    }, [user?.id, isEditing])
-    useEffect(() => {
-        MixerService.getAllMixers()
-            .then(setMixers)
-            .catch((e) => console.error('Failed to fetch mixers for lost load modal:', e))
-    }, [])
-    useEffect(() => {
-        if (!plants?.length) return
-        Promise.all(plants.map((p) => OperatorService.fetchOperatorsByPlant(p.plant_code)))
-            .then((results) => setOperators(results.flat()))
-            .catch((e) => console.error('Failed to fetch operators by plant:', e))
-    }, [plants])
-    const operatorMap = useMemo(() => {
-        const map = {}
-        operators.forEach((op) => {
-            map[op.employeeId] = op.name
-        })
-        return map
-    }, [operators])
-    const selectedMixer = useMemo(() => {
-        const target = truckNumber.trim().toLowerCase()
-        if (!target) return null
-        return (
-            mixers.find(
-                (m) =>
-                    String(m.truckNumber || '')
-                        .trim()
-                        .toLowerCase() === target
-            ) || null
-        )
-    }, [mixers, truckNumber])
-    const selectedOperatorId = selectedMixer?.assignedOperator || null
-    const selectedOperatorName = selectedOperatorId ? operatorMap[selectedOperatorId] || '' : ''
-    const regionalMixers = useMemo(() => {
-        const plantCodes = new Set((plants || []).map((p) => String(p.plant_code).toUpperCase()))
-        let filtered = mixers.filter(
-            (m) => plantCodes.has(String(m.assignedPlant).toUpperCase()) && String(m.status).toLowerCase() !== 'retired'
-        )
-        if (truckSearch.trim()) {
-            const q = truckSearch.toLowerCase()
-            filtered = filtered.filter((m) => {
-                const num = String(m.truckNumber || '').toLowerCase()
-                const opName = (operatorMap[m.assignedOperator] || '').toLowerCase()
-                const plantCode = String(m.assignedPlant || '').toLowerCase()
-                return num.includes(q) || opName.includes(q) || plantCode.includes(q)
-            })
-        }
-        return filtered.sort((a, b) => {
-            const aHasOp = operatorMap[a.assignedOperator] ? 0 : 1
-            const bHasOp = operatorMap[b.assignedOperator] ? 0 : 1
-            if (aHasOp !== bHasOp) return aHasOp - bHasOp
-            return String(a.truckNumber).localeCompare(String(b.truckNumber), undefined, { numeric: true })
-        })
-    }, [mixers, plants, operatorMap, truckSearch])
+
+    const { operatorMap, regionalMixers, selectedOperatorId, selectedOperatorName } = useLostLoadFormData({
+        isEditing,
+        plants,
+        setPlant,
+        truckNumber,
+        truckSearch,
+        user
+    })
+
+    const { submit, submitting, error, setError, emailError } = useLostLoadSubmit({
+        initialReport,
+        isEditing,
+        onClose,
+        onSubmitted,
+        user
+    })
+
     const handleFileSelect = (e) => {
         const file = e.target.files?.[0]
         if (!file) return
@@ -166,114 +70,31 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
         setError('')
         setAttachment(file)
     }
-    const handleSubmit = async () => {
-        if (!plant || !lostLoadDate || !yardage || !truckNumber.trim() || !reason || !dumpLocation) {
-            setError('Please fill out all required fields.')
-            return
-        }
-        if (dumpLocation === 'Other' && !dumpLocationOther.trim()) {
-            setError('Please specify where the concrete was dumped.')
-            return
-        }
-        if (!explanation.trim()) {
-            setError('Please explain what happened and what will be done to prevent this in the future.')
-            return
-        }
-        if (isNaN(Number(yardage)) || Number(yardage) <= 0) {
-            setError('Yardage must be a positive number.')
-            return
-        }
-        const resolvedDumpLocation = dumpLocation === 'Other' ? dumpLocationOther.trim() : dumpLocation
-        setSubmitting(true)
-        setError('')
-        try {
-            // Upload attachment if a new one was chosen; otherwise keep any
-            // existing attachment URL when editing.
-            let attachmentUrl = isEditing ? initialData.attachment_url || null : null
-            if (attachment) {
-                attachmentUrl = await uploadWriteup(attachment, user.id)
-            }
 
-            const { monday, saturday } = getCurrentWeekBounds()
-            const fullReason = reason === 'Other' ? `Other: ${explanation.trim()}` : `${reason}: ${explanation.trim()}`
-            const payloadData = {
-                attachment_url: attachmentUrl,
-                customer_name: customerName.trim() || null,
-                dump_location: resolvedDumpLocation,
-                lost_load_date: lostLoadDate,
-                operator_id: selectedOperatorId,
-                operator_name: selectedOperatorName || null,
-                operator_reprimanded: !!operatorReprimanded,
-                plant,
-                plant_manager_reprimanded: !!plantManagerReprimanded,
-                reason: fullReason,
-                ticket_number: ticketNumber.trim() || null,
-                truck_number: truckNumber.trim(),
-                yardage: Number(yardage)
-            }
-            let payload
-            if (isEditing) {
-                payload = { existingId: initialReport.id, upsertData: { data: payloadData } }
-            } else {
-                payload = {
-                    upsertData: {
-                        completed: true,
-                        data: payloadData,
-                        report_date_range_end: saturday,
-                        report_date_range_start: monday,
-                        report_name: 'lost_load',
-                        submitted_at: new Date().toISOString(),
-                        week: monday
-                    }
-                }
-            }
-            const { json, res } = await APIUtility.post('/report-service/save-report', payload)
-            if (!res.ok) throw new Error(json?.error || 'Failed to submit report')
-            const data = json
-
-            onSubmitted?.(data)
-
-            if (isEditing) {
-                onClose()
-                return
-            }
-
-            // Notify GMs — await so failures are visible, but don't block the success flow
-            try {
-                await EmailService.notifyReportSubmitted({
-                    attachmentUrl,
-                    reportFields: [
-                        {
-                            label: 'Date of Lost Load',
-                            value: new Date(lostLoadDate + 'T12:00:00').toLocaleDateString('en-US', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                            })
-                        },
-                        { label: 'Plant', value: plant },
-                        { label: 'Truck Number', value: truckNumber.trim() },
-                        { label: 'Yardage', value: String(Number(yardage)) },
-                        { label: 'Dump Location', value: resolvedDumpLocation },
-                        ...(customerName.trim() ? [{ label: 'Customer', value: customerName.trim() }] : []),
-                        ...(ticketNumber.trim() ? [{ label: 'Ticket Number', value: ticketNumber.trim() }] : []),
-                        { label: 'Reason', value: fullReason },
-                        ...(attachmentUrl ? [{ label: 'Writeup', value: 'PDF attached' }] : [])
-                    ],
-                    reportTitle: 'Lost Load Report',
-                    userId: user.id,
-                    weekLabel: ''
-                })
-                onClose()
-            } catch (emailErr) {
-                setEmailError(emailErr.message || 'Email notification failed to send.')
-            }
-        } catch (err) {
-            setError(err.message || 'Error submitting report.')
-        } finally {
-            setSubmitting(false)
-        }
+    const handleClearAttachment = () => {
+        setAttachment(null)
+        if (fileInputRef.current) fileInputRef.current.value = ''
     }
+
+    const handleSubmit = () =>
+        submit({
+            attachment,
+            customerName,
+            dumpLocation,
+            dumpLocationOther,
+            explanation,
+            lostLoadDate,
+            operatorReprimanded,
+            plant,
+            plantManagerReprimanded,
+            reason,
+            selectedOperatorId,
+            selectedOperatorName,
+            ticketNumber,
+            truckNumber,
+            yardage
+        })
+
     return (
         <div
             className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center sm:p-4 overflow-y-auto bg-[rgba(0,0,0,0.5)]"
@@ -362,106 +183,17 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             min="0"
                         />
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                            Truck Number
-                        </label>
-                        <button
-                            type="button"
-                            onClick={() => setTruckPickerOpen((v) => !v)}
-                            className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-left transition-colors bg-bg-primary border border-border-light text-text-primary"
-                        >
-                            {truckNumber ? (
-                                <span className="flex items-center gap-2 text-text-primary">
-                                    <span
-                                        className="px-2 py-0.5 rounded-md text-xs font-bold text-white"
-                                        style={{ backgroundColor: accentColor }}
-                                    >
-                                        #{truckNumber}
-                                    </span>
-                                    <span className="text-text-secondary">
-                                        {operatorMap[
-                                            regionalMixers.find((m) => m.truckNumber === truckNumber)?.assignedOperator
-                                        ] || 'Unassigned'}
-                                    </span>
-                                </span>
-                            ) : (
-                                <span className="text-text-secondary">Select truck...</span>
-                            )}
-                            <i
-                                className={`fas fa-chevron-${truckPickerOpen ? 'up' : 'down'} text-xs text-text-secondary`}
-                            />
-                        </button>
-                        {truckPickerOpen && (
-                            <div className="rounded-lg overflow-hidden shadow-md bg-bg-primary border border-border-light">
-                                <div className="p-2 border-b border-border-light">
-                                    <input
-                                        type="text"
-                                        value={truckSearch}
-                                        onChange={(e) => setTruckSearch(e.target.value)}
-                                        placeholder="Search truck #, operator, or plant..."
-                                        className="w-full rounded-md px-3 py-2 text-sm focus:outline-none bg-bg-secondary border border-border-light text-text-primary"
-                                        autoFocus
-                                    />
-                                </div>
-                                {regionalMixers.length === 0 ? (
-                                    <div className="px-4 py-5 text-center text-sm text-text-secondary">
-                                        <i className="fas fa-truck mb-2 text-lg block" />
-                                        No mixers found
-                                    </div>
-                                ) : (
-                                    <div className="max-h-48 overflow-y-auto border-border-light">
-                                        {regionalMixers.map((m) => {
-                                            const opName = operatorMap[m.assignedOperator] || null
-                                            const isSelected = truckNumber === m.truckNumber
-                                            return (
-                                                <button
-                                                    key={m.id}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setTruckNumber(m.truckNumber)
-                                                        setTruckPickerOpen(false)
-                                                        setTruckSearch('')
-                                                    }}
-                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors"
-                                                    style={isSelected ? { backgroundColor: `${accentColor}08` } : {}}
-                                                >
-                                                    <span
-                                                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-white flex-shrink-0"
-                                                        style={{
-                                                            backgroundColor: isSelected ? accentColor : '#94a3b8'
-                                                        }}
-                                                    >
-                                                        #{m.truckNumber}
-                                                    </span>
-                                                    <span className="flex-1 min-w-0">
-                                                        {opName ? (
-                                                            <span className="text-sm font-medium truncate block text-text-primary">
-                                                                {opName}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-sm italic text-text-secondary">
-                                                                Unassigned
-                                                            </span>
-                                                        )}
-                                                    </span>
-                                                    <span className="text-[10px] font-medium flex-shrink-0 text-text-secondary">
-                                                        {m.assignedPlant || '-'}
-                                                    </span>
-                                                    {isSelected && (
-                                                        <i
-                                                            className="fas fa-check text-xs flex-shrink-0"
-                                                            style={{ color: accentColor }}
-                                                        />
-                                                    )}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    <TruckPicker
+                        accentColor={accentColor}
+                        truckNumber={truckNumber}
+                        setTruckNumber={setTruckNumber}
+                        truckPickerOpen={truckPickerOpen}
+                        setTruckPickerOpen={setTruckPickerOpen}
+                        truckSearch={truckSearch}
+                        setTruckSearch={setTruckSearch}
+                        regionalMixers={regionalMixers}
+                        operatorMap={operatorMap}
+                    />
                     <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
                             Customer Name
@@ -486,92 +218,24 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             className="rounded-lg px-3 py-2.5 text-sm focus:outline-none bg-bg-primary border border-border-light text-text-primary"
                         />
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                            Writeup Attachment{' '}
-                            <span className="text-text-tertiary font-normal normal-case">(optional PDF)</span>
-                        </label>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".pdf,application/pdf"
-                            onChange={handleFileSelect}
-                            className="hidden"
-                        />
-                        {attachment ? (
-                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-bg-secondary border border-border-light">
-                                <i className="fas fa-file-pdf text-text-primary" />
-                                <span className="flex-1 min-w-0 text-sm font-medium text-text-primary truncate">
-                                    {attachment.name}
-                                </span>
-                                <span className="text-xs text-text-secondary shrink-0">
-                                    {(attachment.size / 1024 / 1024).toFixed(1)}MB
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setAttachment(null)
-                                        if (fileInputRef.current) fileInputRef.current.value = ''
-                                    }}
-                                    className="w-6 h-6 flex items-center justify-center rounded text-text-secondary hover:text-text-primary transition-colors shrink-0"
-                                >
-                                    <i className="fas fa-times text-xs" />
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center justify-center gap-2 px-3 py-3 rounded-lg border-2 border-dashed border-border-light text-sm text-text-secondary hover:border-border-dark transition-colors"
-                            >
-                                <i className="fas fa-cloud-upload-alt" />
-                                Upload PDF
-                            </button>
-                        )}
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                            Dump Location <span className="text-text-primary">*</span>
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {DUMP_LOCATIONS.map((loc) => (
-                                <button
-                                    key={loc}
-                                    type="button"
-                                    onClick={() => {
-                                        setDumpLocation(loc)
-                                        if (loc !== 'Other') setDumpLocationOther('')
-                                    }}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg border text-sm text-left transition-colors"
-                                    style={
-                                        dumpLocation === loc
-                                            ? {
-                                                  backgroundColor: `${accentColor}10`,
-                                                  borderColor: accentColor,
-                                                  color: accentColor
-                                              }
-                                            : { borderColor: 'var(--border-light)', color: 'var(--text-secondary)' }
-                                    }
-                                >
-                                    <div
-                                        className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                                        style={
-                                            dumpLocation === loc
-                                                ? { borderColor: accentColor }
-                                                : { borderColor: 'var(--border-light)' }
-                                        }
-                                    >
-                                        {dumpLocation === loc && (
-                                            <div
-                                                className="w-2 h-2 rounded-full"
-                                                style={{ backgroundColor: accentColor }}
-                                            />
-                                        )}
-                                    </div>
-                                    <span className="font-medium">{loc}</span>
-                                </button>
-                            ))}
-                        </div>
+                    <AttachmentField
+                        attachment={attachment}
+                        fileInputRef={fileInputRef}
+                        onFileSelect={handleFileSelect}
+                        onClear={handleClearAttachment}
+                    />
+                    <OptionRadioGroup
+                        label="Dump Location"
+                        required
+                        options={DUMP_LOCATIONS}
+                        value={dumpLocation}
+                        onChange={(loc) => {
+                            setDumpLocation(loc)
+                            if (loc !== 'Other') setDumpLocationOther('')
+                        }}
+                        accentColor={accentColor}
+                        columns={2}
+                    >
                         {dumpLocation === 'Other' && (
                             <input
                                 type="text"
@@ -582,50 +246,17 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 className="rounded-lg px-3 py-2.5 text-sm focus:outline-none mt-1 bg-bg-primary border border-border-light text-text-primary"
                             />
                         )}
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                            Reason
-                        </label>
-                        <div className="grid grid-cols-1 gap-2">
-                            {REASONS.map((r) => (
-                                <button
-                                    key={r}
-                                    type="button"
-                                    onClick={() => {
-                                        setReason(r)
-                                        setExplanation('')
-                                    }}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg border text-sm text-left transition-colors"
-                                    style={
-                                        reason === r
-                                            ? {
-                                                  backgroundColor: `${accentColor}10`,
-                                                  borderColor: accentColor,
-                                                  color: accentColor
-                                              }
-                                            : { borderColor: 'var(--border-light)', color: 'var(--text-secondary)' }
-                                    }
-                                >
-                                    <div
-                                        className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                                        style={
-                                            reason === r
-                                                ? { borderColor: accentColor }
-                                                : { borderColor: 'var(--border-light)' }
-                                        }
-                                    >
-                                        {reason === r && (
-                                            <div
-                                                className="w-2 h-2 rounded-full"
-                                                style={{ backgroundColor: accentColor }}
-                                            />
-                                        )}
-                                    </div>
-                                    <span className="font-medium">{r}</span>
-                                </button>
-                            ))}
-                        </div>
+                    </OptionRadioGroup>
+                    <OptionRadioGroup
+                        label="Reason"
+                        options={REASONS}
+                        value={reason}
+                        onChange={(r) => {
+                            setReason(r)
+                            setExplanation('')
+                        }}
+                        accentColor={accentColor}
+                    >
                         {reason && (
                             <textarea
                                 value={explanation}
@@ -636,46 +267,14 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 className="rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none mt-1 bg-bg-primary border border-border-light text-text-primary"
                             />
                         )}
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                            Reprimand
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <label
-                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
-                                style={{
-                                    backgroundColor: operatorReprimanded ? `${accentColor}12` : 'var(--bg-primary)',
-                                    border: `1px solid ${operatorReprimanded ? accentColor : 'var(--border-light)'}`
-                                }}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={operatorReprimanded}
-                                    onChange={(e) => setOperatorReprimanded(e.target.checked)}
-                                    className="w-4 h-4 shrink-0 cursor-pointer"
-                                    style={{ accentColor }}
-                                />
-                                <span className="text-sm text-text-primary">Operator reprimanded</span>
-                            </label>
-                            <label
-                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
-                                style={{
-                                    backgroundColor: plantManagerReprimanded ? `${accentColor}12` : 'var(--bg-primary)',
-                                    border: `1px solid ${plantManagerReprimanded ? accentColor : 'var(--border-light)'}`
-                                }}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={plantManagerReprimanded}
-                                    onChange={(e) => setPlantManagerReprimanded(e.target.checked)}
-                                    className="w-4 h-4 shrink-0 cursor-pointer"
-                                    style={{ accentColor }}
-                                />
-                                <span className="text-sm text-text-primary">Plant Manager reprimanded</span>
-                            </label>
-                        </div>
-                    </div>
+                    </OptionRadioGroup>
+                    <ReprimandToggles
+                        accentColor={accentColor}
+                        operatorReprimanded={operatorReprimanded}
+                        setOperatorReprimanded={setOperatorReprimanded}
+                        plantManagerReprimanded={plantManagerReprimanded}
+                        setPlantManagerReprimanded={setPlantManagerReprimanded}
+                    />
                 </div>
                 <div className="px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 sticky bottom-0 bg-bg-primary border-t border-border-light z-10 border-t border-border-light">
                     <button

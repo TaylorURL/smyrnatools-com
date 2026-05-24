@@ -1,4 +1,4 @@
-/* eslint-disable max-lines, react/forbid-dom-props */
+/* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
 import { exportEfficiencyReport } from '../../../../app/components/modules/export/reports/EfficiencyExport'

@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import CalculatorShell, { CalcField, CalcSection } from '../CalculatorShell'
