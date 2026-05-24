@@ -39,7 +39,7 @@ function PersonStatisticsView({ kind, title }) {
     const accentColor = preferences.accentColor || '#1e3a5f'
     const [activeSection, setActiveSection] = useState('overview')
     const [selectedPlant, setSelectedPlant] = useState('')
-    const periodState = useStatisticsPeriod('allTime')
+    const periodState = useStatisticsPeriod('month')
     const [items, setItems] = useState([])
     const [plants, setPlants] = useState([])
     const [regionPlantCodes, setRegionPlantCodes] = useState(null)

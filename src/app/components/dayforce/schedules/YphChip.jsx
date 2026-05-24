@@ -2,7 +2,7 @@
 import React from 'react'
 
 import { fmtFloat } from '../../../../utils/PlanStatisticsFormatUtility'
-import { YPH_TARGET } from './scheduleConstants'
+import { YPH_TARGET } from '../../../constants/dayforceScheduleConstants'
 
 /** Yards-per-hour chip — shows the per-shift YPH next to the punch row
  *  and tints the BACKGROUND red when the operator is below the

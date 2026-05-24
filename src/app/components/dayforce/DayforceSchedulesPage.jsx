@@ -2,17 +2,17 @@
 import React, { useMemo, useState } from 'react'
 
 import { fmtInt, fmtRange } from '../../../utils/PlanStatisticsFormatUtility'
+import { SCHEDULE_SORT_IDS } from '../../constants/dayforceScheduleConstants'
 import useDayforceOperatorFilters from '../../hooks/useDayforceOperatorFilters'
 import useDayforceOperatorMetrics from '../../hooks/useDayforceOperatorMetrics'
 import useOperatorYardageByDay from '../../hooks/useOperatorYardageByDay'
+import { useWeekTables } from '../../hooks/useWeekTables'
 import { EmptySection, RefreshingHint } from '../plan/tabs/statistics/PlanStatisticsPages'
 import { Panel, Stat, StatGroup } from '../ui/Panel'
 import { DayforceFilters } from './DayforceFilters'
 import { LoadingSkeleton } from './schedules/LoadingSkeleton'
-import { SCHEDULE_SORT_IDS } from './schedules/scheduleConstants'
 import { filterExceptionText } from './schedules/scheduleFlags'
 import { fmtHours } from './schedules/scheduleFormatters'
-import { useWeekTables } from './schedules/useWeekTables'
 import { WeekCarousel } from './schedules/WeekCarousel'
 
 /**

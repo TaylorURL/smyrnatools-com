@@ -1,8 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
+import { INPUT_CLS, INPUT_STYLE } from '../../../../app/constants/nrmcaConstants'
 import { NRMCAService } from '../../../../services/NRMCAService'
-import { INPUT_CLS, INPUT_STYLE } from './nrmcaConstants'
 import { Field, Modal } from './NRMCASharedUI'
 
 export function LogRenewalModal({ plant, onClose, onSaved }) {

@@ -2,8 +2,8 @@
 import React from 'react'
 
 import { fmtFloat } from '../../../../utils/PlanStatisticsFormatUtility'
+import { LONG_SHIFT_HOURS, YPH_TARGET } from '../../../constants/dayforceScheduleConstants'
 import { PunchDelta } from './PunchDelta'
-import { LONG_SHIFT_HOURS, YPH_TARGET } from './scheduleConstants'
 import { filterExceptionText, isPunchLate, isShiftLong, shiftHasRedFlag } from './scheduleFlags'
 import { fmtHours, fmtTime, fmtTimeCompact } from './scheduleFormatters'
 import { YphChip } from './YphChip'
@@ -11,7 +11,9 @@ import { YphChip } from './YphChip'
 /** Compact cell content for one shift inside the weekly grid. Tries to
  *  fit the three most useful signals: hours (big), scheduled in time
  *  (small), and exception / PTO markers (icon row). Hover surfaces the
- *  full punch detail. */
+ *  full punch detail. The tinted background lives on the parent `<td>`
+ *  (see `WeekTable`) so it always fills the row height; this component
+ *  just lays out the foreground content. */
 export function ShiftCell({ accent, shift, yardage }) {
     if (!shift) {
         return (
@@ -27,7 +29,7 @@ export function ShiftCell({ accent, shift, yardage }) {
         return (
             <div
                 className="flex flex-col items-start gap-0.5 px-2 py-1.5 h-full"
-                style={{ background: 'rgba(14, 165, 233, 0.08)', minHeight: 60 }}
+                style={{ minHeight: 60 }}
                 title={`PTO — ${fmtHours(shift.ptoHours || shift.scheduledHours)}`}
             >
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-text-primary">
@@ -61,7 +63,6 @@ export function ShiftCell({ accent, shift, yardage }) {
     // Numeric cells render in the theme text color regardless of flag state —
     // the inline alert icon next to the number carries the warning signal.
     const hoursColor = 'var(--text-primary)'
-    const cellBg = hasRedFlag ? 'rgba(220, 38, 38, 0.08)' : hasException ? 'rgba(217, 119, 6, 0.06)' : 'transparent'
     const iconColor = 'var(--text-primary)'
     /* Padded-shift signals (early in, late out) are intentionally
      * omitted — the dispatcher only acts on short-changed shifts and
@@ -82,11 +83,7 @@ export function ShiftCell({ accent, shift, yardage }) {
         .filter(Boolean)
         .join('\n')
     return (
-        <div
-            className="flex flex-col gap-0.5 px-2 py-1.5 h-full"
-            style={{ background: cellBg, minHeight: 60 }}
-            title={tooltip}
-        >
+        <div className="flex flex-col gap-0.5 px-2 py-1.5 h-full" style={{ minHeight: 60 }} title={tooltip}>
             <div className="flex items-center gap-1.5">
                 <span className="font-mono tabular-nums font-semibold text-[13px]" style={{ color: hoursColor }}>
                     {fmtHours(shift.actualHours)}
@@ -102,7 +99,6 @@ export function ShiftCell({ accent, shift, yardage }) {
             <div className="flex items-center gap-1 text-[10.5px] text-text-secondary font-mono tabular-nums">
                 <span>{fmtTimeCompact(shift.actualInPunchAt || shift.actualInAt)}</span>
                 <PunchDelta
-                    accent={accent}
                     actualIso={shift.actualInPunchAt || shift.actualInAt}
                     scheduledIso={shift.scheduledInAt}
                     kind="in"
@@ -110,7 +106,6 @@ export function ShiftCell({ accent, shift, yardage }) {
                 <span className="text-text-tertiary">→</span>
                 <span>{fmtTimeCompact(shift.actualOutPunchAt || shift.actualOutAt)}</span>
                 <PunchDelta
-                    accent={accent}
                     actualIso={shift.actualOutPunchAt || shift.actualOutAt}
                     scheduledIso={shift.scheduledOutAt}
                     kind="out"

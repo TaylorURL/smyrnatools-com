@@ -1,5 +1,11 @@
 import { Database } from '../../../../../../services/DatabaseService'
-import { ALLOWED_FILE_TYPE, DUMP_LOCATIONS, REASONS, STORAGE_BUCKET, STORAGE_PREFIX } from './constants'
+import {
+    ALLOWED_FILE_TYPE,
+    DUMP_LOCATIONS,
+    REASONS,
+    STORAGE_BUCKET,
+    STORAGE_PREFIX
+} from '../../../../../constants/lostLoadModalConstants'
 
 export function getCurrentWeekBounds() {
     const d = new Date()

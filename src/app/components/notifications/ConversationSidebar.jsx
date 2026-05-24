@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
 
 import DateUtility from '../../../utils/DateUtility'
-import UserUtility from '../../../utils/UserUtility'
 import { ATTACHMENT_ICONS, FILTER_PILLS, SECTION_LABEL_CLASS } from '../../constants/notificationsConstants'
+import UserAvatar from '../common/UserAvatar'
 
 function SidebarSection({ accentColor, badge, children, icon, label }) {
     return (
@@ -27,7 +27,6 @@ function SidebarSection({ accentColor, badge, children, icon, label }) {
 }
 
 function ConversationRow({ accentColor, active, conversation, displayName, muted = false, onSelect, pinned = false }) {
-    const initials = UserUtility.getInitials(displayName)
     const latest = conversation.lastMessage
     const hasUnread = conversation.unread > 0 && !muted
     /** Most recent attachment in the thread — surfaced as a chip on the row
@@ -51,13 +50,7 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
                 borderLeft: active ? `2px solid ${accentColor}` : '2px solid transparent'
             }}
         >
-            <div className="relative shrink-0">
-                <div
-                    className="force-white-text flex h-9 w-9 items-center justify-center rounded text-[12px] font-bold"
-                    style={{ background: accentColor }}
-                >
-                    {initials}
-                </div>
+            <UserAvatar name={displayName} userId={conversation.otherId} size={36} rounded="md">
                 {hasUnread && (
                     <span
                         className="force-white-text absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold font-mono tabular-nums bg-red-600"
@@ -66,7 +59,7 @@ function ConversationRow({ accentColor, active, conversation, displayName, muted
                         {conversation.unread}
                     </span>
                 )}
-            </div>
+            </UserAvatar>
             <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 min-w-0">

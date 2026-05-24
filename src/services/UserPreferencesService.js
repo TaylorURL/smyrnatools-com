@@ -35,6 +35,18 @@ class UserPreferencesService {
         if (!res.ok) throw new Error(json?.error || 'Failed to fetch user preferences')
         return json?.data ?? null
     }
+    /**
+     * Batch-fetches the public `accent_color` field for any set of users.
+     * Returns a `{ userId: '#hex' | null }` map. Used to colour avatars in
+     * presence overlays, online lists, and conversation rows with each
+     * user's own brand colour.
+     */
+    static async getAccentColors(userIds) {
+        if (!Array.isArray(userIds) || userIds.length === 0) return {}
+        const { res, json } = await APIUtility.post('/user-preferences-service/get-accents', { userIds })
+        if (!res.ok) throw new Error(json?.error || 'Failed to fetch accent colors')
+        return json?.data ?? {}
+    }
     /** Persists the user's mixer view filter configuration. */
     static async saveMixerFilters(userId, filters) {
         if (!userId) throw new Error('User ID is required')

@@ -1,9 +1,9 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import { FIELD_STYLE, FIELD_TYPES, SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceCreateConstants'
 import { getFieldTypeIcon, getFieldTypeName } from '../../../../utils/MaintenanceUtility'
 import { Card, CardHeader, ErrorText, FieldLabel, IconButton, SubtleButton } from './atoms'
-import { FIELD_STYLE, FIELD_TYPES, SECTION_LABEL_CLASS } from './constants'
 
 function ChecklistItems({
     errors,

@@ -1,4 +1,4 @@
-import { GM_REQUIRED_FIELD_SUFFIXES } from './submitConstants'
+import { GM_REQUIRED_FIELD_SUFFIXES } from '../../../../app/constants/reportsSubmitConstants'
 
 export const validateSafetyManager = (form) => {
     const issues = Array.isArray(form.issues) ? form.issues : []

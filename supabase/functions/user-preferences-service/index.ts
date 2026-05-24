@@ -235,6 +235,27 @@ Deno.serve(async (req) => {
                 }
                 return jsonResponse({ data: { muted: nextMuted, otherUserId, pinned: nextPinned } }, headers)
             }
+            case 'get-accents': {
+                // Batch lookup of the public `accent_color` field for any
+                // authenticated user. Used to render other users' avatars
+                // (presence overlays, online list, conversation rows, etc.)
+                // with their own brand color. No other preference fields
+                // are exposed across users — only the colour.
+                const body = await parseBody(req)
+                const auth = await requireAuthenticated(supabase, req, headers, body)
+                if (auth instanceof Response) return auth
+                const rawIds = Array.isArray(body?.userIds) ? body.userIds : []
+                const userIds = [...new Set(rawIds.filter((id: unknown) => typeof id === 'string' && id))]
+                if (userIds.length === 0) return jsonResponse({ data: {} }, headers)
+                const { data, error } = await supabase
+                    .from(PREFERENCES_TABLE)
+                    .select('user_id, accent_color')
+                    .in('user_id', userIds)
+                if (error) return errorResponse('Operation failed', headers, 400)
+                const map: Record<string, string | null> = {}
+                for (const row of data ?? []) map[row.user_id] = row.accent_color ?? null
+                return jsonResponse({ data: map }, headers)
+            }
             case 'save-all': {
                 const body = await parseBody(req)
                 const auth = await requireAuthenticated(supabase, req, headers, body)

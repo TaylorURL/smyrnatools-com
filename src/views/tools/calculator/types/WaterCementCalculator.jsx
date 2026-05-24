@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 
+import { WATER_LBS_PER_GALLON } from '../../../../app/constants/calculatorConstants'
 import CalculatorShell, { CalcField, CalcSection } from '../CalculatorShell'
-import { WATER_LBS_PER_GALLON } from './calculatorConstants'
 
 /** Maps W/C ratio quality tiers to CalculatorShell status kinds. */
 const RATIO_STATUS = (ratio) => {

@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react'
 
 import { buildOrderCoveragePayload, getScheduleRowDelay } from '../../../../../utils/PlanScheduleUtility'
+import { usePlanScheduleRowContextMenu } from '../../../../hooks/usePlanScheduleRowContextMenu'
 import OrderInfoModal from '../../../schedule/OrderInfoModal'
 import OrderTicketsModal from '../../../schedule/OrderTicketsModal'
 import PlanScheduleOrderRow from './PlanScheduleOrderRow'
@@ -16,7 +17,6 @@ import {
 } from './PlanScheduleSyntheticRows'
 import PlanScheduleRowContextMenu from './table/PlanScheduleRowContextMenu'
 import { buildTableRows, groupClockInRows } from './table/PlanScheduleTableRows'
-import { usePlanScheduleRowContextMenu } from './table/usePlanScheduleRowContextMenu'
 
 /** Canonical column metadata. Each entry pairs a stable `key` with the
  *  header label that's already in use. The `key` flows through into

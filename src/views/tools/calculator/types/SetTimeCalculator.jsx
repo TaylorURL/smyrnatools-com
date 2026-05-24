@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { WATER_LBS_PER_GALLON } from '../../../../app/constants/calculatorConstants'
 import CalculatorShell, { CalcField, CalcSection } from '../CalculatorShell'
-import { WATER_LBS_PER_GALLON } from './calculatorConstants'
 
 /** Maps the risk level emitted by the calculator to a `CalculatorShell` status. */
 const RISK_TO_STATUS = {

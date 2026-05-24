@@ -1,13 +1,13 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
+import { CARD_STYLE } from '../../../../app/constants/maintenanceFormConstants'
+import { useSubmissionHistory } from '../../../../app/hooks/useSubmissionHistory'
 import MaintenanceService from '../../../../services/MaintenanceService'
 import { formatMaintenanceDateShort } from '../../../../utils/MaintenanceUtility'
 import { CardHeader, PageHeader, PdfEmbed } from './atoms'
-import { CARD_STYLE } from './constants'
 import { statusForSubmission } from './helpers'
 import { SubmissionHistoryCard } from './SubmissionHistoryCard'
-import { useSubmissionHistory } from './useSubmissionHistory'
 
 export function ViewOnlyMode({ accentColor, formObj, item, onBack, submission }) {
     const status = statusForSubmission(submission)

@@ -1,5 +1,6 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import {
     formatPeriodLabel,
@@ -8,6 +9,49 @@ import {
     shiftAnchor
 } from '../../../../../utils/PlanStatisticsUtility'
 import { getTodayDate } from '../../../../../utils/PlanUtility'
+
+/** Compute viewport-anchored coordinates for a dropdown that should sit
+ *  flush-right under its trigger button. Returns `{ top, right }` ready
+ *  to spread into a `position: fixed` style. Recomputes on scroll/resize
+ *  so the menu tracks the trigger when the user scrolls a horizontally
+ *  overflowing parent (the header bar). */
+function useFixedMenuPosition(triggerRef, open) {
+    const [pos, setPos] = useState(null)
+    useLayoutEffect(() => {
+        if (!open || !triggerRef.current) return undefined
+        const recompute = () => {
+            const el = triggerRef.current
+            if (!el) return
+            const rect = el.getBoundingClientRect()
+            setPos({ right: Math.max(8, window.innerWidth - rect.right), top: rect.bottom + 4 })
+        }
+        recompute()
+        window.addEventListener('resize', recompute)
+        window.addEventListener('scroll', recompute, true)
+        return () => {
+            window.removeEventListener('resize', recompute)
+            window.removeEventListener('scroll', recompute, true)
+        }
+    }, [open, triggerRef])
+    return pos
+}
+
+/** Closes the menu when the user clicks outside both the trigger and the
+ *  portaled menu. Needed because the menu lives outside the React tree's
+ *  natural click bubbling for "click anywhere to dismiss" intuition. */
+function useClickOutsideToClose(open, setOpen, triggerRef, menuRef) {
+    useEffect(() => {
+        if (!open) return undefined
+        const handler = (e) => {
+            const t = e.target
+            if (triggerRef.current?.contains(t)) return
+            if (menuRef.current?.contains(t)) return
+            setOpen(false)
+        }
+        document.addEventListener('mousedown', handler)
+        return () => document.removeEventListener('mousedown', handler)
+    }, [open, setOpen, triggerRef, menuRef])
+}
 
 /** Period selector buttons (Day/Week/Month/Quarter/Year/Custom). */
 function PeriodSelector({ accentColor, period, setPeriod }) {
@@ -96,9 +140,14 @@ function PeriodNavigator({
 /** Plant-filter dropdown — scopes every metric to a single plant or all. */
 function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, selectedPlant, setSelectedPlant }) {
     const [open, setOpen] = useState(false)
+    const triggerRef = useRef(null)
+    const menuRef = useRef(null)
+    const pos = useFixedMenuPosition(triggerRef, open)
+    useClickOutsideToClose(open, setOpen, triggerRef, menuRef)
     return (
-        <div className="relative ml-auto">
+        <div className="relative ml-auto shrink-0">
             <button
+                ref={triggerRef}
                 onClick={() => setOpen((s) => !s)}
                 className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
                 style={{
@@ -115,45 +164,52 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                 </span>
                 <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
             </button>
-            {open && (
-                <div className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light">
-                    <button
-                        onClick={() => {
-                            setSelectedPlant(null)
-                            setOpen(false)
-                        }}
-                        className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
-                        style={{
-                            backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
-                            color: 'var(--text-primary)'
-                        }}
+            {open &&
+                pos &&
+                createPortal(
+                    <div
+                        ref={menuRef}
+                        className="fixed rounded-lg overflow-hidden shadow-lg z-50 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
+                        style={{ right: pos.right, top: pos.top }}
                     >
-                        <span>All plants</span>
-                        {!selectedPlant && <i className="fas fa-check text-[10px]" />}
-                    </button>
-                    {availablePlants.length === 0 ? (
-                        <div className="px-3 py-2 text-[11px] text-text-tertiary">No plants in this range</div>
-                    ) : (
-                        availablePlants.map(({ code, label }) => (
-                            <button
-                                key={code}
-                                onClick={() => {
-                                    setSelectedPlant(code)
-                                    setOpen(false)
-                                }}
-                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
-                                style={{
-                                    backgroundColor: selectedPlant === code ? `${accentColor}15` : 'transparent',
-                                    color: 'var(--text-primary)'
-                                }}
-                            >
-                                <span className="truncate">{label}</span>
-                                {selectedPlant === code && <i className="fas fa-check text-[10px]" />}
-                            </button>
-                        ))
-                    )}
-                </div>
-            )}
+                        <button
+                            onClick={() => {
+                                setSelectedPlant(null)
+                                setOpen(false)
+                            }}
+                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                            style={{
+                                backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
+                                color: 'var(--text-primary)'
+                            }}
+                        >
+                            <span>All plants</span>
+                            {!selectedPlant && <i className="fas fa-check text-[10px]" />}
+                        </button>
+                        {availablePlants.length === 0 ? (
+                            <div className="px-3 py-2 text-[11px] text-text-tertiary">No plants in this range</div>
+                        ) : (
+                            availablePlants.map(({ code, label }) => (
+                                <button
+                                    key={code}
+                                    onClick={() => {
+                                        setSelectedPlant(code)
+                                        setOpen(false)
+                                    }}
+                                    className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                                    style={{
+                                        backgroundColor: selectedPlant === code ? `${accentColor}15` : 'transparent',
+                                        color: 'var(--text-primary)'
+                                    }}
+                                >
+                                    <span className="truncate">{label}</span>
+                                    {selectedPlant === code && <i className="fas fa-check text-[10px]" />}
+                                </button>
+                            ))
+                        )}
+                    </div>,
+                    document.body
+                )}
         </div>
     )
 }
@@ -161,9 +217,14 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
 /** Compare-window dropdown — Off / Previous / Last year. */
 function ComparisonMenu({ accentColor, comparison, setComparison }) {
     const [open, setOpen] = useState(false)
+    const triggerRef = useRef(null)
+    const menuRef = useRef(null)
+    const pos = useFixedMenuPosition(triggerRef, open)
+    useClickOutsideToClose(open, setOpen, triggerRef, menuRef)
     return (
-        <div className="relative">
+        <div className="relative shrink-0">
             <button
+                ref={triggerRef}
                 onClick={() => setOpen((s) => !s)}
                 className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2"
                 style={{
@@ -180,27 +241,34 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
                 </span>
                 <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
             </button>
-            {open && (
-                <div className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[160px] bg-bg-primary border border-border-light">
-                    {PLAN_STATS_COMPARISONS.map(({ id, label }) => (
-                        <button
-                            key={id}
-                            onClick={() => {
-                                setComparison(id)
-                                setOpen(false)
-                            }}
-                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
-                            style={{
-                                backgroundColor: comparison === id ? `${accentColor}15` : 'transparent',
-                                color: 'var(--text-primary)'
-                            }}
-                        >
-                            <span>{label}</span>
-                            {comparison === id && <i className="fas fa-check text-[10px]" />}
-                        </button>
-                    ))}
-                </div>
-            )}
+            {open &&
+                pos &&
+                createPortal(
+                    <div
+                        ref={menuRef}
+                        className="fixed rounded-lg overflow-hidden shadow-lg z-50 min-w-[160px] bg-bg-primary border border-border-light"
+                        style={{ right: pos.right, top: pos.top }}
+                    >
+                        {PLAN_STATS_COMPARISONS.map(({ id, label }) => (
+                            <button
+                                key={id}
+                                onClick={() => {
+                                    setComparison(id)
+                                    setOpen(false)
+                                }}
+                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between"
+                                style={{
+                                    backgroundColor: comparison === id ? `${accentColor}15` : 'transparent',
+                                    color: 'var(--text-primary)'
+                                }}
+                            >
+                                <span>{label}</span>
+                                {comparison === id && <i className="fas fa-check text-[10px]" />}
+                            </button>
+                        ))}
+                    </div>,
+                    document.body
+                )}
         </div>
     )
 }
@@ -238,7 +306,7 @@ export function PlanStatisticsControls({
     )
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-nowrap items-center gap-2">
             <PeriodSelector accentColor={accentColor} period={period} setPeriod={setPeriod} />
             <PeriodNavigator
                 accentColor={accentColor}

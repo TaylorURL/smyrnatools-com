@@ -1,5 +1,85 @@
 # Changelog
 
+## [2026.21.35] - 2026-05-23
+
+- Plant Efficiency Report submit form replaced with a card-based,
+  dummy-proof workflow. Each operator is a stacked card (no more
+  carousel) with five field cells laid out in one row at lg breakpoint:
+  Start Time, 1st Load, EOD In Yard, Punch Out, Total Loads. Status pill
+  per card (Ready / Needs attention / Manual override), summary chips at
+  the top to filter, and per-field "Edit" / "Reset" toggles let users
+  override auto-filled values when Dayforce or dispatch tickets are
+  wrong or missing.
+- Start Time and Punch Out now auto-fill from Dayforce shift punches
+  via the new `useEfficiencyDayforcePunches` hook. Same canonical-name
+  matching as `useDayforceOperatorMetrics` so both surfaces agree on
+  who punched when. Multiple same-day punches collapse to earliest-in /
+  latest-out. 1st Load and Total Loads continue to come from dispatch
+  tickets via the existing aggregates hook; both pipelines now respect
+  the per-row `_overrides` flag and preserve manually-typed values when
+  the auto source has nothing for an operator.
+- New `useAutosaveDraft` hook persists the draft on a 1.2 s debounce
+  whenever rows change so progress is never lost on refresh. Runs
+  silently — no header chip — and updates the form snapshot so the
+  existing "unsaved changes" detection still works.
+- `WeeklyEfficiencyReport` detail table swapped its colored-text columns
+  (Loads, Hours, Punch In → 1st, Washout → Punch) for a `WarnPill`
+  component: white-text-on-solid-red/amber pill behind out-of-threshold
+  values, plain text otherwise. Same hex tokens as `operatorStatusBadge`
+  so the visual vocabulary stays consistent across the app.
+- `PlanHeader` gained a date-control slot. On the Statistics tab the
+  controls bar (Day / Week / Month / Quarter / Year / Custom + range
+  picker + Today + plant filter + Compare) portals into the slot,
+  replacing the disabled "Mon · Tomorrow" stepper. Call List and
+  Settings tabs render no date control at all — neither operates on a
+  plan date.
+- Asset Statistics, People Statistics, and Ops > Statistics now default
+  the time range to one calendar month instead of `'week'` /
+  `'allTime'`. Per-session state still persists across tab switches.
+- `PlantFilterMenu` and `ComparisonMenu` dropdowns now portal their
+  panels to `document.body` with `position: fixed`. The header's
+  `overflow-x-auto` was implicitly clipping vertical overflow too; the
+  portal escape lets the menus render at full height. Added a
+  `useFixedMenuPosition` hook that tracks the trigger on scroll/resize
+  and a `useClickOutsideToClose` hook for outside-dismiss intuition.
+- Auto-filled input text in the new Plant Efficiency cells now reads in
+  `var(--text-primary)` instead of the browser's user-agent grey.
+  Forced via `WebkitTextFillColor` + `opacity: 1` so disabled values
+  look identical to manually-typed ones — the badge below the input is
+  the cue for "auto vs manual," not a washed-out value.
+- Manual Review & Send surface retired. Deleted
+  `PlanReviewSendModal.jsx`, the `ReviewSendButton` and Chicago-clock
+  schedule helpers from `PlanActionButtons.jsx`, the `onReviewSend`
+  prop chain through `PlanHeader` and `OperationsView`, and the
+  client-side `DailyPlanEmailService.js` (its only consumer was the
+  modal). The automated 4 PM `daily-plan-email` cron pipeline is
+  untouched.
+- Bulk reorganisation under `src/app/`: ~12 constants files moved from
+  feature folders into `src/app/constants/` (calculator,
+  dayforceSchedule, issueModal, listDetail, lostLoadModal,
+  maintenanceCreate, maintenanceForm, nrmca, operatorDetail, recap,
+  reportsSubmit, topSection), and ~30 feature-local hooks promoted into
+  `src/app/hooks/` (flow-map autoplay / route / marker hooks,
+  maintenance form loaders, operator + manager + trailer + equipment
+  detail data hooks, lost-load form hooks, recap derivation,
+  top-section reveal / height hooks, week-table derivation,
+  schedule-row context-menu hook). All consumers updated; every
+  default + named export preserved.
+- New shared `UserAvatar` component + `useUserAccent` hook +
+  `UserAccentService` give a single avatar primitive backed by each
+  user's saved accent colour. Replaces the bespoke avatar code that
+  had drifted across notifications, online-users, send-message,
+  navigation, profile, comment / issue / recap modals, the plan
+  presence overlay, and the call-list activity feed. The
+  `user-preferences-service` edge function now persists the accent
+  colour alongside the rest of the prefs.
+- Five operator-role PDFs removed from `documentation/`
+  (DispatchManagerGuide, DispatcherGuide, DistrictManagerGuide,
+  GeneralManagerGuide, PlantManagerGuide) — content has moved to the
+  in-app help surfaces.
+- README + `public/release.json` version anchors synced to the new
+  CalVer. `vitest run` still passes (4 test files, 123 tests).
+
 ## [2026.21.34] - 2026-05-23
 
 - `npm run lint` and CI are now actually enforcing what they claim to.

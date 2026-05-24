@@ -1,10 +1,10 @@
 import React from 'react'
 
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
+import { useFormLoader } from '../../../app/hooks/useFormLoader'
 import { LoadingShell } from './form-view/atoms'
 import { ReviewMode } from './form-view/ReviewMode'
 import { SubmitMode } from './form-view/SubmitMode'
-import { useFormLoader } from './form-view/useFormLoader'
 import { ViewOnlyMode } from './form-view/ViewOnlyMode'
 
 export default function MaintenanceFormView({ item, onBack, onSubmitted }) {

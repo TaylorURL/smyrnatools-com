@@ -2,14 +2,19 @@
 import React, { useRef, useState } from 'react'
 
 import { usePreferences } from '../../../../../app/context/PreferencesContext'
+import {
+    ALLOWED_FILE_TYPE,
+    DUMP_LOCATIONS,
+    MAX_FILE_SIZE_MB,
+    REASONS
+} from '../../../../constants/lostLoadModalConstants'
+import { useLostLoadFormData } from '../../../../hooks/useLostLoadFormData'
+import { useLostLoadSubmit } from '../../../../hooks/useLostLoadSubmit'
 import AttachmentField from './modal/AttachmentField'
-import { ALLOWED_FILE_TYPE, DUMP_LOCATIONS, MAX_FILE_SIZE_MB, REASONS } from './modal/constants'
 import { parseInitialDumpLocation, parseInitialReason } from './modal/helpers'
 import OptionRadioGroup from './modal/OptionRadioGroup'
 import ReprimandToggles from './modal/ReprimandToggles'
 import TruckPicker from './modal/TruckPicker'
-import { useLostLoadFormData } from './modal/useLostLoadFormData'
-import { useLostLoadSubmit } from './modal/useLostLoadSubmit'
 
 /** Modal form for submitting or editing a lost load report. Plant is
  *  auto-populated from the user's assigned plant. When `initialReport` is

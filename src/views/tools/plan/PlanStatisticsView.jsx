@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { StatisticsSkeleton } from '../../../app/components/common/PlanSkeletons'
 import TabFadeIn from '../../../app/components/common/TabFadeIn'
@@ -43,6 +44,7 @@ import { useServiceQualityStats } from '../../../app/hooks/useServiceQualityStat
  */
 function PlanStatisticsView({
     accentColor,
+    headerSlotEl,
     liveProduction,
     mixerCountsByPlant,
     planColocationMap,
@@ -354,29 +356,44 @@ function PlanStatisticsView({
      * the user never sees an empty controls bar and KPI strip flash before
      * data is in. Sub-pages still own their own `loading` handling for
      * background re-fetches once the first load lands. */
-    if (loading && currentDays.length === 0) return <StatisticsSkeleton />
+    /* The controls bar lives in the PlanHeader (replacing the global
+     * single-day stepper that's meaningless here). Portal it into the
+     * slot the header exposes via `headerSlotEl`; falls back to inline
+     * rendering on the off-chance the slot hasn't mounted yet so the
+     * controls are never invisible. */
+    const controlsNode = (
+        <PlanStatisticsControls
+            accentColor={accentColor}
+            anchor={anchor}
+            availablePlantCodes={availablePlantCodes}
+            comparison={comparison}
+            customEnd={customEnd}
+            customStart={customStart}
+            period={period}
+            plantNameByCode={plantNameByCode}
+            range={range}
+            selectedPlant={selectedPlant}
+            setAnchor={setAnchor}
+            setComparison={setComparison}
+            setCustomEnd={setCustomEnd}
+            setCustomStart={setCustomStart}
+            setPeriod={setPeriod}
+            setSelectedPlant={setSelectedPlant}
+        />
+    )
+
+    if (loading && currentDays.length === 0) {
+        return (
+            <>
+                {headerSlotEl && createPortal(controlsNode, headerSlotEl)}
+                <StatisticsSkeleton />
+            </>
+        )
+    }
     return (
         <div className="flex-1 min-h-0 overflow-y-auto animate-fade-in-fast" data-content-scroll>
+            {headerSlotEl && createPortal(controlsNode, headerSlotEl)}
             <div className="px-3 sm:px-4 md:px-6 py-4 flex flex-col gap-4">
-                <PlanStatisticsControls
-                    accentColor={accentColor}
-                    anchor={anchor}
-                    availablePlantCodes={availablePlantCodes}
-                    comparison={comparison}
-                    customEnd={customEnd}
-                    customStart={customStart}
-                    period={period}
-                    plantNameByCode={plantNameByCode}
-                    range={range}
-                    selectedPlant={selectedPlant}
-                    setAnchor={setAnchor}
-                    setComparison={setComparison}
-                    setCustomEnd={setCustomEnd}
-                    setCustomStart={setCustomStart}
-                    setPeriod={setPeriod}
-                    setSelectedPlant={setSelectedPlant}
-                />
-
                 {/* KPI strip stays visible across sections — quick situational
                     awareness even when the user has drilled into a sub-view. */}
                 <PlanStatisticsKpiStrip

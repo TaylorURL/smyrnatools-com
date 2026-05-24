@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { BADGE_PILL_TINTS } from './topSectionConstants'
+import { BADGE_PILL_TINTS } from '../../../constants/topSectionConstants'
 
 /** Inline badge — parses "X Label · Y Label" into a row of compact pills.
  *  Text colour flips to white in dark / grayed-out modes and to black in

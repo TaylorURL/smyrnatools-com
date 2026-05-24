@@ -3,9 +3,10 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import MessageService from '../../../../services/MessageService'
 import { UserService } from '../../../../services/UserService'
+import { PILL_BASE, SEVERITY_PALETTE } from '../../../constants/issueModalConstants'
 import { usePreferences } from '../../../context/PreferencesContext'
 import { SkeletonStack } from '../../common/Skeleton'
-import { PILL_BASE, SEVERITY_PALETTE } from './issueModalConstants'
+import UserAvatar from '../../common/UserAvatar'
 import { getInitials } from './issueModalHelpers'
 import { TeamMemberSkeleton } from './IssueModalSkeletons'
 
@@ -149,8 +150,7 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                             {itemNumber || 'N/A'}
                                         </span>
                                         <span
-                                            className={PILL_BASE + ' ml-auto text-text-primary'}
-                                            style={{ background: sevConfig.bg }}
+                                            className={`${PILL_BASE} ${sevConfig.badgeClass} ml-auto text-text-primary`}
                                         >
                                             <i className={`fas ${sevConfig.icon} text-[8px]`} />
                                             {issue.severity}
@@ -188,12 +188,12 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                         >
                                             {selectedManager ? (
                                                 <>
-                                                    <div
-                                                        className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold text-white"
-                                                        style={{ background: accent }}
-                                                    >
-                                                        {getInitials(selectedManager)}
-                                                    </div>
+                                                    <UserAvatar
+                                                        userId={selectedManager.id}
+                                                        initials={getInitials(selectedManager)}
+                                                        size="md"
+                                                        rounded="md"
+                                                    />
                                                     <div className="flex-1 min-w-0">
                                                         <div className="font-semibold truncate">
                                                             {selectedManager.firstName} {selectedManager.lastName}
@@ -256,19 +256,12 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                                                                         e.currentTarget.style.background = 'transparent'
                                                                 }}
                                                             >
-                                                                <div
-                                                                    className="w-6 h-6 rounded flex items-center justify-center shrink-0 text-[9px] font-bold"
-                                                                    style={{
-                                                                        background: isSelected
-                                                                            ? accent
-                                                                            : 'var(--bg-tertiary)',
-                                                                        color: isSelected
-                                                                            ? '#fff'
-                                                                            : 'var(--text-secondary)'
-                                                                    }}
-                                                                >
-                                                                    {getInitials(mgr)}
-                                                                </div>
+                                                                <UserAvatar
+                                                                    userId={mgr.id}
+                                                                    initials={getInitials(mgr)}
+                                                                    size="sm"
+                                                                    rounded="md"
+                                                                />
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="text-[12px] font-semibold truncate text-text-primary">
                                                                         {mgr.firstName} {mgr.lastName}

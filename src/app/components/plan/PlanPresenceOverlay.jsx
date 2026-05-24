@@ -1,6 +1,9 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
+import { useUserAccents } from '../../hooks/useUserAccent'
+import UserAvatar from '../common/UserAvatar'
+
 /**
  * Floating avatar-chip row that shows every dispatcher currently viewing
  * the same `plan_date` on the Planner tab. Mounted absolutely in the
@@ -9,49 +12,23 @@ import React, { useMemo, useState } from 'react'
  * for the full name, role, and editing state.
  *
  * Self is included with a "(You)" label so the dispatcher can confirm at
- * a glance that their presence is being broadcast.
+ * a glance that their presence is being broadcast. Each chip uses that
+ * dispatcher's own accent colour so they're identifiable at a glance.
  */
 
 const MAX_VISIBLE = 6
 
-function initials(name) {
-    if (!name) return '??'
-    const parts = String(name).trim().split(/\s+/).filter(Boolean)
-    if (parts.length === 0) return '??'
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-}
-
-/** Deterministic HSL color derived from the user id so each user keeps
- *  the same chip color across sessions and across clients. */
-function colorForUser(id) {
-    const str = String(id || '')
-    let hash = 0
-    for (let i = 0; i < str.length; i++) {
-        hash = (hash * 31 + str.charCodeAt(i)) | 0
-    }
-    const hue = Math.abs(hash) % 360
-    return `hsl(${hue}, 65%, 42%)`
-}
-
-function PresenceChip({ user, size = 28, ringWhenEditing = true }) {
-    const bg = colorForUser(user.userId)
+function PresenceChip({ accentColor, ringWhenEditing = true, size = 28, user }) {
     const ringClass = ringWhenEditing && user.editing ? 'ring-2 ring-red-500' : 'ring-1 ring-white/40'
-    const dimensionStyle = { height: `${size}px`, minWidth: `${size}px`, width: `${size}px` }
-    const fontStyle = { fontSize: `${Math.round(size * 0.4)}px` }
     return (
-        <div
-            className={`relative flex items-center justify-center rounded-full font-bold text-white shadow-md ${ringClass}`}
-            style={{ background: bg, ...dimensionStyle, ...fontStyle }}
-        >
-            <span>{initials(user.name)}</span>
+        <UserAvatar accentColor={accentColor} className={`shadow-md ${ringClass}`} name={user.name} size={size}>
             {user.editing && (
                 <span
                     className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-bg-primary bg-red-500"
                     title="Editing"
                 />
             )}
-        </div>
+        </UserAvatar>
     )
 }
 
@@ -81,6 +58,8 @@ export function PlanPresenceOverlay({ users }) {
         return users.slice(0, MAX_VISIBLE)
     }, [users, expanded])
     const hidden = (users?.length || 0) - visible.length
+    const userIds = useMemo(() => (users || []).map((u) => u.userId), [users])
+    const accentByUserId = useUserAccents(userIds)
 
     if (!users || users.length === 0) return null
 
@@ -93,7 +72,7 @@ export function PlanPresenceOverlay({ users }) {
             <i className="fas fa-user-group text-[10.5px] text-text-tertiary" aria-hidden="true" />
             {visible.map((u) => (
                 <div key={u.userId} className="group relative">
-                    <PresenceChip user={u} />
+                    <PresenceChip user={u} accentColor={accentByUserId[u.userId]} />
                     <PresenceTooltip user={u} />
                 </div>
             ))}

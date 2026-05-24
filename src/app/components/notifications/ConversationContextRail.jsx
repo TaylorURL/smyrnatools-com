@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
 
 import DateUtility from '../../../utils/DateUtility'
-import UserUtility from '../../../utils/UserUtility'
 import { ATTACHMENT_ICONS, resolveAttachmentView, SECTION_LABEL_CLASS } from '../../constants/notificationsConstants'
+import UserAvatar from '../common/UserAvatar'
 
 /** Section wrapper inside the context rail — title + count + content. */
 function ContextSection({ children, count, icon, label }) {
@@ -81,7 +81,6 @@ export default function ConversationContextRail({
     onTogglePin,
     resolvedUserId
 }) {
-    const initials = UserUtility.getInitials(displayName)
     /** Memo'd to keep `[]` referentially stable for the derivations below. */
     const messages = useMemo(() => conversation.messages || [], [conversation.messages])
 
@@ -123,12 +122,13 @@ export default function ConversationContextRail({
             <div className="flex flex-col gap-3.5 p-3.5">
                 {/* Profile card */}
                 <div className="flex flex-col items-center gap-2 rounded p-4 text-center bg-bg-secondary border border-border-light">
-                    <div
-                        className="flex h-14 w-14 items-center justify-center rounded text-[18px] font-bold text-white"
-                        style={{ background: accentColor }}
-                    >
-                        {initials}
-                    </div>
+                    <UserAvatar
+                        name={displayName}
+                        userId={conversation.otherId}
+                        size={56}
+                        rounded="md"
+                        className="text-[18px]"
+                    />
                     <div className="min-w-0">
                         <div className="text-[13.5px] font-bold truncate text-text-primary">{displayName}</div>
                         <div className="text-[10.5px] mt-0.5 truncate text-text-tertiary">

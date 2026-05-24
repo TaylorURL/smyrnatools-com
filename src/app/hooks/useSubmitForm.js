@@ -42,19 +42,18 @@ export function useSubmitForm({ report, initialData, user, forcedReportDate, pla
     const handleChange = useCallback(
         (e, name, idx, colName) => {
             if (report.name === 'plant_production' && name === 'rows') {
-                // `name` + `truck_number` are auto-filled from the operator/mixer
-                // assignment; `first_load` + `loads` are auto-filled from live
-                // dispatch tickets via `useEfficiencyTicketAggregates`. All
-                // four are intentionally unchangeable by the operator so the
-                // report reflects the system-of-record numbers, not typed
-                // estimates. Editable fields remain: start_time, eod_in_yard,
-                // punch_out, comments.
+                // `name` + `truck_number` are auto-filled from the operator
+                // and mixer assignment — never editable by the user. The
+                // four auto-fillable timing/load fields are gated by the
+                // per-row `_overrides` flags so the user CAN type into them
+                // after explicitly clicking "Edit" on a field that came
+                // from Dayforce or dispatch tickets.
                 if (colName === 'name' || colName === 'truck_number') return
-                if (colName === 'first_load' || colName === 'loads') return
                 setForm((f) => {
-                    const updatedRows = [...(f.rows || [])]
-                    updatedRows[idx][colName] = e.target.value
-                    return { ...f, rows: updatedRows }
+                    const rows = [...(f.rows || [])]
+                    if (!rows[idx]) return f
+                    rows[idx] = { ...rows[idx], [colName]: e.target.value }
+                    return { ...f, rows }
                 })
                 return
             }
@@ -67,6 +66,33 @@ export function useSubmitForm({ report, initialData, user, forcedReportDate, pla
         },
         [report.name]
     )
+    /** Direct row-field setter that bypasses the type=event-target gating
+     *  of `handleChange`. Used by the redesigned Plant Efficiency form so
+     *  field cells can write values from their own state without faking
+     *  a synthetic event. */
+    const setRowField = useCallback((idx, field, value) => {
+        setForm((f) => {
+            const rows = [...(f.rows || [])]
+            if (!rows[idx]) return f
+            rows[idx] = { ...rows[idx], [field]: value }
+            return { ...f, rows }
+        })
+    }, [])
+    /** Flip the per-field override flag on a row. When `override` is true
+     *  the auto-fill effects skip the field and the UI treats it as
+     *  manually edited. Optionally updates the field's value in the same
+     *  transaction so toggling override+value doesn't run as two renders. */
+    const setRowOverride = useCallback((idx, field, override, valueWhenOverride) => {
+        setForm((f) => {
+            const rows = [...(f.rows || [])]
+            if (!rows[idx]) return f
+            const overrides = { ...(rows[idx]._overrides || {}), [field]: !!override }
+            const next = { ...rows[idx], _overrides: overrides }
+            if (valueWhenOverride !== undefined) next[field] = valueWhenOverride
+            rows[idx] = next
+            return { ...f, rows }
+        })
+    }, [])
     useEffect(() => {
         if (initialData) {
             if (initialData.data) {
@@ -131,6 +157,7 @@ export function useSubmitForm({ report, initialData, user, forcedReportDate, pla
             if (!operatorId) return
             const mixer = mixers.find((m) => m.assigned_operator === operatorId)
             const newRow = {
+                _overrides: {},
                 comments: '',
                 eod_in_yard: '',
                 first_load: '',
@@ -160,6 +187,7 @@ export function useSubmitForm({ report, initialData, user, forcedReportDate, pla
         const rows = activeOperators.map((op) => {
             const mixer = mixers.find((m) => m.assigned_operator === op.employee_id)
             return {
+                _overrides: {},
                 comments: '',
                 eod_in_yard: '',
                 first_load: '',
@@ -184,6 +212,7 @@ export function useSubmitForm({ report, initialData, user, forcedReportDate, pla
         form,
         handleChange,
         hasUnsavedChanges,
+        initialFormSnapshot,
         initializeRows,
         plantCode,
         removeOperatorRow,
@@ -191,6 +220,8 @@ export function useSubmitForm({ report, initialData, user, forcedReportDate, pla
         setCarouselIndex,
         setForm,
         setHasUnsavedChanges,
-        setInitialFormSnapshot
+        setInitialFormSnapshot,
+        setRowField,
+        setRowOverride
     }
 }

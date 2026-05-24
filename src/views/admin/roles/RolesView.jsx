@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import TopSection from '../../../app/components/sections/TopSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import { useRolePermissionHandlers } from '../../../app/hooks/useRolePermissionHandlers'
 import { useRolesData } from '../../../app/hooks/useRolesData'
 import BulkAddModal from './parts/BulkAddModal'
 import CreateRoleModal from './parts/CreateRoleModal'
 import EditWeightModal from './parts/EditWeightModal'
 import RoleCard from './parts/RoleCard'
 import RolesLoadingSkeleton from './parts/RolesLoadingSkeleton'
-import { useRolePermissionHandlers } from './parts/useRolePermissionHandlers'
 
 const ELEVATED_WEIGHT_THRESHOLD = 75
 const DEFAULT_ACCENT_COLOR = '#1e3a5f'

@@ -18,6 +18,25 @@ const FIELD_STYLE = {
 const TH_BASE = `${SECTION_LABEL_CLASS} px-3 py-2 text-left whitespace-nowrap bg-bg-tertiary text-text-tertiary border-b border-border-light`
 const TD_BASE = 'px-3 py-2 text-[12px] align-middle text-text-primary'
 
+/** Status pill used in place of colored numbers to flag out-of-threshold
+ *  cells. Severity drives the background: `danger` is the hard red shared
+ *  with operator status badges (#dc2626), `warn` is the standard amber
+ *  (#d97706). White text on a solid fill — same visual vocabulary as the
+ *  `operatorStatusBadge` solid variant on the people list. When `tone` is
+ *  null the value renders as plain text so good rows stay quiet. */
+const WARN_PILL_HEX = { danger: '#dc2626', warn: '#d97706' }
+const WARN_PILL_CLASS =
+    'inline-flex items-center justify-end rounded-full px-2 py-0.5 text-[10.5px] font-bold tabular-nums whitespace-nowrap text-white'
+
+const WarnPill = ({ children, tone }) => {
+    if (!tone) return <>{children}</>
+    return (
+        <span className={WARN_PILL_CLASS} style={{ background: WARN_PILL_HEX[tone] }}>
+            {children}
+        </span>
+    )
+}
+
 const getRows = (form) => (Array.isArray(form.rows) ? form.rows : [])
 
 const STAT_ITEMS = [
@@ -246,48 +265,31 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
                                 <td className={`${TD_BASE} tabular-nums`} style={mutedStyle}>
                                     {r.punch_out || '—'}
                                 </td>
-                                <td
-                                    className={`${TD_BASE} text-right tabular-nums font-semibold`}
-                                    style={{
-                                        ...rowStyle,
-                                        color: lowLoads ? '#dc2626' : 'var(--text-primary)'
-                                    }}
-                                >
-                                    {r.loads || '—'}
+                                <td className={`${TD_BASE} text-right tabular-nums font-semibold`} style={rowStyle}>
+                                    <WarnPill tone={lowLoads ? 'danger' : null}>{r.loads || '—'}</WarnPill>
                                 </td>
-                                <td
-                                    className={`${TD_BASE} text-right tabular-nums font-semibold`}
-                                    style={{
-                                        ...rowStyle,
-                                        color:
+                                <td className={`${TD_BASE} text-right tabular-nums font-semibold`} style={rowStyle}>
+                                    <WarnPill
+                                        tone={
                                             hours !== null && hours > EFFICIENCY_THRESHOLDS.LONG_HOURS_DANGER_THRESHOLD
-                                                ? '#dc2626'
+                                                ? 'danger'
                                                 : longHours
-                                                  ? '#b45309'
-                                                  : 'var(--text-primary)'
-                                    }}
-                                >
-                                    {hours !== null ? hours.toFixed(2) : '—'}
+                                                  ? 'warn'
+                                                  : null
+                                        }
+                                    >
+                                        {hours !== null ? hours.toFixed(2) : '—'}
+                                    </WarnPill>
                                 </td>
-                                <td
-                                    className={`${TD_BASE} text-right tabular-nums`}
-                                    style={{
-                                        ...rowStyle,
-                                        color: warnStart ? '#b45309' : 'var(--text-primary)',
-                                        fontWeight: warnStart ? 600 : 400
-                                    }}
-                                >
-                                    {dStart !== null ? `${dStart} min` : '—'}
+                                <td className={`${TD_BASE} text-right tabular-nums`} style={rowStyle}>
+                                    <WarnPill tone={warnStart ? 'warn' : null}>
+                                        {dStart !== null ? `${dStart} min` : '—'}
+                                    </WarnPill>
                                 </td>
-                                <td
-                                    className={`${TD_BASE} text-right tabular-nums`}
-                                    style={{
-                                        ...rowStyle,
-                                        color: warnEnd ? '#b45309' : 'var(--text-primary)',
-                                        fontWeight: warnEnd ? 600 : 400
-                                    }}
-                                >
-                                    {dEnd !== null ? `${dEnd} min` : '—'}
+                                <td className={`${TD_BASE} text-right tabular-nums`} style={rowStyle}>
+                                    <WarnPill tone={warnEnd ? 'warn' : null}>
+                                        {dEnd !== null ? `${dEnd} min` : '—'}
+                                    </WarnPill>
                                 </td>
                                 <td className={`${TD_BASE} text-right font-mono tabular-nums`} style={rowStyle}>
                                     {lph !== null ? Number(lph).toFixed(2) : '—'}
@@ -296,7 +298,7 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
                                     className={`${TD_BASE} align-top`}
                                     style={{
                                         ...rowStyle,
-                                        color: missingRequiredComment ? '#dc2626' : 'var(--text-secondary)',
+                                        color: 'var(--text-secondary)',
                                         maxWidth: 360,
                                         minWidth: 260
                                     }}
@@ -306,7 +308,7 @@ function DetailTable({ rows, operatorOptions, sortKey, sortDir, filterText }) {
                                             {r.comments}
                                         </div>
                                     ) : missingRequiredComment ? (
-                                        <span className="font-semibold">
+                                        <span className="font-semibold text-text-primary">
                                             * Required — explain timing/performance issues
                                         </span>
                                     ) : (

@@ -1,14 +1,19 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import {
+    CARD_STYLE,
+    FIELD_INPUT_CLASS,
+    FIELD_STYLE,
+    SECTION_LABEL_CLASS
+} from '../../../../app/constants/maintenanceFormConstants'
+import { useSubmissionHistory } from '../../../../app/hooks/useSubmissionHistory'
 import MaintenanceService from '../../../../services/MaintenanceService'
 import { UserService } from '../../../../services/UserService'
 import { formatMaintenanceDateShort } from '../../../../utils/MaintenanceUtility'
 import { CardHeader, PageHeader, PdfEmbed } from './atoms'
-import { CARD_STYLE, FIELD_INPUT_CLASS, FIELD_STYLE, SECTION_LABEL_CLASS } from './constants'
 import { statusForSubmission } from './helpers'
 import { SubmissionHistoryCard } from './SubmissionHistoryCard'
-import { useSubmissionHistory } from './useSubmissionHistory'
 
 export function ReviewMode({ accentColor, formObj, item, onBack, onSubmitted, submission }) {
     const status = statusForSubmission(submission)

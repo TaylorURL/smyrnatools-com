@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react'
 
-import CalculatorShell, { CalcField, CalcSection } from '../CalculatorShell'
 import {
     MAX_BALANCING_ITERATIONS,
     NEGLIGIBLE_ADDITION_THRESHOLD,
     POUNDS_PER_CUBIC_YARD,
     RATIO_CONVERGENCE_TOLERANCE
-} from './calculatorConstants'
+} from '../../../../app/constants/calculatorConstants'
+import CalculatorShell, { CalcField, CalcSection } from '../CalculatorShell'
 
 const MATERIAL_FIELDS = [
     { key: 'coarse', label: 'Coarse Agg' },

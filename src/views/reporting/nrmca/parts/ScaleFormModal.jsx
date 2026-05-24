@@ -1,8 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
+import { INPUT_CLS, INPUT_STYLE, SCALE_TYPES, SELECT_CLS } from '../../../../app/constants/nrmcaConstants'
 import { NRMCAService } from '../../../../services/NRMCAService'
-import { INPUT_CLS, INPUT_STYLE, SCALE_TYPES, SELECT_CLS } from './nrmcaConstants'
 import { Field, Modal } from './NRMCASharedUI'
 
 export function ScaleFormModal({ scale, nrmcaPlants, defaultPlantId, onClose, onSaved }) {

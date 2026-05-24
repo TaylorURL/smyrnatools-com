@@ -119,7 +119,7 @@ const mergePlanAndDispatchRows = (plansRows, dispatchRows) => {
         // would mean the dispatcher booked something never imported).
         const dispatchOrderIds = new Set()
         Object.values(dispatchProduction).forEach((block) => {
-            (block?.orders || []).forEach((o) => {
+            ;(block?.orders || []).forEach((o) => {
                 if (o?.orderId) dispatchOrderIds.add(o.orderId)
             })
         })
@@ -220,7 +220,7 @@ export function usePlanStatistics({
     ticketLookupEnabled = false,
     colocationMap = null
 }) {
-    const [period, setPeriod] = useState('week')
+    const [period, setPeriod] = useState('month')
     const [comparison, setComparison] = useState('none')
     /* Default to today's CST calendar date when the caller didn't pass
      * a `planDate` — keeps the dispatcher's "today" stable across
@@ -586,7 +586,7 @@ export function usePlanStatistics({
     const scheduleMetaByDate = useMemo(() => {
         const out = new Map()
         const ingest = (rows) => {
-            (rows || []).forEach((row) => {
+            ;(rows || []).forEach((row) => {
                 const date = row?.plan_date
                 if (!date) return
                 const production =

@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { FIELD_LABEL_CLASS, SECTION_LABEL_CLASS } from './constants'
+import { FIELD_LABEL_CLASS, SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceCreateConstants'
 
 export function Card({ children }) {
     return <section className="rounded overflow-hidden bg-bg-primary border border-border-light">{children}</section>

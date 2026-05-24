@@ -4,6 +4,7 @@ import MessageService from '../../../services/MessageService'
 import UserUtility from '../../../utils/UserUtility'
 import { SECTION_LABEL_CLASS } from '../../constants/notificationsConstants'
 import { usePreferences } from '../../context/PreferencesContext'
+import UserAvatar from '../common/UserAvatar'
 
 /** Modal for composing a brand new message thread. Loads the regional
  *  recipient list on mount, supports search, and shows a confirmation
@@ -136,14 +137,14 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                             className="flex items-center gap-2.5 px-2.5 py-2 rounded"
                                             style={fieldStyle}
                                         >
-                                            <div
-                                                className="w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                                                style={{ background: accentColor }}
-                                            >
-                                                {UserUtility.getInitials(
+                                            <UserAvatar
+                                                userId={selectedRecipient.id}
+                                                initials={UserUtility.getInitials(
                                                     `${selectedRecipient.firstName} ${selectedRecipient.lastName}`
                                                 )}
-                                            </div>
+                                                size="md"
+                                                rounded="md"
+                                            />
                                             <div className="flex-1 min-w-0">
                                                 <div className="text-[12.5px] font-semibold truncate text-text-primary">
                                                     {selectedRecipient.firstName} {selectedRecipient.lastName}
@@ -200,14 +201,14 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                                                 }}
                                                                 className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-colors hover:bg-bg-tertiary text-text-primary"
                                                             >
-                                                                <div
-                                                                    className="w-6 h-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
-                                                                    style={{ background: accentColor }}
-                                                                >
-                                                                    {UserUtility.getInitials(
+                                                                <UserAvatar
+                                                                    userId={r.id}
+                                                                    initials={UserUtility.getInitials(
                                                                         `${r.firstName} ${r.lastName}`
                                                                     )}
-                                                                </div>
+                                                                    size={24}
+                                                                    rounded="md"
+                                                                />
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="text-[12px] font-semibold truncate">
                                                                         {r.firstName} {r.lastName}

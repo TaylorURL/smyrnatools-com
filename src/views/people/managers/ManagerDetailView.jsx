@@ -3,6 +3,14 @@ import React, { useCallback, useEffect, useState } from 'react'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
 import { useAuth } from '../../../app/context/AuthContext'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import {
+    fetchManagerRecord,
+    useAvailableRoles,
+    useCurrentUserRoleWeight,
+    useFilteredPlants,
+    usePlants,
+    useRegionPlantCodes
+} from '../../../app/hooks/useManagerDetailData'
 import { Database } from '../../../services/DatabaseService'
 import { UserService } from '../../../services/UserService'
 import APIUtility from '../../../utils/APIUtility'
@@ -12,14 +20,6 @@ import ManagerDetailFooterActions from './detail/ManagerDetailFooterActions'
 import ManagerDetailModals from './detail/ManagerDetailModals'
 import ManagerReadOnlyBanner from './detail/ManagerReadOnlyBanner'
 import ManagerSecuritySection from './detail/ManagerSecuritySection'
-import {
-    fetchManagerRecord,
-    useAvailableRoles,
-    useCurrentUserRoleWeight,
-    useFilteredPlants,
-    usePlants,
-    useRegionPlantCodes
-} from './detail/useManagerDetailData'
 
 /**
  * Detail/edit view for a single manager. Provides name, email, plant,

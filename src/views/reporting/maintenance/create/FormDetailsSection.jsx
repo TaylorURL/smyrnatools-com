@@ -2,8 +2,8 @@
 import React from 'react'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
+import { FIELD_STYLE, FREQUENCY_HINT, FREQUENCY_OPTIONS } from '../../../../app/constants/maintenanceCreateConstants'
 import { Card, CardHeader, Chip, ErrorText, FieldLabel } from './atoms'
-import { FIELD_STYLE, FREQUENCY_HINT, FREQUENCY_OPTIONS } from './constants'
 
 const PER_N_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly']
 

@@ -1,9 +1,9 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
+import { SCALE_ICON_TONE_CLASS } from '../../../../app/constants/nrmcaConstants'
 import { NRMCAService } from '../../../../services/NRMCAService'
 import { LogCalibrationModal } from './LogCalibrationModal'
-import { SCALE_ICON_TONE_CLASS } from './nrmcaConstants'
 import { daysFromNow, fmt, getCalibrationStatus, getNextCalibrationDueDate } from './nrmcaHelpers'
 import { IconBtn, StatusBadge } from './NRMCASharedUI'
 import { ScaleFormModal } from './ScaleFormModal'

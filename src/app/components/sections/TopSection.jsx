@@ -1,15 +1,15 @@
 import React, { useState } from 'react'
 
 import { isDarkLikeTheme } from '../../constants/themeConstants'
+import { DEFAULT_COL_WIDTHS, DEFAULT_LIST_LABELS } from '../../constants/topSectionConstants'
 import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import { useRevealOnLoad } from '../../hooks/useRevealOnLoad'
+import { useTopSectionHeight } from '../../hooks/useTopSectionHeight'
 import PlantDropdownModal from '../common/PlantDropdownModal'
-import { DEFAULT_COL_WIDTHS, DEFAULT_LIST_LABELS } from './top-section/topSectionConstants'
 import TopSectionDesktop from './top-section/TopSectionDesktop'
 import TopSectionMobile from './top-section/TopSectionMobile'
 import TopSectionSkeleton from './top-section/TopSectionSkeleton'
-import { useRevealOnLoad } from './top-section/useRevealOnLoad'
-import { useTopSectionHeight } from './top-section/useTopSectionHeight'
 
 function TopSection({
     title,

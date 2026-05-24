@@ -7,6 +7,7 @@ import { usePreferences } from '../../context/PreferencesContext'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import Skeleton, { SkeletonStack } from '../common/Skeleton'
+import UserAvatar from '../common/UserAvatar'
 
 function CommentRowSkeleton() {
     return (
@@ -38,13 +39,6 @@ const formatDate = (dateString) => {
     if (hours < 24) return `${hours}h ago`
     if (days < 7) return `${days}d ago`
     return date.toLocaleDateString()
-}
-
-const getInitials = (name) => {
-    if (!name || name === 'Loading...') return '?'
-    const parts = name.split(' ')
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-    return name.slice(0, 2).toUpperCase()
 }
 
 /**
@@ -246,9 +240,7 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                                     key={comment.id}
                                     className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light"
                                 >
-                                    <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold bg-bg-tertiary text-text-secondary">
-                                        {getInitials(authorName)}
-                                    </div>
+                                    <UserAvatar name={authorName} userId={comment.author} size="md" rounded="md" />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-0.5">
                                             <span className="text-[12px] font-semibold text-text-primary">

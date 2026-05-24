@@ -135,38 +135,40 @@ function TrucksCell({
         : poolAfter
     const isCompleted = service?.status === 'good' || service?.status === 'bad'
     const overbooked = Number.isFinite(poolAfterEffective) && poolAfterEffective < 0 && !isPastDay && !isCompleted
+    // Three-color scale on the trailing pool value, surfaced as the badge
+    // background behind the `/N` pool segment so the dispatcher sees pool
+    // health at a glance without reading the tooltip:
+    //   < 0   → danger (red)    — below demand, overbooked
+    //   0–2   → warning (amber) — tight margin (0 = break-even, 1–2 close to edge)
+    //   ≥ 3   → success (green) — comfortable headroom
+    const poolBadgeClass = Number.isFinite(poolAfterEffective)
+        ? poolAfterEffective < 0
+            ? 'status-badge-danger'
+            : poolAfterEffective <= 2
+              ? 'status-badge-warning'
+              : 'status-badge-success'
+        : ''
+    const poolBadgeTitle = Number.isFinite(poolAfterEffective)
+        ? poolAfterEffective < 0
+            ? `${-poolAfterEffective} truck${poolAfterEffective === -1 ? '' : 's'} short — pour runs below scheduled rate`
+            : poolAfterEffective <= 2
+              ? `Tight — only ${poolAfterEffective} truck${poolAfterEffective === 1 ? '' : 's'} left in the pool during this pour`
+              : `${poolAfterEffective} trucks still free during this pour — comfortable margin`
+        : ''
     return (
         <td className="px-3 py-2 font-mono text-right whitespace-nowrap text-text-secondary">
             <div className="flex flex-col items-end gap-0.5">
-                <span
-                    className="inline-flex items-center gap-1 justify-end font-semibold"
-                    style={{ color: 'var(--text-primary)' }}
-                >
+                <span className="inline-flex items-center gap-1 justify-end font-semibold text-text-primary">
                     {differsFromDispatch && <i className="fas fa-circle-info text-[10px]" />}
                     {computed != null ? computed : '—'}
-                    {Number.isFinite(poolAfterEffective) &&
-                        (() => {
-                            // Three-color scale on the trailing pool value:
-                            //   < 0   → red  (below demand, overbooked)
-                            //   0–2   → amber (tight margin — 1–2 trucks left
-                            //           is close to the edge, 0 is break-even)
-                            //   ≥ 3   → green (comfortable headroom)
-                            return (
-                                <span
-                                    className="font-semibold"
-                                    style={{ color: 'var(--text-primary)' }}
-                                    title={
-                                        poolAfterEffective < 0
-                                            ? `${-poolAfterEffective} truck${poolAfterEffective === -1 ? '' : 's'} short — pour runs below scheduled rate`
-                                            : poolAfterEffective <= 2
-                                              ? `Tight — only ${poolAfterEffective} truck${poolAfterEffective === 1 ? '' : 's'} left in the pool during this pour`
-                                              : `${poolAfterEffective} trucks still free during this pour — comfortable margin`
-                                    }
-                                >
-                                    /{poolAfterEffective}
-                                </span>
-                            )
-                        })()}
+                    {Number.isFinite(poolAfterEffective) && (
+                        <span
+                            className={`${poolBadgeClass} inline-flex items-center px-1.5 py-0.5 rounded-full text-[10.5px] font-bold tabular-nums`}
+                            title={poolBadgeTitle}
+                        >
+                            /{poolAfterEffective}
+                        </span>
+                    )}
                 </span>
                 {overbooked && !compareMode && (
                     <span

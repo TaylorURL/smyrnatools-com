@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom'
 import MessageService from '../../../services/MessageService'
 import { UserService } from '../../../services/UserService'
 import { usePreferences } from '../../context/PreferencesContext'
+import UserAvatar from './UserAvatar'
 
 /**
  * Modal for sending an asset as a message attachment to a team member.
@@ -174,12 +175,12 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                     >
                                         {selectedManager ? (
                                             <>
-                                                <div
-                                                    className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-[10px] font-bold text-white"
-                                                    style={{ background: accentColor }}
-                                                >
-                                                    {getInitials(selectedManager)}
-                                                </div>
+                                                <UserAvatar
+                                                    userId={selectedManager.id}
+                                                    initials={getInitials(selectedManager)}
+                                                    size="md"
+                                                    rounded="md"
+                                                />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="font-medium text-sm text-text-primary">
                                                         {selectedManager.firstName} {selectedManager.lastName}
@@ -259,19 +260,12 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                                         e.currentTarget.style.background = 'transparent'
                                                                 }}
                                                             >
-                                                                <div
-                                                                    className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-[10px] font-bold"
-                                                                    style={{
-                                                                        background: isSelected
-                                                                            ? accentColor
-                                                                            : 'var(--bg-hover)',
-                                                                        color: isSelected
-                                                                            ? 'white'
-                                                                            : 'var(--text-secondary)'
-                                                                    }}
-                                                                >
-                                                                    {getInitials(mgr)}
-                                                                </div>
+                                                                <UserAvatar
+                                                                    userId={mgr.id}
+                                                                    initials={getInitials(mgr)}
+                                                                    size="md"
+                                                                    rounded="md"
+                                                                />
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="text-[13px] font-medium text-text-primary">
                                                                         {mgr.firstName} {mgr.lastName}

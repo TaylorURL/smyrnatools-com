@@ -3,13 +3,13 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { OperatorService } from '../../../../../../services/OperatorService'
 import { fmtInt, fmtRange, fmtYards } from '../../../../../../utils/PlanStatisticsFormatUtility'
+import { useOperatorSegments } from '../../../../../hooks/useOperatorSegments'
 import CommentModalSection from '../../../../sections/CommentModalSection'
 import HistoryViewSection from '../../../../sections/HistoryViewSection'
 import { Panel } from '../../../../ui/Panel'
 import { openOperatorsPrintWindow } from './operators/operatorPrint'
 import { OperatorRow } from './operators/OperatorRow'
 import { OperatorSegmentHeader } from './operators/OperatorRowCells'
-import { useOperatorSegments } from './operators/useOperatorSegments'
 import { EmptySection, RefreshingHint } from './planStatsShared'
 
 /* ──────────────────────────────────────────────────────────────────────────

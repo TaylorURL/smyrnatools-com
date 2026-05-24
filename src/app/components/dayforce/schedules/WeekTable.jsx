@@ -2,8 +2,9 @@
 import React from 'react'
 
 import { fmtFloat } from '../../../../utils/PlanStatisticsFormatUtility'
+import { YPH_TARGET } from '../../../constants/dayforceScheduleConstants'
 import { Panel } from '../../ui/Panel'
-import { YPH_TARGET } from './scheduleConstants'
+import { getShiftCellBackground } from './scheduleFlags'
 import { fmtHours, parseYmd, SHORT_DAY_FORMATTER } from './scheduleFormatters'
 import { ShiftCell } from './ShiftCell'
 
@@ -61,19 +62,28 @@ export function WeekTable({ accent, days, operatorRows, totalsByDay, weekTotal, 
                                             </span>
                                         </div>
                                     </td>
-                                    {days.map((day) => (
-                                        <td
-                                            key={day.iso}
-                                            className="border-l border-border-light align-top"
-                                            style={{ padding: 0 }}
-                                        >
-                                            <ShiftCell
-                                                accent={accent}
-                                                shift={op.byDay[day.iso] || null}
-                                                yardage={op.yardageByDay?.[day.iso] || 0}
-                                            />
-                                        </td>
-                                    ))}
+                                    {days.map((day) => {
+                                        const shift = op.byDay[day.iso] || null
+                                        const yardage = op.yardageByDay?.[day.iso] || 0
+                                        const shiftYph =
+                                            shift && Number(shift.actualHours) > 0 && Number(yardage) > 0
+                                                ? Number(yardage) / Number(shift.actualHours)
+                                                : null
+                                        const cellBg = getShiftCellBackground({
+                                            shift,
+                                            shiftYph,
+                                            yphTarget: YPH_TARGET
+                                        })
+                                        return (
+                                            <td
+                                                key={day.iso}
+                                                className="border-l border-border-light align-top"
+                                                style={{ background: cellBg, padding: 0 }}
+                                            >
+                                                <ShiftCell accent={accent} shift={shift} yardage={yardage} />
+                                            </td>
+                                        )
+                                    })}
                                     <td className="border-l border-border-light px-3 py-2 text-right align-top">
                                         <span className="font-mono tabular-nums font-bold text-text-primary text-[13px]">
                                             {fmtHours(op.weekHours)}

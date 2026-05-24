@@ -1,16 +1,21 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { minuteOf } from './scheduleFlags'
 import { parseLocal } from './scheduleFormatters'
 
 /** Punch-delta tag — small "+5m" / "-8m" pill on actual times. Only
- *  two cases are shown: a late clock-in (red — operator started behind
- *  schedule, short-changing the shift) and an early clock-out (blue —
- *  operator left before scheduled out, also short-changing the shift).
- *  Padding the shift (early-in / late-out) is intentionally suppressed
- *  because the dispatcher doesn't act on those. */
-export function PunchDelta({ accent, actualIso, scheduledIso, kind }) {
+ *  two cases are shown: a late clock-in and an early clock-out (both
+ *  short-change the shift). Padding the shift (early-in / late-out) is
+ *  intentionally suppressed because the dispatcher doesn't act on those.
+ *
+ *  The colour signal lives in the badge background — late clock-in
+ *  paints with the project's `status-badge-danger` (red), early
+ *  clock-out with `status-badge-warning` (amber). The text itself
+ *  stays theme-primary (black in light, white in dark) so the digits
+ *  read cleanly against any theme; the previous inline red / blue
+ *  text washed out in dark mode and clashed with the rest of the
+ *  status vocabulary in the app. */
+export function PunchDelta({ actualIso, scheduledIso, kind }) {
     const a = parseLocal(actualIso)
     const s = parseLocal(scheduledIso)
     if (!a || !s) return null
@@ -23,13 +28,12 @@ export function PunchDelta({ accent, actualIso, scheduledIso, kind }) {
     const isEarlyOut = kind === 'out' && diffMin < 0
     // Padded-shift cases — drop the pill entirely.
     if (!isLateIn && !isEarlyOut) return null
-    const color = isLateIn ? '#b91c1c' : '#1d4ed8'
+    const badgeClass = isLateIn ? 'status-badge-danger' : 'status-badge-warning'
     const sign = diffMin > 0 ? '+' : ''
     const label = Math.abs(diffMin) >= 60 ? `${sign}${(diffMin / 60).toFixed(1)}h` : `${sign}${diffMin}m`
     return (
         <span
-            className="inline-flex items-center rounded px-1 py-0 text-[9px] font-semibold tabular-nums"
-            style={{ background: `${accent}10`, color }}
+            className={`${badgeClass} inline-flex items-center rounded px-1 py-0 text-[9px] font-semibold tabular-nums text-text-primary`}
             title={`Actual vs scheduled ${kind === 'in' ? 'clock in' : 'clock out'}: ${sign}${diffMin} min`}
         >
             {label}

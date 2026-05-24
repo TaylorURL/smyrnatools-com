@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
+import { RESPONSIBLE_ROLE_OPTIONS, STATUS_OPTIONS } from '../../../app/constants/listDetailConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { AIService } from '../../../services/AIService'
 import { ListService } from '../../../services/ListService'
@@ -10,7 +11,6 @@ import { PlantService } from '../../../services/PlantService'
 import { UserService } from '../../../services/UserService'
 import GrammarUtility from '../../../utils/GrammarUtility'
 import CommentsHistoryCard from './detail/CommentsHistoryCard'
-import { RESPONSIBLE_ROLE_OPTIONS, STATUS_OPTIONS } from './detail/listDetailConstants'
 
 /**
  * Detail/edit view for a single task list item. Supports editing description,

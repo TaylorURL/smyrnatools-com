@@ -1,11 +1,14 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import ConfirmationModal from '../../../app/components/reports/ConfirmationModal'
 import OperatorExclusionReasonModal from '../../../app/components/reports/OperatorExclusionReasonModal'
 import ReportValidationErrorModal from '../../../app/components/reports/ReportValidationErrorModal'
 import SubmitHeader from '../../../app/components/reports/SubmitHeader'
+import { EXCLUDED_REPORT_TYPES, PLUGINS, WEEK_ISO_PLUGIN_REPORTS } from '../../../app/constants/reportsSubmitConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import { useAutosaveDraft } from '../../../app/hooks/useAutosaveDraft'
+import { useEfficiencyDayforcePunches } from '../../../app/hooks/useEfficiencyDayforcePunches'
 import { useEfficiencyTicketAggregates } from '../../../app/hooks/useEfficiencyTicketAggregates'
 import { useSubmitData } from '../../../app/hooks/useSubmitData'
 import { useSubmitForm } from '../../../app/hooks/useSubmitForm'
@@ -17,7 +20,6 @@ import { raceAiValidation } from './submit/aiValidation'
 import DefaultReportForm from './submit/DefaultReportForm'
 import PlantManagerForm from './submit/PlantManagerForm'
 import PlantProductionForm from './submit/PlantProductionForm'
-import { EXCLUDED_REPORT_TYPES, PLUGINS, WEEK_ISO_PLUGIN_REPORTS } from './submit/submitConstants'
 import {
     getEditingUserName,
     validateGMFields,
@@ -62,7 +64,6 @@ function ReportsSubmitView({
     } = useSubmitData({ initialData, managerEditUser, report, user })
     const {
         addOperatorRow,
-        carouselIndex,
         clearRows,
         excludedOperators,
         form,
@@ -71,10 +72,11 @@ function ReportsSubmitView({
         initializeRows,
         removeOperatorRow,
         reportDateVerbose,
-        setCarouselIndex,
         setForm,
         setHasUnsavedChanges,
-        setInitialFormSnapshot
+        setInitialFormSnapshot,
+        setRowField,
+        setRowOverride
     } = useSubmitForm({ forcedReportDate, initialData, operatorOptions, plants, report, user })
     // Auto-fill `first_load` + `loads` on the Plant Efficiency Report from
     // live dispatch tickets for the SINGLE report day. Scope is one day,
@@ -96,12 +98,17 @@ function ReportsSubmitView({
         reportDate: form.report_date,
         rows: form.rows
     })
-    // Push ticket aggregates into form.rows whenever they refresh. Honest
-    // overwrite semantics — if no tickets matched an operator, their
-    // first_load + loads reset to empty (rather than retaining a stale
-    // typed value from a prior session). Bails out via reference equality
-    // when nothing actually changed so editing other fields (start_time,
-    // eod_in_yard, etc.) doesn't trigger a setForm cascade.
+    // Push ticket aggregates into form.rows whenever they refresh.
+    // Override-aware semantics:
+    //   - `_overrides[field] === true` → user opted into manual entry,
+    //     auto-fill skips this field for this row entirely.
+    //   - Auto value present + no override → write the auto value.
+    //   - Auto value MISSING + no override → preserve whatever the user
+    //     already typed instead of wiping it. This is the dummy-proof
+    //     fallback so an offline ticket fetch (or a brand-new operator
+    //     with no name match) doesn't blow away a manual entry.
+    // Reference equality bails the setForm out when nothing changed so
+    // unrelated field edits don't cascade.
     useEffect(() => {
         if (!isPlantProduction || !efficiencyTicketsReady) return
         setForm((f) => {
@@ -110,8 +117,11 @@ function ReportsSubmitView({
             let changed = false
             const nextRows = rows.map((row) => {
                 const agg = efficiencyAggregates[row.name]
-                const targetFirstLoad = agg?.firstLoad ?? ''
-                const targetLoads = agg?.loads != null ? String(agg.loads) : ''
+                const overrides = row._overrides || {}
+                const dayforceFirstLoad = agg?.firstLoad || ''
+                const dayforceLoads = agg?.loads != null ? String(agg.loads) : ''
+                const targetFirstLoad = overrides.first_load ? row.first_load : dayforceFirstLoad || row.first_load
+                const targetLoads = overrides.loads ? row.loads : dayforceLoads || row.loads
                 if (row.first_load === targetFirstLoad && row.loads === targetLoads) return row
                 changed = true
                 return { ...row, first_load: targetFirstLoad, loads: targetLoads }
@@ -119,6 +129,57 @@ function ReportsSubmitView({
             return changed ? { ...f, rows: nextRows } : f
         })
     }, [isPlantProduction, efficiencyTicketsReady, efficiencyAggregates, setForm])
+    // Same auto-fill pattern as tickets, but sourcing start_time +
+    // punch_out from Dayforce shift punches for the report day. eod_in_yard
+    // stays manual — it's the truck-back-in-yard time, distinct from the
+    // operator's clock-out.
+    const {
+        loading: dayforcePunchesLoading,
+        punchesByOperatorId: dayforcePunches,
+        ready: dayforcePunchesReady
+    } = useEfficiencyDayforcePunches({
+        enabled: efficiencyTicketsEnabled,
+        operatorOptions,
+        reportDate: form.report_date
+    })
+    useEffect(() => {
+        if (!isPlantProduction || !dayforcePunchesReady) return
+        setForm((f) => {
+            const rows = Array.isArray(f.rows) ? f.rows : []
+            if (rows.length === 0) return f
+            let changed = false
+            const nextRows = rows.map((row) => {
+                const punch = dayforcePunches[row.name]
+                const overrides = row._overrides || {}
+                const targetStartTime = overrides.start_time ? row.start_time : punch?.startTime || row.start_time
+                const targetPunchOut = overrides.punch_out ? row.punch_out : punch?.punchOut || row.punch_out
+                if (row.start_time === targetStartTime && row.punch_out === targetPunchOut) return row
+                changed = true
+                return { ...row, punch_out: targetPunchOut, start_time: targetStartTime }
+            })
+            return changed ? { ...f, rows: nextRows } : f
+        })
+    }, [isPlantProduction, dayforcePunchesReady, dayforcePunches, setForm])
+    // Debounced autosave. Writes the draft 1.2s after the last mutation
+    // so a stream of keystrokes coalesces into one round-trip. Pauses
+    // when the form is read-only, before the plant is picked, or before
+    // any rows exist (otherwise the initial render's empty form would
+    // immediately overwrite a draft that's still being hydrated).
+    const autosaveOnSave = useCallback(
+        async (payload) => {
+            await onSubmit(payload, 'draft')
+            setInitialFormSnapshot(JSON.stringify(payload))
+            setHasUnsavedChanges(false)
+        },
+        [onSubmit, setHasUnsavedChanges, setInitialFormSnapshot]
+    )
+    const autosaveEnabled =
+        !readOnly && !!form.plant && (report.name !== 'plant_production' || (form.rows?.length || 0) > 0)
+    useAutosaveDraft({
+        enabled: autosaveEnabled,
+        form,
+        onSave: autosaveOnSave
+    })
     const [submitting, setSubmitting] = useState(false)
     const [savingDraft, setSavingDraft] = useState(false)
     const [aiValidating, setAiValidating] = useState(false)
@@ -307,21 +368,24 @@ function ReportsSubmitView({
                 <PlantProductionForm
                     accentColor={accentColor}
                     addOperatorRow={addOperatorRow}
-                    carouselIndex={carouselIndex}
+                    dayforcePunches={dayforcePunches}
+                    dayforcePunchesLoading={dayforcePunchesLoading}
+                    dayforcePunchesReady={dayforcePunchesReady}
+                    efficiencyAggregates={efficiencyAggregates}
                     efficiencyTicketsEnabled={efficiencyTicketsEnabled}
                     efficiencyTicketsLoading={efficiencyTicketsLoading}
                     efficiencyTicketsReady={efficiencyTicketsReady}
                     excludedOperators={excludedOperators}
                     form={form}
-                    handleChange={handleChange}
                     mixers={mixers}
                     nextForcedReportDate={nextForcedReportDate}
                     operatorOptions={operatorOptions}
                     plants={plants}
                     readOnly={readOnly}
                     removeOperatorRow={removeOperatorRow}
-                    setCarouselIndex={setCarouselIndex}
                     setForm={setForm}
+                    setRowField={setRowField}
+                    setRowOverride={setRowOverride}
                 />
             )
         if (report.name === 'plant_manager')

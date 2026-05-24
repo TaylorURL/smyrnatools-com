@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { STATUS_BADGE, STATUS_PILL_CLS } from './nrmcaConstants'
+import { STATUS_BADGE, STATUS_PILL_CLS } from '../../../../app/constants/nrmcaConstants'
 
 export function StatusBadge({ status }) {
     const cfg = STATUS_BADGE[status] ?? STATUS_BADGE.unknown

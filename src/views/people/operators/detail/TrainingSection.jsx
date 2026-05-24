@@ -1,5 +1,5 @@
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
-import { SELECT_CLASS } from './operatorDetailConstants'
+import { SELECT_CLASS } from '../../../../app/constants/operatorDetailConstants'
 
 /**
  * Training section: trainer-status selector and (when status is Training or

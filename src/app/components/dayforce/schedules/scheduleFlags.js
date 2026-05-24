@@ -1,4 +1,4 @@
-import { LONG_SHIFT_HOURS } from './scheduleConstants'
+import { LONG_SHIFT_HOURS } from '../../../constants/dayforceScheduleConstants'
 import { parseLocal } from './scheduleFormatters'
 
 /** Minute-of-epoch for a Date — seconds and milliseconds truncated so a
@@ -63,4 +63,25 @@ export const shiftHasRedFlag = (shift) => {
     if (isShiftLong(shift.actualHours)) return true
     if (isPunchLate(shift.actualInPunchAt || shift.actualInAt, shift.scheduledInAt)) return true
     return false
+}
+
+/** Tints for the weekly grid's day cells. Sky tint = PTO, red tint = red
+ *  flag (long shift / late punch / low YPH), amber tint = a non-padded
+ *  exception, transparent otherwise. Exposed as its own helper so
+ *  WeekTable can apply the colour to the `<td>` itself — pinning the bg
+ *  on the inner div leaves a 5–10 px gap at the bottom of taller rows
+ *  because table cells don't propagate `height: 100%` to children. */
+export const PTO_CELL_BG = 'rgba(14, 165, 233, 0.08)'
+export const RED_FLAG_CELL_BG = 'rgba(220, 38, 38, 0.08)'
+export const EXCEPTION_CELL_BG = 'rgba(217, 119, 6, 0.06)'
+
+export const getShiftCellBackground = ({ exceptionText, shift, shiftYph, yphTarget }) => {
+    if (!shift) return 'transparent'
+    if (shift.isPto) return PTO_CELL_BG
+    const effectiveException = filterExceptionText(exceptionText ?? shift.exceptionText)
+    const isLowYph = shiftYph != null && shiftYph < yphTarget
+    const hasRedFlag = shiftHasRedFlag(shift) || isLowYph
+    if (hasRedFlag) return RED_FLAG_CELL_BG
+    if (effectiveException) return EXCEPTION_CELL_BG
+    return 'transparent'
 }

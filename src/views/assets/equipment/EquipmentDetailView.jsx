@@ -2,12 +2,12 @@ import React, { useState } from 'react'
 
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import useEquipmentDetail from '../../../app/hooks/useEquipmentDetail'
+import useEquipmentDetailActions from '../../../app/hooks/useEquipmentDetailActions'
 import EquipmentBasicInfoSection from './detail/EquipmentBasicInfoSection'
 import EquipmentDetailModals from './detail/EquipmentDetailModals'
 import EquipmentMaintenanceSection from './detail/EquipmentMaintenanceSection'
 import EquipmentVerificationSection from './detail/EquipmentVerificationSection'
-import useEquipmentDetail from './detail/useEquipmentDetail'
-import useEquipmentDetailActions from './detail/useEquipmentDetailActions'
 
 /**
  * Full detail/edit view for a single equipment record. Handles loading,

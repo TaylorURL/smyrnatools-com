@@ -34,7 +34,7 @@ function AssetStatisticsView({ config, onSelectAsset, title }) {
     const accentColor = preferences.accentColor || '#1e3a5f'
     const [activeSection, setActiveSection] = useState('overview')
     const [selectedPlant, setSelectedPlant] = useState('')
-    const periodState = useStatisticsPeriod('allTime')
+    const periodState = useStatisticsPeriod('month')
 
     /** `useAssetData` expects a `searchText` + `selectedPlant` for the list
      *  view's filtering pass; statistics doesn't reuse those, so pass

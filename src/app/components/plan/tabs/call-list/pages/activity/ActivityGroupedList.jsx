@@ -3,6 +3,7 @@ import React from 'react'
 
 import { CALL_OUTCOME_COLORS, CALL_OUTCOME_LABELS } from '../../../../../../../utils/CallListUtility'
 import DateUtility from '../../../../../../../utils/DateUtility'
+import UserAvatar from '../../../../../common/UserAvatar'
 import { formatRelativeShort, GROUP_LABELS, ICON_BY_OUTCOME, initialsOf } from './activityShared'
 
 /* ─── Date-grouped timeline ────────────────────────────────────── */
@@ -84,12 +85,13 @@ function ActivityRow({ entry, onSelectCustomer }) {
                         style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
                         title={`Logged by ${entry.created_by_name}`}
                     >
-                        <span
-                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[8px] font-bold text-white"
-                            style={{ background: tone }}
-                        >
-                            {initialsOf(entry.created_by_name)}
-                        </span>
+                        <UserAvatar
+                            userId={entry.created_by}
+                            initials={initialsOf(entry.created_by_name)}
+                            size={14}
+                            rounded="full"
+                            className="text-[8px]"
+                        />
                         {entry.created_by_name}
                     </span>
                 )}

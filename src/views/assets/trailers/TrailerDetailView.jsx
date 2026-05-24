@@ -2,6 +2,15 @@ import React, { useEffect, useState } from 'react'
 
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import {
+    loadInitialTrailerDetailData,
+    useBeforeUnloadGuard,
+    useCanDeleteTrailer,
+    useCurrentRegionForTrailer,
+    useFilteredPlants,
+    useRegionPlantCodes,
+    useTrailerCommentsAndIssues
+} from '../../../app/hooks/useTrailerDetailData'
 import { PlantService } from '../../../services/PlantService'
 import { TractorService } from '../../../services/TractorService'
 import { TrailerService } from '../../../services/TrailerService'
@@ -12,15 +21,6 @@ import TrailerCleanlinessCard from './detail/TrailerCleanlinessCard'
 import { getTractorName } from './detail/trailerDetailHelpers'
 import TrailerDetailModals from './detail/TrailerDetailModals'
 import { applyTrailerToFormState, saveTrailerWithOverrides } from './detail/trailerStateHelpers'
-import {
-    loadInitialTrailerDetailData,
-    useBeforeUnloadGuard,
-    useCanDeleteTrailer,
-    useCurrentRegionForTrailer,
-    useFilteredPlants,
-    useRegionPlantCodes,
-    useTrailerCommentsAndIssues
-} from './detail/useTrailerDetailData'
 
 /**
  * Full detail/edit view for a single trailer. Handles tractor assignment/

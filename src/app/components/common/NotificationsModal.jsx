@@ -4,14 +4,15 @@ import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
 import DateUtility from '../../../utils/DateUtility'
-import UserUtility from '../../../utils/UserUtility'
 import { useAccentColor } from '../../hooks/useAccentColor'
+import UserAvatar from './UserAvatar'
 
 const SECTION_LABEL = 'flex items-center gap-2 px-3 pt-2.5 pb-1 text-[9.5px] font-semibold uppercase tracking-wider'
 
-/** Single conversation row in the messages popup. */
+/** Single conversation row in the messages popup. Avatar uses the other
+ *  participant's accent colour; the unread tint/badge use the viewer's
+ *  accent because it signals the viewer's unread state. */
 function ConversationRow({ accentColor, conversation, displayName, onSelectConversation, onViewAll }) {
-    const initials = UserUtility.getInitials(displayName)
     const latest = conversation.lastMessage
     const hasUnread = conversation.unread > 0
 
@@ -21,22 +22,16 @@ function ConversationRow({ accentColor, conversation, displayName, onSelectConve
             style={{ background: hasUnread ? `${accentColor}0D` : 'transparent' }}
             onClick={() => (onSelectConversation ? onSelectConversation(conversation.otherId) : onViewAll())}
         >
-            <div className="relative shrink-0">
-                <div
-                    className="flex h-7 w-7 items-center justify-center rounded text-[10px] font-bold text-white"
-                    style={{ background: accentColor }}
-                >
-                    {initials}
-                </div>
+            <UserAvatar name={displayName} userId={conversation.otherId} size="md" rounded="md">
                 {hasUnread && (
-                    <div
+                    <span
                         className="absolute -right-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded px-0.5 text-[9px] font-bold text-white font-mono tabular-nums border border-[var(--bg-primary)]"
                         style={{ background: accentColor }}
                     >
                         {conversation.unread}
-                    </div>
+                    </span>
                 )}
-            </div>
+            </UserAvatar>
             <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                     <span

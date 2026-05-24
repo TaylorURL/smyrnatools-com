@@ -1,6 +1,7 @@
+/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import UserUtility from '../../../utils/UserUtility'
+import UserAvatar from '../common/UserAvatar'
 
 /** 30×30 icon button used by the chat header. Active state tints with the
  *  user's accent; danger flips to red. */
@@ -56,12 +57,7 @@ export default function ChatHeader({
                     <i className="fas fa-arrow-left text-[12px]" />
                 </button>
             )}
-            <div
-                className="flex h-9 w-9 items-center justify-center rounded text-[12px] font-bold text-white shrink-0"
-                style={{ background: accentColor }}
-            >
-                {UserUtility.getInitials(name)}
-            </div>
+            <UserAvatar name={name} userId={conversation.otherId} size={36} rounded="md" />
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                     <span className="text-[13px] font-semibold m-0 truncate text-text-primary">{name}</span>

@@ -6,8 +6,19 @@ import { PlanFlowRouteEditor } from '../../../app/components/plan/tabs/flow/Plan
 import { PlanFlowEmptyPanel, PlanFlowPlantOverview } from '../../../app/components/plan/tabs/flow/PlanFlowSidePanel'
 import { PlanFlowTimeScrubber } from '../../../app/components/plan/tabs/flow/PlanFlowTimeScrubber'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import { useAutoplay } from '../../../app/hooks/useAutoplay'
+import { useDirectLoadLines } from '../../../app/hooks/useDirectLoadLines'
+import { useDraftRoute } from '../../../app/hooks/useDraftRoute'
+import { useFitToPlants } from '../../../app/hooks/useFitToPlants'
+import { useFlowMapInstance } from '../../../app/hooks/useFlowMapInstance'
+import { useJobPins } from '../../../app/hooks/useJobPins'
+import { useJobRoutes } from '../../../app/hooks/useJobRoutes'
 import { usePlanFlowEditor } from '../../../app/hooks/usePlanFlowEditor'
 import { usePlanFlowMetrics } from '../../../app/hooks/usePlanFlowMetrics'
+import { usePlantGeocoding } from '../../../app/hooks/usePlantGeocoding'
+import { usePlantMarkers } from '../../../app/hooks/usePlantMarkers'
+import { useRouteFetching } from '../../../app/hooks/useRouteFetching'
+import { useRoutePolylines } from '../../../app/hooks/useRoutePolylines'
 import { yphColorFor } from '../../../utils/PlanFlowLayoutUtility'
 import {
     getMissingOperators,
@@ -19,17 +30,6 @@ import {
 import { resolveStateHint } from './flow-map/flowMapShared'
 import { FlowMapStyleSheet } from './flow-map/FlowMapStyleSheet'
 import { FlowMapToolbar } from './flow-map/FlowMapToolbar'
-import { useAutoplay } from './flow-map/useAutoplay'
-import { useDirectLoadLines } from './flow-map/useDirectLoadLines'
-import { useDraftRoute } from './flow-map/useDraftRoute'
-import { useFitToPlants } from './flow-map/useFitToPlants'
-import { useFlowMapInstance } from './flow-map/useFlowMapInstance'
-import { useJobPins } from './flow-map/useJobPins'
-import { useJobRoutes } from './flow-map/useJobRoutes'
-import { usePlantGeocoding } from './flow-map/usePlantGeocoding'
-import { usePlantMarkers } from './flow-map/usePlantMarkers'
-import { useRouteFetching } from './flow-map/useRouteFetching'
-import { useRoutePolylines } from './flow-map/useRoutePolylines'
 
 /**
  * PlanFlowMapView — Planner tab backed by a real OpenStreetMap surface.

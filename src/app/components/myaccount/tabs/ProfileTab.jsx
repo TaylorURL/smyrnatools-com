@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { FIELD_LABEL_CLASS, FieldStyle } from '../../../constants/myAccountConstants'
+import UserAvatar from '../../common/UserAvatar'
 import { Card, CardHeader, DetailRow, PrimaryButton } from '../MyAccountAtoms'
 
 /** Profile tab body — identity card (name + email + role + form to update
@@ -29,12 +30,13 @@ export default function ProfileTab({
             <section id="identity" className="scroll-mt-4">
                 <Card>
                     <div className="flex items-center gap-4 px-5 py-4 border-b border-border-light">
-                        <div
-                            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg text-[18px] font-bold text-white"
-                            style={{ background: accentColor }}
-                        >
-                            {initials || <i className="fas fa-user text-[18px]" />}
-                        </div>
+                        <UserAvatar
+                            accentColor={accentColor}
+                            initials={initials}
+                            size={56}
+                            rounded="lg"
+                            className="text-[18px]"
+                        />
                         <div className="min-w-0 flex-1">
                             <div className="text-[16px] font-semibold truncate text-text-primary">
                                 {firstName || lastName ? `${firstName || ''} ${lastName || ''}`.trim() : 'My Account'}

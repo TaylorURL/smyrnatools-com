@@ -1,7 +1,7 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { SECTION_LABEL_CLASS } from './constants'
+import { SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceFormConstants'
 
 export function CardHeader({ accent, icon, label, sub, title, right }) {
     return (

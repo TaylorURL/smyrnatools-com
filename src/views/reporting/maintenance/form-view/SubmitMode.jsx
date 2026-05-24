@@ -1,13 +1,13 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useRef, useState } from 'react'
 
+import { CARD_STYLE, FIELD_INPUT_CLASS, FIELD_STYLE } from '../../../../app/constants/maintenanceFormConstants'
+import { useSubmissionHistory } from '../../../../app/hooks/useSubmissionHistory'
 import MaintenanceService from '../../../../services/MaintenanceService'
 import { downloadMaintenanceFormPdf } from '../../../../utils/MaintenancePdfFormUtility'
 import { formatMaintenanceDateShort } from '../../../../utils/MaintenanceUtility'
 import { CardHeader, PageHeader } from './atoms'
-import { CARD_STYLE, FIELD_INPUT_CLASS, FIELD_STYLE } from './constants'
 import { SubmissionHistoryCard } from './SubmissionHistoryCard'
-import { useSubmissionHistory } from './useSubmissionHistory'
 
 export function SubmitMode({ accentColor, dueDate, formObj, item, onBack, onSubmitted, plantCode }) {
     const [pdfFile, setPdfFile] = useState(null)

@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react'
 
 import { usePreferences } from '../../context/PreferencesContext'
+import { usePlantPermissions } from '../../hooks/usePlantPermissions'
+import { useRegionTransfer } from '../../hooks/useRegionTransfer'
 import { DetailViewContext } from './detail-view/DetailViewContext'
 import DetailViewDeleteModal from './detail-view/DetailViewDeleteModal'
 import DetailViewHeader from './detail-view/DetailViewHeader'
@@ -24,8 +26,6 @@ import {
     Toggle
 } from './detail-view/DetailViewSubcomponents'
 import DetailViewTransferModal from './detail-view/DetailViewTransferModal'
-import { usePlantPermissions } from './detail-view/usePlantPermissions'
-import { useRegionTransfer } from './detail-view/useRegionTransfer'
 
 /**
  * Full-screen detail view shell for asset editing.

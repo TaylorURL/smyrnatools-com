@@ -314,7 +314,7 @@ export function usePlantFilter(
                 const districtName = dashboardPlant.slice(9)
                 if (isOffice && regionGroups?.length) {
                     regionGroups.forEach((region) => {
-                        (region.districts || []).forEach((district) => {
+                        ;(region.districts || []).forEach((district) => {
                             if (district.name === districtName) {
                                 district.plantCodes.forEach((code) => plantSet.add(String(code).trim()))
                             }

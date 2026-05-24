@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { FIELD_NAME_ICONS, FIELD_NAME_LABELS, INACTIVE_STATUSES } from './recapConstants'
+import { FIELD_NAME_ICONS, FIELD_NAME_LABELS, INACTIVE_STATUSES } from '../../../constants/recapConstants'
 
 export const formatFieldName = (fieldName) => {
     if (!fieldName) return 'Unknown Field'

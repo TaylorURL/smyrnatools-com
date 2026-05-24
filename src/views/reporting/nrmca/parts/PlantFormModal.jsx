@@ -2,8 +2,8 @@
 import React, { useMemo, useState } from 'react'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
+import { INPUT_CLS, INPUT_STYLE, SELECT_CLS } from '../../../../app/constants/nrmcaConstants'
 import { NRMCAService } from '../../../../services/NRMCAService'
-import { INPUT_CLS, INPUT_STYLE, SELECT_CLS } from './nrmcaConstants'
 import { Field, Modal } from './NRMCASharedUI'
 
 export function PlantFormModal({ plant, regionPlants, onClose, onSaved }) {

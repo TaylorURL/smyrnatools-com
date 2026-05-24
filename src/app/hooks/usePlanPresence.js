@@ -84,7 +84,7 @@ export function usePlanPresence(planDate, { isEditing = false, userId = null } =
              * most-recently-joined entry as the source for `editing`. */
             const byUser = new Map()
             Object.entries(state).forEach(([key, presences]) => {
-                (presences || []).forEach((p) => {
+                ;(presences || []).forEach((p) => {
                     const id = p?.userId
                     if (!id) return
                     const joinedAt = p?.joinedAt || ''

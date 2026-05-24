@@ -2,11 +2,11 @@ import PlantDropdownModal from '../../../app/components/common/PlantDropdownModa
 import CommentModalSection from '../../../app/components/sections/CommentModalSection'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
 import { usePreferences } from '../../../app/context/PreferencesContext'
+import { useOperatorDetail } from '../../../app/hooks/useOperatorDetail'
 import { OperatorService } from '../../../services/OperatorService'
 import AssignmentSection from './detail/AssignmentSection'
 import BasicInfoSection from './detail/BasicInfoSection'
 import TrainingSection from './detail/TrainingSection'
-import { useOperatorDetail } from './detail/useOperatorDetail'
 import OperatorHistoryView from './OperatorHistoryView'
 
 /**

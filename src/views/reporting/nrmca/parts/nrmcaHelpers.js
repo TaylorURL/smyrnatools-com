@@ -1,4 +1,4 @@
-import { CALIBRATION_WARN_DAYS, RENEWAL_WARN_DAYS } from './nrmcaConstants'
+import { CALIBRATION_WARN_DAYS, RENEWAL_WARN_DAYS } from '../../../../app/constants/nrmcaConstants'
 
 export const fmt = (d) =>
     d

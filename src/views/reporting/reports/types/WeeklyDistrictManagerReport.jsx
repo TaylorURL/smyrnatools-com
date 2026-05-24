@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import HelpBreakdownTable from '../../../../app/components/plan/tabs/statistics/HelpBreakdownTable'
 import { usePreferences } from '../../../../app/context/PreferencesContext'
+import { useDistrictHelpBreakdown, useWeeklyYardageByPlant } from '../../../../app/hooks/useDistrictManagerData'
 import { filterMaintenanceItemsByPlant, useAllowedPlantCodes } from '../../../../app/hooks/useReportData'
 import { PlantService } from '../../../../services/PlantService'
 import { getDistrictPlantCodes, getDistrictsForPlantCode } from '../../../../utils/DistrictUtility'
@@ -13,7 +14,6 @@ import {
     MaintenanceItemsTable,
     StatPill
 } from './weekly-dm/DistrictManagerComponents'
-import { useDistrictHelpBreakdown, useWeeklyYardageByPlant } from './weekly-dm/useDistrictManagerData'
 
 const WEEKDAYS = [
     { key: 'monday', label: 'Monday' },

@@ -3,11 +3,12 @@ import React, { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { UserService } from '../../../services/UserService'
+import { PILL_BASE, SEVERITY_PALETTE } from '../../constants/issueModalConstants'
 import { usePreferences } from '../../context/PreferencesContext'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ErrorMessage from '../common/ErrorMessage'
 import { SkeletonStack } from '../common/Skeleton'
-import { PILL_BASE, SEVERITY_PALETTE } from './issue-modal/issueModalConstants'
+import UserAvatar from '../common/UserAvatar'
 import { formatDate, getNameInitials } from './issue-modal/issueModalHelpers'
 import { IssueRowSkeleton } from './issue-modal/IssueModalSkeletons'
 import SendIssueMessageModal from './issue-modal/SendIssueMessageModal'
@@ -247,11 +248,11 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                                 key={sev}
                                                 type="button"
                                                 onClick={() => setSeverity(sev)}
-                                                className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider"
-                                                style={{
-                                                    background: isActive ? config.bg : 'var(--bg-tertiary)',
-                                                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)'
-                                                }}
+                                                className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wider ${
+                                                    isActive
+                                                        ? `${config.badgeClass} text-text-primary`
+                                                        : 'bg-bg-tertiary text-text-secondary'
+                                                }`}
                                             >
                                                 <i className={`fas ${config.icon} text-[9px]`} />
                                                 {sev}
@@ -304,18 +305,18 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                     className="flex items-start gap-2.5 px-3 py-2.5 border-b border-border-light"
                                     style={{ opacity: isResolved ? 0.7 : 1 }}
                                 >
-                                    <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 text-[10px] font-bold bg-bg-tertiary text-text-secondary">
-                                        {getNameInitials(creatorName)}
-                                    </div>
+                                    <UserAvatar
+                                        userId={issue.created_by}
+                                        initials={getNameInitials(creatorName)}
+                                        size="md"
+                                        rounded="md"
+                                    />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap mb-0.5">
                                             <span className="text-[12px] font-semibold text-text-primary">
                                                 {creatorName}
                                             </span>
-                                            <span
-                                                className={`${PILL_BASE} text-text-primary`}
-                                                style={{ background: sevConfig.bg }}
-                                            >
+                                            <span className={`${PILL_BASE} ${sevConfig.badgeClass} text-text-primary`}>
                                                 <i className={`fas ${sevConfig.icon} text-[8px]`} />
                                                 {issue.severity}
                                             </span>

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 
-import UserUtility from '../../../utils/UserUtility'
 import { formatMessageTime, getDateLabel, resolveAttachmentView } from '../../constants/notificationsConstants'
+import UserAvatar from '../common/UserAvatar'
 import AttachmentPreview from './AttachmentPreview'
 
 /** Scrollable chat messages area. Groups messages by date, collapses
@@ -9,7 +9,7 @@ import AttachmentPreview from './AttachmentPreview'
  *  whenever a new message arrives. */
 export default function ChatMessages({ accentColor, conversation, onAttachmentClick, resolvedUserId, userNames }) {
     const scrollRef = useRef(null)
-    const otherInitials = UserUtility.getInitials(userNames[conversation.otherId] || '')
+    const otherName = userNames[conversation.otherId] || ''
 
     const chronological = useMemo(
         () => [...conversation.messages].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
@@ -66,12 +66,12 @@ export default function ChatMessages({ accentColor, conversation, onAttachmentCl
                                 {!isMine && (
                                     <div className="w-6 flex-shrink-0 self-end">
                                         {showAvatar && (
-                                            <div
-                                                className="w-6 h-6 rounded flex items-center justify-center text-[9px] font-bold text-white"
-                                                style={{ background: accentColor }}
-                                            >
-                                                {otherInitials}
-                                            </div>
+                                            <UserAvatar
+                                                name={otherName}
+                                                userId={conversation.otherId}
+                                                size={24}
+                                                rounded="md"
+                                            />
                                         )}
                                     </div>
                                 )}

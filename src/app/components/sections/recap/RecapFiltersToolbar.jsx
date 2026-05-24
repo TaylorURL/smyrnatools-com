@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DATE_OPTIONS, TYPE_OPTIONS } from './recapConstants'
+import { DATE_OPTIONS, TYPE_OPTIONS } from '../../../constants/recapConstants'
 import RecapFilterPill from './RecapFilterPill'
 import { formatFieldName } from './recapHelpers'
 import RecapMetricCell from './RecapMetricCell'

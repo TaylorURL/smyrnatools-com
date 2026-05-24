@@ -1,13 +1,13 @@
 import React from 'react'
 
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
+import { useMaintenanceForm } from '../../../app/hooks/useMaintenanceForm'
 import { AssignedRolesSection } from './create/AssignedRolesSection'
 import { PrimaryButton, SubtleButton } from './create/atoms'
 import { DeleteConfirmModal } from './create/DeleteConfirmModal'
 import { FormDetailsSection } from './create/FormDetailsSection'
 import { FormFieldsSection } from './create/FormFieldsSection'
 import { PageHeader } from './create/PageHeader'
-import { useMaintenanceForm } from './create/useMaintenanceForm'
 
 /**
  * Form builder for creating or editing a maintenance form definition.

@@ -119,6 +119,7 @@ export default function NavigationTwoLevel({
                             badgeColor="#22c55e"
                         />
                         <TwoLevelUserAvatar
+                            accentColor={accentColor}
                             initials={userInitials}
                             title={userName || 'My Account'}
                             onClick={() => onMenuClick('MyAccount')}

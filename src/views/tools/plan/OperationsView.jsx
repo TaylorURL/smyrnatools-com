@@ -6,7 +6,6 @@ import { PlanHeader } from '../../../app/components/plan/PlanHeader'
 import { PlanLoadErrorBanner } from '../../../app/components/plan/PlanLoadErrorBanner'
 import { PlanPresenceOverlay } from '../../../app/components/plan/PlanPresenceOverlay'
 import { PlanReadOnlyBanner } from '../../../app/components/plan/PlanReadOnlyBanner'
-import { PlanReviewSendModal } from '../../../app/components/plan/PlanReviewSendModal'
 import { PlanScheduleStaleBanner } from '../../../app/components/plan/tabs/schedule/PlanScheduleStaleBanner'
 import { isDarkLikeTheme } from '../../../app/constants/themeConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
@@ -237,14 +236,11 @@ function OperationsViewImpl({ accentColor, isDark }) {
             userRoleNames
         })
 
-    /* Review & Send modal — the daily-plan email pipeline. Replaces the
-     * old "Copy Plan" affordance: the dispatcher reviews each plant's
-     * rendered message + resolved recipients, then ships them in one
-     * confirm. While testing every send routes to the redirect inbox
-     * baked into the edge function. */
-    const [reviewSendOpen, setReviewSendOpen] = useState(false)
-    const openReviewSend = useCallback(() => setReviewSendOpen(true), [])
-    const closeReviewSend = useCallback(() => setReviewSendOpen(false), [])
+    /* Header date-control slot. The Statistics tab portals its own
+     * Day/Week/Month controls bar into this slot so it visually replaces
+     * the global single-day stepper. Call-list / settings tabs leave the
+     * slot empty so no date control renders at all. */
+    const [headerStatsSlotEl, setHeaderStatsSlotEl] = useState(null)
 
     return (
         <div
@@ -261,9 +257,9 @@ function OperationsViewImpl({ accentColor, isDark }) {
                 onChangeDate={setPlanDate}
                 onChangeViewMode={setViewMode}
                 onRefresh={refreshSchedule}
-                onReviewSend={openReviewSend}
                 planDate={planDate}
                 scheduleLastSyncedAt={scheduleLastSyncedAt}
+                setStatsSlotEl={setHeaderStatsSlotEl}
                 syncStatus={syncStatus}
                 viewMode={viewMode}
             />
@@ -396,6 +392,7 @@ function OperationsViewImpl({ accentColor, isDark }) {
                             {effectiveViewMode === 'statistics' && (
                                 <PlanStatisticsView
                                     accentColor={accentColor}
+                                    headerSlotEl={headerStatsSlotEl}
                                     liveProduction={plantProduction}
                                     mixerCountsByPlant={mixerCountsByPlant}
                                     planColocationMap={plantColocationMap}
@@ -427,21 +424,6 @@ function OperationsViewImpl({ accentColor, isDark }) {
                     </div>
                 )}
             </div>
-            {reviewSendOpen && (
-                <PlanReviewSendModal
-                    accentColor={accentColor}
-                    assignments={assignments}
-                    detailByOrderId={detailByOrderId}
-                    getTravelTime={getTravelTime}
-                    notes={notes}
-                    onClose={closeReviewSend}
-                    planDate={planDate}
-                    plantAddressByCode={plantAddressByCode}
-                    plantNameByCode={plantNameByCode}
-                    plantProduction={plantProduction}
-                    stats={stats}
-                />
-            )}
         </div>
     )
 }

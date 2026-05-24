@@ -1,6 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import UserAvatar from '../UserAvatar'
+
 /** Compact icon button used in the two-level header for messages/users. */
 export function TwoLevelIconButton({
     title,
@@ -41,17 +43,19 @@ export function TwoLevelIconButton({
     )
 }
 
-/** Avatar pill in the two-level header that opens the user's account view. */
-export function TwoLevelUserAvatar({ initials, title, onClick }) {
+/** Avatar pill in the two-level header that opens the user's account view.
+ *  Renders the viewer's own initials on their accent colour. */
+export function TwoLevelUserAvatar({ accentColor, initials, title, onClick }) {
     return (
-        <div
-            className="flex items-center justify-center cursor-pointer bg-[rgba(255,255,255,0.15)] border border-[rgba(255,255,255,0.1)] rounded-lg font-bold h-[34px] w-[34px]"
-            style={{ color: 'white', fontSize: 12 }}
+        <button
+            type="button"
             onClick={onClick}
             title={title}
+            className="cursor-pointer border border-[rgba(255,255,255,0.1)] rounded-lg p-0"
+            style={{ background: 'transparent' }}
         >
-            {initials}
-        </div>
+            <UserAvatar accentColor={accentColor} initials={initials} size={34} rounded="lg" />
+        </button>
     )
 }
 

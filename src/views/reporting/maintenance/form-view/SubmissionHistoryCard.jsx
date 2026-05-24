@@ -1,10 +1,10 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useMemo } from 'react'
 
+import { CARD_STYLE, HISTORY_COLLAPSED_LIMIT } from '../../../../app/constants/maintenanceFormConstants'
 import MaintenanceService from '../../../../services/MaintenanceService'
 import { formatMaintenanceDateShort } from '../../../../utils/MaintenanceUtility'
 import { CardHeader } from './atoms'
-import { CARD_STYLE, HISTORY_COLLAPSED_LIMIT } from './constants'
 import { formatHistoryDateTime, statusForSubmission } from './helpers'
 
 function HistoryStatusPill({ submission }) {

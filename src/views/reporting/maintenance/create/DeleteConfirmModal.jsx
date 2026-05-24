@@ -1,8 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
+import { SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceCreateConstants'
 import { SubtleButton } from './atoms'
-import { SECTION_LABEL_CLASS } from './constants'
 
 export function DeleteConfirmModal({ onCancel, onConfirm, saving }) {
     return (

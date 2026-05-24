@@ -1,8 +1,10 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { UserPresenceService } from '../../../services/UserPresenceService'
+import { useUserAccents } from '../../hooks/useUserAccent'
+import UserAvatar from './UserAvatar'
 
 const MILLISECONDS_PER_MINUTE = 60000
 const MILLISECONDS_PER_HOUR = 3600000
@@ -41,6 +43,9 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
         UserPresenceService.addOnlineUsersListener(handleUpdate)
         return () => UserPresenceService.removeOnlineUsersListener(handleUpdate)
     }, [isOpen])
+
+    const onlineUserIds = useMemo(() => onlineUsers.map((u) => u.id), [onlineUsers])
+    const accentByUserId = useUserAccents(onlineUserIds)
 
     if (!isOpen) return null
 
@@ -106,24 +111,23 @@ function OnlineUsersModal({ isOpen, onClose, anchorRect }) {
                             {onlineUsers.map((user) => {
                                 const roleColor =
                                     (user.roles?.[0] && roleColorMap[user.roles[0].toLowerCase()]) ?? '#64748b'
-                                const tintBg = roleColor.startsWith('hsl')
-                                    ? roleColor.replace('hsl(', 'hsla(').replace(')', ', 0.12)')
-                                    : `${roleColor}1f`
                                 return (
                                     <div
                                         key={user.id}
                                         className="px-3 py-2 transition-colors hover:bg-bg-tertiary border-b border-border-light"
                                     >
                                         <div className="flex items-start gap-2.5">
-                                            <div className="relative shrink-0">
-                                                <div className="flex h-7 w-7 items-center justify-center rounded bg-bg-tertiary text-text-secondary">
-                                                    <i className="fas fa-user text-[11px]" />
-                                                </div>
-                                                <div
+                                            <UserAvatar
+                                                name={user.name}
+                                                accentColor={accentByUserId[user.id]}
+                                                size="md"
+                                                rounded="md"
+                                            >
+                                                <span
                                                     className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-600"
                                                     style={{ border: '2px solid var(--bg-primary)' }}
                                                 />
-                                            </div>
+                                            </UserAvatar>
                                             <div className="min-w-0 flex-1">
                                                 <span className="block truncate text-[12px] font-semibold text-text-primary">
                                                     {user.name || 'Unknown User'}

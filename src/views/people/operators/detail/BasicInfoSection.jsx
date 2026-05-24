@@ -1,6 +1,6 @@
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
+import { RATING_LABELS } from '../../../../app/constants/operatorDetailConstants'
 import GrammarUtility from '../../../../utils/GrammarUtility'
-import { RATING_LABELS } from './operatorDetailConstants'
 
 /**
  * Basic information section: employee id / name / phone fields and the

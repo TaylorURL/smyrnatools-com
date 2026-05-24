@@ -4,10 +4,10 @@ import ReactDOM from 'react-dom'
 
 import { usePreferences } from '../../context/PreferencesContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import { useRecapDerivedData } from '../../hooks/useRecapDerivedData'
+import { useRecapHistory } from '../../hooks/useRecapHistory'
 import RecapAssetGroup from './recap/RecapAssetGroup'
 import RecapFiltersToolbar from './recap/RecapFiltersToolbar'
-import { useRecapDerivedData } from './recap/useRecapDerivedData'
-import { useRecapHistory } from './recap/useRecapHistory'
 
 const TAB_VISIBILITY_DELAY_MS = 2000
 
