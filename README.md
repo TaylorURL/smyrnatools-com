@@ -11,7 +11,7 @@
 <p align="center">
   <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/ci.yml/badge.svg?branch=core" alt="CI Status" />
   <img src="https://github.com/bradley-t-t/smyrnatools-com/actions/workflows/test.yml/badge.svg?branch=core" alt="Test Status" />
-  <img src="https://img.shields.io/badge/v2026.22.1-release-c12033" alt="Version" />
+  <img src="https://img.shields.io/badge/v2026.22.2-release-c12033" alt="Version" />
   <img src="https://img.shields.io/badge/React-19.1-61DAFB?logo=react&logoColor=white" alt="React" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind" />
@@ -349,7 +349,7 @@ standalone app on iOS with translucent status bar.
 
 | Metric                | Value                                              |
 |-----------------------|----------------------------------------------------|
-| **Current Version**   | 2026.22.1                                          |
+| **Current Version**   | 2026.22.2                                          |
 | **Views**             | 86 view files across 23 page modules               |
 | **Services**          | 30 service classes                                 |
 | **Custom Hooks**      | 99 specialized hooks                               |

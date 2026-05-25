@@ -6,7 +6,6 @@ import { AIService } from './AIService'
 import { UserService } from './UserService'
 
 const PRIORITY_CACHE_TTL_MS = 30 * 60_000
-const MAX_PLANNED_ITEMS_PER_DAY = 3
 const PRIORITY_CACHE_PREFIX = 'ai:priority:'
 
 /**
@@ -235,8 +234,7 @@ class ListServiceImpl {
 
     /** Invalidates all cached priority scores so the next auto-plan re-scores everything. */
     invalidateAllPriorityScores() {
-        const keysToDelete = Object.keys(CacheUtility.caches).filter((key) => key.startsWith(PRIORITY_CACHE_PREFIX))
-        for (const key of keysToDelete) CacheUtility.delete(key)
+        ListItemUtility.invalidateAllPriorityScores()
     }
 
     /**
@@ -244,17 +242,7 @@ class ListServiceImpl {
      * @returns {{ cached: Map<string, number>, uncached: Array }} Partitioned results.
      */
     partitionItemsByScoreCache(openItems) {
-        const cached = new Map()
-        const uncached = []
-        for (const item of openItems) {
-            const score = CacheUtility.get(`${PRIORITY_CACHE_PREFIX}${item.id}`)
-            if (score !== null) {
-                cached.set(item.id, score)
-            } else {
-                uncached.push(item)
-            }
-        }
-        return { cached, uncached }
+        return ListItemUtility.partitionItemsByScoreCache(openItems)
     }
 
     /**
@@ -351,78 +339,12 @@ class ListServiceImpl {
      * Items with deadlines within the week are placed on or before their deadline day.
      */
     distributeItemsAcrossWeek(rankedItems, weekDates, existingPlannedItems) {
-        const today = new Date().toISOString().split('T')[0]
-        const maxPlanDate = new Date()
-        maxPlanDate.setDate(maxPlanDate.getDate() + 7)
-        const oneWeekAhead = maxPlanDate.toISOString().split('T')[0]
-        const futureDays = weekDates.filter((d) => d.dateStr >= today && d.dateStr <= oneWeekAhead)
-        if (futureDays.length === 0) return []
-        const daySlots = new Map()
-        for (const day of futureDays) {
-            const existingCount = existingPlannedItems.filter((pi) => pi.planned_date === day.dateStr).length
-            daySlots.set(day.dateStr, MAX_PLANNED_ITEMS_PER_DAY - existingCount)
-        }
-        const totalAvailableSlots = [...daySlots.values()].reduce((sum, slots) => sum + Math.max(0, slots), 0)
-        const itemsToPlace = rankedItems.slice(0, totalAvailableSlots)
-        const assignments = []
-        const deadlineItems = []
-        const flexibleItems = []
-        const dateStrings = futureDays.map((d) => d.dateStr)
-        const weekStart = dateStrings[0]
-        const weekEnd = dateStrings[dateStrings.length - 1]
-        for (const entry of itemsToPlace) {
-            const deadlineDate = entry.item.deadline ? entry.item.deadline.split('T')[0] : null
-            if (deadlineDate && deadlineDate >= weekStart && deadlineDate <= weekEnd) {
-                deadlineItems.push({ ...entry, deadlineDate })
-            } else {
-                flexibleItems.push(entry)
-            }
-        }
-        for (const entry of deadlineItems) {
-            const targetDateIndex = dateStrings.findIndex((d) => d >= entry.deadlineDate)
-            const targetDate = targetDateIndex >= 0 ? dateStrings[targetDateIndex] : null
-            let placed = false
-            if (targetDate && daySlots.get(targetDate) > 0) {
-                assignments.push({ itemId: entry.item.id, plannedDate: targetDate })
-                daySlots.set(targetDate, daySlots.get(targetDate) - 1)
-                placed = true
-            }
-            if (!placed) {
-                for (let i = (targetDateIndex >= 0 ? targetDateIndex : dateStrings.length) - 1; i >= 0; i--) {
-                    if (daySlots.get(dateStrings[i]) > 0) {
-                        assignments.push({ itemId: entry.item.id, plannedDate: dateStrings[i] })
-                        daySlots.set(dateStrings[i], daySlots.get(dateStrings[i]) - 1)
-                        placed = true
-                        break
-                    }
-                }
-            }
-            if (!placed) {
-                for (const dateStr of dateStrings) {
-                    if (daySlots.get(dateStr) > 0) {
-                        assignments.push({ itemId: entry.item.id, plannedDate: dateStr })
-                        daySlots.set(dateStr, daySlots.get(dateStr) - 1)
-                        break
-                    }
-                }
-            }
-        }
-        let dayIndex = 0
-        for (const entry of flexibleItems) {
-            let placed = false
-            for (let attempt = 0; attempt < dateStrings.length; attempt++) {
-                const dateStr = dateStrings[(dayIndex + attempt) % dateStrings.length]
-                if (daySlots.get(dateStr) > 0) {
-                    assignments.push({ itemId: entry.item.id, plannedDate: dateStr })
-                    daySlots.set(dateStr, daySlots.get(dateStr) - 1)
-                    dayIndex = (dayIndex + attempt + 1) % dateStrings.length
-                    placed = true
-                    break
-                }
-            }
-            if (!placed) break
-        }
-        return assignments
+        return ListItemUtility.distributeItemsAcrossWeek(
+            rankedItems,
+            weekDates,
+            existingPlannedItems,
+            ListItemUtility.MAX_PLANNED_ITEMS_PER_DAY
+        )
     }
 
     // ─── Pure helpers — delegated to ListItemUtility ────────────────────────

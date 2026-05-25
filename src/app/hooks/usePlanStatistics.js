@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { DispatchDataService } from '../../services/DispatchDataService'
-import { MixerService } from '../../services/MixerService'
-import { OperatorService } from '../../services/OperatorService'
 import { PlanService } from '../../services/PlanService'
 import {
     buildActiveAssignmentByName,
@@ -40,6 +38,9 @@ import {
     padTrend
 } from '../../utils/PlanStatisticsUtility'
 import { getTodayDate } from '../../utils/PlanUtility'
+import { usePlanStatisticsDetailByDay } from './usePlanStatisticsDetailByDay'
+import { usePlanStatisticsPlans } from './usePlanStatisticsPlans'
+import { usePlanStatisticsRoster } from './usePlanStatisticsRoster'
 
 /**
  * Orchestrates every async + derived state slice for `PlanStatisticsView`.
@@ -114,118 +115,23 @@ export function usePlanStatistics({
     /** null = all plants; otherwise a plant_code that scopes every
      *  aggregation, chart, and table on the page. */
     const [selectedPlant, setSelectedPlant] = useState(null)
-    /** Per-day detail-order maps (orderId → ticket data) fetched from the
-     *  dispatch storage bucket. Feeds `computeCustomerSatisfaction` so this
-     *  page produces the EXACT same score the Schedule tab shows for the
-     *  current day. Days with no detail data are scored as null. */
-    const [detailByDay, setDetailByDay] = useState({})
-    const [satisfactionLoading, setSatisfactionLoading] = useState(false)
-    /** Active assigned mixers with operators — fetched once when the Operators
-     *  sub-page is first visited so we can cross-reference ticket drivers
-     *  against each plant's roster. Stays in memory after first fetch since
-     *  the roster rarely changes within a session. */
-    const [activeMixers, setActiveMixers] = useState(null)
-    const [mixersLoading, setMixersLoading] = useState(false)
-    /** Full operator roster — fetched once when the Operators sub-page is
-     *  first visited so dispatch ticket drivers (keyed by `driver_num` =
-     *  `smyrna_id`) can be resolved to the canonical operator record. The
-     *  operator's `name` is what the rest of the app shows (Mixer detail,
-     *  Tractor detail, verification modal), so the stats page renders the
-     *  same name instead of the raw dispatch HTML driver string. */
-    const [operatorRoster, setOperatorRoster] = useState(null)
-    const [operatorRosterLoading, setOperatorRosterLoading] = useState(false)
-    /** Saved plan rows (with `assignments`) for the active range — only the
-     *  Help & Cross-Loading sub-page needs these, since the rest of the
-     *  Statistics tab reads ordered/loaded production straight from
-     *  `dispatch_data`. Indexed by plan_date so per-day pair groupings can
-     *  walk one entry at a time. */
-    const [plansByDate, setPlansByDate] = useState({})
     // `plansLoading` is held only as a public-API stub for downstream
     // consumers; the plans fetch now rides on the main `loading` flag
     // since plans + dispatch_data are fetched together in one effect.
     const [plansLoading] = useState(false)
 
-    /* Active-mixer + operator-roster fetches.
-     *
-     * IMPORTANT: the loading flags (`mixersLoading` / `operatorRosterLoading`)
-     * are deliberately NOT in the deps arrays. They get flipped to `true`
-     * INSIDE the effect, which would otherwise:
-     *   1. Trigger a re-render
-     *   2. Re-fire the effect (loading flag changed)
-     *   3. Run cleanup on the previous closure → `cancelled = true`
-     *   4. Skip the guard (loading is true now), bail out
-     *   5. The original fetch completes, hits `if (cancelled) return`, and
-     *      NEVER calls `setActiveMixers`/`setOperatorRoster`
-     * → both rosters stay null forever, every ticket falls into the
-     *   unmatched bucket. We swap to a ref-based guard so the loading
-     *   flag is still surfaced to the UI but doesn't participate in the
-     *   effect's dep diffing. */
-    useEffect(() => {
-        if (!operatorsEnabled) return undefined
-        if (activeMixers !== null) return undefined
-        let cancelled = false
-        setMixersLoading(true)
-        ;(async () => {
-            try {
-                const mixers = await MixerService.fetchMixers()
-                if (cancelled) return
-                const active = (mixers || []).filter(
-                    (m) => m && m.status === 'Active' && m.assignedOperator && m.truckNumber
-                )
-                setActiveMixers(active)
-            } catch (err) {
-                console.warn('[usePlanStatistics] mixer fetch failed', err?.message || err)
-                if (!cancelled) setActiveMixers([])
-            } finally {
-                if (!cancelled) setMixersLoading(false)
-            }
-        })()
-        return () => {
-            cancelled = true
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [operatorsEnabled, activeMixers])
+    const { activeMixers, operatorRoster, operatorRosterLoading } = usePlanStatisticsRoster({ operatorsEnabled })
 
-    useEffect(() => {
-        if (!operatorsEnabled) return undefined
-        if (operatorRoster !== null) return undefined
-        let cancelled = false
-        setOperatorRosterLoading(true)
-        ;(async () => {
-            try {
-                const operators = await OperatorService.getAllOperators()
-                if (cancelled) return
-                setOperatorRoster(operators || [])
-            } catch (err) {
-                console.warn('[usePlanStatistics] operator fetch failed', err?.message || err)
-                if (!cancelled) setOperatorRoster([])
-            } finally {
-                if (!cancelled) setOperatorRosterLoading(false)
-            }
-        })()
-        return () => {
-            cancelled = true
-        }
-    }, [operatorsEnabled, operatorRoster])
-
-    /** Name-based index — operators resolve by canonicalised driver name,
-     *  which is the primary link between Jonel ticket data and Tools.
-     *  Each operator is registered under several canonical variants so
-     *  common Jonel spellings still match. */
+    /* Driver resolution lookup maps. Tickets identify drivers by a mix of
+     * normalized name, employeeId, and truck number — these maps bridge
+     * every variant back to a canonical operator + mixer assignment so
+     * loads-by-operator can attribute correctly even when only one of the
+     * keys is present on the ticket. See the underlying `build*` helpers
+     * for the exact match semantics. */
     const operatorByNormalizedName = useMemo(() => buildOperatorByNormalizedName(operatorRoster), [operatorRoster])
     const mixerByEmployeeId = useMemo(() => buildMixerByEmployeeId(activeMixers), [activeMixers])
-    /** Truck number → assigned-operator employeeId. The primary
-     *  disambiguator when two active operators share a name: each is on
-     *  their own mixer, so the ticket's `truck_num` plus this map
-     *  uniquely identifies which operator drove that load. */
     const mixerByTruckNumber = useMemo(() => buildMixerByTruckNumber(activeMixers), [activeMixers])
-    /** UUID → operator record. */
     const operatorByEmployeeId = useMemo(() => buildOperatorByEmployeeId(operatorRoster), [operatorRoster])
-    /** Direct lookup: normalized operator name → active mixer assignment.
-     *  Lets us resolve home plant even when the smyrnaId / driverNum
-     *  chain misses — as long as the ticket's driver name matches an
-     *  operator who has an active mixer assigned, we know what plant
-     *  they belong to. */
     const activeAssignmentByName = useMemo(
         () => buildActiveAssignmentByName(activeMixers, operatorRoster),
         [activeMixers, operatorRoster]
@@ -285,14 +191,6 @@ export function usePlanStatistics({
                 if (cancelled) return
                 setCurrentRows(mergePlanAndDispatchRows(plansCurrent, dispatchCurrent))
                 setPreviousRows(mergePlanAndDispatchRows(plansPrevious, dispatchPrevious))
-                // Populate `plansByDate` from the same fetch — the Help &
-                // Cross-Loading sub-page consumes it, and consolidating the
-                // fetch avoids a second round-trip.
-                const map = {}
-                ;(plansCurrent || []).forEach((row) => {
-                    if (row?.plan_date) map[row.plan_date] = row
-                })
-                setPlansByDate(map)
             } catch {
                 if (cancelled) return
                 setCurrentRows([])
@@ -306,6 +204,10 @@ export function usePlanStatistics({
             cancelled = true
         }
     }, [range])
+
+    /** Saved plan rows (with `assignments`) for the active range — only the
+     *  Help & Cross-Loading sub-page needs these, so the fetch is gated. */
+    const { plansByDate } = usePlanStatisticsPlans({ helpCrossLoadingEnabled, range })
 
     /** Derive per-day metrics from the raw rows. Re-runs cheaply when the
      *  plant filter changes — no re-fetch needed. The live-production
@@ -342,60 +244,22 @@ export function usePlanStatistics({
         [currentRows, previousRows]
     )
 
-    /** Fetch detail-order ticket data for every working day in the current
-     *  range whose schedule we already loaded. One chunked range request
-     *  rather than N per-date round-trips. */
-    useEffect(() => {
-        if (
-            !satisfactionEnabled &&
-            !operatorsEnabled &&
-            !helpCrossLoadingEnabled &&
-            !plantsEnabled &&
-            !serviceEnabled &&
-            !kickersEnabled &&
-            !ticketLookupEnabled
-        )
-            return undefined
-        const allDays = [...currentDays, ...previousDays]
-        if (allDays.length === 0) return undefined
-        let cancelled = false
-        // Defensive filter: drop empty/falsy plan_dates so a malformed row
-        // can't fan out to a request storm.
-        const dates = [...new Set(allDays.map((d) => d.planDate).filter(Boolean))].filter((d) => !(d in detailByDay))
-        if (dates.length === 0) return undefined
-        setSatisfactionLoading(true)
-        DispatchDataService.fetchDetailByDateRange(dates, scheduleMetaByDate)
-            .then((rangeMap) => {
-                if (cancelled) return
-                setDetailByDay((prev) => {
-                    const next = { ...prev }
-                    dates.forEach((date) => {
-                        next[date] = rangeMap?.[date] || {}
-                    })
-                    return next
-                })
-            })
-            .catch((err) => {
-                if (!cancelled) console.warn('[usePlanStatistics] satisfaction range fetch failed', err)
-            })
-            .finally(() => {
-                if (!cancelled) setSatisfactionLoading(false)
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [
+    /** Per-day detail-order ticket data fetched from the dispatch storage
+     *  bucket. Feeds `computeCustomerSatisfaction` so this page produces
+     *  the EXACT same score the Schedule tab shows for the current day.
+     *  Days with no detail data are scored as null. */
+    const { detailByDay, satisfactionLoading } = usePlanStatisticsDetailByDay({
         currentDays,
         previousDays,
-        detailByDay,
         scheduleMetaByDate,
         satisfactionEnabled,
         operatorsEnabled,
         helpCrossLoadingEnabled,
         plantsEnabled,
         serviceEnabled,
-        kickersEnabled
-    ])
+        kickersEnabled,
+        ticketLookupEnabled
+    })
 
     /** Flat list of every live order in the active window, tagged with its
      *  plant + date. Built ONCE so per-plant memos can bucket without

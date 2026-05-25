@@ -1,5 +1,44 @@
 import { jsPDF } from 'jspdf'
 
+import {
+    CHECKLIST_ITEM_HEIGHT,
+    CHECKLIST_PADDING_BOTTOM,
+    COLORS,
+    COLUMN_WIDTH,
+    DATE_HEIGHT,
+    FALLBACK_ACCENT,
+    FIELD_GAP,
+    HEADER_BAND_HEIGHT,
+    HEADER_META_HEIGHT,
+    HELPER_BLOCK_HEIGHT,
+    LABEL_BLOCK_HEIGHT,
+    MARGIN_BOTTOM,
+    MARGIN_X,
+    NUMBER_HEIGHT,
+    PAGE_HEIGHT,
+    PAGE_WIDTH,
+    SELECT_HEIGHT,
+    SIGNATURE_HEIGHT,
+    TEXT_FONT_SIZE,
+    TEXT_HEIGHT,
+    TEXTAREA_HEIGHT,
+    TITLE_FONT_SIZE,
+    hexToRgb,
+    sanitizeFilenamePart,
+    titleCase
+} from './MaintenancePdfFormConstants'
+import {
+    drawCheckbox,
+    drawHelperText,
+    drawOutlinedBox,
+    drawRule,
+    drawSectionHeading,
+    drawUppercaseLabel,
+    setFill,
+    setStroke,
+    setText
+} from './MaintenancePdfFormDrawing'
+
 /**
  * Builds a printable PDF from a maintenance form definition. The output is a
  * blank fillable sheet — the worker writes their plant, the date they
@@ -14,165 +53,10 @@ import { jsPDF } from 'jspdf'
  *   - Each field is a card: label / helper / fillable input
  *   - Multi-page support — fields that won't fit trigger a page break with
  *     the same header band repeated up top
+ *
+ * Layout constants live in `MaintenancePdfFormConstants.ts`; drawing
+ * primitives live in `MaintenancePdfFormDrawing.ts`.
  */
-
-/* ── Page geometry ──────────────────────────────────────────────────────── */
-const PAGE_WIDTH = 612
-const PAGE_HEIGHT = 792
-const MARGIN_X = 36
-const MARGIN_BOTTOM = 56
-const COLUMN_WIDTH = PAGE_WIDTH - MARGIN_X * 2
-const HEADER_BAND_HEIGHT = 64
-const HEADER_META_HEIGHT = 60
-
-/* ── Type scale ─────────────────────────────────────────────────────────── */
-const LABEL_FONT_SIZE = 8.5
-const TEXT_FONT_SIZE = 11
-const TITLE_FONT_SIZE = 18
-const HELPER_FONT_SIZE = 8.5
-
-/* ── Field heights ──────────────────────────────────────────────────────── */
-const TEXT_HEIGHT = 28
-const TEXTAREA_HEIGHT = 84
-const NUMBER_HEIGHT = 28
-const DATE_HEIGHT = 28
-const SELECT_HEIGHT = 30
-const CHECKLIST_ITEM_HEIGHT = 22
-const CHECKLIST_PADDING_BOTTOM = 8
-const SIGNATURE_HEIGHT = 56
-const FIELD_GAP = 16
-const LABEL_BLOCK_HEIGHT = 18
-const HELPER_BLOCK_HEIGHT = 12
-
-/* ── Palette helpers ────────────────────────────────────────────────────── */
-
-const FALLBACK_ACCENT = '#1e3a5f'
-
-/** Convert a `#rrggbb` (or `#rgb`) string to a `[r,g,b]` triple jspdf wants. */
-/** Title-cases the first letter of each word in a value, leaving the rest
- *  alone so existing capitalization (e.g. acronyms in form titles) survives.
- *  Used for the on-page Frequency display so "monthly" reads as "Monthly"
- *  without us mass-rewriting the underlying DB enum values. */
-function titleCase(value) {
-    return String(value || '')
-        .trim()
-        .replace(/\b([a-z])/g, (_, ch) => ch.toUpperCase())
-}
-
-/** Strip filesystem-illegal / awkward characters from a value but preserve
- *  spaces and casing so the downloaded PDF reads as a human filename rather
- *  than a kebab-cased slug. Used to build the maintenance-form download
- *  filename — much friendlier than the prior `mixer-maintenance-form_2026-05-21.pdf`. */
-function sanitizeFilenamePart(value) {
-    return String(value || '')
-        .trim()
-        .replace(/[\\/:*?"<>|]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-}
-
-function hexToRgb(hex) {
-    const cleaned = (hex || '').replace('#', '').trim()
-    if (cleaned.length === 3) {
-        return [
-            parseInt(cleaned[0] + cleaned[0], 16),
-            parseInt(cleaned[1] + cleaned[1], 16),
-            parseInt(cleaned[2] + cleaned[2], 16)
-        ]
-    }
-    if (cleaned.length === 6) {
-        return [parseInt(cleaned.slice(0, 2), 16), parseInt(cleaned.slice(2, 4), 16), parseInt(cleaned.slice(4, 6), 16)]
-    }
-    return hexToRgb(FALLBACK_ACCENT)
-}
-
-const COLORS = {
-    accentText: [255, 255, 255],
-    bodyText: [30, 41, 59], // slate-800
-    border: [203, 213, 225], // slate-300
-    borderStrong: [148, 163, 184], // slate-400
-    helper: [148, 163, 184], // slate-400
-    label: [71, 85, 105], // slate-600
-    panelBg: [248, 250, 252], // slate-50
-    placeholder: [148, 163, 184],
-    rule: [226, 232, 240] // slate-200
-}
-
-/* ── Low-level drawing ─────────────────────────────────────────────────── */
-
-function setFill(doc, rgb) {
-    doc.setFillColor(rgb[0], rgb[1], rgb[2])
-}
-
-function setStroke(doc, rgb) {
-    doc.setDrawColor(rgb[0], rgb[1], rgb[2])
-}
-
-function setText(doc, rgb) {
-    doc.setTextColor(rgb[0], rgb[1], rgb[2])
-}
-
-function drawRule(doc, x1, y, x2, rgb = COLORS.rule) {
-    setStroke(doc, rgb)
-    doc.setLineWidth(0.5)
-    doc.line(x1, y, x2, y)
-}
-
-function drawOutlinedBox(doc, x, y, w, h, { fill = null, stroke = COLORS.border, radius = 3 } = {}) {
-    setStroke(doc, stroke)
-    doc.setLineWidth(0.6)
-    if (fill) {
-        setFill(doc, fill)
-        doc.roundedRect(x, y, w, h, radius, radius, 'FD')
-    } else {
-        doc.roundedRect(x, y, w, h, radius, radius, 'S')
-    }
-}
-
-function drawCheckbox(doc, x, y, size = 11) {
-    setStroke(doc, COLORS.borderStrong)
-    doc.setLineWidth(0.7)
-    doc.roundedRect(x, y, size, size, 1.5, 1.5, 'S')
-}
-
-function drawUppercaseLabel(doc, label, x, y, { required = false, color = COLORS.label } = {}) {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(LABEL_FONT_SIZE)
-    setText(doc, color)
-    const text = (label || '').toUpperCase()
-    doc.text(text, x, y, { charSpace: 0.6 })
-    if (required) {
-        const w = doc.getTextWidth(text) + 4
-        setText(doc, [220, 38, 38])
-        doc.text('*', x + w, y)
-    }
-    setText(doc, COLORS.bodyText)
-}
-
-function drawHelperText(doc, text, x, y, maxWidth) {
-    if (!text) return
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(HELPER_FONT_SIZE)
-    setText(doc, COLORS.helper)
-    doc.text(text, x, y, { maxWidth })
-    setText(doc, COLORS.bodyText)
-}
-
-/** Renders a flush-left section heading: tracked accent eyebrow above an
- *  uppercase title with a thin rule running the rest of the column. Used
- *  to break the page into "Submission info" and "Inspection items"
- *  groups so the worker reads the form in chapters. */
-function drawSectionHeading(doc, label, x, y, accentRgb) {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(LABEL_FONT_SIZE)
-    setText(doc, accentRgb)
-    const text = label.toUpperCase()
-    doc.text(text, x, y, { charSpace: 1.2 })
-    const labelWidth = doc.getTextWidth(text)
-    drawRule(doc, x + labelWidth + 10, y - 3, x + COLUMN_WIDTH, COLORS.border)
-    setText(doc, COLORS.bodyText)
-    return y + 10
-}
 
 /* ── Header / footer ───────────────────────────────────────────────────── */
 

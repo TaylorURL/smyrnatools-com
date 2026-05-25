@@ -1,3 +1,17 @@
+import type {
+    AccumulateOrdersParams,
+    BiggestOrder,
+    BuildDemandParams,
+    BuildPlantAccumulatorsParams,
+    CollectHourlyParams,
+    DemandData,
+    HourBucket,
+    HourlyKpiResult,
+    PlantAccumulator,
+    StackedHourlyEntry,
+    SupplyVerdict,
+    TimeOfDayTotals
+} from './PlanDemandTypes'
 import { cleanString, estimatePourMinutes } from './PlanRuntimeUtility'
 import {
     getCalculatedTruckCount,
@@ -7,174 +21,34 @@ import {
     PLAN_META_KEY
 } from './PlanUtility'
 
+export type {
+    AccumulateOrdersParams,
+    BiggestOrder,
+    BuildDemandParams,
+    BuildPlantAccumulatorsParams,
+    CapacityByPlantEntry,
+    CollectHourlyParams,
+    CustomerEntry,
+    DemandData,
+    DemandTotals,
+    HourBucket,
+    HourlyKpiResult,
+    OrderLike,
+    PeakHour,
+    PlantAccumulator,
+    PlantProduction,
+    PlantStat,
+    ProductEntry,
+    StackedHourlyEntry,
+    SupplyVerdict,
+    TimeOfDayTotals
+} from './PlanDemandTypes'
+
 /**
  * Pure aggregation helpers for the Plan Demand view. Builds every chart's
  * underlying data set once so totals stay consistent across the KPI row,
  * hourly demand, top-customers, product mix, and per-plant breakdown.
  */
-
-interface OrderLike {
-    startTime?: string
-    rate?: string
-    loadSize?: string | number
-    yardage?: string | number
-    customer?: string
-    productCode?: string
-    orderNum?: string
-    plantCode?: string
-    [key: string]: unknown
-}
-
-interface PlantProduction {
-    [key: string]: {
-        orders?: OrderLike[]
-        [key: string]: unknown
-    }
-}
-
-interface PlantStat {
-    code?: string
-    base?: number
-    send?: number
-    recv?: number
-    [key: string]: unknown
-}
-
-interface PlantAccumulator {
-    code: string
-    name: string
-    base: number
-    adjustedBase: number
-    helpSend: number
-    helpRecv: number
-    orders: number
-    totalTrucks: number
-    totalYardage: number
-}
-
-interface HourBucket {
-    hour: number
-    label: string
-    total: number
-    yardage: number
-}
-
-interface StackedHourlyEntry {
-    hour: number
-    label: string
-    [plantCode: string]: number | string
-}
-
-interface BiggestOrder {
-    customer: string
-    orderNum: string
-    plantCode: string
-    startTime: string
-    yardage: number
-}
-
-interface HourlyKpiResult {
-    hours: HourBucket[]
-    stackedHourly: StackedHourlyEntry[]
-    customerYardage: Map<string, number>
-    productYardage: Map<string, number>
-    biggestOrder: BiggestOrder | null
-    bigPourCount: number
-    totalLoadSizeSum: number
-    totalLoadSizeCount: number
-}
-
-interface TimeOfDayTotals {
-    overnight: number
-    morning: number
-    afternoon: number
-    evening: number
-}
-
-interface CapacityByPlantEntry {
-    code: string
-    label: string
-    base: number
-    rawBase: number
-    peak: number
-    slack: number
-}
-
-interface CustomerEntry {
-    customer: string
-    yardage: number
-}
-
-interface ProductEntry {
-    product: string
-    yardage: number
-}
-
-interface PeakHour {
-    hour: number | null
-    label: string
-    total: number
-}
-
-interface DemandTotals {
-    orders: number
-    trucks: number
-    yardage: number
-}
-
-interface DemandData {
-    avgLoadSize: number
-    bigPourCount: number
-    biggestOrder: BiggestOrder | null
-    capacityByPlant: CapacityByPlantEntry[]
-    capacityUtilization: number
-    cumulativeHourly: Array<{ hour: number; label: string; yardage: number }>
-    hours: HourBucket[]
-    peakByPlant: Record<string, number>
-    peakHour: PeakHour
-    perPlant: PlantAccumulator[]
-    productMix: ProductEntry[]
-    stackedHourly: StackedHourlyEntry[]
-    timeOfDay: TimeOfDayTotals
-    topCustomers: CustomerEntry[]
-    totalBase: number
-    totals: DemandTotals
-}
-
-interface SupplyVerdict {
-    label: string
-    color: string
-    tone: string
-    coverage?: number
-}
-
-interface BuildDemandParams {
-    plantProduction: PlantProduction | null | undefined
-    stats: PlantStat[] | null | undefined
-    plantNameByCode: Record<string, string> | null | undefined
-    planDate: string | null | undefined
-    allowedCodes: Set<string> | null | undefined
-}
-
-interface BuildPlantAccumulatorsParams {
-    stats: PlantStat[] | null | undefined
-    plantProduction: PlantProduction | null | undefined
-    plantNameByCode: Record<string, string> | null | undefined
-    planDate: string | null | undefined
-    passesPlantFilter: (code: string) => boolean
-}
-
-interface AccumulateOrdersParams {
-    plants: Map<string, PlantAccumulator>
-    plantProduction: PlantProduction | null | undefined
-    plantNameByCode: Record<string, string> | null | undefined
-    passesPlantFilter: (code: string) => boolean
-}
-
-interface CollectHourlyParams {
-    plantProduction: PlantProduction | null | undefined
-    passesPlantFilter: (code: string) => boolean
-}
 
 /** Fallback palette for plants that aren't in the shared plant-badge map. */
 export const FALLBACK_SERIES_COLORS = [

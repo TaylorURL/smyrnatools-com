@@ -1,6 +1,15 @@
 import { normalizeListStatus } from '../app/constants/listViewConstants'
+import CacheUtility from './CacheUtility'
 import DateUtility from './DateUtility'
 import FormatUtility from './FormatUtility'
+
+/** Per-day cap for AI auto-plan placements — prevents the planner from
+ *  stuffing every high-priority item into the same day. Shared with
+ *  `ListService.distributeItemsAcrossWeek`. */
+export const MAX_PLANNED_ITEMS_PER_DAY = 3
+
+/** Cache-key prefix for AI priority scores. */
+export const PRIORITY_CACHE_PREFIX = 'ai:priority:'
 
 /** Priority/urgency display metadata. Colors are CSS values (not Tailwind
  *  classes) so the badges read correctly in both light and dark mode — the
@@ -447,4 +456,26 @@ export function computeDeterministicScore(item) {
     }
     if (item.responsible_role === 'maintenance') score = Math.min(10, score + 1)
     return score
+}
+
+/** Reads cached AI priority scores into a `cached` Map and returns the
+ *  items still needing a score in `uncached`. Pure read against the
+ *  shared CacheUtility — no DB access. */
+export function partitionItemsByScoreCache(openItems) {
+    const cached = new Map()
+    const uncached = []
+    for (const item of openItems) {
+        const score = CacheUtility.get(`${PRIORITY_CACHE_PREFIX}${item.id}`)
+        if (score !== null) cached.set(item.id, score)
+        else uncached.push(item)
+    }
+    return { cached, uncached }
+}
+
+/** Cache invalidation helper — wipes every priority-score entry for the
+ *  current session. Used when the auto-plan needs to re-score from
+ *  scratch (e.g., after a bulk import). */
+export function invalidateAllPriorityScores() {
+    const keysToDelete = Object.keys(CacheUtility.caches).filter((key) => key.startsWith(PRIORITY_CACHE_PREFIX))
+    for (const key of keysToDelete) CacheUtility.delete(key)
 }
