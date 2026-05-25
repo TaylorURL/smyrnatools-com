@@ -4,9 +4,9 @@
  * service-needed tallies, fleet sorting, and operator-assignment helpers.
  */
 
-const MILLIS_PER_DAY = 1000 * 60 * 60 * 24
+export const MILLIS_PER_DAY = 1000 * 60 * 60 * 24
 
-const RETIRED_STATUSES = ['Retired', 'Terminated']
+export const RETIRED_STATUSES = ['Retired', 'Terminated']
 
 const STATUS_PRIORITY: Record<string, number> = {
     Active: 0,
@@ -18,6 +18,156 @@ const STATUS_PRIORITY: Record<string, number> = {
 }
 
 const VALID_STATUSES = ['Active', 'Spare', 'In Shop', 'Retired']
+
+/** Sub-status labels for In-Shop assets. Flattens the operational team's
+ *  shop sub-states into chart-friendly display strings. */
+export const SHOP_SUB_LABELS: Record<string, string> = {
+    down_in_yard: 'Down In Yard',
+    in_shop: 'In Shop',
+    ready_for_pickup: 'Ready For Pickup',
+    third_party: 'Third Party Work',
+    waiting_for_shop: 'Waiting For Shop'
+}
+
+/** Ordered bucket labels for the fleet-wide status-tenure histogram. */
+export const TENURE_BUCKET_ORDER = ['0–7d', '8–30d', '31–90d', '91–180d', '181–365d', '> 1 year']
+
+/** Ordered bucket labels for the asset-age histogram (2-year bins). */
+export const AGE_BUCKET_ORDER = ['0–2 yr', '3–5 yr', '6–10 yr', '11–15 yr', '16–20 yr', '> 20 yr']
+
+interface DisplayStatusItem {
+    shopStatus?: string | null
+    status?: string | null
+}
+
+interface YearItem {
+    year?: number | string | null
+}
+
+interface AssetIdentifierConfig {
+    primaryField?: string
+}
+
+interface AssetIdentifierItem {
+    [key: string]: unknown
+    truckNumber?: string | number | null
+    tractorNumber?: string | number | null
+    trailerNumber?: string | number | null
+    equipmentNumber?: string | number | null
+    pickupTruckNumber?: string | number | null
+    vehicleNumber?: string | number | null
+    identifyingNumber?: string | number | null
+    vinNumber?: string | null
+    vin?: string | null
+}
+
+interface NamedOperator {
+    employeeId?: string | null
+    name?: string | null
+}
+
+interface NamedPlant {
+    plantCode?: string | null
+    code?: string | null
+    name?: string | null
+}
+
+/** Days between an ISO timestamp and "now"; null when the date is missing
+ *  or unparsable. Used for status-tenure, service-age, and verification-age
+ *  derivations across every statistics section. */
+export const daysSince = (iso: string | null | undefined): number | null => {
+    if (!iso) return null
+    const time = new Date(iso).getTime()
+    if (!Number.isFinite(time)) return null
+    return Math.max(0, Math.floor((Date.now() - time) / MILLIS_PER_DAY))
+}
+
+/** Build the bucket key for a status-tenure histogram. Tighter buckets at
+ *  the front (where most of the fleet lives) and a long tail bucket so
+ *  ancient assets don't blow up the chart. */
+export const tenureBucket = (days: number | null | undefined): string | null => {
+    if (days == null) return null
+    if (days <= 7) return '0–7d'
+    if (days <= 30) return '8–30d'
+    if (days <= 90) return '31–90d'
+    if (days <= 180) return '91–180d'
+    if (days <= 365) return '181–365d'
+    return '> 1 year'
+}
+
+/** Year-bucket histogram for the Aging page. Bins by 2-year span so a fleet
+ *  with sparse single years still shows usable bars. */
+export const ageBucket = (year: number | string | null | undefined, currentYear: number): string | null => {
+    const numeric = Number(year)
+    if (!Number.isFinite(numeric) || numeric < 1980) return null
+    const age = currentYear - numeric
+    if (age <= 2) return '0–2 yr'
+    if (age <= 5) return '3–5 yr'
+    if (age <= 10) return '6–10 yr'
+    if (age <= 15) return '11–15 yr'
+    if (age <= 20) return '16–20 yr'
+    return '> 20 yr'
+}
+
+/** Display label for the asset's current status — flattens In-Shop sub
+ *  statuses into the same surface the list view shows. */
+export const displayStatus = (item: DisplayStatusItem): string => {
+    const status = String(item.status || 'Unknown')
+    if (status !== 'In Shop') return status
+    return SHOP_SUB_LABELS[item.shopStatus || ''] || 'In Shop'
+}
+
+/** Pull a comparable year value from an item; tolerates string years. */
+export const itemYear = (item: YearItem): number | null => {
+    const numeric = Number(item.year)
+    return Number.isFinite(numeric) ? numeric : null
+}
+
+/** Identifier shown in tables — honors the config's declared primary field
+ *  first (e.g. truckNumber for mixers, `assigned` for pickup trucks), then
+ *  falls back through known asset number fields. Strictly avoids leaking
+ *  raw UUIDs (`item.id`) or unrelated text fields (`item.name`, which
+ *  doesn't exist on assets) into the identifier column — when nothing
+ *  meaningful is available we surface the VIN tail so the user can still
+ *  locate the record. */
+export const itemDisplayId = (
+    item: AssetIdentifierItem | null | undefined,
+    config: AssetIdentifierConfig | null | undefined
+): string => {
+    if (config?.primaryField && item?.[config.primaryField]) return String(item[config.primaryField])
+    const numericField =
+        item?.truckNumber ||
+        item?.tractorNumber ||
+        item?.trailerNumber ||
+        item?.equipmentNumber ||
+        item?.pickupTruckNumber ||
+        item?.vehicleNumber ||
+        item?.identifyingNumber
+    if (numericField) return String(numericField)
+    const vin = item?.vinNumber || item?.vin
+    if (vin && String(vin).length >= 6) return `VIN ${String(vin).slice(-6)}`
+    return '—'
+}
+
+/** Operator name lookup keyed by employeeId; returns "Unassigned" for empty
+ *  assignments so the chart never shows a blank slice. */
+export const operatorNameLookup = (operators: NamedOperator[] | null | undefined): Map<string, string> => {
+    const map = new Map<string, string>()
+    operators?.forEach((op) => {
+        if (op?.employeeId) map.set(op.employeeId, op.name || op.employeeId)
+    })
+    return map
+}
+
+/** Plant name lookup keyed by uppercased plant code. */
+export const plantNameLookup = (plants: NamedPlant[] | null | undefined): Map<string, string> => {
+    const map = new Map<string, string>()
+    plants?.forEach((p) => {
+        const code = p?.plantCode || p?.code
+        if (code) map.set(String(code).trim().toUpperCase(), p?.name || code)
+    })
+    return map
+}
 
 interface AssetRow {
     [key: string]: unknown

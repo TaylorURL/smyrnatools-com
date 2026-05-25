@@ -1,26 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { DispatchDataService } from '../../services/DispatchDataService'
-
-/** Canonical name key — mirrors the same normalization
- *  `useDayforceOperatorMetrics` uses so the keys we build here line up
- *  with the displayed name on each shift row. Strips punctuation,
- *  parenthesized nicknames, trailing badge numbers, then sorts the
- *  remaining tokens alphabetically so "Gomez, Jose 007943" and "Jose
- *  Gomez" both collapse to "gomez jose". */
-const canonicalNameKey = (name) => {
-    if (!name) return null
-    let s = String(name).toLowerCase()
-    s = s.replace(/\s+\d+\s*$/, '')
-    s = s.replace(/\s*\([^)]*\)\s*/g, ' ')
-    s = s
-        .replace(/[^a-z\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-    const tokens = s.split(' ').filter(Boolean)
-    if (tokens.length === 0) return null
-    return tokens.sort().join(' ')
-}
+import { canonicalNameKey } from '../../utils/OperatorNameLookupUtility'
 
 const enumerateDates = (start, end) => {
     if (!start || !end) return []
@@ -131,5 +112,3 @@ export default function useOperatorYardageByDay({ dateRange }) {
 
     return { isLoading, yardageByOperator, yardageByOperatorByDay, yardageByOperatorByPlant }
 }
-
-export { canonicalNameKey }

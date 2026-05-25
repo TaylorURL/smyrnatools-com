@@ -1,132 +1,42 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { AIService } from '../../services/AIService'
-import { Database } from '../../services/DatabaseService'
-import { OperatorService } from '../../services/OperatorService'
-import { UserService } from '../../services/UserService'
-import { HistoryUtility } from '../../utils/HistoryUtility'
 import {
-    AI_CACHE_DURATION_MS,
-    AI_HISTORY_CACHE_KEY,
-    HISTORY_SERVICE_MAP,
-    HISTORY_TABLE_MAP,
-    ISSUE_SERVICE_MAP
-} from '../constants/historyConstants'
+    buildAIHistoryContext,
+    clearAISummaryCache,
+    getAISummaryFromCache,
+    setAISummaryToCache
+} from '../../utils/HistoryDataUtility'
+import { HistoryUtility } from '../../utils/HistoryUtility'
+import { useHistoryDataFetchers } from './useHistoryDataFetchers'
 
-const filterEquivalentEntries = (entries) => {
-    try {
-        return entries.filter(
-            (entry) =>
-                !HistoryUtility.areEquivalent(
-                    entry.fieldName ?? entry.field_name,
-                    entry.oldValue ?? entry.old_value,
-                    entry.newValue ?? entry.new_value
-                )
-        )
-    } catch (e) {
-        console.error('Failed to filter equivalent history entries:', e)
-        return entries
-    }
-}
 /**
  * Loads and manages asset/operator history data, issues, comments, AI summaries,
  * and user display names for the history detail view.
  */
 export default function useHistoryData(item, type) {
-    const [history, setHistory] = useState([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState(null)
-    const [operators, setOperators] = useState([])
-    const [users, setUsers] = useState([])
-    const [issues, setIssues] = useState([])
-    const [userNames, setUserNames] = useState({})
+    const assetId = HistoryUtility.resolveAssetId(type, item)
+    const assetCacheKey = `${type}-${assetId}`
+
+    const {
+        error,
+        fetchHistory,
+        handleAddIssue,
+        handleCompleteIssue,
+        handleDeleteIssue,
+        history,
+        isLoading,
+        issues,
+        operators,
+        setError,
+        userNames,
+        users
+    } = useHistoryDataFetchers({ assetId, item, type })
+
     const [aiSummary, setAiSummary] = useState(null)
     const [aiSummaryLoading, setAiSummaryLoading] = useState(false)
     const [aiSummaryError, setAiSummaryError] = useState(false)
-    const assetId = HistoryUtility.resolveAssetId(type, item)
-    const assetCacheKey = `${type}-${assetId}`
-    const fetchOperators = useCallback(async () => {
-        try {
-            setOperators(await OperatorService.fetchOperators())
-        } catch (e) {
-            console.error('Failed to fetch operators for history:', e)
-        }
-    }, [])
-    const fetchUsers = useCallback(async () => {
-        try {
-            const { data } = await Database.from('users_profiles').select('id, first_name, last_name')
-            const rows = (data ?? []).map((row) => ({
-                id: row.id,
-                name: [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || 'Unknown'
-            }))
-            setUsers(rows)
-        } catch (e) {
-            console.error('Failed to fetch user profiles for history:', e)
-        }
-    }, [])
-    const fetchIssues = useCallback(async () => {
-        if (type === 'operator') return
-        const serviceName = ISSUE_SERVICE_MAP[type]
-        if (!serviceName) return
-        try {
-            const Service = await HistoryUtility.loadServiceModule(serviceName)
-            const fetchedIssues = await Service.fetchIssues(item.id)
-            const issuesList = Array.isArray(fetchedIssues) ? fetchedIssues : []
-            setIssues(issuesList)
-            const userIds = new Set(issuesList.filter((i) => i.created_by).map((i) => i.created_by))
-            const names = {}
-            for (const userId of userIds) {
-                try {
-                    names[userId] = (await UserService.getUserDisplayName(userId)) ?? 'Unknown'
-                } catch (e) {
-                    console.error(`Failed to resolve display name for user ${userId}:`, e)
-                    names[userId] = 'Unknown'
-                }
-            }
-            setUserNames((prev) => ({ ...prev, ...names }))
-        } catch (e) {
-            console.error(`Failed to fetch issues for ${type} ${item.id}:`, e)
-            setIssues([])
-        }
-    }, [item.id, type])
-    const fetchHistory = useCallback(async () => {
-        const config = HISTORY_SERVICE_MAP[type]
-        if (!config) return
-        try {
-            const Service = await HistoryUtility.loadServiceModule(config.service)
-            const historyData = await Service[config.method](assetId)
-            setHistory(filterEquivalentEntries(historyData ?? []))
-            setError(null)
-        } catch (e) {
-            console.error(`Failed to fetch ${type} history via service, falling back to direct query:`, e)
-            try {
-                const tableName = HISTORY_TABLE_MAP[type]
-                const idField = type === 'pickup-truck' ? 'truck_id' : `${type}_id`
-                const { data, error: queryError } = await Database.from(tableName)
-                    .select('*')
-                    .eq(idField, assetId)
-                    .order('changed_at', { ascending: false })
-                if (queryError) throw queryError
-                setHistory(filterEquivalentEntries(data ?? []))
-                setError(null)
-            } catch (e2) {
-                console.error(`Failed to fetch ${type} history via direct query:`, e2)
-                setError('Failed to load history. Please try again.')
-            }
-        }
-    }, [type, assetId])
-    useEffect(() => {
-        let cancelled = false
-        const loadData = async () => {
-            setIsLoading(true)
-            await Promise.all([fetchHistory(), fetchOperators(), fetchUsers(), fetchIssues()])
-            if (!cancelled) setIsLoading(false)
-        }
-        loadData()
-        return () => {
-            cancelled = true
-        }
-    }, [item.id, fetchHistory, fetchOperators, fetchUsers, fetchIssues])
+
     const getOperatorName = useCallback(
         (operatorId) => {
             if (!operatorId || operatorId === '0') return 'None'
@@ -323,49 +233,11 @@ export default function useHistoryData(item, type) {
         })
         return statusPeriods
     }, [history])
-    const getAISummaryFromCache = useCallback(() => {
-        try {
-            const cached = localStorage.getItem(AI_HISTORY_CACHE_KEY)
-            if (!cached) return null
-            const cacheData = JSON.parse(cached)
-            const assetCache = cacheData[assetCacheKey]
-            if (!assetCache) return null
-            if (Date.now() - assetCache.timestamp > AI_CACHE_DURATION_MS) return null
-            if (assetCache.historyCount !== history.length) return null
-            return assetCache.summary
-        } catch (e) {
-            console.error('Failed to read AI summary from localStorage cache:', e)
-            return null
-        }
-    }, [assetCacheKey, history.length])
-    const setAISummaryToCache = useCallback(
-        (summary) => {
-            try {
-                const cached = localStorage.getItem(AI_HISTORY_CACHE_KEY)
-                const cacheData = cached ? JSON.parse(cached) : {}
-                cacheData[assetCacheKey] = { historyCount: history.length, summary, timestamp: Date.now() }
-                localStorage.setItem(AI_HISTORY_CACHE_KEY, JSON.stringify(cacheData))
-            } catch (e) {
-                console.error('Failed to write AI summary to localStorage cache:', e)
-            }
-        },
-        [assetCacheKey, history.length]
-    )
-    const clearAISummaryCache = useCallback(() => {
-        try {
-            const cached = localStorage.getItem(AI_HISTORY_CACHE_KEY)
-            if (!cached) return
-            const cacheData = JSON.parse(cached)
-            delete cacheData[assetCacheKey]
-            localStorage.setItem(AI_HISTORY_CACHE_KEY, JSON.stringify(cacheData))
-        } catch (e) {
-            console.error('Failed to clear AI summary from localStorage cache:', e)
-        }
-    }, [assetCacheKey])
+
     const generateAISummary = useCallback(
         async (forceRegenerate = false) => {
             if (!forceRegenerate) {
-                const cachedSummary = getAISummaryFromCache()
+                const cachedSummary = getAISummaryFromCache(assetCacheKey, history.length)
                 if (cachedSummary) {
                     setAiSummary(cachedSummary)
                     return
@@ -378,72 +250,21 @@ export default function useHistoryData(item, type) {
             setAiSummaryLoading(true)
             setAiSummaryError(false)
             try {
-                const historyContext = {
-                    assetIdentifier: HistoryUtility.resolveAssetIdentifier(type, item),
-                    assetType: type,
-                    cleanlinessHistory:
-                        cleanlinessData.length > 0
-                            ? {
-                                  average:
-                                      cleanlinessData.reduce((sum, c) => sum + c.rating, 0) / cleanlinessData.length,
-                                  count: cleanlinessData.length,
-                                  current: cleanlinessData[cleanlinessData.length - 1]?.rating,
-                                  trend:
-                                      cleanlinessData.length >= 2
-                                          ? cleanlinessData[cleanlinessData.length - 1]?.rating -
-                                            cleanlinessData[0]?.rating
-                                          : 0
-                              }
-                            : null,
-                    currentPlant: item.plantCode ?? item.assignedPlant ?? 'Unknown',
-                    currentStatus: item.status ?? 'Unknown',
-                    currentStatusDays: statusData.find((s) => s.isCurrent)?.days ?? 0,
-                    highSeverityIssues: issues.filter((i) => i.severity === 'High' && i.status !== 'Resolved').length,
-                    openIssues: issues.filter((i) => i.status !== 'Resolved').length,
-                    operatorChanges: type === 'mixer' || type === 'tractor' ? operatorData.length : 0,
-                    plantChanges: plantData?.length ?? 0,
-                    recentChanges: history.slice(0, 10).map((h) => ({
-                        date: HistoryUtility.getEntryTimestamp(h),
-                        field: HistoryUtility.getEntryFieldName(h),
-                        from: HistoryUtility.getEntryOldValue(h),
-                        to: HistoryUtility.getEntryNewValue(h)
-                    })),
-                    resolvedIssues: issues.filter((i) => i.status === 'Resolved').length,
-                    serviceHistory:
-                        serviceData.length > 0
-                            ? {
-                                  avgDaysBetweenService:
-                                      serviceData.length >= 2
-                                          ? Math.round(
-                                                serviceData.reduce((sum, s, i) => {
-                                                    if (i === 0) return 0
-                                                    return (
-                                                        sum +
-                                                        HistoryUtility.daysBetween(serviceData[i - 1].date, s.date)
-                                                    )
-                                                }, 0) /
-                                                    (serviceData.length - 1)
-                                            )
-                                          : null,
-                                  count: serviceData.length,
-                                  lastService: serviceData[serviceData.length - 1]?.date
-                              }
-                            : null,
-                    statusBreakdown: statusData.reduce((acc, s) => {
-                        acc[s.status] = (acc[s.status] || 0) + s.days
-                        return acc
-                    }, {}),
-                    statusChanges: statusData.length,
-                    totalHistoryEntries: history.length,
-                    uniqueOperators:
-                        type === 'mixer' || type === 'tractor'
-                            ? new Set(operatorData.filter((o) => !o.isEmpty).map((o) => o.operatorId)).size
-                            : 0
-                }
+                const historyContext = buildAIHistoryContext({
+                    cleanlinessData,
+                    history,
+                    issues,
+                    item,
+                    operatorData,
+                    plantData,
+                    serviceData,
+                    statusData,
+                    type
+                })
                 const summary = await AIService.generateHistorySummary(historyContext)
                 if (summary) {
                     setAiSummary(summary)
-                    setAISummaryToCache(summary)
+                    setAISummaryToCache(assetCacheKey, history.length, summary)
                 } else {
                     setAiSummaryError(true)
                     setAiSummary(null)
@@ -456,48 +277,14 @@ export default function useHistoryData(item, type) {
                 setAiSummaryLoading(false)
             }
         },
-        [
-            history,
-            issues,
-            item,
-            type,
-            statusData,
-            cleanlinessData,
-            operatorData,
-            serviceData,
-            plantData,
-            getAISummaryFromCache,
-            setAISummaryToCache
-        ]
+        [assetCacheKey, cleanlinessData, history, issues, item, operatorData, plantData, serviceData, statusData, type]
     )
     const handleRegenerateAISummary = useCallback(() => {
-        clearAISummaryCache()
+        clearAISummaryCache(assetCacheKey)
         setAiSummary(null)
         generateAISummary(true)
-    }, [clearAISummaryCache, generateAISummary])
-    const handleAddIssue = async (newIssue, severity) => {
-        const serviceName = ISSUE_SERVICE_MAP[type]
-        if (!serviceName) throw new Error('Invalid item type')
-        const Service = await HistoryUtility.loadServiceModule(serviceName)
-        const currentUser = await UserService.getCurrentUser()
-        if (!currentUser?.id) throw new Error('You must be logged in to add an issue')
-        await Service.addIssue(item.id, newIssue, severity, currentUser.id)
-        fetchIssues()
-    }
-    const handleDeleteIssue = async (issueId) => {
-        const serviceName = ISSUE_SERVICE_MAP[type]
-        if (!serviceName) throw new Error('Invalid item type')
-        const Service = await HistoryUtility.loadServiceModule(serviceName)
-        await Service.deleteIssue(issueId)
-        fetchIssues()
-    }
-    const handleCompleteIssue = async (issueId) => {
-        const serviceName = ISSUE_SERVICE_MAP[type]
-        if (!serviceName) throw new Error('Invalid item type')
-        const Service = await HistoryUtility.loadServiceModule(serviceName)
-        await Service.completeIssue(issueId)
-        fetchIssues()
-    }
+    }, [assetCacheKey, generateAISummary])
+
     return {
         aiSummary,
         aiSummaryError,

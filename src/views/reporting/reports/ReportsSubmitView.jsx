@@ -10,6 +10,7 @@ import { usePreferences } from '../../../app/context/PreferencesContext'
 import { useAutosaveDraft } from '../../../app/hooks/useAutosaveDraft'
 import { useEfficiencyDayforcePunches } from '../../../app/hooks/useEfficiencyDayforcePunches'
 import { useEfficiencyTicketAggregates } from '../../../app/hooks/useEfficiencyTicketAggregates'
+import { usePlantEfficiencyAutofill } from '../../../app/hooks/usePlantEfficiencyAutofill'
 import { useSubmitData } from '../../../app/hooks/useSubmitData'
 import { useSubmitForm } from '../../../app/hooks/useSubmitForm'
 import ErrorReporterUtility from '../../../utils/ErrorReporterUtility'
@@ -20,6 +21,7 @@ import { raceAiValidation } from './submit/aiValidation'
 import DefaultReportForm from './submit/DefaultReportForm'
 import PlantManagerForm from './submit/PlantManagerForm'
 import PlantProductionForm from './submit/PlantProductionForm'
+import SubmitActions from './submit/SubmitActions'
 import {
     getEditingUserName,
     validateGMFields,
@@ -98,41 +100,9 @@ function ReportsSubmitView({
         reportDate: form.report_date,
         rows: form.rows
     })
-    // Push ticket aggregates into form.rows whenever they refresh.
-    // Override-aware semantics:
-    //   - `_overrides[field] === true` → user opted into manual entry,
-    //     auto-fill skips this field for this row entirely.
-    //   - Auto value present + no override → write the auto value.
-    //   - Auto value MISSING + no override → preserve whatever the user
-    //     already typed instead of wiping it. This is the dummy-proof
-    //     fallback so an offline ticket fetch (or a brand-new operator
-    //     with no name match) doesn't blow away a manual entry.
-    // Reference equality bails the setForm out when nothing changed so
-    // unrelated field edits don't cascade.
-    useEffect(() => {
-        if (!isPlantProduction || !efficiencyTicketsReady) return
-        setForm((f) => {
-            const rows = Array.isArray(f.rows) ? f.rows : []
-            if (rows.length === 0) return f
-            let changed = false
-            const nextRows = rows.map((row) => {
-                const agg = efficiencyAggregates[row.name]
-                const overrides = row._overrides || {}
-                const dayforceFirstLoad = agg?.firstLoad || ''
-                const dayforceLoads = agg?.loads != null ? String(agg.loads) : ''
-                const targetFirstLoad = overrides.first_load ? row.first_load : dayforceFirstLoad || row.first_load
-                const targetLoads = overrides.loads ? row.loads : dayforceLoads || row.loads
-                if (row.first_load === targetFirstLoad && row.loads === targetLoads) return row
-                changed = true
-                return { ...row, first_load: targetFirstLoad, loads: targetLoads }
-            })
-            return changed ? { ...f, rows: nextRows } : f
-        })
-    }, [isPlantProduction, efficiencyTicketsReady, efficiencyAggregates, setForm])
-    // Same auto-fill pattern as tickets, but sourcing start_time +
-    // punch_out from Dayforce shift punches for the report day. eod_in_yard
-    // stays manual — it's the truck-back-in-yard time, distinct from the
-    // operator's clock-out.
+    // Dayforce shift punches → start_time + punch_out auto-fill (parallel
+    // to tickets above). eod_in_yard stays manual — it's the truck-back-in-yard
+    // time, distinct from the operator's clock-out.
     const {
         loading: dayforcePunchesLoading,
         punchesByOperatorId: dayforcePunches,
@@ -142,24 +112,14 @@ function ReportsSubmitView({
         operatorOptions,
         reportDate: form.report_date
     })
-    useEffect(() => {
-        if (!isPlantProduction || !dayforcePunchesReady) return
-        setForm((f) => {
-            const rows = Array.isArray(f.rows) ? f.rows : []
-            if (rows.length === 0) return f
-            let changed = false
-            const nextRows = rows.map((row) => {
-                const punch = dayforcePunches[row.name]
-                const overrides = row._overrides || {}
-                const targetStartTime = overrides.start_time ? row.start_time : punch?.startTime || row.start_time
-                const targetPunchOut = overrides.punch_out ? row.punch_out : punch?.punchOut || row.punch_out
-                if (row.start_time === targetStartTime && row.punch_out === targetPunchOut) return row
-                changed = true
-                return { ...row, punch_out: targetPunchOut, start_time: targetStartTime }
-            })
-            return changed ? { ...f, rows: nextRows } : f
-        })
-    }, [isPlantProduction, dayforcePunchesReady, dayforcePunches, setForm])
+    usePlantEfficiencyAutofill({
+        dayforcePunches,
+        dayforcePunchesReady,
+        efficiencyAggregates,
+        efficiencyTicketsReady,
+        isPlantProduction,
+        setForm
+    })
     // Debounced autosave. Writes the draft 1.2s after the last mutation
     // so a stream of keystrokes coalesces into one round-trip. Pauses
     // when the form is read-only, before the plant is picked, or before
@@ -454,38 +414,15 @@ function ReportsSubmitView({
                     </div>
                 )}
                 {!readOnly && (
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-border-light mt-4 sm:mt-6">
-                        <button
-                            type="button"
-                            className="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors order-3 sm:order-1"
-                            onClick={handleBackClick}
-                            disabled={submitting || savingDraft}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            className="px-4 sm:px-6 py-2.5 sm:py-3 bg-sky-100 text-text-primary rounded-lg text-sm font-semibold hover:bg-sky-200 transition-colors order-2"
-                            onClick={handleSaveDraft}
-                            disabled={submitting || savingDraft}
-                        >
-                            {savingDraft ? 'Saving...' : 'Save Changes'}
-                        </button>
-                        {!managerEditUser && (
-                            <button
-                                type="submit"
-                                className="px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-lg text-sm font-semibold transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed order-1 sm:order-3"
-                                style={{ background: accentColor }}
-                                disabled={submitting || savingDraft}
-                            >
-                                {submitting
-                                    ? report.name === 'plant_production'
-                                        ? 'Validating...'
-                                        : 'Submitting...'
-                                    : 'Submit'}
-                            </button>
-                        )}
-                    </div>
+                    <SubmitActions
+                        accentColor={accentColor}
+                        isPlantProduction={isPlantProduction}
+                        managerEditUser={managerEditUser}
+                        onCancel={handleBackClick}
+                        onSaveDraft={handleSaveDraft}
+                        savingDraft={savingDraft}
+                        submitting={submitting}
+                    />
                 )}
             </form>
             {showConfirmationModal && (

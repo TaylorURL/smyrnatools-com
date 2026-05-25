@@ -3,131 +3,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { Database } from '../../services/DatabaseService'
 import { OperatorService } from '../../services/OperatorService'
 import { PlantService } from '../../services/PlantService'
-
-/** Overtime rules: any hours past 8 in a single day OR past 40 in a
- *  single week count as overtime, paid at the OT multiplier. Daily
- *  hours that have already been counted toward daily OT do NOT also
- *  count toward the weekly cap — only the first 8 (regular) hours of
- *  each day stack into the weekly total. Mirrors the standard "daily
- *  AND weekly" OT pattern used by states like California. */
-const OT_DAILY_THRESHOLD_HOURS = 8
-const OT_WEEKLY_THRESHOLD_HOURS = 40
-const OT_MULTIPLIER = 1.5
-
-const toDateString = (date) => {
-    if (!date) return null
-    const d = date instanceof Date ? date : new Date(date)
-    if (Number.isNaN(d.getTime())) return null
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-}
-
-/** ISO week key (YYYY-Www) for grouping shifts into pay weeks. Using a
- *  string key keeps the aggregation grouping trivially serializable and
- *  sortable. */
-const weekKey = (dateString) => {
-    if (!dateString) return null
-    const d = new Date(`${dateString}T00:00:00`)
-    if (Number.isNaN(d.getTime())) return null
-    const target = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-    const dayNum = target.getUTCDay() || 7
-    target.setUTCDate(target.getUTCDate() + 4 - dayNum)
-    const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1))
-    const weekNo = Math.ceil(((target - yearStart) / 86400000 + 1) / 7)
-    return `${target.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`
-}
-
-/** Splits a week's hours into regular + overtime buckets using the
- *  daily-AND-weekly rule:
- *    1. For each day, any hours past 8 are daily OT.
- *    2. The first 8 hours of each day stack into the weekly base; any
- *       portion of that base past 40 is weekly OT.
- *    3. Hours already counted as daily OT do NOT also accrue toward the
- *       weekly cap (no double-dipping).
- *
- *  Takes the bucket's `totalHours` (week sum) plus `dailyHours` (Map of
- *  `dateString → hoursOnThatDay`). When `dailyHours` is missing or empty,
- *  falls back to weekly-only OT — keeps the function safe for callers
- *  that haven't been updated yet. */
-const computeWeeklyCost = (totalHours, hourlyRate, dailyHours) => {
-    if (!hourlyRate || !totalHours) return { cost: 0, otCost: 0, otHours: 0, regCost: 0, regHours: 0 }
-
-    let dailyOtHours = 0
-    let weeklyBase = 0
-    if (dailyHours && dailyHours.size > 0) {
-        for (const hours of dailyHours.values()) {
-            if (!Number.isFinite(hours) || hours <= 0) continue
-            const dayOt = Math.max(0, hours - OT_DAILY_THRESHOLD_HOURS)
-            dailyOtHours += dayOt
-            weeklyBase += hours - dayOt
-        }
-    } else {
-        weeklyBase = totalHours
-    }
-    const weeklyOtHours = Math.max(0, weeklyBase - OT_WEEKLY_THRESHOLD_HOURS)
-    const otHours = dailyOtHours + weeklyOtHours
-    const regHours = Math.max(0, totalHours - otHours)
-    const regCost = regHours * hourlyRate
-    const otCost = otHours * hourlyRate * OT_MULTIPLIER
-    return { cost: regCost + otCost, otCost, otHours, regCost, regHours }
-}
-
-/**
- * Canonical name key for fuzzy-matching across two systems. Strips
- * punctuation, parenthesized nicknames, trailing badge numbers, and
- * sorts the remaining tokens alphabetically so "Gomez, Jose (Jose) 007943"
- * and "Jose Gomez" both normalize to "gomez jose".
- *
- * Sorting tokens lets us ignore whether the source put first-name or
- * last-name first without needing to know which side is which.
- */
-const canonicalNameKey = (name) => {
-    if (!name) return null
-    let s = String(name).toLowerCase()
-    s = s.replace(/\s+\d+\s*$/, '') // trailing badge number
-    s = s.replace(/\s*\([^)]*\)\s*/g, ' ') // (Nickname)
-    s = s
-        .replace(/[^a-z\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-    const tokens = s.split(' ').filter(Boolean)
-    if (tokens.length === 0) return null
-    return tokens.sort().join(' ')
-}
-
-/** Builds a name → operator lookup. Skips operators without a usable name
- *  so that "Unknown" or empty rows don't collide with real matches. */
-const buildOperatorIndex = (operators) => {
-    const byName = new Map()
-    const byBadge = new Map()
-    for (const op of operators) {
-        if (!op) continue
-        const key = canonicalNameKey(op.name)
-        if (key && !byName.has(key)) byName.set(key, op)
-        const badge = String(op.smyrnaId ?? '').trim()
-        if (badge && !byBadge.has(badge)) byBadge.set(badge, op)
-    }
-    return { byBadge, byName }
-}
-
-/** Matches a Dayforce employee to a smyrnatools operator. Name first,
- *  badge as fallback. Returns null when neither path resolves so the
- *  caller can decide whether to show or hide the row. */
-const matchOperator = (employee, operatorIndex) => {
-    if (!employee) return null
-    const nameKey =
-        canonicalNameKey(employee.display_name) ||
-        canonicalNameKey([employee.first_name, employee.last_name].filter(Boolean).join(' '))
-    if (nameKey) {
-        const hit = operatorIndex.byName.get(nameKey)
-        if (hit) return hit
-    }
-    const badge = String(employee.employee_badge ?? '').trim()
-    if (badge && operatorIndex.byBadge.has(badge)) return operatorIndex.byBadge.get(badge)
-    return null
-}
+import {
+    buildEmployeeWeekBuckets,
+    buildOperatorMatchIndex,
+    buildPerOperatorRollup,
+    buildPerPlantRollup,
+    buildPerShiftRows,
+    buildPerWeekRollup,
+    buildShiftPlantResolver
+} from '../../utils/DayforceMetricsAggregators'
+import { buildOperatorIndex, matchOperator, toDateString } from '../../utils/DayforcePayrollUtility'
 
 /**
  * Loads Dayforce shift data, joins each employee to the corresponding
@@ -283,65 +168,19 @@ export default function useDayforceOperatorMetrics({
         const plantByCode = new Map(plants.map((p) => [String(p.plantCode), p]))
         const operatorIndex = buildOperatorIndex(Array.isArray(operators) ? operators : [])
 
-        // Match every dayforce employee to a smyrnatools operator once,
-        // up-front. Subsequent loops just read this map.
-        const operatorByEmployeeId = new Map()
-        for (const emp of employees) {
-            const op = matchOperator(emp, operatorIndex)
-            if (op) operatorByEmployeeId.set(emp.dayforce_employee_id, op)
-        }
-
-        const restrictPlantCodes =
-            Array.isArray(plantCodes) && plantCodes.length > 0 ? new Set(plantCodes.map(String)) : null
         const positionAllowlist =
             Array.isArray(restrictToPositions) && restrictToPositions.length > 0 ? new Set(restrictToPositions) : null
+        const restrictPlantCodes =
+            Array.isArray(plantCodes) && plantCodes.length > 0 ? new Set(plantCodes.map(String)) : null
 
-        // Resolves the smyrnatools-side plant code for a shift. Always
-        // returns either a real smyrnatools plant_code (with the friendly
-        // plantName for display) or the "Unassigned" bucket — never the
-        // raw Dayforce display_code, which would surface as "RMX_TX_*" in
-        // the UI. Order:
-        //   1. Matched operator's plantCode (source of truth in smyrnatools)
-        //   2. Dayforce org_unit's mapped plant_code column (if a future
-        //      seed or auto-mapping fills it in)
-        //   3. "Unassigned" — the operator hasn't been assigned a plant
-        //      in smyrnatools yet
-        const resolveShiftPlant = (shift) => {
-            const op = operatorByEmployeeId.get(shift.dayforce_employee_id)
-            let plantCode = null
-            if (op?.plantCode) plantCode = String(op.plantCode)
-            else {
-                const org = orgsById.get(shift.dayforce_org_id)
-                if (org?.plant_code) plantCode = String(org.plant_code)
-            }
-            if (!plantCode) return { code: 'Unassigned', isMapped: false, name: 'Unassigned' }
-            const plant = plantByCode.get(plantCode)
-            return { code: plantCode, isMapped: true, name: plant?.plantName || plantCode }
-        }
+        const { excludedOtherPosition, excludedUnmatched, operatorByEmployeeId, passesPositionGate } =
+            buildOperatorMatchIndex({ employees, matchOperator, operatorIndex, positionAllowlist })
 
-        // Position gate. Dayforce employees who have no smyrnatools match
-        // (plant managers, office staff, mismatched names) are excluded
-        // — Hours / Labor Cost are operator-only views. Same logic for
-        // matched employees whose position isn't in the allowlist.
-        const excludedEmployeesUnmatched = new Set()
-        const excludedEmployeesOtherPosition = new Set()
-        const passesPositionGate = (employeeId) => {
-            if (!positionAllowlist) return true
-            const op = operatorByEmployeeId.get(employeeId)
-            if (!op) {
-                excludedEmployeesUnmatched.add(employeeId)
-                return false
-            }
-            if (!positionAllowlist.has(op.position)) {
-                excludedEmployeesOtherPosition.add(employeeId)
-                return false
-            }
-            return true
-        }
+        const resolveShiftPlant = buildShiftPlantResolver({ operatorByEmployeeId, orgsById, plantByCode })
 
-        const filteredShifts = shifts.filter((s) => {
-            if (!passesPositionGate(s.dayforce_employee_id)) return false
-            const { code, isMapped } = resolveShiftPlant(s)
+        const filteredShifts = shifts.filter((shift) => {
+            if (!passesPositionGate(shift.dayforce_employee_id)) return false
+            const { code, isMapped } = resolveShiftPlant(shift)
             // Plant selector matches exact code (operator-side or org-side).
             if (selectedPlant && String(code) !== String(selectedPlant)) return false
             // Region restriction only enforced when the shift resolved to
@@ -352,226 +191,33 @@ export default function useDayforceOperatorMetrics({
             return true
         })
 
-        // Per-(employee, week) bucket so OT is calculated against the
-        // weekly threshold rather than per-shift (federal OT is weekly).
-        const employeeWeekBuckets = new Map()
-        for (const shift of filteredShifts) {
-            const wk = weekKey(shift.shift_date)
-            if (!wk) continue
-            const key = `${shift.dayforce_employee_id}|${wk}`
-            const bucket = employeeWeekBuckets.get(key) || {
-                actualHours: 0,
-                /** Per-day hour totals within this week — keyed by ISO
-                 *  date string. Drives the daily-OT (>8h) leg of the
-                 *  weekly cost calc; weekly OT (>40h after daily-OT is
-                 *  carved out) is computed from the sum. */
-                dailyHours: new Map(),
-                dayforceEmployeeId: shift.dayforce_employee_id,
-                hourlyRate: null,
-                ptoHours: 0,
-                scheduledHours: 0,
-                week: wk
-            }
-            const shiftHours = Number(shift.actual_hours) || 0
-            bucket.actualHours += shiftHours
-            if (shift.shift_date && shiftHours > 0) {
-                bucket.dailyHours.set(shift.shift_date, (bucket.dailyHours.get(shift.shift_date) || 0) + shiftHours)
-            }
-            bucket.scheduledHours += Number(shift.scheduled_hours) || 0
-            if (shift.is_pto) bucket.ptoHours += Number(shift.pto_hours) || 0
-            const snapRate = Number(shift.hourly_rate_snapshot) || null
-            if (snapRate && !bucket.hourlyRate) bucket.hourlyRate = snapRate
-            employeeWeekBuckets.set(key, bucket)
-        }
+        const employeeWeekBuckets = buildEmployeeWeekBuckets({ filteredShifts })
 
-        let totalActualHours = 0
-        let totalScheduledHours = 0
-        let totalPtoHours = 0
-        let totalRegHours = 0
-        let totalOtHours = 0
-        let totalRegCost = 0
-        let totalOtCost = 0
-        const perOperatorMap = new Map()
+        const {
+            operatorCount,
+            perOperator,
+            totalActualHours,
+            totalOtCost,
+            totalOtHours,
+            totalPtoHours,
+            totalRegCost,
+            totalRegHours,
+            totalScheduledHours
+        } = buildPerOperatorRollup({ employeeWeekBuckets, employeesById, operatorByEmployeeId })
 
-        for (const bucket of employeeWeekBuckets.values()) {
-            const employee = employeesById.get(bucket.dayforceEmployeeId)
-            const operator = operatorByEmployeeId.get(bucket.dayforceEmployeeId)
-            const rate = bucket.hourlyRate || Number(employee?.hourly_rate) || 0
-            const { otCost, otHours, regCost, regHours } = computeWeeklyCost(
-                bucket.actualHours,
-                rate,
-                bucket.dailyHours
-            )
-
-            totalActualHours += bucket.actualHours
-            totalScheduledHours += bucket.scheduledHours
-            totalPtoHours += bucket.ptoHours
-            totalRegHours += regHours
-            totalOtHours += otHours
-            totalRegCost += regCost
-            totalOtCost += otCost
-
-            const displayName =
-                operator?.name ||
-                employee?.display_name ||
-                [employee?.first_name, employee?.last_name].filter(Boolean).join(' ') ||
-                employee?.employee_badge ||
-                `Employee ${bucket.dayforceEmployeeId}`
-
-            const operatorRow = perOperatorMap.get(bucket.dayforceEmployeeId) || {
-                actualHours: 0,
-                badge: employee?.employee_badge || operator?.smyrnaId || null,
-                dayforceEmployeeId: bucket.dayforceEmployeeId,
-                hourlyRate: rate,
-                isMatched: !!operator,
-                name: displayName,
-                operatorId: operator?.employeeId || null,
-                otCost: 0,
-                otHours: 0,
-                plantCode: operator?.plantCode || null,
-                position: operator?.position || null,
-                ptoHours: 0,
-                regCost: 0,
-                regHours: 0,
-                scheduledHours: 0,
-                status: operator?.status || null
-            }
-            operatorRow.actualHours += bucket.actualHours
-            operatorRow.scheduledHours += bucket.scheduledHours
-            operatorRow.ptoHours += bucket.ptoHours
-            operatorRow.regHours += regHours
-            operatorRow.otHours += otHours
-            operatorRow.regCost += regCost
-            operatorRow.otCost += otCost
-            perOperatorMap.set(bucket.dayforceEmployeeId, operatorRow)
-        }
-
-        const perOperator = Array.from(perOperatorMap.values())
-            .map((row) => ({ ...row, totalCost: row.regCost + row.otCost }))
-            .sort((a, b) => b.totalCost - a.totalCost)
-
-        // Per-plant rollup — uses the operator's plant assignment when
-        // matched, falling back to the Dayforce org's display code. A
-        // driver lent to another plant for a day counts toward where
-        // they're rostered (operator.plantCode) rather than where the
-        // punch was rung.
-        const perPlantMap = new Map()
-        for (const shift of filteredShifts) {
-            const { code, name } = resolveShiftPlant(shift)
-            const employee = employeesById.get(shift.dayforce_employee_id)
-            const rate = Number(shift.hourly_rate_snapshot) || Number(employee?.hourly_rate) || 0
-            const hours = Number(shift.actual_hours) || 0
-            const row = perPlantMap.get(code) || {
-                actualHours: 0,
-                code,
-                cost: 0,
-                name,
-                operatorIds: new Set(),
-                scheduledHours: 0
-            }
-            row.actualHours += hours
-            row.scheduledHours += Number(shift.scheduled_hours) || 0
-            row.cost += hours * rate
-            row.operatorIds.add(shift.dayforce_employee_id)
-            perPlantMap.set(code, row)
-        }
-
-        const perPlant = Array.from(perPlantMap.values())
-            .map((row) => ({
-                actualHours: row.actualHours,
-                code: row.code,
-                cost: row.cost,
-                name: row.name,
-                operatorCount: row.operatorIds.size,
-                scheduledHours: row.scheduledHours
-            }))
-            .sort((a, b) => b.cost - a.cost)
-
-        const perWeekMap = new Map()
-        for (const bucket of employeeWeekBuckets.values()) {
-            const employee = employeesById.get(bucket.dayforceEmployeeId)
-            const rate = bucket.hourlyRate || Number(employee?.hourly_rate) || 0
-            const { cost, otHours, regHours } = computeWeeklyCost(bucket.actualHours, rate)
-            const row = perWeekMap.get(bucket.week) || {
-                actualHours: 0,
-                cost: 0,
-                operatorIds: new Set(),
-                operatorsOverOt: new Set(),
-                otHours: 0,
-                regHours: 0,
-                scheduledHours: 0,
-                week: bucket.week
-            }
-            row.actualHours += bucket.actualHours
-            row.scheduledHours += bucket.scheduledHours
-            row.cost += cost
-            row.otHours += otHours
-            row.regHours += regHours
-            row.operatorIds.add(bucket.dayforceEmployeeId)
-            if (otHours > 0) row.operatorsOverOt.add(bucket.dayforceEmployeeId)
-            perWeekMap.set(bucket.week, row)
-        }
-        const perWeek = Array.from(perWeekMap.values())
-            .map((row) => ({
-                ...row,
-                operatorCount: row.operatorIds.size,
-                operatorIds: undefined,
-                operatorsOverOt: undefined,
-                operatorsOverOtCount: row.operatorsOverOt.size
-            }))
-            .sort((a, b) => a.week.localeCompare(b.week))
+        const perPlant = buildPerPlantRollup({ employeesById, filteredShifts, resolveShiftPlant })
+        const perWeek = buildPerWeekRollup({ employeeWeekBuckets, employeesById })
+        const perShift = buildPerShiftRows({
+            employeesById,
+            filteredShifts,
+            operatorByEmployeeId,
+            resolveShiftPlant
+        })
 
         const exceptionsCount = filteredShifts.filter((s) => s.exception_code).length
         const exceptionEmployees = new Set(
             filteredShifts.filter((s) => s.exception_code).map((s) => s.dayforce_employee_id)
         ).size
-
-        // Flat per-shift list — one row per (operator × day). Feeds the
-        // Schedules sub-page where each row shows the four timestamps
-        // (scheduled in/out + actual in/out) the dispatcher needs to
-        // audit a single day. Sorted by shift_date desc then operator
-        // name so the most recent activity sits on top.
-        const perShift = filteredShifts
-            .map((shift) => {
-                const employee = employeesById.get(shift.dayforce_employee_id)
-                const operator = operatorByEmployeeId.get(shift.dayforce_employee_id)
-                const { code, name } = resolveShiftPlant(shift)
-                const displayName =
-                    operator?.name ||
-                    employee?.display_name ||
-                    [employee?.first_name, employee?.last_name].filter(Boolean).join(' ') ||
-                    employee?.employee_badge ||
-                    `Employee ${shift.dayforce_employee_id}`
-                return {
-                    actualHours: Number(shift.actual_hours) || 0,
-                    actualInAt: shift.actual_in_at,
-                    actualInPunchAt: shift.actual_in_punch_at,
-                    actualOutAt: shift.actual_out_at,
-                    actualOutPunchAt: shift.actual_out_punch_at,
-                    badge: employee?.employee_badge || operator?.smyrnaId || null,
-                    dayforceEmployeeId: shift.dayforce_employee_id,
-                    dayforceShiftId: shift.dayforce_shift_id,
-                    exceptionText: shift.exception_text || null,
-                    isMatched: !!operator,
-                    isPto: !!shift.is_pto,
-                    name: displayName,
-                    plantCode: code,
-                    plantName: name,
-                    position: operator?.position || null,
-                    ptoHours: Number(shift.pto_hours) || 0,
-                    scheduledHours: Number(shift.scheduled_hours) || 0,
-                    scheduledInAt: shift.scheduled_in_at,
-                    scheduledOutAt: shift.scheduled_out_at,
-                    shiftDate: shift.shift_date
-                }
-            })
-            .sort((a, b) => {
-                // Most recent first; tie-break by operator name so the
-                // table reads predictably within a single day.
-                const dateCmp = String(b.shiftDate).localeCompare(String(a.shiftDate))
-                if (dateCmp !== 0) return dateCmp
-                return String(a.name).localeCompare(String(b.name))
-            })
 
         return {
             // Diagnostic counts so the empty-state messaging can tell
@@ -589,8 +235,8 @@ export default function useDayforceOperatorMetrics({
             // non-operators) vs. matched-but-wrong-position. Used by the
             // filter bar header so the reduced row count is transparent.
             excluded: {
-                otherPosition: excludedEmployeesOtherPosition.size,
-                unmatched: excludedEmployeesUnmatched.size
+                otherPosition: excludedOtherPosition.size,
+                unmatched: excludedUnmatched.size
             },
             hasSyncedData: shifts.length > 0,
             isLoading,
@@ -607,7 +253,7 @@ export default function useDayforceOperatorMetrics({
                 avgHourlyRate: totalActualHours > 0 ? (totalRegCost + totalOtCost) / totalActualHours : 0,
                 exceptionEmployees,
                 exceptionsCount,
-                operatorCount: perOperatorMap.size,
+                operatorCount,
                 otCost: totalOtCost,
                 otHours: totalOtHours,
                 ptoHours: totalPtoHours,

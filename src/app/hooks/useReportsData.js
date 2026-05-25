@@ -2,13 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Database } from '../../services/DatabaseService'
 import { PlantService } from '../../services/PlantService'
-import { ReportService } from '../../services/ReportService'
 import { UserService } from '../../services/UserService'
+import { mapReportRow } from '../../utils/ReportsDataUtility'
 import { ReportUtility } from '../../utils/ReportUtility'
 import { usePreferences } from '../context/PreferencesContext'
-import { oneOffReportTypeMap, oneOffReportTypes, reportTypeMap, reportTypes } from '../types/ReportTypes'
+import { oneOffReportTypes, reportTypes } from '../types/ReportTypes'
+import { useReportsLostLoads } from './useReportsLostLoads'
+import { useReportsUserProfiles } from './useReportsUserProfiles'
 
 const REPORTS_START_DATE = new Date('2025-07-20')
+
 /**
  * Loads all reports data: user's own reports, review permissions, assigned report types,
  * region-scoped plant lists, and reporter-to-plant mappings.
@@ -16,7 +19,6 @@ const REPORTS_START_DATE = new Date('2025-07-20')
 export function useReportsData() {
     const [localReports, setLocalReports] = useState([])
     const [user, setUser] = useState(null)
-    const [userProfiles, setUserProfiles] = useState({})
     const [hasAssigned, setHasAssigned] = useState({})
     const [hasReviewPermission, setHasReviewPermission] = useState({})
     const [plants, setPlants] = useState([])
@@ -40,26 +42,12 @@ export function useReportsData() {
     const [hasLostLoadsDeletePermission, setHasLostLoadsDeletePermission] = useState(false)
     const [hasQCStrengthPermission, setHasQCStrengthPermission] = useState(false)
     const [hasOneOffReviewPermission, setHasOneOffReviewPermission] = useState({})
-    const [lostLoadReports, setLostLoadReports] = useState([])
-    const [isLoadingLostLoads, setIsLoadingLostLoads] = useState(false)
-    const [lostLoadsLoaded, setLostLoadsLoaded] = useState(false)
     const { preferences } = usePreferences()
-    const fetchProfilesFor = useCallback(
-        async (userIds) => {
-            const missing = userIds.filter((id) => !userProfiles[id])
-            if (missing.length === 0) return
-            const { data: profiles, error } = await Database.from('users_profiles')
-                .select('id, first_name, last_name')
-                .in('id', missing)
-            if (!error && Array.isArray(profiles)) {
-                setUserProfiles((prev) => ({
-                    ...prev,
-                    ...profiles.reduce((map, p) => ({ ...map, [p.id]: p }), {})
-                }))
-            }
-        },
-        [userProfiles]
-    )
+
+    const { fetchProfilesFor, getUserName, userProfiles } = useReportsUserProfiles()
+    const { addLostLoadReport, deleteLostLoadReport, isLoadingLostLoads, loadLostLoadReports, lostLoadReports } =
+        useReportsLostLoads({ fetchProfilesFor, isLoadingPermissions, user })
+
     const fetchReportsBatch = useCallback(
         async ({ weeks, scope }) => {
             if (!user || !Array.isArray(weeks) || weeks.length === 0) return
@@ -163,24 +151,7 @@ export function useReportsData() {
                 }
                 setLocalReports((prev) => {
                     const existingIds = new Set(prev.map((r) => r.id))
-                    const mapped = data
-                        .filter((r) => !existingIds.has(r.id))
-                        .map((r) => ({
-                            completed: !!r.completed,
-                            completedDate: r.submitted_at,
-                            data: r.data,
-                            id: r.id,
-                            name: r.report_name,
-                            report_date_range_end: r.report_date_range_end ? new Date(r.report_date_range_end) : null,
-                            report_date_range_start: r.report_date_range_start
-                                ? new Date(r.report_date_range_start)
-                                : null,
-                            title:
-                                (reportTypeMap[r.report_name] || oneOffReportTypeMap[r.report_name] || {}).title ||
-                                r.report_name,
-                            userId: r.user_id,
-                            week: r.week || r.data?.week || null
-                        }))
+                    const mapped = data.filter((r) => !existingIds.has(r.id)).map(mapReportRow)
                     return [...prev, ...mapped]
                 })
                 const ids = Array.from(new Set(data.map((r) => r.user_id).filter(Boolean)))
@@ -444,48 +415,6 @@ export function useReportsData() {
         await fetchReportsBatch({ scope: 'review', weeks: toLoad })
         setReviewLoadedWeeks((prev) => new Set([...toLoad, ...prev]))
     }, [user, isLoadingPermissions, reviewLoadedWeeks, fetchReportsBatch])
-    const loadLostLoadReports = useCallback(async () => {
-        if (!user || isLoadingPermissions || lostLoadsLoaded) return
-        setIsLoadingLostLoads(true)
-        try {
-            const { data, error } = await Database.from('reports')
-                .select('id,user_id,submitted_at,data,week')
-                .eq('report_name', 'lost_load')
-                .eq('completed', true)
-                .order('submitted_at', { ascending: false })
-            if (!error && Array.isArray(data)) {
-                const mapped = data.map((r) => ({
-                    data: r.data,
-                    id: r.id,
-                    submitted_at: r.submitted_at,
-                    userId: r.user_id,
-                    week: r.week
-                }))
-                setLostLoadReports(mapped)
-                const ids = Array.from(new Set(data.map((r) => r.user_id).filter(Boolean)))
-                await fetchProfilesFor(ids)
-            }
-        } catch (err) {
-            console.error('Failed to load lost load reports:', err)
-        }
-        setIsLoadingLostLoads(false)
-        setLostLoadsLoaded(true)
-    }, [user, isLoadingPermissions, lostLoadsLoaded, fetchProfilesFor])
-    const addLostLoadReport = useCallback((report) => {
-        if (!report) return
-        const mapped = {
-            data: report.data,
-            id: report.id,
-            submitted_at: report.submitted_at,
-            userId: report.user_id,
-            week: report.week
-        }
-        setLostLoadReports((prev) => [mapped, ...prev])
-    }, [])
-    const deleteLostLoadReport = useCallback(async (reportId) => {
-        await ReportService.deleteReport(reportId)
-        setLostLoadReports((prev) => prev.filter((r) => r.id !== reportId))
-    }, [])
     const triggerRefresh = useCallback(() => {
         setIsRefreshing(true)
         setRefreshKey((prev) => prev + 1)
@@ -501,17 +430,6 @@ export function useReportsData() {
             return newSet
         })
     }, [])
-    const getUserName = useCallback(
-        (userId) => {
-            const profile = userProfiles[userId]
-            return profile && (profile.first_name || profile.last_name)
-                ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
-                : typeof userId === 'string' && userId.length > 0
-                  ? userId.slice(0, 8)
-                  : ''
-        },
-        [userProfiles]
-    )
     /** True once at least one review week has been fetched. Lets the view
      *  keep the existing list rendered during subsequent reloads (week
      *  switches, manual refresh) instead of swapping in the full-page

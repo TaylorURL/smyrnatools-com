@@ -1,5 +1,15 @@
 import APIUtility from '../utils/APIUtility'
 import { detectDeviceType } from '../utils/DeviceUtility'
+import {
+    ACTIVITY_THROTTLE_MS,
+    buildRoleColorMap,
+    CLEANUP_INTERVAL_MS,
+    extractRegionCode,
+    extractRoleNames,
+    getActiveDevices,
+    HEARTBEAT_INTERVAL_MS,
+    STALE_THRESHOLD
+} from '../utils/UserPresenceUtility'
 import { Database } from './DatabaseService'
 import { PlantService } from './PlantService'
 import { UserService } from './UserService'
@@ -27,51 +37,6 @@ async function mergeActiveDevice(userId, device) {
     } catch (err) {
         console.error('Failed to merge active device:', err)
     }
-}
-
-// ── Online users helpers (read side) ──
-
-const STALE_THRESHOLD = 5 * 60 * 1000
-const HEARTBEAT_INTERVAL_MS = 30000
-const ACTIVITY_THROTTLE_MS = 30000
-const CLEANUP_INTERVAL_MS = 60000
-
-function buildRoleColorMap(roles) {
-    if (!roles?.length) return {}
-    const sorted = [...roles].sort((a, b) => (b.weight || 0) - (a.weight || 0))
-    return Object.fromEntries(
-        sorted.map((role, index) => {
-            const hue = sorted.length === 1 ? 0 : Math.round((index / (sorted.length - 1)) * 120)
-            return [role.name.toLowerCase(), `hsl(${hue}, 72%, 42%)`]
-        })
-    )
-}
-
-function extractRegionCode(profile) {
-    if (!profile) return null
-    if (Array.isArray(profile.regions) && profile.regions.length > 0) return profile.regions[0]
-    return profile.region_code || profile.regionCode || null
-}
-
-function extractRoleNames(rolesData) {
-    if (!Array.isArray(rolesData)) return []
-    return rolesData.map((r) => (typeof r === 'string' ? r : (r?.name ?? null))).filter(Boolean)
-}
-
-function getActiveDevices(activeDevices, isSelf) {
-    const now = Date.now()
-    const recentDevices =
-        activeDevices && typeof activeDevices === 'object'
-            ? Object.entries(activeDevices)
-                  .filter(([, timestamp]) => timestamp && now - new Date(timestamp).getTime() < STALE_THRESHOLD)
-                  .map(([type]) => type)
-            : []
-    if (isSelf) {
-        const current = detectDeviceType()
-        if (!recentDevices.includes(current)) recentDevices.push(current)
-    }
-    if (recentDevices.length === 0) recentDevices.push('desktop')
-    return recentDevices.sort()
 }
 
 /**

@@ -1,9 +1,7 @@
-import { normalizeListStatus } from '../app/constants/listViewConstants'
 import APIUtility from '../utils/APIUtility'
 import CacheUtility from '../utils/CacheUtility'
-import DateUtility from '../utils/DateUtility'
-import FormatUtility from '../utils/FormatUtility'
 import GrammarUtility from '../utils/GrammarUtility'
+import * as ListItemUtility from '../utils/ListItemUtility'
 import { AIService } from './AIService'
 import { UserService } from './UserService'
 
@@ -11,84 +9,20 @@ const PRIORITY_CACHE_TTL_MS = 30 * 60_000
 const MAX_PLANNED_ITEMS_PER_DAY = 3
 const PRIORITY_CACHE_PREFIX = 'ai:priority:'
 
-/** Priority levels with display config — ordered from highest to lowest severity. */
-/** Priority/urgency display metadata. Colors are CSS values (not Tailwind
- *  classes) so the badges read correctly in both light and dark mode — the
- *  rgba bg/border layer over the active theme background instead of relying
- *  on a hard-coded pale tint that disappears on dark surfaces. */
-const PRIORITY_CONFIG = {
-    high: {
-        bg: 'rgba(234,88,12,0.12)',
-        border: 'rgba(234,88,12,0.35)',
-        color: '#f97316',
-        icon: 'fa-arrow-up',
-        label: 'High'
-    },
-    low: {
-        bg: 'rgba(59,130,246,0.12)',
-        border: 'rgba(59,130,246,0.35)',
-        color: '#60a5fa',
-        icon: 'fa-arrow-down',
-        label: 'Low'
-    },
-    medium: {
-        bg: 'rgba(202,138,4,0.12)',
-        border: 'rgba(202,138,4,0.35)',
-        color: '#eab308',
-        icon: 'fa-minus',
-        label: 'Medium'
-    },
-    none: {
-        bg: 'rgba(148,163,184,0.12)',
-        border: 'rgba(148,163,184,0.30)',
-        color: '#94a3b8',
-        icon: 'fa-minus',
-        label: 'No Priority'
-    },
-    urgent: {
-        bg: 'rgba(220,38,38,0.12)',
-        border: 'rgba(220,38,38,0.35)',
-        color: '#ef4444',
-        icon: 'fa-fire',
-        label: 'Urgent'
-    }
-}
-const PRIORITY_OPTIONS = [
-    { label: 'No Priority', value: 'none' },
-    { label: 'Low', value: 'low' },
-    { label: 'Medium', value: 'medium' },
-    { label: 'High', value: 'high' },
-    { label: 'Urgent', value: 'urgent' }
-]
-const DEFAULT_PRIORITY = PRIORITY_CONFIG.none
-
-/**
- * Consolidated status configuration — single source of truth for label, icon, and Tailwind color per status.
- */
-const STATUS_CONFIG = {
-    completed: { color: 'text-green-500', cssClass: 'completed', icon: 'fa-check-circle', label: 'Completed' },
-    in_progress: { color: 'text-blue-400', cssClass: 'in-progress', icon: 'fa-spinner', label: 'In Progress' },
-    ordered_materials: {
-        color: 'text-sky-400',
-        cssClass: 'ordered',
-        icon: 'fa-truck-loading',
-        label: 'Ordered Materials'
-    },
-    overdue: { color: 'text-red-500', cssClass: 'overdue', icon: 'fa-exclamation-circle', label: 'Overdue' },
-    pending: { color: 'text-blue-500', cssClass: 'pending', icon: 'fa-clock', label: 'Pending' },
-    waiting: { color: 'text-yellow-500', cssClass: 'waiting', icon: 'fa-hourglass-half', label: 'Waiting' }
-}
-const DEFAULT_STATUS = STATUS_CONFIG.pending
-
 /**
  * Task list management service handling CRUD, filtering, sorting, and status tracking
  * for plant-level list items. Caches items and creator profiles for performance.
+ *
+ * Pure helpers and display formatters live in `src/utils/ListItemUtility.js`. This class
+ * owns DB/network methods and stateful caches (listItems, creatorProfiles, plants), and
+ * delegates the pure helpers for backward compatibility with existing call sites.
  */
 class ListServiceImpl {
     listItems = []
     creatorProfiles = {}
     plants = []
     plantDistribution = {}
+
     /**
      * Fetches all list items with their creator profiles in a single call.
      * Uses a 60-second cache to reduce redundant API calls.
@@ -123,6 +57,7 @@ class ListServiceImpl {
         CacheUtility.set('list:items-with-profiles', { items: cleaned, profiles }, 60_000)
         return this.listItems
     }
+
     /** Fetches available plants for list item assignment with a 10-minute cache. */
     async fetchPlants(opts = {}) {
         const { force = false } = opts || {}
@@ -139,6 +74,7 @@ class ListServiceImpl {
         CacheUtility.set('list:plants', this.plants, 10 * 60_000)
         return this.plants
     }
+
     /** Fetches display profiles for list item creators by their user IDs. */
     async fetchCreatorProfiles(listItems) {
         const userIds = [...new Set(listItems.map((item) => item.user_id).filter((id) => id))]
@@ -154,6 +90,7 @@ class ListServiceImpl {
         this.creatorProfiles = newProfiles
         return this.creatorProfiles
     }
+
     /** Creates a new list item with grammar-cleaned description and comments. */
     async createListItem(
         plantCode,
@@ -187,6 +124,7 @@ class ListServiceImpl {
         this.invalidateAllPriorityScores()
         return true
     }
+
     /** Updates an existing list item with grammar-cleaned text fields. */
     async updateListItem(item) {
         if (!item?.id) throw new Error('Item ID is required')
@@ -211,6 +149,7 @@ class ListServiceImpl {
         await this.fetchListItems({ force: true })
         return true
     }
+
     /** Toggles the completion status of a list item and records the completing user. */
     async toggleCompletion(item, currentUserId) {
         if (!item?.id) throw new Error('Item ID is required')
@@ -226,6 +165,7 @@ class ListServiceImpl {
         await this.fetchListItems({ force: true })
         return true
     }
+
     /** Deletes a list item and triggers a notifications refresh. */
     async deleteListItem(id) {
         if (!id) throw new Error('Item ID is required')
@@ -235,145 +175,7 @@ class ListServiceImpl {
         await this.fetchListItems({ force: true })
         return true
     }
-    /**
-     * Filters and sorts list items by plant, search term, completion status, and status type.
-     * Supported `statusFilter` values: `completed`, `overdue` (derived from deadline), `pending`
-     * (no explicit status or explicit `pending`, not overdue), or any explicit `item.status` value
-     * (`in_progress`, `blocked`, `waiting`, `ordered_materials`). Overdue items are prioritized in
-     * non-completed views.
-     */
-    getFilteredItems({ plantCode, searchTerm, showCompleted, statusFilter }) {
-        let items = [...this.listItems]
-        if (plantCode && plantCode !== 'All') items = items.filter((item) => item.plant_code === plantCode)
-        if (searchTerm?.trim()) {
-            const term = searchTerm.toLowerCase().trim()
-            items = items.filter(
-                (item) =>
-                    (item.description || '').toLowerCase().includes(term) ||
-                    (item.comments || '').toLowerCase().includes(term)
-            )
-        }
-        if (!showCompleted) items = items.filter((item) => !item.completed)
-        if (statusFilter === 'completed') {
-            items = items.filter((item) => item.completed)
-        } else if (statusFilter === 'overdue') {
-            items = items.filter((item) => this.isOverdue(item) && !item.completed)
-        } else if (statusFilter === 'pending') {
-            items = items.filter(
-                (item) => (!item.status || item.status === 'pending') && !this.isOverdue(item) && !item.completed
-            )
-        } else if (statusFilter) {
-            items = items.filter((item) => normalizeListStatus(item.status) === statusFilter && !item.completed)
-        }
-        if (showCompleted) {
-            items.sort((a, b) => {
-                const aCompletedAt = new Date(a.completed_at).getTime() || 0
-                const bCompletedAt = new Date(b.completed_at).getTime() || 0
-                return bCompletedAt - aCompletedAt
-            })
-        } else {
-            items.sort((a, b) => {
-                const aOverdue = this.isOverdue(a) && !a.completed
-                const bOverdue = this.isOverdue(b) && !b.completed
-                if (aOverdue && !bOverdue) return -1
-                if (!aOverdue && bOverdue) return 1
-                const aDeadline = new Date(a.deadline).getTime() || 0
-                const bDeadline = new Date(b.deadline).getTime() || 0
-                return aDeadline - bDeadline
-            })
-        }
-        return items
-    }
-    /** Formats a date string for display (e.g., "Jan 5, 2026, 02:30 PM"). Delegates to DateUtility. */
-    formatDate(dateString) {
-        if (!dateString) return 'N/A'
-        const result = DateUtility.formatDateTime(dateString)
-        return result || 'Invalid Date'
-    }
-    /** Formats a date string into an HTML datetime-local input value. Delegates to DateUtility. */
-    formatDateForInput(dateString) {
-        return DateUtility.formatDateTimeLocal(dateString)
-    }
-    /** Returns true if the item has a deadline that has passed and is not completed. */
-    isOverdue(item) {
-        return item.deadline && !item.completed && new Date(item.deadline) < new Date()
-    }
-    /** Returns status display metadata (Tailwind color class, icon, label) based on item state and deadline. */
-    calculateStatusInfo(item) {
-        if (!item) return { color: 'text-gray-500', icon: 'question-circle', label: 'Unknown' }
-        if (item.completed || item.status === 'completed')
-            return { color: 'text-green-500', icon: 'check-circle', label: 'Completed' }
-        const status = normalizeListStatus(item.status)
-        if (status === 'in_progress') return { color: 'text-blue-400', icon: 'spinner', label: 'In Progress' }
-        if (status === 'ordered_materials')
-            return { color: 'text-sky-400', icon: 'truck-loading', label: 'Ordered Materials' }
-        if (status === 'waiting') return { color: 'text-yellow-500', icon: 'hourglass-half', label: 'Waiting' }
-        const deadline = new Date(item.deadline)
-        const now = new Date()
-        if (isNaN(deadline.getTime())) return { color: 'text-gray-500', icon: 'calendar-times', label: 'No Deadline' }
-        if (deadline < now || item.status === 'overdue')
-            return { color: 'text-red-500', icon: 'exclamation-circle', label: 'Overdue' }
-        const hours = (deadline - now) / (1000 * 60 * 60)
-        if (hours < 24) return { color: 'text-yellow-500', icon: 'clock', label: 'Due Soon' }
-        return { color: 'text-blue-500', icon: 'calendar-check', label: 'Pending' }
-    }
-    /** Maps a status key to its human-readable label via STATUS_CONFIG. */
-    getStatusLabel(status) {
-        return (STATUS_CONFIG[normalizeListStatus(status)] ?? DEFAULT_STATUS).label
-    }
-    /** Maps a status key to its FontAwesome icon class via STATUS_CONFIG. */
-    getStatusIcon(status) {
-        return (STATUS_CONFIG[normalizeListStatus(status)] ?? DEFAULT_STATUS).icon
-    }
-    /** Maps a status key to its CSS color class name via STATUS_CONFIG. */
-    getStatusColor(status) {
-        return (STATUS_CONFIG[normalizeListStatus(status)] ?? DEFAULT_STATUS).cssClass
-    }
-    /** Maps a responsible role key to its display label. */
-    getResponsibleRoleLabel(role) {
-        const labels = {
-            district_manager: 'District Manager',
-            maintenance: 'Maintenance',
-            plant_manager: 'Plant Manager'
-        }
-        return labels[role] || 'Unassigned'
-    }
-    /** Returns priority display metadata (label, icon, Tailwind classes) for a given priority value. */
-    getPriorityConfig(priority) {
-        return PRIORITY_CONFIG[priority] ?? DEFAULT_PRIORITY
-    }
-    /** Returns the ordered list of priority options for dropdowns. */
-    getPriorityOptions() {
-        return PRIORITY_OPTIONS
-    }
-    /** Maps a responsible role key to its FontAwesome icon class. */
-    getResponsibleRoleIcon(role) {
-        const icons = {
-            district_manager: 'fa-user-shield',
-            maintenance: 'fa-wrench',
-            plant_manager: 'fa-user-tie'
-        }
-        return icons[role] || 'fa-users'
-    }
-    /** Resolves a plant code to its display name from the cached plants list. */
-    getPlantName(plantCode) {
-        const plant = this.plants.find((p) => p.plant_code === plantCode)
-        return plant ? plant.plant_name : plantCode || 'No Plant'
-    }
-    /** Truncates text by character count or word count with ellipsis. Delegates to FormatUtility. */
-    truncateText(text, maxLength, byWords = false) {
-        return FormatUtility.truncateText(text, maxLength, byWords)
-    }
-    /** Resolves a creator's display name from the cached profiles. */
-    getCreatorName(userId) {
-        if (!userId) return 'Unknown'
-        const profile = this.creatorProfiles[userId]
-        if (profile) {
-            const name = `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
-            return name || userId.slice(0, 8)
-        }
-        return userId.slice(0, 8)
-    }
+
     /**
      * Fetches the activity feed from the list_items_activity table.
      * Returns activity entries with resolved user profiles.
@@ -397,124 +199,14 @@ class ListServiceImpl {
         CacheUtility.set(cacheKey, result, 30_000)
         return result
     }
-    /**
-     * Resolves a user ID to a display name from a provided profiles map, falling back to creatorProfiles.
-     * @param {string} userId - The user ID to resolve.
-     * @param {Object} [profilesMap] - Optional profiles map to check first.
-     * @returns {string} Display name or truncated ID.
-     */
-    getProfileName(userId, profilesMap) {
-        if (!userId) return 'Unknown'
-        const profile = profilesMap?.[userId] || this.creatorProfiles[userId]
-        if (profile) {
-            const name = `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
-            return name || userId.slice(0, 8)
-        }
-        return userId.slice(0, 8)
-    }
-    /**
-     * Maps an activity action + field to a human-readable verb and icon.
-     * @param {string} action - The action type (created, updated, completed, uncompleted, deleted).
-     * @param {string} [fieldName] - The field that changed (for "updated" actions).
-     * @returns {{ verb: string, icon: string, color: string }}
-     */
-    getActivityDisplay(action, fieldName) {
-        const FIELD_LABELS = {
-            comments: 'comments',
-            deadline: 'deadline',
-            description: 'description',
-            plant_code: 'plant',
-            priority: 'priority',
-            responsible_role: 'assigned role',
-            status: 'status'
-        }
-        switch (action) {
-            case 'created':
-                return { color: 'accentColor', icon: 'fa-plus', verb: 'created' }
-            case 'completed':
-                return { color: '#16a34a', icon: 'fa-check', verb: 'completed' }
-            case 'uncompleted':
-                return { color: '#f59e0b', icon: 'fa-undo', verb: 'reopened' }
-            case 'deleted':
-                return { color: '#ef4444', icon: 'fa-trash', verb: 'deleted' }
-            case 'updated':
-                return {
-                    color: '#3b82f6',
-                    icon: 'fa-pen',
-                    verb: `changed ${FIELD_LABELS[fieldName] || fieldName || 'a field'} on`
-                }
-            default:
-                return { color: '#94a3b8', icon: 'fa-circle', verb: action }
-        }
-    }
-    /**
-     * Formats an activity-feed `old_value` / `new_value` for display. Most
-     * tracked fields are plain strings, but `deadline` is stored as an ISO
-     * timestamp and rendered raw without this formatter.
-     */
-    formatActivityValue(fieldName, value) {
-        if (value == null || value === '') return 'none'
-        if (fieldName === 'deadline') {
-            const d = new Date(value)
-            if (Number.isNaN(d.getTime())) return String(value)
-            const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
-            return d.toLocaleDateString('en-US', {
-                day: 'numeric',
-                hour: hasTime ? 'numeric' : undefined,
-                minute: hasTime ? '2-digit' : undefined,
-                month: 'short',
-                year: 'numeric'
-            })
-        }
-        return String(value)
-    }
-    /**
-     * Formats a timestamp into a human-readable relative string (e.g. "2 hours ago", "Yesterday").
-     * Falls back to absolute date for anything older than 7 days.
-     * @param {string} timestamp - ISO timestamp string.
-     * @returns {string} Relative or absolute time label.
-     */
-    formatRelativeTime(timestamp) {
-        if (!timestamp) return ''
-        const now = new Date()
-        const then = new Date(timestamp)
-        const diffMs = now - then
-        const diffMinutes = Math.floor(diffMs / 60_000)
-        const diffHours = Math.floor(diffMs / 3_600_000)
-        const diffDays = Math.floor(diffMs / 86_400_000)
-        if (diffMinutes < 1) return 'Just now'
-        if (diffMinutes < 60) return `${diffMinutes}m ago`
-        if (diffHours < 24) return `${diffHours}h ago`
-        if (diffDays === 1) return 'Yesterday'
-        if (diffDays < 7) return `${diffDays}d ago`
-        return then.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-    }
-    /** Computes per-plant distribution of total, completed, pending, and overdue items. */
-    getPlantDistribution(listItems) {
-        const distribution = {}
-        const uniquePlants = [...new Set(listItems.map((item) => item.plant_code || 'Unassigned'))]
-        uniquePlants.forEach((plant) => {
-            distribution[plant] = { Completed: 0, Overdue: 0, Pending: 0, Total: 0 }
-        })
-        listItems.forEach((item) => {
-            const plant = item.plant_code || 'Unassigned'
-            distribution[plant].Total++
-            if (item.completed) {
-                distribution[plant].Completed++
-            } else {
-                distribution[plant].Pending++
-                if (this.isOverdue(item)) distribution[plant].Overdue++
-            }
-        })
-        this.plantDistribution = distribution
-        return distribution
-    }
+
     /** Fetches planned items within a date range for calendar views. */
     async fetchPlannedItems(startDate, endDate) {
         const { res, json } = await APIUtility.post('/list-service/fetch-planned-items', { endDate, startDate })
         if (!res.ok) throw new Error(json?.error || 'Failed to fetch planned items')
         return json?.data ?? []
     }
+
     /** Associates a list item with a planned date for scheduling. */
     async addPlannedItem(listItemId, plannedDate) {
         const user = await UserService.getCurrentUser()
@@ -526,23 +218,27 @@ class ListServiceImpl {
         if (!res.ok) throw new Error(json?.error || 'Failed to add planned item')
         return json
     }
+
     /** Removes a planned date association from a list item. */
     async removePlannedItem(listItemId, plannedDate) {
         const { res, json } = await APIUtility.post('/list-service/remove-planned-item', { listItemId, plannedDate })
         if (!res.ok) throw new Error(json?.error || 'Failed to remove planned item')
         return json
     }
+
     /** Clears all planned items within a date range. */
     async clearPlannedItems(startDate, endDate) {
         const { res, json } = await APIUtility.post('/list-service/clear-planned-items', { endDate, startDate })
         if (!res.ok) throw new Error(json?.error || 'Failed to clear planned items')
         return json
     }
+
     /** Invalidates all cached priority scores so the next auto-plan re-scores everything. */
     invalidateAllPriorityScores() {
         const keysToDelete = Object.keys(CacheUtility.caches).filter((key) => key.startsWith(PRIORITY_CACHE_PREFIX))
         for (const key of keysToDelete) CacheUtility.delete(key)
     }
+
     /**
      * Retrieves cached priority scores for items that have them, identifies items needing scoring.
      * @returns {{ cached: Map<string, number>, uncached: Array }} Partitioned results.
@@ -560,13 +256,11 @@ class ListServiceImpl {
         }
         return { cached, uncached }
     }
+
     /**
      * AI-powered auto-plan: scores open items by operational priority, then distributes
      * the highest-priority items across the week while respecting deadlines and existing plans.
      * Returns assignments grouped by day for progressive rendering.
-     * @param {Array<{dateStr: string}>} weekDates - Mon-Sat date objects from the planner.
-     * @param {Array<{list_item_id: string, planned_date: string}>} existingPlannedItems - Already-planned records.
-     * @returns {Promise<Map<string, Array<string>>>} Map of dateStr → array of itemIds.
      */
     async autoPlanWeek(weekDates, existingPlannedItems) {
         const openItems = this.listItems.filter((item) => !item.completed && item.status !== 'completed')
@@ -587,32 +281,11 @@ class ListServiceImpl {
         }
         return byDay
     }
-    /**
-     * Computes a deterministic priority score (1-10) from an item's structured fields.
-     * Used as the immediate/fallback scoring — no API call needed.
-     */
-    computeDeterministicScore(item) {
-        let score = 5
-        const status = normalizeListStatus(item.status)
-        if (status === 'overdue' || this.isOverdue(item)) score = 9
-        else if (status === 'in_progress') score = 7
-        else if (status === 'ordered_materials') score = 6
-        else if (status === 'waiting') score = 4
-        else if (status === 'pending') score = 5
-        if (item.deadline) {
-            const daysUntilDeadline = (new Date(item.deadline) - new Date()) / (1000 * 60 * 60 * 24)
-            if (daysUntilDeadline < 0) score = Math.max(score, 9)
-            else if (daysUntilDeadline <= 2) score = Math.min(10, score + 2)
-            else if (daysUntilDeadline <= 5) score = Math.min(10, score + 1)
-        }
-        if (item.responsible_role === 'maintenance') score = Math.min(10, score + 1)
-        return score
-    }
+
     /**
      * Fetches priority scores for items. Uses cached AI scores when available,
      * falls back to deterministic scoring, and calls AI for uncached items
      * to get scores + update deadline/status.
-     * @returns {Promise<Map<string, number>>} Map of itemId → priority score.
      */
     async getScoresForItems(items) {
         const scores = new Map()
@@ -642,6 +315,7 @@ class ListServiceImpl {
         }
         return scores
     }
+
     /**
      * Applies AI-recommended deadline and status updates to list items.
      * Only updates if the AI suggestion differs from the current value.
@@ -671,6 +345,7 @@ class ListServiceImpl {
             }
         }
     }
+
     /**
      * Distributes ranked items across the week's days, respecting deadlines and per-day caps.
      * Items with deadlines within the week are placed on or before their deadline day.
@@ -749,5 +424,105 @@ class ListServiceImpl {
         }
         return assignments
     }
+
+    // ─── Pure helpers — delegated to ListItemUtility ────────────────────────
+    // These shims preserve the existing `ListService.foo(...)` call sites.
+    // New code should import the functions directly from `utils/ListItemUtility`.
+
+    formatDate(dateString) {
+        return ListItemUtility.formatDate(dateString)
+    }
+
+    formatDateForInput(dateString) {
+        return ListItemUtility.formatDateForInput(dateString)
+    }
+
+    isOverdue(item) {
+        return ListItemUtility.isOverdue(item)
+    }
+
+    calculateStatusInfo(item) {
+        return ListItemUtility.calculateStatusInfo(item)
+    }
+
+    getStatusLabel(status) {
+        return ListItemUtility.getStatusLabel(status)
+    }
+
+    getStatusIcon(status) {
+        return ListItemUtility.getStatusIcon(status)
+    }
+
+    getStatusColor(status) {
+        return ListItemUtility.getStatusColor(status)
+    }
+
+    getResponsibleRoleLabel(role) {
+        return ListItemUtility.getResponsibleRoleLabel(role)
+    }
+
+    getPriorityConfig(priority) {
+        return ListItemUtility.getPriorityConfig(priority)
+    }
+
+    getPriorityOptions() {
+        return ListItemUtility.getPriorityOptions()
+    }
+
+    getResponsibleRoleIcon(role) {
+        return ListItemUtility.getResponsibleRoleIcon(role)
+    }
+
+    truncateText(text, maxLength, byWords = false) {
+        return ListItemUtility.truncateText(text, maxLength, byWords)
+    }
+
+    getActivityDisplay(action, fieldName) {
+        return ListItemUtility.getActivityDisplay(action, fieldName)
+    }
+
+    formatActivityValue(fieldName, value) {
+        return ListItemUtility.formatActivityValue(fieldName, value)
+    }
+
+    formatRelativeTime(timestamp) {
+        return ListItemUtility.formatRelativeTime(timestamp)
+    }
+
+    computeDeterministicScore(item) {
+        return ListItemUtility.computeDeterministicScore(item)
+    }
+
+    // ─── Stateful helpers — read from instance caches and delegate ──────────
+
+    /** Filters/sorts the cached `listItems`. Pure logic lives in `ListItemUtility.getFilteredItems`. */
+    getFilteredItems(filters) {
+        return ListItemUtility.getFilteredItems(this.listItems, filters)
+    }
+
+    /** Resolves a plant code to its display name from the cached plants list. */
+    getPlantName(plantCode) {
+        return ListItemUtility.getPlantName(plantCode, this.plants)
+    }
+
+    /** Resolves a creator's display name from the cached profiles. */
+    getCreatorName(userId) {
+        return ListItemUtility.getProfileName(userId, this.creatorProfiles)
+    }
+
+    /** Resolves a user ID to a display name, checking the provided map first then cached creator profiles. */
+    getProfileName(userId, profilesMap) {
+        if (!userId) return 'Unknown'
+        const merged = profilesMap ? { ...this.creatorProfiles, ...profilesMap } : this.creatorProfiles
+        return ListItemUtility.getProfileName(userId, merged)
+    }
+
+    /** Computes per-plant distribution of total, completed, pending, and overdue items. Caches result on instance. */
+    getPlantDistribution(listItems) {
+        const distribution = ListItemUtility.getPlantDistribution(listItems)
+        this.plantDistribution = distribution
+        return distribution
+    }
 }
+
 export const ListService = new ListServiceImpl()

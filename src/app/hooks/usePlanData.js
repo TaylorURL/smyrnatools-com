@@ -1,48 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { PlanService } from '../../services/PlanService'
-import { PlantService } from '../../services/PlantService'
-import { ReportService } from '../../services/ReportService'
 import { UserService } from '../../services/UserService'
+import { chicagoTodayDate, hasMeaningfulAssignments, PLAN_AUTOSAVE_RACE_WINDOW_MS } from '../../utils/PlanDataUtility'
 import { AUTOSAVE_DELAY_MS, createEmptyAssignment, ensureUniqueIds, getOffsetDate } from '../../utils/PlanUtility'
 import { usePreferences } from '../context/PreferencesContext'
 import { useDetailOrders } from './useDetailOrders'
-import { useRealtimeSubscription } from './useRealtimeSubscription'
+import { usePlanPlants } from './usePlanPlants'
+import { usePlanRealtimeSync } from './usePlanRealtimeSync'
 import { useScheduleSync } from './useScheduleSync'
-
-const PLAN_EDIT_TIME_ZONE = 'America/Chicago'
-
-/** Today's date in the planner's authoritative time zone (Chicago) as
- *  `YYYY-MM-DD`. Used to gate edits — past-day plans are read-only no
- *  matter what permission the user holds. Computed via Intl so the
- *  string lines up with the `planDate` values already produced by
- *  `usePlanDate` (which also formats Chicago dates). */
-function chicagoTodayDate() {
-    const fmt = new Intl.DateTimeFormat('en-US', {
-        day: '2-digit',
-        month: '2-digit',
-        timeZone: PLAN_EDIT_TIME_ZONE,
-        year: 'numeric'
-    })
-    const parts = fmt.formatToParts(new Date()).reduce((acc, p) => {
-        acc[p.type] = p.value
-        return acc
-    }, {})
-    return `${parts.year}-${parts.month}-${parts.day}`
-}
 
 export function usePlanData(planDate) {
     const { preferences } = usePreferences()
     const selectedRegionCode = preferences?.selectedRegion?.code || null
-    const [plants, setPlants] = useState([])
-    const [regionPlants, setRegionPlants] = useState([])
-    const [mixerCountsByPlant, setMixerCountsByPlant] = useState({})
     const [assignments, setAssignments] = useState([])
     const [notes, setNotes] = useState('')
-    const [travelTimes, setTravelTimes] = useState({})
     const [userId, setUserId] = useState(null)
     const [canEdit, setCanEdit] = useState(true)
-    const [isLoading, setIsLoading] = useState(true)
     const [plantProduction, setPlantProduction] = useState({})
     const [adjacentPlans, setAdjacentPlans] = useState({})
     const [adjacentProduction, setAdjacentProduction] = useState({})
@@ -62,10 +36,7 @@ export function usePlanData(planDate) {
      *  fresh plan. The autosave race guard compares against this to
      *  decide whether an empty-over-meaningful save looks like a load
      *  race (suspicious — block) vs a deliberate user-initiated clear
-     *  (allow through). 10 s is wide enough to catch the realtime / sync
-     *  / scheduleSync timing path but tight enough that a dispatcher who
-     *  manually deletes every route after reading the plan still gets
-     *  their save through. */
+     *  (allow through). */
     const loadedAtMsRef = useRef(0)
     /* Monotonic counter incremented on every local edit. Each scheduled save
      * captures the serial at scheduling time; on completion it only clears
@@ -90,19 +61,12 @@ export function usePlanData(planDate) {
      *  write threw. Drives the small indicator next to the planner header. */
     const [syncStatus, setSyncStatus] = useState('idle')
 
-    const getTravelTime = (from, to) => travelTimes[`${from}->${to}`] ?? null
+    const { isLoading, mixerCountsByPlant, plants, refreshTravelTimes, regionPlants, travelTimes } = usePlanPlants({
+        selectedRegionCode,
+        userId
+    })
 
-    /** Best-effort travel-time refresh. Swallows errors (e.g. Unauthorized
-     *  when the session hasn't established yet, or transient network blips)
-     *  so the planner doesn't surface a runtime error for non-critical data. */
-    const refreshTravelTimes = async () => {
-        try {
-            await PlanService.fetchTravelTimes()
-            setTravelTimes(PlanService.getTravelTimesMap())
-        } catch (err) {
-            console.warn('[usePlanData] travel-times refresh failed:', err?.message || err)
-        }
-    }
+    const getTravelTime = (from, to) => travelTimes[`${from}->${to}`] ?? null
 
     // One-time bootstrap: user, permissions, travel-time cache. We only fetch
     // travel times once we have a session — otherwise the edge function 401s
@@ -127,60 +91,7 @@ export function usePlanData(planDate) {
             }
         }
         bootstrap()
-    }, [])
-
-    // Plants + mixer counts — re-runs whenever the user's selected region
-    // changes so the plan scopes to the region the user is currently viewing,
-    // not their permanently-assigned one.
-    useEffect(() => {
-        let cancelled = false
-        const loadPlants = async () => {
-            let plantList = []
-            let regionPlantRecords = []
-            if (selectedRegionCode) {
-                try {
-                    const [all, fetchedRegionPlants] = await Promise.all([
-                        ReportService.fetchPlantsSorted(),
-                        PlantService.fetchRegionPlants(selectedRegionCode)
-                    ])
-                    regionPlantRecords = fetchedRegionPlants || []
-                    const allowedCodes = new Set(
-                        regionPlantRecords
-                            .map((rp) => String(rp.plantCode || rp.plant_code || '').trim())
-                            .filter(Boolean)
-                    )
-                    plantList = (all || []).filter((p) => allowedCodes.has(String(p.plant_code || '').trim()))
-                } catch {
-                    plantList = []
-                    regionPlantRecords = []
-                }
-            } else if (userId) {
-                plantList = await ReportService.fetchPlantsForUser(userId)
-                if (!plantList.length) plantList = await ReportService.fetchPlantsSorted()
-            } else {
-                plantList = await ReportService.fetchPlantsSorted()
-            }
-            if (!cancelled) setRegionPlants(regionPlantRecords)
-            if (cancelled) return
-            const sorted = (plantList || [])
-                .filter((p) => p.plant_code)
-                .sort((a, b) => String(a.plant_code).localeCompare(String(b.plant_code)))
-            setPlants(sorted)
-            if (sorted.length) {
-                const counts = await ReportService.fetchActiveMixerCountsByPlant(
-                    sorted.map((p) => p.plant_code).filter(Boolean)
-                )
-                if (!cancelled) setMixerCountsByPlant(counts)
-            } else {
-                setMixerCountsByPlant({})
-            }
-            if (!cancelled) setIsLoading(false)
-        }
-        loadPlants()
-        return () => {
-            cancelled = true
-        }
-    }, [userId, selectedRegionCode])
+    }, [refreshTravelTimes])
 
     // Load plan for selected date
     const loadedForDateRef = useRef(null)
@@ -212,9 +123,7 @@ export function usePlanData(planDate) {
                  * culprit is identified. */
                 console.info('[usePlanData] plan loaded', {
                     assignmentCount: loadedAssignments.length,
-                    hasMeaningfulAssignments: loadedAssignments.some(
-                        (a) => a?.fromPlant || a?.toPlant || a?.forOrderId
-                    ),
+                    hasMeaningfulAssignments: hasMeaningfulAssignments(loadedAssignments),
                     planDate,
                     rawAssignmentsLength: plan?.assignments?.length ?? null,
                     rawPlanWasNull: plan === null
@@ -310,34 +219,26 @@ export function usePlanData(planDate) {
          * this, and the dispatcher's confirm dialog already protects
          * against accidental clicks there. Remove this block once the
          * culprit is identified. */
-        const hasMeaningful = (list) =>
-            Array.isArray(list) && list.some((a) => a?.fromPlant || a?.toPlant || a?.forOrderId)
-        const newSnapshotEffectivelyEmpty = !hasMeaningful(assignments)
+        const newSnapshotEffectivelyEmpty = !hasMeaningfulAssignments(assignments)
         let prevSnapshotWasMeaningful = false
         if (lastSyncedSnapshotRef.current) {
             try {
                 const prev = JSON.parse(lastSyncedSnapshotRef.current)
-                prevSnapshotWasMeaningful = hasMeaningful(prev?.assignments)
+                prevSnapshotWasMeaningful = hasMeaningfulAssignments(prev?.assignments)
             } catch {
                 prevSnapshotWasMeaningful = false
             }
         }
         if (newSnapshotEffectivelyEmpty && prevSnapshotWasMeaningful) {
             /* Hard guard: when the new state goes from meaningful to
-             * effectively-empty WITHIN ~10s of the last load, treat it as
-             * a race (realtime echo, schedule sync, etc.) and refuse to
-             * persist. The wipes the dispatcher has been hitting on
-             * tomorrow's plan all happen in this window — the load races
-             * with secondary state updates and the autosave ships an
-             * empty payload before the dispatcher has time to react. A
-             * legitimate "delete every route" workflow takes longer than
-             * 10 s after page load (user has to read the plan, click
-             * Delete, confirm each one), so those still pass through.
-             * Block + log so the next reproduction tells us where the
-             * stale empty state came from. */
-            const RACE_WINDOW_MS = 10000
+             * effectively-empty WITHIN the race window of the last load,
+             * treat it as a race (realtime echo, schedule sync, etc.) and
+             * refuse to persist. A legitimate "delete every route" flow
+             * takes longer than the window after page load so those still
+             * pass through. Block + log so the next reproduction tells us
+             * where the stale empty state came from. */
             const elapsedSinceLoad = Date.now() - loadedAtMsRef.current
-            if (elapsedSinceLoad < RACE_WINDOW_MS) {
+            if (elapsedSinceLoad < PLAN_AUTOSAVE_RACE_WINDOW_MS) {
                 console.error(
                     '[usePlanData] BLOCKED autosave: would write EMPTY plan over previously non-empty state within ' +
                         `${elapsedSinceLoad}ms of load — treating as a race and preserving the saved plan.`,
@@ -393,102 +294,17 @@ export function usePlanData(planDate) {
     }, [canEdit, planDate, assignments, notes, plantProduction, isLoading])
 
     // Realtime: sync plan changes from other users
-    const planDateRef = useRef(planDate)
-    planDateRef.current = planDate
-    const assignmentsRef = useRef(assignments)
-    assignmentsRef.current = assignments
-    const notesRef = useRef(notes)
-    notesRef.current = notes
-    const plantProductionRef = useRef(plantProduction)
-    plantProductionRef.current = plantProduction
-
-    useRealtimeSubscription({
-        enabled: !isLoading,
-        onChange: useCallback((payload) => {
-            const record = payload.new
-            if (!record || record.plan_date !== planDateRef.current) return
-            /* Realtime payloads with a null / missing / empty `assignments`
-             * column used to wipe the local map: the old code coerced
-             * them to `[createEmptyAssignment()]`, which has no
-             * fromPlant/toPlant, which made the route-render effect's
-             * `wanted` diff delete every polyline on the map for a
-             * second or two before the next legitimate save corrected
-             * state. Real-world triggers seen: another dispatcher's
-             * autosave briefly serializing a transient mid-edit, a DB
-             * row whose `assignments` column was null from a legacy
-             * insert path, a partial save that didn't include the
-             * assignments key. Guard skips those payloads when the
-             * local user has meaningful assignments to lose. */
-            const localAssignments = assignmentsRef.current || []
-            const localHasMeaningfulAssignments =
-                localAssignments.length > 1 || localAssignments.some((a) => a?.fromPlant || a?.toPlant || a?.forOrderId)
-            const incomingHasAssignments = !!record.assignments?.length
-            if (!incomingHasAssignments && localHasMeaningfulAssignments) {
-                console.warn(
-                    '[usePlanData] Skipping realtime apply: incoming `assignments` was empty / null while local plan has live routes. Preserving local state.'
-                )
-                return
-            }
-            const incomingAssignments = incomingHasAssignments
-                ? ensureUniqueIds(record.assignments)
-                : [createEmptyAssignment()]
-            const incomingNotes = record.notes || ''
-            const incomingProduction = record.plant_production || {}
-            const incomingSnapshot = JSON.stringify({
-                assignments: incomingAssignments,
-                notes: incomingNotes,
-                plantProduction: incomingProduction
-            })
-            /* Skip our own save echo. The autosave loop stores its
-             * just-written snapshot in `lastSyncedSnapshotRef`; a realtime
-             * payload that matches it is the bus reflecting our own write
-             * back at us — applying it would just bounce state for no
-             * reason. */
-            if (incomingSnapshot === lastSyncedSnapshotRef.current) return
-            /* Stamp the snapshot BEFORE applying so the autosave effect
-             * that fires from the setState calls below short-circuits
-             * instead of immediately re-saving what we just received. */
-            lastSyncedSnapshotRef.current = incomingSnapshot
-            if (JSON.stringify(incomingAssignments) !== JSON.stringify(assignmentsRef.current)) {
-                setAssignments(incomingAssignments)
-            }
-            if (incomingNotes !== notesRef.current) {
-                setNotes(incomingNotes)
-            }
-            if (JSON.stringify(incomingProduction) !== JSON.stringify(plantProductionRef.current)) {
-                setPlantProduction(incomingProduction)
-            }
-            setSyncStatus('saved')
-        }, []),
-        table: 'plans'
-    })
-
-    // Realtime: refresh mixer counts
-    const plantCodesRef = useRef([])
-    plantCodesRef.current = plants.map((p) => p.plant_code).filter(Boolean)
-
-    useRealtimeSubscription({
-        enabled: !isLoading && plants.length > 0,
-        onChange: useCallback(async () => {
-            if (!plantCodesRef.current.length) return
-            const counts = await ReportService.fetchActiveMixerCountsByPlant(plantCodesRef.current)
-            setMixerCountsByPlant(counts)
-        }, []),
-        table: 'mixers'
-    })
-
-    // Realtime: refresh travel times
-    useRealtimeSubscription({
-        enabled: !isLoading,
-        onChange: useCallback(async () => {
-            try {
-                await PlanService.fetchTravelTimes()
-                setTravelTimes(PlanService.getTravelTimesMap())
-            } catch (err) {
-                console.warn('[usePlanData] realtime travel-times refresh failed:', err?.message || err)
-            }
-        }, []),
-        table: 'plant_travel_times'
+    usePlanRealtimeSync({
+        assignments,
+        isLoading,
+        lastSyncedSnapshotRef,
+        notes,
+        planDate,
+        plantProduction,
+        setAssignments,
+        setNotes,
+        setPlantProduction,
+        setSyncStatus
     })
 
     // Pull the daily schedule from the bucket every 5 min, plus realtime when

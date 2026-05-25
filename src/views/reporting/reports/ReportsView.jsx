@@ -1,13 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import ReportsHomeOfficeGate from '../../../app/components/reports/ReportsHomeOfficeGate'
 import ReportsModalsHostConnected from '../../../app/components/reports/ReportsModalsHostConnected'
 import ReportsToolbar, { ReportsActionBar } from '../../../app/components/reports/ReportsToolbar'
-import { ReportsViewSkeleton } from '../../../app/components/reports/ReportsViewSkeletons'
-import LostLoadsTabPanel from '../../../app/components/reports/tabs/lost-loads/LostLoadsTabPanel'
-import MyReportsTabPanel from '../../../app/components/reports/tabs/my-reports/MyReportsTabPanel'
-import QualityTabPanel from '../../../app/components/reports/tabs/quality/QualityTabPanel'
-import ReviewTabPanel from '../../../app/components/reports/tabs/review/ReviewTabPanel'
 import { usePagination } from '../../../app/hooks/usePagination'
 import { useReportsData } from '../../../app/hooks/useReportsData'
 import { useReportsFilters } from '../../../app/hooks/useReportsFilters'
@@ -18,11 +12,18 @@ import { useReportsQc } from '../../../app/hooks/useReportsQc'
 import { useReportsRailCollapse } from '../../../app/hooks/useReportsRailCollapse'
 import { useReportSubmission } from '../../../app/hooks/useReportSubmission'
 import { useReportsWeekTimeline } from '../../../app/hooks/useReportsWeekTimeline'
-import { reportTypeMap, reportTypes } from '../../../app/types/ReportTypes'
 import { ReportUtility } from '../../../utils/ReportUtility'
-import QualityIssuesView from '../quality/QualityIssuesView'
-import ReportsReviewView from './ReportsReviewView'
-import ReportsSubmitView from './ReportsSubmitView'
+import ReportsTabContent from './parts/ReportsTabContent'
+import { ReportsHomeOfficeBranch, ReportsReviewBranch, ReportsSubmitBranch } from './parts/ReportsViewBranches'
+import {
+    buildAllowedReviewReportNames,
+    buildMyPlantCodesSet,
+    buildPillTabs,
+    buildRegionalPlants,
+    buildReviewTypeOptions,
+    getPreviousTwoCompletedWeekIsos,
+    resolvePlantDisplayText
+} from './parts/reportsHelpers'
 
 /**
  * Top-level reports hub. Presents a week-timeline layout for "My Reports",
@@ -96,45 +97,20 @@ function ReportsView() {
 
     const modals = useReportsModals()
 
-    /* ── Plant scoping ─────────────────────────────────────────── */
-    const myPlantCodesSet = useMemo(() => {
-        if (!userPlantCode && !userAdditionalPlants.length) return null
-        const codes = new Set()
-        if (userPlantCode) codes.add(userPlantCode)
-        userAdditionalPlants.forEach((code) => codes.add(code))
-        return codes
-    }, [userPlantCode, userAdditionalPlants])
-
-    /* ── Review permission scoping ─────────────────────────────── */
+    /* ── Plant + review permission scoping ─────────────────────── */
+    const myPlantCodesSet = useMemo(
+        () => buildMyPlantCodesSet({ userAdditionalPlants, userPlantCode }),
+        [userPlantCode, userAdditionalPlants]
+    )
     const reviewTypeOptions = useMemo(
-        () =>
-            reportTypes.filter(
-                (rt) =>
-                    (hasAssigned[rt.name] || hasReviewPermission[rt.name]) &&
-                    (regionType !== 'office' || rt.name === 'general_manager')
-            ),
+        () => buildReviewTypeOptions({ hasAssigned, hasReviewPermission, regionType }),
         [hasAssigned, hasReviewPermission, regionType]
     )
-    const allowedReviewReportNames = useMemo(() => {
-        if (isLoadingPermissions) return []
-        if (regionType === 'office') return hasReviewPermission['general_manager'] ? ['general_manager'] : []
-        return reportTypes
-            .filter((rt) => hasReviewPermission[rt.name] && rt.name !== 'general_manager')
-            .map((rt) => rt.name)
-    }, [hasReviewPermission, regionType, isLoadingPermissions])
-    const previousTwoWeekIsos = useMemo(() => {
-        const now = new Date()
-        const candidates = ReportUtility.getLastNWeekIsos(4, now)
-        const completed = []
-        for (const iso of candidates) {
-            const { saturday } = ReportUtility.getWeekDatesFromIso(iso)
-            if (saturday && saturday < now) {
-                completed.push(iso)
-                if (completed.length === 2) break
-            }
-        }
-        return completed
-    }, [])
+    const allowedReviewReportNames = useMemo(
+        () => buildAllowedReviewReportNames({ hasReviewPermission, isLoadingPermissions, regionType }),
+        [hasReviewPermission, regionType, isLoadingPermissions]
+    )
+    const previousTwoWeekIsos = useMemo(() => getPreviousTwoCompletedWeekIsos(), [])
 
     /* ── QC + Missing loaders (hooks) ──────────────────────────── */
     const qc = useReportsQc({ fetchProfilesFor, user })
@@ -196,27 +172,17 @@ function ReportsView() {
     }, [timeline.selectedWeekIso, tab, filters])
 
     /* ── Plant rolldown ────────────────────────────────────────── */
-    const regionalPlants = useMemo(() => {
-        const filtered = plants.filter(
-            (p) => !preferences.selectedRegion?.code || !regionPlantCodes || regionPlantCodes.has(p.plant_code)
-        )
-        if (!regionPlantsWithDistricts.length) return filtered
-        const districtMap = {}
-        regionPlantsWithDistricts.forEach((rp) => {
-            const code = rp.plantCode || rp.plant_code
-            if (code && rp.districts?.length) districtMap[code] = rp.districts
-        })
-        return filtered.map((p) => (districtMap[p.plant_code] ? { ...p, districts: districtMap[p.plant_code] } : p))
-    }, [plants, preferences.selectedRegion?.code, regionPlantCodes, regionPlantsWithDistricts])
-
-    const selectedPlantObj = regionalPlants.find((p) => p.plant_code === filters.filterPlant)
-    const plantDisplayText = (() => {
-        if (!filters.filterPlant || filters.filterPlant === 'All') return 'All Plants'
-        if (filters.filterPlant === 'MY_PLANTS') return 'My Plants'
-        if (filters.filterPlant.startsWith('DISTRICT:')) return filters.filterPlant.slice(9)
-        if (selectedPlantObj) return `(${selectedPlantObj.plant_code}) ${selectedPlantObj.plant_name}`
-        return 'All Plants'
-    })()
+    const regionalPlants = useMemo(
+        () =>
+            buildRegionalPlants({
+                plants,
+                regionPlantCodes,
+                regionPlantsWithDistricts,
+                selectedRegionCode: preferences.selectedRegion?.code
+            }),
+        [plants, preferences.selectedRegion?.code, regionPlantCodes, regionPlantsWithDistricts]
+    )
+    const plantDisplayText = resolvePlantDisplayText({ filterPlant: filters.filterPlant, regionalPlants })
 
     /* ── Rail collapse on scroll ───────────────────────────────── */
     const { railCollapsed, railRef } = useReportsRailCollapse(tab)
@@ -315,50 +281,32 @@ function ReportsView() {
     })
 
     /* ── Pre-render branches ───────────────────────────────────── */
-    // Home Office never owns reports. Short-circuit any deep-link /
-    // stale-state path that would otherwise drop the user straight into
-    // a submit or review form before they pick an operating region.
     if (String(regionType || '').toLowerCase() === 'office') {
-        return (
-            <div className="bg-slate-50 min-h-screen w-full pb-16 relative">
-                <div className="pointer-events-none select-none blur-sm" aria-hidden>
-                    <ReportsViewSkeleton variant="grid" />
-                </div>
-                <ReportsHomeOfficeGate userId={user?.id} />
-            </div>
-        )
+        return <ReportsHomeOfficeBranch userId={user?.id} />
     }
     if (showForm) {
-        const report = reportTypeMap[showForm.name]
-            ? { ...reportTypeMap[showForm.name], weekIso: showForm.weekIso }
-            : showForm
         return (
-            <div className="bg-slate-50 min-h-screen w-full pb-16">
-                <ReportsSubmitView
-                    report={report}
-                    initialData={submitInitialData}
-                    onBack={handlers.handleBack}
-                    onSubmit={handlers.handleFormSubmit}
-                    user={user}
-                    readOnly={showReview === null && reviewData !== null}
-                    managerEditUser={managerEditUser}
-                    userProfiles={userProfiles}
-                />
-            </div>
+            <ReportsSubmitBranch
+                handlers={handlers}
+                managerEditUser={managerEditUser}
+                reviewData={reviewData}
+                showForm={showForm}
+                showReview={showReview}
+                submitInitialData={submitInitialData}
+                user={user}
+                userProfiles={userProfiles}
+            />
         )
     }
     if (showReview) {
         return (
-            <div className="bg-slate-50 min-h-screen w-full pb-16">
-                <ReportsReviewView
-                    report={reportTypeMap[showReview.name] || showReview}
-                    initialData={reviewData}
-                    onBack={handlers.handleReviewBack}
-                    user={user}
-                    completedByUser={reviewData?.userId ? userProfiles[reviewData.userId] : undefined}
-                    onManagerEdit={handlers.handleManagerEdit}
-                />
-            </div>
+            <ReportsReviewBranch
+                handlers={handlers}
+                reviewData={reviewData}
+                showReview={showReview}
+                user={user}
+                userProfiles={userProfiles}
+            />
         )
     }
 
@@ -377,17 +325,13 @@ function ReportsView() {
     const showReviewSkeleton = tab === 'review' && (isReviewLoading || missing.isLoadingMissing) && !hasLoadedReviewOnce
     const showBootSkeleton = tab === null
 
-    const pillTabs = [
-        ...(hasAnyAssigned ? [{ icon: 'fa-file-alt', key: 'all', label: 'My Reports' }] : []),
-        ...(hasAnyReviewPermission ? [{ icon: 'fa-clipboard-check', key: 'review', label: 'Review' }] : []),
-        ...(hasLostLoadsPermission ? [{ icon: 'fa-truck', key: 'lost_loads', label: 'Loss Reports' }] : []),
-        ...(hasOneOffReviewPermission?.qc_strength || hasQCStrengthPermission
-            ? [{ icon: 'fa-flask', key: 'quality', label: 'Quality Reports' }]
-            : []),
-        ...(hasOneOffReviewPermission?.qc_strength || hasQCStrengthPermission
-            ? [{ icon: 'fa-clipboard-list', key: 'quality_issues', label: 'Quality Issues' }]
-            : [])
-    ]
+    const pillTabs = buildPillTabs({
+        hasAnyAssigned,
+        hasAnyReviewPermission,
+        hasLostLoadsPermission,
+        hasOneOffReviewPermission,
+        hasQCStrengthPermission
+    })
     const accent = preferences.accentColor || '#1e3a5f'
     const onPickWeek = (iso) => iso && setActiveWeekIso(iso)
 
@@ -415,83 +359,33 @@ function ReportsView() {
                 onRefresh={triggerRefresh}
             />
 
-            <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-5">
-                {showBootSkeleton && <ReportsViewSkeleton variant="grid" />}
-                {showAllSkeleton && <ReportsViewSkeleton variant="grid" />}
-                {showReviewSkeleton && <ReportsViewSkeleton variant="list" />}
-
-                {!showBootSkeleton && !showAllSkeleton && tab === 'all' && (
-                    <MyReportsTabPanel
-                        accent={accent}
-                        handlers={handlers}
-                        hasAssigned={hasAssigned}
-                        hasLostLoadsPermission={hasLostLoadsPermission}
-                        hasQCStrengthPermission={hasQCStrengthPermission}
-                        onOpenLostLoad={() => modals.setShowLostLoadModal(true)}
-                        onOpenQCStrength={() => modals.setShowQCStrengthModal(true)}
-                        onOpenThirdPartyLab={() => modals.setShowLabReportModal(true)}
-                        onPickWeek={onPickWeek}
-                        railCollapsed={railCollapsed}
-                        railRef={railRef}
-                        timeline={timeline}
-                    />
-                )}
-
-                {!showReviewSkeleton && tab === 'review' && (
-                    <ReviewTabPanel
-                        filters={filters}
-                        getUserName={getUserName}
-                        handlers={handlers}
-                        onPickWeek={onPickWeek}
-                        railCollapsed={railCollapsed}
-                        railRef={railRef}
-                        reviewTypeOptions={reviewTypeOptions}
-                        reviewedByCurrentUser={reviewedByCurrentUser}
-                        timeline={timeline}
-                    />
-                )}
-
-                {tab === 'lost_loads' && (
-                    <LostLoadsTabPanel
-                        accent={accent}
-                        deleteLostLoadReport={deleteLostLoadReport}
-                        filters={filters}
-                        getUserName={getUserName}
-                        handlers={handlers}
-                        hasLostLoadsDeletePermission={hasLostLoadsDeletePermission}
-                        hasLostLoadsPermission={hasLostLoadsPermission}
-                        isLoadingLostLoads={isLoadingLostLoads}
-                        lostLoadsPagination={lostLoadsPagination}
-                        onOpenLostLoadModal={() => modals.setShowLostLoadModal(true)}
-                        onSetSelectedLostLoad={modals.setSelectedLostLoad}
-                        railCollapsed={railCollapsed}
-                        railRef={railRef}
-                        regionalPlants={regionalPlants}
-                    />
-                )}
-
-                {tab === 'quality' && (
-                    <QualityTabPanel
-                        accent={accent}
-                        filters={filters}
-                        getUserName={getUserName}
-                        handlers={handlers}
-                        hasQCStrengthPermission={hasQCStrengthPermission}
-                        onOpenLabReportModal={() => modals.setShowLabReportModal(true)}
-                        onOpenQcStrengthModal={() => modals.setShowQCStrengthModal(true)}
-                        onOpenQualityIssueModal={() => modals.setShowQualityIssueModal(true)}
-                        onSetSelectedLabReport={modals.setSelectedLabReport}
-                        onSetSelectedQCReport={modals.setSelectedQCReport}
-                        qc={qc}
-                        railCollapsed={railCollapsed}
-                        railRef={railRef}
-                    />
-                )}
-
-                {tab === 'quality_issues' && (
-                    <QualityIssuesView plants={regionalPlants} regionCode={preferences?.selectedRegion?.code || ''} />
-                )}
-            </div>
+            <ReportsTabContent
+                accent={accent}
+                deleteLostLoadReport={deleteLostLoadReport}
+                filters={filters}
+                getUserName={getUserName}
+                handlers={handlers}
+                hasAssigned={hasAssigned}
+                hasLostLoadsDeletePermission={hasLostLoadsDeletePermission}
+                hasLostLoadsPermission={hasLostLoadsPermission}
+                hasQCStrengthPermission={hasQCStrengthPermission}
+                isLoadingLostLoads={isLoadingLostLoads}
+                lostLoadsPagination={lostLoadsPagination}
+                modals={modals}
+                onPickWeek={onPickWeek}
+                preferences={preferences}
+                qc={qc}
+                railCollapsed={railCollapsed}
+                railRef={railRef}
+                regionalPlants={regionalPlants}
+                reviewTypeOptions={reviewTypeOptions}
+                reviewedByCurrentUser={reviewedByCurrentUser}
+                showAllSkeleton={showAllSkeleton}
+                showBootSkeleton={showBootSkeleton}
+                showReviewSkeleton={showReviewSkeleton}
+                tab={tab}
+                timeline={timeline}
+            />
 
             <ReportsModalsHostConnected
                 addLostLoadReport={addLostLoadReport}

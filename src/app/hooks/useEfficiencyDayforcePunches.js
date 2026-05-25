@@ -1,28 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { Database } from '../../services/DatabaseService'
+import { canonicalNameKey } from '../../utils/OperatorNameLookupUtility'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
-
-/** Canonical name key for matching smyrnatools operator names against
- *  Dayforce employee display names. Strips punctuation, parenthesized
- *  nicknames, and trailing badge numbers, then sorts tokens alphabetically
- *  so "Gomez, Jose" and "Jose Gomez" both reduce to "gomez jose". Same
- *  canonicalization scheme used by useDayforceOperatorMetrics so the
- *  Operations → Hours and Plant Efficiency surfaces agree on who's who. */
-const canonicalNameKey = (name) => {
-    if (!name) return null
-    const stripped = String(name)
-        .toLowerCase()
-        .replace(/\s+\d+\s*$/, '')
-        .replace(/\s*\([^)]*\)\s*/g, ' ')
-        .replace(/[^a-z\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-    const tokens = stripped.split(' ').filter(Boolean)
-    if (tokens.length === 0) return null
-    return tokens.sort().join(' ')
-}
 
 /** Extract HH:MM from a `timestamp` (no-TZ) column value. Dayforce punch
  *  columns are inserted as local Chicago time by the userscript, so a

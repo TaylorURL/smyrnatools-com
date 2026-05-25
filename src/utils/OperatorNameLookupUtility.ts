@@ -81,6 +81,38 @@ export function nameLookupVariants(name: string | null | undefined): string[] {
 }
 
 /**
+ * Token-sorted canonical key used to match smyrnatools operator names against
+ * Dayforce employee names and dispatch driver names. Strips punctuation,
+ * parenthesized nicknames, and trailing badge numbers, then sorts the
+ * remaining tokens alphabetically so "Gomez, Jose" and "Jose Gomez" both
+ * reduce to `"gomez jose"`. Consumed by every Dayforce ↔ dispatch join
+ * (useDayforceOperatorMetrics, useEfficiencyDayforcePunches,
+ * useOperatorYardageByDay, useWeekTables, DayforceEfficiencyPage) so the
+ * surfaces agree on who's who.
+ *
+ *   "Gomez, Jose (Jose) 007943" → "gomez jose"
+ *   "Jose A. Gomez Jr."          → "a gomez jose jr"
+ *   "" / null / undefined        → null
+ *
+ * Distinct from `nameLookupVariants`: that helper fans out variants for
+ * fuzzy lookup against the dispatch-ticket-driver name index;
+ * `canonicalNameKey` produces a single deterministic key for Map lookup.
+ */
+export function canonicalNameKey(name: string | null | undefined): string | null {
+    if (!name) return null
+    const stripped = String(name)
+        .toLowerCase()
+        .replace(/\s+\d+\s*$/, '')
+        .replace(/\s*\([^)]*\)\s*/g, ' ')
+        .replace(/[^a-z\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    const tokens = stripped.split(' ').filter(Boolean)
+    if (tokens.length === 0) return null
+    return tokens.sort().join(' ')
+}
+
+/**
  * Normalize a person's name to a consistent Title Case display. The dispatch
  * data and the operator records themselves are a mix of ALL-CAPS, mixed-case,
  * and occasional all-lowercase rows. Every consumer (Tickets modal,
