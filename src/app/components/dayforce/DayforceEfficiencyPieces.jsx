@@ -1,7 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { fmtFloat, fmtYards } from '../../../utils/PlanStatisticsFormatUtility'
+import { fmtFloat, fmtInt, fmtYards } from '../../../utils/PlanStatisticsFormatUtility'
+import { PLANT_BADGE_COLORS } from '../../constants/planConstants'
 
 /** YPH thresholds — mirrored from the main Efficiency page so this
  *  module stays self-contained. Kept in sync manually; both files
@@ -11,6 +12,28 @@ export const YPH_EXCEPTIONAL = 5
 
 const fmtHours = (n) => `${fmtFloat(n, 1)}h`
 const fmtYph = (n) => fmtFloat(n, 2)
+
+/** Map a plant's YPH onto one of four status buckets that drive the
+ *  scorecard's badge colour + the headline KPI counts. `no-data` covers
+ *  plants whose operators clocked hours but never appear on a ticket
+ *  (typically a small office plant or a roster mismatch). */
+export function plantStatusFor(yph) {
+    if (!yph || yph <= 0) return 'no-data'
+    if (yph >= YPH_EXCEPTIONAL) return 'exceptional'
+    if (yph >= YPH_TARGET) return 'on-target'
+    return 'below-target'
+}
+
+/** Status pill tones — solid colour + white text, matching the rest of
+ *  the site's badge vocabulary (see WarnPill, operatorStatusBadge). */
+const PLANT_STATUS_TONES = {
+    'below-target': { bg: '#dc2626', icon: 'fa-triangle-exclamation', label: 'Below target' },
+    exceptional: { bg: '#047857', icon: 'fa-trophy', label: 'Exceptional' },
+    'no-data': { bg: '#64748b', icon: 'fa-circle-minus', label: 'No yardage' },
+    'on-target': { bg: '#15803d', icon: 'fa-circle-check', label: 'On target' }
+}
+
+const FALLBACK_PLANT_COLOR = '#475569'
 
 /** First-load placeholder — matches the rhythm used by every other
  *  Plan stats sub-page (Hours, Labor Cost, Schedules). */
@@ -151,29 +174,101 @@ export function OperatorEfficiencyRow({ accent, fleetYph, row }) {
     )
 }
 
-/** Per-plant rollup row — same shape as the Hours page rollup but the
- *  trailing metric is plant YPH instead of plant hours. */
-export function PlantEfficiencyRow({ accent, maxYph, row }) {
-    const pct = maxYph > 0 ? Math.min(100, (row.yph / maxYph) * 100) : 0
+/** Large plant-first scorecard. Anchors the redesigned Efficiency page:
+ *  one card per plant, ranked by YPH, with the big number front-and-
+ *  center, a target-referenced fill bar, a colour-coded status pill,
+ *  and the supporting hours / yards / operator-count line. The plant
+ *  identity chip pulls its colour from `PLANT_BADGE_COLORS` so each
+ *  plant has the same hue here that it does on the Schedule and
+ *  Planner views. */
+export function PlantScorecard({ fleetYph, row }) {
+    const status = plantStatusFor(row.yph)
+    const statusConfig = PLANT_STATUS_TONES[status]
+    const plantColor = PLANT_BADGE_COLORS[row.code] || FALLBACK_PLANT_COLOR
+    const scaleMax = Math.max(YPH_EXCEPTIONAL, row.yph)
+    const fillPct = scaleMax > 0 ? Math.min(100, (row.yph / scaleMax) * 100) : 0
+    const targetPct = scaleMax > 0 ? (YPH_TARGET / scaleMax) * 100 : 0
+    const exceptionalPct = scaleMax > 0 ? (YPH_EXCEPTIONAL / scaleMax) * 100 : 0
+    const deltaVsFleet = fleetYph > 0 && row.yph > 0 ? row.yph - fleetYph : null
+    const deltaPrefix = deltaVsFleet == null ? '' : deltaVsFleet >= 0 ? '+' : ''
     return (
-        <div className="flex items-center gap-2 text-[12px]">
-            <span className="font-mono tabular-nums w-14 shrink-0 text-text-primary">{row.code}</span>
-            <span className="flex-1 min-w-0 truncate text-text-secondary">{row.name}</span>
-            <div className="h-4 rounded-sm overflow-hidden relative shrink-0 bg-bg-tertiary w-28">
-                <div className="h-full" style={{ background: accent, width: `${pct}%` }} />
+        <div className="flex flex-col gap-2.5 rounded-lg p-3 bg-bg-primary border border-border-light">
+            <div className="flex items-center gap-2.5">
+                <div
+                    className="flex h-10 w-12 items-center justify-center rounded-md text-[13px] font-bold text-white shrink-0 tabular-nums"
+                    style={{ background: plantColor }}
+                >
+                    {row.code}
+                </div>
+                <div className="flex-1 min-w-0 leading-tight">
+                    <div className="text-[13px] font-semibold text-text-primary truncate">{row.name}</div>
+                    <div className="text-[10.5px] text-text-tertiary tabular-nums mt-0.5">
+                        {fmtInt(row.operatorCount)} operator{row.operatorCount === 1 ? '' : 's'}
+                    </div>
+                </div>
+                <span
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap text-white shrink-0"
+                    style={{ background: statusConfig.bg }}
+                >
+                    <i className={`fas ${statusConfig.icon} text-[9px]`} />
+                    {statusConfig.label}
+                </span>
             </div>
-            <span className="font-mono tabular-nums w-16 text-right shrink-0 text-text-secondary">
-                {fmtHours(row.actualHours)}
-            </span>
-            <span className="font-mono tabular-nums w-20 text-right shrink-0 text-text-secondary">
-                {fmtYards(row.yards)}
-            </span>
-            <span className="font-mono tabular-nums w-14 text-right shrink-0 text-text-primary font-semibold">
-                {row.yph > 0 ? fmtYph(row.yph) : '—'}
-            </span>
-            <span className="font-mono tabular-nums w-10 text-right shrink-0 text-text-tertiary">
-                {row.operatorCount}
-            </span>
+
+            <div className="flex items-end gap-3">
+                <div className="flex flex-col leading-none shrink-0">
+                    <span className="text-[28px] font-bold tabular-nums text-text-primary">
+                        {row.yph > 0 ? fmtYph(row.yph) : '—'}
+                    </span>
+                    <span className="text-[9.5px] font-semibold uppercase tracking-wider text-text-tertiary mt-1">
+                        YPH
+                    </span>
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="h-2.5 rounded-sm overflow-hidden bg-bg-tertiary relative">
+                        <div
+                            className="h-full absolute left-0 top-0"
+                            style={{ background: plantColor, width: `${fillPct}%` }}
+                        />
+                        <div
+                            className="absolute top-0 bottom-0 w-px"
+                            style={{ background: 'var(--text-tertiary)', left: `${targetPct}%` }}
+                            title={`Target ${YPH_TARGET}`}
+                        />
+                        <div
+                            className="absolute top-0 bottom-0 w-px"
+                            style={{ background: 'var(--border-light)', left: `${exceptionalPct}%` }}
+                            title={`Exceptional ${YPH_EXCEPTIONAL}`}
+                        />
+                    </div>
+                    <div className="flex justify-between text-[9.5px] text-text-tertiary tabular-nums">
+                        <span>Target {YPH_TARGET}</span>
+                        <span>Exceptional {YPH_EXCEPTIONAL}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-secondary tabular-nums pt-1 border-t border-border-light">
+                <span>
+                    <b className="text-text-primary">{fmtHours(row.actualHours)}</b> hours
+                </span>
+                <span className="text-text-tertiary">·</span>
+                <span>
+                    <b className="text-text-primary">{fmtYards(row.yards)}</b> yards
+                </span>
+                {deltaVsFleet != null && (
+                    <>
+                        <span className="text-text-tertiary">·</span>
+                        <span>
+                            <b className="text-text-primary">
+                                {deltaPrefix}
+                                {fmtYph(deltaVsFleet)}
+                            </b>{' '}
+                            vs fleet
+                        </span>
+                    </>
+                )}
+            </div>
         </div>
     )
 }

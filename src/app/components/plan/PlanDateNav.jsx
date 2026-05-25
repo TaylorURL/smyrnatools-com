@@ -1,6 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
+import useFixedDropdownPosition from '../../hooks/useFixedDropdownPosition'
 import { getTodayDate, getTomorrowDate, offsetDateSkipSunday, skipSundayDate } from '../../../utils/PlanUtility'
 
 /** Display variant for the realtime tab — date is locked to today and
@@ -52,8 +54,13 @@ const buildCalendarCells = (year, month1Based) => {
 /** Themed mini-calendar popover. Uses CSS variables for every color so it
  *  reads in both light and dark mode without any accent reliance. Sundays
  *  are dimmed and disabled (plants closed); the Today / Tomorrow shortcuts
- *  route through `skipSundayDate` so the user can never land on one. */
-function MiniCalendar({ onClose, onSelect, planDate }) {
+ *  route through `skipSundayDate` so the user can never land on one.
+ *  Positioned via inline `position: fixed` coords from the parent so it
+ *  can be portaled to `document.body` and escape any ancestor `overflow`
+ *  clipping (the Plan header has `overflow-x: auto` which implicitly
+ *  clips Y too — without the portal the calendar reads as cut off by the
+ *  content area below the header). */
+function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
     const todayIso = getTodayDate()
     const initial = useMemo(() => {
         const src = planDate || todayIso
@@ -90,8 +97,9 @@ function MiniCalendar({ onClose, onSelect, planDate }) {
 
     return (
         <div
-            className="absolute top-full left-0 mt-1.5 z-20 rounded-lg p-2 bg-bg-primary border border-border-light"
-            style={{ boxShadow: 'var(--shadow-lg)', minWidth: 240 }}
+            ref={menuRef}
+            className="fixed z-50 rounded-lg p-2 bg-bg-primary border border-border-light"
+            style={{ boxShadow: 'var(--shadow-lg)', left: pos.left, minWidth: 240, top: pos.top }}
             role="dialog"
             aria-label="Pick a date"
         >
@@ -182,12 +190,20 @@ function MiniCalendar({ onClose, onSelect, planDate }) {
  *  the date scope (e.g. Statistics' built-in range + custom-tab picker). */
 function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
     const [open, setOpen] = useState(false)
-    const containerRef = useRef(null)
+    const triggerRef = useRef(null)
+    const menuRef = useRef(null)
+    const pos = useFixedDropdownPosition(triggerRef, open, 'left')
 
     useEffect(() => {
         if (!open) return undefined
+        // Dismiss on outside click — check BOTH the trigger and the
+        // portaled menu since the menu sits outside the stepper's DOM
+        // subtree. Without the menu check, every click inside the
+        // calendar would close it.
         const onMouseDown = (e) => {
-            if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false)
+            if (triggerRef.current?.contains(e.target)) return
+            if (menuRef.current?.contains(e.target)) return
+            setOpen(false)
         }
         const onKey = (e) => {
             if (e.key === 'Escape') setOpen(false)
@@ -211,7 +227,6 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
 
     return (
         <div
-            ref={containerRef}
             className="relative inline-flex items-center gap-0.5 rounded-lg text-sm font-semibold px-1.5 py-1 bg-bg-secondary border border-border-light text-text-primary"
             style={{ cursor: disabled ? 'not-allowed' : 'default', opacity: disabled ? 0.55 : 1 }}
             title={wrapperTitle}
@@ -229,6 +244,7 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                 <i className="fas fa-chevron-left text-xs" />
             </button>
             <button
+                ref={triggerRef}
                 type="button"
                 onClick={() => !disabled && setOpen((v) => !v)}
                 disabled={disabled}
@@ -256,9 +272,19 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
             >
                 <i className="fas fa-chevron-right text-xs" />
             </button>
-            {open && !disabled && (
-                <MiniCalendar onClose={() => setOpen(false)} onSelect={onChange} planDate={planDate} />
-            )}
+            {open &&
+                !disabled &&
+                pos &&
+                createPortal(
+                    <MiniCalendar
+                        menuRef={menuRef}
+                        onClose={() => setOpen(false)}
+                        onSelect={onChange}
+                        planDate={planDate}
+                        pos={pos}
+                    />,
+                    document.body
+                )}
         </div>
     )
 }

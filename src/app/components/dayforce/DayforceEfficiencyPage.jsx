@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { fmtFloat, fmtInt, fmtRange, fmtYards } from '../../../utils/PlanStatisticsFormatUtility'
 import useDayforceOperatorFilters from '../../hooks/useDayforceOperatorFilters'
@@ -10,7 +10,8 @@ import { Panel, Stat, StatGroup } from '../ui/Panel'
 import {
     LoadingSkeleton,
     OperatorEfficiencyRow,
-    PlantEfficiencyRow,
+    plantStatusFor,
+    PlantScorecard,
     SpotlightChip,
     SpotlightColumn,
     YPH_EXCEPTIONAL,
@@ -52,22 +53,22 @@ const titleCaseCanon = (canon) =>
 
 /**
  * Efficiency sub-page — joins Dayforce actual hours with dispatch
- * yardage to surface yards-per-hour (YPH) at the operator and plant
- * level. The page is built around the question "who's getting the most
- * (or least) out of their clocked time" and surfaces the data quality
- * problems that distort that answer — operators with hours but zero
- * yardage (name mismatch or non-driving role), and yardage attributed
- * to drivers Dayforce never logged hours for.
+ * yardage to surface yards-per-hour (YPH) at the PLANT and operator
+ * level. Plant-first by design: the page leads with how each plant is
+ * trending, then exposes the operator-level detail underneath for
+ * dispatchers who need to drill into a specific driver.
  *
  * Layout:
- *   1. KPI strip — fleet YPH, median operator YPH, below/above target
- *      counts, data-mismatch counts.
- *   2. Spotlight callouts — top performers / below target / data check.
- *      Three columns of chips so the dispatcher reads the names that
- *      need a conversation without scrolling the table.
- *   3. Per-operator table — actual hours, yards, YPH, delta vs fleet,
- *      with a 0..5 scale bar that lands at the operator's YPH.
- *   4. Per-plant rollup — same view at plant granularity.
+ *   1. KPI strip — fleet YPH, plants on / below target, total yards,
+ *      operator-data-mismatch counters.
+ *   2. Per-plant scorecards (PRIMARY) — one large card per plant ranked
+ *      by YPH, with the big number, a target-referenced fill bar, a
+ *      colour-coded status pill, and supporting hours / yards lines.
+ *   3. Operator spotlights — Top performers / Below target / Data
+ *      check chips. Three thin columns so the dispatcher reads the
+ *      names that need a conversation without scrolling.
+ *   4. Per-operator table (SECONDARY, collapsed by default) — actual
+ *      hours, yards, YPH, delta vs fleet with the 0..5 scale bar.
  */
 export function DayforceEfficiencyPage({ accentColor, dateRange, plantCodes, selectedPlant }) {
     const accent = accentColor || '#1e3a5f'
@@ -214,24 +215,20 @@ export function DayforceEfficiencyPage({ accentColor, dateRange, plantCodes, sel
             .sort((a, b) => b.yph - a.yph)
     }, [operatorRows])
 
-    const belowTargetCount = useMemo(
-        () =>
-            operatorRows.filter(
-                (r) => !r.isPhantom && r.actualHours >= MIN_HOURS_FOR_RANKING && r.yph > 0 && r.yph < YPH_TARGET
-            ).length,
-        [operatorRows]
-    )
-    const onTargetCount = useMemo(
-        () =>
-            operatorRows.filter((r) => !r.isPhantom && r.actualHours >= MIN_HOURS_FOR_RANKING && r.yph >= YPH_TARGET)
-                .length,
-        [operatorRows]
-    )
     const totalYards = useMemo(
         () => operatorRows.filter((r) => !r.isPhantom).reduce((sum, r) => sum + (r.yards || 0), 0),
         [operatorRows]
     )
-    const maxPlantYph = useMemo(() => perPlant.reduce((max, r) => Math.max(max, r.yph), 0), [perPlant])
+    /* Plant-level status counts drive the headline KPI strip — operator
+     * threshold counts moved into the secondary "Operator detail" tray
+     * where they're contextually relevant. */
+    const plantStatusCounts = useMemo(() => {
+        const counts = { 'below-target': 0, exceptional: 0, 'no-data': 0, 'on-target': 0 }
+        for (const p of perPlant) counts[plantStatusFor(p.yph)] += 1
+        return counts
+    }, [perPlant])
+    const topPlant = perPlant.length > 0 ? perPlant[0] : null
+    const [operatorDetailOpen, setOperatorDetailOpen] = useState(false)
 
     if (isLoading && diagnostics.shiftsLoaded === 0 && yardageByOperator.size === 0) return <LoadingSkeleton />
 
@@ -278,179 +275,202 @@ export function DayforceEfficiencyPage({ accentColor, dateRange, plantCodes, sel
                 }
                 innerClassName="p-3"
             >
-                <StatGroup columns={6}>
+                <StatGroup columns={5}>
                     <Stat
                         label="Fleet YPH"
                         value={fmtYph(fleetYph)}
                         hint={`${fmtYards(totalYards)} ÷ ${fmtHours(totals.totalActualHours)}`}
                     />
                     <Stat
-                        label="Median operator"
-                        value={fmtYph(medianYph)}
-                        hint={`Target ${YPH_TARGET} · exceptional ${YPH_EXCEPTIONAL}`}
+                        label="Plants on target"
+                        value={`${fmtInt(plantStatusCounts['on-target'] + plantStatusCounts.exceptional)} / ${fmtInt(perPlant.length)}`}
+                        hint={`≥ ${YPH_TARGET} YPH${plantStatusCounts.exceptional ? ` · ${plantStatusCounts.exceptional} exceptional` : ''}`}
                     />
                     <Stat
-                        label="Below target"
-                        value={fmtInt(belowTargetCount)}
-                        hint={`< ${YPH_TARGET} YPH with ≥${MIN_HOURS_FOR_RANKING}h`}
+                        label="Plants below target"
+                        value={fmtInt(plantStatusCounts['below-target'])}
+                        hint={
+                            plantStatusCounts['no-data']
+                                ? `+${plantStatusCounts['no-data']} with no yardage`
+                                : `Target ${YPH_TARGET} YPH`
+                        }
                     />
                     <Stat
-                        label="On / above target"
-                        value={fmtInt(onTargetCount)}
-                        hint={`≥ ${YPH_TARGET} YPH with ≥${MIN_HOURS_FOR_RANKING}h`}
+                        label="Top plant"
+                        value={topPlant && topPlant.yph > 0 ? fmtYph(topPlant.yph) : '—'}
+                        hint={
+                            topPlant && topPlant.yph > 0
+                                ? `${topPlant.code} · ${topPlant.name}`
+                                : 'No plant yardage yet'
+                        }
                     />
                     <Stat
-                        label="Hours, no yards"
-                        value={fmtInt(spotlights.hoursNoYards.length)}
-                        hint={spotlights.hoursNoYards.length > 0 ? 'Check role / name match' : 'All matched'}
-                    />
-                    <Stat
-                        label="Yards, no hours"
-                        value={fmtInt(spotlights.yardsNoHours.length)}
-                        hint={spotlights.yardsNoHours.length > 0 ? 'Dispatch driver not in Dayforce' : 'All matched'}
+                        label="Data mismatches"
+                        value={fmtInt(spotlights.hoursNoYards.length + spotlights.yardsNoHours.length)}
+                        hint={
+                            spotlights.hoursNoYards.length + spotlights.yardsNoHours.length > 0
+                                ? `${spotlights.hoursNoYards.length} hours w/o yards · ${spotlights.yardsNoHours.length} yards w/o hours`
+                                : 'Dayforce and dispatch line up'
+                        }
                     />
                 </StatGroup>
             </Panel>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                <SpotlightColumn
-                    accentColor="#15803d"
-                    count={spotlights.top.length}
-                    emptyMessage="No qualifying operators yet."
-                    hint={`Top YPH · ≥${MIN_HOURS_FOR_RANKING}h`}
-                    icon="fa-trophy"
-                    title="Top performers"
-                >
-                    {spotlights.top.map((row) => (
-                        <SpotlightChip
-                            key={row.dayforceEmployeeId}
-                            accent={accent}
-                            primary={fmtYph(row.yph)}
-                            secondary={`${fmtYards(row.yards)} on ${fmtHours(row.actualHours)}`}
-                            row={row}
-                        />
-                    ))}
-                </SpotlightColumn>
-
-                <SpotlightColumn
-                    accentColor="#b91c1c"
-                    count={spotlights.bottom.length}
-                    emptyMessage={`Nobody below ${YPH_TARGET} YPH.`}
-                    hint={`< ${YPH_TARGET} YPH · ≥${MIN_HOURS_FOR_RANKING}h`}
-                    icon="fa-triangle-exclamation"
-                    title="Below target"
-                >
-                    {spotlights.bottom.map((row) => (
-                        <SpotlightChip
-                            key={row.dayforceEmployeeId}
-                            accent={accent}
-                            primary={fmtYph(row.yph)}
-                            secondary={`${fmtYards(row.yards)} on ${fmtHours(row.actualHours)}`}
-                            row={row}
-                        />
-                    ))}
-                </SpotlightColumn>
-
-                <SpotlightColumn
-                    accentColor="#b45309"
-                    count={spotlights.hoursNoYards.length + spotlights.yardsNoHours.length}
-                    emptyMessage="Dayforce and dispatch line up clean."
-                    hint="Mismatches to investigate"
-                    icon="fa-magnifying-glass-chart"
-                    title="Data check"
-                >
-                    {spotlights.hoursNoYards.map((row) => (
-                        <SpotlightChip
-                            key={`hno-${row.dayforceEmployeeId}`}
-                            accent={accent}
-                            primary={fmtHours(row.actualHours)}
-                            secondary={`${row.position || 'Operator'} · 0 yards on dispatch`}
-                            row={row}
-                        />
-                    ))}
-                    {spotlights.yardsNoHours.map((row) => (
-                        <SpotlightChip
-                            key={`ynh-${row.canonKey}`}
-                            accent={accent}
-                            primary={fmtYards(row.yards)}
-                            secondary="Dispatch ticket name not in Dayforce"
-                            row={row}
-                        />
-                    ))}
-                </SpotlightColumn>
-            </div>
-
-            <DayforceFilters
-                accent={accent}
-                availablePositions={filters.availablePositions}
-                controls={filters.controls}
-                excluded={excluded}
-                onReset={filters.reset}
-                setPosition={filters.setPosition}
-                setSearch={filters.setSearch}
-                setSort={filters.setSort}
-                sortIds={EFFICIENCY_SORT_IDS}
-                visibleCount={filters.filtered.length}
-            />
-
             <Panel
-                title="Per-operator efficiency"
-                innerClassName="p-0"
-                right={
-                    isLoading ? (
-                        <RefreshingHint when />
-                    ) : (
-                        <span className="text-[11px] text-text-tertiary">
-                            {filters.filtered.length} of {operatorRows.length} shown · target {YPH_TARGET} YPH
-                        </span>
-                    )
-                }
-            >
-                {filters.filtered.length === 0 ? (
-                    <EmptySection
-                        icon="fa-filter-circle-xmark"
-                        message="No operators match these filters. Try widening the date range or clearing the search / role filters."
-                    />
-                ) : (
-                    <div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary border-b border-border-light bg-bg-secondary">
-                            <span className="w-14 shrink-0">Badge</span>
-                            <span className="flex-1">Operator</span>
-                            <span className="w-16 text-right shrink-0">Hours</span>
-                            <span className="w-20 text-right shrink-0">Yards</span>
-                            <span className="w-14 text-right shrink-0">YPH</span>
-                            <span className="w-16 text-right shrink-0">vs Fleet</span>
-                        </div>
-                        {filters.filtered.map((row) => (
-                            <OperatorEfficiencyRow
-                                key={row.dayforceEmployeeId}
-                                accent={accent}
-                                fleetYph={fleetYph}
-                                row={row}
-                            />
-                        ))}
-                    </div>
-                )}
-            </Panel>
-
-            <Panel
-                title="Per-plant efficiency"
+                title="Plant efficiency"
                 innerClassName="p-3"
                 right={
                     isLoading ? (
                         <RefreshingHint when />
                     ) : (
-                        <span className="text-[11px] text-text-tertiary">Sorted by YPH</span>
+                        <span className="text-[11px] text-text-tertiary">
+                            {perPlant.length} plant{perPlant.length === 1 ? '' : 's'} · sorted by YPH
+                        </span>
                     )
                 }
             >
                 {perPlant.length === 0 ? (
                     <EmptySection icon="fa-industry" message="No plant-attributed hours in this window." />
                 ) : (
-                    <div className="flex flex-col gap-1.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                         {perPlant.map((row) => (
-                            <PlantEfficiencyRow key={row.code} accent={accent} maxYph={maxPlantYph} row={row} />
+                            <PlantScorecard key={row.code} fleetYph={fleetYph} row={row} />
                         ))}
+                    </div>
+                )}
+            </Panel>
+
+            <Panel
+                title="Operator highlights"
+                innerClassName="p-3"
+                right={
+                    <span className="text-[11px] text-text-tertiary">
+                        Median operator {fmtYph(medianYph)} · ≥{MIN_HOURS_FOR_RANKING}h to qualify
+                    </span>
+                }
+            >
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <SpotlightColumn
+                        accentColor="#15803d"
+                        count={spotlights.top.length}
+                        emptyMessage="No qualifying operators yet."
+                        hint={`Top YPH · ≥${MIN_HOURS_FOR_RANKING}h`}
+                        icon="fa-trophy"
+                        title="Top performers"
+                    >
+                        {spotlights.top.map((row) => (
+                            <SpotlightChip
+                                key={row.dayforceEmployeeId}
+                                accent={accent}
+                                primary={fmtYph(row.yph)}
+                                secondary={`${fmtYards(row.yards)} on ${fmtHours(row.actualHours)}`}
+                                row={row}
+                            />
+                        ))}
+                    </SpotlightColumn>
+
+                    <SpotlightColumn
+                        accentColor="#b91c1c"
+                        count={spotlights.bottom.length}
+                        emptyMessage={`Nobody below ${YPH_TARGET} YPH.`}
+                        hint={`< ${YPH_TARGET} YPH · ≥${MIN_HOURS_FOR_RANKING}h`}
+                        icon="fa-triangle-exclamation"
+                        title="Below target"
+                    >
+                        {spotlights.bottom.map((row) => (
+                            <SpotlightChip
+                                key={row.dayforceEmployeeId}
+                                accent={accent}
+                                primary={fmtYph(row.yph)}
+                                secondary={`${fmtYards(row.yards)} on ${fmtHours(row.actualHours)}`}
+                                row={row}
+                            />
+                        ))}
+                    </SpotlightColumn>
+
+                    <SpotlightColumn
+                        accentColor="#b45309"
+                        count={spotlights.hoursNoYards.length + spotlights.yardsNoHours.length}
+                        emptyMessage="Dayforce and dispatch line up clean."
+                        hint="Mismatches to investigate"
+                        icon="fa-magnifying-glass-chart"
+                        title="Data check"
+                    >
+                        {spotlights.hoursNoYards.map((row) => (
+                            <SpotlightChip
+                                key={`hno-${row.dayforceEmployeeId}`}
+                                accent={accent}
+                                primary={fmtHours(row.actualHours)}
+                                secondary={`${row.position || 'Operator'} · 0 yards on dispatch`}
+                                row={row}
+                            />
+                        ))}
+                        {spotlights.yardsNoHours.map((row) => (
+                            <SpotlightChip
+                                key={`ynh-${row.canonKey}`}
+                                accent={accent}
+                                primary={fmtYards(row.yards)}
+                                secondary="Dispatch ticket name not in Dayforce"
+                                row={row}
+                            />
+                        ))}
+                    </SpotlightColumn>
+                </div>
+            </Panel>
+
+            <Panel
+                title="Operator detail"
+                innerClassName={operatorDetailOpen ? 'p-3' : 'p-0'}
+                right={
+                    <button
+                        type="button"
+                        onClick={() => setOperatorDetailOpen((s) => !s)}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border-light px-2.5 py-1 text-[11px] font-semibold cursor-pointer bg-bg-tertiary text-text-secondary hover:text-text-primary"
+                    >
+                        <i className={`fas fa-chevron-${operatorDetailOpen ? 'up' : 'down'} text-[9px]`} />
+                        {operatorDetailOpen ? 'Hide table' : `Show all ${operatorRows.length} operators`}
+                    </button>
+                }
+            >
+                {operatorDetailOpen && (
+                    <div className="flex flex-col gap-3">
+                        <DayforceFilters
+                            accent={accent}
+                            availablePositions={filters.availablePositions}
+                            controls={filters.controls}
+                            excluded={excluded}
+                            onReset={filters.reset}
+                            setPosition={filters.setPosition}
+                            setSearch={filters.setSearch}
+                            setSort={filters.setSort}
+                            sortIds={EFFICIENCY_SORT_IDS}
+                            visibleCount={filters.filtered.length}
+                        />
+                        {filters.filtered.length === 0 ? (
+                            <EmptySection
+                                icon="fa-filter-circle-xmark"
+                                message="No operators match these filters. Widen the date range in the top bar or clear the search / role filters."
+                            />
+                        ) : (
+                            <div className="rounded border border-border-light overflow-hidden">
+                                <div className="flex items-center gap-2 px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary border-b border-border-light bg-bg-secondary">
+                                    <span className="w-14 shrink-0">Badge</span>
+                                    <span className="flex-1">Operator</span>
+                                    <span className="w-16 text-right shrink-0">Hours</span>
+                                    <span className="w-20 text-right shrink-0">Yards</span>
+                                    <span className="w-14 text-right shrink-0">YPH</span>
+                                    <span className="w-16 text-right shrink-0">vs Fleet</span>
+                                </div>
+                                {filters.filtered.map((row) => (
+                                    <OperatorEfficiencyRow
+                                        key={row.dayforceEmployeeId}
+                                        accent={accent}
+                                        fleetYph={fleetYph}
+                                        row={row}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </Panel>

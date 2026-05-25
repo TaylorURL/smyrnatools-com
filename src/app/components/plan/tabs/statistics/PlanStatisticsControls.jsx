@@ -1,7 +1,8 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import useFixedDropdownPosition from '../../../../hooks/useFixedDropdownPosition'
 import {
     formatPeriodLabel,
     PLAN_STATS_COMPARISONS,
@@ -9,32 +10,6 @@ import {
     shiftAnchor
 } from '../../../../../utils/PlanStatisticsUtility'
 import { getTodayDate } from '../../../../../utils/PlanUtility'
-
-/** Compute viewport-anchored coordinates for a dropdown that should sit
- *  flush-right under its trigger button. Returns `{ top, right }` ready
- *  to spread into a `position: fixed` style. Recomputes on scroll/resize
- *  so the menu tracks the trigger when the user scrolls a horizontally
- *  overflowing parent (the header bar). */
-function useFixedMenuPosition(triggerRef, open) {
-    const [pos, setPos] = useState(null)
-    useLayoutEffect(() => {
-        if (!open || !triggerRef.current) return undefined
-        const recompute = () => {
-            const el = triggerRef.current
-            if (!el) return
-            const rect = el.getBoundingClientRect()
-            setPos({ right: Math.max(8, window.innerWidth - rect.right), top: rect.bottom + 4 })
-        }
-        recompute()
-        window.addEventListener('resize', recompute)
-        window.addEventListener('scroll', recompute, true)
-        return () => {
-            window.removeEventListener('resize', recompute)
-            window.removeEventListener('scroll', recompute, true)
-        }
-    }, [open, triggerRef])
-    return pos
-}
 
 /** Closes the menu when the user clicks outside both the trigger and the
  *  portaled menu. Needed because the menu lives outside the React tree's
@@ -142,7 +117,7 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
     const [open, setOpen] = useState(false)
     const triggerRef = useRef(null)
     const menuRef = useRef(null)
-    const pos = useFixedMenuPosition(triggerRef, open)
+    const pos = useFixedDropdownPosition(triggerRef, open, 'right')
     useClickOutsideToClose(open, setOpen, triggerRef, menuRef)
     return (
         <div className="relative ml-auto shrink-0">
@@ -219,7 +194,7 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
     const [open, setOpen] = useState(false)
     const triggerRef = useRef(null)
     const menuRef = useRef(null)
-    const pos = useFixedMenuPosition(triggerRef, open)
+    const pos = useFixedDropdownPosition(triggerRef, open, 'right')
     useClickOutsideToClose(open, setOpen, triggerRef, menuRef)
     return (
         <div className="relative shrink-0">

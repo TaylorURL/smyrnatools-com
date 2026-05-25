@@ -11,7 +11,7 @@ import { usePreferences } from '../../../app/context/PreferencesContext'
  *   1. Operational settings — the per-region `plan_settings` row that
  *      tunes pre-trip / load / slump / DOT cap / big-pour thresholds
  *      and the slot grid. Replaces the hardcoded JS constants in
- *      `src/app/constants/planConstants.ts` so dispatch can adjust
+ *      `src/app/constants/planConstants.js` so dispatch can adjust
  *      cycle math without a redeploy.
  *   2. Travel times between plants — the existing inter-plant route
  *      matrix the Planner / Schedule / Demand views consume for route

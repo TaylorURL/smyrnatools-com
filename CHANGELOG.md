@@ -1,5 +1,53 @@
 # Changelog
 
+## [2026.22.0] - 2026-05-25
+
+- Efficiency sub-page (Ops > Statistics > Workforce > Efficiency)
+  redesigned plant-first. The page now leads with a grid of large
+  `PlantScorecard` cards ranked by YPH, each with a coloured plant chip
+  (pulled from `PLANT_BADGE_COLORS` so the plant's hue matches the
+  Schedule + Planner views), a big 28 px YPH number, a target-referenced
+  fill bar with tick marks at the target (3) and exceptional (5)
+  thresholds, a white-text-on-solid status pill (Exceptional / On
+  target / Below target / No yardage), and the supporting hours / yards
+  / Δ-vs-fleet line. KPI strip swapped from operator-focused to plant-
+  focused: Fleet YPH, Plants on target (X / Y), Plants below target,
+  Top plant (YPH + name), Data mismatches. The 3-column operator
+  spotlight (Top / Below / Data check) drops to a secondary
+  "Operator highlights" panel, and the full operator detail table now
+  lives behind a "Show all N operators" disclosure button collapsed by
+  default. Per-plant row component (`PlantEfficiencyRow`) retired —
+  scorecards replace it.
+- Schedules sub-page (Ops > Statistics > Workforce > Schedules) no
+  longer has its own week-by-week carousel. `WeekCarousel` and
+  `WeekNavigator` were deleted; the page now renders one `WeekTable`
+  per Mon–Sat week in the active date range stacked vertically, newest
+  on top. The header date range is now the single source of truth — a
+  Week selection shows one table, Month shows 4–5, Custom shows
+  however many windows fall in the range.
+- Calendar popover on the global Plan date stepper
+  (`PlanDateNav` → `MiniCalendar`) was being clipped by the Schedule
+  view's content area because the popover used `position: absolute`
+  inside the header's overflow context. Now portaled to `document.body`
+  with `position: fixed` coords from a new shared hook
+  (`useFixedDropdownPosition`, extracted from
+  `PlanStatisticsControls`), and outside-click dismissal updated to
+  test both the trigger and the portaled calendar refs. Same hook now
+  drives the `PlantFilterMenu` + `ComparisonMenu` dropdowns so
+  positioning + scroll-tracking behaviour is shared across all three
+  popovers.
+- `src/app/constants/planConstants.ts` renamed to `planConstants.js`
+  via `git mv` (history preserved). Content was already pure JS — the
+  `PlanSettingsSnapshot` type lives as a JSDoc `@typedef` — so the move
+  is mechanical and no consumer import had to change (all 13 importers
+  resolve extensionless). Stale `.ts` comment references in
+  `dayforceScheduleConstants.js`, `PlanSettingsView.jsx`, and the
+  `daily-plan-email` edge function updated to `.js`. The shipped
+  `20260521_plan_settings.sql` migration left untouched.
+- README + `public/release.json` version anchors synced to the new
+  CalVer (first release of week 22). `vitest run` still passes
+  (4 test files, 123 tests).
+
 ## [2026.21.35] - 2026-05-23
 
 - Plant Efficiency Report submit form replaced with a card-based,

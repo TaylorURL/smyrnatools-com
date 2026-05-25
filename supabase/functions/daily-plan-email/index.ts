@@ -642,7 +642,7 @@ function formatMin(min: number | null | undefined): string {
 }
 
 /* Sentinel start times the dispatcher uses to flag non-production orders.
- * MUST match `src/app/constants/planConstants.ts`:
+ * MUST match `src/app/constants/planConstants.js`:
  *   CANCELLED_ORDER_START = '17:00'  → cancelled at the customer
  *   TEST_ORDER_START      = '18:00'  → dispatcher test entry
  * Earlier versions of this file used '00:00'/'99:99' which silently let

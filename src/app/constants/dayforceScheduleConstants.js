@@ -1,6 +1,6 @@
 /** YPH target — yards-per-hour below this counts as "not doing well"
  *  per the dispatcher's threshold. Mirrors `TARGET_YPH` from
- *  `planConstants.ts` so the schedule grid and the plant scorecard read
+ *  `planConstants.js` so the schedule grid and the plant scorecard read
  *  off the same number. */
 export const YPH_TARGET = 3
 

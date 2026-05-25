@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 
 import { fmtInt, fmtRange } from '../../../utils/PlanStatisticsFormatUtility'
 import { SCHEDULE_SORT_IDS } from '../../constants/dayforceScheduleConstants'
@@ -13,7 +13,7 @@ import { DayforceFilters } from './DayforceFilters'
 import { LoadingSkeleton } from './schedules/LoadingSkeleton'
 import { filterExceptionText } from './schedules/scheduleFlags'
 import { fmtHours } from './schedules/scheduleFormatters'
-import { WeekCarousel } from './schedules/WeekCarousel'
+import { WeekTable } from './schedules/WeekTable'
 
 /**
  * Schedules sub-page — weekly timesheet grid. Per-(operator × day) shifts
@@ -39,10 +39,6 @@ export function DayforceSchedulesPage({ accentColor, dateRange, plantCodes, sele
      *  operators. */
     const { yardageByOperatorByDay } = useOperatorYardageByDay({ dateRange })
     const filters = useDayforceOperatorFilters({ defaultSort: 'operator', rows: perShift })
-    /** Active week the user is viewing. `weekTables` is sorted newest-
-     *  first, so index 0 = current/latest week. Increment moves older,
-     *  decrement moves newer. */
-    const [activeWeekIndex, setActiveWeekIndex] = useState(0)
 
     /** Summary counter — recomputed locally so the "Exceptions" tile in
      *  the top StatGroup ignores padded-shift cases (early clock-in,
@@ -142,16 +138,29 @@ export function DayforceSchedulesPage({ accentColor, dateRange, plantCodes, sele
                 <Panel title="Per-shift schedule" innerClassName="p-0">
                     <EmptySection
                         icon="fa-filter-circle-xmark"
-                        message="No shifts match these filters. Widen the date range above or clear the search / role filters."
+                        message="No shifts match these filters. Widen the date range in the top bar or clear the search / role filters."
                     />
                 </Panel>
             ) : (
-                <WeekCarousel
-                    accent={accent}
-                    activeWeekIndex={activeWeekIndex}
-                    setActiveWeekIndex={setActiveWeekIndex}
-                    weekTables={weekTables}
-                />
+                /* One WeekTable per Mon–Sat week in the selected range —
+                 * stacked vertically so the date range in the page header
+                 * is the single source of truth. The historical week-by-
+                 * week carousel was removed because it duplicated what the
+                 * top-bar period selector already does. `weekTables` is
+                 * sorted newest-first so the most recent week renders on
+                 * top. */
+                weekTables.map((week) => (
+                    <WeekTable
+                        key={week.weekLabel}
+                        accent={accent}
+                        days={week.days}
+                        operatorRows={week.operatorRows}
+                        totalsByDay={week.totalsByDay}
+                        weekLabel={week.weekLabel}
+                        weekTotal={week.weekTotal}
+                        weekYardageTotal={week.weekYardageTotal}
+                    />
+                ))
             )}
         </div>
     )
