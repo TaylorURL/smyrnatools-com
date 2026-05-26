@@ -231,9 +231,9 @@ const tractorConfig = {
     },
 
     statusBadgeClasses: {
-        Active: 'bg-[#dcfce7] text-[#166534]',
-        'In Shop': 'bg-[#dbeafe] text-[#1e40af]',
-        Spare: 'bg-[#f3e8ff] text-[#7c3aed]'
+        Active: 'bg-status-active/15 text-status-active',
+        'In Shop': 'bg-status-shop/15 text-status-shop',
+        Spare: 'bg-status-spare/15 text-status-spare'
     },
 
     statusColors: {
