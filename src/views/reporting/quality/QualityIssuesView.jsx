@@ -1,7 +1,12 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { CARD_STYLE, FIELD_STYLE, SECTION_LABEL_CLASS } from '../../../app/constants/weeklyReportConstants'
+import {
+    CARD_STYLE,
+    FIELD_SELECT_CLASS,
+    FIELD_STYLE,
+    SECTION_LABEL_CLASS
+} from '../../../app/constants/weeklyReportConstants'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { QualityIssueService } from '../../../services/QualityIssueService'
 import StatsSidebar from './parts/StatsSidebar'
@@ -261,7 +266,7 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                         value={plantFilter}
                                         onChange={(e) => setPlantFilter(e.target.value)}
                                         aria-label="Filter by plant"
-                                        className="rounded px-2.5 py-1.5 text-[12.5px] outline-none cursor-pointer transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
+                                        className={FIELD_SELECT_CLASS}
                                         style={FIELD_STYLE}
                                     >
                                         <option value="all">All plants</option>
