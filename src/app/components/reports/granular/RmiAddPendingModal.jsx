@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { getPlantNameFromList, POSITIONS } from '../../../constants/rmiReportConstants'
-import { FIELD_INPUT_CLASS, FIELD_STYLE } from '../../../constants/weeklyReportConstants'
+import { FIELD_INPUT_CLASS, FIELD_SELECT_CLASS, FIELD_STYLE } from '../../../constants/weeklyReportConstants'
 import { FormModal, ModalField } from './RmiAtoms'
 
 /** "Add pending operator" form modal — pick position + name + plant + start
@@ -30,7 +30,7 @@ export default function RmiAddPendingModal({
                 <select
                     value={pending.position}
                     onChange={(e) => setPending({ ...pending, position: e.target.value })}
-                    className={`${FIELD_INPUT_CLASS} appearance-none cursor-pointer pr-8`}
+                    className={FIELD_SELECT_CLASS}
                     style={FIELD_STYLE}
                 >
                     <option value={POSITIONS.MIXER}>Mixer Operator</option>

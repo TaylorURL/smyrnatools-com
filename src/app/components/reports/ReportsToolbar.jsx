@@ -9,7 +9,8 @@ import { usePreferences } from '../../../app/context/PreferencesContext'
 /* ── Shared atoms — all flat, Plan-tab aesthetic ────────────────────────── */
 
 /** Flat select with native chevron — no SVG-bg hack, matches the Plan tab. */
-const flatSelectClass = 'text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7'
+const flatSelectClass =
+    'text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 transition-colors duration-150 hover:border-border-medium focus:outline-none focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary'
 const flatSelectStyle = {
     background: 'var(--bg-secondary)',
     border: '1px solid var(--border-light)',
@@ -38,7 +39,8 @@ const RefreshButton = ({ isRefreshing, onClick }) => (
         type="button"
         onClick={onClick}
         disabled={isRefreshing}
-        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary"
+        aria-label={isRefreshing ? 'Refreshing' : 'Refresh'}
+        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary hover:bg-bg-tertiary hover:border-border-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
     >
         <i className={`fas fa-rotate ${isRefreshing ? 'fa-spin' : ''}`} />
         <span className="hidden sm:inline">{isRefreshing ? 'Syncing…' : 'Refresh'}</span>
@@ -75,22 +77,26 @@ const PillToggle = ({ options, value, onChange }) => {
     )
 }
 
-/** Compact date-range picker matching FlatSelect chrome. */
+/** Compact date-range picker matching FlatSelect chrome. The wrapper carries
+ *  the focus ring via `focus-within` so the two date inputs feel like one
+ *  unit; individual inputs intentionally drop their own outlines. */
 const DateRange = ({ from, to, onFromChange, onToChange }) => (
-    <div className="flex items-center gap-1 rounded px-2 py-1 w-full sm:w-auto bg-bg-secondary border border-border-light">
-        <i className="fas fa-calendar-alt text-[10px] shrink-0 text-text-tertiary" />
+    <div className="flex items-center gap-1 rounded px-2 py-1 w-full sm:w-auto bg-bg-secondary border border-border-light hover:border-border-medium transition-colors duration-150 focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent)]/40 focus-within:ring-offset-1 focus-within:ring-offset-bg-primary">
+        <i className="fas fa-calendar-alt text-[10px] shrink-0 pointer-events-none text-text-tertiary" />
         <input
             type="date"
+            aria-label="From date"
             value={from}
             onChange={(e) => onFromChange(e.target.value)}
-            className="text-[12px] bg-transparent focus:outline-none focus-visible:ring-1 focus-visible:ring-accent/40 rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
+            className="text-[12px] bg-transparent focus:outline-none rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
         />
         <span className="text-[10px] select-none mx-0.5 text-text-tertiary">–</span>
         <input
             type="date"
+            aria-label="To date"
             value={to}
             onChange={(e) => onToChange(e.target.value)}
-            className="text-[12px] bg-transparent focus:outline-none focus-visible:ring-1 focus-visible:ring-accent/40 rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
+            className="text-[12px] bg-transparent focus:outline-none rounded-sm flex-1 min-w-0 sm:flex-none sm:w-[6.5rem] text-text-primary"
         />
     </div>
 )
@@ -109,7 +115,8 @@ const ClearButton = ({ onClick }) => (
     <button
         type="button"
         onClick={onClick}
-        className="flex items-center gap-1 rounded text-[12px] font-semibold px-2 py-1.5 cursor-pointer transition-colors bg-bg-secondary border border-border-light text-text-secondary"
+        aria-label="Clear filters"
+        className="flex items-center gap-1 rounded text-[12px] font-semibold px-2 py-1.5 cursor-pointer transition-colors duration-150 bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-tertiary hover:border-border-medium hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
     >
         <i className="fas fa-times text-[10px]" />
         Clear
@@ -198,7 +205,7 @@ export function ReportsActionBar({
                         type="button"
                         onClick={onExport}
                         disabled={!canExport || isExporting}
-                        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary"
+                        className="flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary hover:bg-bg-tertiary hover:border-border-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         title="Export the current view to CSV"
                     >
                         <i className={`fas ${isExporting ? 'fa-spinner fa-spin' : 'fa-file-export'}`} />
@@ -399,7 +406,8 @@ export function LossFilterBar({
                     <button
                         type="button"
                         onClick={onExport}
-                        className="flex items-center justify-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer flex-1 sm:flex-none bg-bg-secondary border border-border-light text-text-primary"
+                        aria-label="Export lost loads"
+                        className="flex items-center justify-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 cursor-pointer flex-1 sm:flex-none bg-bg-secondary border border-border-light text-text-primary hover:bg-bg-tertiary hover:border-border-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                     >
                         <i className="fas fa-file-export text-[10px]" />
                         Export
@@ -432,7 +440,9 @@ export function MobileFilterShell({ activeCount = 0, children, defaultOpen = fal
                 <button
                     type="button"
                     onClick={() => setOpen((v) => !v)}
-                    className="inline-flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 bg-bg-secondary border border-border-light text-text-primary"
+                    aria-expanded={open}
+                    aria-label={open ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+                    className="inline-flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 py-1.5 bg-bg-secondary border border-border-light text-text-primary hover:bg-bg-tertiary hover:border-border-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                 >
                     <i className="fas fa-sliders text-[10px]" />
                     {label}

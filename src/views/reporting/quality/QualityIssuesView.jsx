@@ -1,19 +1,11 @@
 /* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { CARD_STYLE, FIELD_STYLE, SECTION_LABEL_CLASS } from '../../../app/constants/weeklyReportConstants'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { QualityIssueService } from '../../../services/QualityIssueService'
 import StatsSidebar from './parts/StatsSidebar'
 import QualityIssueModal from './QualityIssueModal'
-
-/* ── Plan-tab design tokens ──────────────────────────────────────────────── */
-const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
-const CARD_STYLE = { background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }
-const FIELD_STYLE = {
-    background: 'var(--bg-secondary)',
-    border: '1px solid var(--border-light)',
-    color: 'var(--text-primary)'
-}
 
 const STATUS_DEFS = {
     active: { color: '#dc2626', icon: 'fa-fire', label: 'Active' },
@@ -257,17 +249,19 @@ export default function QualityIssuesView({ plants = [], regionCode = '' }) {
                                 />
                                 <div className="flex-1 flex items-center gap-2 min-w-[200px]">
                                     <input
-                                        type="text"
+                                        type="search"
+                                        aria-label="Search quality issues"
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder="Search title, description, plant…"
-                                        className="flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                                        className="flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary placeholder:text-text-tertiary"
                                         style={FIELD_STYLE}
                                     />
                                     <select
                                         value={plantFilter}
                                         onChange={(e) => setPlantFilter(e.target.value)}
-                                        className="rounded px-2.5 py-1.5 text-[12.5px] outline-none cursor-pointer"
+                                        aria-label="Filter by plant"
+                                        className="rounded px-2.5 py-1.5 text-[12.5px] outline-none cursor-pointer transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                                         style={FIELD_STYLE}
                                     >
                                         <option value="all">All plants</option>

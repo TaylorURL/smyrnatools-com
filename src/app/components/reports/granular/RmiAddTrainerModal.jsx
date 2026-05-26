@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { getPlantNameFromList, POSITIONS } from '../../../constants/rmiReportConstants'
-import { FIELD_INPUT_CLASS, FIELD_STYLE } from '../../../constants/weeklyReportConstants'
+import { FIELD_INPUT_CLASS, FIELD_SELECT_CLASS, FIELD_STYLE } from '../../../constants/weeklyReportConstants'
 import { FormModal, ModalField } from './RmiAtoms'
 
 /** "Add trainer" form modal — pick position + existing trainer + plant.
@@ -31,7 +31,7 @@ export default function RmiAddTrainerModal({
                 <select
                     value={trainer.position}
                     onChange={(e) => setTrainer({ ...trainer, position: e.target.value, trainerId: '' })}
-                    className={`${FIELD_INPUT_CLASS} appearance-none cursor-pointer pr-8`}
+                    className={FIELD_SELECT_CLASS}
                     style={FIELD_STYLE}
                 >
                     <option value={POSITIONS.MIXER}>Mixer Operator</option>
@@ -42,7 +42,7 @@ export default function RmiAddTrainerModal({
                 <select
                     value={trainer.trainerId}
                     onChange={(e) => setTrainer({ ...trainer, trainerId: e.target.value })}
-                    className={`${FIELD_INPUT_CLASS} appearance-none cursor-pointer pr-8`}
+                    className={FIELD_SELECT_CLASS}
                     style={FIELD_STYLE}
                 >
                     <option value="">Choose a trainer…</option>

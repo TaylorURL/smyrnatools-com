@@ -1,3 +1,17 @@
+/**
+ * Shared form-control classes for the list-task add/edit/detail surfaces. All
+ * use theme tokens so light/dark/grayed render correctly; chevron is encoded
+ * inline so the dropdown affordance survives `appearance-none` on every theme.
+ * `color-scheme` keeps native datetime popups in sync with the active theme.
+ */
+const LIST_INPUT_BASE =
+    'w-full px-4 py-3 border border-border-light rounded-xl text-sm text-text-primary bg-bg-secondary transition-colors duration-150 hover:border-border-medium focus:outline-none focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-text-tertiary'
+
+export const LIST_INPUT_CLASS = `${LIST_INPUT_BASE} [color-scheme:light] dark:[color-scheme:dark]`
+export const LIST_TEXTAREA_CLASS = `${LIST_INPUT_BASE} resize-none`
+export const LIST_PLANT_BUTTON_CLASS = `${LIST_INPUT_BASE} text-left cursor-pointer hover:bg-bg-hover`
+export const LIST_SELECT_CLASS = `${LIST_INPUT_BASE} cursor-pointer appearance-none bg-no-repeat bg-[right_12px_center] bg-[length:14px] pr-10 bg-[url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%2394a3b8'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-width='2'%3E%3Cpath%20d='M19%209l-7%207-7-7'/%3E%3C/svg%3E")]`
+
 /** Maps internal status keys to their user-facing display labels. */
 export const STATUS_MAP = {
     completed: 'Completed',

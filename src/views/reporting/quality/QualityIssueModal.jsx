@@ -2,18 +2,16 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import ReactDOM from 'react-dom'
 
+import {
+    CARD_STYLE,
+    FIELD_INPUT_CLASS,
+    FIELD_SELECT_CLASS,
+    FIELD_STYLE,
+    SECTION_LABEL_CLASS
+} from '../../../app/constants/weeklyReportConstants'
 import { useConfirm } from '../../../app/context/ConfirmContext'
 import { useAccentColor } from '../../../app/hooks/useAccentColor'
 import { QualityIssueService } from '../../../services/QualityIssueService'
-
-const SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
-const CARD_STYLE = { background: 'var(--bg-primary)', border: '1px solid var(--border-light)' }
-const FIELD_STYLE = {
-    background: 'var(--bg-secondary)',
-    border: '1px solid var(--border-light)',
-    color: 'var(--text-primary)'
-}
-const FIELD_INPUT_CLASS = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border disabled:opacity-90'
 
 const STATUS_OPTIONS = [
     { label: 'Active', value: 'active' },
@@ -204,7 +202,7 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                             <select
                                 value={draft.plant_code}
                                 onChange={(e) => update({ plant_code: e.target.value })}
-                                className={`${FIELD_INPUT_CLASS} appearance-none cursor-pointer pr-8`}
+                                className={FIELD_SELECT_CLASS}
                                 style={FIELD_STYLE}
                             >
                                 <option value="">— Region-wide —</option>
@@ -221,7 +219,7 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                             <select
                                 value={draft.severity}
                                 onChange={(e) => update({ severity: e.target.value })}
-                                className={`${FIELD_INPUT_CLASS} appearance-none cursor-pointer pr-8`}
+                                className={FIELD_SELECT_CLASS}
                                 style={FIELD_STYLE}
                             >
                                 {SEVERITY_OPTIONS.map((opt) => (
@@ -240,7 +238,7 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                             <select
                                 value={draft.status}
                                 onChange={(e) => update({ status: e.target.value })}
-                                className={`${FIELD_INPUT_CLASS} appearance-none cursor-pointer pr-8`}
+                                className={FIELD_SELECT_CLASS}
                                 style={FIELD_STYLE}
                             >
                                 {STATUS_OPTIONS.map((opt) => (

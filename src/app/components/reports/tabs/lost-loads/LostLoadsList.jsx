@@ -11,11 +11,14 @@ const STATUS_PILL_BASE =
 
 const PageSizeSelect = ({ value, onChange }) => (
     <div className="flex items-center gap-2 text-[11px] text-text-secondary">
-        <label className="hidden sm:inline uppercase tracking-wider text-[10px]">Show</label>
+        <label htmlFor="lost-loads-page-size" className="hidden sm:inline uppercase tracking-wider text-[10px]">
+            Show
+        </label>
         <select
+            id="lost-loads-page-size"
             value={value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="rounded px-2 py-1 text-[11px] cursor-pointer bg-bg-primary border border-border-light text-text-primary"
+            className="rounded px-2 py-1 text-[11px] cursor-pointer bg-bg-primary border border-border-light text-text-primary hover:border-border-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)]"
         >
             {PAGE_SIZE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -28,11 +31,11 @@ const PageSizeSelect = ({ value, onChange }) => (
 
 const PageButton = ({ disabled, onClick, children }) => (
     <button
-        className="px-2.5 py-1 text-[11px] font-semibold rounded uppercase tracking-wider border border-border-light"
+        type="button"
+        className="px-2.5 py-1 text-[11px] font-semibold rounded uppercase tracking-wider border border-border-light transition-colors duration-150 hover:enabled:bg-bg-tertiary hover:enabled:border-border-medium disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
         style={{
             background: disabled ? 'var(--bg-secondary)' : 'var(--bg-primary)',
-            color: disabled ? 'var(--text-tertiary)' : 'var(--text-primary)',
-            cursor: disabled ? 'not-allowed' : 'pointer'
+            color: disabled ? 'var(--text-tertiary)' : 'var(--text-primary)'
         }}
         onClick={onClick}
         disabled={disabled}

@@ -1,7 +1,12 @@
 /* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
-import { FIELD_STYLE, FIELD_TYPES, SECTION_LABEL_CLASS } from '../../../../app/constants/maintenanceCreateConstants'
+import {
+    FIELD_INPUT_CLASS,
+    FIELD_STYLE,
+    FIELD_TYPES,
+    SECTION_LABEL_CLASS
+} from '../../../../app/constants/maintenanceCreateConstants'
 import { getFieldTypeIcon, getFieldTypeName } from '../../../../utils/MaintenanceUtility'
 import { Card, CardHeader, ErrorText, FieldLabel, IconButton, SubtleButton } from './atoms'
 
@@ -25,7 +30,8 @@ function ChecklistItems({
                         value={item}
                         onChange={(e) => updateChecklistItem(index, itemIndex, e.target.value)}
                         placeholder={`Item ${itemIndex + 1}`}
-                        className="flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                        aria-label={`Checklist item ${itemIndex + 1}`}
+                        className={`${FIELD_INPUT_CLASS} flex-1`}
                         style={FIELD_STYLE}
                     />
                     <IconButton
@@ -101,7 +107,7 @@ function FieldCard({
                         value={field.label}
                         onChange={(e) => updateField(index, { label: e.target.value })}
                         placeholder="Enter question or label"
-                        className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                        className={FIELD_INPUT_CLASS}
                         style={{
                             ...FIELD_STYLE,
                             borderColor: errors[`field-${index}`] ? '#dc2626' : 'var(--border-light)'
@@ -117,7 +123,7 @@ function FieldCard({
                         value={field.description || ''}
                         onChange={(e) => updateField(index, { description: e.target.value })}
                         placeholder="Add a description or instructions"
-                        className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                        className={FIELD_INPUT_CLASS}
                         style={FIELD_STYLE}
                     />
                 </div>
