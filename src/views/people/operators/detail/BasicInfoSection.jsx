@@ -1,5 +1,5 @@
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
-import { RATING_LABELS } from '../../../../app/constants/operatorDetailConstants'
+import { INPUT_CLASS, RATING_LABELS } from '../../../../app/constants/operatorDetailConstants'
 import GrammarUtility from '../../../../utils/GrammarUtility'
 
 /**
@@ -28,7 +28,7 @@ function BasicInfoSection({
                         type="text"
                         value={smyrnaId}
                         onChange={(e) => setSmyrnaId(e.target.value)}
-                        className="w-full rounded border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                        className={INPUT_CLASS}
                         disabled={!canEditOperator}
                     />
                 </div>
@@ -38,7 +38,7 @@ function BasicInfoSection({
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full rounded border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                        className={INPUT_CLASS}
                         disabled={!canEditOperator}
                     />
                 </div>
@@ -48,7 +48,7 @@ function BasicInfoSection({
                         type="tel"
                         value={GrammarUtility.formatPhone(phone)}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="w-full rounded border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                        className={INPUT_CLASS}
                         placeholder="(555) 555-5555"
                         disabled={!canEditOperator}
                     />

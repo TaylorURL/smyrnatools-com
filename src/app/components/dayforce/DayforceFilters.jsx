@@ -32,20 +32,25 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
         <div className="relative" ref={containerRef}>
             <button
                 onClick={() => setOpen((s) => !s)}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                 style={{
                     backgroundColor: active ? `${accentColor}20` : 'var(--bg-tertiary)',
                     color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
                 }}
                 title={title}
+                aria-haspopup="listbox"
+                aria-expanded={open}
                 type="button"
             >
-                {icon && <i className={`fas ${icon} text-[11px]`} />}
+                {icon && <i className={`fas ${icon} text-[11px]`} aria-hidden="true" />}
                 <span className="truncate max-w-[180px]">{display}</span>
-                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
+                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} aria-hidden="true" />
             </button>
             {open && (
-                <div className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[180px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light">
+                <div
+                    className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[180px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
+                    role="listbox"
+                >
                     {options.map((opt) => (
                         <button
                             key={opt.id}
@@ -53,15 +58,17 @@ function FilterPill({ accentColor, activeId, defaultId, icon, label, onSelect, o
                                 onSelect(opt.id)
                                 setOpen(false)
                             }}
-                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover"
                             style={{
                                 backgroundColor: activeId === opt.id ? `${accentColor}15` : 'transparent',
                                 color: 'var(--text-primary)'
                             }}
+                            role="option"
+                            aria-selected={activeId === opt.id}
                             type="button"
                         >
                             <span className="truncate">{opt.label}</span>
-                            {activeId === opt.id && <i className="fas fa-check text-[10px]" />}
+                            {activeId === opt.id && <i className="fas fa-check text-[10px]" aria-hidden="true" />}
                         </button>
                     ))}
                 </div>
@@ -77,33 +84,32 @@ function SearchPill({ accentColor, onChange, value }) {
     const active = value.trim() !== ''
     return (
         <label
-            className="inline-flex items-center gap-1.5 rounded-lg cursor-text text-xs font-semibold px-3 py-2 flex-1 min-w-[160px] max-w-[260px]"
+            className="inline-flex items-center gap-1.5 rounded-lg cursor-text text-xs font-semibold px-3 py-2 flex-1 min-w-[160px] max-w-[260px] transition-colors duration-150 focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-1 focus-within:ring-offset-bg-primary"
             style={{
                 backgroundColor: active ? `${accentColor}20` : 'var(--bg-tertiary)',
                 color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
             }}
         >
-            <i className="fas fa-magnifying-glass text-[11px]" />
+            <i className="fas fa-magnifying-glass text-[11px]" aria-hidden="true" />
             <input
                 aria-label="Search operators"
-                className="bg-transparent border-none outline-none flex-1 min-w-0 text-text-primary"
+                className="bg-transparent border-none outline-none flex-1 min-w-0 text-text-primary placeholder:text-text-tertiary"
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Search…"
-                type="text"
+                type="search"
                 value={value}
             />
             {active && (
                 <button
                     aria-label="Clear search"
-                    className="border-none bg-transparent cursor-pointer text-[10px] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                    className="border-none bg-transparent cursor-pointer text-[10px] text-text-primary rounded p-0.5 active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                     onClick={(e) => {
                         e.preventDefault()
                         onChange('')
                     }}
-                    style={{ color: 'var(--text-primary)' }}
                     type="button"
                 >
-                    <i className="fas fa-xmark" />
+                    <i className="fas fa-xmark" aria-hidden="true" />
                 </button>
             )}
         </label>

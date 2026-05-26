@@ -12,31 +12,40 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
         <div className="relative">
             <button
                 onClick={() => setOpen((s) => !s)}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                 style={{
                     backgroundColor: selectedPlant ? `${accentColor}20` : 'var(--bg-tertiary)',
                     color: selectedPlant ? accentColor : 'var(--text-secondary)'
                 }}
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                type="button"
             >
-                <i className="fas fa-industry text-[11px]" />
+                <i className="fas fa-industry text-[11px]" aria-hidden="true" />
                 <span>{selectedPlant ? `Plant · ${selectedPlant}` : 'All plants'}</span>
-                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
+                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} aria-hidden="true" />
             </button>
             {open && (
-                <div className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light">
+                <div
+                    className="absolute right-0 top-full mt-1 rounded-lg overflow-hidden shadow-lg z-10 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light"
+                    role="listbox"
+                >
                     <button
                         onClick={() => {
                             setSelectedPlant('')
                             setOpen(false)
                         }}
-                        className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover"
                         style={{
                             backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
                             color: !selectedPlant ? accentColor : 'var(--text-primary)'
                         }}
+                        role="option"
+                        aria-selected={!selectedPlant}
+                        type="button"
                     >
                         <span>All plants</span>
-                        {!selectedPlant && <i className="fas fa-check text-[10px]" />}
+                        {!selectedPlant && <i className="fas fa-check text-[10px]" aria-hidden="true" />}
                     </button>
                     {availablePlants.length === 0 ? (
                         <div className="px-3 py-2 text-[11px] text-text-tertiary">No plants in scope</div>
@@ -48,14 +57,17 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                                     setSelectedPlant(code)
                                     setOpen(false)
                                 }}
-                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover"
                                 style={{
                                     backgroundColor: selectedPlant === code ? `${accentColor}15` : 'transparent',
                                     color: selectedPlant === code ? accentColor : 'var(--text-primary)'
                                 }}
+                                role="option"
+                                aria-selected={selectedPlant === code}
+                                type="button"
                             >
                                 <span className="truncate">{label}</span>
-                                {selectedPlant === code && <i className="fas fa-check text-[10px]" />}
+                                {selectedPlant === code && <i className="fas fa-check text-[10px]" aria-hidden="true" />}
                             </button>
                         ))
                     )}
@@ -96,7 +108,7 @@ export function PersonStatisticsControls({
                 <button
                     type="button"
                     onClick={() => setSelectedPlant('')}
-                    className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                    className="text-[11px] font-semibold border-none bg-transparent cursor-pointer text-text-secondary rounded px-2 py-1 active:scale-[0.97] transition-[transform,background-color,color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                     Clear plant
                 </button>

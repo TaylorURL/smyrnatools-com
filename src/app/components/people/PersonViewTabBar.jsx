@@ -23,13 +23,13 @@ export default function PersonViewTabBar({ accentColor, activeTab, onChange }) {
                         role="tab"
                         aria-selected={active}
                         onClick={() => onChange(tab.id)}
-                        className="flex items-center gap-1.5 rounded-md text-[12px] font-semibold border-none cursor-pointer px-3 py-1.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
+                        className="flex items-center gap-1.5 rounded-md text-[12px] font-semibold border-none cursor-pointer px-3 py-1.5 transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{
                             background: active ? accentColor : 'transparent',
                             color: active ? '#fff' : 'var(--text-secondary)'
                         }}
                     >
-                        <i className={`fas ${tab.icon} text-[11px]`} />
+                        <i className={`fas ${tab.icon} text-[11px]`} aria-hidden="true" />
                         <span>{tab.label}</span>
                     </button>
                 )

@@ -69,33 +69,33 @@ function OperatorCard({
             )}
             {children}
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Plant</div>
+                <div className="text-sm text-text-secondary">Plant</div>
                 <div className="text-sm font-medium">{plantName || 'None'}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Status</div>
+                <div className="text-sm text-text-secondary">Status</div>
                 <div className="text-sm font-medium">{operator.status || 'Unknown'}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Employee ID</div>
+                <div className="text-sm text-text-secondary">Employee ID</div>
                 <div className="text-sm font-medium">{operator.smyrnaId || 'Not Assigned'}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Phone</div>
+                <div className="text-sm text-text-secondary">Phone</div>
                 <div className="text-sm font-medium">
                     {operator.phone ? <PhoneLink phone={operator.phone} /> : 'Not Set'}
                 </div>
             </div>
             {operator.status === 'Pending Start' && (
                 <div className="flex justify-between items-center py-1">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Pending Start Date</div>
+                    <div className="text-sm text-text-secondary">Pending Start Date</div>
                     <div className="text-sm font-medium">
                         {operator.pendingStartDate ? DateUtility.formatDate(operator.pendingStartDate) : 'Not Set'}
                     </div>
                 </div>
             )}
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Role</div>
+                <div className="text-sm text-text-secondary">Role</div>
                 <div className="text-sm font-medium">
                     {operator.isTrainer ? (
                         <span className="bg-blue-100 text-text-primary text-xs font-semibold px-2 py-0.5 rounded">
@@ -108,24 +108,24 @@ function OperatorCard({
             </div>
             {operator.position && (
                 <div className="flex justify-between items-center py-1">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Position</div>
+                    <div className="text-sm text-text-secondary">Position</div>
                     <div className="text-sm font-medium">{operator.position || 'Not Specified'}</div>
                 </div>
             )}
             {!operator.isTrainer && operator.status !== 'Active' && (
                 <div className="flex justify-between items-center py-1">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Trainer</div>
+                    <div className="text-sm text-text-secondary">Trainer</div>
                     <div className="text-sm font-medium">{trainerName}</div>
                 </div>
             )}
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Rating</div>
+                <div className="text-sm text-text-secondary">Rating</div>
                 <div className="text-sm font-medium">
                     <div className="flex gap-0.5">
                         {[...Array(5)].map((_, i) => (
                             <i
                                 key={i}
-                                className={`fas fa-star ${i < displayRating ? 'text-text-primary' : 'text-gray-300'}`}
+                                className={`fas fa-star ${i < displayRating ? 'text-text-primary' : 'text-border-light'}`}
                                 aria-hidden="true"
                             ></i>
                         ))}

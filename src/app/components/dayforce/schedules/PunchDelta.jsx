@@ -33,7 +33,7 @@ export function PunchDelta({ actualIso, scheduledIso, kind }) {
     const label = Math.abs(diffMin) >= 60 ? `${sign}${(diffMin / 60).toFixed(1)}h` : `${sign}${diffMin}m`
     return (
         <span
-            className={`${badgeClass} inline-flex items-center rounded px-1 py-0 text-[9px] font-semibold tabular-nums text-text-primary`}
+            className={`${badgeClass} inline-flex items-center rounded px-1 py-0 text-[9px] font-semibold tabular-nums text-text-primary cursor-help`}
             title={`Actual vs scheduled ${kind === 'in' ? 'clock in' : 'clock out'}: ${sign}${diffMin} min`}
         >
             {label}
