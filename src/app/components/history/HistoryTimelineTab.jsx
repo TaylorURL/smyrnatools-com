@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { HistoryUtility } from '../../../utils/HistoryUtility'
@@ -11,7 +10,7 @@ function HistoryChangeCard({ entry, formatValue, type }) {
     const fieldName = entry.fieldName ?? entry.field_name
     const isCreatedEntry = fieldName === 'created'
     return (
-        <div className="rounded p-2.5 bg-bg-secondary border border-border-light">
+        <div className="rounded-md p-2.5 bg-bg-secondary border border-border-light transition-colors duration-150 hover:border-border-medium">
             <div className="flex justify-between items-center mb-1.5">
                 <div className="text-[12.5px] font-semibold capitalize text-text-primary">
                     {HistoryUtility.formatFieldName(fieldName, type)}
@@ -32,7 +31,7 @@ function HistoryChangeCard({ entry, formatValue, type }) {
                         <span className="text-[9.5px] font-bold uppercase tracking-wider mr-1">From</span>
                         {formatValue(fieldName, entry.oldValue ?? entry.old_value)}
                     </span>
-                    <i className="fas fa-arrow-right text-[10px] text-[var(--accent, #1e3a5f)]" />
+                    <i className="fas fa-arrow-right text-[10px] text-accent" />
                     <span className="text-[12px] font-semibold text-text-primary">
                         <span className="text-[9.5px] font-bold uppercase tracking-wider mr-1">To</span>
                         {formatValue(fieldName, entry.newValue ?? entry.new_value)}
@@ -50,6 +49,9 @@ function HistoryChangeCard({ entry, formatValue, type }) {
  * Two-column timeline tab: left side is the sorted list of every history change,
  * right side is the collapsible AI analysis panel. The right panel's width
  * animates in/out as the user scrolls past the first viewport.
+ *
+ * Uses `flex-[N]` Tailwind utilities (with `grow-0` shorthand for collapsed)
+ * instead of inline flex values — keeps the layout consistent across themes.
  */
 export default function HistoryTimelineTab({
     aiDisplayText,
@@ -67,11 +69,15 @@ export default function HistoryTimelineTab({
     statusData,
     type
 }) {
+    const listColumnClass = analysisVisible ? 'flex-[3]' : 'flex-1'
+    const sidebarColumnClass = analysisVisible
+        ? 'flex-[2] opacity-100 pl-5 border-l border-border-light'
+        : 'flex-none w-0 opacity-0 pl-0 border-l-0'
+
     return (
         <div className="flex gap-5">
             <div
-                className="flex flex-col gap-3 min-w-0 pr-1 transition-all duration-500 ease-in-out"
-                style={{ flex: analysisVisible ? '3' : '1' }}
+                className={`flex flex-col gap-3 min-w-0 pr-1 transition-all duration-500 ease-in-out ${listColumnClass}`}
             >
                 {sortedHistory.length === 0 ? (
                     <HistoryEmptyState
@@ -90,13 +96,7 @@ export default function HistoryTimelineTab({
                 )}
             </div>
             <div
-                className="min-w-0 transition-all duration-500 ease-in-out border-border-light overflow-hidden"
-                style={{
-                    borderLeftWidth: analysisVisible ? '1px' : '0px',
-                    flex: analysisVisible ? '2' : '0',
-                    opacity: analysisVisible ? 1 : 0,
-                    paddingLeft: analysisVisible ? '1.25rem' : '0px'
-                }}
+                className={`min-w-0 overflow-hidden transition-all duration-500 ease-in-out border-border-light ${sidebarColumnClass}`}
             >
                 <HistoryAiSummary
                     aiDisplayText={aiDisplayText}

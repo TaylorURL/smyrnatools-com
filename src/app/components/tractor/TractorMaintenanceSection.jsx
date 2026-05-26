@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import AssetStatsUtility from '../../../utils/AssetStatsUtility'
@@ -25,7 +24,7 @@ function CleanlinessRating({ canEditTractor, cleanlinessRating, setCleanlinessRa
                             <button
                                 key={star}
                                 type="button"
-                                className={`star-button ${isLit ? 'active' : ''} ${!canEditTractor ? 'disabled' : ''} active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded`}
+                                className={`star-button ${isLit ? 'active tractor-active' : ''} ${!canEditTractor ? 'disabled' : ''} rounded transition-transform duration-150 ease-out active:scale-[0.97] disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none`}
                                 onClick={() =>
                                     canEditTractor && setCleanlinessRating(star === cleanlinessRating ? 0 : star)
                                 }
@@ -34,9 +33,8 @@ function CleanlinessRating({ canEditTractor, cleanlinessRating, setCleanlinessRa
                                 disabled={!canEditTractor}
                             >
                                 <i
-                                    className={`fas fa-star ${isLit ? 'filled' : ''}`}
-                                    style={isLit ? { color: 'var(--text-primary)' } : {}}
-                                ></i>
+                                    className={`fas fa-star ${isLit ? 'filled !text-text-primary' : ''}`}
+                                />
                             </button>
                         )
                     })}

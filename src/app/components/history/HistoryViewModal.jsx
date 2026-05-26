@@ -7,6 +7,11 @@ import TabButton from '../ui/TabButton'
  * Portal-mounted full-screen modal shell that hosts the change history UI. Owns
  * the header, tab strip, scroll body, and footer chrome; child content is
  * supplied by the caller and renders inside the scrollable body.
+ *
+ * Polish notes:
+ *   - Backdrop fades in, modal uses `animate-pop-in` spring curve.
+ *   - Close + footer buttons use Tailwind hover/focus tokens — no JS hover handlers.
+ *   - All chrome reads from semantic tokens (`bg-bg-secondary`, `border-border-light`).
  */
 export default function HistoryViewModal({
     activeTab,
@@ -19,30 +24,32 @@ export default function HistoryViewModal({
 }) {
     if (typeof document === 'undefined' || !document.body) return null
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 flex items-center justify-center z-[2000] p-4 bg-[rgba(15,_23,_42,_0.65)] animate-[fadeIn_200ms_ease-out_both] motion-reduce:animate-none">
-            <div className="flex flex-col max-w-[900px] w-full max-h-[85vh] rounded overflow-hidden bg-bg-primary border border-border-light">
-                <div className="flex justify-between items-center px-4 py-3 border-b border-border-light">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-bg-tertiary text-text-secondary">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-[rgba(15,23,42,0.65)] animate-fade-in motion-reduce:animate-none">
+            <div className="flex flex-col w-full max-w-[900px] max-h-[85vh] overflow-hidden rounded-modal border border-border-light bg-bg-primary shadow-modal animate-pop-in motion-reduce:animate-none">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border-light bg-bg-secondary">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-bg-tertiary text-text-secondary">
                             <i className="fas fa-history text-[12px]" />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
                                 Change History
                             </div>
-                            <h2 className="text-[14px] font-semibold m-0 truncate text-text-primary">{itemName}</h2>
+                            <h2 className="m-0 truncate font-heading text-[14px] font-semibold text-text-primary">
+                                {itemName}
+                            </h2>
                         </div>
                     </div>
                     <button
-                        className="w-7 h-7 flex items-center justify-center rounded transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none bg-transparent text-text-secondary active:scale-[0.92]"
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        type="button"
                         onClick={onClose}
+                        aria-label="Close history"
+                        className="flex h-8 w-8 items-center justify-center rounded-md bg-transparent text-text-secondary transition-colors duration-150 ease-out hover:bg-bg-hover hover:text-text-primary active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
                     >
                         <i className="fas fa-times text-[12px]" />
                     </button>
                 </div>
-                <div className="flex gap-1.5 px-4 py-2 overflow-x-auto shrink-0 bg-bg-secondary border-b border-border-light">
+                <div className="flex shrink-0 gap-1.5 overflow-x-auto px-4 py-2 border-b border-border-light bg-bg-secondary">
                     {tabs.map((tab) => (
                         <TabButton
                             key={tab.id}
@@ -52,15 +59,14 @@ export default function HistoryViewModal({
                         />
                     ))}
                 </div>
-                <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-3 min-h-0 bg-bg-primary">
+                <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto bg-bg-primary px-4 py-3">
                     {children}
                 </div>
-                <div className="px-4 py-2.5 flex justify-end bg-bg-secondary border-t border-border-light">
+                <div className="flex justify-end gap-2 border-t border-border-light bg-bg-secondary px-4 py-2.5">
                     <button
-                        className="rounded px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none bg-bg-primary border border-border-light text-text-primary active:scale-[0.97]"
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-primary)')}
+                        type="button"
                         onClick={onClose}
+                        className="inline-flex items-center rounded-md border border-border-light bg-bg-primary px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-text-primary transition-colors duration-150 ease-out hover:bg-bg-hover hover:border-border-medium active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent motion-reduce:transition-none"
                     >
                         Close
                     </button>
