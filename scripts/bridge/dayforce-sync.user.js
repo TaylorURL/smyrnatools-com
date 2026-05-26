@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Smyrna Dayforce Sync
 // @namespace    smyrna-tools
-// @version      1.0.0
-// @description  Syncs Houston RMX_TX_* timesheet bundles + raw clock punches from Dayforce (wkdus261) to Supabase every 5 minutes. Captures the session GUID + CSRF token from the live UI's own traffic, calls the same internal endpoints the timesheet view calls (ObfuscatingTimesheet/GetManagerTimesheetLoadBundle, EmployeeSelfService/TimeAndAttendance/GetManagerEmployeeRawPunches), POSTs structured JSON to the dayforce-import edge function which decodes and upserts. Manual triggers under window.dayforceSync.
+// @version      1.1.0
+// @description  Syncs Houston RMX_TX_* timesheet bundles + raw clock punches from Dayforce (wkdus261) to Supabase every 5 minutes. Captures the session GUID + CSRF token from the live UI's own traffic, calls the same internal endpoints the timesheet view calls (ObfuscatingTimesheet/GetManagerTimesheetLoadBundle, EmployeeSelfService/TimeAndAttendance/GetManagerEmployeeRawPunches), POSTs structured JSON to the dayforce-import edge function which decodes and upserts. Manual triggers under window.dayforceSync. Auto-recovers from session expiry by reloading once for silent SSO re-auth, then shows a prominent re-login banner if SSO is also dead.
 // @match        https://wkdus261.dayforcehcm.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
@@ -67,15 +67,180 @@
 
     // ============================================================
     // STATE
+    //
+    // syncState is the source of truth:
+    //   'idle'             — ready to run, no cycle in flight
+    //   'syncing'          — a cycle is actively running
+    //   'paused-window'    — outside sync window; reserved for future throttling
+    //   'session-expired'  — server rejected our auth; recovery in progress
+    //   'recovering'       — transitioning back to idle (fresh GUID captured)
+    //
+    // currentRunToken bumps on every cycle start AND on every state transition
+    // out of 'syncing'. Workers inside a cycle compare their captured token
+    // against currentRunToken after each await — if it changed, they bail
+    // cleanly without trying to cancel in-flight GM_xmlhttpRequests.
     // ============================================================
+    const RELOAD_GUARD_KEY = 'dayforce-sync-reload-attempted'
+
     let csrfToken = null
     let sessionGuid = null
     let lastSync = null
-    let syncing = false
+    let syncState = 'idle'
+    let currentRunToken = 0
     let earlyKickScheduled = false
+    let originalDocumentTitle = null
 
     const log = (...args) => console.log('[Dayforce Sync]', ...args)
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+    function setSyncState(next) {
+        if (syncState === next) return
+        const prev = syncState
+        syncState = next
+        // Any transition out of 'syncing' bumps the run token so any
+        // workers still awaiting will bail on their next checkpoint.
+        if (prev === 'syncing') currentRunToken++
+    }
+
+    // ============================================================
+    // SESSION EXPIRY DETECTION + RECOVERY
+    //
+    // When the Dayforce server-side session dies, our captured GUID + CSRF
+    // go stale. The server responds in one of three ways:
+    //   1. 401 / 403  — explicit auth failure
+    //   2. 302 / 303  — gateway redirect to the login page
+    //   3. 200 + HTML — gateway swallowed the redirect and served the login
+    //                   page directly (the live API endpoints we hit always
+    //                   return JSON when alive, so HTML means we're logged out)
+    //   4. status 0   — GM_xmlhttpRequest can't classify a blocked redirect
+    //
+    // On detection we:
+    //   - clear the stale GUID + CSRF so interceptors recapture from scratch
+    //   - bump the run token so in-flight workers exit cleanly
+    //   - reload once (silent SSO) on the FIRST detection per tab
+    //   - on a SECOND detection (the reload didn't help), show the banner
+    //     and wait for the user to log back in
+    // ============================================================
+    function parseResponseHeaders(headerBlob) {
+        // GM_xmlhttpRequest returns response headers as one CRLF-delimited
+        // string. Parse case-insensitively into a plain object.
+        const out = {}
+        if (!headerBlob || typeof headerBlob !== 'string') return out
+        for (const line of headerBlob.split(/\r?\n/)) {
+            const idx = line.indexOf(':')
+            if (idx <= 0) continue
+            const key = line.slice(0, idx).trim().toLowerCase()
+            const val = line.slice(idx + 1).trim()
+            if (key) out[key] = val
+        }
+        return out
+    }
+
+    function isSessionExpiredResponse(res) {
+        if (!res) return false
+        const status = res.status
+        if (status === 0) return true
+        if (status === 401 || status === 403) return true
+        if (status === 302 || status === 303) return true
+        if (status === 200) {
+            // The live JSON endpoints we call should NEVER return HTML.
+            // If they do, the gateway short-circuited us to a login page.
+            const headers = parseResponseHeaders(res.responseHeaders)
+            const contentType = (headers['content-type'] || '').toLowerCase()
+            if (contentType.includes('text/html')) return true
+        }
+        return false
+    }
+
+    function reloadGuardWasAttempted() {
+        try {
+            return sessionStorage.getItem(RELOAD_GUARD_KEY) === '1'
+        } catch {
+            return false
+        }
+    }
+
+    function markReloadAttempted() {
+        try {
+            sessionStorage.setItem(RELOAD_GUARD_KEY, '1')
+        } catch {
+            // sessionStorage may be unavailable in unusual contexts — if so
+            // we just lose the loop guard and accept the (small) risk of
+            // reloading twice. Better than crashing.
+        }
+    }
+
+    function clearReloadGuard() {
+        try {
+            sessionStorage.removeItem(RELOAD_GUARD_KEY)
+        } catch {
+            // ignore — see markReloadAttempted
+        }
+    }
+
+    function applyExpiredTitleFlag() {
+        if (originalDocumentTitle === null) originalDocumentTitle = document.title
+        const flag = '⚠ LOGIN — '
+        if (!document.title.startsWith(flag)) {
+            document.title = flag + (originalDocumentTitle || '')
+        }
+    }
+
+    function restoreOriginalTitle() {
+        if (originalDocumentTitle !== null) {
+            document.title = originalDocumentTitle
+            originalDocumentTitle = null
+        }
+    }
+
+    function handleSessionExpired() {
+        // Idempotent — once we're already in the expired state, ignore
+        // further expiry signals from in-flight workers.
+        if (syncState === 'session-expired') return
+
+        log('Session expired — clearing captured GUID + CSRF')
+        setSyncState('session-expired')
+        sessionGuid = null
+        csrfToken = null
+        earlyKickScheduled = false
+
+        applyExpiredTitleFlag()
+        updateBadge('expired')
+        showReloginBanner()
+
+        if (!reloadGuardWasAttempted()) {
+            markReloadAttempted()
+            log('Reloading tab once to attempt silent SSO re-auth')
+            // Defer slightly so the banner renders before the reload
+            // (helps when the SSO chain returns instantly).
+            setTimeout(() => {
+                try {
+                    window.location.reload()
+                } catch (e) {
+                    log('Reload failed:', e?.message || e)
+                }
+            }, 250)
+            return
+        }
+        log('Reload already attempted this tab — waiting for fresh session capture')
+    }
+
+    function handleFreshSessionCaptured() {
+        // Called from captureFromUrl when a new sessionGuid lands AFTER we
+        // were stuck in session-expired. The interceptors caught a live
+        // request from the (now logged-in) UI, so we're back in business.
+        if (syncState !== 'session-expired') return
+        log('Fresh session captured after expiry — resuming')
+        clearReloadGuard()
+        hideReloginBanner()
+        restoreOriginalTitle()
+        setSyncState('recovering')
+        // Brief tick to let CSRF capture also land before we kick a cycle.
+        setTimeout(() => {
+            setSyncState('idle')
+            kickSyncSoon()
+        }, 500)
+    }
 
     function getCentralMinutesOfDay() {
         const parts = new Intl.DateTimeFormat('en-US', {
@@ -123,9 +288,14 @@
         const m = url.match(SESSION_GUID_RE)
         if (m && sessionGuid !== m[1]) {
             const wasUnset = !sessionGuid
+            const wasExpired = syncState === 'session-expired'
             sessionGuid = m[1]
             log('Captured session GUID from URL')
-            if (wasUnset) kickSyncSoon()
+            if (wasExpired) {
+                handleFreshSessionCaptured()
+            } else if (wasUnset) {
+                kickSyncSoon()
+            }
         }
     }
 
@@ -184,6 +354,15 @@
     // DAYFORCE API CALLS (via GM_xmlhttpRequest to attach the session cookie
     // automatically AND let us add the x-csrf-token header)
     // ============================================================
+    function makeExpiredError(path, res) {
+        const err = new Error(
+            `${path} returned ${res.status} (session expired)`
+        )
+        err.status = res.status
+        err.sessionExpired = true
+        return err
+    }
+
     function dayforcePost(path, body) {
         return new Promise((resolve, reject) => {
             const url = `${DAYFORCE_BASE}/u/${sessionGuid}${path}`
@@ -200,6 +379,11 @@
                 },
                 data: JSON.stringify(body),
                 onload: (res) => {
+                    if (isSessionExpiredResponse(res)) {
+                        handleSessionExpired()
+                        reject(makeExpiredError(path, res))
+                        return
+                    }
                     if (res.status >= 200 && res.status < 300) {
                         try {
                             resolve(JSON.parse(res.responseText))
@@ -212,7 +396,15 @@
                     err.status = res.status
                     reject(err)
                 },
-                onerror: (e) => reject(new Error(`network error: ${e?.error}`))
+                onerror: (e) => {
+                    // Treat as expired-style; the gateway sometimes blocks
+                    // the redirect chain at the network layer and we get
+                    // here with no status at all.
+                    handleSessionExpired()
+                    const err = new Error(`network error: ${e?.error}`)
+                    err.sessionExpired = true
+                    reject(err)
+                }
             })
         })
     }
@@ -232,6 +424,11 @@
                     'x-csrf-token': csrfToken || ''
                 },
                 onload: (res) => {
+                    if (isSessionExpiredResponse(res)) {
+                        handleSessionExpired()
+                        reject(makeExpiredError(path, res))
+                        return
+                    }
                     if (res.status >= 200 && res.status < 300) {
                         try {
                             resolve(JSON.parse(res.responseText))
@@ -244,7 +441,12 @@
                     err.status = res.status
                     reject(err)
                 },
-                onerror: (e) => reject(new Error(`network error: ${e?.error}`))
+                onerror: (e) => {
+                    handleSessionExpired()
+                    const err = new Error(`network error: ${e?.error}`)
+                    err.sessionExpired = true
+                    reject(err)
+                }
             })
         })
     }
@@ -346,11 +548,16 @@
     //      Saturday punch still lands)
     //   4. POST each slice to the import edge function as soon as it's ready
     async function runSync() {
-        if (syncing) {
+        if (syncState === 'syncing') {
             log('Already syncing, skipping tick')
             return
         }
+        if (syncState === 'session-expired' || syncState === 'recovering') {
+            log('Skipping cycle — session expired, awaiting re-login')
+            return
+        }
         if (!isWithinSyncWindow()) {
+            setSyncState('paused-window')
             updateBadge('paused', 'outside sync window')
             return
         }
@@ -360,8 +567,10 @@
             return
         }
 
-        syncing = true
+        setSyncState('syncing')
         const cycleStart = Date.now()
+        const myRunToken = ++currentRunToken
+        const isCancelled = () => myRunToken !== currentRunToken
         const results = { employees: 0, punches: 0, shifts: 0, timesheets: 0 }
         updateBadge('syncing', '0%')
 
@@ -389,6 +598,7 @@
             let orgCursor = 0
             const orgWorker = async () => {
                 while (true) {
+                    if (isCancelled()) return
                     const idx = orgCursor++
                     if (idx >= RMX_ORG_UNITS.length) return
                     const org = RMX_ORG_UNITS[idx]
@@ -397,6 +607,7 @@
                             '/Timesheet/ObfuscatingTimesheet/GetManagerTimesheetLoadBundle',
                             buildTimesheetBody(org.id, periodStart, periodEnd)
                         )
+                        if (isCancelled()) return
                         timesheetSlices.push({ bundle, orgUnitId: org.id, periodEnd, periodStart })
                         const empList = bundle?.Result?.[TS_EMPLOYEES_KEY]
                         if (Array.isArray(empList)) {
@@ -407,6 +618,7 @@
                         }
                         results.timesheets++
                     } catch (err) {
+                        if (err?.sessionExpired) return
                         log(`  TS fail ${org.label}: ${err.message}`)
                     }
                     updateBadge(
@@ -418,6 +630,7 @@
             await Promise.all(
                 Array.from({ length: Math.min(WORKER_CONCURRENCY, RMX_ORG_UNITS.length) }, orgWorker)
             )
+            if (isCancelled()) return
 
             // Push timesheets to the import endpoint as one batch — the
             // edge function handles dedup across slices.
@@ -433,6 +646,7 @@
                     log(`Timesheet import failed: ${tsRes.error}`)
                 }
             }
+            if (isCancelled()) return
 
             // -------- 3. Per-employee raw punches (current + prior week) --------
             const punchWindowStart = new Date(weekStart)
@@ -446,6 +660,7 @@
             let empCursor = 0
             const punchWorker = async () => {
                 while (true) {
+                    if (isCancelled()) return
                     const idx = empCursor++
                     if (idx >= employeeIdList.length) return
                     const eid = employeeIdList[idx]
@@ -454,11 +669,13 @@
                             '/EmployeeSelfService/TimeAndAttendance/GetManagerEmployeeRawPunches',
                             buildRawPunchBody(eid, punchStartStr, punchEndStr)
                         )
+                        if (isCancelled()) return
                         const punches = res?.Result
                         if (Array.isArray(punches) && punches.length > 0) {
                             punchSlices.push({ employeeId: eid, punches })
                         }
                     } catch (err) {
+                        if (err?.sessionExpired) return
                         log(`  Punch fail ${eid}: ${err.message}`)
                     }
                     if ((idx + 1) % 25 === 0 || idx + 1 === employeeIdList.length) {
@@ -469,12 +686,14 @@
             await Promise.all(
                 Array.from({ length: Math.min(WORKER_CONCURRENCY, employeeIdList.length) }, punchWorker)
             )
+            if (isCancelled()) return
 
             // Punches POST'd in chunks to keep request bodies under the
             // edge function payload ceiling. 50 employees * ~5 punches each
             // is well under 1 MB; the edge function dedupes across chunks.
             const CHUNK = 50
             for (let i = 0; i < punchSlices.length; i += CHUNK) {
+                if (isCancelled()) return
                 const chunk = punchSlices.slice(i, i + CHUNK)
                 const punchRes = await postToImport({ rawPunches: chunk })
                 if (punchRes.ok) results.punches += punchRes.body?.stats?.punches ?? 0
@@ -489,10 +708,18 @@
             )
             updateBadge('ok')
         } catch (err) {
+            if (err?.sessionExpired) {
+                // handleSessionExpired already transitioned state + UI.
+                // Don't overwrite the badge or log a generic error.
+                return
+            }
             log(`Sync error: ${err.message}`)
             updateBadge('error', err.message)
         } finally {
-            syncing = false
+            // Only flip out of 'syncing' if we're still in it — handleSessionExpired
+            // may have moved us to 'session-expired' mid-cycle, and we don't want
+            // to clobber that transition with 'idle'.
+            if (syncState === 'syncing') setSyncState('idle')
         }
     }
 
@@ -529,6 +756,9 @@
         } else if (state === 'ok') {
             badge.style.background = '#2d7a2d'
             badge.textContent = `DAYFORCE OK ${ts}`
+        } else if (state === 'expired') {
+            badge.style.background = '#a02020'
+            badge.textContent = `DAYFORCE session expired — re-login required`
         } else if (state === 'error') {
             badge.style.background = '#a33'
             badge.textContent = `DAYFORCE FAIL | last ok ${ts}`
@@ -537,10 +767,77 @@
     }
 
     // ============================================================
+    // RE-LOGIN BANNER
+    //
+    // Full-width red banner docked to the top of the page when the session
+    // is dead AND the silent-reload attempt has already been used. Cannot be
+    // dismissed by the user — only auto-hides when state transitions back
+    // to idle (fresh session captured). A "Reload now" button on the right
+    // clears the reload guard and forces a manual reload.
+    // ============================================================
+    let banner
+    function ensureBanner() {
+        if (banner || !document.body) return
+        banner = document.createElement('div')
+        banner.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; z-index: 2147483647;
+            background: #a02020; color: #fff; padding: 14px 20px;
+            font-family: monospace; font-size: 14px; font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+            display: none; align-items: center; justify-content: space-between;
+            gap: 16px;
+        `
+        const message = document.createElement('span')
+        message.textContent =
+            'Smyrna Dayforce Sync — session expired. Click anywhere in this tab and complete the Dayforce login.'
+        const reloadBtn = document.createElement('button')
+        reloadBtn.textContent = 'Reload now'
+        reloadBtn.style.cssText = `
+            background: #fff; color: #a02020; border: none;
+            padding: 6px 14px; border-radius: 3px;
+            font-family: monospace; font-size: 13px; font-weight: 700;
+            cursor: pointer; flex-shrink: 0;
+        `
+        reloadBtn.addEventListener('click', () => {
+            clearReloadGuard()
+            try {
+                window.location.reload()
+            } catch (e) {
+                log('Manual reload failed:', e?.message || e)
+            }
+        })
+        banner.appendChild(message)
+        banner.appendChild(reloadBtn)
+        document.body.appendChild(banner)
+    }
+
+    function showReloginBanner() {
+        ensureBanner()
+        if (!banner) {
+            // body not ready yet — retry once it is
+            const retry = () => {
+                ensureBanner()
+                if (banner) banner.style.display = 'flex'
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', retry, { once: true })
+            } else {
+                setTimeout(retry, 100)
+            }
+            return
+        }
+        banner.style.display = 'flex'
+    }
+
+    function hideReloginBanner() {
+        if (banner) banner.style.display = 'none'
+    }
+
+    // ============================================================
     // KICKOFF
     // ============================================================
     log(
-        `Smyrna Dayforce Sync v1.0.0 loaded — host ${DAYFORCE_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${RMX_ORG_UNITS.length} RMX orgs. Manual triggers under window.dayforceSync`
+        `Smyrna Dayforce Sync v1.1.0 loaded — host ${DAYFORCE_HOST}, ${WORKER_CONCURRENCY} parallel workers, ${RMX_ORG_UNITS.length} RMX orgs. Manual triggers under window.dayforceSync`
     )
 
     setTimeout(() => {
@@ -564,19 +861,48 @@
             const snap = {
                 csrfCaptured: !!csrfToken,
                 lastSync: lastSync ? lastSync.toISOString() : null,
+                reloadGuard: reloadGuardWasAttempted(),
                 sessionGuid: sessionGuid ? `${sessionGuid.slice(0, 8)}…` : null,
-                syncing,
+                state: syncState,
                 withinWindow: isWithinSyncWindow()
             }
             log('Manual: status', snap)
             return snap
         },
         // Escape hatch: if the captured session GUID ever sticks to a dead
-        // session, this clears it so the next UI XHR re-populates from scratch.
+        // session, this clears it + the state machine so the next UI XHR
+        // re-populates from scratch.
         resetSession() {
             sessionGuid = null
             csrfToken = null
-            log('Manual: session GUID + CSRF cleared')
+            earlyKickScheduled = false
+            if (syncState === 'session-expired') {
+                hideReloginBanner()
+                restoreOriginalTitle()
+            }
+            setSyncState('idle')
+            log('Manual: session GUID + CSRF cleared, state reset to idle')
+        },
+        // Force a fresh reload — clears the sessionStorage guard first so
+        // the reload counts as a fresh attempt (not a loop).
+        manualLogin() {
+            log('Manual: clearing reload guard and reloading for fresh SSO')
+            clearReloadGuard()
+            try {
+                window.location.reload()
+            } catch (e) {
+                log('Manual reload failed:', e?.message || e)
+            }
+        },
+        getState() {
+            return syncState
+        },
+        // Debug helper — if the user got stuck on the banner because the
+        // reload guard fired prematurely, this lets them try the silent
+        // reload path again on the next expiry.
+        clearReloadGuard() {
+            clearReloadGuard()
+            log('Manual: reload guard cleared')
         }
     }
     log('Manual triggers ready — call dayforceSync.runNow() from devtools to test')
