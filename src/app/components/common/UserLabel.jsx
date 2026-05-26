@@ -11,22 +11,38 @@ const SIZE_CONFIG = {
     medium: { fontSize: 'text-sm', initialsFontSize: 'text-[11px]', initialsSize: 'h-[26px] w-[26px]' },
     small: { fontSize: 'text-xs', initialsFontSize: 'text-[10px]', initialsSize: 'h-5 w-5' }
 }
+
 /**
  * Inline label that asynchronously resolves and displays a user's name by ID.
- * Optionally shows a colored initials badge or user icon, with loading/error states.
+ * Optionally shows a colored initials badge or user icon, with loading/error
+ * states. Set `interactive` to add a subtle hover lift so the label reads as a
+ * clickable pill when wrapped in a button / link.
+ *
  * @param {Object} props
  * @param {string} props.userId - database user ID to resolve.
  * @param {boolean} [props.showInitials=false] - Show a circular initials badge.
  * @param {boolean} [props.showIcon=false] - Show a generic user icon instead of initials.
  * @param {'small'|'medium'|'large'} [props.size='medium'] - Controls font and badge sizing.
+ * @param {string} [props.secondary] - Optional secondary text (role/title) rendered below the name.
+ * @param {boolean} [props.interactive=false] - When true, applies hover styling for clickable contexts.
+ * @param {string} [props.className] - Extra classes appended to the root span.
  */
-function UserLabel({ userId, showInitials = false, showIcon = false, size = 'medium' }) {
+function UserLabel({
+    userId,
+    showInitials = false,
+    showIcon = false,
+    size = 'medium',
+    secondary,
+    interactive = false,
+    className = ''
+}) {
     const [userName, setUserName] = useState('')
     const [initials, setInitials] = useState('')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
     const accentColor = useAccentColor()
     const sizeStyles = SIZE_CONFIG[size] || SIZE_CONFIG.medium
+
     useEffect(() => {
         let mounted = true
         async function fetchUserData() {
@@ -58,14 +74,21 @@ function UserLabel({ userId, showInitials = false, showIcon = false, size = 'med
             mounted = false
         }
     }, [userId])
-    const baseClass = `inline-flex items-center gap-2 text-gray-700 ${sizeStyles.fontSize}`
-    const initialsBaseClass = `inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${sizeStyles.initialsFontSize} ${sizeStyles.initialsSize}`
+
+    const hoverClass = interactive
+        ? 'transition-colors duration-150 hover:text-text-primary rounded-md px-1 -mx-1 hover:bg-bg-hover'
+        : ''
+    const baseClass = `inline-flex items-center gap-2 text-text-primary ${sizeStyles.fontSize} ${hoverClass} ${className}`
+    const initialsBaseClass = `inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white shadow-sm ${sizeStyles.initialsFontSize} ${sizeStyles.initialsSize}`
+
     if (isLoading) {
         return (
-            <span className={baseClass}>
-                {showIcon && <i className="fas fa-user text-slate-500" />}
-                {showInitials && <span className={`${initialsBaseClass} bg-slate-100 text-slate-400`}>?</span>}
-                <span className="h-3.5 w-20 rounded bg-gray-200" />
+            <span className={baseClass} aria-busy="true">
+                {showIcon && <i className="fas fa-user text-text-tertiary" aria-hidden="true" />}
+                {showInitials && (
+                    <span className={`${initialsBaseClass} bg-bg-tertiary text-text-tertiary shadow-none`}>?</span>
+                )}
+                <span className="h-3.5 w-20 animate-pulse rounded bg-bg-tertiary" />
             </span>
         )
     }
@@ -73,25 +96,31 @@ function UserLabel({ userId, showInitials = false, showIcon = false, size = 'med
         return (
             <span className={baseClass} title={`Error: ${error}`}>
                 {showIcon ? (
-                    <i className="fas fa-exclamation-triangle text-text-primary" />
+                    <i className="fas fa-exclamation-triangle text-status-danger" aria-hidden="true" />
                 ) : showInitials ? (
-                    <span className={`${initialsBaseClass} bg-red-50 text-text-primary`}>!</span>
+                    <span className={`${initialsBaseClass} bg-status-danger`}>!</span>
                 ) : null}
-                <span className="font-medium text-gray-700">Unknown User</span>
+                <span className="font-medium text-text-secondary">Unknown User</span>
             </span>
         )
     }
     return (
         <span className={baseClass} data-testid={`user-label-${userId}`}>
             {showIcon ? (
-                <i className="fas fa-user text-slate-500" />
+                <i className="fas fa-user text-text-tertiary" aria-hidden="true" />
             ) : showInitials ? (
                 <span className={initialsBaseClass} style={{ backgroundColor: accentColor }}>
                     {initials}
                 </span>
             ) : null}
-            <span className="font-medium text-gray-700">{userName}</span>
+            <span className="flex min-w-0 flex-col">
+                <span className="truncate font-medium text-text-primary">{userName}</span>
+                {secondary && (
+                    <span className="truncate text-xs font-normal text-text-secondary">{secondary}</span>
+                )}
+            </span>
         </span>
     )
 }
+
 export default UserLabel

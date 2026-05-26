@@ -95,8 +95,8 @@ function BasicInfoSection({
                                 disabled={!canEditOperator}
                                 className="sr-only peer"
                             />
-                            <div className="w-11 h-6 bg-slate-200 rounded-full peer-checked:bg-accent transition-colors"></div>
-                            <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+                            <div className="h-6 w-11 rounded-full border border-border-light bg-bg-tertiary transition-colors duration-200 peer-checked:border-accent peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-bg-primary" />
+                            <div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-5 motion-reduce:transition-none" />
                         </div>
                         <span className="text-sm font-medium text-text-primary">Automatic Only (CDL)</span>
                     </label>

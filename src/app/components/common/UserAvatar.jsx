@@ -36,6 +36,8 @@ const SIZE_PRESETS = {
  * a preset key or a number of pixels. `rounded` selects between full
  * circle (`full`, default) and a rounded square (`md`/`lg`) for the
  * header / notification slots that traditionally used a soft square.
+ * Pass `ring` for a 2 px halo of `--bg-primary` so an online overlay or
+ * presence chip reads clearly when stacked on a coloured surface.
  */
 function UserAvatar({
     accentColor,
@@ -43,6 +45,7 @@ function UserAvatar({
     className = '',
     initials: initialsProp,
     name,
+    ring = false,
     rounded = 'full',
     size = 'md',
     style: styleOverride,
@@ -57,9 +60,10 @@ function UserAvatar({
     const fontSize = preset ? preset.fontSize : Math.max(9, Math.round(diameter * 0.4))
     const letters = (initialsProp ?? UserUtility.getInitials(name || '')) || ''
     const radiusClass = rounded === 'full' ? 'rounded-full' : rounded === 'lg' ? 'rounded-lg' : 'rounded-md'
+    const ringClass = ring ? 'ring-2 ring-bg-primary' : ''
     return (
         <span
-            className={`relative inline-flex shrink-0 items-center justify-center font-bold text-white ${radiusClass} ${className}`}
+            className={`relative inline-flex shrink-0 select-none items-center justify-center font-semibold text-white shadow-sm animate-fade-in-fast motion-reduce:animate-none ${radiusClass} ${ringClass} ${className}`}
             style={{
                 background: finalAccent,
                 fontSize: `${fontSize}px`,
@@ -71,7 +75,7 @@ function UserAvatar({
             title={title}
             {...rest}
         >
-            {letters || <i className="fas fa-user" />}
+            {letters || <i className="fas fa-user" aria-hidden="true" />}
             {children}
         </span>
     )

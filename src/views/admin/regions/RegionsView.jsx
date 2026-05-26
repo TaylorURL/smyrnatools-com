@@ -12,13 +12,15 @@ const getRegionCode = (region) => region?.region_code || region?.regionCode || '
 const getRegionName = (region) => region?.region_name || region?.regionName || ''
 const getRegionType = (region) => region?.type || region?.region_type || ''
 
-/** Color + icon per region type — used in pills and grid card headers. */
+/** Color + icon per region type — used in pills and grid card headers.
+ *  Backgrounds use `bg-status-*`-with-alpha so the chips read in all three
+ *  themes without hardcoded palette swaps. */
 const REGION_TYPE_META = {
-    Aggregate: { badge: 'bg-amber-100 text-text-primary', icon: 'fa-mountain' },
-    Concrete: { badge: 'bg-blue-100 text-text-primary', icon: 'fa-industry' },
-    Office: { badge: 'bg-purple-100 text-text-primary', icon: 'fa-building' }
+    Aggregate: { badge: 'bg-status-warning/15 text-status-warning', icon: 'fa-mountain' },
+    Concrete: { badge: 'bg-accent/10 text-accent', icon: 'fa-industry' },
+    Office: { badge: 'bg-status-active/15 text-status-active', icon: 'fa-building' }
 }
-const DEFAULT_TYPE_META = { badge: 'bg-slate-100 text-text-primary', icon: 'fa-map-marker-alt' }
+const DEFAULT_TYPE_META = { badge: 'bg-bg-tertiary text-text-secondary', icon: 'fa-map-marker-alt' }
 
 /** Slim filter select — matches the FilterSelect atom inside TopSection so admin
  *  views read with the same rhythm as Mixers / Operators / AssetView. The
@@ -40,28 +42,41 @@ function RegionGridCard({ region, onSelect }) {
     const code = getRegionCode(region)
     const name = getRegionName(region)
     return (
-        <div
-            className="flex flex-col overflow-hidden rounded border border-border-light bg-bg-primary shadow-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+        <button
+            type="button"
+            className="group flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary text-left shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-border-medium hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:translate-y-0 motion-reduce:transition-none motion-reduce:transform-none"
             onClick={() => onSelect(code)}
+            aria-label={`Open region ${code}${name ? ` — ${name}` : ''}`}
         >
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-                <div className="w-10 h-10 rounded flex items-center justify-center text-white text-lg flex-shrink-0 bg-accent">
-                    <i className={`fas ${meta.icon}`} />
+            <div className="flex items-center gap-3 border-b border-border-light px-5 py-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10 text-base text-accent transition-colors duration-200 group-hover:bg-accent group-hover:text-white">
+                    <i className={`fas ${meta.icon}`} aria-hidden="true" />
                 </div>
-                <div className="flex-1 min-w-0">
-                    <div className="text-lg font-extrabold tracking-tight truncate text-text-primary">#{code}</div>
-                    <div className="text-[11px] font-medium text-text-secondary truncate">Region</div>
+                <div className="min-w-0 flex-1">
+                    <div className="truncate font-heading text-lg font-bold tracking-tight text-text-primary">
+                        #{code}
+                    </div>
+                    <div className="truncate text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
+                        Region
+                    </div>
                 </div>
-                <span className={`inline-block rounded text-[11px] font-bold px-3 py-1.5 flex-shrink-0 ${meta.badge}`}>
+                <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${meta.badge}`}
+                >
+                    <i className={`fas ${meta.icon} text-[10px]`} aria-hidden="true" />
                     {type || 'N/A'}
                 </span>
             </div>
 
             <div className="px-5 py-3">
-                <span className="text-[10px] font-medium uppercase tracking-wide text-text-secondary block">Name</span>
-                <span className="text-[13px] font-semibold text-text-primary truncate block">{name || '—'}</span>
+                <span className="block text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                    Name
+                </span>
+                <span className="mt-0.5 block truncate text-[13px] font-semibold text-text-primary">
+                    {name || '—'}
+                </span>
             </div>
-        </div>
+        </button>
     )
 }
 
@@ -162,7 +177,7 @@ function RegionsView({ title = 'Regions' }) {
     }
     if (selectedRegion) {
         return (
-            <div className="min-h-screen bg-slate-50">
+            <div className="min-h-screen bg-bg-secondary">
                 <RegionsDetailView
                     region={selectedRegion}
                     onClose={() => setSelectedRegion(null)}
@@ -173,7 +188,7 @@ function RegionsView({ title = 'Regions' }) {
         )
     }
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-bg-secondary">
             <TopSection
                 title={title}
                 badge={badge}
@@ -208,28 +223,35 @@ function RegionsView({ title = 'Regions' }) {
                         ))}
                     </div>
                 ) : (
-                    <div className="bg-white border border-border-light rounded overflow-hidden">
+                    <div className="overflow-hidden rounded-card border border-border-light bg-bg-primary">
                         <table className="w-full">
-                            <tbody className="divide-y divide-slate-100">
-                                {filteredRegions.map((region, index) => {
+                            <tbody className="divide-y divide-border-light">
+                                {filteredRegions.map((region) => {
                                     const type = getRegionType(region)
                                     const meta = REGION_TYPE_META[type] || DEFAULT_TYPE_META
                                     const code = getRegionCode(region)
                                     return (
                                         <tr
                                             key={code}
-                                            className={`cursor-pointer hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
+                                            className="cursor-pointer bg-bg-primary transition-colors duration-150 hover:bg-bg-hover focus-within:bg-bg-hover"
                                             onClick={() => handleSelectRegion(code)}
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault()
+                                                    handleSelectRegion(code)
+                                                }
+                                            }}
                                         >
                                             <td className="px-5 py-4 text-sm font-bold text-accent">{code}</td>
-                                            <td className="px-5 py-4 text-sm font-medium text-slate-800">
+                                            <td className="px-5 py-4 text-sm font-medium text-text-primary">
                                                 {getRegionName(region)}
                                             </td>
                                             <td className="px-5 py-4">
                                                 <span
-                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${meta.badge}`}
+                                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${meta.badge}`}
                                                 >
-                                                    <i className={`fas ${meta.icon} text-[10px]`} />
+                                                    <i className={`fas ${meta.icon} text-[10px]`} aria-hidden="true" />
                                                     {type || 'N/A'}
                                                 </span>
                                             </td>
@@ -255,11 +277,11 @@ function RegionsLoadingState({ viewMode }) {
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
                 <SkeletonStack count={6} gapClassName="hidden">
                     {() => (
-                        <div className="rounded border border-border-light bg-white p-5">
-                            <div className="flex items-center gap-3 mb-4">
-                                <Skeleton className="w-10 h-10" rounded="rounded" />
+                        <div className="rounded-card border border-border-light bg-bg-primary p-5">
+                            <div className="mb-4 flex items-center gap-3">
+                                <Skeleton className="h-10 w-10" rounded="rounded-md" />
                                 <div className="flex-1">
-                                    <Skeleton className="h-4 w-20 mb-1.5" />
+                                    <Skeleton className="mb-1.5 h-4 w-20" />
                                     <Skeleton className="h-3 w-16" />
                                 </div>
                                 <Skeleton className="h-6 w-20" rounded="rounded-full" />
@@ -272,10 +294,10 @@ function RegionsLoadingState({ viewMode }) {
         )
     }
     return (
-        <div className="bg-white border border-border-light rounded overflow-hidden">
+        <div className="overflow-hidden rounded-card border border-border-light bg-bg-primary">
             <SkeletonStack count={6} gapClassName="gap-0">
                 {() => (
-                    <div className="flex items-center gap-4 px-5 py-4 border-b border-slate-100 last:border-b-0">
+                    <div className="flex items-center gap-4 border-b border-border-light px-5 py-4 last:border-b-0">
                         <Skeleton className="h-4 w-[25%]" />
                         <Skeleton className="h-4 w-[50%]" />
                         <Skeleton className="h-5 w-20" rounded="rounded-full" />
@@ -289,16 +311,17 @@ function RegionsLoadingState({ viewMode }) {
 /** Empty / no-results placeholder. */
 function RegionsEmptyState({ hasSearch, onAddClick }) {
     return (
-        <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-border-light rounded">
-            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
-                <i className="fas fa-map-marker-alt text-3xl text-slate-400" />
+        <div className="flex flex-col items-center justify-center rounded-card border border-border-light bg-bg-primary px-6 py-16 text-center animate-fade-in motion-reduce:animate-none">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-accent/10 text-accent">
+                <i className="fas fa-map-marker-alt text-3xl" aria-hidden="true" />
             </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">No Regions Found</h3>
-            <p className="text-slate-500 mb-6 max-w-md">
+            <h3 className="mb-2 font-heading text-xl font-semibold text-text-primary">No Regions Found</h3>
+            <p className="mb-6 max-w-md text-sm text-text-secondary">
                 {hasSearch ? 'No regions match your search criteria.' : 'There are no regions in the system yet.'}
             </p>
             <button
-                className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors"
+                type="button"
+                className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-accent-hover hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.98] motion-reduce:transition-none motion-reduce:transform-none"
                 onClick={onAddClick}
             >
                 Add Region
