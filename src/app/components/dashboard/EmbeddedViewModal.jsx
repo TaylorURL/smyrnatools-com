@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import EquipmentsView from '../../../views/assets/equipment/EquipmentsView'
 import MixersView from '../../../views/assets/mixers/MixersView'
@@ -31,33 +31,55 @@ export default function EmbeddedViewModal({
     accentColor,
     onClose
 }) {
+    /* Close on Escape — matches the keyboard model users expect from a
+     * modal layer. */
+    useEffect(() => {
+        if (!embeddedView) return
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') onClose?.()
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [embeddedView, onClose])
+
     const config = VIEW_CONFIG[embeddedView]
     if (!config) return null
     const ViewComponent = config.component
     return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 md:p-4">
-            <div className="relative w-full max-w-full md:max-w-6xl h-[95vh] md:h-[85vh] bg-white rounded-xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+        <div
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 md:p-4 animate-fade-in-fast"
+            role="dialog"
+            aria-modal="true"
+            aria-label={config.title}
+            onClick={(event) => {
+                if (event.target === event.currentTarget) onClose?.()
+            }}
+        >
+            <div className="relative w-full max-w-full md:max-w-6xl h-[95vh] md:h-[85vh] bg-bg-primary border border-border-light rounded-modal shadow-modal overflow-hidden flex flex-col animate-pop-in">
                 <div
                     className="flex items-center justify-between px-3 py-2.5 md:px-5 md:py-3 text-white flex-shrink-0"
                     style={{ backgroundColor: accentColor }}
                 >
-                    <div className="flex items-center gap-2 md:gap-3">
-                        <i className={`fas ${config.icon} text-base md:text-lg`} />
-                        <span className="font-semibold text-base md:text-lg">{config.title}</span>
+                    <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                        <i className={`fas ${config.icon} text-base md:text-lg`} aria-hidden="true" />
+                        <span className="font-heading font-semibold text-base md:text-lg truncate">{config.title}</span>
                         {embeddedViewSearch && (
-                            <span className="px-2 py-0.5 bg-white/20 rounded text-sm">
+                            <span className="px-2 py-0.5 bg-white/20 rounded-md text-sm truncate">
                                 Searching: {embeddedViewSearch}
                             </span>
                         )}
                     </div>
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                        className="flex items-center justify-center w-9 h-9 rounded-md bg-white/10 transition-all duration-150 hover:bg-white/20 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                        aria-label="Close"
+                        title="Close"
                     >
-                        <i className="fas fa-times text-lg" />
+                        <i className="fas fa-times text-lg" aria-hidden="true" />
                     </button>
                 </div>
-                <div className="flex-1 overflow-auto">
+                <div className="flex-1 overflow-auto bg-bg-secondary">
                     <ViewComponent
                         embedded={true}
                         initialSearch={embeddedViewSearch}

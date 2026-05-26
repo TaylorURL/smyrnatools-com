@@ -1,5 +1,13 @@
 import React from 'react'
 
+const ACTION_BUTTON_CLASS =
+    'inline-flex items-center gap-1.5 rounded-md text-[12px] font-semibold px-2.5 h-[30px] cursor-pointer ' +
+    'bg-bg-secondary border border-border-light text-text-primary ' +
+    'transition-all duration-150 hover:bg-bg-hover hover:border-border-medium ' +
+    'active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ' +
+    'focus-visible:ring-offset-bg-primary'
+
 /**
  * Slim sticky dashboard header — mirrors `PlanHeader`'s flat aesthetic so
  * both surfaces feel like part of the same product. One-line title, an
@@ -17,13 +25,15 @@ export default function DashboardHeader({
     regionDisplayName
 }) {
     return (
-        <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b px-3 sm:px-4 py-2.5 bg-bg-primary border-border-light">
-            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0 text-text-primary">Dashboard</h1>
+        <div className="shrink-0 flex items-center flex-wrap gap-x-3 gap-y-2 border-b border-border-light bg-bg-primary px-3 sm:px-4 py-2.5 animate-fade-in-fast">
+            <h1 className="font-heading text-lg font-semibold tracking-tight m-0 shrink-0 text-text-primary">
+                Dashboard
+            </h1>
             {isLoading ? (
-                <div className="h-6 w-56 rounded animate-pulse bg-bg-tertiary" />
+                <div className="h-6 w-56 rounded-md animate-pulse bg-bg-tertiary" />
             ) : (
-                <span className="inline-flex items-center gap-2 rounded text-[12px] font-medium px-2.5 py-1 max-w-full bg-bg-secondary border border-border-light text-text-primary">
-                    <i className="fas fa-location-dot text-[10px] text-text-primary" />
+                <span className="inline-flex items-center gap-2 rounded-md text-[12px] font-medium px-2.5 py-1 max-w-full bg-bg-secondary border border-border-light text-text-primary transition-colors duration-150">
+                    <i className="fas fa-location-dot text-[10px] text-text-tertiary" aria-hidden="true" />
                     <span className="truncate">{regionDisplayName || 'Region'}</span>
                     {heroRegionSub && (
                         <span className="hidden sm:inline truncate text-text-tertiary">· {heroRegionSub}</span>
@@ -36,9 +46,10 @@ export default function DashboardHeader({
                     <button
                         type="button"
                         onClick={onPlantFilterClick}
-                        className="inline-flex items-center gap-1.5 rounded text-[12px] font-semibold px-2.5 h-[30px] cursor-pointer bg-bg-secondary border border-border-light text-text-primary"
+                        className={ACTION_BUTTON_CLASS}
+                        aria-label="Filter dashboard by plant"
                     >
-                        <i className="fas fa-filter text-[11px]" />
+                        <i className="fas fa-filter text-[11px]" aria-hidden="true" />
                         {!isMobile && <span>Filter</span>}
                     </button>
                 )}
@@ -47,10 +58,14 @@ export default function DashboardHeader({
                         type="button"
                         onClick={onRefresh}
                         disabled={refreshing}
-                        className="inline-flex items-center justify-center w-[30px] h-[30px] rounded cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-bg-secondary border border-border-light text-text-primary"
+                        className={`${ACTION_BUTTON_CLASS} justify-center w-[30px] px-0`}
+                        aria-label="Refresh dashboard data"
                         title="Refresh"
                     >
-                        <i className={`fas fa-arrows-rotate text-[11px] ${refreshing ? 'animate-spin' : ''}`} />
+                        <i
+                            className={`fas fa-arrows-rotate text-[11px] ${refreshing ? 'animate-spin motion-reduce:animate-none' : ''}`}
+                            aria-hidden="true"
+                        />
                     </button>
                 )}
             </div>

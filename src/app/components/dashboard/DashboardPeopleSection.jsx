@@ -6,10 +6,16 @@ import { Panel } from '../ui/Panel'
 /** Single label · count row in a two-column flat table. */
 function CountRow({ color, label, value }) {
     return (
-        <tr className="transition-colors hover:bg-bg-tertiary">
+        <tr className="transition-colors duration-150 hover:bg-bg-hover">
             <td className="px-3 py-2 text-[12.5px] border-b border-border-light text-text-primary">
                 <div className="flex items-center gap-2">
-                    {color && <span className="w-2 h-2 rounded-sm" style={{ background: color }} />}
+                    {color && (
+                        <span
+                            className="w-2 h-2 rounded-sm flex-shrink-0"
+                            style={{ background: color }}
+                            aria-hidden="true"
+                        />
+                    )}
                     <span>{label}</span>
                 </div>
             </td>
@@ -38,7 +44,7 @@ function TotalRow({ label, value }) {
 function SubHeader({ label, meta }) {
     return (
         <div className="flex items-baseline justify-between mb-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-text-secondary">{label}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">{label}</span>
             {meta && <span className="text-[11px] text-text-tertiary">{meta}</span>}
         </div>
     )

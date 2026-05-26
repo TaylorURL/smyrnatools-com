@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 const SKELETON_ROW_LABELS = [
@@ -14,6 +13,8 @@ const SKELETON_ROW_LABELS = [
     'Open issues'
 ]
 
+const ASIDE_CLASS = 'hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto w-60 max-h-screen'
+
 /**
  * Right-rail "at a glance" snapshot for the dashboard. Mirrors the Plan
  * tab's `PlanDashboardAtAGlance` so the user sees the same vertical
@@ -26,22 +27,16 @@ const SKELETON_ROW_LABELS = [
 export function DashboardAtAGlance({ alertCount, displayStats, loading = false, openIssues }) {
     if (loading) {
         return (
-            <aside
-                className="hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto w-60"
-                style={{ maxHeight: '100vh' }}
-            >
-                <div className="h-3 w-32 mb-2 rounded animate-pulse bg-bg-tertiary" />
+            <aside className={ASIDE_CLASS} aria-busy="true" aria-label="Loading dashboard snapshot">
+                <div className="h-3 w-32 mb-2 rounded-md animate-pulse motion-reduce:animate-none bg-bg-tertiary" />
                 <div className="flex flex-col">
-                    {SKELETON_ROW_LABELS.map((label, i) => (
+                    {SKELETON_ROW_LABELS.map((label) => (
                         <div
                             key={label}
                             className="flex items-baseline justify-between py-1.5 border-b border-border-light"
                         >
                             <span className="text-[12px] text-text-secondary">{label}</span>
-                            <span
-                                className="h-3 w-12 rounded animate-pulse bg-bg-tertiary"
-                                style={{ animationDelay: `${i * 40}ms` }}
-                            />
+                            <span className="h-3 w-12 rounded-md animate-pulse motion-reduce:animate-none bg-bg-tertiary" />
                         </div>
                     ))}
                 </div>
@@ -93,16 +88,15 @@ export function DashboardAtAGlance({ alertCount, displayStats, loading = false, 
     ]
 
     return (
-        <aside
-            className="hidden xl:block sticky top-0 self-start py-5 pl-4 overflow-y-auto w-60"
-            style={{ maxHeight: '100vh' }}
-        >
-            <div className="text-[12px] mb-1 text-text-tertiary">{dateLabel}</div>
+        <aside className={`${ASIDE_CLASS} animate-fade-in-up`} aria-label="Dashboard at-a-glance snapshot">
+            <div className="text-[12px] font-medium mb-1.5 text-text-tertiary uppercase tracking-wider">
+                {dateLabel}
+            </div>
             <div className="flex flex-col">
                 {rows.map((row) => (
                     <div
                         key={row.label}
-                        className="flex items-baseline justify-between py-1.5 border-b border-border-light"
+                        className="flex items-baseline justify-between py-1.5 px-1 -mx-1 rounded transition-colors duration-150 border-b border-border-light hover:bg-bg-hover"
                     >
                         <span className="text-[12px] text-text-secondary">{row.label}</span>
                         <span className="text-[13px] font-semibold font-mono tabular-nums text-text-primary">

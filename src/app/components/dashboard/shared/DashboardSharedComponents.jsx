@@ -7,7 +7,14 @@ export const getAssetViewType = (assetType) => {
     return viewMap[assetType] || 'equipment'
 }
 
-/** Skeleton pulse block — generic loading placeholder with configurable size. */
+/** Skeleton pulse block — generic loading placeholder. Honors
+ *  `prefers-reduced-motion` so the shimmer disables for users who opt
+ *  out of decorative motion. `style` stays available for callers that
+ *  need to set arbitrary width/height values. */
 export const Skeleton = ({ className = '', style }) => (
-    <div className={`bg-bg-tertiary rounded-lg animate-pulse ${className}`} style={style} />
+    <div
+        className={`bg-bg-tertiary rounded-md animate-pulse motion-reduce:animate-none ${className}`}
+        style={style}
+        aria-hidden="true"
+    />
 )
