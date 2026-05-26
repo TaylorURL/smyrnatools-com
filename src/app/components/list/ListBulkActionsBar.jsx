@@ -30,6 +30,7 @@ const setActionHover = (type, hovered) => (e) => {
 function BulkDropdownPanel({ children, isMobile, minWidth }) {
     return (
         <div
+            role="menu"
             className={`absolute bottom-full mb-2 z-50 rounded shadow-lg overflow-hidden animate-filter-fade ${
                 isMobile ? 'left-1/2 -translate-x-1/2 w-[min(220px,90vw)]' : 'left-0'
             } bg-bg-primary border border-border-light`}
@@ -100,12 +101,15 @@ export default function ListBulkActionsBar({
                 </button>
                 <div className={`relative ${isMobile ? 'flex-1 flex' : ''}`} ref={bulkStatusRef}>
                     <button
+                        type="button"
                         onClick={onToggleStatus}
                         className={actionButtonClass(isMobile)}
                         style={getBulkButtonStyle('neutral')}
                         onMouseEnter={setActionHover('neutral', true)}
                         onMouseLeave={setActionHover('neutral', false)}
                         aria-label="Status"
+                        aria-haspopup="menu"
+                        aria-expanded={bulkStatusOpen}
                     >
                         <i className={`fas fa-layer-group ${isMobile ? 'text-base' : ''}`} />
                         <span className={isMobile ? '' : 'flex items-center gap-2'}>
@@ -126,6 +130,8 @@ export default function ListBulkActionsBar({
                                 return (
                                     <button
                                         key={opt.value}
+                                        type="button"
+                                        role="menuitem"
                                         onClick={() => onBulkUpdateStatus(opt.value)}
                                         className={dropdownItemClass(isMobile)}
                                         onMouseEnter={setHoverBg('var(--bg-secondary)')}
@@ -146,12 +152,15 @@ export default function ListBulkActionsBar({
                 </div>
                 <div className={`relative ${isMobile ? 'flex-1 flex' : ''}`} ref={bulkPriorityRef}>
                     <button
+                        type="button"
                         onClick={onTogglePriority}
                         className={actionButtonClass(isMobile)}
                         style={getBulkButtonStyle('neutral')}
                         onMouseEnter={setActionHover('neutral', true)}
                         onMouseLeave={setActionHover('neutral', false)}
                         aria-label="Priority"
+                        aria-haspopup="menu"
+                        aria-expanded={bulkPriorityOpen}
                     >
                         <i className={`fas fa-flag ${isMobile ? 'text-base' : ''}`} />
                         <span className={isMobile ? '' : 'flex items-center gap-2'}>
@@ -172,6 +181,8 @@ export default function ListBulkActionsBar({
                                 return (
                                     <button
                                         key={opt.value}
+                                        type="button"
+                                        role="menuitem"
                                         onClick={() => onBulkUpdatePriority(opt.value)}
                                         className={dropdownItemClass(isMobile)}
                                         onMouseEnter={setHoverBg('var(--bg-secondary)')}

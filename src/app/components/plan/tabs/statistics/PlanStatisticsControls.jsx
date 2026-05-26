@@ -125,43 +125,51 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
         <div className="relative ml-auto shrink-0">
             <button
                 ref={triggerRef}
+                type="button"
                 onClick={() => setOpen((s) => !s)}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                 style={{
                     backgroundColor: selectedPlant ? `${accentColor}20` : 'var(--bg-tertiary)',
                     color: selectedPlant ? 'var(--text-primary)' : 'var(--text-secondary)'
                 }}
                 title="Filter every chart and table to a single plant"
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                aria-label="Filter every chart and table to a single plant"
             >
-                <i className="fas fa-industry text-[11px]" />
+                <i className="fas fa-industry text-[11px]" aria-hidden="true" />
                 <span>
                     {selectedPlant
                         ? `Plant · ${plantNameByCode?.[selectedPlant] ? `${selectedPlant}` : selectedPlant}`
                         : 'All plants'}
                 </span>
-                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
+                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} aria-hidden="true" />
             </button>
             {open &&
                 pos &&
                 createPortal(
                     <div
                         ref={menuRef}
+                        role="listbox"
                         className="fixed rounded-lg overflow-hidden shadow-lg z-50 min-w-[220px] max-h-[320px] overflow-y-auto bg-bg-primary border border-border-light origin-top-right animate-[fadeSlideIn_180ms_ease-out_both] motion-reduce:animate-none"
                         style={{ right: pos.right, top: pos.top }}
                     >
                         <button
+                            type="button"
+                            role="option"
+                            aria-selected={!selectedPlant}
                             onClick={() => {
                                 setSelectedPlant(null)
                                 setOpen(false)
                             }}
-                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                            className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover"
                             style={{
                                 backgroundColor: !selectedPlant ? `${accentColor}15` : 'transparent',
                                 color: 'var(--text-primary)'
                             }}
                         >
                             <span>All plants</span>
-                            {!selectedPlant && <i className="fas fa-check text-[10px]" />}
+                            {!selectedPlant && <i className="fas fa-check text-[10px]" aria-hidden="true" />}
                         </button>
                         {availablePlants.length === 0 ? (
                             <div className="px-3 py-2 text-[11px] text-text-tertiary">No plants in this range</div>
@@ -169,18 +177,23 @@ function PlantFilterMenu({ accentColor, availablePlants, plantNameByCode, select
                             availablePlants.map(({ code, label }) => (
                                 <button
                                     key={code}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={selectedPlant === code}
                                     onClick={() => {
                                         setSelectedPlant(code)
                                         setOpen(false)
                                     }}
-                                    className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                    className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover"
                                     style={{
                                         backgroundColor: selectedPlant === code ? `${accentColor}15` : 'transparent',
                                         color: 'var(--text-primary)'
                                     }}
                                 >
                                     <span className="truncate">{label}</span>
-                                    {selectedPlant === code && <i className="fas fa-check text-[10px]" />}
+                                    {selectedPlant === code && (
+                                        <i className="fas fa-check text-[10px]" aria-hidden="true" />
+                                    )}
                                 </button>
                             ))
                         )}
@@ -202,45 +215,53 @@ function ComparisonMenu({ accentColor, comparison, setComparison }) {
         <div className="relative shrink-0">
             <button
                 ref={triggerRef}
+                type="button"
                 onClick={() => setOpen((s) => !s)}
-                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                className="flex items-center gap-1.5 border-none rounded-lg cursor-pointer text-xs font-semibold px-3 py-2 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                 style={{
                     backgroundColor: comparison !== 'none' ? `${accentColor}20` : 'var(--bg-tertiary)',
                     color: comparison !== 'none' ? 'var(--text-primary)' : 'var(--text-secondary)'
                 }}
                 title="Compare against another period"
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                aria-label="Compare against another period"
             >
-                <i className="fas fa-code-compare text-[11px]" />
+                <i className="fas fa-code-compare text-[11px]" aria-hidden="true" />
                 <span>
                     {comparison === 'none'
                         ? 'Compare'
                         : `Compare · ${PLAN_STATS_COMPARISONS.find((c) => c.id === comparison)?.label}`}
                 </span>
-                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} />
+                <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px]`} aria-hidden="true" />
             </button>
             {open &&
                 pos &&
                 createPortal(
                     <div
                         ref={menuRef}
+                        role="listbox"
                         className="fixed rounded-lg overflow-hidden shadow-lg z-50 min-w-[160px] bg-bg-primary border border-border-light origin-top-right animate-[fadeSlideIn_180ms_ease-out_both] motion-reduce:animate-none"
                         style={{ right: pos.right, top: pos.top }}
                     >
                         {PLAN_STATS_COMPARISONS.map(({ id, label }) => (
                             <button
                                 key={id}
+                                type="button"
+                                role="option"
+                                aria-selected={comparison === id}
                                 onClick={() => {
                                     setComparison(id)
                                     setOpen(false)
                                 }}
-                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                className="w-full text-left text-xs font-semibold border-none cursor-pointer px-3 py-2 flex items-center justify-between active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:bg-bg-hover"
                                 style={{
                                     backgroundColor: comparison === id ? `${accentColor}15` : 'transparent',
                                     color: 'var(--text-primary)'
                                 }}
                             >
                                 <span>{label}</span>
-                                {comparison === id && <i className="fas fa-check text-[10px]" />}
+                                {comparison === id && <i className="fas fa-check text-[10px]" aria-hidden="true" />}
                             </button>
                         ))}
                     </div>,

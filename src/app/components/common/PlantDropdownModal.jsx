@@ -125,58 +125,68 @@ function PlantDropdownModal({
         <div
             className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-5"
             onClick={allowMultiple ? undefined : onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-label={allowMultiple ? 'Select plants' : 'Select plant'}
         >
             <div
-                className="flex max-h-[80vh] w-[90%] max-w-[400px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
+                className="flex max-h-[80vh] w-[90%] max-w-[400px] flex-col overflow-hidden rounded-2xl bg-bg-primary border border-border-light shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between rounded-t-2xl border-b border-gray-200 bg-slate-50 px-5 py-4">
+                <div className="flex items-center justify-between rounded-t-2xl border-b border-border-light bg-bg-secondary px-5 py-4">
                     <h2 className="m-0 text-lg font-semibold" style={{ color: accentColor }}>
                         {allowMultiple ? 'Select Plants' : 'Select Plant'}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-transparent text-base text-slate-500 hover:bg-slate-100"
+                        aria-label="Close"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-transparent text-base text-text-secondary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                     >
                         <i className="fas fa-times" />
                     </button>
                 </div>
-                <div className="relative border-b border-gray-200 px-4 py-3">
+                <div className="relative border-b border-border-light px-4 py-3">
                     <input
                         type="text"
                         placeholder={searchPlaceholder}
                         aria-label={searchPlaceholder}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full rounded-[10px] border border-gray-200 py-3 pl-10 pr-9 text-sm outline-none transition-colors duration-150 placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                        className="w-full rounded-[10px] border border-border-light bg-bg-secondary py-3 pl-10 pr-9 text-sm text-text-primary outline-none transition-colors duration-150 placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                     />
-                    <i className="fas fa-search absolute left-7 top-1/2 -translate-y-1/2 text-sm text-slate-400" />
+                    <i className="fas fa-search absolute left-7 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
                     {search && (
                         <button
                             type="button"
                             onClick={() => setSearch('')}
                             aria-label="Clear search"
-                            className="absolute right-6 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 transition-colors duration-150"
+                            className="absolute right-6 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         >
                             <i className="fas fa-times text-xs" />
                         </button>
                     )}
                 </div>
-                <div className="flex-1 overflow-y-auto bg-white p-2">
+                <div className="flex-1 overflow-y-auto bg-bg-primary p-2" role="listbox">
                     {showAllPlants && !allowMultiple && (
-                        <div
-                            className="mb-1 flex cursor-pointer items-center gap-3 rounded-[10px] px-4 py-3 text-sm text-gray-700 hover:bg-slate-100"
+                        <button
+                            type="button"
+                            role="option"
+                            aria-selected={false}
+                            className="mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left text-sm text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
                             onClick={() => {
                                 onSelect('All')
                                 onClose()
                             }}
                         >
                             All Plants
-                        </div>
+                        </button>
                     )}
                     {showMyPlants && !allowMultiple && (
-                        <div
-                            className="mb-1 flex cursor-pointer items-center gap-3 rounded-[10px] px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-100"
+                        <button
+                            type="button"
+                            role="option"
+                            aria-selected={false}
+                            className="mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left text-sm font-medium text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
                             onClick={() => {
                                 onSelect('MY_PLANTS')
                                 onClose()
@@ -184,12 +194,12 @@ function PlantDropdownModal({
                         >
                             <i className="fas fa-user-circle" style={{ color: accentColor }} />
                             My Plants
-                        </div>
+                        </button>
                     )}
                     {!allowMultiple && regionGroups && regionGroups.length > 0 && !search.trim() && (
                         <>
                             <div className="mx-4 my-1 border-t border-border-light" />
-                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
                                 Regions
                             </div>
                             {regionGroups.map((region) => {
@@ -205,7 +215,7 @@ function PlantDropdownModal({
                                 })
                                 return (
                                     <div key={region.code} className="mb-1">
-                                        <div className="flex items-center gap-1 rounded-[10px] hover:bg-slate-100">
+                                        <div className="flex items-center gap-1 rounded-[10px] hover:bg-bg-tertiary">
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -214,15 +224,19 @@ function PlantDropdownModal({
                                                         [region.code]: !prev[region.code]
                                                     }))
                                                 }
-                                                className="flex items-center justify-center w-8 h-8 ml-2 rounded border-none bg-transparent text-slate-500 cursor-pointer"
+                                                className="flex items-center justify-center w-8 h-8 ml-2 rounded border-none bg-transparent text-text-secondary cursor-pointer transition-colors duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                                 aria-label={isExpanded ? 'Collapse region' : 'Expand region'}
+                                                aria-expanded={isExpanded}
                                             >
                                                 <i
                                                     className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[11px]`}
                                                 />
                                             </button>
-                                            <div
-                                                className="flex flex-1 cursor-pointer items-center gap-3 rounded-[10px] px-2 py-3 text-sm font-medium text-gray-700"
+                                            <button
+                                                type="button"
+                                                role="option"
+                                                aria-selected={false}
+                                                className="flex flex-1 cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-2 py-3 text-left text-sm font-medium text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                                 onClick={() => {
                                                     onSelect(`REGION:${region.code}`)
                                                     onClose()
@@ -230,22 +244,25 @@ function PlantDropdownModal({
                                             >
                                                 <i className="fas fa-globe" style={{ color: accentColor }} />
                                                 <span className="flex-1">{region.name}</span>
-                                                <span className="text-xs text-slate-400">
+                                                <span className="text-xs text-text-tertiary">
                                                     {region.plantCodes?.length || 0}
                                                 </span>
-                                            </div>
+                                            </button>
                                         </div>
                                         {isExpanded && (
-                                            <div className="ml-6 mt-1 mb-2 border-l border-gray-200 pl-2">
+                                            <div className="ml-6 mt-1 mb-2 border-l border-border-light pl-2">
                                                 {districts.length > 0 && (
                                                     <>
-                                                        <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                                        <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-text-tertiary">
                                                             Districts
                                                         </div>
                                                         {districts.map((district) => (
-                                                            <div
+                                                            <button
                                                                 key={`${region.code}:${district.name}`}
-                                                                className="mb-0.5 flex cursor-pointer items-center gap-3 rounded-[8px] px-3 py-2 text-sm text-gray-700 hover:bg-slate-100"
+                                                                type="button"
+                                                                role="option"
+                                                                aria-selected={false}
+                                                                className="mb-0.5 flex w-full cursor-pointer items-center gap-3 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-sm text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
                                                                 onClick={() => {
                                                                     onSelect(`DISTRICT:${district.name}`)
                                                                     onClose()
@@ -256,24 +273,27 @@ function PlantDropdownModal({
                                                                     style={{ color: accentColor }}
                                                                 />
                                                                 <span className="flex-1">{district.name}</span>
-                                                                <span className="text-xs text-slate-400">
+                                                                <span className="text-xs text-text-tertiary">
                                                                     {district.plantCodes.length}
                                                                 </span>
-                                                            </div>
+                                                            </button>
                                                         ))}
                                                     </>
                                                 )}
                                                 {regionPlants.length > 0 && (
                                                     <>
-                                                        <div className="px-3 py-1 mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                                        <div className="px-3 py-1 mt-1 text-[9px] font-bold uppercase tracking-wider text-text-tertiary">
                                                             Plants
                                                         </div>
                                                         {regionPlants.map((plant) => {
                                                             const code = plant.plantCode || plant.plant_code
                                                             return (
-                                                                <div
+                                                                <button
                                                                     key={`${region.code}:${code}`}
-                                                                    className="flex cursor-pointer items-center gap-3 rounded-[8px] px-3 py-2 text-sm text-gray-700 hover:bg-slate-100"
+                                                                    type="button"
+                                                                    role="option"
+                                                                    aria-selected={false}
+                                                                    className="flex w-full cursor-pointer items-center gap-3 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-sm text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
                                                                     onClick={() => {
                                                                         onSelect(code)
                                                                         onClose()
@@ -282,7 +302,7 @@ function PlantDropdownModal({
                                                                     <span>
                                                                         ({code}) {plant.plantName || plant.plant_name}
                                                                     </span>
-                                                                </div>
+                                                                </button>
                                                             )
                                                         })}
                                                     </>
@@ -296,7 +316,7 @@ function PlantDropdownModal({
                         </>
                     )}
                     {!allowMultiple && regionGroups && regionGroups.length > 0 && search.trim() && (
-                        <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
                             Plants
                         </div>
                     )}
@@ -304,8 +324,11 @@ function PlantDropdownModal({
                         <>
                             <div className="mx-4 my-1 border-t border-border-light" />
                             {userDistrict && (
-                                <div
-                                    className="mb-1 flex cursor-pointer items-center gap-3 rounded-[10px] px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-100"
+                                <button
+                                    type="button"
+                                    role="option"
+                                    aria-selected={false}
+                                    className="mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left text-sm font-medium text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
                                     onClick={() => {
                                         onSelect(`DISTRICT:${userDistrict.name}`)
                                         onClose()
@@ -313,13 +336,18 @@ function PlantDropdownModal({
                                 >
                                     <i className="fas fa-user-circle" style={{ color: accentColor }} />
                                     <span className="flex-1">My District</span>
-                                    <span className="text-xs text-slate-400">{userDistrict.plantCodes.length}</span>
-                                </div>
+                                    <span className="text-xs text-text-tertiary">
+                                        {userDistrict.plantCodes.length}
+                                    </span>
+                                </button>
                             )}
                             {districtGroups.map((district) => (
-                                <div
+                                <button
                                     key={district.name}
-                                    className="mb-1 flex cursor-pointer items-center gap-3 rounded-[10px] px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-100"
+                                    type="button"
+                                    role="option"
+                                    aria-selected={false}
+                                    className="mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left text-sm font-medium text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
                                     onClick={() => {
                                         onSelect(`DISTRICT:${district.name}`)
                                         onClose()
@@ -327,15 +355,15 @@ function PlantDropdownModal({
                                 >
                                     <i className="fas fa-layer-group" style={{ color: accentColor }} />
                                     <span className="flex-1">{district.name}</span>
-                                    <span className="text-xs text-slate-400">{district.plantCodes.length}</span>
-                                </div>
+                                    <span className="text-xs text-text-tertiary">{district.plantCodes.length}</span>
+                                </button>
                             ))}
                             <div className="mx-4 my-1 border-t border-border-light" />
                         </>
                     )}
                     {allowMultiple && districtGroups.length > 0 && (
                         <>
-                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
                                 Districts — tap to toggle every plant
                             </div>
                             {districtGroups.map((district) => {
@@ -346,9 +374,13 @@ function PlantDropdownModal({
                                 const allSelected = inDistrict.length > 0 && selectedInDistrict === inDistrict.length
                                 const partial = selectedInDistrict > 0 && !allSelected
                                 return (
-                                    <div
+                                    <button
                                         key={district.name}
-                                        className={`mb-1 flex cursor-pointer items-center gap-3 rounded-[10px] px-4 py-2.5 text-sm transition-colors hover:bg-slate-100 ${allSelected ? 'bg-blue-50 font-semibold' : 'text-gray-700'}`}
+                                        type="button"
+                                        role="option"
+                                        aria-selected={allSelected}
+                                        className={`mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none px-4 py-2.5 text-left text-sm transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40 ${allSelected ? 'font-semibold text-text-primary' : 'bg-transparent text-text-primary'}`}
+                                        style={allSelected ? { background: `${accentColor}14` } : undefined}
                                         onClick={() => handleDistrictClickMulti(district)}
                                     >
                                         <input
@@ -360,17 +392,18 @@ function PlantDropdownModal({
                                             onChange={() => {}}
                                             className="h-[18px] w-[18px]"
                                             style={{ accentColor }}
+                                            tabIndex={-1}
                                         />
                                         <i className="fas fa-layer-group" style={{ color: accentColor }} />
                                         <span className="flex-1">{district.name}</span>
-                                        <span className="text-xs text-slate-400">
+                                        <span className="text-xs text-text-tertiary">
                                             {selectedInDistrict}/{inDistrict.length}
                                         </span>
-                                    </div>
+                                    </button>
                                 )
                             })}
                             <div className="mx-4 my-2 border-t border-border-light" />
-                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
                                 Plants
                             </div>
                         </>
@@ -386,9 +419,13 @@ function PlantDropdownModal({
                               const code = plant.plantCode || plant.plant_code
                               const isSelected = allowMultiple && localSelectedCodes.includes(code)
                               return (
-                                  <div
+                                  <button
                                       key={code}
-                                      className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-4 py-3 text-sm transition-colors hover:bg-slate-100 ${isSelected ? 'bg-blue-50 font-semibold' : 'text-gray-700'}`}
+                                      type="button"
+                                      role="option"
+                                      aria-selected={isSelected}
+                                      className={`flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none px-4 py-3 text-left text-sm transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40 ${isSelected ? 'font-semibold text-text-primary' : 'bg-transparent text-text-primary'}`}
+                                      style={isSelected ? { background: `${accentColor}14` } : undefined}
                                       onClick={() => handlePlantClick(code)}
                                   >
                                       {allowMultiple && (
@@ -398,17 +435,18 @@ function PlantDropdownModal({
                                               onChange={() => {}}
                                               className="h-[18px] w-[18px]"
                                               style={{ accentColor }}
+                                              tabIndex={-1}
                                           />
                                       )}
-                                      <span className="text-gray-700">
+                                      <span className="text-text-primary">
                                           ({code}) {plant.plantName || plant.plant_name}
                                       </span>
-                                  </div>
+                                  </button>
                               )
                           })}
                 </div>
                 {allowMultiple && (
-                    <div className="border-t border-gray-200 bg-slate-50 px-4 py-3 flex items-center gap-2">
+                    <div className="border-t border-border-light bg-bg-secondary px-4 py-3 flex items-center gap-2">
                         <button
                             type="button"
                             onClick={() => {
@@ -419,13 +457,13 @@ function PlantDropdownModal({
                                 setLocalSelectedCodes([])
                             }}
                             disabled={localSelectedCodes.length === 0}
-                            className="rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50"
+                            className="rounded-[10px] border border-border-light bg-bg-primary px-3 py-2 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         >
                             Clear
                         </button>
                         <button
                             onClick={onClose}
-                            className="flex-1 rounded-[10px] border-none px-5 py-3 text-sm font-semibold text-white"
+                            className="flex-1 rounded-[10px] border-none px-5 py-3 text-sm font-semibold text-white transition-[filter,transform] duration-150 hover:brightness-105 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary"
                             style={{ backgroundColor: accentColor }}
                         >
                             Done ({localSelectedCodes.length} selected)

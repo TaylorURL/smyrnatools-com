@@ -54,10 +54,11 @@ export default function ListFilterBar({
         <div className="flex items-center flex-wrap gap-2 bg-bg-secondary border border-border-light rounded-[10px] px-3.5 py-2.5">
             <div className="inline-flex items-center rounded-md border border-border-light overflow-hidden">
                 <button
+                    type="button"
                     onClick={() => onLayoutChange('list')}
                     className={`flex items-center text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer ${
-                        !isCards ? 'bg-gray-900 text-white' : 'bg-transparent text-gray-500'
-                    } active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none`}
+                        !isCards ? 'bg-text-primary text-bg-primary' : 'bg-transparent text-text-secondary'
+                    } active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`}
                     aria-label="List view"
                     aria-pressed={!isCards}
                 >
@@ -65,10 +66,11 @@ export default function ListFilterBar({
                     {isMobile ? '' : 'List'}
                 </button>
                 <button
+                    type="button"
                     onClick={() => onLayoutChange('cards')}
                     className={`flex items-center text-xs font-medium gap-1.5 px-2.5 py-1.5 cursor-pointer ${
-                        isCards ? 'bg-gray-900 text-white' : 'bg-transparent text-gray-500'
-                    } active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none`}
+                        isCards ? 'bg-text-primary text-bg-primary' : 'bg-transparent text-text-secondary'
+                    } active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`}
                     aria-label="Cards view"
                     aria-pressed={isCards}
                 >
@@ -81,12 +83,14 @@ export default function ListFilterBar({
                     {VIEW_MODES.map((mode) => (
                         <button
                             key={mode.id}
+                            type="button"
                             onClick={() => onViewModeChange(mode.id)}
+                            aria-pressed={viewMode === mode.id}
                             className={`flex items-center rounded-md text-xs font-medium gap-1.5 px-3 py-1.5 cursor-pointer ${
                                 viewMode === mode.id
-                                    ? 'bg-gray-900 text-white border-none'
-                                    : 'bg-transparent text-gray-500 border border-border-light'
-                            } active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none`}
+                                    ? 'bg-text-primary text-bg-primary border-none'
+                                    : 'bg-transparent text-text-secondary border border-border-light'
+                            } active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40`}
                         >
                             <i className={`fas ${mode.icon} text-[11px]`} />
                             {mode.label}
@@ -131,7 +135,11 @@ export default function ListFilterBar({
                         />
                     </button>
                     {statusDropdownOpen && (
-                        <div className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-filter-fade bg-bg-primary border border-border-light">
+                        <div
+                            role="listbox"
+                            aria-label="Status filter"
+                            className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[180px] animate-filter-fade bg-bg-primary border border-border-light"
+                        >
                             <div className="p-1.5">
                                 {STATUS_OPTIONS.map((opt) => {
                                     const key = Object.keys(STATUS_MAP).find((k) => STATUS_MAP[k] === opt)
@@ -140,6 +148,8 @@ export default function ListFilterBar({
                                         <button
                                             key={opt}
                                             type="button"
+                                            role="option"
+                                            aria-selected={false}
                                             onClick={() => onStatusFilterChange(opt)}
                                             className={dropdownItemClass}
                                         >
@@ -194,12 +204,18 @@ export default function ListFilterBar({
                         />
                     </button>
                     {roleDropdownOpen && (
-                        <div className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-filter-fade bg-bg-primary border border-border-light">
+                        <div
+                            role="listbox"
+                            aria-label="Role filter"
+                            className="absolute top-full left-0 mt-1.5 z-50 rounded shadow-lg overflow-hidden min-w-[170px] animate-filter-fade bg-bg-primary border border-border-light"
+                        >
                             <div className="p-1.5">
                                 {ROLE_OPTIONS.map((opt) => (
                                     <button
                                         key={opt}
                                         type="button"
+                                        role="option"
+                                        aria-selected={false}
                                         onClick={() => onRoleFilterChange(opt)}
                                         className={dropdownItemClass}
                                     >
@@ -218,7 +234,7 @@ export default function ListFilterBar({
             <div className={`flex items-center ${isMobile ? 'gap-2 ml-auto' : 'gap-3'}`}>
                 {summaryStats.overdue > 0 && (
                     <div
-                        className={`flex items-center animate-pulse bg-red-50 rounded-md text-red-600 font-semibold ${
+                        className={`flex items-center animate-pulse rounded-md font-semibold border border-[color:color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--danger)_12%,transparent)] text-[var(--danger)] ${
                             isMobile ? 'text-[10px] gap-1 px-1.5 py-1' : 'text-xs gap-1.5 px-2.5 py-1.5'
                         }`}
                     >
@@ -227,8 +243,9 @@ export default function ListFilterBar({
                         {isMobile ? '' : ' overdue'}
                     </div>
                 )}
-                <span className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
-                    <span className="text-gray-900 font-semibold">{summaryStats.total}</span> {isMobile ? '' : 'tasks'}
+                <span className={`text-text-tertiary ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+                    <span className="text-text-primary font-semibold">{summaryStats.total}</span>{' '}
+                    {isMobile ? '' : 'tasks'}
                 </span>
             </div>
         </div>
