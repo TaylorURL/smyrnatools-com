@@ -12,7 +12,7 @@ const STATUS_PILL_TINTS = {
 }
 
 const SEARCH_INPUT_CLASS =
-    'text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary'
+    'text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none'
 
 /** Plan-tab styled search input — flat single row, magnifier icon left, optional
  *  clear "x" right. Mirrors the chrome used in TopSection / ReportsToolbar. */
