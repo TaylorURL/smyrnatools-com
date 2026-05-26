@@ -31,6 +31,7 @@ const IOS_STEPS = [
         )
     }
 ]
+
 /** Step-by-step PWA install instructions for Android Chrome. */
 const ANDROID_STEPS = [
     {
@@ -56,7 +57,7 @@ const ANDROID_STEPS = [
         )
     }
 ]
-/** Desktop-targeted instructions for installing on an iPhone/iPad. */
+
 const DESKTOP_IOS_STEPS = [
     'Open **Safari** on your iPhone or iPad',
     'Navigate to **smyrnatools.com**',
@@ -64,7 +65,7 @@ const DESKTOP_IOS_STEPS = [
     'Select **Add to Home Screen**',
     'Tap **Add**'
 ]
-/** Desktop-targeted instructions for installing on Android. */
+
 const DESKTOP_ANDROID_STEPS = [
     'Open **Chrome** on your Android phone',
     'Navigate to **smyrnatools.com**',
@@ -72,6 +73,7 @@ const DESKTOP_ANDROID_STEPS = [
     'Select **Add to Home screen**',
     'Tap **Add**'
 ]
+
 /** Numbered circle badge used in mobile install step lists. */
 function StepNumber({ number, accentColor }) {
     return (
@@ -83,6 +85,7 @@ function StepNumber({ number, accentColor }) {
         </span>
     )
 }
+
 /** Compact numbered badge used in desktop tutorial step lists. */
 function SmallStepNumber({ number, accentColor }) {
     return (
@@ -94,29 +97,34 @@ function SmallStepNumber({ number, accentColor }) {
         </span>
     )
 }
+
 /** Converts **bold** markdown segments to <strong> elements. */
 function renderBold(text) {
     return text.split(/\*\*(.+?)\*\*/).map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part))
 }
+
 /** Shared button group for install prompt actions (primary, remind later, dismiss forever). */
 function ActionButtons({ onPrimary, primaryIcon, primaryLabel, onSecondary, onDismiss, accentColor }) {
     return (
         <div className="flex flex-col gap-3">
             <button
-                className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-6 py-3.5 text-[15px] font-semibold text-white"
+                type="button"
+                className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none px-6 py-3.5 text-[15px] font-semibold text-white cursor-pointer active:scale-[0.98] transition-[transform,filter] duration-150 ease-out motion-reduce:transition-none hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 style={{ backgroundColor: accentColor }}
                 onClick={onPrimary}
             >
-                <i className={`fas ${primaryIcon}`} /> {primaryLabel}
+                <i className={`fas ${primaryIcon}`} aria-hidden="true" /> {primaryLabel}
             </button>
             <button
-                className="flex w-full items-center justify-center gap-2.5 rounded-xl border-none bg-slate-100 px-6 py-3.5 text-[15px] font-medium text-gray-700"
+                type="button"
+                className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border-light bg-bg-secondary px-6 py-3.5 text-[15px] font-medium text-text-primary cursor-pointer active:scale-[0.98] transition-[transform,background-color] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 onClick={onSecondary}
             >
-                <i className="fas fa-clock" /> Remind Me Later
+                <i className="fas fa-clock" aria-hidden="true" /> Remind Me Later
             </button>
             <button
-                className="mt-1 border-none bg-transparent p-2 text-[13px] text-slate-400 hover:text-slate-600"
+                type="button"
+                className="mt-1 border-none bg-transparent p-2 text-[13px] text-text-tertiary cursor-pointer transition-colors duration-150 ease-out motion-reduce:transition-none hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary rounded"
                 onClick={onDismiss}
             >
                 Do Not Show This Again
@@ -124,6 +132,7 @@ function ActionButtons({ onPrimary, primaryIcon, primaryLabel, onSecondary, onDi
         </div>
     )
 }
+
 /** Mobile-specific install instructions panel with device-appropriate steps. */
 function MobileContent({ deviceType, accentColor, onInstalled, onRemindLater, onDismissForever }) {
     const steps = deviceType === 'ios' ? IOS_STEPS : deviceType === 'android' ? ANDROID_STEPS : []
@@ -131,25 +140,28 @@ function MobileContent({ deviceType, accentColor, onInstalled, onRemindLater, on
         <div className="px-8 pb-8 pt-10 text-center">
             <div
                 className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[20px] text-4xl"
-                style={{ backgroundColor: `${accentColor}12`, color: accentColor }}
+                style={{ backgroundColor: `${accentColor}14`, color: accentColor }}
             >
-                <i className="fas fa-mobile-alt" />
+                <i className="fas fa-mobile-alt" aria-hidden="true" />
             </div>
-            <h2 className="mb-3 text-2xl font-bold" style={{ color: accentColor }}>
+            <h2
+                className="mb-3 font-heading text-2xl font-bold tracking-tight"
+                style={{ color: accentColor }}
+            >
                 Install Smyrna Tools
             </h2>
-            <p className="mb-7 text-[15px] leading-relaxed text-slate-500">
-                Add Smyrna Tools to your home screen for quick access and a better experience!
+            <p className="mb-7 text-[15px] leading-relaxed text-text-secondary">
+                Add Smyrna Tools to your home screen for quick access and a better experience.
             </p>
             <div className="mb-7 text-left">
                 {steps.map((step, index) => (
                     <div
                         key={index}
-                        className={`flex items-start gap-3.5 py-3 ${index < steps.length - 1 ? 'border-b border-slate-100' : ''}`}
+                        className={`flex items-start gap-3.5 py-3 ${index < steps.length - 1 ? 'border-b border-border-light' : ''}`}
                     >
                         <StepNumber number={index + 1} accentColor={accentColor} />
-                        <span className="pt-1 text-sm leading-normal text-gray-700">
-                            {step.text} {step.icon && <i className={`fas ${step.icon}`} />}
+                        <span className="pt-1 text-sm leading-normal text-text-primary">
+                            {step.text} {step.icon && <i className={`fas ${step.icon}`} aria-hidden="true" />}
                         </span>
                     </div>
                 ))}
@@ -165,18 +177,19 @@ function MobileContent({ deviceType, accentColor, onInstalled, onRemindLater, on
         </div>
     )
 }
+
 /** Tutorial section card for a single platform (iOS or Android) shown on desktop. */
 function DesktopTutorialSection({ icon, title, steps, accentColor }) {
     return (
-        <div className="rounded-xl bg-slate-50 p-5 text-left">
+        <div className="rounded-xl border border-border-light bg-bg-secondary p-5 text-left">
             <div className="mb-4 flex items-center gap-3">
-                <i className={`${icon} text-2xl`} style={{ color: accentColor }} />
-                <h3 className="m-0 text-base font-semibold" style={{ color: accentColor }}>
+                <i className={`${icon} text-2xl`} style={{ color: accentColor }} aria-hidden="true" />
+                <h3 className="m-0 font-heading text-base font-semibold" style={{ color: accentColor }}>
                     {title}
                 </h3>
             </div>
             {steps.map((step, index) => (
-                <div key={index} className="flex items-center gap-2.5 py-2 text-[13px] text-gray-700">
+                <div key={index} className="flex items-center gap-2.5 py-2 text-[13px] text-text-primary">
                     <SmallStepNumber number={index + 1} accentColor={accentColor} />
                     <span>{renderBold(step)}</span>
                 </div>
@@ -184,21 +197,25 @@ function DesktopTutorialSection({ icon, title, steps, accentColor }) {
         </div>
     )
 }
+
 /** Desktop-specific content showing install tutorials for both iOS and Android. */
 function DesktopContent({ accentColor, onInstalled, onRemindLater, onDismissForever }) {
     return (
         <div className="px-8 pb-8 pt-10 text-center">
             <div
                 className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[20px] text-4xl"
-                style={{ backgroundColor: `${accentColor}12`, color: accentColor }}
+                style={{ backgroundColor: `${accentColor}14`, color: accentColor }}
             >
-                <i className="fas fa-mobile-screen-button" />
+                <i className="fas fa-mobile-screen-button" aria-hidden="true" />
             </div>
-            <h2 className="mb-3 text-2xl font-bold" style={{ color: accentColor }}>
+            <h2
+                className="mb-3 font-heading text-2xl font-bold tracking-tight"
+                style={{ color: accentColor }}
+            >
                 Install on Your Phone
             </h2>
-            <p className="mb-7 text-[15px] leading-relaxed text-slate-500">
-                Get the best experience by installing Smyrna Tools on your mobile device
+            <p className="mb-7 text-[15px] leading-relaxed text-text-secondary">
+                Get the best experience by installing Smyrna Tools on your mobile device.
             </p>
             <div className="mb-7 flex flex-col gap-5">
                 <DesktopTutorialSection
@@ -225,6 +242,7 @@ function DesktopContent({ accentColor, onInstalled, onRemindLater, onDismissFore
         </div>
     )
 }
+
 /**
  * Smart PWA install prompt modal that detects the user's device and shows
  * platform-appropriate installation instructions.
@@ -270,18 +288,22 @@ function AppInstallPromptModal() {
     const ContentComponent = deviceType === 'desktop' ? DesktopContent : MobileContent
     return (
         <div
-            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-5"
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-5 backdrop-blur-sm animate-fade-in motion-reduce:animate-none"
             onClick={handleRemindLater}
         >
             <div
-                className="relative max-h-[90vh] w-full max-w-[480px] overflow-auto rounded-[20px] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
+                className="relative max-h-[90vh] w-full max-w-[480px] overflow-auto rounded-modal border border-border-light bg-bg-primary shadow-modal animate-pop-in motion-reduce:animate-none"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
-                    className="absolute right-4 top-4 z-[1] flex h-9 w-9 items-center justify-center rounded-full border-none bg-slate-100 text-base text-slate-500 hover:bg-slate-200"
+                    type="button"
+                    aria-label="Close"
+                    className="absolute right-4 top-4 z-[1] flex h-9 w-9 items-center justify-center rounded-full border-none bg-bg-secondary text-base text-text-secondary cursor-pointer hover:bg-bg-hover hover:text-text-primary active:scale-[0.94] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                     onClick={handleRemindLater}
                 >
-                    <i className="fas fa-times" />
+                    <i className="fas fa-times" aria-hidden="true" />
                 </button>
                 <ContentComponent
                     deviceType={deviceType}
