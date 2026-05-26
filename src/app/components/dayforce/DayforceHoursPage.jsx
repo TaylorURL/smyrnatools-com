@@ -128,7 +128,7 @@ function PlantPressureTable({ focusedPlantCode, maxOtCost, onTogglePlant, plants
                             Pressure (rel. OT cost)
                         </th>
                         <th
-                            className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-right"
+                            className="text-[10.5px] font-semibold uppercase tracking-wider px-3 py-2 whitespace-nowrap border-b border-border-light bg-bg-tertiary text-text-tertiary text-right cursor-help"
                             title="Operators in OT / total operators at plant"
                         >
                             In OT

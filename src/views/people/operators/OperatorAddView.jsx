@@ -302,7 +302,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                             ))}
                                     </select>
                                     {operators.filter((op) => op.isTrainer).length === 0 && (
-                                        <span className="text-xs text-text-primary">No trainers available</span>
+                                        <span className="text-xs text-text-tertiary">No trainers available</span>
                                     )}
                                 </div>
                             </div>
@@ -322,7 +322,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                 />
                                 <span>Automatic Only</span>
                             </label>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-text-tertiary">
                                 Enable if the operator has a CDL restriction for automatic transmission only
                             </span>
                         </div>

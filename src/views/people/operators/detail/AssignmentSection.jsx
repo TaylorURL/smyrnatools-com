@@ -1,5 +1,5 @@
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
-import { SELECT_CLASS } from '../../../../app/constants/operatorDetailConstants'
+import { INPUT_CLASS, SELECT_CLASS } from '../../../../app/constants/operatorDetailConstants'
 
 /**
  * Assignment section: status / pending start date / assigned plant button
@@ -48,7 +48,7 @@ function AssignmentSection({
                             type="date"
                             value={pendingStartDate || ''}
                             onChange={(e) => setPendingStartDate(e.target.value)}
-                            className="w-full rounded border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                            className={`${INPUT_CLASS} [color-scheme:light] dark:[color-scheme:dark]`}
                             disabled={!canEditOperator}
                         />
                     </div>
@@ -56,7 +56,7 @@ function AssignmentSection({
                 <div className="flex flex-col gap-1.5">
                     <label>Assigned Plant</label>
                     <button
-                        className="w-full rounded border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary text-left outline-none transition-colors focus:border-accent"
+                        className={`${INPUT_CLASS} text-left ${canEditOperator ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                         onClick={() => setShowPlantModal(true)}
                         type="button"
                         disabled={!canEditOperator}

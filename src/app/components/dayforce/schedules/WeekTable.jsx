@@ -90,7 +90,7 @@ export function WeekTable({ accent, days, operatorRows, totalsByDay, weekTotal, 
                                         </span>
                                         {opYph != null && (
                                             <div
-                                                className="text-[10.5px] font-mono tabular-nums mt-0.5"
+                                                className="text-[10.5px] font-mono tabular-nums mt-0.5 cursor-help"
                                                 style={{ color: 'var(--text-secondary)' }}
                                                 title={`${fmtFloat(opYph, 1)} yards / hour across the week${isLowOpYph ? ` (below ${YPH_TARGET} target)` : ''}`}
                                             >

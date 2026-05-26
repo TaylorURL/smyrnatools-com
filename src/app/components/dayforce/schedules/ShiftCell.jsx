@@ -28,7 +28,7 @@ export function ShiftCell({ accent, shift, yardage }) {
     if (shift.isPto) {
         return (
             <div
-                className="flex flex-col items-start gap-0.5 px-2 py-1.5 h-full"
+                className="flex flex-col items-start gap-0.5 px-2 py-1.5 h-full cursor-help"
                 style={{ minHeight: 60 }}
                 title={`PTO — ${fmtHours(shift.ptoHours || shift.scheduledHours)}`}
             >
@@ -85,7 +85,7 @@ export function ShiftCell({ accent, shift, yardage }) {
         .filter(Boolean)
         .join('\n')
     return (
-        <div className="flex flex-col gap-0.5 px-2 py-1.5 h-full" style={{ minHeight: 60 }} title={tooltip}>
+        <div className="flex flex-col gap-0.5 px-2 py-1.5 h-full cursor-help" style={{ minHeight: 60 }} title={tooltip}>
             <div className="flex items-center gap-1.5">
                 <span className="font-mono tabular-nums font-semibold text-[13px]" style={{ color: hoursColor }}>
                     {fmtHours(shift.actualHours)}
