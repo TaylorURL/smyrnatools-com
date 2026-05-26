@@ -38,7 +38,7 @@ export default function ReplyBar({ accentColor, onSend, otherName }) {
                 }}
                 placeholder={`Message ${otherName}…`}
                 rows="1"
-                className="flex-1 px-3 py-1.5 rounded text-[12.5px] outline-none resize-none bg-bg-secondary border border-border-light text-text-primary"
+                className="flex-1 px-3 py-1.5 rounded text-[12.5px] outline-none resize-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150"
                 style={{ fontFamily: 'inherit', maxHeight: '100px' }}
                 onFocus={(e) => {
                     e.currentTarget.style.borderColor = accentColor

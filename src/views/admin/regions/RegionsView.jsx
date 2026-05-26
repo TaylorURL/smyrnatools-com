@@ -21,10 +21,17 @@ const REGION_TYPE_META = {
 const DEFAULT_TYPE_META = { badge: 'bg-slate-100 text-text-primary', icon: 'fa-map-marker-alt' }
 
 /** Slim filter select — matches the FilterSelect atom inside TopSection so admin
- *  views read with the same rhythm as Mixers / Operators / AssetView. */
+ *  views read with the same rhythm as Mixers / Operators / AssetView. The
+ *  inline chevron is an SVG data URI so the trigger renders the same in
+ *  dark / light / gray themes without depending on the browser's native
+ *  select arrow. */
 const FILTER_SELECT_CLS =
-    'text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 bg-bg-secondary border border-border-light text-text-primary'
-const FILTER_SELECT_STYLE = { minWidth: 130 }
+    'appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:0.65em_auto] text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 bg-bg-secondary border border-border-light text-text-primary hover:border-border-medium focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50'
+const FILTER_SELECT_STYLE = {
+    backgroundImage:
+        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><polyline points='2.5,4.5 6,8 9.5,4.5'/></svg>\")",
+    minWidth: 130
+}
 
 /** Grid card matching the asset-card visual rhythm — header (icon + code + type pill) + name row. */
 function RegionGridCard({ region, onSelect }) {

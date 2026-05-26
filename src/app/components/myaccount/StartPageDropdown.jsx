@@ -22,7 +22,9 @@ export default function StartPageDropdown({ accentColor, onChange, value }) {
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left outline-none transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-accent/30 active:scale-[0.97]"
                 style={FieldStyle}
             >
                 <span className="flex items-center gap-3">

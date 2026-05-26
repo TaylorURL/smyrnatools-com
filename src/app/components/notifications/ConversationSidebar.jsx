@@ -159,14 +159,28 @@ export default function ConversationSidebar({
         <aside className="shrink-0 flex flex-col w-full lg:w-[320px] min-h-0 bg-bg-primary border-r border-border-light">
             <div className="px-3 py-2 shrink-0 border-b border-border-light">
                 <div className="relative">
-                    <i className="fas fa-magnifying-glass absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary" />
+                    <i
+                        aria-hidden="true"
+                        className="fas fa-magnifying-glass pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary"
+                    />
                     <input
-                        type="text"
+                        type="search"
                         value={search}
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder="Search conversations…"
-                        className="w-full rounded text-[12px] pl-7 pr-2 py-1.5 outline-none bg-bg-secondary border border-border-light text-text-primary"
+                        aria-label="Search conversations"
+                        className="w-full rounded text-[12px] pl-7 pr-7 py-1.5 outline-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
                     />
+                    {search && (
+                        <button
+                            type="button"
+                            aria-label="Clear search"
+                            onClick={() => onSearchChange('')}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-text-tertiary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                        >
+                            <i className="fas fa-times text-[9px]" />
+                        </button>
+                    )}
                 </div>
             </div>
 

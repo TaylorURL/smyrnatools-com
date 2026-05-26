@@ -145,14 +145,31 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                 <div className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
                     Add a sibling plant
                 </div>
-                <input
-                    type="text"
-                    className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent disabled:opacity-60"
-                    placeholder="Filter plants by code or name…"
-                    value={filterText}
-                    onChange={(e) => setFilterText(e.target.value)}
-                    disabled={disabled}
-                />
+                <div className="relative">
+                    <i
+                        aria-hidden="true"
+                        className="fas fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary"
+                    />
+                    <input
+                        type="search"
+                        className="w-full rounded-xl border border-border-light bg-bg-secondary pl-9 pr-9 py-2.5 text-sm text-text-primary outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
+                        placeholder="Filter plants by code or name…"
+                        value={filterText}
+                        onChange={(e) => setFilterText(e.target.value)}
+                        disabled={disabled}
+                        aria-label="Filter sibling plant candidates"
+                    />
+                    {filterText && !disabled && (
+                        <button
+                            type="button"
+                            aria-label="Clear filter"
+                            onClick={() => setFilterText('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                        >
+                            <i className="fas fa-times text-[10px]" />
+                        </button>
+                    )}
+                </div>
                 <div className="rounded-xl border border-border-light bg-bg-secondary max-h-64 overflow-y-auto">
                     {addableCandidates.length === 0 ? (
                         <div className="px-4 py-6 text-center text-[12px] text-text-tertiary">
@@ -196,7 +213,7 @@ export default function PlantColocationEditor({ candidates = [], disabled = fals
                 <div className="flex flex-col sm:flex-row gap-2">
                     <input
                         type="text"
-                        className="flex-1 rounded-xl border border-border-light bg-bg-secondary px-4 py-2.5 text-sm font-mono tabular-nums text-text-primary outline-none transition-colors focus:border-accent disabled:opacity-60"
+                        className="flex-1 rounded-xl border border-border-light bg-bg-secondary px-4 py-2.5 text-sm font-mono tabular-nums text-text-primary outline-none transition-colors placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-60"
                         placeholder="e.g. 404"
                         value={customCodeInput}
                         onChange={(e) => {

@@ -65,7 +65,7 @@ export default function PasswordModal({
                             onChange={(e) => setCurrentPassword(e.target.value)}
                             placeholder="Enter current password"
                             required
-                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30"
                             style={FieldStyle}
                         />
                     </div>
@@ -79,7 +79,7 @@ export default function PasswordModal({
                             onChange={(e) => setNewPassword(e.target.value)}
                             placeholder="Enter new password"
                             required
-                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30"
                             style={FieldStyle}
                         />
                         <p className="mt-1.5 text-[11.5px] text-text-tertiary">Must be at least 8 characters</p>
@@ -94,7 +94,7 @@ export default function PasswordModal({
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="Confirm new password"
                             required
-                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none"
+                            className="w-full rounded-lg px-3 py-2.5 text-[14px] outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30"
                             style={FieldStyle}
                         />
                     </div>
