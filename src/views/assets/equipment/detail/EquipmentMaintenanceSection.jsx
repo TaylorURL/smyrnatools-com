@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
@@ -7,9 +6,9 @@ import DateUtility from '../../../../utils/DateUtility'
 import { RATING_LABELS } from './equipmentTypeOptions'
 
 /**
- * Star-rating input shared by cleanliness + condition. Inline style on the
- * filled icons preserves the original `var(--text-primary)` fill that the
- * design system applies only at runtime via the CSS variable.
+ * Star-rating input shared by cleanliness + condition.
+ * Lit stars use `!text-text-primary` to override the design system's default
+ * yellow accent (mixer-only) and match the equipment view's text-tone palette.
  */
 function StarRatingInput({ canEditEquipment, label, onChange, value }) {
     return (
@@ -23,16 +22,13 @@ function StarRatingInput({ canEditEquipment, label, onChange, value }) {
                             <button
                                 key={star}
                                 type="button"
-                                className={`star-button ${isLit ? 'active' : ''} ${!canEditEquipment ? 'disabled' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded`}
+                                className={`star-button ${isLit ? 'active' : ''} ${!canEditEquipment ? 'disabled' : ''} rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-transform duration-150 ease-out active:scale-[0.97] disabled:active:scale-100 motion-reduce:transition-none`}
                                 onClick={() => canEditEquipment && onChange(star === value ? 0 : star)}
                                 aria-label={`Rate ${star} of 5 stars`}
                                 aria-pressed={isLit}
                                 disabled={!canEditEquipment}
                             >
-                                <i
-                                    className={`fas fa-star ${isLit ? 'filled' : ''}`}
-                                    style={isLit ? { color: 'var(--text-primary)' } : {}}
-                                ></i>
+                                <i className={`fas fa-star ${isLit ? 'filled !text-text-primary' : ''}`} />
                             </button>
                         )
                     })}

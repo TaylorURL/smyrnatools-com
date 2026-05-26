@@ -57,32 +57,32 @@ function TractorCard({
             verificationTooltip={verificationTooltip}
         >
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Plant</div>
+                <div className="text-sm text-text-secondary">Plant</div>
                 <div className="text-sm font-medium">{plantName}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Status</div>
+                <div className="text-sm text-text-secondary">Status</div>
                 <div className="text-sm font-medium">{tractor.status || 'Unknown'}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Last Service</div>
+                <div className="text-sm text-text-secondary">Last Service</div>
                 <div className="text-sm font-medium">
                     {tractor.lastServiceDate ? new Date(tractor.lastServiceDate).toLocaleDateString() : 'Unknown'}
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Has Blower</div>
+                <div className="text-sm text-text-secondary">Has Blower</div>
                 <div className="text-sm font-medium">{tractor.hasBlower ? 'Yes' : 'No'}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Cleanliness</div>
+                <div className="text-sm text-text-secondary">Cleanliness</div>
                 <div className="text-sm font-medium">
                     {tractor.cleanlinessRating ? (
                         <div className="flex gap-0.5">
                             {[...Array(5)].map((_, i) => (
                                 <i
                                     key={i}
-                                    className={`fas fa-star ${i < tractor.cleanlinessRating ? 'text-text-primary' : 'text-gray-300'}`}
+                                    className={`fas fa-star ${i < tractor.cleanlinessRating ? 'text-text-primary' : 'text-border-light'}`}
                                     aria-hidden="true"
                                 ></i>
                             ))}
