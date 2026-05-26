@@ -38,6 +38,7 @@ export function PlanFlowPlantOverview({
     onSaturdayOverrideChange,
     outbound,
     production,
+    saturdayForecast = null,
     saturdayOverride = null,
     selected,
     yphByCode,
@@ -72,6 +73,7 @@ export function PlanFlowPlantOverview({
                     onChange={onSaturdayOverrideChange}
                     override={saturdayOverride}
                     rosterCount={rosterCount}
+                    saturdayForecast={saturdayForecast}
                 />
             ) : (
                 canEdit &&
@@ -260,10 +262,17 @@ function MissingOperatorsEditor({ baseCount, hasMissing, missingOperators, onCha
  * the dispatcher needs to pin the real number for the day. When set,
  * the override IS the working count (no separate missing subtraction);
  * clearing it falls back to floor(roster / 2).
+ *
+ * When a plant manager has submitted a forecast for this Saturday, we
+ * surface it as the input placeholder + a small hint row — but we
+ * deliberately do NOT auto-apply it as an override. Dispatch keeps
+ * explicit authority over the working count; the forecast is a smart
+ * suggestion, not a side-effect.
  */
-function SaturdayOverrideEditor({ halfFleetDefault, onChange, override, rosterCount }) {
+function SaturdayOverrideEditor({ halfFleetDefault, onChange, override, rosterCount, saturdayForecast = null }) {
     const max = rosterCount > 0 ? rosterCount : 50
     const hasOverride = override != null
+    const showForecastHint = saturdayForecast != null && !hasOverride
     const displaySeed = hasOverride ? String(override) : ''
     const [inputValue, setInputValue] = useState(displaySeed)
     useEffect(() => {
@@ -283,6 +292,7 @@ function SaturdayOverrideEditor({ halfFleetDefault, onChange, override, rosterCo
         if (inputValue === '') onChange(null)
     }
     const resolved = hasOverride ? override : halfFleetDefault
+    const placeholderValue = showForecastHint ? String(saturdayForecast) : String(halfFleetDefault)
     return (
         <div className="rounded-lg p-3 bg-bg-primary border border-border-light">
             <div className="flex items-center justify-between gap-2 mb-2">
@@ -310,13 +320,15 @@ function SaturdayOverrideEditor({ halfFleetDefault, onChange, override, rosterCo
                 min={0}
                 onBlur={handleBlur}
                 onChange={commit}
-                placeholder={String(halfFleetDefault)}
+                placeholder={placeholderValue}
                 value={inputValue}
             />
             <div className="text-[11px] mt-2 text-text-secondary">
                 {hasOverride
                     ? `Running ${resolved} active mixer${resolved === 1 ? '' : 's'} today (override of the ${halfFleetDefault}-mixer half-fleet default from a ${rosterCount}-mixer roster).`
-                    : `Default: ${halfFleetDefault} mixer${halfFleetDefault === 1 ? '' : 's'} (half the ${rosterCount}-mixer roster). Type the actual count to override.`}
+                    : showForecastHint
+                      ? `From manager forecast: ${saturdayForecast} mixer${saturdayForecast === 1 ? '' : 's'}. Type a different number to override.`
+                      : `Default: ${halfFleetDefault} mixer${halfFleetDefault === 1 ? '' : 's'} (half the ${rosterCount}-mixer roster). Type the actual count to override.`}
             </div>
         </div>
     )
