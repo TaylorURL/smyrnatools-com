@@ -7,7 +7,7 @@ export const SearchInput = ({ value, onChange, onClear, placeholder, className =
         <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-text-tertiary" />
         <input
             type="search"
-            className="w-full text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7 bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+            className="w-full text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7 bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
             placeholder={placeholder}
             value={value || ''}
             onChange={(e) => onChange?.(e.target.value)}

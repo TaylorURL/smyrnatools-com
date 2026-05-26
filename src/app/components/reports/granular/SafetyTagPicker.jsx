@@ -60,7 +60,7 @@ function SearchBar({ onChange, query }) {
                     placeholder="Search tags…"
                     value={query}
                     onChange={(e) => onChange(e.target.value)}
-                    className="flex-1 border-none bg-transparent text-[12.5px] outline-none text-text-primary placeholder:text-text-tertiary"
+                    className="flex-1 border-none bg-transparent text-[12.5px] outline-none text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
                 />
             </div>
         </div>
