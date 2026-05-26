@@ -8,21 +8,18 @@ import { usePreferences } from '../../../app/context/PreferencesContext'
 
 /* ── Shared atoms — all flat, Plan-tab aesthetic ────────────────────────── */
 
-/** Flat select with native chevron — no SVG-bg hack, matches the Plan tab. */
+/** Flat select with inline SVG chevron — `appearance-none` strips the
+ *  browser's native arrow so the dropdown affordance reads identically in
+ *  light / dark / gray themes. `currentColor` keeps the glyph in sync with
+ *  the select's text color. */
 const flatSelectClass =
-    'text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 transition-colors duration-150 hover:border-border-medium focus:outline-none focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary'
-const flatSelectStyle = {
-    background: 'var(--bg-secondary)',
-    border: '1px solid var(--border-light)',
-    color: 'var(--text-primary)'
-}
+    "appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:0.875rem_0.875rem] bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20fill=%22none%22%20viewBox=%220%200%2024%2024%22%20stroke=%22currentColor%22%3E%3Cpath%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20stroke-width=%222%22%20d=%22M19%209l-7%207-7-7%22/%3E%3C/svg%3E')] [color-scheme:light] dark:[color-scheme:dark] text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 bg-bg-secondary border border-border-light text-text-primary transition-colors duration-150 hover:border-border-medium focus:outline-none focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
 
 const FlatSelect = ({ value, onChange, options, ariaLabel, className = '' }) => (
     <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`${flatSelectClass} ${className}`}
-        style={flatSelectStyle}
         aria-label={ariaLabel}
     >
         {options.map((opt) => (

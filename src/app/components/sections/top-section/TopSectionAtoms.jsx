@@ -76,10 +76,13 @@ export const ViewToggle = ({ viewMode, onChange, accentColor }) => (
     </div>
 )
 
-/** Standard select — uses native browser chrome with var(--bg-secondary) styling. */
+/** Standard select — flat chrome with inline SVG chevron so the dropdown
+ *  affordance is consistent across the three themes after `appearance-none`
+ *  strips the browser's native arrow. `currentColor` keeps the glyph in
+ *  sync with the select's text color. */
 export const FilterSelect = ({ value, options, onChange, ariaLabel, className = '' }) => (
     <select
-        className={`text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 ${className} bg-bg-secondary border border-border-light text-text-primary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30`}
+        className={`appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:0.875rem_0.875rem] bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20fill=%22none%22%20viewBox=%220%200%2024%2024%22%20stroke=%22currentColor%22%3E%3Cpath%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20stroke-width=%222%22%20d=%22M19%209l-7%207-7-7%22/%3E%3C/svg%3E')] [color-scheme:light] dark:[color-scheme:dark] text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 ${className} bg-bg-secondary border border-border-light text-text-primary transition-colors duration-150 hover:border-border-medium focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-50 disabled:cursor-not-allowed`}
         style={{ minWidth: 130 }}
         value={value || ''}
         onChange={(e) => onChange?.(e.target.value)}
