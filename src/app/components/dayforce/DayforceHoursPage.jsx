@@ -18,10 +18,14 @@ const APPROACHING_OT_THRESHOLD = 35
 const UNDERUTILIZED_THRESHOLD = 30
 
 /* Status colors used across the page so OT-related surfaces (spotlights,
- * plant bars, day strip) read as one visual system. */
-const COLOR_DANGER = '#b91c1c'
-const COLOR_WARN = '#b45309'
-const COLOR_CALM = '#1d4ed8'
+ * plant bars, day strip) read as one visual system. These map onto the
+ * design system's status tokens — `var(--status-danger)` for overtime
+ * breaches, `var(--status-warning)` for "approaching" risk, `var(--accent)`
+ * for calm/baseline, and a saturated sky tone for PTO that holds across
+ * all three themes. */
+const COLOR_DANGER = 'var(--status-danger)'
+const COLOR_WARN = 'var(--status-warning)'
+const COLOR_CALM = 'var(--accent)'
 const COLOR_PTO = '#0ea5e9'
 
 const USD = new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 0, style: 'currency' })
@@ -40,11 +44,13 @@ const computeAvgWeeklyHours = (perOperator, perWeek) => {
     return operatorWeeks > 0 ? totalActual / operatorWeeks : 0
 }
 
+const SKELETON_HEIGHT_CLASSES = ['h-[120px]', 'h-[56px]', 'h-[180px]', 'h-[240px]', 'h-[320px]']
+
 function LoadingSkeleton() {
     return (
         <div className="flex flex-col gap-4 animate-pulse">
-            {[120, 56, 180, 240, 320].map((h, i) => (
-                <div key={i} className="rounded bg-bg-secondary border border-border-light" style={{ height: h }} />
+            {SKELETON_HEIGHT_CLASSES.map((h, i) => (
+                <div key={i} className={`rounded-card bg-bg-secondary border border-border-light ${h}`} />
             ))}
         </div>
     )
