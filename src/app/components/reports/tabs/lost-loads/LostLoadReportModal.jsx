@@ -128,7 +128,8 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary"
+                        aria-label="Close"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                         type="button"
                     >
                         <i className="fas fa-times text-sm" />

@@ -377,7 +377,8 @@ function LoginView() {
                                     <button
                                         type="button"
                                         onClick={togglePassword}
-                                        className="absolute right-0 bottom-3 bg-transparent border-none text-slate-400 cursor-pointer text-sm p-0"
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        className="absolute right-0 bottom-3 bg-transparent border-none text-slate-400 hover:text-slate-600 transition-colors duration-150 cursor-pointer text-sm p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 rounded"
                                     >
                                         <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
                                     </button>

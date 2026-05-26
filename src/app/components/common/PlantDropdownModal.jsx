@@ -136,7 +136,8 @@ function PlantDropdownModal({
                     </h2>
                     <button
                         onClick={onClose}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-transparent text-base text-slate-500 hover:bg-slate-100"
+                        aria-label="Close"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-transparent text-base text-slate-500 hover:bg-slate-100 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                     >
                         <i className="fas fa-times" />
                     </button>

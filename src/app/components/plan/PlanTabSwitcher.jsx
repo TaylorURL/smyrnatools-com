@@ -36,14 +36,20 @@ export function PlanTabSwitcher({ accentColor, canSeeSettings = false, isMobile 
         (t) => !t.requiresSettings || canSeeSettings
     )
     return (
-        <div className="flex items-center rounded-lg p-0.5 bg-bg-tertiary border border-border-light">
+        <div
+            role="tablist"
+            aria-label="Plan view"
+            className="flex items-center rounded-lg p-0.5 bg-bg-tertiary border border-border-light"
+        >
             {tabs.map(({ icon, label, mobileLabel, mode }) => {
                 const isActive = viewMode === mode
                 return (
                     <button
                         key={mode}
+                        role="tab"
+                        aria-selected={isActive}
                         onClick={() => onChange(mode)}
-                        className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{
                             backgroundColor: isActive ? accentColor : 'transparent',
                             color: isActive ? '#fff' : 'var(--text-secondary)'

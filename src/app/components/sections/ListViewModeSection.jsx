@@ -53,7 +53,8 @@ const RowIconButton = ({ icon, title, onClick }) => (
         type="button"
         onClick={onClick}
         title={title}
-        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent hover:brightness-90 transition-colors text-text-tertiary"
+        aria-label={title}
+        className="flex items-center justify-center w-5 h-5 rounded text-[11px] cursor-pointer border-none bg-transparent hover:brightness-90 transition-colors text-text-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
     >
         <i className={`fas ${icon}`} />
     </button>

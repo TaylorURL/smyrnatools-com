@@ -165,7 +165,10 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                     <button
                                         type="button"
                                         onClick={() => setDropdownOpen((prev) => !prev)}
-                                        className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-left cursor-pointer bg-bg-primary active:scale-[0.99] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                        aria-haspopup="listbox"
+                                        aria-expanded={dropdownOpen}
+                                        aria-label="Select recipient"
+                                        className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-left cursor-pointer bg-bg-primary active:scale-[0.99] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                                         style={{
                                             border: dropdownOpen
                                                 ? `1.5px solid ${accentColor}`
@@ -215,13 +218,13 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                 <div className="relative">
                                                     <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none text-text-secondary" />
                                                     <input
-                                                        type="text"
+                                                        type="search"
                                                         value={recipientSearch}
                                                         onChange={(e) => setRecipientSearch(e.target.value)}
                                                         placeholder="Search recipients..."
                                                         aria-label="Search recipients"
                                                         autoFocus
-                                                        className="w-full text-[13px] rounded-md py-1.5 pl-7 pr-7 outline-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                                                        className="w-full text-[13px] rounded-md py-1.5 pl-7 pr-7 outline-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none"
                                                         style={{ fontFamily: 'inherit' }}
                                                     />
                                                     {recipientSearch && (
@@ -237,7 +240,7 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                 </div>
                                             </div>
 
-                                            <div className="flex-1 overflow-y-auto">
+                                            <div role="listbox" aria-label="Recipients" className="flex-1 overflow-y-auto">
                                                 {filteredManagers.length === 0 ? (
                                                     <div className="text-center text-[13px] py-4 text-text-secondary">
                                                         {managers.length === 0 ? 'No team members found' : 'No matches'}
@@ -249,12 +252,14 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                             <button
                                                                 key={mgr.id}
                                                                 type="button"
+                                                                role="option"
+                                                                aria-selected={isSelected}
                                                                 onClick={() => {
                                                                     setSelectedManager(mgr)
                                                                     setDropdownOpen(false)
                                                                     setRecipientSearch('')
                                                                 }}
-                                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left border-none cursor-pointer active:scale-[0.99] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left border-none cursor-pointer active:scale-[0.99] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-inset"
                                                                 style={{
                                                                     background: isSelected
                                                                         ? `${accentColor}12`

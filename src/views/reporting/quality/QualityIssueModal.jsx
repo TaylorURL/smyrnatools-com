@@ -164,7 +164,8 @@ export default function QualityIssueModal({ issue, onClose, onDeleted, onSaved, 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6"
+                        aria-label="Close"
+                        className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6 hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                     >
                         <i className="fas fa-times text-[10px]" />
                     </button>
