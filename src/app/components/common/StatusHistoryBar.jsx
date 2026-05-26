@@ -3,23 +3,31 @@ import React, { memo, useEffect, useState } from 'react'
 
 import { Database } from '../../../services/DatabaseService'
 
-/** Color mapping for each known asset status value. */
-const STATUS_COLORS = {
-    Active: '#16a34a',
-    'Down In Yard': '#dc2626',
-    'In Shop': '#3b82f6',
-    'Light Duty': '#f59e0b',
-    'No Hire': '#b91c1c',
-    'Pending Start': '#3b82f6',
-    Retired: '#6b7280',
-    Sold: '#6b7280',
-    Spare: '#9333ea',
-    Stationary: '#4f46e5',
-    Terminated: '#dc2626',
-    'Third Party Work': '#7c3aed',
-    Training: '#6366f1',
-    'Waiting For Shop': '#f59e0b'
+/**
+ * Status → CSS variable token. Reads from the same `--status-*` palette
+ * the rest of the app uses, so the bar respects every theme automatically.
+ * Falls back to a neutral slate token for any unknown status value.
+ */
+const STATUS_COLOR_VAR = {
+    Active: 'var(--status-active)',
+    'Down In Yard': 'var(--status-danger)',
+    'In Shop': 'var(--status-shop)',
+    'Light Duty': 'var(--status-warning)',
+    'No Hire': 'var(--status-danger)',
+    'Pending Start': 'var(--status-shop)',
+    Retired: 'var(--text-tertiary)',
+    Sold: 'var(--text-tertiary)',
+    Spare: 'var(--status-spare)',
+    Stationary: 'var(--status-shop)',
+    Terminated: 'var(--status-danger)',
+    'Third Party Work': 'var(--status-spare)',
+    Training: 'var(--status-warning)',
+    'Waiting For Shop': 'var(--status-warning)'
 }
+
+const FALLBACK_STATUS_COLOR = 'var(--text-tertiary)'
+
+const resolveStatusColor = (status) => STATUS_COLOR_VAR[status] || FALLBACK_STATUS_COLOR
 /**
  * Animated horizontal bar that visualizes the percentage of time an asset
  * has spent in each status since creation.
@@ -159,7 +167,7 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
                             key={index}
                             className="h-full transition-[width] duration-[600ms] ease-out"
                             style={{
-                                background: STATUS_COLORS[item.status] || '#64748b',
+                                background: resolveStatusColor(item.status),
                                 minWidth: item.percentage > 0 ? '2px' : '0',
                                 opacity: animateIn ? 1 : 0,
                                 transition: 'width 0.6s ease-out, opacity 0.4s ease-out',
@@ -171,8 +179,8 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
                 ) : null}
             </div>
             {isHovered && !loading && statusPercentages && statusPercentages.length > 0 && (
-                <div className="absolute left-1/2 top-full z-[1000] min-w-[140px] -translate-x-1/2 rounded-lg border border-border-light bg-bg-primary p-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
-                    <div className="mb-1.5 text-[9px] font-semibold uppercase text-text-secondary">
+                <div className="absolute left-1/2 top-full z-[1000] min-w-[140px] -translate-x-1/2 mt-1 rounded-card border border-border-light bg-bg-secondary p-2.5 shadow-modal animate-fade-in-fast">
+                    <div className="mb-1.5 text-[9px] font-semibold uppercase tracking-wider text-text-tertiary">
                         {totalDays} days tracked
                     </div>
                     {statusPercentages.map((item, index) => (
@@ -182,7 +190,7 @@ const StatusHistoryBar = memo(function StatusHistoryBar({ itemId, itemType, curr
                         >
                             <div
                                 className="h-2 w-2 flex-shrink-0 rounded-sm"
-                                style={{ background: STATUS_COLORS[item.status] || '#64748b' }}
+                                style={{ background: resolveStatusColor(item.status) }}
                             />
                             <span className="flex-1 text-[11px] font-medium text-text-primary">{item.status}</span>
                             <span className="text-[10px] text-text-secondary">{item.percentage}%</span>

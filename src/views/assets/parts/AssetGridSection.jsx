@@ -28,8 +28,8 @@ export default function AssetGridSection({
     const delayDecrement = Math.max(0, (BASE_DELAY_MS - MIN_DELAY_MS) / Math.max(itemsToRender.length, 1))
 
     return (
-        <div className="overflow-auto" style={{ marginBottom: 24, maxHeight: 'calc(100vh - 250px)' }}>
-            <div className="grid gap-4 p-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+        <div className="mb-6 overflow-auto max-h-[calc(100vh-250px)]">
+            <div className="grid gap-4 p-4 grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
                 {itemsToRender.map((item, index) => {
                     const operator = operators?.find((op) => op.employeeId === item.assignedOperator)
                     const plant = plants?.find((p) => p.code === item.assignedPlant)

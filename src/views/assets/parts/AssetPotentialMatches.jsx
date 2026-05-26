@@ -9,8 +9,8 @@ import React from 'react'
 export default function AssetPotentialMatches({ children, count, hasFiltered }) {
     return (
         <>
-            <div className="flex items-center gap-3 px-4 py-3 mt-4 rounded-lg bg-bg-hover">
-                <i className="fas fa-filter text-xs text-text-secondary" />
+            <div className="mt-4 flex items-center gap-3 rounded-md bg-bg-hover px-4 py-3 animate-fade-in-fast">
+                <i className="fas fa-filter text-xs text-text-tertiary" />
                 <span className="text-sm font-semibold text-text-primary">
                     {hasFiltered ? 'Potential Matches' : 'Results Outside Current Filters'}
                 </span>
@@ -19,11 +19,13 @@ export default function AssetPotentialMatches({ children, count, hasFiltered }) 
                         ? '(hidden by active filters)'
                         : 'No exact filter matches — showing results that match your search'}
                 </span>
-                <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-bg-secondary text-text-secondary">
+                <span className="ml-auto inline-flex items-center rounded-full bg-bg-secondary px-2 py-0.5 text-xs font-bold tabular-nums text-text-secondary">
                     {count}
                 </span>
             </div>
-            <div className={hasFiltered ? 'opacity-60' : ''}>{children}</div>
+            <div className={hasFiltered ? 'opacity-60 transition-opacity duration-200 hover:opacity-100' : ''}>
+                {children}
+            </div>
         </>
     )
 }
