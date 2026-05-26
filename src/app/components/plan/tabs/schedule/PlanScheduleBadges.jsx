@@ -30,11 +30,10 @@ export function ServiceBadge({ service }) {
     if (service.status === 'good') {
         return (
             <span
-                className={SERVICE_BADGE_BASE}
-                style={{ background: 'rgba(22, 163, 74, 0.14)', color: 'var(--text-primary)' }}
+                className={`${SERVICE_BADGE_BASE} bg-status-active/10 text-text-primary`}
                 title="On-time start, on-pace pour"
             >
-                <i className="fas fa-circle-check text-[9px]" />
+                <i className="fas fa-circle-check text-[9px] text-status-active" aria-hidden="true" />
                 Good Experience
             </span>
         )
@@ -51,11 +50,10 @@ export function ServiceBadge({ service }) {
             service.isLate && service.isSlow ? 'Late, Bad Experience' : service.isLate ? 'Late' : 'Bad Experience'
         return (
             <span
-                className={SERVICE_BADGE_BASE}
-                style={{ background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' }}
+                className={`${SERVICE_BADGE_BASE} bg-status-danger/10 text-text-primary`}
                 title={issues.join(' · ') || 'Service flagged'}
             >
-                <i className="fas fa-circle-exclamation text-[9px]" />
+                <i className="fas fa-circle-exclamation text-[9px] text-status-danger" aria-hidden="true" />
                 {label}
             </span>
         )
@@ -66,18 +64,18 @@ export function ServiceBadge({ service }) {
                 ? `${service.ticketsLoaded}/${service.expectedTrucks}`
                 : `${service.ticketsLoaded ?? 0} loaded`
         const isLate = service.isLate
-        const bg = isLate ? 'rgba(217, 119, 6, 0.14)' : 'rgba(37, 99, 235, 0.12)'
+        const toneClass = isLate ? 'bg-status-warning/10' : 'bg-status-shop/10'
+        const iconClass = isLate ? 'text-status-warning' : 'text-status-shop'
         return (
             <span
-                className={SERVICE_BADGE_BASE}
-                style={{ background: bg, color: 'var(--text-primary)' }}
+                className={`${SERVICE_BADGE_BASE} ${toneClass} text-text-primary`}
                 title={
                     isLate
                         ? `Pour in progress · started ${service.startLateness} min late · ${counts} loaded`
                         : `Pour in progress · ${counts} loaded`
                 }
             >
-                <i className="fas fa-truck-fast text-[9px]" />
+                <i className={`fas fa-truck-fast text-[9px] ${iconClass}`} aria-hidden="true" />
                 Ongoing · {counts}
             </span>
         )
@@ -95,22 +93,20 @@ export function ServiceBadge({ service }) {
             const lateText = hoursLate > 0 ? `${hoursLate}h ${remainderMin}m` : `${remainderMin}m`
             return (
                 <span
-                    className={SERVICE_BADGE_BASE}
-                    style={{ background: 'rgba(220, 38, 38, 0.12)', color: 'var(--text-primary)' }}
+                    className={`${SERVICE_BADGE_BASE} bg-status-danger/10 text-text-primary`}
                     title={`Scheduled start was ${lateText} ago — no trucks loaded yet.`}
                 >
-                    <i className="fas fa-circle-exclamation text-[9px]" />
+                    <i className="fas fa-circle-exclamation text-[9px] text-status-danger" aria-hidden="true" />
                     Late · {lateText}
                 </span>
             )
         }
         return (
             <span
-                className={SERVICE_BADGE_BASE}
-                style={{ background: 'rgba(217, 119, 6, 0.12)', color: 'var(--text-primary)' }}
+                className={`${SERVICE_BADGE_BASE} bg-status-warning/10 text-text-primary`}
                 title="Past scheduled start with no tickets loaded yet"
             >
-                <i className="fas fa-hourglass-half text-[9px]" />
+                <i className="fas fa-hourglass-half text-[9px] text-status-warning" aria-hidden="true" />
                 Awaiting Truck
             </span>
         )
@@ -124,17 +120,20 @@ export function SatisfactionBadge({ score }) {
     if (!Number.isFinite(score)) return null
     const pct = Math.round(score * 100)
     const tier = pct >= 90 ? 'great' : pct >= 75 ? 'good' : pct >= 60 ? 'ok' : 'poor'
-    const colors = { good: '#65a30d', great: '#16a34a', ok: '#d97706', poor: '#dc2626' }
-    const labels = { good: 'Good', great: 'Excellent', ok: 'Watch', poor: 'Action needed' }
-    const color = colors[tier]
+    const tones = {
+        good: { bg: 'bg-status-active/10', dot: 'text-status-active', label: 'Good' },
+        great: { bg: 'bg-status-active/15', dot: 'text-status-active', label: 'Excellent' },
+        ok: { bg: 'bg-status-warning/10', dot: 'text-status-warning', label: 'Watch' },
+        poor: { bg: 'bg-status-danger/10', dot: 'text-status-danger', label: 'Action needed' }
+    }
+    const { bg, dot, label } = tones[tier]
     return (
         <span
-            className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5"
-            style={{ background: `${color}1a`, color: 'var(--text-primary)' }}
-            title={`${labels[tier]} · weighted blend of pour pace, on-time start, and yardage completion across the day's tickets`}
+            className={`inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5 ${bg} text-text-primary`}
+            title={`${label} · weighted blend of pour pace, on-time start, and yardage completion across the day's tickets`}
         >
-            <i className="fas fa-face-smile text-[9px]" />
-            {labels[tier]}
+            <i className={`fas fa-face-smile text-[9px] ${dot}`} aria-hidden="true" />
+            {label}
         </span>
     )
 }
@@ -145,17 +144,19 @@ export function YardageDeltaBadge({ comparisonLabel, comparisonYardage, pct }) {
     if (!Number.isFinite(pct)) return null
     const isFlat = pct === 0
     const isUp = pct > 0
-    const color = isFlat ? '#64748b' : isUp ? '#16a34a' : '#dc2626'
-    const icon = isFlat ? 'fa-minus' : isUp ? 'fa-arrow-up' : 'fa-arrow-down'
+    const tone = isFlat
+        ? { bg: 'bg-bg-tertiary', dot: 'text-text-tertiary', icon: 'fa-minus' }
+        : isUp
+          ? { bg: 'bg-status-active/10', dot: 'text-status-active', icon: 'fa-arrow-up' }
+          : { bg: 'bg-status-danger/10', dot: 'text-status-danger', icon: 'fa-arrow-down' }
     const sign = isUp ? '+' : ''
     const label = comparisonLabel || 'previous business day'
     return (
         <span
-            className="inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5"
-            style={{ background: `${color}1a`, color: 'var(--text-primary)' }}
+            className={`inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-0.5 tabular-nums ${tone.bg} text-text-primary`}
             title={`Day-over-day change · ${label} ${comparisonYardage.toLocaleString()} yd`}
         >
-            <i className={`fas ${icon} text-[9px]`} />
+            <i className={`fas ${tone.icon} text-[9px] ${tone.dot}`} aria-hidden="true" />
             {sign}
             {pct.toFixed(1)}%
         </span>
@@ -200,12 +201,13 @@ export function BigPourBadge({ order, travelOverrides }) {
     if (understaffed) tooltipLines.push(`Short by ${shortfall} truck${shortfall === 1 ? '' : 's'}`)
     return (
         <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap text-white"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap text-white shadow-sm"
             style={{ background: understaffed ? '#dc2626' : isBigPour ? '#4f46e5' : '#d97706' }}
             title={tooltipLines.join('\n')}
         >
             <i
                 className={`fas ${understaffed ? 'fa-triangle-exclamation' : isBigPour ? 'fa-fire' : 'fa-users'} text-[9px]`}
+                aria-hidden="true"
             />
             {understaffed
                 ? `${isBigPour ? 'Big pour · ' : ''}+${shortfall} trucks`
@@ -236,7 +238,7 @@ export function HoursLimitBadge({ limit }) {
             className="status-badge-danger inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
             title={tooltipLines.join('\n')}
         >
-            <i className="fas fa-clock text-[9px]" />
+            <i className="fas fa-clock text-[9px]" aria-hidden="true" />
             Limit · {elapsedHours.toFixed(1)}h
         </span>
     )
@@ -258,12 +260,11 @@ export function LikelyKickerBadge({ rate }) {
     const pct = Math.round((rate || 0) * 100)
     return (
         <span
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
-            style={{ background: 'rgba(220, 38, 38, 0.14)', color: 'var(--text-primary)' }}
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0 bg-status-danger/10 text-status-danger"
             title={`Likely to Kick — kicker rate ${pct}% over the last 60 working days. This customer regularly calls in extra yardage mid-pour.`}
             aria-label="Likely to call in a kicker"
         >
-            <i className="fas fa-bolt text-[10px]" />
+            <i className="fas fa-bolt text-[10px]" aria-hidden="true" />
         </span>
     )
 }
@@ -272,12 +273,11 @@ export function LikelyChurnBadge({ rate }) {
     const pct = Math.round((rate || 0) * 100)
     return (
         <span
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
-            style={{ background: 'rgba(217, 119, 6, 0.16)', color: 'var(--text-primary)' }}
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0 bg-status-warning/15 text-status-warning"
             title={`Likely to Cancel/Move — combined cancel + move rate ${pct}% over the last 60 working days. This order may shift after the 5:30 PM commit.`}
             aria-label="Likely to cancel or move"
         >
-            <i className="fas fa-shuffle text-[10px]" />
+            <i className="fas fa-shuffle text-[10px]" aria-hidden="true" />
         </span>
     )
 }
@@ -300,7 +300,7 @@ export function OrderStatusBadge({ status }) {
             className={`${toneClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap`}
             title={`Start time sentinel — order is ${status.label.toLowerCase()}`}
         >
-            <i className={`fas ${status.icon} text-[8px]`} />
+            <i className={`fas ${status.icon} text-[8px]`} aria-hidden="true" />
             {status.label}
         </span>
     )
@@ -316,11 +316,11 @@ export function PlantBadge({ code, fallback, name }) {
     const bg = plantBadgeColor(code, fallback)
     return (
         <span
-            className="force-white-text inline-flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-0.5 font-semibold whitespace-nowrap"
+            className="force-white-text inline-flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-0.5 font-semibold whitespace-nowrap shadow-sm"
             style={{ background: bg }}
         >
             <span
-                className="force-white-text inline-flex items-center justify-center rounded-full font-bold bg-[rgba(255,255,255,0.22)] font-heading h-[18px]"
+                className="force-white-text inline-flex items-center justify-center rounded-full font-bold bg-white/20 font-heading h-[18px] tabular-nums"
                 style={{ fontSize: 10.5, minWidth: 34 }}
             >
                 {code}
@@ -333,9 +333,9 @@ export function PlantBadge({ code, fallback, name }) {
 /** Compact "label + value" chip used inside the OrderCard footer. */
 export function KeyValue({ label, value }) {
     return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-bg-secondary">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-bg-secondary border border-border-light">
             <span className="text-[9.5px] uppercase tracking-wider text-text-tertiary">{label}</span>
-            <span className="font-mono font-semibold text-text-primary">{value}</span>
+            <span className="font-mono font-semibold text-text-primary tabular-nums">{value}</span>
         </span>
     )
 }

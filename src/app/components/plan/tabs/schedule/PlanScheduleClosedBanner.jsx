@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 /**
@@ -8,24 +7,28 @@ import React from 'react'
  */
 export default function PlanScheduleClosedBanner({ isSaturday, plantsClosed }) {
     if (!plantsClosed && !isSaturday) return null
+    const isClosed = !!plantsClosed
     return (
         <div
-            className="rounded-lg px-4 py-3 flex items-start gap-3"
-            style={{
-                background: plantsClosed ? 'rgba(220, 38, 38, 0.08)' : 'rgba(217, 119, 6, 0.08)',
-                border: `1px solid ${plantsClosed ? 'rgba(220, 38, 38, 0.35)' : 'rgba(217, 119, 6, 0.35)'}`
-            }}
+            className={`rounded-card px-4 py-3 flex items-start gap-3 border-l-4 animate-fade-slide-in ${
+                isClosed
+                    ? 'bg-status-danger/10 border-l-status-danger border-border-light'
+                    : 'bg-status-warning/10 border-l-status-warning border-border-light'
+            }`}
+            role="status"
         >
             <i
-                className={`fas ${plantsClosed ? 'fa-ban' : 'fa-calendar-day'} mt-0.5 text-text-primary`}
-                style={{ fontSize: 14 }}
+                className={`fas mt-0.5 text-sm ${
+                    isClosed ? 'fa-ban text-status-danger' : 'fa-calendar-day text-status-warning'
+                }`}
+                aria-hidden="true"
             />
             <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-bold text-text-primary">
-                    {plantsClosed ? 'Sunday — plants closed' : 'Saturday — half crew'}
+                    {isClosed ? 'Sunday — plants closed' : 'Saturday — half crew'}
                 </div>
-                <div className="text-[12px] text-text-secondary">
-                    {plantsClosed
+                <div className="text-[12px] text-text-secondary leading-relaxed">
+                    {isClosed
                         ? 'All plants are assumed closed today. Truck-coverage math treats every plant pool as 0.'
                         : 'Saturday crews run at half staffing. Every plant’s active mixer count is halved (rounded down) for the coverage math.'}
                 </div>
