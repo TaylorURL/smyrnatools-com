@@ -16,72 +16,75 @@ const formatLocalTime = (iso) => {
     return `${hh}:${m} ${period}`
 }
 
-const COLOR_ON_CLOCK = '#16a34a'
-const COLOR_OFF_CLOCK = '#94a3b8'
-const COLOR_UNKNOWN = '#cbd5e1'
-
 /**
  * Tiny clock-status dot for any operator name surface. Reads today's
  * Dayforce shifts via `useOperatorClockStatus` and renders:
- *   - green dot when the operator has an open shift (clocked in, not
- *     yet clocked out)
- *   - slate dot when there's a closed shift today (clocked in and out)
- *   - neutral light-slate dot when the operator has no shift today —
- *     they may legitimately be off, or Dayforce hasn't synced yet
+ *   - green dot (status-active) with a soft pulsing halo when the operator
+ *     has an open shift (clocked in, not yet clocked out)
+ *   - muted dot when there's a closed shift today (clocked in and out)
+ *   - neutral dot when the operator has no shift today — they may
+ *     legitimately be off, or Dayforce hasn't synced yet
  *
  * The dot is `size="sm"` by default for inline use beside a name. Pass
  * `size="md"` for headers / detail-page contexts where the indicator
- * deserves a bit more weight. `withLabel` reveals a short "On the clock"
- * / "Off" caption beside the dot for surfaces that have the room.
+ * deserves a bit more weight. `withLabel` reveals a short "On clock" /
+ * "Off" caption beside the dot for surfaces that have the room.
  */
 export function OperatorClockIndicator({ badge, size = 'sm', withLabel = false, className = '' }) {
     const status = useOperatorClockStatus(badge)
     if (!badge) return null
 
-    const dotSize = size === 'md' ? 10 : 8
-    const ringSize = dotSize + 4
+    const dotPxSize = size === 'md' ? 'h-2.5 w-2.5' : 'h-2 w-2'
+    const dotColor = status.isKnown
+        ? status.isClockedIn
+            ? 'bg-status-active'
+            : 'bg-text-tertiary'
+        : 'bg-border-medium'
 
-    let color = COLOR_UNKNOWN
     let title = 'No shift on file for today'
     let label = 'Unknown'
     if (status.isKnown && status.isClockedIn) {
-        color = COLOR_ON_CLOCK
         const inAt = formatLocalTime(status.actualInAt)
         title = inAt ? `On the clock since ${inAt}` : 'On the clock'
         label = 'On clock'
     } else if (status.isKnown && !status.isClockedIn) {
-        color = COLOR_OFF_CLOCK
         const outAt = formatLocalTime(status.actualOutAt)
         title = outAt ? `Off the clock — last out ${outAt}` : 'Off the clock'
         label = 'Off clock'
     }
 
+    const isActive = status.isKnown && status.isClockedIn
+
     return (
         <span
-            className={`inline-flex items-center gap-1 align-middle shrink-0 ${className}`}
+            className={`inline-flex shrink-0 items-center gap-1 align-middle ${className}`}
             title={title}
             aria-label={title}
+            role="img"
         >
-            <span
-                className="inline-block rounded-full"
-                style={{
-                    background: color,
-                    boxShadow: status.isClockedIn ? `0 0 0 2px ${color}33` : undefined,
-                    height: dotSize,
-                    width: dotSize
-                }}
-            />
+            <span className="relative inline-flex">
+                <span
+                    className={`inline-block rounded-full ${dotPxSize} ${dotColor} ${
+                        isActive ? 'ring-2 ring-status-active/30 motion-reduce:ring-status-active/40' : ''
+                    }`}
+                />
+                {isActive && (
+                    <span
+                        className={`absolute inset-0 inline-block rounded-full bg-status-active/40 animate-ping motion-reduce:animate-none`}
+                        aria-hidden="true"
+                    />
+                )}
+            </span>
             {withLabel && (
-                <span className="text-[10.5px] font-semibold uppercase tracking-wider" style={{ color }}>
+                <span
+                    className={`text-[10.5px] font-semibold uppercase tracking-wider ${
+                        isActive ? 'text-status-active' : 'text-text-secondary'
+                    }`}
+                >
                     {label}
                 </span>
             )}
-            {/* Reserve the same vertical footprint as a 12px text node so a
-             *  bare dot doesn't shift the baseline of the name it sits
-             *  next to. */}
-            <span className="sr-only" style={{ width: ringSize - dotSize }}>
-                {status.isClockedIn ? 'clocked in' : 'clocked out'}
-            </span>
+            <span className="sr-only">{isActive ? 'clocked in' : 'clocked out'}</span>
         </span>
     )
 }
