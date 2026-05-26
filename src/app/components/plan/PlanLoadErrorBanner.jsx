@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 /**
@@ -16,10 +15,10 @@ import React from 'react'
 export function PlanLoadErrorBanner({ message, onRetry }) {
     return (
         <div
-            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border-b shrink-0 bg-[rgba(220,38,38,0.08)] border-border-light text-text-primary"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border-b border-l-4 shrink-0 bg-status-danger/10 border-l-status-danger border-border-light text-text-primary animate-fade-slide-in"
             role="alert"
         >
-            <i className="fas fa-triangle-exclamation text-[11px]" />
+            <i className="fas fa-triangle-exclamation text-[11px] text-status-danger" aria-hidden="true" />
             <span className="min-w-0 flex-1 truncate">
                 Couldn&apos;t load this plan — your saved data is still on the server. Autosave is paused until the
                 fetch succeeds so nothing gets overwritten.
@@ -29,9 +28,9 @@ export function PlanLoadErrorBanner({ message, onRetry }) {
                 <button
                     type="button"
                     onClick={onRetry}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 dark:border-red-700 bg-bg-primary text-text-primary cursor-pointer text-[11px] font-bold hover:bg-bg-secondary active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border-medium bg-bg-primary text-text-primary cursor-pointer text-[11px] font-bold transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 >
-                    <i className="fas fa-rotate text-[10px]" />
+                    <i className="fas fa-rotate text-[10px]" aria-hidden="true" />
                     Retry
                 </button>
             )}
