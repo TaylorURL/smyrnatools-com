@@ -70,7 +70,8 @@ function PeriodNavigator({
                     value={customStart}
                     max={customEnd}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="rounded px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary"
+                    aria-label="Custom range start"
+                    className="rounded px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)] [color-scheme:light] dark:[color-scheme:dark]"
                 />
                 <span className="text-text-secondary">to</span>
                 <input
@@ -78,7 +79,8 @@ function PeriodNavigator({
                     value={customEnd}
                     min={customStart}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="rounded px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary"
+                    aria-label="Custom range end"
+                    className="rounded px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)] [color-scheme:light] dark:[color-scheme:dark]"
                 />
             </div>
         )

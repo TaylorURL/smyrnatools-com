@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import DetailViewSection from '../../../../app/components/sections/DetailViewSection'
@@ -23,21 +22,18 @@ export default function TrailerAssignmentCard({
                 <label>Assigned Tractor</label>
                 <div className="operator-select-container">
                     <button
-                        className="operator-select-button form-control"
+                        className={`operator-select-button form-control text-left ${!canEditTrailer ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''}`}
                         onClick={onOpenTractorModal}
                         type="button"
                         disabled={!canEditTrailer}
-                        style={!canEditTrailer ? { cursor: 'not-allowed', opacity: 0.8 } : {}}
                     >
-                        <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
-                            {tractorDisplayText}
-                        </span>
+                        <span className="block truncate">{tractorDisplayText}</span>
                     </button>
                     {canEditTrailer &&
                         (assignedTractor ? (
                             <button
-                                className="unassign-operator-button"
-                                title="Unassign Tractor"
+                                className="unassign-operator-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                                aria-label="Unassign Tractor"
                                 onClick={onUnassignTractor}
                                 type="button"
                             >
@@ -46,8 +42,8 @@ export default function TrailerAssignmentCard({
                         ) : (
                             lastUnassignedTractorId && (
                                 <button
-                                    className="undo-operator-button unassign-operator-button"
-                                    title="Undo Unassign"
+                                    className="undo-operator-button unassign-operator-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                                    aria-label="Undo Unassign"
                                     onClick={onUndoUnassign}
                                     type="button"
                                 >

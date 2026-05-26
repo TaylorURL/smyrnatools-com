@@ -166,20 +166,32 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                         </div>
                                     ) : (
                                         <>
-                                            <input
-                                                type="text"
-                                                value={recipientSearch}
-                                                onChange={(e) => {
-                                                    setRecipientSearch(e.target.value)
-                                                    setDropdownOpen(true)
-                                                }}
-                                                onFocus={() => setDropdownOpen(true)}
-                                                placeholder="Search by name, role, or plant…"
-                                                className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none"
-                                                style={fieldStyle}
-                                            />
+                                            <div className="relative">
+                                                <i
+                                                    aria-hidden="true"
+                                                    className="fas fa-magnifying-glass pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary"
+                                                />
+                                                <input
+                                                    type="search"
+                                                    value={recipientSearch}
+                                                    onChange={(e) => {
+                                                        setRecipientSearch(e.target.value)
+                                                        setDropdownOpen(true)
+                                                    }}
+                                                    onFocus={() => setDropdownOpen(true)}
+                                                    placeholder="Search by name, role, or plant…"
+                                                    aria-label="Search recipients"
+                                                    aria-expanded={dropdownOpen}
+                                                    aria-haspopup="listbox"
+                                                    className="w-full pl-7 pr-2.5 py-1.5 rounded text-[12.5px] outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
+                                                    style={fieldStyle}
+                                                />
+                                            </div>
                                             {dropdownOpen && (
-                                                <div className="absolute left-0 right-0 z-10 mt-1 max-h-52 overflow-y-auto rounded py-1 bg-bg-primary border border-border-light">
+                                                <div
+                                                    role="listbox"
+                                                    className="absolute left-0 right-0 z-10 mt-1 max-h-52 overflow-y-auto rounded py-1 bg-bg-primary border border-border-light shadow-lg"
+                                                >
                                                     {loadingRecipients ? (
                                                         <div className="px-3 py-2 text-[12px] text-center text-text-secondary">
                                                             <i className="fas fa-spinner animate-dv-spin mr-1.5" />
@@ -194,12 +206,14 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                                             <button
                                                                 key={r.id}
                                                                 type="button"
+                                                                role="option"
+                                                                aria-selected={false}
                                                                 onClick={() => {
                                                                     setSelectedRecipient(r)
                                                                     setDropdownOpen(false)
                                                                     setRecipientSearch('')
                                                                 }}
-                                                                className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary text-text-primary active:scale-[0.97]"
+                                                                className="flex items-center gap-2.5 w-full px-3 py-1.5 text-left transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary focus-visible:bg-bg-tertiary focus-visible:outline-none text-text-primary active:scale-[0.97]"
                                                             >
                                                                 <UserAvatar
                                                                     userId={r.id}
@@ -237,7 +251,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
                                     placeholder="Subject (optional)"
-                                    className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none"
+                                    className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none placeholder:text-text-tertiary transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30"
                                     style={fieldStyle}
                                 />
                             </div>
@@ -251,7 +265,7 @@ export default function ComposeModal({ accentColor, onClose, onSend }) {
                                     onChange={(e) => setBody(e.target.value)}
                                     placeholder="Write your message…"
                                     rows="5"
-                                    className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none resize-y"
+                                    className="w-full px-2.5 py-1.5 rounded text-[12.5px] outline-none resize-y placeholder:text-text-tertiary transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/30"
                                     style={{ ...fieldStyle, fontFamily: 'inherit', lineHeight: 1.55 }}
                                 />
                             </div>

@@ -280,7 +280,8 @@ export function CallListCustomerDetail({
                     onChange={(e) => setComment(e.target.value)}
                     placeholder="Notes — project timeline, gatekeeper, follow-up date, which numbers you tried…"
                     rows={3}
-                    className="w-full rounded-md p-2 text-[12.5px] resize-y outline-none bg-bg-secondary border border-border-light text-text-primary mb-2"
+                    aria-label="Call notes"
+                    className="w-full rounded-md p-2 text-[12.5px] resize-y outline-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary mb-2 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {CALL_OUTCOME_BUTTONS.map(({ color, icon, key, label }) => {

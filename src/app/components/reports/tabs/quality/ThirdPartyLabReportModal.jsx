@@ -10,6 +10,12 @@ const STORAGE_PREFIX = 'lab-reports'
 const MAX_FILE_SIZE_MB = 25
 const ACCEPTED_TYPES = 'image/*,video/*'
 
+/* Shared input chrome — same vocabulary as QCStrengthReportModal so the two
+   lab modals feel identical. Tokens make all three themes work. */
+const TEXT_INPUT_CLS =
+    'w-full bg-bg-secondary border border-border-light rounded-lg px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 hover:border-border-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)] [color-scheme:light] dark:[color-scheme:dark]'
+const TEXTAREA_CLS = `${TEXT_INPUT_CLS} resize-none`
+
 function getCurrentWeekBounds() {
     const d = new Date()
     const day = d.getDay()
@@ -174,7 +180,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                 type="text"
                                 value={labCompanyName}
                                 onChange={(e) => setLabCompanyName(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors"
+                                className={TEXT_INPUT_CLS}
                                 placeholder="Lab company name"
                             />
                         </div>
@@ -187,7 +193,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                 type="text"
                                 value={customer}
                                 onChange={(e) => setCustomer(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors"
+                                className={TEXT_INPUT_CLS}
                                 placeholder="Customer name"
                             />
                         </div>
@@ -200,7 +206,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                 type="text"
                                 value={orderNo}
                                 onChange={(e) => setOrderNo(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors"
+                                className={TEXT_INPUT_CLS}
                                 placeholder="Order number"
                             />
                         </div>
@@ -213,7 +219,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                 type="text"
                                 value={ticketNo}
                                 onChange={(e) => setTicketNo(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors"
+                                className={TEXT_INPUT_CLS}
                                 placeholder="Ticket number"
                             />
                         </div>
@@ -226,7 +232,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                 type="text"
                                 value={truckNo}
                                 onChange={(e) => setTruckNo(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors"
+                                className={TEXT_INPUT_CLS}
                                 placeholder="Truck number"
                             />
                         </div>
@@ -239,7 +245,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                 type="date"
                                 value={reportDate}
                                 onChange={(e) => setReportDate(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors"
+                                className={TEXT_INPUT_CLS}
                             />
                         </div>
                         {/* Lab Issue */}
@@ -251,7 +257,7 @@ function ThirdPartyLabReportModal({ onClose, onSubmitted, user, initialReport = 
                                 value={labIssue}
                                 onChange={(e) => setLabIssue(e.target.value)}
                                 rows={4}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors resize-none"
+                                className={TEXTAREA_CLS}
                                 placeholder="Describe the issue in detail..."
                             />
                         </div>

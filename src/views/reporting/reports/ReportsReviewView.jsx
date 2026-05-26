@@ -104,9 +104,12 @@ function ReportsReviewView({ report, initialData, onBack, user, completedByUser,
         setExporting(false)
     }
     /* Plan-tab compact form chrome — same tokens used by the redesigned
-     * Plant / District manager report bodies and the submit view. */
+     * Plant / District manager report bodies and the submit view. `color-scheme`
+     * lines up the native date / time popups with the active theme even on
+     * read-only previews. */
     const REVIEW_SECTION_LABEL_CLASS = 'text-[9.5px] font-semibold uppercase tracking-wider'
-    const REVIEW_FIELD_CLASS = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border opacity-90'
+    const REVIEW_FIELD_CLASS =
+        'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none box-border opacity-90 [color-scheme:light] dark:[color-scheme:dark]'
     const REVIEW_FIELD_STYLE = {
         background: 'var(--bg-secondary)',
         border: '1px solid var(--border-light)',

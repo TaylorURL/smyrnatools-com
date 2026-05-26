@@ -21,11 +21,12 @@ export default function MixerCleanlinessRatingCard({ canEditMixer, cleanlinessRa
                                 <button
                                     key={star}
                                     type="button"
-                                    className={`star-button ${isActive ? 'active' : ''} ${!canEditMixer ? 'disabled' : ''} active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none`}
+                                    className={`star-button ${isActive ? 'active' : ''} ${!canEditMixer ? 'disabled' : ''} active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded`}
                                     onClick={() =>
                                         canEditMixer && setCleanlinessRating(star === cleanlinessRating ? 0 : star)
                                     }
                                     aria-label={`Rate ${star} of 5 stars`}
+                                    aria-pressed={isActive}
                                     disabled={!canEditMixer}
                                 >
                                     <i

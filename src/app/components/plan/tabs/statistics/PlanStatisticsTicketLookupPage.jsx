@@ -90,7 +90,7 @@ export default function PlanStatisticsTicketLookupPage({
         <div className="flex flex-col gap-4">
             <form
                 onSubmit={onSubmit}
-                className="flex items-center gap-2 rounded-lg border border-border-light bg-bg-primary px-3 py-2"
+                className="flex items-center gap-2 rounded-lg border border-border-light bg-bg-primary px-3 py-2 transition-colors duration-150 hover:border-border-medium focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
             >
                 <i className="fas fa-receipt text-[12px] text-text-tertiary" />
                 <input
@@ -99,7 +99,7 @@ export default function PlanStatisticsTicketLookupPage({
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search by ticket number"
                     aria-label="Ticket number"
-                    className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px] font-mono tabular-nums text-text-primary"
+                    className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[13px] font-mono tabular-nums text-text-primary placeholder:text-text-tertiary [&::-webkit-search-cancel-button]:hidden"
                     autoFocus
                 />
                 {query && (

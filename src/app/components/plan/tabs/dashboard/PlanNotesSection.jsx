@@ -43,7 +43,7 @@ function PlanNotesSection({
                     onChange={(e) => setNotes?.(e.target.value)}
                     placeholder="Anything special about today — weather, plant closures, special events, etc."
                     rows={5}
-                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none resize-y bg-bg-secondary border border-border-light text-text-primary"
+                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none resize-y bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
                 />
             )}
 

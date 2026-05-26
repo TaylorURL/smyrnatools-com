@@ -2,6 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import AddViewSection from '../../../app/components/sections/AddViewSection'
+import {
+    LIST_INPUT_CLASS,
+    LIST_PLANT_BUTTON_CLASS,
+    LIST_SELECT_CLASS,
+    LIST_TEXTAREA_CLASS
+} from '../../../app/constants/listViewConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { AIService } from '../../../services/AIService'
 import { ListService } from '../../../services/ListService'
@@ -258,7 +264,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                     <input
                                         id="description"
                                         type="text"
-                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className={LIST_INPUT_CLASS}
                                         value={description}
                                         onChange={(e) => {
                                             setDescription(e.target.value)
@@ -318,7 +324,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                     <>
                                         <button
                                             type="button"
-                                            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-slate-50 text-left cursor-pointer hover:bg-slate-100 transition-colors"
+                                            className={LIST_PLANT_BUTTON_CLASS}
                                             onClick={() => setIsPlantModalOpen(true)}
                                             aria-label="Select plants"
                                         >
@@ -359,7 +365,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                 ) : (
                                     <button
                                         type="button"
-                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-slate-50 text-left cursor-pointer hover:bg-slate-100 transition-colors"
+                                        className={LIST_PLANT_BUTTON_CLASS}
                                         onClick={() => setIsPlantModalOpen(true)}
                                         aria-label="Select plant"
                                     >
@@ -375,7 +381,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                 </label>
                                 <select
                                     id="priority"
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-slate-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className={LIST_SELECT_CLASS}
                                     value={priority}
                                     onChange={(e) => setPriority(e.target.value)}
                                 >
@@ -392,7 +398,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                 </label>
                                 <select
                                     id="status"
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-slate-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className={LIST_SELECT_CLASS}
                                     value={status}
                                     onChange={(e) => setStatus(e.target.value)}
                                 >
@@ -409,7 +415,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                 </label>
                                 <select
                                     id="responsibleRole"
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-slate-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className={LIST_SELECT_CLASS}
                                     value={responsibleRole}
                                     onChange={(e) => setResponsibleRole(e.target.value)}
                                 >
@@ -430,7 +436,7 @@ function ListAddView({ onClose, onItemAdded, item = null }) {
                                 </label>
                                 <textarea
                                     id="comments"
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    className={LIST_TEXTAREA_CLASS}
                                     value={comments}
                                     onChange={(e) => setComments(e.target.value)}
                                     placeholder="Enter any additional comments"

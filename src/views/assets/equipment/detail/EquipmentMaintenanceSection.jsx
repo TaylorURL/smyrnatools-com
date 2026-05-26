@@ -17,21 +17,25 @@ function StarRatingInput({ canEditEquipment, label, onChange, value }) {
             <label>{label}</label>
             <div className="cleanliness-rating-editor">
                 <div className="star-input">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                            key={star}
-                            type="button"
-                            className={`star-button ${star <= value ? 'active' : ''} ${!canEditEquipment ? 'disabled' : ''}`}
-                            onClick={() => canEditEquipment && onChange(star === value ? 0 : star)}
-                            aria-label={`Rate ${star} of 5 stars`}
-                            disabled={!canEditEquipment}
-                        >
-                            <i
-                                className={`fas fa-star ${star <= value ? 'filled' : ''}`}
-                                style={star <= value ? { color: 'var(--text-primary)' } : {}}
-                            ></i>
-                        </button>
-                    ))}
+                    {[1, 2, 3, 4, 5].map((star) => {
+                        const isLit = star <= value
+                        return (
+                            <button
+                                key={star}
+                                type="button"
+                                className={`star-button ${isLit ? 'active' : ''} ${!canEditEquipment ? 'disabled' : ''} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 rounded`}
+                                onClick={() => canEditEquipment && onChange(star === value ? 0 : star)}
+                                aria-label={`Rate ${star} of 5 stars`}
+                                aria-pressed={isLit}
+                                disabled={!canEditEquipment}
+                            >
+                                <i
+                                    className={`fas fa-star ${isLit ? 'filled' : ''}`}
+                                    style={isLit ? { color: 'var(--text-primary)' } : {}}
+                                ></i>
+                            </button>
+                        )
+                    })}
                 </div>
                 {value > 0 && (
                     <div className="rating-value-display">
@@ -76,13 +80,13 @@ export default function EquipmentMaintenanceSection({
                         onChange={(e) =>
                             setLastServiceDate(e.target.value ? DateUtility.parseLocalDate(e.target.value) : null)
                         }
-                        className="form-control"
+                        className="form-control [color-scheme:light] dark:[color-scheme:dark]"
                         readOnly={!canEditEquipment}
                     />
                     {lastServiceDate && AssetStatsUtility.isServiceOverdue(lastServiceDate) && (
                         <div className="warning-text">Service overdue</div>
                     )}
-                    <div className="text-text-secondary text-[11px]" style={{ lineHeight: '1.4', marginTop: '4px' }}>
+                    <div className="text-text-secondary text-[11px] leading-snug mt-1">
                         Service will show as overdue if it has been more than 6 months since last serviced. Service is
                         determined by hours on the asset - check hours of service.
                     </div>

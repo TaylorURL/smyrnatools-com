@@ -22,7 +22,8 @@ function ModalHeader({ onClose }) {
             <button
                 type="button"
                 onClick={onClose}
-                className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6"
+                aria-label="Close"
+                className="rounded border-none cursor-pointer bg-bg-tertiary text-text-secondary h-6 w-6 hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
             >
                 <i className="fas fa-times text-[10px]" />
             </button>
@@ -31,22 +32,14 @@ function ModalHeader({ onClose }) {
 }
 
 function BulkActions({ onClear, onSelectAll }) {
+    const buttonClass =
+        'inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary'
     return (
         <div className="flex gap-1.5 p-2 border-b border-border-light">
-            <button
-                type="button"
-                onClick={onSelectAll}
-                className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none"
-                style={FIELD_STYLE}
-            >
+            <button type="button" onClick={onSelectAll} className={buttonClass} style={FIELD_STYLE}>
                 <i className="fas fa-check-double text-[10px]" /> Select All
             </button>
-            <button
-                type="button"
-                onClick={onClear}
-                className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[11.5px] font-semibold cursor-pointer border-none"
-                style={FIELD_STYLE}
-            >
+            <button type="button" onClick={onClear} className={buttonClass} style={FIELD_STYLE}>
                 <i className="fas fa-times text-[10px]" /> Clear
             </button>
         </div>
@@ -56,14 +49,18 @@ function BulkActions({ onClear, onSelectAll }) {
 function SearchBar({ onChange, query }) {
     return (
         <div className="p-2 border-b border-border-light">
-            <div className="flex items-center gap-2 rounded px-2 py-1.5" style={FIELD_STYLE}>
-                <i className="fas fa-search text-[10px] text-text-tertiary" />
+            <div
+                className="flex items-center gap-2 rounded px-2 py-1.5 transition-colors duration-150 focus-within:ring-2 focus-within:ring-[var(--accent)]/40 focus-within:ring-offset-1 focus-within:ring-offset-bg-primary focus-within:border-[var(--accent)]"
+                style={FIELD_STYLE}
+            >
+                <i className="fas fa-search text-[10px] pointer-events-none text-text-tertiary" />
                 <input
-                    type="text"
+                    type="search"
+                    aria-label="Search tags"
                     placeholder="Search tags…"
                     value={query}
                     onChange={(e) => onChange(e.target.value)}
-                    className="flex-1 border-none bg-transparent text-[12.5px] outline-none text-text-primary"
+                    className="flex-1 border-none bg-transparent text-[12.5px] outline-none text-text-primary placeholder:text-text-tertiary"
                 />
             </div>
         </div>
@@ -142,7 +139,7 @@ function TagPickerModal({ onChange, onClose, options, value }) {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-full rounded text-[12px] font-bold uppercase tracking-wider text-white py-2 cursor-pointer border-none bg-[var(--accent,_#1e3a5f)]"
+                        className="w-full rounded text-[12px] font-bold uppercase tracking-wider text-white py-2 cursor-pointer border-none bg-[var(--accent,_#1e3a5f)] hover:bg-[var(--accent-hover,_#15263d)] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                     >
                         Done · {value.length} selected
                     </button>

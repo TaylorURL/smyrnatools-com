@@ -136,11 +136,12 @@ function Toolbar({ filterText, setFilterText, sortKey, sortDir, setSort }) {
     return (
         <div className="flex flex-wrap items-center gap-1.5 mb-2">
             <input
-                type="text"
+                type="search"
+                aria-label="Filter operators or trucks"
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
                 placeholder="Filter operators or trucks…"
-                className="min-w-[200px] flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                className="min-w-[200px] flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary placeholder:text-text-tertiary"
                 style={FIELD_STYLE}
             />
             {sortButtons.map(({ key, label }) => {

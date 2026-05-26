@@ -54,7 +54,7 @@ export const CHEVRON_BG =
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")"
 
 export const SELECT_CLS =
-    'w-full appearance-none rounded bg-no-repeat px-2.5 py-1.5 pr-8 text-[12.5px] outline-none cursor-pointer'
+    'w-full appearance-none rounded bg-no-repeat px-2.5 py-1.5 pr-8 text-[12.5px] outline-none cursor-pointer transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary disabled:opacity-50 disabled:cursor-not-allowed'
 
 export const SELECT_STYLE = {
     background: 'var(--bg-secondary)',
@@ -66,7 +66,8 @@ export const SELECT_STYLE = {
     color: 'var(--text-primary)'
 }
 
-export const FIELD_INPUT_CLS = 'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none'
+export const FIELD_INPUT_CLS =
+    'w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark] hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary disabled:opacity-50 disabled:cursor-not-allowed'
 
 export const FIELD_INPUT_STYLE = {
     background: 'var(--bg-secondary)',

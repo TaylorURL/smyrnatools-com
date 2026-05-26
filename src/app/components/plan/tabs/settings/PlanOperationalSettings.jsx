@@ -103,14 +103,25 @@ function Toolbar({ dirtyCount, loading, onResetAll, onSearch, regionName, search
             </div>
             <div className="flex items-center gap-2">
                 <div className="relative">
-                    <i className="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary" />
+                    <i className="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary pointer-events-none" />
                     <input
                         type="search"
                         value={searchQuery}
                         onChange={(e) => onSearch(e.target.value)}
                         placeholder="Search settings"
-                        className="rounded-md border border-border-medium bg-bg-secondary pl-7 pr-2 py-1.5 text-xs text-text-primary outline-none w-44 sm:w-56"
+                        aria-label="Search settings"
+                        className="rounded-md border border-border-medium bg-bg-secondary pl-7 pr-7 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary outline-none w-44 sm:w-56 transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)] [&::-webkit-search-cancel-button]:hidden"
                     />
+                    {searchQuery && (
+                        <button
+                            type="button"
+                            onClick={() => onSearch('')}
+                            aria-label="Clear search"
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary p-0.5 transition-colors duration-150"
+                        >
+                            <i className="fas fa-times text-[10px]" />
+                        </button>
+                    )}
                 </div>
                 <button
                     type="button"
@@ -195,7 +206,7 @@ function SettingRow({ error, field, onChange, value }) {
                         max={field.max}
                         value={value === '' ? '' : value}
                         onChange={(e) => onChange(field.column, e.target.value)}
-                        className="w-20 sm:w-24 rounded-md border bg-bg-secondary border-border-medium px-2 py-1 text-sm text-right tabular-nums text-text-primary outline-none"
+                        className="w-20 sm:w-24 rounded-md border bg-bg-secondary border-border-medium px-2 py-1 text-sm text-right tabular-nums text-text-primary outline-none transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
                         style={{ borderColor: error ? '#dc2626' : undefined }}
                         aria-invalid={Boolean(error)}
                     />

@@ -15,15 +15,15 @@ function ManagerCard({ manager, plantName, onSelect }) {
             statusColor={roleColor}
         >
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Email</div>
+                <div className="text-sm text-text-secondary">Email</div>
                 <div className="text-sm font-medium">{manager.email || 'Not Assigned'}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Plant</div>
+                <div className="text-sm text-text-secondary">Plant</div>
                 <div className="text-sm font-medium">{plantName || 'None'}</div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Role</div>
+                <div className="text-sm text-text-secondary">Role</div>
                 <div className="text-sm font-medium">
                     <span
                         className="inline-block px-2 py-0.5 rounded text-xs font-semibold text-white"
@@ -35,7 +35,7 @@ function ManagerCard({ manager, plantName, onSelect }) {
                 </div>
             </div>
             <div className="flex justify-between items-center py-1">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Last Login</div>
+                <div className="text-sm text-text-secondary">Last Login</div>
                 <div className="text-sm font-medium">
                     {manager.lastLoginAt
                         ? new Date(manager.lastLoginAt + 'T00:00:00').toLocaleDateString(undefined, {

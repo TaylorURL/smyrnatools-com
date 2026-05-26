@@ -15,7 +15,7 @@ export function YphChip({ yph }) {
     const bg = isLow ? 'rgba(220,38,38,0.12)' : 'rgba(22,163,74,0.12)'
     return (
         <span
-            className="inline-flex items-center rounded px-1 py-0 text-[9.5px] font-semibold tabular-nums text-text-primary"
+            className="inline-flex items-center rounded px-1 py-0 text-[9.5px] font-semibold tabular-nums text-text-primary cursor-help"
             style={{ background: bg }}
             title={`${fmtFloat(yph, 1)} yd / hour${isLow ? ` (below ${YPH_TARGET} target)` : ''}`}
         >

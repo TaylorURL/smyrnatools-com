@@ -99,7 +99,7 @@ export function RoleFormField({ children, label, sublabel }) {
 export function RoleTextInput({ disabled, onChange, placeholder, type = 'text', value }) {
     return (
         <input
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-default"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm bg-white text-slate-900 placeholder:text-slate-400 transition-colors duration-150 hover:border-slate-400 focus:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/20 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-default"
             disabled={disabled}
             onChange={(e) => !disabled && onChange(type === 'number' ? parseInt(e.target.value) || 0 : e.target.value)}
             placeholder={placeholder}

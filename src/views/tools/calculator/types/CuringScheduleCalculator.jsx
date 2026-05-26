@@ -117,9 +117,10 @@ const CuringScheduleCalculator = () => {
                         <CalcField label="Pour date">
                             <input
                                 type="date"
+                                aria-label="Pour date"
                                 value={values.pourDate}
                                 onChange={(e) => setField('pourDate')(e.target.value)}
-                                className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md text-[var(--text-primary)] text-[13px] font-semibold outline-none transition-colors duration-150 px-2.5 py-2 focus:border-accent"
+                                className="w-full bg-[var(--bg-primary)] border border-[var(--border-medium)] rounded-md text-[var(--text-primary)] text-[13px] font-semibold outline-none transition-colors duration-150 px-2.5 py-2 [color-scheme:light] dark:[color-scheme:dark] hover:border-[var(--border-dark)] focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                             />
                         </CalcField>
                     </div>

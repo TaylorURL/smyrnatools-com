@@ -84,15 +84,17 @@ export function PersonStatisticsSidebar({ accentColor, activeSection, onSelect, 
                 return (
                     <button
                         key={section.id}
+                        type="button"
                         onClick={() => onSelect(section.id)}
-                        className="flex items-center gap-2.5 rounded-md border-none cursor-pointer text-left px-3 py-2 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97]"
+                        className="flex items-center gap-2.5 rounded-md border-none cursor-pointer text-left px-3 py-2 transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{
                             background: active ? `${accentColor}15` : 'transparent',
                             color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
                         }}
                         title={section.description}
+                        aria-pressed={active}
                     >
-                        <i className={`fas ${section.icon} text-[12px] w-3.5 text-center`} />
+                        <i className={`fas ${section.icon} text-[12px] w-3.5 text-center`} aria-hidden="true" />
                         <span className="text-[12.5px] font-semibold truncate">{section.label}</span>
                     </button>
                 )
@@ -112,15 +114,17 @@ export function PersonStatisticsSectionTabs({ accentColor, activeSection, onSele
                 return (
                     <button
                         key={section.id}
+                        type="button"
                         onClick={() => onSelect(section.id)}
-                        className="flex items-center gap-1.5 rounded-md border-none cursor-pointer px-2.5 py-1.5 text-[12px] font-semibold shrink-0 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className="flex items-center gap-1.5 rounded-md border-none cursor-pointer px-2.5 py-1.5 text-[12px] font-semibold shrink-0 active:scale-[0.97] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{
                             background: active ? `${accentColor}15` : 'var(--bg-tertiary)',
                             color: active ? 'var(--text-primary)' : 'var(--text-secondary)'
                         }}
                         title={section.description}
+                        aria-pressed={active}
                     >
-                        <i className={`fas ${section.icon} text-[11px]`} />
+                        <i className={`fas ${section.icon} text-[11px]`} aria-hidden="true" />
                         <span>{section.label}</span>
                     </button>
                 )

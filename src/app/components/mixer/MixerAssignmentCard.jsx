@@ -3,25 +3,8 @@ import React from 'react'
 
 import DetailViewSection from '../sections/DetailViewSection'
 
-const readOnlyPlantStyle = {
-    backgroundColor: 'var(--card-bg)',
-    cursor: 'not-allowed',
-    opacity: 0.8
-}
-
-const readOnlyOperatorStyle = {
-    backgroundColor: 'var(--bg-secondary)',
-    cursor: 'not-allowed',
-    opacity: 0.8
-}
-
-const undoButtonStyle = {
-    border: 'none',
-    boxSizing: 'border-box',
-    marginLeft: '8px',
-    minWidth: '140px',
-    padding: '0 16px'
-}
+const UNDO_BUTTON_CLASSES =
+    'undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px] min-w-[140px] border-0 box-border ml-2 px-4 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40'
 
 /**
  * Renders the Assigned Plant and Assigned Operator selectors with their
@@ -40,41 +23,41 @@ export default function MixerAssignmentCard({
     onUnassignOperator,
     plantDisplayText
 }) {
+    const plantDisabled = !canEditMixer
+    const operatorDisabled = !canEditMixer || isCleanlinessBlocking
+    const disabledFieldClasses = 'bg-bg-secondary opacity-80 cursor-not-allowed'
+
     return (
         <DetailViewSection.Card title="Assignment" icon="fas fa-user-tag">
             <div className="form-group">
                 <label>Assigned Plant</label>
                 <button
-                    className="operator-select-button form-control active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
+                    className={`operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none ${plantDisabled ? disabledFieldClasses : ''}`}
                     onClick={() => canEditMixer && onOpenPlantModal()}
                     type="button"
-                    disabled={!canEditMixer}
-                    style={!canEditMixer ? readOnlyPlantStyle : {}}
+                    disabled={plantDisabled}
                 >
-                    <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
-                        {plantDisplayText}
-                    </span>
+                    <span className="block truncate">{plantDisplayText}</span>
                 </button>
             </div>
             <div className="form-group">
                 <label>Assigned Operator</label>
                 <div className="operator-select-container">
                     <button
-                        className="operator-select-button form-control active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className={`operator-select-button form-control text-left active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none ${operatorDisabled ? disabledFieldClasses : ''}`}
                         onClick={onOpenOperatorModal}
                         type="button"
-                        disabled={!canEditMixer || isCleanlinessBlocking}
-                        style={!canEditMixer || isCleanlinessBlocking ? readOnlyOperatorStyle : {}}
+                        disabled={operatorDisabled}
                     >
-                        <span className="block overflow-hidden" style={{ textOverflow: 'ellipsis' }}>
+                        <span className="block truncate">
                             {assignedOperator ? getOperatorName(assignedOperator) : 'None (Click to select)'}
                         </span>
                     </button>
                     {canEditMixer &&
                         (assignedOperator ? (
                             <button
-                                className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                                title="Unassign Operator"
+                                className="unassign-operator-button active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                                aria-label="Unassign Operator"
                                 onClick={onUnassignOperator}
                                 type="button"
                             >
@@ -83,11 +66,10 @@ export default function MixerAssignmentCard({
                         ) : (
                             lastUnassignedOperatorId && (
                                 <button
-                                    className="undo-operator-button unassign-operator-button bg-[var(--success)] rounded text-[var(--text-light)] cursor-pointer text-[1rem] h-[38px] active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                                    title="Undo Unassign"
+                                    className={UNDO_BUTTON_CLASSES}
+                                    aria-label="Undo Unassign"
                                     onClick={onUndoUnassignOperator}
                                     type="button"
-                                    style={undoButtonStyle}
                                 >
                                     Undo
                                 </button>
@@ -95,10 +77,7 @@ export default function MixerAssignmentCard({
                         ))}
                 </div>
                 {isCleanlinessBlocking && (
-                    <div
-                        className="items-center bg-bg-hover rounded-md text-text-secondary flex text-[0.8125rem]"
-                        style={{ gap: '0.5rem', marginTop: '0.5rem', padding: '0.5rem 0.75rem' }}
-                    >
+                    <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-bg-hover rounded-md text-text-secondary text-[0.8125rem]">
                         <i className="fas fa-exclamation-triangle"></i>
                         <span>Cleanliness must be 3+ stars to assign an operator</span>
                     </div>

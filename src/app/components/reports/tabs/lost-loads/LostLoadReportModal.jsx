@@ -16,6 +16,14 @@ import OptionRadioGroup from './modal/OptionRadioGroup'
 import ReprimandToggles from './modal/ReprimandToggles'
 import TruckPicker from './modal/TruckPicker'
 
+/* Shared form-control classes so every input in this modal shares one focus
+   ring + hover + placeholder treatment across the three themes. `[color-scheme]`
+   keeps native date popups in sync with the active theme. */
+const INPUT_BASE =
+    'rounded-lg px-3 py-2.5 text-sm bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed'
+const FIELD_INPUT_CLS = `${INPUT_BASE} [color-scheme:light] dark:[color-scheme:dark]`
+const FIELD_TEXTAREA_CLS = `${INPUT_BASE} resize-y`
+
 /** Modal form for submitting or editing a lost load report. Plant is
  *  auto-populated from the user's assigned plant. When `initialReport` is
  *  provided the modal runs in edit mode and UPDATEs the existing row. */
@@ -152,7 +160,8 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 onChange={(e) => {
                                     setPlant(e.target.value)
                                 }}
-                                className={`w-full appearance-none rounded-lg pl-3 pr-9 py-2.5 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent cursor-pointer transition-colors bg-bg-secondary border border-border-light ${plant ? 'text-text-primary' : 'text-text-secondary'}`}
+                                aria-label="Plant"
+                                className={`w-full appearance-none rounded-lg pl-3 pr-9 py-2.5 text-sm font-medium cursor-pointer transition-colors duration-150 bg-bg-secondary border border-border-light hover:border-border-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)] ${plant ? 'text-text-primary' : 'text-text-secondary'}`}
                             >
                                 <option value="">Select plant...</option>
                                 {plants.map((p) => (
@@ -161,7 +170,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                     </option>
                                 ))}
                             </select>
-                            <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none text-text-secondary" />
+                            <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none text-text-tertiary" />
                         </div>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -172,7 +181,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             type="date"
                             value={lostLoadDate}
                             onChange={(e) => setLostLoadDate(e.target.value)}
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-secondary border border-border-light text-text-primary"
+                            className={`${FIELD_INPUT_CLS} bg-bg-secondary`}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -184,7 +193,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             value={yardage}
                             onChange={(e) => setYardage(e.target.value)}
                             placeholder="Enter yardage..."
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-primary border border-border-light text-text-primary"
+                            className={FIELD_INPUT_CLS}
                             min="0"
                         />
                     </div>
@@ -208,7 +217,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             value={customerName}
                             onChange={(e) => setCustomerName(e.target.value)}
                             placeholder="Enter customer name..."
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-primary border border-border-light text-text-primary"
+                            className={FIELD_INPUT_CLS}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -220,7 +229,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                             value={ticketNumber}
                             onChange={(e) => setTicketNumber(e.target.value)}
                             placeholder="Enter ticket number..."
-                            className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent bg-bg-primary border border-border-light text-text-primary"
+                            className={FIELD_INPUT_CLS}
                         />
                     </div>
                     <AttachmentField
@@ -248,7 +257,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 onChange={(e) => setDumpLocationOther(e.target.value)}
                                 placeholder="Specify where concrete was dumped..."
                                 autoFocus
-                                className="rounded-lg px-3 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent mt-1 bg-bg-primary border border-border-light text-text-primary"
+                                className={`${FIELD_INPUT_CLS} mt-1`}
                             />
                         )}
                     </OptionRadioGroup>
@@ -269,7 +278,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                                 placeholder="Explain what happened and what will be done to prevent this..."
                                 rows={3}
                                 autoFocus
-                                className="rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent mt-1 bg-bg-primary border border-border-light text-text-primary"
+                                className={`${FIELD_TEXTAREA_CLS} mt-1 resize-none`}
                             />
                         )}
                     </OptionRadioGroup>
@@ -284,7 +293,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                 <div className="px-4 sm:px-6 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 sticky bottom-0 bg-bg-primary border-t border-border-light z-10 border-t border-border-light">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2.5 rounded-lg text-sm font-medium bg-bg-secondary text-text-secondary"
+                        className="px-4 py-2.5 rounded-lg text-sm font-medium bg-bg-secondary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         type="button"
                     >
                         Cancel
@@ -292,7 +301,7 @@ function LostLoadReportModal({ onClose, onSubmitted, plants, user, initialReport
                     <button
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white"
+                        className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-[background-color,opacity] duration-150 hover:brightness-110 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{ background: accentColor, opacity: submitting ? 0.7 : 1 }}
                         type="button"
                     >

@@ -19,40 +19,48 @@ export function FilterStrip({ isLoading, onChangeQuery, onChangeSort, query, sor
             className="rounded-lg px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-bg-primary border border-border-light"
             style={{ boxShadow: 'var(--shadow-sm)' }}
         >
-            <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px] bg-bg-secondary border border-border-light">
+            <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px] bg-bg-secondary border border-border-light transition-colors duration-150 hover:border-border-medium focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]">
                 <i className="fas fa-magnifying-glass text-[11px] text-text-tertiary" />
                 <input
-                    type="text"
+                    type="search"
                     value={query}
                     onChange={(e) => onChangeQuery(e.target.value)}
                     placeholder="Search customers, contacts, phone…"
                     disabled={isLoading}
-                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary disabled:opacity-60"
+                    aria-label="Search call list"
+                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
                 />
                 {query && (
                     <button
                         type="button"
                         onClick={() => onChangeQuery('')}
-                        className="border-none bg-transparent cursor-pointer text-text-tertiary active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                        className="border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                         aria-label="Clear search"
                     >
                         <i className="fas fa-times text-[10px]" />
                     </button>
                 )}
             </div>
-            <select
-                value={sortKey}
-                onChange={(e) => onChangeSort(e.target.value)}
-                disabled={isLoading}
-                className="rounded-md px-2.5 py-1.5 text-[12.5px] cursor-pointer outline-none bg-bg-secondary border border-border-light text-text-primary disabled:opacity-60"
-                title="Sort by"
-            >
-                {CALL_LIST_SORT_OPTIONS.map(({ key, label }) => (
-                    <option key={key} value={key}>
-                        Sort: {label}
-                    </option>
-                ))}
-            </select>
+            <div className="relative">
+                <select
+                    value={sortKey}
+                    onChange={(e) => onChangeSort(e.target.value)}
+                    disabled={isLoading}
+                    className="appearance-none rounded-md pl-2.5 pr-7 py-1.5 text-[12.5px] cursor-pointer outline-none bg-bg-secondary border border-border-light text-text-primary disabled:opacity-60 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
+                    title="Sort by"
+                    aria-label="Sort by"
+                >
+                    {CALL_LIST_SORT_OPTIONS.map(({ key, label }) => (
+                        <option key={key} value={key}>
+                            Sort: {label}
+                        </option>
+                    ))}
+                </select>
+                <i
+                    aria-hidden="true"
+                    className="fas fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 text-[9px] pointer-events-none text-text-tertiary"
+                />
+            </div>
             <span className="text-[11.5px] text-text-tertiary tabular-nums">
                 {isLoading ? (
                     <span className="italic">Loading…</span>

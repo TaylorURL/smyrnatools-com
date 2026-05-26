@@ -123,7 +123,7 @@ const SlumpAdjustmentCalculator = () => {
                     />
                 </CalcSection>
                 {result && result.strengthImpact > 0 && (
-                    <div className="flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-300 text-text-primary text-sm font-medium p-3">
+                    <div role="status" className="flex items-start gap-3 rounded-lg bg-[color:var(--warning)]/10 border border-[color:var(--warning)]/40 text-text-primary text-sm font-medium p-3">
                         <i className="fas fa-exclamation-triangle mt-0.5" />
                         <span>Adding water may reduce strength by ~{result.strengthImpact}%.</span>
                     </div>

@@ -11,7 +11,9 @@ const CELL_BASE = 'text-text-primary text-[12px] font-medium py-1.5 px-2.5 text-
 const CELL_SECONDARY = 'text-text-secondary text-[11.5px] py-1.5 px-2.5 text-left align-middle'
 const CELL_HIGHLIGHT = 'text-text-primary text-[12.5px] font-bold py-1.5 px-2.5 text-left align-middle'
 const ACTION_BUTTON =
-    'inline-flex items-center justify-center w-5 h-5 mr-0.5 rounded text-[11px] cursor-pointer border-none bg-transparent transition-colors hover:brightness-90'
+    'inline-flex items-center justify-center w-5 h-5 mr-0.5 rounded text-[11px] cursor-pointer border-none bg-transparent text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
+const COPY_BUTTON =
+    'inline-flex items-center justify-center bg-transparent border-none text-text-tertiary cursor-pointer text-xs p-0.5 rounded transition-colors hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
 
 const computeDaysSinceStatusChange = (operator) => {
     const dateToUse = operator.statusChangedAt || operator.createdAt
@@ -52,7 +54,8 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                         type="button"
                         onClick={(e) => handleCopyName(e, operator.name)}
                         title="Copy name"
-                        className="inline-flex items-center bg-transparent border-none text-text-secondary cursor-pointer text-xs p-0.5"
+                        aria-label="Copy operator name"
+                        className={COPY_BUTTON}
                     >
                         <i className="fas fa-copy"></i>
                     </button>
@@ -91,6 +94,7 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                         }}
                         type="button"
                         title="View comments"
+                        aria-label="View comments"
                         className={`${ACTION_BUTTON} relative`}
                     >
                         <i className="fas fa-comments"></i>
@@ -107,6 +111,7 @@ function OperatorListRow({ operator, onSelect, onOpenComments, onOpenHistory, du
                         }}
                         type="button"
                         title="View history"
+                        aria-label="View history"
                         className={ACTION_BUTTON}
                     >
                         <i className="fas fa-history"></i>

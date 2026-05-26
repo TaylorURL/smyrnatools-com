@@ -218,11 +218,22 @@ export default function SendAssetMessageModal({ item, itemNumber, itemType, onCl
                                                         type="text"
                                                         value={recipientSearch}
                                                         onChange={(e) => setRecipientSearch(e.target.value)}
-                                                        placeholder="Search..."
+                                                        placeholder="Search recipients..."
+                                                        aria-label="Search recipients"
                                                         autoFocus
-                                                        className="w-full text-[13px] rounded-md py-1.5 pl-7 pr-2.5 outline-none bg-bg-secondary border border-border-light text-text-primary"
+                                                        className="w-full text-[13px] rounded-md py-1.5 pl-7 pr-7 outline-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                                                         style={{ fontFamily: 'inherit' }}
                                                     />
+                                                    {recipientSearch && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setRecipientSearch('')}
+                                                            aria-label="Clear search"
+                                                            className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-text-tertiary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 transition-colors duration-150"
+                                                        >
+                                                            <i className="fas fa-times text-[10px]" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
 

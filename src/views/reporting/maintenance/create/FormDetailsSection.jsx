@@ -2,7 +2,14 @@
 import React from 'react'
 
 import PlantDropdownModal from '../../../../app/components/common/PlantDropdownModal'
-import { FIELD_STYLE, FREQUENCY_HINT, FREQUENCY_OPTIONS } from '../../../../app/constants/maintenanceCreateConstants'
+import {
+    FIELD_INPUT_CLASS,
+    FIELD_SELECT_CLASS,
+    FIELD_STYLE,
+    FIELD_TEXTAREA_CLASS,
+    FREQUENCY_HINT,
+    FREQUENCY_OPTIONS
+} from '../../../../app/constants/maintenanceCreateConstants'
 import { Card, CardHeader, Chip, ErrorText, FieldLabel } from './atoms'
 
 const PER_N_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly']
@@ -51,7 +58,7 @@ export function FormDetailsSection({
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Enter form title"
-                        className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none"
+                        className={FIELD_INPUT_CLASS}
                         style={{
                             ...FIELD_STYLE,
                             borderColor: errors.title ? '#dc2626' : 'var(--border-light)'
@@ -83,7 +90,7 @@ export function FormDetailsSection({
                     <button
                         type="button"
                         onClick={() => setShowPlantModal(true)}
-                        className="flex w-full items-center justify-between rounded px-2.5 py-1.5 text-[12.5px] cursor-pointer transition-colors hover:brightness-95"
+                        className="flex w-full items-center justify-between rounded px-2.5 py-1.5 text-[12.5px] cursor-pointer transition-colors duration-150 hover:bg-bg-tertiary hover:border-border-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
                         style={{
                             ...FIELD_STYLE,
                             borderColor: errors.plants ? '#dc2626' : 'var(--border-light)'
@@ -113,7 +120,7 @@ export function FormDetailsSection({
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Optional description or instructions"
                         rows={3}
-                        className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none resize-y min-h-[64px]"
+                        className={FIELD_TEXTAREA_CLASS}
                         style={FIELD_STYLE}
                     />
                 </div>
@@ -124,7 +131,8 @@ export function FormDetailsSection({
                         <select
                             value={frequency}
                             onChange={(e) => setFrequency(e.target.value)}
-                            className="w-full rounded px-2.5 py-1.5 text-[12.5px] cursor-pointer outline-none"
+                            aria-label="Frequency"
+                            className={FIELD_SELECT_CLASS}
                             style={FIELD_STYLE}
                         >
                             {FREQUENCY_OPTIONS.map((opt) => (
@@ -143,7 +151,8 @@ export function FormDetailsSection({
                                     value={frequencyValue}
                                     onChange={(e) => setFrequencyValue(Math.max(1, parseInt(e.target.value, 10) || 1))}
                                     min="1"
-                                    className="flex-1 rounded px-2.5 py-1.5 text-[12.5px] outline-none font-mono tabular-nums"
+                                    aria-label="Frequency value"
+                                    className={`${FIELD_INPUT_CLASS} font-mono tabular-nums`}
                                     style={FIELD_STYLE}
                                 />
                                 <span className="text-[10.5px] whitespace-nowrap uppercase tracking-wider text-text-tertiary">
@@ -160,7 +169,7 @@ export function FormDetailsSection({
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full rounded px-2.5 py-1.5 text-[12.5px] outline-none font-mono tabular-nums"
+                        className={`${FIELD_INPUT_CLASS} font-mono tabular-nums`}
                         style={FIELD_STYLE}
                     />
                     <p className="mt-1 text-[10.5px] text-text-tertiary">{FREQUENCY_HINT[frequency]}</p>

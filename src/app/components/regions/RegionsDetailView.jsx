@@ -198,7 +198,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <label>Region Code</label>
                         <input
                             type="text"
-                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
                             value={regionCode}
                             disabled
                         />
@@ -207,25 +207,31 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                         <label>Region Name</label>
                         <input
                             type="text"
-                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
+                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
                             value={regionName}
                             onChange={(e) => setRegionName(e.target.value)}
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <label>Type</label>
-                        <select
-                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
-                            value={regionType}
-                            onChange={(e) => setRegionType(e.target.value)}
-                        >
-                            <option value="" disabled>
-                                Select type
-                            </option>
-                            <option value="Concrete">Concrete</option>
-                            <option value="Aggregate">Aggregate</option>
-                            <option value="Office">Office</option>
-                        </select>
+                        <div className="relative">
+                            <select
+                                className="w-full appearance-none cursor-pointer rounded-xl border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                                value={regionType}
+                                onChange={(e) => setRegionType(e.target.value)}
+                            >
+                                <option value="" disabled>
+                                    Select type
+                                </option>
+                                <option value="Concrete">Concrete</option>
+                                <option value="Aggregate">Aggregate</option>
+                                <option value="Office">Office</option>
+                            </select>
+                            <i
+                                aria-hidden="true"
+                                className="fas fa-chevron-down pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary"
+                            />
+                        </div>
                     </div>
                 </DetailViewSection.Card>
             </DetailViewSection.Section>
@@ -269,20 +275,36 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                 </div>
                             )}
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    className="flex-1 w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
-                                    placeholder="Search by code or name"
-                                    value={plantQuery}
-                                    onChange={(e) => setPlantQuery(e.target.value)}
-                                    aria-label="Search plants"
-                                />
-                                <span className="text-xs text-slate-500 whitespace-nowrap">
+                                <div className="relative flex-1">
+                                    <i
+                                        aria-hidden="true"
+                                        className="fas fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary"
+                                    />
+                                    <input
+                                        type="search"
+                                        className="w-full rounded-xl border border-border-light bg-bg-secondary pl-10 pr-10 py-3 text-sm text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-search-cancel-button]:hidden"
+                                        placeholder="Search by code or name"
+                                        value={plantQuery}
+                                        onChange={(e) => setPlantQuery(e.target.value)}
+                                        aria-label="Search plants"
+                                    />
+                                    {plantQuery && (
+                                        <button
+                                            type="button"
+                                            aria-label="Clear plant search"
+                                            onClick={() => setPlantQuery('')}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                                        >
+                                            <i className="fas fa-times text-[10px]" />
+                                        </button>
+                                    )}
+                                </div>
+                                <span className="text-xs text-text-secondary whitespace-nowrap">
                                     {filteredPlants.length} results
                                 </span>
                                 <button
                                     type="button"
-                                    className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100"
+                                    className="flex items-center gap-2 rounded-xl border border-border-light bg-bg-primary px-3 py-2 text-[13px] font-semibold text-text-primary whitespace-nowrap transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover active:scale-[0.97] disabled:active:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
                                     onClick={selectAllFiltered}
                                     disabled={!filteredPlants.length}
                                 >
@@ -416,26 +438,34 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                         </div>
                                                     )}
                                                     {unassignedPlants.length > 0 && (
-                                                        <select
-                                                            className="w-full rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-[13px] text-text-primary outline-none transition-colors focus:border-accent"
-                                                            value=""
-                                                            onChange={(e) => {
-                                                                if (e.target.value)
-                                                                    addDistrictToPlant(e.target.value, districtName)
-                                                            }}
-                                                        >
-                                                            <option value="">Add plant to {districtName}...</option>
-                                                            {unassignedPlants.map((code) => {
-                                                                const p = visiblePlants.find(
-                                                                    (pl) => pl.plant_code === code
-                                                                )
-                                                                return (
-                                                                    <option key={code} value={code}>
-                                                                        ({code}) {p?.plant_name || ''}
-                                                                    </option>
-                                                                )
-                                                            })}
-                                                        </select>
+                                                        <div className="relative">
+                                                            <select
+                                                                className="w-full appearance-none cursor-pointer rounded-xl border border-border-light bg-bg-secondary pl-4 pr-10 py-3 text-[13px] text-text-primary outline-none transition-colors hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                                                                value=""
+                                                                onChange={(e) => {
+                                                                    if (e.target.value)
+                                                                        addDistrictToPlant(e.target.value, districtName)
+                                                                }}
+                                                            >
+                                                                <option value="">
+                                                                    Add plant to {districtName}...
+                                                                </option>
+                                                                {unassignedPlants.map((code) => {
+                                                                    const p = visiblePlants.find(
+                                                                        (pl) => pl.plant_code === code
+                                                                    )
+                                                                    return (
+                                                                        <option key={code} value={code}>
+                                                                            ({code}) {p?.plant_name || ''}
+                                                                        </option>
+                                                                    )
+                                                                })}
+                                                            </select>
+                                                            <i
+                                                                aria-hidden="true"
+                                                                className="fas fa-chevron-down pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary"
+                                                            />
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>

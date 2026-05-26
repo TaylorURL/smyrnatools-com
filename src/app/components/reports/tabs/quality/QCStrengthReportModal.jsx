@@ -9,6 +9,22 @@ import { oneOffReportTypeMap } from '../../../../types/ReportTypes'
 
 const REPORT_DEF = oneOffReportTypeMap.qc_strength
 
+/* Shared input chrome so date/time/text/select/textarea all share one focus +
+   hover + placeholder treatment across the three themes. The encoded chevron
+   sits behind selects to restore the dropdown affordance under `appearance-none`. */
+const TEXT_INPUT_CLS =
+    'w-full bg-bg-secondary border border-border-light rounded-lg px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary outline-none transition-colors duration-150 hover:border-border-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark]'
+const TEXTAREA_CLS = `${TEXT_INPUT_CLS} resize-none`
+const SELECT_CHEVRON_URL =
+    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E\")"
+const SELECT_CLS = `${TEXT_INPUT_CLS} appearance-none cursor-pointer pr-10 disabled:cursor-wait bg-no-repeat`
+const SELECT_BG_STYLE = {
+    backgroundImage: SELECT_CHEVRON_URL,
+    backgroundPosition: 'right 10px center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '16px'
+}
+
 function getCurrentWeekBounds() {
     const d = new Date()
     const day = d.getDay()
@@ -150,13 +166,9 @@ function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = nul
                         value={formData[field.name] || ''}
                         onChange={(e) => updateField(field.name, e.target.value)}
                         disabled={isLoading}
-                        className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
-                        style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                            backgroundPosition: 'right 10px center',
-                            backgroundRepeat: 'no-repeat',
-                            backgroundSize: '16px'
-                        }}
+                        aria-label={field.label}
+                        className={SELECT_CLS}
+                        style={SELECT_BG_STYLE}
                     >
                         <option value="">
                             {isLoading
@@ -181,13 +193,9 @@ function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = nul
                     <select
                         value={formData[field.name] || ''}
                         onChange={(e) => updateField(field.name, e.target.value)}
-                        className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors cursor-pointer"
-                        style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                            backgroundPosition: 'right 10px center',
-                            backgroundRepeat: 'no-repeat',
-                            backgroundSize: '16px'
-                        }}
+                        aria-label={field.label}
+                        className={SELECT_CLS}
+                        style={SELECT_BG_STYLE}
                     >
                         <option value="">Select {field.label}...</option>
                         {(field.options || []).map((opt) => (
@@ -205,7 +213,7 @@ function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = nul
                     value={formData[field.name] || ''}
                     onChange={(e) => updateField(field.name, e.target.value)}
                     rows={3}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors resize-none"
+                    className={TEXTAREA_CLS}
                     placeholder={field.label}
                 />
             )
@@ -223,7 +231,7 @@ function QCStrengthReportModal({ onClose, onSubmitted, user, initialReport = nul
                 }
                 value={formData[field.name] || ''}
                 onChange={(e) => updateField(field.name, e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400 transition-colors"
+                className={TEXT_INPUT_CLS}
                 placeholder={field.label}
             />
         )

@@ -24,16 +24,27 @@ export function ActivityToolbar({
             className="rounded-lg px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-bg-primary border border-border-light"
             style={{ boxShadow: 'var(--shadow-sm)' }}
         >
-            <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px] bg-bg-secondary border border-border-light">
+            <div className="flex items-center gap-2 rounded-md px-2.5 py-1.5 flex-1 min-w-[200px] bg-bg-secondary border border-border-light transition-colors duration-150 hover:border-border-medium focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]">
                 <i className="fas fa-magnifying-glass text-[11px] text-text-tertiary" />
                 <input
-                    type="text"
+                    type="search"
                     value={query}
                     onChange={(e) => onQueryChange(e.target.value)}
                     placeholder="Search by customer, contact, note, or who called…"
                     disabled={isLoading}
-                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary disabled:opacity-60"
+                    aria-label="Search activity feed"
+                    className="bg-transparent outline-none border-none text-[12.5px] w-full text-text-primary placeholder:text-text-tertiary disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
                 />
+                {query && (
+                    <button
+                        type="button"
+                        onClick={() => onQueryChange('')}
+                        className="border-none bg-transparent cursor-pointer text-text-tertiary hover:text-text-primary active:scale-[0.92] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
+                        aria-label="Clear search"
+                    >
+                        <i className="fas fa-times text-[10px]" />
+                    </button>
+                )}
             </div>
             <div className="inline-flex rounded-md overflow-hidden border border-border-light">
                 {TIME_RANGE_OPTIONS.map((opt) => {

@@ -125,7 +125,7 @@ const VolumeCalculator = () => {
 
     const cfg = SHAPE_CONFIG[shape]
     const shapeSwitcher = (
-        <div className="inline-flex items-center rounded-lg p-0.5 gap-0.5 bg-[var(--bg-tertiary)] border border-[var(--border-light)] flex-wrap">
+        <div role="group" aria-label="Shape" className="inline-flex items-center rounded-lg p-0.5 gap-0.5 bg-[var(--bg-tertiary)] border border-[var(--border-light)] flex-wrap">
             {SHAPES.map((s) => {
                 const active = shape === s.id
                 return (
@@ -136,7 +136,8 @@ const VolumeCalculator = () => {
                             setShape(s.id)
                             setValues({})
                         }}
-                        className={`flex items-center gap-1.5 font-semibold rounded text-[11.5px] py-1 px-2 transition-colors ${active ? 'bg-accent text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                        aria-pressed={active}
+                        className={`flex items-center gap-1.5 font-semibold rounded text-[11.5px] py-1 px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${active ? 'bg-accent text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
                     >
                         <i className={`fas ${s.icon} text-[10px]`} />
                         {s.label}

@@ -16,7 +16,7 @@ function PlantFilterButton({ accentColor, active = false, displayText, onClick, 
             onClick={onClick}
             aria-label={title}
             title={title}
-            className="text-[12px] font-medium cursor-pointer rounded py-1.5 px-2 flex items-center gap-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+            className="text-[12px] font-medium cursor-pointer rounded py-1.5 px-2 flex items-center gap-1.5 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
             style={{
                 background: tinted ? `${accentColor}14` : 'var(--bg-secondary)',
                 border: `1px solid ${tinted ? accentColor : 'var(--border-light)'}`,
