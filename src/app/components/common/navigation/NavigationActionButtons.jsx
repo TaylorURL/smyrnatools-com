@@ -3,6 +3,27 @@ import React from 'react'
 
 import UserAvatar from '../UserAvatar'
 
+/** Shared classes for chrome-on-accent action buttons in the two-level header. */
+const TWO_LEVEL_BUTTON_BASE =
+    'relative inline-flex items-center justify-center cursor-pointer rounded-lg bg-white/[0.08] border border-white/10 text-white/80 hover:text-white hover:bg-white/[0.18] active:scale-[0.94] transition-[background-color,color,transform] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40'
+
+/** Small badge bubble overlaid on icon buttons. */
+function ActionBadge({ count, accentColor, color = '#ef4444', small = false }) {
+    if (!count || count <= 0) return null
+    return (
+        <span
+            className={`force-white-text absolute -right-1 -top-1 inline-flex items-center justify-center rounded-full font-bold text-white tabular-nums ${small ? 'h-4 min-w-[16px] px-1 text-[9px]' : 'h-5 min-w-[20px] px-1 text-[11px]'}`}
+            style={{
+                backgroundColor: color,
+                border: `2px solid ${accentColor}`,
+                boxShadow: `0 2px 8px ${color}66`
+            }}
+        >
+            {count}
+        </span>
+    )
+}
+
 /** Compact icon button used in the two-level header for messages/users. */
 export function TwoLevelIconButton({
     title,
@@ -16,31 +37,16 @@ export function TwoLevelIconButton({
     return (
         <button
             type="button"
-            className="relative flex items-center justify-center cursor-pointer bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded-lg text-[rgba(255,255,255,0.7)] h-[34px] active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none hover:bg-[rgba(255,255,255,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            className={`${TWO_LEVEL_BUTTON_BASE} h-[34px] gap-1`}
             title={title}
             aria-label={title}
-            style={{ gap: 4, width }}
+            style={{ width }}
             onClick={onClick}
         >
             {iconClasses.map((cls) => (
-                <i key={cls.name} className={`fas ${cls.name}`} style={{ fontSize: cls.size }} />
+                <i key={cls.name} className={`fas ${cls.name}`} style={{ fontSize: cls.size }} aria-hidden="true" />
             ))}
-            {badge > 0 && (
-                <span
-                    className="force-white-text absolute flex items-center justify-center rounded-full font-bold h-4"
-                    style={{
-                        backgroundColor: badgeColor,
-                        border: `2px solid ${accentColor}`,
-                        color: 'white',
-                        fontSize: 9,
-                        minWidth: 16,
-                        right: -4,
-                        top: -4
-                    }}
-                >
-                    {badge}
-                </span>
-            )}
+            <ActionBadge count={badge} accentColor={accentColor} color={badgeColor} small />
         </button>
     )
 }
@@ -54,8 +60,7 @@ export function TwoLevelUserAvatar({ accentColor, initials, title, onClick }) {
             onClick={onClick}
             title={title}
             aria-label={title}
-            className="cursor-pointer border border-[rgba(255,255,255,0.1)] rounded-lg p-0 active:scale-[0.92] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            style={{ background: 'transparent' }}
+            className="rounded-lg border border-white/10 bg-transparent p-0 cursor-pointer active:scale-[0.94] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         >
             <UserAvatar accentColor={accentColor} initials={initials} size={34} rounded="lg" />
         </button>
@@ -64,50 +69,21 @@ export function TwoLevelUserAvatar({ accentColor, initials, title, onClick }) {
 
 /** Messages icon button in the top-bar header — wider to fit bell + envelope. */
 export function TopBarMessagesButton({ onClick, combinedCount, accentColor, isTablet }) {
+    const size = isTablet
+        ? 'h-8 w-10 rounded-lg gap-[3px] text-xs'
+        : 'h-[42px] w-[52px] rounded-[12px] gap-1 text-sm'
     return (
-        <div
-            className="items-center bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] cursor-pointer flex justify-center relative"
-            style={{
-                borderRadius: isTablet ? '8px' : '12px',
-                color: 'white',
-                flexShrink: 0,
-                gap: isTablet ? '3px' : '4px',
-                height: isTablet ? '32px' : '42px',
-                transition: 'all 0.2s ease',
-                width: isTablet ? '40px' : '52px'
-            }}
+        <button
+            type="button"
+            className={`relative inline-flex items-center justify-center text-white bg-white/[0.05] border border-white/10 cursor-pointer flex-shrink-0 hover:bg-white/[0.18] hover:-translate-y-[1px] active:scale-[0.96] active:translate-y-0 transition-[background-color,transform] duration-200 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${size}`}
             onClick={onClick}
             title="Messages"
-            onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'
-                e.currentTarget.style.transform = 'translateY(-1px)'
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'
-                e.currentTarget.style.transform = 'translateY(0)'
-            }}
+            aria-label={combinedCount > 0 ? `Messages, ${combinedCount} unread` : 'Messages'}
         >
-            <i className="fas fa-bell" style={{ fontSize: isTablet ? '12px' : '14px' }} />
-            <i className="fas fa-envelope" style={{ fontSize: isTablet ? '11px' : '13px' }} />
-            {combinedCount > 0 && (
-                <span
-                    className="force-white-text items-center bg-red-500 rounded-[10px] flex font-bold justify-center absolute"
-                    style={{
-                        border: `2px solid ${accentColor}`,
-                        boxShadow: '0 2px 8px #ef444466',
-                        color: 'white',
-                        fontSize: isTablet ? '9px' : '11px',
-                        height: isTablet ? '16px' : '20px',
-                        minWidth: isTablet ? '16px' : '20px',
-                        padding: '0 4px',
-                        right: '-4px',
-                        top: '-4px'
-                    }}
-                >
-                    {combinedCount}
-                </span>
-            )}
-        </div>
+            <i className={`fas fa-bell ${isTablet ? 'text-xs' : 'text-sm'}`} aria-hidden="true" />
+            <i className={`fas fa-envelope ${isTablet ? 'text-[11px]' : 'text-[13px]'}`} aria-hidden="true" />
+            <ActionBadge count={combinedCount} accentColor={accentColor} small={isTablet} />
+        </button>
     )
 }
 
@@ -123,51 +99,22 @@ export function TopBarIconButton({
     isTablet,
     accentColor
 }) {
+    const size = isTablet ? 'h-8 w-8 rounded-lg text-[13px]' : 'h-[42px] w-[42px] rounded-[12px] text-base'
+    const tone = isActive
+        ? 'bg-white/[0.18] border border-white/15'
+        : 'bg-white/[0.05] border border-white/10 hover:bg-white/[0.18]'
     return (
-        <div
-            className="items-center cursor-pointer flex justify-center relative"
-            style={{
-                backgroundColor: isActive ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                border: isActive ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.08)',
-                borderRadius: isTablet ? '8px' : '12px',
-                color: 'white',
-                flexShrink: 0,
-                height: isTablet ? '32px' : '42px',
-                transition: 'all 0.2s ease',
-                width: isTablet ? '32px' : '42px'
-            }}
+        <button
+            type="button"
+            className={`relative inline-flex items-center justify-center text-white cursor-pointer flex-shrink-0 hover:-translate-y-[1px] active:scale-[0.96] active:translate-y-0 transition-[background-color,transform] duration-200 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${size} ${tone}`}
             onClick={onClick}
             title={title}
+            aria-label={title}
+            aria-pressed={isActive}
             data-tutorial-target={tutorialTarget}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'
-                e.currentTarget.style.transform = 'translateY(-1px)'
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = isActive ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'
-                e.currentTarget.style.transform = 'translateY(0)'
-            }}
         >
-            <i className={`fas ${icon}`} style={{ fontSize: isTablet ? '13px' : '16px' }}></i>
-            {badge > 0 && (
-                <span
-                    className="force-white-text items-center rounded-[10px] flex font-bold justify-center absolute"
-                    style={{
-                        backgroundColor: badgeColor,
-                        border: `2px solid ${accentColor}`,
-                        boxShadow: `0 2px 8px ${badgeColor}66`,
-                        color: 'white',
-                        fontSize: isTablet ? '9px' : '11px',
-                        height: isTablet ? '16px' : '20px',
-                        minWidth: isTablet ? '16px' : '20px',
-                        padding: '0 4px',
-                        right: '-4px',
-                        top: '-4px'
-                    }}
-                >
-                    {badge}
-                </span>
-            )}
-        </div>
+            <i className={`fas ${icon}`} aria-hidden="true" />
+            <ActionBadge count={badge} accentColor={accentColor} color={badgeColor} small={isTablet} />
+        </button>
     )
 }
