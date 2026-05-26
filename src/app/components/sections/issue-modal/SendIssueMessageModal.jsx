@@ -285,16 +285,21 @@ function SendIssueMessageModal({ issue, itemNumber, itemType, creatorName, onClo
                             </div>
 
                             <div className="mb-3">
-                                <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1 text-text-secondary">
+                                <label
+                                    htmlFor="issue-message-textarea"
+                                    className="block text-[10px] font-semibold uppercase tracking-wider mb-1 text-text-secondary"
+                                >
                                     Message{' '}
                                     <span className="font-normal normal-case text-text-tertiary">(optional)</span>
                                 </label>
                                 <textarea
+                                    id="issue-message-textarea"
                                     value={commentary}
                                     onChange={(e) => setCommentary(e.target.value)}
                                     placeholder="Add context, questions, or instructions..."
+                                    aria-label="Message"
                                     rows="3"
-                                    className="w-full rounded outline-none px-3 py-2 text-[12px] resize-vertical bg-bg-secondary border border-border-light text-text-primary"
+                                    className="w-full rounded outline-none px-3 py-2 text-[12px] resize-vertical bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                                 />
                             </div>
 

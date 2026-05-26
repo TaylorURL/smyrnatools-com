@@ -12,14 +12,12 @@ import {
 } from '../../constants/listViewConstants'
 
 const dropdownTrigger = (isMobile) =>
-    `flex items-center rounded cursor-pointer font-medium transition-all duration-150 ${
+    `flex items-center rounded cursor-pointer font-medium transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
         isMobile ? 'text-[11px] gap-1 px-2 py-[5px]' : 'text-xs gap-1.5 px-2.5 py-1.5'
     } text-text-secondary`
 
 const dropdownItemClass =
-    'flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-all duration-100 border-none bg-transparent text-text-primary'
-
-const setHoverBg = (color) => (e) => (e.currentTarget.style.background = color)
+    'flex items-center gap-2.5 w-full rounded px-3 py-2 text-xs font-medium cursor-pointer transition-colors duration-100 border-none bg-transparent text-text-primary hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40'
 
 /**
  * Sticky filter bar inside TopSection's custom bottom slot: view-mode toggles,
@@ -113,7 +111,11 @@ export default function ListFilterBar({
             ) : (
                 <div className="relative" ref={statusDropdownRef}>
                     <button
+                        type="button"
                         onClick={onStatusDropdownToggle}
+                        aria-haspopup="listbox"
+                        aria-expanded={statusDropdownOpen}
+                        aria-label="Filter by status"
                         className={dropdownTrigger(isMobile)}
                         style={{
                             background: statusDropdownOpen ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
@@ -137,10 +139,9 @@ export default function ListFilterBar({
                                     return (
                                         <button
                                             key={opt}
+                                            type="button"
                                             onClick={() => onStatusFilterChange(opt)}
                                             className={dropdownItemClass}
-                                            onMouseEnter={setHoverBg('var(--bg-secondary)')}
-                                            onMouseLeave={setHoverBg('transparent')}
                                         >
                                             <span
                                                 className="flex items-center justify-center h-5 w-5 rounded-md text-[9px]"
@@ -173,7 +174,11 @@ export default function ListFilterBar({
             ) : (
                 <div className="relative" ref={roleDropdownRef}>
                     <button
+                        type="button"
                         onClick={onRoleDropdownToggle}
+                        aria-haspopup="listbox"
+                        aria-expanded={roleDropdownOpen}
+                        aria-label="Filter by assigned role"
                         className={dropdownTrigger(isMobile)}
                         style={{
                             background: roleDropdownOpen ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
@@ -194,10 +199,9 @@ export default function ListFilterBar({
                                 {ROLE_OPTIONS.map((opt) => (
                                     <button
                                         key={opt}
+                                        type="button"
                                         onClick={() => onRoleFilterChange(opt)}
                                         className={dropdownItemClass}
-                                        onMouseEnter={setHoverBg('var(--bg-secondary)')}
-                                        onMouseLeave={setHoverBg('transparent')}
                                     >
                                         <span className="flex items-center justify-center h-5 w-5 rounded-md text-[9px] bg-bg-tertiary text-text-secondary">
                                             <i className="fas fa-user" />

@@ -51,12 +51,15 @@ export function MobileRegionSelect({ regionCode, permittedRegions, onChange, acc
     return (
         <div style={{ marginBottom: '20px' }}>
             <label
+                htmlFor="mobile-region-select"
                 className="text-text-secondary block text-[11px] font-semibold tracking-wider uppercase"
                 style={{ marginBottom: '6px' }}
             >
                 Region
             </label>
             <select
+                id="mobile-region-select"
+                aria-label="Region"
                 className="bg-bg-secondary rounded-[10px] text-text-primary cursor-pointer text-sm font-semibold w-full"
                 value={regionCode || ''}
                 onChange={onChange}
@@ -95,7 +98,8 @@ export function TwoLevelRegionSelect({ regionCode, permittedRegions, onChange })
         <select
             value={regionCode || ''}
             onChange={onChange}
-            className="cursor-pointer transition-all duration-200 outline-none bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] rounded-[10px] font-semibold"
+            aria-label="Region"
+            className="cursor-pointer transition-all duration-200 outline-none bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] rounded-[10px] font-semibold hover:bg-[rgba(255,255,255,0.14)] focus-visible:ring-2 focus-visible:ring-white/40"
             style={{
                 appearance: 'none',
                 backgroundImage: REGION_SELECT_ARROW,
@@ -129,6 +133,7 @@ export function TopBarRegionSelect({ regionCode, permittedRegions, onChange, isT
     return (
         <select
             className="bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.15)] cursor-pointer font-semibold overflow-hidden whitespace-nowrap"
+            aria-label="Region"
             value={regionCode || ''}
             onChange={onChange}
             onMouseEnter={(e) => {

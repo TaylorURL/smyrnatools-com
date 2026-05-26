@@ -28,7 +28,8 @@ const SUGGESTION_LIMIT = 8
  * container) can't clip it out of view. Position is recomputed off the
  * input's bounding rect on open + on scroll/resize.
  */
-const DEFAULT_INPUT_CLASSNAME = 'w-full rounded-lg px-3 py-2.5 text-[14px] outline-none'
+const DEFAULT_INPUT_CLASSNAME =
+    'w-full rounded-lg px-3 py-2.5 text-[14px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30'
 
 function AddressAutocomplete({ fieldStyle, inputClassName, onChange, placeholder, required, value }) {
     const [suggestions, setSuggestions] = useState([])
@@ -165,6 +166,9 @@ function AddressAutocomplete({ fieldStyle, inputClassName, onChange, placeholder
                 placeholder={placeholder}
                 required={required}
                 autoComplete="off"
+                aria-label={placeholder || 'Address'}
+                aria-autocomplete="list"
+                aria-expanded={showDropdown}
                 className={inputClassName || DEFAULT_INPUT_CLASSNAME}
                 style={fieldStyle}
             />
@@ -191,26 +195,27 @@ function AddressAutocomplete({ fieldStyle, inputClassName, onChange, placeholder
                                 No matches found — keep typing or check spelling.
                             </li>
                         )}
-                        {suggestions.map((suggestion, index) => (
-                            <li
-                                key={`${suggestion.coord.lat}-${suggestion.coord.lng}-${index}`}
-                                role="option"
-                                aria-selected={highlightIndex === index}
-                                onMouseDown={(event) => {
-                                    event.preventDefault()
-                                    acceptSuggestion(suggestion)
-                                }}
-                                onMouseEnter={() => setHighlightIndex(index)}
-                                className="px-3 py-2 text-[12.5px] cursor-pointer leading-snug text-text-primary"
-                                style={{
-                                    background: highlightIndex === index ? 'var(--bg-secondary)' : 'transparent',
-                                    borderTop: index === 0 ? 'none' : '1px solid var(--border-light)'
-                                }}
-                            >
-                                <i className="fas fa-location-dot text-[10px] mr-2 text-text-tertiary" />
-                                {suggestion.displayName}
-                            </li>
-                        ))}
+                        {suggestions.map((suggestion, index) => {
+                            const isActive = highlightIndex === index
+                            return (
+                                <li
+                                    key={`${suggestion.coord.lat}-${suggestion.coord.lng}-${index}`}
+                                    role="option"
+                                    aria-selected={isActive}
+                                    onMouseDown={(event) => {
+                                        event.preventDefault()
+                                        acceptSuggestion(suggestion)
+                                    }}
+                                    onMouseEnter={() => setHighlightIndex(index)}
+                                    className={`px-3 py-2 text-[12.5px] cursor-pointer leading-snug text-text-primary transition-colors duration-100 ${
+                                        index === 0 ? '' : 'border-t border-border-light'
+                                    } ${isActive ? 'bg-bg-secondary' : ''}`}
+                                >
+                                    <i className="fas fa-location-dot text-[10px] mr-2 text-text-tertiary" />
+                                    {suggestion.displayName}
+                                </li>
+                            )
+                        })}
                     </ul>,
                     document.body
                 )}

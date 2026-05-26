@@ -234,9 +234,10 @@ function IssueModalSection({ itemId, itemNumber, itemType, onClose, service, dis
                                 value={newIssue}
                                 onChange={(e) => setNewIssue(e.target.value)}
                                 placeholder="What's the issue?"
+                                aria-label="Describe the issue"
                                 disabled={isSubmitting}
                                 rows="2"
-                                className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary"
+                                className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
                                 <div className="flex items-center gap-1.5 flex-wrap">

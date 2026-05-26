@@ -140,8 +140,9 @@ export default function JobMapModal({ onClose, order, plantAddress, plantCode, p
                                 <select
                                     value={selectedCode}
                                     onChange={(e) => setSelectedCode(e.target.value)}
-                                    className="text-[12px] font-mono font-semibold bg-transparent border-0 outline-none cursor-pointer text-text-primary"
+                                    className="text-[12px] font-mono font-semibold bg-transparent border-0 outline-none cursor-pointer text-text-primary rounded transition-colors duration-150 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                     title="Switch origin plant to compare routes"
+                                    aria-label="Origin plant"
                                 >
                                     {plantOptions.map((p) => (
                                         <option key={p.code} value={p.code}>

@@ -197,9 +197,10 @@ function CommentModalSection({ itemId, itemNumber, itemType, onClose, service, d
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
                             placeholder="Write a comment..."
+                            aria-label="Write a comment"
                             disabled={isSubmitting}
                             rows="2"
-                            className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary"
+                            className="w-full rounded outline-none p-2 resize-none text-[12px] bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                         <div className="flex justify-end mt-2">
                             <button

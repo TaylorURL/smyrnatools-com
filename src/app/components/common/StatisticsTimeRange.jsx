@@ -45,22 +45,29 @@ function PeriodNavigator({
 }) {
     if (period === 'allTime') return null
     if (period === 'custom') {
+        const dateInputClass =
+            'rounded px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary ' +
+            'transition-colors duration-150 hover:border-border-medium ' +
+            'focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 ' +
+            '[color-scheme:light] dark:[color-scheme:dark]'
         return (
             <div className="flex items-center gap-1.5 text-xs">
                 <input
                     type="date"
+                    aria-label="Custom range start"
                     value={customStart}
                     max={customEnd}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="rounded px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary"
+                    className={dateInputClass}
                 />
                 <span className="text-text-secondary">to</span>
                 <input
                     type="date"
+                    aria-label="Custom range end"
                     value={customEnd}
                     min={customStart}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="rounded px-2 py-1 text-xs bg-bg-primary border border-border-light text-text-primary"
+                    className={dateInputClass}
                 />
             </div>
         )
