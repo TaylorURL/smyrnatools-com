@@ -25,15 +25,16 @@ export function PlanChartModeToggle({ accentColor, onChange, options, value }) {
                         key={option.key}
                         type="button"
                         onClick={() => onChange(option.key)}
-                        className="flex items-center gap-1.5 rounded text-[12px] font-medium cursor-pointer px-2.5 py-1 whitespace-nowrap active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
-                        style={{
-                            background: isActive ? accentColor : 'var(--bg-secondary)',
-                            border: `1px solid ${isActive ? accentColor : 'var(--border-light)'}`,
-                            color: isActive ? '#fff' : 'var(--text-secondary)'
-                        }}
+                        aria-pressed={isActive}
                         title={option.group ? `${option.group} · ${option.label}` : option.label}
+                        className={`inline-flex items-center gap-1.5 rounded-md text-[12px] font-medium cursor-pointer px-2.5 py-1 whitespace-nowrap border transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary ${
+                            isActive
+                                ? 'text-white border-transparent'
+                                : 'bg-bg-secondary border-border-light text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                        }`}
+                        style={isActive ? { background: accentColor, borderColor: accentColor } : undefined}
                     >
-                        <i className={`fas ${option.icon} text-[10px]`} />
+                        <i className={`fas ${option.icon} text-[10px]`} aria-hidden="true" />
                         <span>{option.label}</span>
                     </button>
                 )

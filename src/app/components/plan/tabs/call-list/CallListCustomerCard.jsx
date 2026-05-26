@@ -41,11 +41,12 @@ export function CallListCustomerCardRow({ isActive, onSelect, row }) {
         <button
             type="button"
             onClick={() => onSelect(row.customer_num)}
-            className="text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
-            style={{
-                background: isActive ? 'var(--bg-secondary)' : 'var(--bg-primary)',
-                borderColor: isActive ? 'var(--text-secondary)' : 'var(--border-light)'
-            }}
+            aria-current={isActive ? 'true' : undefined}
+            className={`text-left rounded-md p-3 flex flex-col gap-2 cursor-pointer border transition-[colors,transform,box-shadow] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary ${
+                isActive
+                    ? 'bg-bg-secondary border-text-secondary shadow-card'
+                    : 'bg-bg-primary border-border-light hover:border-border-medium hover:shadow-sm'
+            }`}
         >
             <div className="flex items-baseline justify-between gap-3 min-w-0">
                 <div className="min-w-0">
@@ -62,8 +63,7 @@ export function CallListCustomerCardRow({ isActive, onSelect, row }) {
                     </div>
                 </div>
                 <div
-                    className={`font-semibold tabular-nums leading-none shrink-0 ${isCustomerOnSchedule(row.days_since_last_pour) ? 'text-[11px] uppercase tracking-wider' : 'text-[20px]'}`}
-                    style={{ color: 'var(--text-primary)' }}
+                    className={`font-semibold tabular-nums leading-none shrink-0 text-text-primary ${isCustomerOnSchedule(row.days_since_last_pour) ? 'text-[11px] uppercase tracking-wider' : 'text-[20px]'}`}
                     title={
                         isCustomerOnSchedule(row.days_since_last_pour)
                             ? 'Booked on an upcoming schedule'
@@ -104,7 +104,7 @@ export function CallListCustomerCardRow({ isActive, onSelect, row }) {
                         className="truncate"
                         title={row.last_call_by_name ? `By ${row.last_call_by_name}` : undefined}
                     >
-                        <span style={{ color: 'var(--text-tertiary)' }} className="font-semibold">
+                        <span className="font-semibold text-text-tertiary">
                             {CALL_OUTCOME_LABELS[row.last_call_outcome] || '—'}
                         </span>
                         <span> · {formatRelativeDays(row.last_call_at)}</span>
@@ -211,7 +211,7 @@ export function CallListCustomerDetail({
                         <span className="text-[11px] text-text-tertiary font-normal ml-2">#{row.customer_num}</span>
                     </h3>
                     <div className="text-[11.5px] text-text-tertiary tabular-nums mt-0.5 flex flex-wrap gap-x-1.5">
-                        <span style={{ color: 'var(--text-primary)' }} className="font-semibold">
+                        <span className="font-semibold text-text-primary">
                             {isCustomerOnSchedule(row.days_since_last_pour)
                                 ? 'On Schedule'
                                 : `${row.days_since_last_pour}d dormant`}
@@ -281,7 +281,7 @@ export function CallListCustomerDetail({
                     placeholder="Notes — project timeline, gatekeeper, follow-up date, which numbers you tried…"
                     rows={3}
                     aria-label="Call notes"
-                    className="w-full rounded-md p-2 text-[12.5px] resize-y outline-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary mb-2 transition-colors duration-150 hover:border-border-medium focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
+                    className="w-full rounded-md p-2 text-[12.5px] resize-y outline-none bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary mb-2 transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25"
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {CALL_OUTCOME_BUTTONS.map(({ color, icon, key, label }) => {

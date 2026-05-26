@@ -46,16 +46,16 @@ export function PlanTabSwitcher({ accentColor, canSeeSettings = false, isMobile 
                 return (
                     <button
                         key={mode}
+                        type="button"
                         role="tab"
                         aria-selected={isActive}
                         onClick={() => onChange(mode)}
-                        className="flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
-                        style={{
-                            backgroundColor: isActive ? accentColor : 'transparent',
-                            color: isActive ? '#fff' : 'var(--text-secondary)'
-                        }}
+                        className={`inline-flex items-center gap-1.5 rounded-md text-xs font-semibold border-none cursor-pointer px-2.5 py-1.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-tertiary ${
+                            isActive ? 'text-white shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+                        }`}
+                        style={isActive ? { backgroundColor: accentColor } : undefined}
                     >
-                        <i className={`fas ${icon}`} />
+                        <i className={`fas ${icon}`} aria-hidden="true" />
                         <span>{isMobile ? mobileLabel || label : label}</span>
                     </button>
                 )

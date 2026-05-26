@@ -110,7 +110,7 @@ function Toolbar({ dirtyCount, loading, onResetAll, onSearch, regionName, search
                         onChange={(e) => onSearch(e.target.value)}
                         placeholder="Search settings"
                         aria-label="Search settings"
-                        className="rounded-md border border-border-medium bg-bg-secondary pl-7 pr-7 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary outline-none w-44 sm:w-56 transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)] [&::-webkit-search-cancel-button]:hidden"
+                        className="rounded-md border border-border-medium bg-bg-secondary pl-7 pr-7 py-1.5 text-xs text-text-primary placeholder:text-text-tertiary outline-none w-44 sm:w-56 transition-colors duration-150 hover:border-text-tertiary focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25 [&::-webkit-search-cancel-button]:hidden"
                     />
                     {searchQuery && (
                         <button
@@ -190,7 +190,7 @@ function SettingRow({ error, field, onChange, value }) {
                 </label>
                 <p className="text-[11.5px] text-text-tertiary leading-snug mt-0.5">{field.helper}</p>
                 {error && (
-                    <p className="mt-1 text-[11.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    <p className="mt-1 text-[11.5px] font-semibold text-status-danger" role="alert">
                         {error}
                     </p>
                 )}
@@ -206,8 +206,11 @@ function SettingRow({ error, field, onChange, value }) {
                         max={field.max}
                         value={value === '' ? '' : value}
                         onChange={(e) => onChange(field.column, e.target.value)}
-                        className="w-20 sm:w-24 rounded-md border bg-bg-secondary border-border-medium px-2 py-1 text-sm text-right tabular-nums text-text-primary outline-none transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
-                        style={{ borderColor: error ? '#dc2626' : undefined }}
+                        className={`w-20 sm:w-24 rounded-md border bg-bg-secondary px-2 py-1 text-sm text-right tabular-nums text-text-primary outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent/25 ${
+                            error
+                                ? 'border-status-danger focus-visible:border-status-danger'
+                                : 'border-border-medium hover:border-text-tertiary focus-visible:border-accent'
+                        }`}
                         aria-invalid={Boolean(error)}
                     />
                     <span className="text-[11.5px] text-text-tertiary whitespace-nowrap min-w-[3.5rem]">
@@ -283,14 +286,14 @@ function ActionBar({
 function StatusMessage({ dirtyCount, error, hasValidationErrors, isDirty, showSavedFlash }) {
     if (error) {
         return (
-            <div className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-[12px] font-semibold text-text-primary">
                 {error}
             </div>
         )
     }
     if (hasValidationErrors) {
         return (
-            <div className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-[12px] font-semibold text-text-primary">
                 Fix the highlighted fields before saving.
             </div>
         )
@@ -305,7 +308,7 @@ function StatusMessage({ dirtyCount, error, hasValidationErrors, isDirty, showSa
     }
     if (showSavedFlash) {
         return (
-            <div className="text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-[12px] font-semibold text-text-primary">
                 <i className="fas fa-check mr-1.5" />
                 Settings saved.
             </div>

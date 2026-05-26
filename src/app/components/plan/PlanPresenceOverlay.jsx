@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useMemo, useState } from 'react'
 
 import { useUserAccents } from '../../hooks/useUserAccent'
@@ -19,12 +18,12 @@ import UserAvatar from '../common/UserAvatar'
 const MAX_VISIBLE = 6
 
 function PresenceChip({ accentColor, ringWhenEditing = true, size = 28, user }) {
-    const ringClass = ringWhenEditing && user.editing ? 'ring-2 ring-red-500' : 'ring-1 ring-white/40'
+    const ringClass = ringWhenEditing && user.editing ? 'ring-2 ring-status-danger' : 'ring-2 ring-bg-primary'
     return (
-        <UserAvatar accentColor={accentColor} className={`shadow-md ${ringClass}`} name={user.name} size={size}>
+        <UserAvatar accentColor={accentColor} className={`shadow-sm ${ringClass}`} name={user.name} size={size}>
             {user.editing && (
                 <span
-                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-bg-primary bg-red-500"
+                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-bg-primary bg-status-danger animate-pulse motion-reduce:animate-none"
                     title="Editing"
                 />
             )}
@@ -34,7 +33,7 @@ function PresenceChip({ accentColor, ringWhenEditing = true, size = 28, user }) 
 
 function PresenceTooltip({ user }) {
     return (
-        <div className="absolute right-0 top-full z-10 mt-1.5 hidden whitespace-nowrap rounded-md border border-border-light bg-bg-primary px-2.5 py-1.5 text-[11.5px] shadow-lg group-hover:block">
+        <div className="absolute right-0 top-full z-10 mt-1.5 hidden whitespace-nowrap rounded-md border border-border-light bg-bg-primary px-2.5 py-1.5 text-[11.5px] shadow-modal animate-fade-in-fast group-hover:block">
             <div className="font-semibold text-text-primary">
                 {user.name}
                 {user.isSelf && <span className="ml-1 text-text-tertiary">(You)</span>}
@@ -42,7 +41,9 @@ function PresenceTooltip({ user }) {
             {user.role && <div className="mt-0.5 text-text-secondary">{user.role}</div>}
             <div className="mt-1 flex items-center gap-1.5 text-[10.5px] text-text-tertiary">
                 <span
-                    className={`inline-block h-1.5 w-1.5 rounded-full ${user.editing ? 'bg-red-500' : 'bg-green-500'}`}
+                    className={`inline-block h-1.5 w-1.5 rounded-full ${
+                        user.editing ? 'bg-status-danger' : 'bg-status-active'
+                    }`}
                 />
                 {user.editing ? 'Editing now' : 'Viewing'}
             </div>
@@ -65,7 +66,7 @@ export function PlanPresenceOverlay({ users }) {
 
     return (
         <div
-            className="absolute right-3 top-3 z-30 flex items-center gap-1.5 rounded-full border border-border-light bg-bg-primary/90 px-2 py-1.5 shadow-md backdrop-blur"
+            className="absolute right-3 top-3 z-30 flex items-center gap-1.5 rounded-full border border-border-light bg-bg-primary/90 px-2 py-1.5 shadow-card backdrop-blur transition-shadow duration-200"
             role="status"
             aria-label={`${users.length} dispatcher${users.length === 1 ? '' : 's'} viewing this plan`}
         >
@@ -80,8 +81,9 @@ export function PlanPresenceOverlay({ users }) {
                 <button
                     type="button"
                     onClick={() => setExpanded(true)}
-                    className="flex h-7 min-w-[28px] items-center justify-center rounded-full bg-bg-tertiary px-1.5 text-[11px] font-semibold text-text-secondary hover:bg-bg-hover active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none"
                     title={`Show ${hidden} more`}
+                    aria-label={`Show ${hidden} more dispatchers`}
+                    className="flex h-7 min-w-[28px] items-center justify-center rounded-full bg-bg-tertiary px-1.5 text-[11px] font-semibold text-text-secondary transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover hover:text-text-primary active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                 >
                     +{hidden}
                 </button>

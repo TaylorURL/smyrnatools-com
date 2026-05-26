@@ -292,12 +292,7 @@ function OperationsViewImpl({ accentColor, isDark }) {
                 ) : (
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                         {planLoadError && <PlanLoadErrorBanner message={planLoadError} onRetry={retryPlanLoad} />}
-                        {!canEdit && (
-                            <PlanReadOnlyBanner
-                                accentColor={accentColor}
-                                reason={isPastPlanDate ? 'past-day' : 'permission'}
-                            />
-                        )}
+                        {!canEdit && <PlanReadOnlyBanner reason={isPastPlanDate ? 'past-day' : 'permission'} />}
                         <PlanScheduleStaleBanner planDate={planDate} scheduleFileUpdatedAt={scheduleFileUpdatedAt} />
 
                         <TabFadeIn

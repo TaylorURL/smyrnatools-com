@@ -37,9 +37,13 @@ export function PlanScheduleStaleBanner({ planDate, scheduleFileUpdatedAt }) {
     if (!isPastDate && !isStale) return null
     const formattedTimestamp = formatTimestamp(scheduleFileUpdatedAt)
     return (
-        <div className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border-b shrink-0 bg-[rgba(245,_158,_11,_0.12)] border-[rgba(245,_158,_11,_0.4)] text-text-primary">
+        <div
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold border-b border-l-4 shrink-0 bg-status-warning/10 border-l-status-warning border-border-light text-text-primary animate-fade-slide-in"
+            role="status"
+        >
             <i
-                className={`fas ${isPastDate ? 'fa-clock-rotate-left' : 'fa-triangle-exclamation'} text-[11px] text-text-primary`}
+                className={`fas ${isPastDate ? 'fa-clock-rotate-left' : 'fa-triangle-exclamation'} text-[11px] text-status-warning`}
+                aria-hidden="true"
             />
             <span>
                 {isPastDate ? (

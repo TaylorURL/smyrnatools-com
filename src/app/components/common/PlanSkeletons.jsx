@@ -2,7 +2,7 @@
 import React from 'react'
 
 const Bar = ({ className = '', style }) => (
-    <div className={`rounded animate-pulse ${className}`} style={{ background: 'var(--bg-tertiary)', ...style }} />
+    <div className={`rounded bg-bg-tertiary animate-pulse motion-reduce:animate-none ${className}`} style={style} />
 )
 
 const SectionLabel = () => (
@@ -26,10 +26,7 @@ const StatGroupSkeleton = ({ cols = 6 }) => (
         {Array.from({ length: cols }).map((_, i) => (
             <div
                 key={i}
-                className="px-3 py-2.5 flex flex-col gap-1"
-                style={{
-                    borderRight: i < cols - 1 ? '1px solid var(--border-light)' : 'none'
-                }}
+                className={`px-3 py-2.5 flex flex-col gap-1 ${i < cols - 1 ? 'border-r border-border-light' : ''}`}
             >
                 <Bar className="h-2.5 w-16" />
                 <Bar className="h-5 w-20 mt-1" />
@@ -319,8 +316,9 @@ export function CallListSkeleton() {
                         {Array.from({ length: 3 }).map((_, i) => (
                             <div
                                 key={i}
-                                className="flex items-center gap-2.5 rounded-md px-3 py-2"
-                                style={{ background: i === 0 ? 'var(--bg-secondary)' : 'transparent' }}
+                                className={`flex items-center gap-2.5 rounded-md px-3 py-2 ${
+                                    i === 0 ? 'bg-bg-secondary' : ''
+                                }`}
                             >
                                 <Bar className="h-3 w-3 rounded-full" />
                                 <Bar className="h-3 w-28" />

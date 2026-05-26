@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 /**
@@ -17,9 +16,21 @@ import React from 'react'
  *                surface it so the user knows their work hasn't shipped.
  */
 const STATUS_CONFIG = {
-    error: { bg: 'rgba(220, 38, 38, 0.12)', fg: '#b91c1c', icon: 'fa-circle-exclamation', label: 'Sync error' },
-    saved: { bg: 'rgba(22, 163, 74, 0.12)', fg: '#15803d', icon: 'fa-circle-check', label: 'Saved' },
-    saving: { bg: 'rgba(217, 119, 6, 0.16)', fg: '#92400e', icon: 'fa-arrows-rotate fa-spin', label: 'Saving…' }
+    error: {
+        className: 'bg-status-danger/10 text-status-danger',
+        icon: 'fa-circle-exclamation',
+        label: 'Sync error'
+    },
+    saved: {
+        className: 'bg-status-active/10 text-status-active',
+        icon: 'fa-circle-check',
+        label: 'Saved'
+    },
+    saving: {
+        className: 'bg-status-warning/10 text-status-warning',
+        icon: 'fa-arrows-rotate fa-spin',
+        label: 'Saving…'
+    }
 }
 
 export function PlanSyncStatusPill({ status }) {
@@ -27,11 +38,12 @@ export function PlanSyncStatusPill({ status }) {
     if (!cfg) return null
     return (
         <span
-            className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold"
-            style={{ background: cfg.bg, color: cfg.fg }}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold transition-colors duration-200 ${cfg.className}`}
             title="Planner saves automatically and syncs to every other dispatcher viewing this date."
+            role="status"
+            aria-live="polite"
         >
-            <i className={`fas ${cfg.icon} text-[10px]`} />
+            <i className={`fas ${cfg.icon} text-[10px]`} aria-hidden="true" />
             {cfg.label}
         </span>
     )

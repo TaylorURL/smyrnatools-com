@@ -46,7 +46,7 @@ export function PlanHeader({
     const hideDateNav = TABS_WITHOUT_DATE_NAV.has(viewMode)
     return (
         <div className="shrink-0 flex items-center flex-nowrap gap-3 border-b px-3 sm:px-4 py-2.5 bg-bg-primary border-border-light overflow-x-auto">
-            <h1 className="text-lg font-bold tracking-tight m-0 shrink-0 text-text-primary">Plan</h1>
+            <h1 className="font-heading text-lg font-semibold tracking-tight m-0 shrink-0 text-text-primary">Plan</h1>
             {isStatisticsTab ? (
                 <div ref={setStatsSlotEl} className="flex flex-nowrap items-center gap-2 min-w-0 shrink-0" />
             ) : hideDateNav ? null : (
