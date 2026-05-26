@@ -23,14 +23,21 @@ const getPlantManagerIds = (plant) => {
     return Array.isArray(raw) ? raw : []
 }
 const getPlantType = (region) => REGION_TYPE_TO_PLANT_TYPE[region?.type] || 'N/A'
-
-/** Tailwind class + icon per plant type — used in both grid cards and list pills. */
-const PLANT_TYPE_META = {
-    'Aggregate Location': { badge: 'bg-amber-100 text-text-primary', icon: 'fa-mountain' },
-    'Concrete Plant': { badge: 'bg-blue-100 text-text-primary', icon: 'fa-industry' },
-    'Office Location': { badge: 'bg-purple-100 text-text-primary', icon: 'fa-building' }
+const getPlantAliasCodes = (plant) => {
+    const raw = plant?.colocated_alias_codes ?? plant?.colocatedAliasCodes
+    return Array.isArray(raw) ? raw : []
 }
-const DEFAULT_TYPE_META = { badge: 'bg-slate-100 text-text-primary', icon: 'fa-map-marker-alt' }
+const hasColocation = (plant) =>
+    Boolean(plant?.location_group_id ?? plant?.locationGroupId) || getPlantAliasCodes(plant).length > 0
+
+/** Tailwind class + icon per plant type — used in both grid cards and list pills.
+ *  Theme-safe alpha-tinted chips so dark / light / gray all render cleanly. */
+const PLANT_TYPE_META = {
+    'Aggregate Location': { badge: 'bg-status-warning/15 text-status-warning', icon: 'fa-mountain' },
+    'Concrete Plant': { badge: 'bg-accent/10 text-accent', icon: 'fa-industry' },
+    'Office Location': { badge: 'bg-status-active/15 text-status-active', icon: 'fa-building' }
+}
+const DEFAULT_TYPE_META = { badge: 'bg-bg-tertiary text-text-secondary', icon: 'fa-map-marker-alt' }
 
 /** Slim filter select — matches the FilterSelect atom inside TopSection so admin
  *  views read with the same rhythm as Mixers / Operators / AssetView. The
@@ -50,57 +57,117 @@ function PlantGridCard({ plant, region, plantType, managerCount, onSelect, onMan
     const meta = PLANT_TYPE_META[plantType] || DEFAULT_TYPE_META
     const code = getPlantCode(plant)
     const name = getPlantName(plant)
+    const aliasCodes = getPlantAliasCodes(plant)
+    const isColocated = hasColocation(plant)
     return (
-        <div
-            className="flex flex-col overflow-hidden rounded border border-border-light bg-bg-primary shadow-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+        <button
+            type="button"
+            className="group relative flex flex-col overflow-hidden rounded-card border border-border-light bg-bg-primary text-left shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-border-medium hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:translate-y-0 motion-reduce:transition-none motion-reduce:transform-none"
             onClick={() => onSelect(code)}
+            aria-label={`Open plant ${code}${name ? ` — ${name}` : ''}`}
         >
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-                <div className="w-10 h-10 rounded flex items-center justify-center text-white text-lg flex-shrink-0 bg-accent">
-                    <i className={`fas ${meta.icon}`} />
+            {isColocated && (
+                <span
+                    className="absolute top-0 left-0 h-1 w-full bg-accent/70"
+                    aria-hidden="true"
+                    title="Co-located plant"
+                />
+            )}
+            <div className="flex items-center gap-3 border-b border-border-light px-5 py-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10 text-base text-accent transition-colors duration-200 group-hover:bg-accent group-hover:text-white">
+                    <i className={`fas ${meta.icon}`} aria-hidden="true" />
                 </div>
-                <div className="flex-1 min-w-0">
-                    <div className="text-lg font-extrabold tracking-tight truncate text-text-primary">#{code}</div>
-                    <div className="text-[11px] font-medium text-text-secondary truncate">{name || '—'}</div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                        <span className="truncate font-heading text-lg font-bold tracking-tight text-text-primary">
+                            #{code}
+                        </span>
+                        {isColocated && (
+                            <i
+                                className="fas fa-link text-[10px] text-accent/70"
+                                title={
+                                    aliasCodes.length
+                                        ? `Co-located with ${aliasCodes.join(', ')}`
+                                        : 'Co-located with other plants'
+                                }
+                                aria-hidden="true"
+                            />
+                        )}
+                    </div>
+                    <div className="truncate text-[11px] font-medium text-text-secondary">{name || '—'}</div>
                 </div>
-                <span className={`inline-block rounded text-[11px] font-bold px-3 py-1.5 flex-shrink-0 ${meta.badge}`}>
+                <span
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${meta.badge}`}
+                >
+                    <i className={`fas ${meta.icon} text-[10px]`} aria-hidden="true" />
                     {plantType}
                 </span>
             </div>
 
             <div className="grid grid-cols-2">
-                <div className="flex flex-col gap-0.5 px-5 py-3 border-r border-border-light">
-                    <span className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">Region</span>
-                    <span className="text-[13px] font-semibold text-text-primary truncate">
+                <div className="flex flex-col gap-0.5 border-r border-border-light px-5 py-3">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                        Region
+                    </span>
+                    <span className="truncate text-[13px] font-semibold text-text-primary">
                         {region?.regionName || 'N/A'}
                     </span>
                 </div>
                 <div className="flex flex-col gap-0.5 px-5 py-3">
-                    <span className="text-[10px] font-medium uppercase tracking-wide text-text-secondary">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                         Region Code
                     </span>
-                    <span className="text-[13px] font-semibold text-text-primary truncate">
+                    <span className="truncate text-[13px] font-semibold text-text-primary">
                         {region?.regionCode || '—'}
                     </span>
                 </div>
             </div>
 
-            <div className="flex border-t border-border-light">
-                <button
-                    type="button"
+            {aliasCodes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1 border-t border-border-light px-5 py-2.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                        Shares site with
+                    </span>
+                    {aliasCodes.map((alias) => (
+                        <span
+                            key={alias}
+                            className="inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-[10.5px] font-semibold text-accent"
+                        >
+                            {alias}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            <div
+                className="flex border-t border-border-light"
+                onClick={(event) => event.stopPropagation()}
+                role="presentation"
+            >
+                <span
+                    role="button"
+                    tabIndex={0}
                     onClick={(event) => {
                         event.stopPropagation()
                         onManageManagers(plant)
                     }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-none bg-transparent text-[11px] font-semibold cursor-pointer transition-all text-text-secondary hover:bg-accent/10"
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            event.stopPropagation()
+                            onManageManagers(plant)
+                        }
+                    }}
+                    className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold text-text-secondary transition-colors duration-150 hover:bg-accent/10 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
                     title="Attach or remove managers for this plant"
+                    aria-label="Manage plant managers"
                 >
-                    <i className="fas fa-user-tie" />
+                    <i className="fas fa-user-tie" aria-hidden="true" />
                     {managerCount === 0 ? 'No managers' : `${managerCount} manager${managerCount === 1 ? '' : 's'}`}
-                    <i className="fas fa-pen text-[9px] text-slate-400 ml-1" />
-                </button>
+                    <i className="fas fa-pen ml-1 text-[9px] text-text-tertiary" aria-hidden="true" />
+                </span>
             </div>
-        </div>
+        </button>
     )
 }
 
@@ -247,7 +314,7 @@ function PlantsView({ title = 'Plants' }) {
     )
     if (selectedPlant) {
         return (
-            <div className="min-h-screen bg-slate-50">
+            <div className="min-h-screen bg-bg-secondary">
                 <PlantsDetailView
                     plant={selectedPlant}
                     onClose={() => setSelectedPlant(null)}
@@ -258,7 +325,7 @@ function PlantsView({ title = 'Plants' }) {
         )
     }
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-bg-secondary">
             <TopSection
                 title={title}
                 badge={badge}
@@ -305,33 +372,57 @@ function PlantsView({ title = 'Plants' }) {
                         })}
                     </div>
                 ) : (
-                    <div className="bg-white border border-border-light rounded overflow-hidden">
+                    <div className="overflow-hidden rounded-card border border-border-light bg-bg-primary">
                         <table className="w-full">
-                            <tbody className="divide-y divide-slate-100">
-                                {filteredPlants.map((plant, index) => {
+                            <tbody className="divide-y divide-border-light">
+                                {filteredPlants.map((plant) => {
                                     const code = getPlantCode(plant)
                                     const region = plantRegionMap[code]
                                     const plantType = getPlantType(region)
                                     const meta = PLANT_TYPE_META[plantType] || DEFAULT_TYPE_META
                                     const managerCount = getPlantManagerIds(plant).length
+                                    const aliasCodes = getPlantAliasCodes(plant)
+                                    const isColocated = hasColocation(plant)
                                     return (
                                         <tr
                                             key={code}
-                                            className={`cursor-pointer hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
+                                            className="cursor-pointer bg-bg-primary transition-colors duration-150 hover:bg-bg-hover focus-within:bg-bg-hover"
                                             onClick={() => handleSelectPlant(code)}
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault()
+                                                    handleSelectPlant(code)
+                                                }
+                                            }}
                                         >
-                                            <td className="px-5 py-4 text-sm font-bold text-accent">{code}</td>
-                                            <td className="px-5 py-4 text-sm font-medium text-slate-800">
+                                            <td className="px-5 py-4 text-sm font-bold text-accent">
+                                                <span className="inline-flex items-center gap-1.5">
+                                                    {code}
+                                                    {isColocated && (
+                                                        <i
+                                                            className="fas fa-link text-[10px] text-accent/60"
+                                                            title={
+                                                                aliasCodes.length
+                                                                    ? `Co-located with ${aliasCodes.join(', ')}`
+                                                                    : 'Co-located with other plants'
+                                                            }
+                                                            aria-hidden="true"
+                                                        />
+                                                    )}
+                                                </span>
+                                            </td>
+                                            <td className="px-5 py-4 text-sm font-medium text-text-primary">
                                                 {getPlantName(plant)}
                                             </td>
-                                            <td className="px-5 py-4 text-sm text-slate-600">
+                                            <td className="px-5 py-4 text-sm text-text-secondary">
                                                 {region?.regionName || 'N/A'}
                                             </td>
                                             <td className="px-5 py-4">
                                                 <span
-                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${meta.badge}`}
+                                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${meta.badge}`}
                                                 >
-                                                    <i className={`fas ${meta.icon} text-[10px]`} />
+                                                    <i className={`fas ${meta.icon} text-[10px]`} aria-hidden="true" />
                                                     {plantType}
                                                 </span>
                                             </td>
@@ -342,16 +433,23 @@ function PlantsView({ title = 'Plants' }) {
                                                         event.stopPropagation()
                                                         setManagersEditPlant(plant)
                                                     }}
-                                                    className="inline-flex items-center gap-2 rounded-full border border-border-light bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-colors hover:bg-blue-50 hover:border-accent"
+                                                    className="inline-flex items-center gap-2 rounded-full border border-border-light bg-bg-primary px-3 py-1 text-xs font-semibold text-text-secondary transition-all duration-150 hover:border-accent hover:bg-accent/10 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.97]"
                                                     title="Attach or remove managers for this plant"
+                                                    aria-label="Manage plant managers"
                                                 >
-                                                    <i className="fas fa-user-tie text-[10px] text-accent" />
+                                                    <i
+                                                        className="fas fa-user-tie text-[10px] text-accent"
+                                                        aria-hidden="true"
+                                                    />
                                                     <span>
                                                         {managerCount === 0
                                                             ? 'No managers'
                                                             : `${managerCount} manager${managerCount === 1 ? '' : 's'}`}
                                                     </span>
-                                                    <i className="fas fa-pen text-[9px] text-slate-400" />
+                                                    <i
+                                                        className="fas fa-pen text-[9px] text-text-tertiary"
+                                                        aria-hidden="true"
+                                                    />
                                                 </button>
                                             </td>
                                         </tr>
@@ -381,11 +479,11 @@ function PlantsLoadingState({ viewMode }) {
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
                 <SkeletonStack count={8} gapClassName="hidden">
                     {() => (
-                        <div className="rounded border border-border-light bg-white p-5">
-                            <div className="flex items-center gap-3 mb-4">
-                                <Skeleton className="w-10 h-10" rounded="rounded" />
+                        <div className="rounded-card border border-border-light bg-bg-primary p-5">
+                            <div className="mb-4 flex items-center gap-3">
+                                <Skeleton className="h-10 w-10" rounded="rounded-md" />
                                 <div className="flex-1">
-                                    <Skeleton className="h-4 w-20 mb-1.5" />
+                                    <Skeleton className="mb-1.5 h-4 w-20" />
                                     <Skeleton className="h-3 w-32" />
                                 </div>
                                 <Skeleton className="h-6 w-24" rounded="rounded-full" />
@@ -401,10 +499,10 @@ function PlantsLoadingState({ viewMode }) {
         )
     }
     return (
-        <div className="bg-white border border-border-light rounded overflow-hidden">
+        <div className="overflow-hidden rounded-card border border-border-light bg-bg-primary">
             <SkeletonStack count={8} gapClassName="gap-0">
                 {() => (
-                    <div className="flex items-center gap-4 px-5 py-4 border-b border-slate-100 last:border-b-0">
+                    <div className="flex items-center gap-4 border-b border-border-light px-5 py-4 last:border-b-0">
                         <Skeleton className="h-4 w-16" />
                         <Skeleton className="h-4 flex-1" />
                         <Skeleton className="h-4 w-32" />
@@ -420,16 +518,17 @@ function PlantsLoadingState({ viewMode }) {
 /** Empty / no-results placeholder. */
 function PlantsEmptyState({ hasSearch, onAddClick }) {
     return (
-        <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-white border border-border-light rounded">
-            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
-                <i className="fas fa-industry text-3xl text-slate-400" />
+        <div className="flex flex-col items-center justify-center rounded-card border border-border-light bg-bg-primary px-6 py-16 text-center animate-fade-in motion-reduce:animate-none">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-accent/10 text-accent">
+                <i className="fas fa-industry text-3xl" aria-hidden="true" />
             </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">No Plants Found</h3>
-            <p className="text-slate-500 mb-6 max-w-md">
+            <h3 className="mb-2 font-heading text-xl font-semibold text-text-primary">No Plants Found</h3>
+            <p className="mb-6 max-w-md text-sm text-text-secondary">
                 {hasSearch ? 'No plants match your search criteria.' : 'There are no plants in the system yet.'}
             </p>
             <button
-                className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors"
+                type="button"
+                className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-accent-hover hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary active:scale-[0.98] motion-reduce:transition-none motion-reduce:transform-none"
                 onClick={onAddClick}
             >
                 Add Plant
