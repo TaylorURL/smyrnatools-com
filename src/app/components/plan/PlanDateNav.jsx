@@ -146,7 +146,7 @@ function MiniCalendar({ menuRef, onClose, onSelect, planDate, pos }) {
                             type="button"
                             onClick={() => !isSunday && pickDate(cell.iso)}
                             disabled={isSunday}
-                            className="text-[12px] py-1.5 rounded border-none transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] disabled:active:scale-100"
+                            className="text-[12px] py-1.5 rounded border-none outline-none transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] disabled:active:scale-100 hover:enabled:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_35%,transparent)]"
                             style={{
                                 background: isSelected ? 'var(--bg-tertiary)' : 'transparent',
                                 boxShadow: isToday && !isSelected ? 'inset 0 0 0 1px var(--border-medium)' : 'none',
@@ -248,7 +248,7 @@ function DateStepper({ disabled = false, disabledReason, onChange, planDate }) {
                 type="button"
                 onClick={() => !disabled && setOpen((v) => !v)}
                 disabled={disabled}
-                className="border-none bg-transparent px-2 py-0.5 rounded font-semibold text-sm inline-flex items-center gap-1.5 text-text-primary active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
+                className="border-none bg-transparent px-2 py-0.5 rounded font-semibold text-sm inline-flex items-center gap-1.5 text-text-primary outline-none active:scale-[0.97] disabled:active:scale-100 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]"
                 style={{ cursor: buttonCursor }}
                 title={disabled ? disabledReason : 'Click to pick a date'}
                 aria-haspopup={disabled ? undefined : 'dialog'}

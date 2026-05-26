@@ -95,7 +95,7 @@ export function MilitaryTimeInput({ ariaLabel = 'Time (24-hour)', compact = fals
     }
 
     const baseClass =
-        'rounded-lg text-sm border font-mono tabular-nums bg-bg-primary border-border-medium text-text-primary'
+        'rounded-lg text-sm border font-mono tabular-nums bg-bg-primary border-border-medium text-text-primary outline-none transition-colors duration-150 hover:border-border-dark focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_30%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed'
     const sizing = compact ? 'px-2 py-1.5 text-[12px]' : 'px-3 py-2'
     return (
         <input
