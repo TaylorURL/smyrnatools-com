@@ -297,16 +297,22 @@ function TomorrowButton({ accentColor, disabled = false, disabledReason, isDark,
     const isTomorrow = planDate === tomorrowTarget
     return (
         <button
+            type="button"
             onClick={() => !disabled && onChange(tomorrowTarget)}
             disabled={disabled}
             title={disabled ? disabledReason : undefined}
-            className="border-none rounded-lg text-xs font-semibold px-2.5 py-1.5 active:scale-[0.97] disabled:active:scale-100 transition-transform duration-150 ease-out motion-reduce:transition-none"
-            style={{
-                background: isTomorrow ? `${accentColor}${isDark ? '30' : '15'}` : 'var(--bg-tertiary)',
-                color: isTomorrow ? accentColor : 'var(--text-secondary)',
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                opacity: disabled ? 0.55 : 1
-            }}
+            aria-pressed={isTomorrow}
+            className={`border-none rounded-lg text-xs font-semibold px-2.5 py-1.5 transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none active:scale-[0.97] disabled:active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary ${
+                isTomorrow ? '' : 'bg-bg-tertiary text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+            }`}
+            style={
+                isTomorrow
+                    ? {
+                          background: `${accentColor}${isDark ? '30' : '15'}`,
+                          color: accentColor
+                      }
+                    : undefined
+            }
         >
             Tomorrow
         </button>
