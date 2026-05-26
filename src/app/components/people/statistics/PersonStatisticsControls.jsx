@@ -67,7 +67,9 @@ function PlantFilterMenu({ accentColor, availablePlants, selectedPlant, setSelec
                                 type="button"
                             >
                                 <span className="truncate">{label}</span>
-                                {selectedPlant === code && <i className="fas fa-check text-[10px]" aria-hidden="true" />}
+                                {selectedPlant === code && (
+                                    <i className="fas fa-check text-[10px]" aria-hidden="true" />
+                                )}
                             </button>
                         ))
                     )}

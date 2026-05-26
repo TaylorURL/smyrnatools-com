@@ -100,7 +100,11 @@ const YardagePerHourCalculator = () => {
     const yardsField = isOngoing ? 'yardsPoured' : 'totalYards'
 
     const modeToggle = (
-        <div role="group" aria-label="Pour mode" className="inline-flex items-center rounded-lg p-0.5 gap-0.5 bg-[var(--bg-tertiary)] border border-[var(--border-light)]">
+        <div
+            role="group"
+            aria-label="Pour mode"
+            className="inline-flex items-center rounded-lg p-0.5 gap-0.5 bg-[var(--bg-tertiary)] border border-[var(--border-light)]"
+        >
             <button
                 type="button"
                 onClick={() => setIsOngoing(false)}
@@ -150,7 +154,11 @@ const YardagePerHourCalculator = () => {
                         />
                         <CalcField label={isOngoing ? 'Now' : 'Last Poured'}>
                             {isOngoing ? (
-                                <div role="status" aria-live="polite" className="flex items-center gap-2 w-full rounded-lg bg-[color:var(--success)]/10 border border-[color:var(--success)]/40 text-text-primary font-bold text-sm py-2.5 px-3">
+                                <div
+                                    role="status"
+                                    aria-live="polite"
+                                    className="flex items-center gap-2 w-full rounded-lg bg-[color:var(--success)]/10 border border-[color:var(--success)]/40 text-text-primary font-bold text-sm py-2.5 px-3"
+                                >
                                     <i className="fas fa-circle text-[6px] animate-pulse text-[color:var(--success)]" />
                                     <span className="tabular-nums">{values.completionTime}</span>
                                 </div>

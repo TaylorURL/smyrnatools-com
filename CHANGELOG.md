@@ -1,5 +1,132 @@
 # Changelog
 
+## [2026.22.4] - 2026-05-26
+
+- App-wide input-control polish sweep. Ran the
+  `react-dropdownsandhovers-styles` skill across every view and
+  component in `src/` — 130 files touched, +1289 / -907. Every
+  dropdown / select / combobox / autocomplete / search bar / tooltip
+  / date picker / time input / datalist / chip input got a
+  surface-aware Tailwind pass: focus-visible accent rings, hover
+  borders, theme-correct placeholder / disabled state, hover-bg on
+  icon-only actions, missing `aria-label` / `aria-pressed` /
+  `aria-haspopup` / `htmlFor` associations filled in. All work
+  preserves 100% of behavior — props, handlers, state, validation,
+  and submission paths untouched.
+- Shared input/select constants upgraded so polish propagates to
+  every consumer with a single edit. `src/app/constants/listView
+  Constants.js`, `nrmcaConstants.js`, `weeklyReportConstants.js`,
+  `maintenanceCreateConstants.js`, `maintenanceFormConstants.js`,
+  `operatorDetailConstants.js`, and `src/utils/MaintenanceLog
+  Utility.ts` now export field/select/textarea classes that bake in
+  hover-border, focus-visible ring, `color-scheme`, placeholder
+  color, disabled-state, and inline-SVG chevrons for
+  `appearance-none` selects. New `INPUT_CLASS` added to
+  `operatorDetailConstants.js` and adopted by `AssignmentSection` +
+  `BasicInfoSection` so operator + manager detail surfaces stay
+  visually aligned.
+- `src/app/components/common/MilitaryTimeInput.jsx` — base class
+  rebuilt with `outline-none`, `placeholder:text-text-tertiary`,
+  `hover:border-border-dark`, `focus-visible:border-accent`,
+  `focus-visible:ring-2 focus-visible:ring-accent/30`, and
+  `disabled:opacity-50 disabled:cursor-not-allowed`. The single
+  change cascades to every time field in the plan flow editor,
+  schedule filter drawer, statistics controls, settings panel, and
+  the planner map's compact time scrubber.
+- `src/views/tools/calculator/CalculatorShell.jsx` — the shared
+  `<input>` inside `CalcField` picked up `color-scheme` for native
+  date/time pickers, focus-visible ring, hover-border, and a real
+  disabled state. The polish cascades to all nine calculator types
+  (`AirContent`, `CuringSchedule`, `Proportions`, `RequiredStrength`,
+  `SetTime`, `SlumpAdjustment`, `Volume`, `WaterCement`,
+  `YardagePerHour`). Segmented mode toggles in `VolumeCalculator`
+  (`shapeSwitcher`) and `YardagePerHourCalculator` (`modeToggle`)
+  gained `role="group"` + `aria-pressed`. Risk callouts in
+  `SetTimeCalculator` / `SlumpAdjustmentCalculator` /
+  `YardagePerHourCalculator` swapped `bg-red-50 / bg-amber-50 /
+  bg-blue-50 / bg-green-50` for `--danger` / `--warning` / `--accent`
+  / `--success` alpha tokens so they actually read in dark + gray
+  themes.
+- `src/views/tools/documents/DocumentsView.jsx` — Pagination select,
+  type-filter select, mobile + desktop action buttons, skeleton
+  rows, empty state, upload + error banners, table header, and
+  outer container all migrated off `bg-white` / `bg-slate-50,100,200`
+  / `text-slate-400,500,600,700,800` / `border-blue-200` /
+  `border-red-200` to `bg-bg-primary` / `bg-bg-secondary` /
+  `bg-bg-tertiary` / `text-text-primary,secondary,tertiary` /
+  `[color:var(--accent)]/30` / `[color:var(--danger)]/40`. Icon-only
+  Preview / Download / Delete buttons gained `aria-label` and
+  focus-visible rings.
+- `src/views/assets/mixers/OperatorSelectModal.jsx` and
+  `src/views/assets/trailers/TractorSelectModal.jsx` — both modals
+  rebuilt around theme tokens (`bg-bg-primary` / `bg-bg-secondary` /
+  `bg-bg-tertiary` / `text-text-primary,secondary,tertiary` /
+  `border-border-light,medium`) so they finally render correctly in
+  dark and gray modes. Search inputs gained `type="search"`,
+  focus-visible accent rings, and proper aria. Removed several
+  `style={{ backgroundColor: 'var(--card-bg)', cursor:
+  'not-allowed', opacity: 0.8 }}` blocks from
+  `MixerAssignmentCard` / `MixerTruckDetailsCard` /
+  `MixerServiceInfoCard` / `TractorOperatorAssignmentField` /
+  `EquipmentBasicInfoSection` / `TrailerBasicInfoCard` /
+  `TrailerAssignmentCard` / `PickupTrucksDetailView` in favour of
+  the equivalent Tailwind utility combos. Asset star-rating buttons
+  picked up `aria-pressed` + focus-visible rings; dropped
+  `tractorDetailConstants.js` style-object exports now that the
+  only consumer is on Tailwind.
+- Reporting + maintenance + NRMCA + quality modals — `PlantFormModal`,
+  `ScaleFormModal`, `RmiAddPendingModal`, `RmiAddTrainerModal`,
+  `LostLoadReportModal`, `QCStrengthReportModal`,
+  `ThirdPartyLabReportModal`, `QualityIssueModal`,
+  `MaintenanceFilterBar`, `ReportsToolbar`, `SafetyTagPicker`,
+  `FieldInput`, `PlantProductionForm`, `FormDetailsSection`,
+  `FormFieldsSection`, `WeeklyEfficiencyReport`,
+  `WeeklyDistrictManagerReport`,
+  `WeeklyQualityControlManagerReport`, `ListAddView`,
+  `ReportsReviewView`, and the lost-load / quality issue list views
+  all converted light-only `slate-*` palettes to theme tokens, got
+  consistent chevron-bearing selects under `appearance-none`,
+  hover-border + focus-visible rings, and `color-scheme` on disabled
+  date previews so the native popup respects the active theme.
+- Plan / Operations suite — `BookOrderForm`, `PlanFlowRouteEditor`,
+  `PlanFlowSidePanel`, `PlanScheduleFilterDrawer`,
+  `PlanStatisticsControls`, `PlanStatisticsCustomerLookupPage`,
+  `PlanStatisticsKickersPage`, `PlanStatisticsMovesCancelsPage`,
+  `PlanStatisticsTicketLookupPage`, `PlanOperationalSettings`,
+  `PlanNotesSection`, `PlanDateNav`,
+  `tabs/call-list/CallListCustomerCard`,
+  `tabs/call-list/customer-card/ContactEditor`, and the call-list
+  activity toolbar + shared filter strip all picked up focus rings
+  on inputs and selects, `type="search"` + clear buttons on filter
+  inputs, hover-border, placeholder color, and consistent
+  appearance-none chevron rendering on every native `<select>`.
+- People + dayforce surfaces — `OperatorAddView`, `OperatorCard`,
+  `OperatorListRow`, `OperatorEmptyState`, `ManagerCard`,
+  `ManagersView`, `PersonViewTabBar`, `PersonStatisticsControls`,
+  `PersonStatisticsSidebar`, `DayforceFilters`, `DayforceHoursPage`,
+  and `dayforce/schedules/{PunchDelta,ShiftCell,WeekTable,YphChip}`
+  all swapped hardcoded `text-gray-*` / `text-slate-*` / star-track
+  greys for `text-text-secondary` / `text-border-light`. Dayforce
+  hover-info cells (PunchDelta, YphChip, ShiftCell, WeekTable YPH
+  column, `In OT` `th`) gained `cursor-help` so users see the hover
+  affordance on the native `title=` tooltips that the project's
+  no-Tooltip-primitive constraint forces us to keep. Native
+  `<input type="date">` in `AssignmentSection` declares
+  `color-scheme` so the calendar popup follows the theme.
+- Admin + common views — `PlantsView`, `RegionsView`,
+  `RegionsDetailView`, `RolesView`, `BulkAddModal`, `RoleCard`,
+  `PlantColocationEditor`, `ConversationSidebar`, `ComposeModal`,
+  `ReplyBar`, `PasswordModal`, `StartPageDropdown`,
+  `myaccount/tabs/ProfileTab`, and the three verification sections
+  all got chevron-bearing `FILTER_SELECT_CLS` with focus-visible
+  rings, ARIA roles (`listbox` / `option` / `haspopup` /
+  `expanded`), and theme tokens for Roles bulk-add + inline
+  permission editor (previously hardcoded `bg-slate-100,200` /
+  `text-slate-*` only worked in light mode).
+- `.gitignore` — added `.claude/skills/`, `.agents/`, and
+  `skills-lock.json` so claude tooling artifacts stay out of the
+  repo on future runs.
+
 ## [2026.22.3] - 2026-05-25
 
 - App-wide micro-interaction polish. Every clickable surface (buttons,

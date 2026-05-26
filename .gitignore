@@ -28,3 +28,7 @@ yarn-error.log*
 /.github/instructions.md
 public/changelog.txt
 .claude/worktrees/
+.claude/skills/
+.agents/
+.infinity/
+skills-lock.json

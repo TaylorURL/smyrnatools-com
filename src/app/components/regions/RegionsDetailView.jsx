@@ -447,9 +447,7 @@ function RegionsDetailView({ region, onClose, onDelete, onUpdate }) {
                                                                         addDistrictToPlant(e.target.value, districtName)
                                                                 }}
                                                             >
-                                                                <option value="">
-                                                                    Add plant to {districtName}...
-                                                                </option>
+                                                                <option value="">Add plant to {districtName}...</option>
                                                                 {unassignedPlants.map((code) => {
                                                                     const p = visiblePlants.find(
                                                                         (pl) => pl.plant_code === code

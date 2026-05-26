@@ -125,7 +125,11 @@ const VolumeCalculator = () => {
 
     const cfg = SHAPE_CONFIG[shape]
     const shapeSwitcher = (
-        <div role="group" aria-label="Shape" className="inline-flex items-center rounded-lg p-0.5 gap-0.5 bg-[var(--bg-tertiary)] border border-[var(--border-light)] flex-wrap">
+        <div
+            role="group"
+            aria-label="Shape"
+            className="inline-flex items-center rounded-lg p-0.5 gap-0.5 bg-[var(--bg-tertiary)] border border-[var(--border-light)] flex-wrap"
+        >
             {SHAPES.map((s) => {
                 const active = shape === s.id
                 return (
