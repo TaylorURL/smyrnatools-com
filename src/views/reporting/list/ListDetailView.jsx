@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
 import DetailViewSection from '../../../app/components/sections/DetailViewSection'
 import { RESPONSIBLE_ROLE_OPTIONS, STATUS_OPTIONS } from '../../../app/constants/listDetailConstants'
+import { LIST_SELECT_CLASS } from '../../../app/constants/listViewConstants'
 import { usePreferences } from '../../../app/context/PreferencesContext'
 import { AIService } from '../../../services/AIService'
 import { ListService } from '../../../services/ListService'
@@ -415,7 +416,7 @@ function ListDetailView({ itemId, onClose }) {
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
                                 disabled={!canEdit || !canEditList}
-                                className="form-control"
+                                className={LIST_SELECT_CLASS}
                             >
                                 {statusOptions.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
@@ -431,7 +432,7 @@ function ListDetailView({ itemId, onClose }) {
                                 value={priority}
                                 onChange={(e) => setPriority(e.target.value)}
                                 disabled={!canEdit || !canEditList}
-                                className="form-control"
+                                className={LIST_SELECT_CLASS}
                             >
                                 {priorityOptions.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
@@ -447,7 +448,7 @@ function ListDetailView({ itemId, onClose }) {
                                 value={responsibleRole}
                                 onChange={(e) => setResponsibleRole(e.target.value)}
                                 disabled={!canEdit || !canEditList}
-                                className="form-control"
+                                className={LIST_SELECT_CLASS}
                             >
                                 {responsibleRoleOptions.map((opt) => (
                                     <option key={opt.value} value={opt.value}>
