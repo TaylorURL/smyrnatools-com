@@ -7,6 +7,8 @@ import StatCard from './StatCard'
 
 const USABLE_WIDTH = CHART_WIDTH - CHART_PADDING * 2
 const RATING_VALUES = [5, 4, 3, 2, 1]
+const STAR = '★'
+
 /**
  * SVG line chart plotting star ratings over time with average / total /
  * current stat cards. Empty-state fallback when `data` is empty.
@@ -15,21 +17,23 @@ export default function RatingChart({ data, title, emptyTitle, emptySubtitle }) 
     if (!data?.length) {
         return <HistoryEmptyState title={emptyTitle} subtitle={emptySubtitle} />
     }
-    const averageRating = (data.reduce((sum, d) => sum + d.rating, 0) / data.length).toFixed(1)
+    const averageRating = (data.reduce((sum, point) => sum + point.rating, 0) / data.length).toFixed(1)
     const currentRating = data[data.length - 1]?.rating ?? null
     return (
-        <div className="flex flex-col gap-2.5">
-            <h3 className="m-0 mb-3 text-sm font-bold text-slate-800">{title}</h3>
-            <div className="flex gap-4 mb-4 flex-wrap">
-                <StatCard label="Average Rating" value={`${averageRating}\u2605`} />
+        <div className="flex flex-col gap-3">
+            <h3 className="m-0 font-heading text-sm font-bold text-text-primary">{title}</h3>
+            <div className="flex gap-3 flex-wrap">
+                <StatCard label="Average Rating" value={`${averageRating}${STAR}`} />
                 <StatCard label="Total Ratings" value={data.length} />
-                <StatCard label="Current Rating" value={`${currentRating}\u2605`} />
+                <StatCard label="Current Rating" value={`${currentRating}${STAR}`} />
             </div>
-            <div className="overflow-x-auto my-3 bg-slate-50 rounded-md p-3 border border-gray-200">
+            <div className="overflow-x-auto rounded-card p-3 bg-bg-secondary border border-border-light">
                 <svg
                     className="w-full min-h-[250px]"
                     viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT + CHART_PADDING * 2}`}
                     preserveAspectRatio="xMidYMid meet"
+                    role="img"
+                    aria-label={`${title} rating chart`}
                 >
                     <g transform={`translate(${CHART_PADDING}, ${CHART_PADDING})`}>
                         {RATING_VALUES.map((rating) => {
@@ -45,8 +49,14 @@ export default function RatingChart({ data, title, emptyTitle, emptySubtitle }) 
                                         strokeWidth="1"
                                         strokeDasharray="4"
                                     />
-                                    <text x="-10" y={y + 5} textAnchor="end" fontSize="12" fill="var(--text-secondary)">
-                                        {rating}\u2605
+                                    <text
+                                        x="-10"
+                                        y={y + 5}
+                                        textAnchor="end"
+                                        fontSize="12"
+                                        fill="var(--text-secondary)"
+                                    >
+                                        {`${rating}${STAR}`}
                                     </text>
                                 </g>
                             )
@@ -64,10 +74,17 @@ export default function RatingChart({ data, title, emptyTitle, emptySubtitle }) 
                                             x2={((index + 1) / (data.length - 1)) * USABLE_WIDTH}
                                             y2={(MAX_STAR_RATING - nextPoint.rating) * (CHART_HEIGHT / MAX_STAR_RATING)}
                                             stroke="var(--accent)"
-                                            strokeWidth="3"
+                                            strokeWidth="2.5"
                                         />
                                     )}
-                                    <circle cx={x} cy={y} r="6" fill="var(--accent)" stroke="white" strokeWidth="2" />
+                                    <circle
+                                        cx={x}
+                                        cy={y}
+                                        r="5"
+                                        fill="var(--accent)"
+                                        stroke="var(--bg-primary)"
+                                        strokeWidth="2"
+                                    />
                                     <text
                                         x={x}
                                         y={CHART_HEIGHT + 20}

@@ -15,8 +15,9 @@ function PlantFilterButton({ accentColor, active = false, displayText, onClick, 
             type="button"
             onClick={onClick}
             aria-label={title}
+            aria-pressed={!!active}
             title={title}
-            className="text-[12px] font-medium cursor-pointer rounded py-1.5 px-2 flex items-center gap-1.5 active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+            className="text-xs font-medium cursor-pointer rounded-md py-1.5 px-2 inline-flex items-center gap-1.5 transition-colors duration-150 hover:bg-bg-hover active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary motion-reduce:transition-none"
             style={{
                 background: tinted ? `${accentColor}14` : 'var(--bg-secondary)',
                 border: `1px solid ${tinted ? accentColor : 'var(--border-light)'}`,
@@ -27,6 +28,7 @@ function PlantFilterButton({ accentColor, active = false, displayText, onClick, 
             <i
                 className="fas fa-chevron-down text-[9px]"
                 style={{ color: tinted ? accentColor : 'var(--text-tertiary)' }}
+                aria-hidden="true"
             />
         </button>
     )

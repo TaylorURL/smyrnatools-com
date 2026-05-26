@@ -34,12 +34,20 @@ function PourSizeBadge({ size, truckRange, showLabel = true, className = '' }) {
     const meta = SIZE_META[size] || SIZE_META.medium
     return (
         <span
-            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap ${className} bg-bg-tertiary border border-border-light text-text-secondary`}
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap bg-bg-tertiary border border-border-light text-text-secondary ${className}`}
             title={`${meta.label} pour${truckRange ? ` · ${truckRange} trucks` : ''}`}
         >
-            <span className="inline-block rounded-full shrink-0 h-1.5 w-1.5" style={{ background: meta.dot }} />
+            <span
+                className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ background: meta.dot }}
+                aria-hidden="true"
+            />
             {showLabel && <span>{meta.label}</span>}
-            {truckRange && <span className="font-mono opacity-75 normal-case tracking-normal">{truckRange}</span>}
+            {truckRange && (
+                <span className="font-mono tabular-nums text-text-tertiary normal-case tracking-normal">
+                    {truckRange}
+                </span>
+            )}
         </span>
     )
 }
