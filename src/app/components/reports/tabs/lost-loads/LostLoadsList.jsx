@@ -9,6 +9,11 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50, 9999]
 const STATUS_PILL_BASE =
     'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold uppercase tracking-wider shrink-0'
 
+/** Compact paginator select — appearance-none + inline chevron so the
+ *  affordance survives, plus theme-aware tokens and color-scheme so the
+ *  option list paints correctly in dark / light / gray. */
+const PAGE_SIZE_SELECT_CLASS = `rounded pl-2 pr-7 py-1 text-[11px] cursor-pointer appearance-none bg-bg-primary border border-border-light text-text-primary hover:border-border-medium transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)] [color-scheme:light] dark:[color-scheme:dark] bg-no-repeat bg-[right_6px_center] bg-[length:12px] bg-[url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%2394a3b8'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-width='2'%3E%3Cpath%20d='M19%209l-7%207-7-7'/%3E%3C/svg%3E")]`
+
 const PageSizeSelect = ({ value, onChange }) => (
     <div className="flex items-center gap-2 text-[11px] text-text-secondary">
         <label htmlFor="lost-loads-page-size" className="hidden sm:inline uppercase tracking-wider text-[10px]">
@@ -18,7 +23,7 @@ const PageSizeSelect = ({ value, onChange }) => (
             id="lost-loads-page-size"
             value={value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="rounded px-2 py-1 text-[11px] cursor-pointer bg-bg-primary border border-border-light text-text-primary hover:border-border-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)]"
+            className={PAGE_SIZE_SELECT_CLASS}
         >
             {PAGE_SIZE_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>

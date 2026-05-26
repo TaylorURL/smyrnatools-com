@@ -60,7 +60,7 @@ export function MobileRegionSelect({ regionCode, permittedRegions, onChange, acc
             <select
                 id="mobile-region-select"
                 aria-label="Region"
-                className="bg-bg-secondary rounded-[10px] text-text-primary cursor-pointer text-sm font-semibold w-full"
+                className="bg-bg-secondary rounded-[10px] text-text-primary cursor-pointer text-sm font-semibold w-full appearance-none pr-9 pl-3 py-3 bg-no-repeat bg-[right_12px_center] bg-[length:16px_16px] [color-scheme:light] dark:[color-scheme:dark] bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20fill=%22none%22%20viewBox=%220%200%2024%2024%22%20stroke=%22currentColor%22%3E%3Cpath%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20stroke-width=%222%22%20d=%22M19%209l-7%207-7-7%22%3E%3C/path%3E%3C/svg%3E')]"
                 value={regionCode || ''}
                 onChange={onChange}
                 onFocus={(e) => {
@@ -74,7 +74,6 @@ export function MobileRegionSelect({ regionCode, permittedRegions, onChange, acc
                 }}
                 style={{
                     border: '2px solid var(--border-light)',
-                    padding: '12px',
                     transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
                 }}
             >

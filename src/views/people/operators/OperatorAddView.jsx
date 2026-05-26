@@ -10,6 +10,13 @@ import { getSessionUserId } from '../../../services/SessionService'
 import { UserService } from '../../../services/UserService'
 import ValidationUtility from '../../../utils/ValidationUtility'
 
+// Theme-aware native <select> styling. `appearance-none` strips the browser
+// chevron so the inline-SVG (uses `currentColor`, so it follows --text-primary
+// across dark/light/grayed themes) renders consistently. Matches the input
+// height ladder and focus treatment used elsewhere in the add-view forms.
+const SELECT_CLS =
+    'h-11 w-full cursor-pointer rounded-xl bg-bg-secondary border border-border-light text-text-primary text-sm px-4 pr-10 appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2024%2024%27%20stroke%3D%27currentColor%27%3E%3Cpath%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%272%27%20d%3D%27M19%209l-7%207-7-7%27%2F%3E%3C%2Fsvg%3E")] hover:border-border-medium focus:outline-none focus-visible:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 [color-scheme:light] dark:[color-scheme:dark]'
+
 /**
  * Slide-in form for creating a new operator record. Supports name, phone,
  * plant assignment (region-scoped), status (with permission-gated Training/
@@ -224,7 +231,12 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="status">Status</label>
-                                <select id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
+                                <select
+                                    id="status"
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className={SELECT_CLS}
+                                >
                                     <option value="Active">Active</option>
                                     <option value="Light Duty">Light Duty</option>
                                     <option value="Terminated">Terminated</option>
@@ -256,7 +268,12 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="position">Position</label>
-                                <select id="position" value={position} onChange={(e) => setPosition(e.target.value)}>
+                                <select
+                                    id="position"
+                                    value={position}
+                                    onChange={(e) => setPosition(e.target.value)}
+                                    className={SELECT_CLS}
+                                >
                                     <option value="">Select Position</option>
                                     <option value="Mixer Operator">Mixer Operator</option>
                                     <option value="Tractor Operator">Tractor Operator</option>
@@ -275,6 +292,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                                 setAssignedTrainer('0')
                                             }
                                         }}
+                                        className={SELECT_CLS}
                                     >
                                         <option value="false">Not a Trainer</option>
                                         <option value="true">Trainer</option>
@@ -291,6 +309,7 @@ function OperatorAddView({ plants, operators = [], onClose, onOperatorAdded, all
                                         value={assignedTrainer}
                                         onChange={(e) => setAssignedTrainer(e.target.value)}
                                         disabled={isTrainer}
+                                        className={SELECT_CLS}
                                     >
                                         <option value="0">None</option>
                                         {operators

@@ -176,7 +176,10 @@ export default function PlanScheduleFilterDrawer({
             <button
                 type="button"
                 onClick={() => setPlantModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px] font-semibold cursor-pointer text-left active:scale-[0.97] transition-transform duration-150 ease-out motion-reduce:transition-none"
+                aria-haspopup="dialog"
+                aria-expanded={plantModalOpen}
+                aria-label="Pick plants — supports districts and arbitrary multi-select"
+                className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px] font-semibold cursor-pointer text-left active:scale-[0.97] transition-[colors,transform] duration-150 ease-out motion-reduce:transition-none hover:border-border-medium focus-visible:outline-none focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--accent)_25%,transparent)]"
                 style={{
                     ...FIELD_INPUT_STYLE,
                     color: plantFilters.length === 0 ? 'var(--text-secondary)' : 'var(--text-primary)',
