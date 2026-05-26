@@ -7,6 +7,12 @@ import {
 } from '../../constants/mixerDetailConstants'
 import DetailViewSection from '../sections/DetailViewSection'
 
+// Canonical chevron-bearing select treatment for the mixer truck-details card.
+// Mirrors the surrounding `form-control` size while using a `currentColor`
+// chevron so the affordance follows `text-text-primary` across themes.
+const SELECT_CLS =
+    'w-full appearance-none cursor-pointer rounded border border-border-light bg-bg-secondary text-text-primary text-[0.8125rem] px-2.5 py-[0.4375rem] pr-9 bg-no-repeat bg-[right_0.75rem_center] bg-[length:1rem_1rem] transition-colors duration-150 hover:border-border-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark] bg-[url("data:image/svg+xml,%3Csvg%20xmlns=\'http://www.w3.org/2000/svg\'%20fill=\'none\'%20viewBox=\'0%200%2024%2024\'%20stroke=\'currentColor\'%3E%3Cpath%20stroke-linecap=\'round\'%20stroke-linejoin=\'round\'%20stroke-width=\'2\'%20d=\'M19%209l-7%207-7-7\'%3E%3C/path%3E%3C/svg%3E")]'
+
 /**
  * Truck Number, Status, and (when In Shop) Shop Status sub-selector. Status
  * change is async because moving away from Active while an operator is
@@ -23,7 +29,7 @@ export default function MixerTruckDetailsCard({
     truckNumber
 }) {
     const shopStatusNote = MIXER_SHOP_STATUS_NOTES[shopStatus] || MIXER_SHOP_STATUS_NOTES.in_shop
-    const readOnlySelectClasses = !canEditMixer ? 'bg-bg-secondary opacity-80 cursor-not-allowed' : ''
+    const readOnlySelectClasses = !canEditMixer ? 'opacity-80 cursor-not-allowed' : ''
 
     return (
         <DetailViewSection.Card title="Truck Details" icon="fas fa-info-circle">
@@ -47,7 +53,7 @@ export default function MixerTruckDetailsCard({
                         onStatusChange(newStatus)
                     }}
                     disabled={!canEditMixer}
-                    className="form-control"
+                    className={SELECT_CLS}
                 >
                     <option value="">Select Status</option>
                     {MIXER_STATUS_OPTIONS.map((option) => (
@@ -79,7 +85,7 @@ export default function MixerTruckDetailsCard({
                     <div className="form-group mb-2">
                         <label>Shop Status</label>
                         <select
-                            className={`form-control ${readOnlySelectClasses}`}
+                            className={`${SELECT_CLS} ${readOnlySelectClasses}`}
                             value={shopStatus || 'in_shop'}
                             onChange={(e) => canEditMixer && setShopStatus(e.target.value)}
                             disabled={!canEditMixer}

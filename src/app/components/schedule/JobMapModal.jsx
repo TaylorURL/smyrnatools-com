@@ -140,7 +140,7 @@ export default function JobMapModal({ onClose, order, plantAddress, plantCode, p
                                 <select
                                     value={selectedCode}
                                     onChange={(e) => setSelectedCode(e.target.value)}
-                                    className="text-[12px] font-mono font-semibold bg-transparent border-0 outline-none cursor-pointer text-text-primary rounded transition-colors duration-150 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                                    className="text-[12px] font-mono font-semibold cursor-pointer text-text-primary rounded appearance-none bg-bg-tertiary border border-border-light hover:border-border-medium pl-2 pr-7 py-0.5 bg-no-repeat bg-[right_6px_center] bg-[length:12px_12px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:border-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark] bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20fill=%22none%22%20viewBox=%220%200%2024%2024%22%20stroke=%22currentColor%22%3E%3Cpath%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20stroke-width=%222%22%20d=%22M19%209l-7%207-7-7%22%3E%3C/path%3E%3C/svg%3E')]"
                                     title="Switch origin plant to compare routes"
                                     aria-label="Origin plant"
                                 >
