@@ -1,34 +1,64 @@
 /* eslint-disable react/forbid-dom-props */
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import ReactDOM from 'react-dom'
 
 import { useAccentColor } from '../../hooks/useAccentColor'
 
+const plantCodeOf = (plant) => plant.plantCode || plant.plant_code || ''
+const plantNameOf = (plant) => plant.plantName || plant.plant_name || ''
+const numericRank = (code) => parseInt(String(code).replace(/\D/g, '') || '0', 10)
+
+const sortPlantsByCode = (list) =>
+    [...list].sort((a, b) => {
+        const codeA = plantCodeOf(a)
+        const codeB = plantCodeOf(b)
+        if (codeA === 'OTHER_REGION') return 1
+        if (codeB === 'OTHER_REGION') return -1
+        return numericRank(codeA) - numericRank(codeB)
+    })
+
+/** Compute the district groupings from a flat plants list. Each plant can
+ *  contribute to multiple districts via its `.districts` array. */
+const computeDistrictGroups = (plants) => {
+    const map = {}
+    plants.forEach((plant) => {
+        const code = plantCodeOf(plant)
+        const districts = plant.districts || []
+        districts.forEach((district) => {
+            const name = typeof district === 'string' ? district : district?.name
+            if (!name) return
+            if (!map[name]) map[name] = []
+            map[name].push(code)
+        })
+    })
+    return Object.entries(map)
+        .map(([name, plantCodes]) => ({ name, plantCodes }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+}
+
 /**
  * Portal modal for selecting one or more plants from a searchable list.
  * Supports single-select (auto-closes on pick) and multi-select (checkbox) modes.
+ *
  * @param {Object} props
- * @param {boolean} props.isOpen - Controls portal visibility.
- * @param {Function} props.onClose - Callback to close the modal.
- * @param {Array<Object>} [props.plants] - Plant objects with plantCode/plant_code and plantName/plant_name.
- * @param {Function} props.onSelect - Called with the selected plant code string.
- * @param {string} [props.searchPlaceholder] - Placeholder text for the search input.
- * @param {boolean} [props.showAllPlants=false] - When true in single-select mode, shows an "All Plants" option.
- * @param {boolean} [props.showMyPlants=false] - When true in single-select mode, shows a "My Plants" option that selects 'MY_PLANTS'.
- * @param {boolean} [props.allowMultiple=false] - Enables multi-select mode with checkboxes.
- * @param {string[]} [props.selectedPlantCodes] - Pre-selected plant codes for multi-select mode.
- * @param {string} [props.userPlantCode] - User's primary plant code for "My District" detection.
- * @param {Array<Object>} [props.regionGroups] - Optional region groupings rendered above the
- *   district list in single-select mode. Each entry is `{ code, name, plantCodes: string[] }`.
- *   Clicking a region row emits `REGION:<code>` via `onSelect` so the parent can scope its
- *   filter to that region's plants. Used by the dashboard's Home Office plant picker.
+ * @param {boolean} props.isOpen
+ * @param {Function} props.onClose
+ * @param {Array<Object>} [props.plants]
+ * @param {Function} props.onSelect
+ * @param {string} [props.searchPlaceholder]
+ * @param {boolean} [props.showAllPlants=false]
+ * @param {boolean} [props.showMyPlants=false]
+ * @param {boolean} [props.allowMultiple=false]
+ * @param {string[]} [props.selectedPlantCodes]
+ * @param {string} [props.userPlantCode]
+ * @param {Array<Object>} [props.regionGroups]
  */
 function PlantDropdownModal({
     isOpen,
     onClose,
     plants = [],
     onSelect,
-    searchPlaceholder = 'Search plants...',
+    searchPlaceholder = 'Search plants…',
     showAllPlants = false,
     showMyPlants = false,
     allowMultiple = false,
@@ -38,62 +68,57 @@ function PlantDropdownModal({
 }) {
     const [search, setSearch] = useState('')
     const [localSelectedCodes, setLocalSelectedCodes] = useState(selectedPlantCodes || [])
-    /** Per-region collapse state for the hierarchical (office-mode) view.
-     *  Regions start collapsed so the user can see the whole list at a
-     *  glance, then expand the one they want to drill into. */
     const [expandedRegions, setExpandedRegions] = useState({})
-    /** Re-seed local state every time the modal opens so the checked rows
-     *  always reflect the parent's current `selectedPlantCodes`. Without
-     *  this, an external selection change while the modal was closed
-     *  would leave the next open in a stale state. */
+    const accentColor = useAccentColor()
+
     useEffect(() => {
         if (isOpen) setLocalSelectedCodes(selectedPlantCodes || [])
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
+
     useEffect(() => {
         if (isOpen) setExpandedRegions({})
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
-    const accentColor = useAccentColor()
-    const districtGroups = (() => {
-        const map = {}
-        plants.forEach((plant) => {
-            const code = plant.plantCode || plant.plant_code || ''
-            const dists = plant.districts || []
-            dists.forEach((d) => {
-                const name = typeof d === 'string' ? d : d?.name
-                if (!name) return
-                if (!map[name]) map[name] = []
-                map[name].push(code)
-            })
-        })
-        return Object.entries(map)
-            .map(([name, codes]) => ({ name, plantCodes: codes }))
-            .sort((a, b) => a.name.localeCompare(b.name))
-    })()
-    const userDistrict = userPlantCode ? districtGroups.find((d) => d.plantCodes.includes(userPlantCode)) : null
-    const filteredPlants = plants.filter((plant) => {
-        const code = plant.plantCode || plant.plant_code || ''
-        const name = plant.plantName || plant.plant_name || ''
+
+    useEffect(() => {
+        if (!isOpen) return undefined
+        const handleKey = (event) => {
+            if (event.key === 'Escape') onClose?.()
+        }
+        document.addEventListener('keydown', handleKey)
+        return () => document.removeEventListener('keydown', handleKey)
+    }, [isOpen, onClose])
+
+    const districtGroups = useMemo(() => computeDistrictGroups(plants), [plants])
+    const userDistrict = useMemo(
+        () => (userPlantCode ? districtGroups.find((d) => d.plantCodes.includes(userPlantCode)) : null),
+        [districtGroups, userPlantCode]
+    )
+
+    const filteredPlants = useMemo(() => {
         const term = search.toLowerCase()
-        return code.toLowerCase().includes(term) || name.toLowerCase().includes(term)
-    })
-    const sortedPlants = [...filteredPlants].sort((a, b) => {
-        const codeA = a.plantCode || a.plant_code || ''
-        const codeB = b.plantCode || b.plant_code || ''
-        if (codeA === 'OTHER_REGION') return 1
-        if (codeB === 'OTHER_REGION') return -1
-        return parseInt(codeA.replace(/\D/g, '') || '0') - parseInt(codeB.replace(/\D/g, '') || '0')
-    })
+        if (!term) return plants
+        return plants.filter((plant) => {
+            const code = plantCodeOf(plant).toLowerCase()
+            const name = plantNameOf(plant).toLowerCase()
+            return code.includes(term) || name.includes(term)
+        })
+    }, [plants, search])
+
+    const sortedPlants = useMemo(() => sortPlantsByCode(filteredPlants), [filteredPlants])
+
     const handlePlantClick = (code) => {
         if (allowMultiple) {
-            setLocalSelectedCodes((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]))
+            setLocalSelectedCodes((prev) =>
+                prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+            )
             onSelect(code)
         } else {
             onSelect(code)
             onClose()
         }
     }
+
     /** Multi-select district click — when every plant in the district is
      *  already selected, deselect them all; otherwise add the missing
      *  ones. We surface the diff through `onSelect(code)` calls so the
@@ -102,59 +127,66 @@ function PlantDropdownModal({
     const handleDistrictClickMulti = (district) => {
         const codes = district.plantCodes || []
         if (!codes.length) return
-        const currentlyAllSelected = codes.every((c) => localSelectedCodes.includes(c))
+        const currentlyAllSelected = codes.every((code) => localSelectedCodes.includes(code))
         setLocalSelectedCodes((prev) => {
             const set = new Set(prev)
-            codes.forEach((c) => {
-                if (currentlyAllSelected) set.delete(c)
-                else set.add(c)
+            codes.forEach((code) => {
+                if (currentlyAllSelected) set.delete(code)
+                else set.add(code)
             })
             return [...set]
         })
-        codes.forEach((c) => {
-            const already = localSelectedCodes.includes(c)
-            // Only emit an event for codes whose membership actually flips,
-            // so a parent that mirrors the codes via per-event toggling
-            // ends up in the right state regardless of seed order.
-            if (currentlyAllSelected && already) onSelect(c)
-            else if (!currentlyAllSelected && !already) onSelect(c)
+        codes.forEach((code) => {
+            const already = localSelectedCodes.includes(code)
+            if (currentlyAllSelected && already) onSelect(code)
+            else if (!currentlyAllSelected && !already) onSelect(code)
         })
     }
+
     if (!isOpen || typeof document === 'undefined' || !document.body) return null
+
+    const hasRegions = regionGroups && regionGroups.length > 0
+    const searchActive = search.trim().length > 0
+
     return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-5"
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in-fast motion-reduce:animate-none"
             onClick={allowMultiple ? undefined : onClose}
             role="dialog"
             aria-modal="true"
-            aria-label={allowMultiple ? 'Select plants' : 'Select plant'}
+            aria-label={allowMultiple ? 'Select Plants' : 'Select Plant'}
         >
             <div
-                className="flex max-h-[80vh] w-[90%] max-w-[400px] flex-col overflow-hidden rounded-2xl bg-bg-primary border border-border-light shadow-[0_20px_60px_rgba(0,0,0,0.3)]"
-                onClick={(e) => e.stopPropagation()}
+                className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-modal bg-bg-secondary border border-border-light shadow-modal animate-pop-in motion-reduce:animate-none"
+                onClick={(event) => event.stopPropagation()}
             >
-                <div className="flex items-center justify-between rounded-t-2xl border-b border-border-light bg-bg-secondary px-5 py-4">
-                    <h2 className="m-0 text-lg font-semibold" style={{ color: accentColor }}>
+                <div className="flex items-center justify-between rounded-t-modal border-b border-border-light bg-bg-tertiary/40 px-5 py-4">
+                    <h2 className="m-0 font-heading text-lg font-semibold" style={{ color: accentColor }}>
                         {allowMultiple ? 'Select Plants' : 'Select Plant'}
                     </h2>
                     <button
+                        type="button"
                         onClick={onClose}
                         aria-label="Close"
                         className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-transparent text-base text-text-secondary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                     >
-                        <i className="fas fa-times" />
+                        <i className="fas fa-times" aria-hidden="true" />
                     </button>
                 </div>
+
                 <div className="relative border-b border-border-light px-4 py-3">
                     <input
                         type="text"
                         placeholder={searchPlaceholder}
                         aria-label={searchPlaceholder}
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full rounded-[10px] border border-border-light bg-bg-secondary py-3 pl-10 pr-9 text-sm text-text-primary outline-none transition-colors duration-150 placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+                        onChange={(event) => setSearch(event.target.value)}
+                        className="w-full rounded-md border border-border-light bg-bg-primary text-text-primary py-2.5 pl-10 pr-9 text-sm outline-none transition-colors duration-150 placeholder:text-text-tertiary hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                     />
-                    <i className="fas fa-search absolute left-7 top-1/2 -translate-y-1/2 text-sm text-text-tertiary" />
+                    <i
+                        className="fas fa-search absolute left-7 top-1/2 -translate-y-1/2 text-sm text-text-tertiary"
+                        aria-hidden="true"
+                    />
                     {search && (
                         <button
                             type="button"
@@ -162,60 +194,33 @@ function PlantDropdownModal({
                             aria-label="Clear search"
                             className="absolute right-6 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                         >
-                            <i className="fas fa-times text-xs" />
+                            <i className="fas fa-times text-xs" aria-hidden="true" />
                         </button>
                     )}
                 </div>
-                <div className="flex-1 overflow-y-auto bg-bg-primary p-2" role="listbox">
+                <div className="flex-1 overflow-y-auto bg-bg-secondary p-2" role="listbox">
                     {showAllPlants && !allowMultiple && (
-                        <button
-                            type="button"
-                            role="option"
-                            aria-selected={false}
-                            className="mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left text-sm text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
-                            onClick={() => {
-                                onSelect('All')
-                                onClose()
-                            }}
-                        >
+                        <PickerRow icon="fa-globe" accentColor={accentColor} onClick={() => { onSelect('All'); onClose() }}>
                             All Plants
-                        </button>
+                        </PickerRow>
                     )}
                     {showMyPlants && !allowMultiple && (
-                        <button
-                            type="button"
-                            role="option"
-                            aria-selected={false}
-                            className="mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left text-sm font-medium text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
-                            onClick={() => {
-                                onSelect('MY_PLANTS')
-                                onClose()
-                            }}
-                        >
-                            <i className="fas fa-user-circle" style={{ color: accentColor }} />
+                        <PickerRow icon="fa-user-circle" accentColor={accentColor} onClick={() => { onSelect('MY_PLANTS'); onClose() }}>
                             My Plants
-                        </button>
+                        </PickerRow>
                     )}
-                    {!allowMultiple && regionGroups && regionGroups.length > 0 && !search.trim() && (
+
+                    {!allowMultiple && hasRegions && !searchActive && (
                         <>
-                            <div className="mx-4 my-1 border-t border-border-light" />
-                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
-                                Regions
-                            </div>
+                            <Divider />
+                            <SectionLabel>Regions</SectionLabel>
                             {regionGroups.map((region) => {
                                 const isExpanded = !!expandedRegions[region.code]
                                 const districts = region.districts || []
-                                const regionPlants = (region.plants || []).slice().sort((a, b) => {
-                                    const codeA = a.plantCode || a.plant_code || ''
-                                    const codeB = b.plantCode || b.plant_code || ''
-                                    return (
-                                        parseInt(codeA.replace(/\D/g, '') || '0') -
-                                        parseInt(codeB.replace(/\D/g, '') || '0')
-                                    )
-                                })
+                                const regionPlants = sortPlantsByCode(region.plants || [])
                                 return (
                                     <div key={region.code} className="mb-1">
-                                        <div className="flex items-center gap-1 rounded-[10px] hover:bg-bg-tertiary">
+                                        <div className="flex items-center gap-1 rounded-card hover:bg-bg-hover transition-colors duration-150">
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -224,27 +229,32 @@ function PlantDropdownModal({
                                                         [region.code]: !prev[region.code]
                                                     }))
                                                 }
-                                                className="flex items-center justify-center w-8 h-8 ml-2 rounded border-none bg-transparent text-text-secondary cursor-pointer transition-colors duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                                 aria-label={isExpanded ? 'Collapse region' : 'Expand region'}
                                                 aria-expanded={isExpanded}
+                                                className="ml-2 flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent text-text-tertiary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
                                             >
                                                 <i
                                                     className={`fas ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} text-[11px]`}
+                                                    aria-hidden="true"
                                                 />
                                             </button>
                                             <button
                                                 type="button"
                                                 role="option"
                                                 aria-selected={false}
-                                                className="flex flex-1 cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-2 py-3 text-left text-sm font-medium text-text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                                                 onClick={() => {
                                                     onSelect(`REGION:${region.code}`)
                                                     onClose()
                                                 }}
+                                                className="flex flex-1 cursor-pointer items-center gap-3 rounded-card px-2 py-3 text-sm font-medium text-text-primary border-0 bg-transparent text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                                             >
-                                                <i className="fas fa-globe" style={{ color: accentColor }} />
+                                                <i
+                                                    className="fas fa-globe"
+                                                    style={{ color: accentColor }}
+                                                    aria-hidden="true"
+                                                />
                                                 <span className="flex-1">{region.name}</span>
-                                                <span className="text-xs text-text-tertiary">
+                                                <span className="text-xs text-text-tertiary tabular-nums">
                                                     {region.plantCodes?.length || 0}
                                                 </span>
                                             </button>
@@ -253,56 +263,38 @@ function PlantDropdownModal({
                                             <div className="ml-6 mt-1 mb-2 border-l border-border-light pl-2">
                                                 {districts.length > 0 && (
                                                     <>
-                                                        <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-text-tertiary">
-                                                            Districts
-                                                        </div>
+                                                        <NestedLabel>Districts</NestedLabel>
                                                         {districts.map((district) => (
-                                                            <button
+                                                            <NestedRow
                                                                 key={`${region.code}:${district.name}`}
-                                                                type="button"
-                                                                role="option"
-                                                                aria-selected={false}
-                                                                className="mb-0.5 flex w-full cursor-pointer items-center gap-3 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-sm text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
+                                                                icon="fa-layer-group"
+                                                                accentColor={accentColor}
+                                                                count={district.plantCodes.length}
                                                                 onClick={() => {
                                                                     onSelect(`DISTRICT:${district.name}`)
                                                                     onClose()
                                                                 }}
                                                             >
-                                                                <i
-                                                                    className="fas fa-layer-group"
-                                                                    style={{ color: accentColor }}
-                                                                />
-                                                                <span className="flex-1">{district.name}</span>
-                                                                <span className="text-xs text-text-tertiary">
-                                                                    {district.plantCodes.length}
-                                                                </span>
-                                                            </button>
+                                                                {district.name}
+                                                            </NestedRow>
                                                         ))}
                                                     </>
                                                 )}
                                                 {regionPlants.length > 0 && (
                                                     <>
-                                                        <div className="px-3 py-1 mt-1 text-[9px] font-bold uppercase tracking-wider text-text-tertiary">
-                                                            Plants
-                                                        </div>
+                                                        <NestedLabel className="mt-1">Plants</NestedLabel>
                                                         {regionPlants.map((plant) => {
-                                                            const code = plant.plantCode || plant.plant_code
+                                                            const code = plantCodeOf(plant)
                                                             return (
-                                                                <button
+                                                                <NestedRow
                                                                     key={`${region.code}:${code}`}
-                                                                    type="button"
-                                                                    role="option"
-                                                                    aria-selected={false}
-                                                                    className="flex w-full cursor-pointer items-center gap-3 rounded-[8px] border-none bg-transparent px-3 py-2 text-left text-sm text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
                                                                     onClick={() => {
                                                                         onSelect(code)
                                                                         onClose()
                                                                     }}
                                                                 >
-                                                                    <span>
-                                                                        ({code}) {plant.plantName || plant.plant_name}
-                                                                    </span>
-                                                                </button>
+                                                                    ({code}) {plantNameOf(plant)}
+                                                                </NestedRow>
                                                             )
                                                         })}
                                                     </>
@@ -312,76 +304,64 @@ function PlantDropdownModal({
                                     </div>
                                 )
                             })}
-                            <div className="mx-4 my-1 border-t border-border-light" />
+                            <Divider />
                         </>
                     )}
-                    {!allowMultiple && regionGroups && regionGroups.length > 0 && search.trim() && (
-                        <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
-                            Plants
-                        </div>
-                    )}
-                    {!allowMultiple && (!regionGroups || regionGroups.length === 0) && districtGroups.length > 0 && (
+
+                    {!allowMultiple && hasRegions && searchActive && <SectionLabel>Plants</SectionLabel>}
+
+                    {!allowMultiple && !hasRegions && districtGroups.length > 0 && (
                         <>
-                            <div className="mx-4 my-1 border-t border-border-light" />
+                            <Divider />
                             {userDistrict && (
-                                <button
-                                    type="button"
-                                    role="option"
-                                    aria-selected={false}
-                                    className="mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left text-sm font-medium text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
+                                <PickerRow
+                                    icon="fa-user-circle"
+                                    accentColor={accentColor}
                                     onClick={() => {
                                         onSelect(`DISTRICT:${userDistrict.name}`)
                                         onClose()
                                     }}
+                                    count={userDistrict.plantCodes.length}
                                 >
-                                    <i className="fas fa-user-circle" style={{ color: accentColor }} />
-                                    <span className="flex-1">My District</span>
-                                    <span className="text-xs text-text-tertiary">
-                                        {userDistrict.plantCodes.length}
-                                    </span>
-                                </button>
+                                    My District
+                                </PickerRow>
                             )}
                             {districtGroups.map((district) => (
-                                <button
+                                <PickerRow
                                     key={district.name}
-                                    type="button"
-                                    role="option"
-                                    aria-selected={false}
-                                    className="mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none bg-transparent px-4 py-3 text-left text-sm font-medium text-text-primary transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40"
+                                    icon="fa-layer-group"
+                                    accentColor={accentColor}
                                     onClick={() => {
                                         onSelect(`DISTRICT:${district.name}`)
                                         onClose()
                                     }}
+                                    count={district.plantCodes.length}
                                 >
-                                    <i className="fas fa-layer-group" style={{ color: accentColor }} />
-                                    <span className="flex-1">{district.name}</span>
-                                    <span className="text-xs text-text-tertiary">{district.plantCodes.length}</span>
-                                </button>
+                                    {district.name}
+                                </PickerRow>
                             ))}
-                            <div className="mx-4 my-1 border-t border-border-light" />
+                            <Divider />
                         </>
                     )}
+
                     {allowMultiple && districtGroups.length > 0 && (
                         <>
-                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
-                                Districts — tap to toggle every plant
-                            </div>
+                            <SectionLabel>Districts — tap to toggle every plant</SectionLabel>
                             {districtGroups.map((district) => {
-                                const inDistrict = district.plantCodes
-                                const selectedInDistrict = inDistrict.filter((c) =>
-                                    localSelectedCodes.includes(c)
+                                const codes = district.plantCodes
+                                const selectedInDistrict = codes.filter((code) =>
+                                    localSelectedCodes.includes(code)
                                 ).length
-                                const allSelected = inDistrict.length > 0 && selectedInDistrict === inDistrict.length
+                                const allSelected = codes.length > 0 && selectedInDistrict === codes.length
                                 const partial = selectedInDistrict > 0 && !allSelected
                                 return (
                                     <button
-                                        key={district.name}
                                         type="button"
+                                        key={district.name}
                                         role="option"
                                         aria-selected={allSelected}
-                                        className={`mb-1 flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none px-4 py-2.5 text-left text-sm transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40 ${allSelected ? 'font-semibold text-text-primary' : 'bg-transparent text-text-primary'}`}
-                                        style={allSelected ? { background: `${accentColor}14` } : undefined}
                                         onClick={() => handleDistrictClickMulti(district)}
+                                        className={`mb-1 w-full flex items-center gap-3 rounded-card px-4 py-2.5 text-sm border-0 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${allSelected ? 'bg-accent/10 font-semibold text-text-primary' : 'text-text-primary hover:bg-bg-hover'}`}
                                     >
                                         <input
                                             type="checkbox"
@@ -390,80 +370,93 @@ function PlantDropdownModal({
                                                 if (el) el.indeterminate = partial
                                             }}
                                             onChange={() => {}}
-                                            className="h-[18px] w-[18px]"
-                                            style={{ accentColor }}
+                                            className="h-[18px] w-[18px] accent-accent"
                                             tabIndex={-1}
                                         />
-                                        <i className="fas fa-layer-group" style={{ color: accentColor }} />
+                                        <i
+                                            className="fas fa-layer-group"
+                                            style={{ color: accentColor }}
+                                            aria-hidden="true"
+                                        />
                                         <span className="flex-1">{district.name}</span>
-                                        <span className="text-xs text-text-tertiary">
-                                            {selectedInDistrict}/{inDistrict.length}
+                                        <span className="text-xs text-text-tertiary tabular-nums">
+                                            {selectedInDistrict}/{codes.length}
                                         </span>
                                     </button>
                                 )
                             })}
-                            <div className="mx-4 my-2 border-t border-border-light" />
-                            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
-                                Plants
-                            </div>
+                            <Divider className="my-2" />
+                            <SectionLabel>Plants</SectionLabel>
                         </>
                     )}
+
                     {/* The hierarchical region accordion already renders
                         every plant nested under its region in office-mode
                         single-select view. Suppressing the flat list while
-                        no search is active avoids a duplicate flat dump
-                        of every org plant under the accordion. */}
-                    {!allowMultiple && regionGroups && regionGroups.length > 0 && !search.trim()
+                        no search is active avoids a duplicate flat dump. */}
+                    {!allowMultiple && hasRegions && !searchActive
                         ? null
                         : sortedPlants.map((plant) => {
-                              const code = plant.plantCode || plant.plant_code
+                              const code = plantCodeOf(plant)
                               const isSelected = allowMultiple && localSelectedCodes.includes(code)
                               return (
                                   <button
-                                      key={code}
                                       type="button"
+                                      key={code}
+                                      onClick={() => handlePlantClick(code)}
                                       role="option"
                                       aria-selected={isSelected}
-                                      className={`flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-none px-4 py-3 text-left text-sm transition-colors duration-150 hover:bg-bg-tertiary focus-visible:outline-none focus-visible:bg-bg-tertiary focus-visible:ring-2 focus-visible:ring-accent/40 ${isSelected ? 'font-semibold text-text-primary' : 'bg-transparent text-text-primary'}`}
-                                      style={isSelected ? { background: `${accentColor}14` } : undefined}
-                                      onClick={() => handlePlantClick(code)}
+                                      className={`w-full flex items-center gap-3 rounded-card px-4 py-3 text-sm border-0 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${isSelected ? 'bg-accent/10 font-semibold text-text-primary' : 'text-text-primary hover:bg-bg-hover'}`}
                                   >
                                       {allowMultiple && (
                                           <input
                                               type="checkbox"
                                               checked={isSelected}
                                               onChange={() => {}}
-                                              className="h-[18px] w-[18px]"
-                                              style={{ accentColor }}
+                                              className="h-[18px] w-[18px] accent-accent"
                                               tabIndex={-1}
                                           />
                                       )}
                                       <span className="text-text-primary">
-                                          ({code}) {plant.plantName || plant.plant_name}
+                                          ({code}) {plantNameOf(plant)}
                                       </span>
+                                      {isSelected && (
+                                          <i
+                                              className="fas fa-check ml-auto text-accent"
+                                              aria-hidden="true"
+                                          />
+                                      )}
                                   </button>
                               )
                           })}
+
+                    {sortedPlants.length === 0 && searchActive && (
+                        <div className="px-4 py-8 text-center text-sm text-text-tertiary">
+                            No plants match “{search}”.
+                        </div>
+                    )}
                 </div>
+
                 {allowMultiple && (
-                    <div className="border-t border-border-light bg-bg-secondary px-4 py-3 flex items-center gap-2">
+                    <div className="border-t border-border-light bg-bg-tertiary/40 px-4 py-3 flex items-center gap-2">
                         <button
                             type="button"
                             onClick={() => {
                                 // Emit a toggle for every currently selected
                                 // code so the parent's per-event reducer
                                 // shrinks back to nothing.
-                                localSelectedCodes.forEach((c) => onSelect(c))
+                                localSelectedCodes.forEach((code) => onSelect(code))
                                 setLocalSelectedCodes([])
                             }}
                             disabled={localSelectedCodes.length === 0}
-                            className="rounded-[10px] border border-border-light bg-bg-primary px-3 py-2 text-xs font-semibold text-text-secondary transition-colors duration-150 hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                            className="rounded-md border border-border-light bg-bg-primary text-text-primary px-3 py-2 text-xs font-semibold transition-colors duration-150 hover:bg-bg-hover disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none"
                         >
                             Clear
                         </button>
                         <button
+                            type="button"
                             onClick={onClose}
-                            className="flex-1 rounded-[10px] border-none px-5 py-3 text-sm font-semibold text-white transition-[filter,transform] duration-150 hover:brightness-105 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary"
+                            className="flex-1 rounded-md border-0 px-5 py-3 text-sm font-semibold text-white transition-colors duration-150 hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-secondary motion-reduce:transition-none"
                             style={{ backgroundColor: accentColor }}
                         >
                             Done ({localSelectedCodes.length} selected)
@@ -475,4 +468,59 @@ function PlantDropdownModal({
         document.body
     )
 }
+
+/** Top-level picker row used for All Plants / My Plants / district groups. */
+function PickerRow({ icon, accentColor, onClick, children, count }) {
+    return (
+        <button
+            type="button"
+            role="option"
+            aria-selected={false}
+            onClick={onClick}
+            className="mb-1 w-full flex items-center gap-3 rounded-card px-4 py-3 text-sm font-medium text-text-primary border-0 bg-transparent text-left cursor-pointer transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+            {icon && <i className={`fas ${icon}`} style={{ color: accentColor }} aria-hidden="true" />}
+            <span className="flex-1">{children}</span>
+            {count != null && <span className="text-xs text-text-tertiary tabular-nums">{count}</span>}
+        </button>
+    )
+}
+
+/** Nested picker row used inside an expanded region accordion. */
+function NestedRow({ icon, accentColor, onClick, children, count }) {
+    return (
+        <button
+            type="button"
+            role="option"
+            aria-selected={false}
+            onClick={onClick}
+            className="mb-0.5 w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm text-text-primary border-0 bg-transparent text-left cursor-pointer transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+            {icon && <i className={`fas ${icon}`} style={{ color: accentColor }} aria-hidden="true" />}
+            <span className="flex-1">{children}</span>
+            {count != null && <span className="text-xs text-text-tertiary tabular-nums">{count}</span>}
+        </button>
+    )
+}
+
+function SectionLabel({ children }) {
+    return (
+        <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+            {children}
+        </div>
+    )
+}
+
+function NestedLabel({ children, className = '' }) {
+    return (
+        <div className={`px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-text-tertiary ${className}`}>
+            {children}
+        </div>
+    )
+}
+
+function Divider({ className = '' }) {
+    return <div className={`mx-4 my-1 border-t border-border-light ${className}`} />
+}
+
 export default PlantDropdownModal

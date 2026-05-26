@@ -11,6 +11,10 @@ const SUGGESTION_MIN_QUERY_LEN = 3
  * construction) — Photon and Census both rank decently, so the extra
  * rows usually contain useful near-matches rather than noise. */
 const SUGGESTION_LIMIT = 8
+const DROPDOWN_OFFSET_PX = 6
+
+const DEFAULT_INPUT_CLASSNAME =
+    'w-full rounded-md px-3 py-2.5 text-sm outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30'
 
 /**
  * Free-text address input with multi-provider autocomplete + verification.
@@ -28,9 +32,6 @@ const SUGGESTION_LIMIT = 8
  * container) can't clip it out of view. Position is recomputed off the
  * input's bounding rect on open + on scroll/resize.
  */
-const DEFAULT_INPUT_CLASSNAME =
-    'w-full rounded-lg px-3 py-2.5 text-[14px] outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30'
-
 function AddressAutocomplete({ fieldStyle, inputClassName, onChange, placeholder, required, value }) {
     const [suggestions, setSuggestions] = useState([])
     const [isOpen, setIsOpen] = useState(false)
@@ -100,7 +101,7 @@ function AddressAutocomplete({ fieldStyle, inputClassName, onChange, placeholder
         const rect = input.getBoundingClientRect()
         setDropdownStyle({
             left: rect.left,
-            top: rect.bottom + 4,
+            top: rect.bottom + DROPDOWN_OFFSET_PX,
             width: rect.width
         })
     }
@@ -169,29 +170,37 @@ function AddressAutocomplete({ fieldStyle, inputClassName, onChange, placeholder
                 aria-label={placeholder || 'Address'}
                 aria-autocomplete="list"
                 aria-expanded={showDropdown}
+                role="combobox"
                 className={inputClassName || DEFAULT_INPUT_CLASSNAME}
                 style={fieldStyle}
             />
             {isLoading && (
-                <i className="fas fa-circle-notch fa-spin absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-text-tertiary" />
+                <i
+                    className="fas fa-circle-notch fa-spin absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-tertiary"
+                    aria-hidden="true"
+                />
             )}
             {showDropdown &&
                 createPortal(
                     <ul
                         ref={dropdownRef}
                         role="listbox"
-                        className="fixed z-[1000] max-h-72 overflow-y-auto rounded-lg shadow-lg bg-bg-primary border border-border-light"
-                        style={{ left: dropdownStyle.left, top: dropdownStyle.top, width: dropdownStyle.width }}
+                        className="fixed z-[1000] max-h-72 overflow-y-auto rounded-card shadow-modal bg-bg-secondary border border-border-light animate-fade-in-fast motion-reduce:animate-none"
+                        style={{
+                            left: dropdownStyle.left,
+                            top: dropdownStyle.top,
+                            width: dropdownStyle.width
+                        }}
                     >
                         {suggestions.length === 0 && isLoading && (
-                            <li className="px-3 py-2 text-[12.5px] flex items-center gap-2 text-text-tertiary">
-                                <i className="fas fa-circle-notch fa-spin text-[10px]" />
+                            <li className="px-3 py-2 text-xs flex items-center gap-2 text-text-tertiary">
+                                <i className="fas fa-circle-notch fa-spin text-[10px]" aria-hidden="true" />
                                 Searching addresses…
                             </li>
                         )}
                         {suggestions.length === 0 && !isLoading && hasSearched && (
-                            <li className="px-3 py-2 text-[12.5px] flex items-center gap-2 text-text-tertiary">
-                                <i className="fas fa-circle-info text-[10px]" />
+                            <li className="px-3 py-2 text-xs flex items-center gap-2 text-text-tertiary">
+                                <i className="fas fa-circle-info text-[10px]" aria-hidden="true" />
                                 No matches found — keep typing or check spelling.
                             </li>
                         )}
@@ -207,11 +216,14 @@ function AddressAutocomplete({ fieldStyle, inputClassName, onChange, placeholder
                                         acceptSuggestion(suggestion)
                                     }}
                                     onMouseEnter={() => setHighlightIndex(index)}
-                                    className={`px-3 py-2 text-[12.5px] cursor-pointer leading-snug text-text-primary transition-colors duration-100 ${
+                                    className={`px-3 py-2 text-xs cursor-pointer leading-snug text-text-primary transition-colors duration-100 ${
                                         index === 0 ? '' : 'border-t border-border-light'
-                                    } ${isActive ? 'bg-bg-secondary' : ''}`}
+                                    } ${isActive ? 'bg-accent/10 text-accent' : 'hover:bg-bg-hover'}`}
                                 >
-                                    <i className="fas fa-location-dot text-[10px] mr-2 text-text-tertiary" />
+                                    <i
+                                        className="fas fa-location-dot text-[10px] mr-2 text-text-tertiary"
+                                        aria-hidden="true"
+                                    />
                                     {suggestion.displayName}
                                 </li>
                             )

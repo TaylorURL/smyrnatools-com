@@ -1,8 +1,8 @@
-/* eslint-disable react/forbid-dom-props */
 import React from 'react'
 
 import { GrammarUtility } from '../../../utils/GrammarUtility'
 
+const MIN_DIALABLE_DIGITS = 7
 const stripToDigits = (phone) => String(phone || '').replace(/\D/g, '')
 
 /**
@@ -28,7 +28,7 @@ function PhoneLink({ className = '', display, phone, style, title }) {
     if (!phone) return null
     const digits = stripToDigits(phone)
     const label = display ?? GrammarUtility.formatPhone(phone)
-    if (digits.length < 7) {
+    if (digits.length < MIN_DIALABLE_DIGITS) {
         return (
             <span className={className} style={style} title={title}>
                 {label}
@@ -38,9 +38,10 @@ function PhoneLink({ className = '', display, phone, style, title }) {
     return (
         <a
             href={`tel:${digits}`}
-            className={`hover:underline ${className}`.trim()}
-            style={{ color: 'inherit', ...style }}
-            title={title || label}
+            className={`text-current underline-offset-2 transition-colors duration-150 hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary rounded-sm ${className}`.trim()}
+            style={style}
+            title={title || `Call ${label}`}
+            aria-label={`Call ${label}`}
             onClick={(event) => event.stopPropagation()}
         >
             {label}

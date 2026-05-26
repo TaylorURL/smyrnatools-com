@@ -12,10 +12,14 @@ import React from 'react'
  *
  * `className` is composed AFTER the animation class so callers can apply
  * layout utilities (flex, gap, etc.) without overwriting the animation.
+ * Reduced-motion users get an instant swap with no fade.
  */
 export default function TabFadeIn({ animationKey, children, className }) {
     return (
-        <div key={animationKey} className={`animate-fade-in-fast ${className || ''}`}>
+        <div
+            key={animationKey}
+            className={`animate-fade-in-fast motion-reduce:animate-none ${className || ''}`}
+        >
             {children}
         </div>
     )
