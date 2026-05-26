@@ -145,11 +145,22 @@ function PlantDropdownModal({
                     <input
                         type="text"
                         placeholder={searchPlaceholder}
+                        aria-label={searchPlaceholder}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full rounded-[10px] border border-gray-200 py-3 pl-10 pr-4 text-sm outline-none focus:border-slate-400"
+                        className="w-full rounded-[10px] border border-gray-200 py-3 pl-10 pr-9 text-sm outline-none transition-colors duration-150 placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                     />
                     <i className="fas fa-search absolute left-7 top-1/2 -translate-y-1/2 text-sm text-slate-400" />
+                    {search && (
+                        <button
+                            type="button"
+                            onClick={() => setSearch('')}
+                            aria-label="Clear search"
+                            className="absolute right-6 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 transition-colors duration-150"
+                        >
+                            <i className="fas fa-times text-xs" />
+                        </button>
+                    )}
                 </div>
                 <div className="flex-1 overflow-y-auto bg-white p-2">
                     {showAllPlants && !allowMultiple && (

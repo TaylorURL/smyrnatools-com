@@ -45,9 +45,16 @@ export default function DetailViewTransferModal({
                         <div className="text-sm font-semibold text-slate-800">{currentRegion || 'Unknown'}</div>
                     </div>
                     <div className="mb-3.5">
-                        <label className="mb-1.5 block text-xs font-semibold text-slate-500">Target Region</label>
+                        <label
+                            htmlFor="transfer-target-region"
+                            className="mb-1.5 block text-xs font-semibold text-slate-500"
+                        >
+                            Target Region
+                        </label>
                         <select
-                            className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-border-light text-sm text-slate-800 outline-none"
+                            id="transfer-target-region"
+                            aria-label="Target region"
+                            className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-border-light text-sm text-slate-800 outline-none transition-colors duration-150 hover:border-border-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             value={targetRegion}
                             onChange={(e) => setTargetRegion(e.target.value)}
                             disabled={transferring}
@@ -73,9 +80,16 @@ export default function DetailViewTransferModal({
                     </div>
                     {targetRegion && (
                         <div className="mb-3.5">
-                            <label className="mb-1.5 block text-xs font-semibold text-slate-500">Target Plant</label>
+                            <label
+                                htmlFor="transfer-target-plant"
+                                className="mb-1.5 block text-xs font-semibold text-slate-500"
+                            >
+                                Target Plant
+                            </label>
                             <select
-                                className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-border-light text-sm text-slate-800 outline-none"
+                                id="transfer-target-plant"
+                                aria-label="Target plant"
+                                className="dv-input w-full cursor-pointer appearance-none rounded-[10px] border-[1.5px] border-border-light text-sm text-slate-800 outline-none transition-colors duration-150 hover:border-border-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                 value={targetPlant}
                                 onChange={(e) => setTargetPlant(e.target.value)}
                                 disabled={transferring || !plants.length}

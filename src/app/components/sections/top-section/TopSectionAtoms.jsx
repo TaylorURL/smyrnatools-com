@@ -6,16 +6,16 @@ export const SearchInput = ({ value, onChange, onClear, placeholder, className =
     <div className={`relative ${className}`} role="search">
         <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-text-tertiary" />
         <input
-            type="text"
-            className="w-full text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7 bg-bg-secondary border border-border-light text-text-primary"
+            type="search"
+            className="w-full text-[12.5px] outline-none rounded py-1.5 pl-8 pr-7 bg-bg-secondary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
             placeholder={placeholder}
             value={value || ''}
             onChange={(e) => onChange?.(e.target.value)}
-            aria-label="Search"
+            aria-label={placeholder || 'Search'}
         />
         {value && onClear && (
             <button
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none bg-bg-tertiary text-text-secondary"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded text-[10px] cursor-pointer border-none bg-bg-tertiary text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
                 onClick={onClear}
                 type="button"
                 aria-label="Clear search"
@@ -79,7 +79,7 @@ export const ViewToggle = ({ viewMode, onChange, accentColor }) => (
 /** Standard select — uses native browser chrome with var(--bg-secondary) styling. */
 export const FilterSelect = ({ value, options, onChange, ariaLabel, className = '' }) => (
     <select
-        className={`text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 ${className} bg-bg-secondary border border-border-light text-text-primary`}
+        className={`text-[12px] cursor-pointer font-medium rounded py-1.5 pl-2 pr-7 ${className} bg-bg-secondary border border-border-light text-text-primary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30`}
         style={{ minWidth: 130 }}
         value={value || ''}
         onChange={(e) => onChange?.(e.target.value)}
@@ -97,7 +97,7 @@ export const FilterSelect = ({ value, options, onChange, ariaLabel, className = 
 export const ResetButton = ({ onClick }) => (
     <button
         type="button"
-        className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none bg-bg-secondary border border-border-light text-text-secondary"
+        className="flex items-center justify-center w-7 h-7 rounded text-[12px] cursor-pointer border-none bg-bg-secondary border border-border-light text-text-secondary transition-colors duration-150 hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
         onClick={onClick}
         aria-label="Reset filters"
         title="Reset filters"

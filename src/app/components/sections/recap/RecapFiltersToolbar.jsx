@@ -28,17 +28,19 @@ function RecapFiltersToolbar({
             <div className="relative">
                 <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-text-tertiary" />
                 <input
-                    type="text"
+                    type="search"
                     placeholder="Search by name…"
+                    aria-label="Search recap entries by name"
                     value={searchQuery}
                     onChange={(e) => onSearchQueryChange(e.target.value)}
-                    className="w-full pl-7 pr-7 py-1.5 text-[12.5px] rounded outline-none bg-bg-primary border border-border-light text-text-primary"
+                    className="w-full pl-7 pr-7 py-1.5 text-[12.5px] rounded outline-none bg-bg-primary border border-border-light text-text-primary placeholder:text-text-tertiary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                 />
                 {searchQuery && (
                     <button
                         type="button"
                         onClick={() => onSearchQueryChange('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 border-none bg-transparent cursor-pointer text-text-tertiary"
+                        aria-label="Clear search"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded border-none bg-transparent cursor-pointer text-text-tertiary hover:bg-bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 transition-colors duration-150"
                     >
                         <i className="fa-solid fa-xmark text-[10px]" />
                     </button>
@@ -75,7 +77,8 @@ function RecapFiltersToolbar({
                         <select
                             value={fieldFilter}
                             onChange={(e) => onFieldFilterChange(e.target.value)}
-                            className="rounded text-[11px] cursor-pointer font-medium px-2 py-1 outline-none bg-bg-primary border border-border-light text-text-primary"
+                            aria-label="Filter by field"
+                            className="rounded text-[11px] cursor-pointer font-medium px-2 py-1 outline-none bg-bg-primary border border-border-light text-text-primary transition-colors duration-150 hover:border-border-medium focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
                         >
                             <option value="all">All fields</option>
                             {availableFields.map((f) => (
