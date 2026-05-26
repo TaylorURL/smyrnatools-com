@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useState } from 'react'
 
 import { Panel } from '../ui/Panel'
@@ -6,23 +5,29 @@ import { getAssetViewType } from './shared/DashboardSharedComponents'
 
 const COLLAPSED_LIMIT = 3
 
-/** Inline alert row — monospace identifier on the left, message in the
- *  middle, terse metric on the right. Becomes a button when actionable. */
-function AlertRow({ id, message, metric, onClick }) {
+const SEVERITY_STRIPE = {
+    danger: 'border-l-status-danger',
+    warning: 'border-l-status-warning',
+    info: 'border-l-accent'
+}
+
+/** Inline alert row — left-edge severity stripe, monospace identifier,
+ *  message, and a right-aligned metric. Becomes a focusable button when
+ *  actionable so keyboard users get the same affordances as mouse users. */
+function AlertRow({ id, message, metric, onClick, severity = 'info' }) {
     const Wrapper = onClick ? 'button' : 'div'
+    const stripeClass = SEVERITY_STRIPE[severity] || SEVERITY_STRIPE.info
+    const interactiveClass = onClick
+        ? 'cursor-pointer hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary'
+        : ''
     return (
         <Wrapper
             onClick={onClick}
             type={onClick ? 'button' : undefined}
-            className={`flex items-baseline gap-3 py-1.5 text-left bg-transparent border-none w-full ${
-                onClick ? 'cursor-pointer hover:opacity-70' : ''
-            }`}
+            className={`flex items-baseline gap-3 py-1.5 pl-2.5 pr-1 text-left w-full rounded-md border-l-4 ${stripeClass} bg-transparent transition-colors duration-150 ${interactiveClass}`}
         >
             {id && (
-                <span
-                    className="font-mono text-[11.5px] font-semibold shrink-0 text-text-primary"
-                    style={{ minWidth: 56 }}
-                >
+                <span className="font-mono text-[11.5px] font-semibold shrink-0 min-w-[56px] text-text-primary">
                     {id}
                 </span>
             )}
@@ -81,7 +86,8 @@ export default function DashboardAlertsPanel({
             id: 'FLEET',
             key: 'shop',
             message: 'In-shop count crossed bottleneck threshold',
-            metric: `${shopIssue.inShopCount} / ${shopIssue.spareCount}`
+            metric: `${shopIssue.inShopCount} / ${shopIssue.spareCount}`,
+            severity: 'danger'
         })
     }
     longTermShopAssets.forEach((asset, i) => {
@@ -90,7 +96,8 @@ export default function DashboardAlertsPanel({
             key: `long-${i}`,
             message: `${asset.type} long-term in shop${asset.downInYard ? ' (down in yard)' : ''}`,
             metric: `${asset.daysInShop}d`,
-            onClick: openOnAsset(asset)
+            onClick: openOnAsset(asset),
+            severity: 'warning'
         })
     })
     if (unassignedOperators.length > 0) {
@@ -99,7 +106,8 @@ export default function DashboardAlertsPanel({
             key: 'unassigned',
             message: 'Unassigned operators',
             metric: unassignedOperators.length,
-            onClick: openOperators('Unassigned Active')
+            onClick: openOperators('Unassigned Active'),
+            severity: 'warning'
         })
     }
     if (pendingOperators.length > 0) {
@@ -108,7 +116,8 @@ export default function DashboardAlertsPanel({
             key: 'pending',
             message: 'Operators awaiting start date',
             metric: pendingOperators.length,
-            onClick: openOperators('Pending Start')
+            onClick: openOperators('Pending Start'),
+            severity: 'info'
         })
     }
     if (trainingOperators.length > 0) {
@@ -117,7 +126,8 @@ export default function DashboardAlertsPanel({
             key: 'training',
             message: 'Operators currently in training',
             metric: trainingOperators.length,
-            onClick: openOperators('Training')
+            onClick: openOperators('Training'),
+            severity: 'info'
         })
     }
 
@@ -126,7 +136,10 @@ export default function DashboardAlertsPanel({
     if (totalCount === 0) {
         return (
             <Panel id="alerts" title="Alerts">
-                <div className="text-[12.5px] text-text-secondary">No active alerts.</div>
+                <div className="flex items-center gap-2 text-[12.5px] text-text-secondary">
+                    <i className="fas fa-check-circle text-status-active" aria-hidden="true" />
+                    <span>No active alerts.</span>
+                </div>
             </Panel>
         )
     }
@@ -137,7 +150,7 @@ export default function DashboardAlertsPanel({
 
     return (
         <Panel id="alerts" title={`Alerts · ${totalCount}`}>
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-0.5">
                 {visibleRows.map((row) => (
                     <AlertRow
                         key={row.key}
@@ -145,13 +158,15 @@ export default function DashboardAlertsPanel({
                         message={row.message}
                         metric={row.metric}
                         onClick={row.onClick}
+                        severity={row.severity}
                     />
                 ))}
                 {canExpand && (
                     <button
                         type="button"
                         onClick={() => setExpanded((prev) => !prev)}
-                        className="self-start text-[12px] font-semibold mt-1 px-0 py-1 bg-transparent border-none cursor-pointer hover:underline text-text-secondary"
+                        className="self-start text-[12px] font-semibold mt-1.5 px-2 py-1 rounded-md bg-transparent cursor-pointer transition-colors duration-150 text-text-secondary hover:text-text-primary hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                        aria-expanded={expanded}
                     >
                         {expanded ? 'Show less' : `View more (${hiddenCount})`}
                     </button>

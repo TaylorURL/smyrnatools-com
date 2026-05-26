@@ -3,16 +3,29 @@ import React from 'react'
 
 import { Panel } from '../ui/Panel'
 
+/** Resolve allocation bar color via semantic status tokens. */
+const allocationColorClass = (pct) =>
+    pct >= 80 ? 'bg-status-active' : pct >= 50 ? 'bg-status-warning' : 'bg-status-danger'
+
 /** Inline horizontal allocation bar — track + fill + percent text. The
  *  fixed minimums only kick in at `sm+`; on mobile the bar shrinks with
  *  the column so the table fits inside a phone viewport. */
 function AllocationBar({ percent }) {
     const pct = Math.min(100, Math.max(0, percent || 0))
-    const color = pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#dc2626'
     return (
         <div className="flex items-center gap-1.5 sm:gap-2 sm:min-w-[120px]">
-            <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
-                <div className="h-full rounded-full" style={{ background: color, width: `${pct}%` }} />
+            <div
+                className="flex-1 h-1.5 rounded-full overflow-hidden bg-bg-tertiary"
+                role="progressbar"
+                aria-valuenow={pct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Allocation ${pct} percent`}
+            >
+                <div
+                    className={`h-full rounded-full transition-[width] duration-500 ease-out ${allocationColorClass(pct)}`}
+                    style={{ width: `${pct}%` }}
+                />
             </div>
             <span className="text-[11px] sm:text-[11.5px] font-semibold font-mono tabular-nums sm:min-w-[36px] text-right text-text-primary">
                 {pct}%
@@ -26,16 +39,14 @@ function AllocationBar({ percent }) {
  *  essentials (asset type · total · active · allocation) without
  *  horizontal scroll. */
 function FleetRow({ active, allocation, dotColor, isTotal, label, shop, spare, stationary, total }) {
+    const rowClass = isTotal
+        ? 'font-semibold bg-bg-secondary border-t border-border-medium'
+        : 'transition-colors duration-150 hover:bg-bg-hover'
     return (
-        <tr
-            className={isTotal ? 'font-semibold' : 'transition-colors hover:bg-bg-tertiary'}
-            style={
-                isTotal ? { background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-medium)' } : undefined
-            }
-        >
+        <tr className={rowClass}>
             <td className="px-3 py-2 text-[12.5px] text-text-primary">
                 <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: dotColor }} />
+                    <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: dotColor }} aria-hidden="true" />
                     <span>{label}</span>
                 </div>
             </td>
@@ -46,8 +57,9 @@ function FleetRow({ active, allocation, dotColor, isTotal, label, shop, spare, s
                 {active ?? '—'}
             </td>
             <td
-                className="hidden sm:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
-                style={{ color: spare != null ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
+                className={`hidden sm:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold ${
+                    spare != null ? 'text-text-primary' : 'text-text-tertiary'
+                }`}
             >
                 {spare ?? '—'}
             </td>
@@ -55,8 +67,9 @@ function FleetRow({ active, allocation, dotColor, isTotal, label, shop, spare, s
                 {shop ?? '—'}
             </td>
             <td
-                className="hidden md:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold"
-                style={{ color: stationary != null ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
+                className={`hidden md:table-cell px-3 py-2 text-right font-mono tabular-nums text-[12.5px] font-semibold ${
+                    stationary != null ? 'text-text-primary' : 'text-text-tertiary'
+                }`}
             >
                 {stationary ?? '—'}
             </td>

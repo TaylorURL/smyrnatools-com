@@ -170,9 +170,12 @@ export default function DashboardPodcastPanel() {
     const progressPct = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0
 
     return (
-        <aside className="flex flex-col gap-3 w-full pt-3 pb-0 lg:w-[300px] lg:shrink-0 lg:py-5 lg:pr-3">
+        <aside
+            className="flex flex-col gap-3 w-full pt-3 pb-0 lg:w-[300px] lg:shrink-0 lg:py-5 lg:pr-3 animate-fade-in-up"
+            aria-label="SRM podcast player"
+        >
             <header className="flex items-baseline justify-between gap-2 px-1">
-                <span className="text-[13px] font-bold text-text-primary font-heading">SRM Podcast</span>
+                <span className="font-heading text-[13px] font-semibold text-text-primary">SRM Podcast</span>
                 {episodes.length > 0 && (
                     <span className="text-[10.5px] font-mono tabular-nums text-text-tertiary">
                         {episodes.length} ep
@@ -184,20 +187,16 @@ export default function DashboardPodcastPanel() {
                 while the feed is loading or if the fetch fails. The title
                 slot shows the current state; the play button stays disabled
                 until an audio src is present. */}
-            <div className="rounded-xl border border-border-light bg-bg-primary overflow-hidden">
+            <div className="rounded-card border border-border-light bg-bg-primary overflow-hidden shadow-sm transition-shadow duration-200 hover:shadow-card">
                 <div className="flex items-start gap-3 px-3 pt-3">
                     <div
-                        className="shrink-0 rounded-md overflow-hidden flex items-center justify-center text-text-primary"
-                        style={{
-                            background: selected?.artwork ? 'transparent' : `${accent}1f`,
-                            height: 56,
-                            width: 56
-                        }}
+                        className="shrink-0 rounded-md overflow-hidden flex items-center justify-center text-text-primary w-14 h-14 bg-bg-tertiary"
+                        style={selected?.artwork ? undefined : { background: `${accent}1f` }}
                     >
                         {selected?.artwork ? (
                             <img src={selected.artwork} alt="" className="w-full h-full object-cover" loading="lazy" />
                         ) : (
-                            <i className="fas fa-podcast text-[22px]" />
+                            <i className="fas fa-podcast text-[22px]" aria-hidden="true" />
                         )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -235,17 +234,23 @@ export default function DashboardPodcastPanel() {
                             type="button"
                             onClick={togglePlay}
                             disabled={!selected || audioError}
-                            className="w-10 h-10 rounded-full border-0 flex items-center justify-center text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                            className="w-10 h-10 rounded-full border-0 flex items-center justify-center text-white cursor-pointer transition-all duration-150 active:scale-[0.95] disabled:cursor-not-allowed disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                             style={{ background: accent }}
                             aria-label={isPlaying ? 'Pause' : 'Play'}
                             title={isPlaying ? 'Pause' : 'Play'}
                         >
-                            <i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'} text-[13px]`} />
+                            <i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'} text-[13px]`} aria-hidden="true" />
                         </button>
                         <div className="flex-1 min-w-0 flex flex-col gap-1">
-                            <div className="relative h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                            <div
+                                className="relative h-1.5 rounded-full bg-bg-tertiary overflow-hidden"
+                                role="progressbar"
+                                aria-valuenow={Math.round(progressPct)}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                            >
                                 <div
-                                    className="absolute inset-y-0 left-0 rounded-full"
+                                    className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-150 ease-out"
                                     style={{ background: accent, width: `${progressPct}%` }}
                                 />
                                 <input
@@ -274,7 +279,7 @@ export default function DashboardPodcastPanel() {
                                 href={selected.fallbackUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-text-secondary hover:text-text-primary"
+                                className="text-text-secondary transition-colors duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:underline"
                             >
                                 Open episode ↗
                             </a>
@@ -298,35 +303,27 @@ export default function DashboardPodcastPanel() {
             </div>
 
             {!loading && !error && episodes.length > 1 && (
-                <div className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-text-tertiary px-1">
+                <div className="text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary px-1">
                     Episodes
                 </div>
             )}
 
-            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5 pr-0.5">
+            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 pr-0.5">
                 {episodes.map((ep) => {
                     const active = ep.key === selectedKey
+                    const stateClass = active
+                        ? 'bg-bg-tertiary border-border-medium text-text-primary font-semibold'
+                        : 'bg-transparent border-transparent text-text-secondary font-medium hover:bg-bg-hover'
                     return (
                         <button
                             key={ep.key}
                             type="button"
                             onClick={() => setSelectedKey(ep.key)}
-                            className="text-left bg-transparent cursor-pointer rounded-md px-2.5 py-2 transition-colors hover:bg-bg-tertiary"
-                            style={{
-                                background: active ? 'var(--bg-tertiary)' : 'transparent',
-                                border: `1px solid ${active ? 'var(--border-medium)' : 'transparent'}`
-                            }}
+                            className={`text-left cursor-pointer rounded-md border px-2.5 py-2 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary ${stateClass}`}
                             title={ep.title}
+                            aria-pressed={active}
                         >
-                            <div
-                                className="text-[12.5px] leading-snug line-clamp-2"
-                                style={{
-                                    color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                    fontWeight: active ? 600 : 500
-                                }}
-                            >
-                                {ep.title}
-                            </div>
+                            <div className="text-[12.5px] leading-snug line-clamp-2">{ep.title}</div>
                             <div className="flex items-center gap-1.5 mt-1 text-[10.5px] font-mono tabular-nums text-text-tertiary">
                                 <span>{formatDate(ep.pubDate)}</span>
                                 {ep.duration && (

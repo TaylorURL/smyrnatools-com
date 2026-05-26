@@ -1,4 +1,3 @@
-/* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import PlantDropdownModal from '../../../app/components/common/PlantDropdownModal'
@@ -244,10 +243,7 @@ export default function DashboardView() {
         (stats.equipment?.issues || 0)
 
     return (
-        <div
-            className="dashboard-full-width global-flush-top flush-top text-text-primary bg-bg-secondary flex flex-col overflow-hidden absolute"
-            style={{ inset: 0 }}
-        >
+        <div className="dashboard-full-width global-flush-top flush-top text-text-primary bg-bg-secondary flex flex-col overflow-hidden absolute inset-0">
             <DashboardHeader
                 accentColor={accentColor}
                 heroRegionSub={heroRegionSub}
@@ -268,11 +264,15 @@ export default function DashboardView() {
 
                     <main className="flex-1 min-w-0 py-3 sm:py-5 flex flex-col gap-3 sm:gap-5">
                         {error && (
-                            <div className="flex items-center justify-between rounded text-text-primary px-4 py-3 bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.3)]">
+                            <div
+                                role="alert"
+                                className="flex items-center justify-between rounded-md text-text-primary px-4 py-3 bg-status-danger/5 border border-status-danger/30 animate-fade-in-fast"
+                            >
                                 <span className="text-[13px] font-semibold">{error}</span>
                                 <button
+                                    type="button"
                                     onClick={() => setRefreshKey((v) => v + 1)}
-                                    className="bg-transparent border-none text-text-primary cursor-pointer font-semibold text-[12px]"
+                                    className="bg-transparent border-none text-text-primary cursor-pointer font-semibold text-[12px] px-2 py-1 rounded-md transition-colors duration-150 hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
                                 >
                                     Retry
                                 </button>
@@ -301,7 +301,7 @@ export default function DashboardView() {
                                     isAggregate={isAggregate}
                                     managerStats={managerStats}
                                 />
-                                <div className="h-8" />
+                                <div className="h-8" aria-hidden="true" />
                             </>
                         )}
                     </main>
